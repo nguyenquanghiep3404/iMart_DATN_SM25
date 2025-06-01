@@ -20,7 +20,7 @@ class PostFactory extends Factory
             'slug' => Str::slug($title) . '-' . Str::lower(Str::random(3)),
             'content' => '<p>' . implode('</p><p>', $this->faker->paragraphs(rand(10, 25))) . '</p>',
             'excerpt' => $this->faker->paragraph(3),
-            'user_id' => User::query()->whereHas('roles', fn($q) => $q->whereIn(['name', 'admin', 'content_manager']))->inRandomOrder()->first()?->id ?? User::factory()->create()->id,
+            'user_id' => User::query()->whereHas('roles', fn($q) => $q->whereIn('name', ['admin', 'content_manager']))->inRandomOrder()->first()?->id ?? User::factory()->create()->id,
             'post_category_id' => PostCategory::query()->inRandomOrder()->first()?->id ?? PostCategory::factory()->create()->id,
             'status' => $this->faker->randomElement(['published', 'draft', 'pending_review']),
             'is_featured' => $this->faker->boolean(15),

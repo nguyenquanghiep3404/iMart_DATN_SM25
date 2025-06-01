@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->foreignId('parent_id')->nullable()->constrained('categories')->onDelete('cascade');
             $table->text('description')->nullable();
+            $table->integer('order')->nullable()->default(0);
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->string('meta_title')->nullable();
             $table->text('meta_description')->nullable();

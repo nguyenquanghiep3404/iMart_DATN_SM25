@@ -3,10 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\Comment;
-use App\Models\User; // Đã import
-use App\Models\Post; // Đã import
-use App\Models\Review; // Đã import
-use Illuminate\Database\Eloquent\Factories\Factory; // Đã import
+use App\Models\User; 
+use App\Models\Post; 
+use App\Models\Review; 
+use Illuminate\Database\Eloquent\Factories\Factory;
 
 class CommentFactory extends Factory
 {
