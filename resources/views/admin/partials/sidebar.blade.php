@@ -2,7 +2,7 @@
             <div class="">
                 <div class="py-4 pb-8 px-8 border-b border-gray h-[78px]">
                     <a href="index.html">
-                        <img class="w-[140px]" src="assets/img/logo/logo.svg" alt="">
+                        <img class="w-[140px]" src="{{asset('assets/admin/img/logo/logo.svg')}}" alt="">
                     </a>
                 </div>
                 <div class="px-4 py-5" x-data="{nav:null}">

@@ -234,7 +234,7 @@
                 <div class="flex flex-wrap items-center justify-between">
                     <div class="m-2 mb:sm-0 flex items-center space-x-3">
                         <div class="avatar">
-                            <img class="rounded-full w-10 h-10" src="assets/img/users/user-6.jpg" alt="avatar">
+                            <img class="rounded-full w-10 h-10" src="assets/admin/img/users/user-6.jpg" alt="avatar">
                         </div>
                         <div>
                             <h4 class="text-base text-slate-700 mb-[6px] leading-none">
@@ -250,7 +250,7 @@
                 <div class="flex flex-wrap items-center justify-between">
                     <div class="m-2 mb:sm-0 flex items-center space-x-3">
                         <div class="avatar">
-                            <img class="rounded-full w-10 h-10" src="assets/img/users/user-7.jpg" alt="avatar">
+                            <img class="rounded-full w-10 h-10" src="assets/admin/img/users/user-7.jpg" alt="avatar">
                         </div>
                         <div>
                             <h4 class="text-base text-slate-700 mb-[6px] leading-none">
@@ -266,7 +266,7 @@
                 <div class="flex flex-wrap items-center justify-between">
                     <div class="m-2 mb:sm-0 flex items-center space-x-3">
                         <div class="avatar">
-                            <img class="rounded-full w-10 h-10" src="assets/img/users/user-8.jpg" alt="avatar">
+                            <img class="rounded-full w-10 h-10" src="assets/admin/img/users/user-8.jpg" alt="avatar">
                         </div>
                         <div>
                             <h4 class="text-base text-slate-700 mb-[6px] leading-none">
@@ -282,7 +282,7 @@
                 <div class="flex flex-wrap items-center justify-between">
                     <div class="m-2 mb:sm-0 flex items-center space-x-3">
                         <div class="avatar">
-                            <img class="rounded-full w-10 h-10" src="assets/img/users/user-9.jpg" alt="avatar">
+                            <img class="rounded-full w-10 h-10" src="assets/admin/img/users/user-9.jpg" alt="avatar">
                         </div>
                         <div>
                             <h4 class="text-base text-slate-700 mb-[6px] leading-none">

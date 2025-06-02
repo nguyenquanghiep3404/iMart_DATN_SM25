@@ -55,7 +55,7 @@
                             <div class="flex items-center justify-between last:border-0 border-b border-gray pb-4 mb-4 last:pb-0 last:mb-0">
                                 <div class="flex items-center space-x-3">
                                     <div class="">
-                                        <img class="w-[40px] h-[40px] rounded-md" src="assets/img/product/prodcut-1.jpg" alt="img">
+                                        <img class="w-[40px] h-[40px] rounded-md" src="{{asset ('assets/admin/img/product/prodcut-1.jpg')}}" alt="img">
                                     </div>
                                     <div class="">
                                         <h5 class="text-base mb-0 leading-none">Green shirt for women</h5>
@@ -72,7 +72,7 @@
                             <div class="flex items-center justify-between last:border-0 border-b border-gray pb-4 mb-4 last:pb-0 last:mb-0">
                                 <div class="flex items-center space-x-3">
                                     <div class="">
-                                        <img class="w-[40px] h-[40px] rounded-md" src="assets/img/product/prodcut-2.jpg" alt="img">
+                                        <img class="w-[40px] h-[40px] rounded-md" src="{{asset ('assets/admin/img/product/prodcut-2.jpg')}}" alt="img">
                                     </div>
                                     <div class="">
                                         <h5 class="text-base mb-0 leading-none">Red School Bag</h5>
@@ -89,7 +89,7 @@
                             <div class="flex items-center justify-between last:border-0 border-b border-gray pb-4 mb-4 last:pb-0 last:mb-0">
                                 <div class="flex items-center space-x-3">
                                     <div class="">
-                                        <img class="w-[40px] h-[40px] rounded-md" src="assets/img/product/prodcut-3.jpg" alt="img">
+                                        <img class="w-[40px] h-[40px] rounded-md" src="{{asset ('assets/admin/img/product/prodcut-3.jpg')}}" alt="img">
                                     </div>
                                     <div class="">
                                         <h5 class="text-base mb-0 leading-none">Shoe for men</h5>
@@ -106,7 +106,7 @@
                             <div class="flex items-center justify-between last:border-0 border-b border-gray pb-4 mb-4 last:pb-0 last:mb-0">
                                 <div class="flex items-center space-x-3">
                                     <div class="">
-                                        <img class="w-[40px] h-[40px] rounded-md" src="assets/img/product/prodcut-4.jpg" alt="img">
+                                        <img class="w-[40px] h-[40px] rounded-md" src="{{asset ('assets/admin/img/product/prodcut-4.jpg')}}" alt="img">
                                     </div>
                                     <div class="">
                                         <h5 class="text-base mb-0 leading-none">Yellow Bag for women</h5>
@@ -123,7 +123,7 @@
                             <div class="flex items-center justify-between last:border-0 border-b border-gray pb-4 mb-4 last:pb-0 last:mb-0">
                                 <div class="flex items-center space-x-3">
                                     <div class="">
-                                        <img class="w-[40px] h-[40px] rounded-md" src="assets/img/product/prodcut-5.jpg" alt="img">
+                                        <img class="w-[40px] h-[40px] rounded-md" src="{{asset('assets/admin/img/product/prodcut-5.jpg')}}" alt="img">
                                     </div>
                                     <div class="">
                                         <h5 class="text-base mb-0 leading-none">Blavk Bag for women</h5>
@@ -142,7 +142,7 @@
                         </div>
                         <div class="relative w-[70%] flex justify-end items-center" x-data="{ userOption: false }">
                             <button class="relative" type="button" x-on:click="userOption = ! userOption">
-                                <img class="w-[40px] h-[40px] rounded-md" src="assets/img/users/user-10.jpg" alt="">
+                                <img class="w-[40px] h-[40px] rounded-md" src="{{asset('assets/admin/img/users/user-10.jpg')}}" alt="">
                                 <span class="w-[12px] h-[12px] inline-block bg-green-500 rounded-full absolute -top-[4px] -right-[4px] border-[2px] border-white"></span>
                             </button>
                             <div 
@@ -159,7 +159,7 @@
                             >
                                 <div class="flex items-center space-x-3 border-b border-gray pb-3 mb-2">
                                     <div class="">
-                                        <img class="w-[50px] h-[50px] rounded-md" src="assets/img/users/user-10.jpg" alt="">
+                                        <img class="w-[50px] h-[50px] rounded-md" src="{{asset('assets/admin/img/users/user-10.jpg')}}" alt="">
                                     </div>
                                     <div class="">
                                         <h5 class="text-base mb-1 leading-none">Shahnewaz</h5>
