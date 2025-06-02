@@ -58,15 +58,17 @@
                                 </li>
                                 <li>
                                     <a href="product-grid.html"
-                                        class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Lưới sản pphẩm</a>
-                                </li>
-                                <li>
-                                    <a href="add-product.html"
                                         class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Thêm mới sản phẩm</a>
                                 </li>
                                 <li>
+                                    <a 
+                                    href="{{ route('admin.attributes.index') }}" class=" block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot nav-link {{ request()->routeIs('admin.attributes.index') || request()->routeIs('admin.attributes.show') || request()->routeIs('admin.attributes.edit') ? 'active' : '' }}">
+
+                                    Quản lý thuộc tính</a>
+                                </li>
+                                <li>
                                     <a href="edit-product.html"
-                                        class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Chỉnh sửa sản phẩm</a>
+                                        class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Thêm thuộc tính mới</a>
                                 </li>
                             </ul>
                         </li>
