@@ -71,8 +71,10 @@
                             </ul>
                         </li>
                         <li>
-                            <a href="category.html"
-                                class="group rounded-md relative text-black text-lg font-medium inline-flex items-center w-full transition-colors ease-in-out duration-300 px-5 py-[9px] mb-3 hover:bg-gray sidebar-link-active">
+                            <a @click="nav !== 2 ? nav = 2 : nav = null"
+                            :class="nav == 2 ? 'bg-themeLight hover:bg-themeLight text-theme' : ''"
+                            href="javascript:void(0);"
+                            class="group rounded-md relative text-black text-lg font-medium inline-flex items-center w-full transition-colors ease-in-out duration-300 px-5 py-[9px] mb-3 hover:bg-gray sidebar-link-active">
                                 <span class="inline-block translate-y-[1px] mr-[10px] text-xl">
                                     <svg class="-translate-y-[4px]" xmlns="http://www.w3.org/2000/svg"
                                         viewBox="0 0 24 24" width="16" height="16">
@@ -83,9 +85,36 @@
                                     </svg>
                                 </span>
                                 Danh mục sản phẩm
-
+                                <span class="absolute right-4 top-[52%] transition-transform duration-300 origin-center w-4 h-4"
+                                    :class="nav == 2 ? 'translate-y-[-10px] rotate-90' : 'translate-y-[-10px]'">
+                                    <svg class="-translate-y-[5px]" xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 24 24" width="16" height="16">
+                                        <path fill="currentColor"
+                                            d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                                    </svg>
+                                </span>
                             </a>
+                            <ul x-show="nav == 2" class="pl-[42px] pr-[20px] pb-3">
+                                <li>
+                                    <a href="{{ route('admin.categories.index') }}"
+                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Danh Sách sản phẩm</a>
+                                </li>
+                                <li>
+                                    <a href="product-grid.html"
+                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Lưới sản phẩm</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('admin.categories.create') }}"
+                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Thêm mới sản phẩm</a>
+                                </li>
+                                <li>
+                                    <a href="edit-product.html"
+                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Chỉnh sửa sản phẩm</a>
+                                </li>
+                            </ul>
                         </li>
+
+
                         <li class="hidden">
                             <a @click="nav !== 3 ? nav = 3 : nav = null"
                                 :class="nav == 3 ? 'bg-themeLight hover:bg-themeLight text-theme' : ''"
