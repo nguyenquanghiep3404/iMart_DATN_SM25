@@ -31,7 +31,7 @@
         <div class="fixed top-0 left-0 w-full h-full z-40 bg-black/70 transition-all duration-300 print:hidden" :class="sideMenu ? 'visible opacity-1' : 'invisible opacity-0'" x-on:click="sideMenu = false"></div>
 
         {{-- Gợi ý cải thiện: Dùng w-full và margin responsive thay vì width cố định --}}
-        <div class="tp-main-content w-full lg:ml-[250px] xl:ml-[300px] lg:w-[calc(100%-250px)] xl:w-[calc(100%-300px)]" x-data="{ searchOverlay: false }">
+         <div class="tp-main-content lg:ml-[250px] xl:ml-[300px] w-[calc(100% - 300px)]" x-data="{ searchOverlay: false }">
             @include('admin.partials.header')
             
             <main>

@@ -36,31 +36,49 @@
         }
 
         @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-            to {
-                transform: rotate(360deg);
-            }
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
+
+        /* === CSS CHO TOAST NOTIFICATION === */
+        .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1100; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast { opacity: 1; transform: translateX(0); transition: all 0.3s ease-in-out; }
+        .toast.hide { opacity: 0; transform: translateX(100%); }
+
     </style>
 @endpush
 
 @section('content')
 <div class="body-content px-6 md:px-8 py-8">
-    <div class="container mx-auto max-w-7xl">
-        {{-- Hiển thị thông báo (flash message) --}}
+    {{-- Hiển thị thông báo (flash message) dưới dạng TOAST ở góc trên bên phải --}}
+    <div id="toast-container" class="toast-container">
         @if (session('success'))
-            <div class="alert bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
-                <p>{{ session('success') }}</p>
+            <div id="toast-success" class="toast flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-lg dark:text-gray-400 dark:bg-gray-800" role="alert">
+                <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="ml-3 text-sm font-normal">{{ session('success') }}</div>
+                <button type="button" class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700" data-dismiss-target="#toast-success" aria-label="Close">
+                    <span class="sr-only">Close</span>
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
         @endif
         @if (session('error'))
-            <div class="alert bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
-                <p>{{ session('error') }}</p>
+            <div id="toast-error" class="toast flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-lg dark:text-gray-400 dark:bg-gray-800" role="alert">
+                <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
+                     <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="ml-3 text-sm font-normal">{{ session('error') }}</div>
+                <button type="button" class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700" data-dismiss-target="#toast-error" aria-label="Close">
+                    <span class="sr-only">Close</span>
+                     <i class="fas fa-times"></i>
+                </button>
             </div>
         @endif
+    </div>
 
+    <div class="container mx-auto max-w-7xl">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Quản lý Thuộc tính</h1>
             <nav aria-label="breadcrumb" class="mt-2">
@@ -173,7 +191,12 @@
                                 {{-- Trường hợp không có dữ liệu --}}
                                 <tr>
                                     <td colspan="6" class="text-center px-4 py-10 text-gray-500">
-                                        Không tìm thấy thuộc tính nào.
+                                        @if (request('search'))
+                                            Không tìm thấy thuộc tính nào với từ khóa "<strong>{{ request('search') }}</strong>".
+                                        @else
+                                            Không có thuộc tính nào.
+                                        @endif
+                                        <a href="{{ route('admin.attributes.create') }}" class="text-indigo-600 hover:underline ml-2">Thêm thuộc tính mới?</a>
                                     </td>
                                 </tr>
                             @endforelse
@@ -181,10 +204,30 @@
                     </table>
                 </div>
             </div>
-            <div class="bg-gray-50 p-4 border-t border-gray-200">
-                {{-- Hiển thị link phân trang --}}
-                {{ $attributes->links() }}
+            
+            {{-- PHẦN PHÂN TRANG --}}
+            @if ($attributes->hasPages())
+            <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+                {{-- Thông tin số lượng kết quả --}}
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-start">
+                    <p class="text-sm text-gray-700 leading-5">
+                        Hiển thị từ
+                        <span class="font-medium">{{ $attributes->firstItem() }}</span>
+                        đến
+                        <span class="font-medium">{{ $attributes->lastItem() }}</span>
+                        trên tổng số
+                        <span class="font-medium">{{ $attributes->total() }}</span>
+                        kết quả
+                    </p>
+                </div>
+                {{-- Các liên kết phân trang --}}
+                <div>
+                     {{-- Thêm `appends(['search' => request('search')])` để giữ lại query string khi tìm kiếm --}}
+                    {!! $attributes->appends(['search' => request('search')])->links() !!}
+                </div>
             </div>
+            @endif
+
         </div>
     </div>
 </div>
@@ -192,56 +235,81 @@
 
 @push('scripts')
 <script>
-    // Hàm mở modal
-    function openModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('show'); // Sử dụng class 'show' để hiển thị modal
-            document.body.style.overflow = 'hidden'; // Ngăn cuộn trang nền
-        }
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        // === SCRIPT CHO TOAST NOTIFICATION ===
+        const toasts = document.querySelectorAll('.toast');
 
-    // Hàm đóng modal
-    function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.remove('show'); // Xóa class 'show' để ẩn modal
-            document.body.style.overflow = 'auto'; // Cho phép cuộn trang nền trở lại
-        }
-    }
+        const hideToast = (toastElement) => {
+            if (toastElement) {
+                toastElement.classList.add('hide');
+                // Xóa hẳn element khỏi DOM sau khi animation kết thúc
+                setTimeout(() => {
+                    toastElement.remove();
+                }, 350); // Phải khớp với thời gian transition trong CSS
+            }
+        };
 
-    // Đóng modal khi nhấp chuột bên ngoài modal-content
-    window.addEventListener('click', function(event) {
-        document.querySelectorAll('.modal.show').forEach(modal => {
-            // Kiểm tra xem click có phải là trực tiếp lên modal (vùng nền mờ) hay không
-            // và không phải là click vào bên trong modal-content
-            if (event.target.closest('.modal-content') === null && event.target.classList.contains('modal')) {
-                 closeModal(modal.id);
+        toasts.forEach(toast => {
+            // Tự động ẩn sau 5 giây
+            const autoHideTimeout = setTimeout(() => {
+                hideToast(toast);
+            }, 5000);
+
+            // Xử lý khi click nút đóng
+            const closeButton = toast.querySelector('[data-dismiss-target]');
+            if (closeButton) {
+                closeButton.addEventListener('click', function() {
+                    clearTimeout(autoHideTimeout); // Hủy tự động ẩn nếu người dùng tự đóng
+                    const targetId = this.getAttribute('data-dismiss-target');
+                    const toastToHide = document.querySelector(targetId);
+                    hideToast(toastToHide);
+                });
             }
         });
-    });
 
-    // Đóng modal khi nhấn phím Escape
-    window.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            document.querySelectorAll('.modal.show').forEach(modal => closeModal(modal.id));
+        // === SCRIPT CHO MODAL ===
+        // Hàm mở modal
+        window.openModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
         }
-    });
 
-    // === SCRIPT CHO NÚT LÀM MỚI ===
-    document.addEventListener('DOMContentLoaded', function() {
+        // Hàm đóng modal
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('show');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Đóng modal khi nhấp chuột bên ngoài modal-content
+        window.addEventListener('click', function(event) {
+            document.querySelectorAll('.modal.show').forEach(modal => {
+                if (event.target.closest('.modal-content') === null && event.target.classList.contains('modal')) {
+                    closeModal(modal.id);
+                }
+            });
+        });
+
+        // Đóng modal khi nhấn phím Escape
+        window.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                document.querySelectorAll('.modal.show').forEach(modal => closeModal(modal.id));
+            }
+        });
+
+        // === SCRIPT CHO NÚT LÀM MỚI ===
         const refreshButton = document.getElementById('refresh-button');
-
         if (refreshButton) {
             refreshButton.addEventListener('click', function() {
-                // Tìm biểu tượng <i> bên trong nút
-                const icon = this.querySelector('i.fa-sync-alt'); // Cụ thể hơn để chỉ chọn icon làm mới
+                const icon = this.querySelector('i.fa-sync-alt');
                 if (icon) {
-                    // Thêm class để bắt đầu animation
                     icon.classList.add('icon-spin');
                 }
-                // Trình duyệt sẽ tự động điều hướng đến href của thẻ <a> sau khi click
-                // Không cần e.preventDefault() ở đây vì chúng ta muốn nó điều hướng
             });
         }
     });

@@ -24,7 +24,7 @@ class AttributeController extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $attributes = $query->paginate(15)->withQueryString();
+        $attributes = $query->paginate(10)->withQueryString();
         return view('admin.attributes.index', compact('attributes'));
     }
 
