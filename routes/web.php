@@ -44,8 +44,22 @@ Route::prefix('admin')
         Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
 
         // Product routes
-        Route::resource('products', ProductController::class)->except(['show']); // 'show' thường dùng cho frontend, admin có thể không cần
-        Route::delete('products/images/{image}', [ProductController::class, 'deleteGalleryImage'])->name('products.images.destroy');
+        // --- Routes cho Quản Lý Sản Phẩm ---
+        // Route::resource('products', ProductController::class);
+        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::get('/products/{category}', [ProductController::class, 'show'])->name('products.show');
+        Route::get('/products/{category}/edit', [ProductController::class, 'edit'])->name('products.edit');
+        Route::put('/products/{category}', [ProductController::class, 'update'])->name('products.update');
+        Route::delete('/products/{category}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+        // Route riêng cho việc xóa ảnh gallery của sản phẩm
+        // {uploadedFile} ở đây sẽ là ID của bản ghi trong bảng uploaded_files
+        // Laravel sẽ tự động thực hiện Route Model Binding nếu tham số trong controller là UploadedFile $uploadedFile
+        Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
+            ->name('products.gallery.delete');
+        // URL sẽ là: /admin/products/gallery-images/{id_cua_uploaded_file}
 
         // Category routes
         // Route::resource('categories', CategoryController::class);
