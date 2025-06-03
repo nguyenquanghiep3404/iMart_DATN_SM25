@@ -17,7 +17,7 @@
                         <li class="breadcrumb-item text-gray-500">Category List</li>
                     </ul>
                 </div>
-                <a href="{{ route('admin.categories.create') }}" class="bg-blue-600 px-4 py-2 rounded-md hover:bg-blue-700 transition duration-200">
+                <a href="{{ route('admin.categories.create') }}" class="tp-btn px-7 py-2">
                     Add New Category
                 </a>
             </div>

@@ -22,7 +22,7 @@
     <div class="grid grid-cols-12 gap-6">
         <div class="col-span-12">
             <div class="bg-white rounded-lg shadow p-8">
-                <form action="" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('admin.categories.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {{-- Upload Image --}}
@@ -40,55 +40,128 @@
                         <div class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="name" class="block text-sm font-bold text-gray-700 mb-1">Name</label>
-                                <input type="text" name="name" id="name" placeholder="Name" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <input type="text" name="name" id="name" value="{{ old('name') }}" placeholder="Name" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                @error('name')
+                                    <p class="mt-1 text-sm text-red-600 dark:text-red-500 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        <span class="font-medium">{{ $message }}</span>
+                                    </p>
+                                @enderror
                             </div>
 
                             <div>
                                 <label for="slug" class="block text-sm font-bold text-gray-700 mb-1">Slug</label>
-                                <input type="text" name="slug" id="slug" placeholder="Slug" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <input type="text" name="slug" id="slug" value="{{ old('slug') }}" placeholder="Slug" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                @error('slug')
+                                    <span class="text-red-500 text-sm mt-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                             </div>
 
                             <div>
                                 <label for="parent_id" class="block text-sm font-bold text-gray-700 mb-1">Parent Category</label>
                                 <select name="parent_id" id="parent_id" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                     <option value="">-- None (Parent) --</option>
-                                    {{-- @foreach ($categories as $cat)
-                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
-                                    @endforeach --}}
+                                    @foreach ($parents as $parent)
+                                        <option value="{{ $parent->id }}" {{ old('parent_id') == $parent->id ? 'selected' : '' }}>{{ $parent->name }}</option>
+                                    @endforeach
                                 </select>
+                                @error('parent_id')
+                                    <span class="text-red-500 text-sm mt-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                             </div>
 
                             <div>
                                 <label for="order" class="block text-sm font-bold text-gray-700 mb-1">Order</label>
-                                <input type="number" name="order" id="order" value="0" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <input type="number" name="order" id="order" min="0" value="{{ old('order', 0) }}" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                @error('order')
+                                    <span class="text-red-500 text-sm mt-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                             </div>
 
                             <div>
                                 <label for="status" class="block text-sm font-bold text-gray-700 mb-1">Status</label>
                                 <select name="status" id="status" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
+                                    <option value="" selected disabled>-- Select Status --</option>
+                                    <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
+                                    <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
                                 </select>
+                                @error('status')
+                                    <span class="mt-1 text-sm text-red-600 dark:text-red-500 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                             </div>
 
                             <div class="col-span-2">
                                 <label for="description" class="block text-sm font-bold text-gray-700 mb-1">Description</label>
-                                <textarea name="description" id="description" rows="3" placeholder="Description here" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"></textarea>
+                                <textarea name="description" id="description" rows="3" placeholder="Description here" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none">{{ old('description') }}</textarea>
+                                @error('description')
+                                    <span class="text-red-500 text-sm mt-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                             </div>
 
                             <div class="col-span-2">
                                 <label for="meta_title" class="block text-sm font-bold text-gray-700 mb-1">Meta Title</label>
-                                <input type="text" name="meta_title" id="meta_title" placeholder="Enter Meta Title" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <input type="text" name="meta_title" id="meta_title" value="{{ old('meta_title') }}" placeholder="Enter Meta Title" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                @error('meta_title')
+                                    <span class="text-red-500 text-sm mt-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                             </div>
 
                             <div class="col-span-2">
                                 <label for="meta_description" class="block text-sm font-bold text-gray-700 mb-1">Meta Description</label>
-                                <textarea name="meta_description" id="meta_description" rows="2" placeholder="Enter Meta Description" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"></textarea>
+                                <textarea name="meta_description" id="meta_description" rows="2" placeholder="Enter Meta Description" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none">{{ old('meta_description') }}</textarea>
+                                @error('meta_description')
+                                    <span class="text-red-500 text-sm mt-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                             </div>
 
                             <div class="col-span-2">
                                 <label for="meta_keywords" class="block text-sm font-bold text-gray-700 mb-1">Meta Keywords</label>
-                                <input type="text" name="meta_keywords" id="meta_keywords" placeholder="Enter Meta Keywords" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <input type="text" name="meta_keywords" id="meta_keywords" value="{{ old('meta_keywords') }}" placeholder="Enter Meta Keywords" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                @error('meta_keywords')
+                                    <span class="text-red-500 text-sm mt-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        {{ $message }}
+                                    </span>
+                                @enderror
                             </div>
                         </div>
                     </div>
@@ -96,7 +169,7 @@
                     {{-- Buttons --}}
                     <div class="mt-8 text-right">
                         <button type="submit" class="tp-btn px-7 py-2">Add Category</button>
-                        <a href="" 
+                        <a href="{{ route('admin.categories.index') }}" 
                         class="ml-4 inline-block px-7 py-2 border border-red-500 text-red-500 rounded hover:bg-red-50 font-semibold shadow">
                         Cancel
                         </a>
@@ -106,4 +179,37 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+    // Hàm chuyển đổi chuỗi thành slug
+    function stringToSlug(str) {
+        // Chuyển về lowercase
+        str = str.toLowerCase();
+        
+        // Chuyển đổi các ký tự có dấu thành không dấu
+        str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        
+        // Thay thế các ký tự đặc biệt và khoảng trắng thành dấu gạch ngang
+        str = str.replace(/[^a-z0-9\s-]/g, '')
+                 .replace(/\s+/g, '-')
+                 .replace(/-+/g, '-')
+                 .replace(/^-+|-+$/g, '');
+                 
+        return str;
+    }
+
+    // Lắng nghe sự kiện khi người dùng nhập vào trường name
+    document.getElementById('name').addEventListener('input', function() {
+        // Lấy giá trị từ trường name
+        let nameValue = this.value;
+        
+        // Chuyển đổi thành slug
+        let slugValue = stringToSlug(nameValue);
+        
+        // Gán giá trị slug vào trường slug
+        document.getElementById('slug').value = slugValue;
+    });
+</script>
+@endpush
 @endsection

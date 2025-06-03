@@ -9,6 +9,9 @@
     <title>Website Bán sản phẩm iMart</title>
     <link rel="shortcut icon" href="assets/admin/img/logo/favicon.png" type="image/x-icon">
 
+    <!-- Vite Assets -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <!-- css links -->
     <link rel="stylesheet" href="{{asset('assets/admin/css/perfect-scrollbar.css')}}">
     <link rel="stylesheet" href="{{asset('assets/admin/css/choices.css') }}">

@@ -84,7 +84,7 @@
                                         <circle fill="currentColor" cx="17" cy="22" r="2" />
                                     </svg>
                                 </span>
-                                Danh mục sản phẩm
+                                Danh Mục
                                 <span class="absolute right-4 top-[52%] transition-transform duration-300 origin-center w-4 h-4"
                                     :class="nav == 2 ? 'translate-y-[-10px] rotate-90' : 'translate-y-[-10px]'">
                                     <svg class="-translate-y-[5px]" xmlns="http://www.w3.org/2000/svg"
@@ -97,11 +97,11 @@
                             <ul x-show="nav == 2" class="pl-[42px] pr-[20px] pb-3">
                                 <li>
                                     <a href="{{ route('admin.categories.index') }}"
-                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Danh Sách sản phẩm</a>
+                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Danh Sách Danh Mục</a>
                                 </li>
                                 <li>
                                     <a href="{{ route('admin.categories.create') }}"
-                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Thêm mới sản phẩm</a>
+                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Thêm Mới Danh Mục</a>
                                 </li>
                             </ul>
                         </li>
