@@ -312,10 +312,11 @@
 
                 <!-- Social login -->
                 <div class="d-flex flex-column flex-sm-row gap-3 pb-4 mb-3 mb-lg-4">
-                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 px-2">
+                    <a href="{{ route('auth.google') }}" class="btn btn-lg btn-outline-secondary w-100 px-2">
                         <i class="ci-google ms-1 me-1"></i>
                         Google
-                    </button>
+                    </a>
+
                     <button type="button" class="btn btn-lg btn-outline-secondary w-100 px-2">
                         <i class="ci-facebook ms-1 me-1"></i>
                         Facebook
