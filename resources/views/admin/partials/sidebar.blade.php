@@ -100,16 +100,8 @@
                                     class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Danh Sách sản phẩm</a>
                                 </li>
                                 <li>
-                                    <a href="product-grid.html"
-                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Lưới sản phẩm</a>
-                                </li>
-                                <li>
                                     <a href="{{ route('admin.categories.create') }}"
                                     class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Thêm mới sản phẩm</a>
-                                </li>
-                                <li>
-                                    <a href="edit-product.html"
-                                    class="block font-normal w-full text-[#6D6F71] hover:text-theme nav-dot">Chỉnh sửa sản phẩm</a>
                                 </li>
                             </ul>
                         </li>
