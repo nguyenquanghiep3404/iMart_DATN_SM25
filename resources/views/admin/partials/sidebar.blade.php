@@ -141,7 +141,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                         </li>
                     </ul>
                 </li>
-                
+
                 {{-- 4. Đơn hàng --}}
                 <li>
                     @php $isOrdersActive = request()->routeIs('admin.orders.*'); @endphp
@@ -165,7 +165,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                         </li>
                     </ul>
                 </li>
-                
+
                 {{-- 5. Quản lý người dùng --}}
                 <li>
                     @php $isUsersActive = request()->routeIs('admin.users.*'); @endphp
@@ -182,7 +182,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                     </button>
                     <ul x-show="openNav === 4" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
-                            <a href="{{-- {{ route('admin.users.index') }}" {{-- Giả sử route --}}
+                            <a href="{{  route('admin.users.index') }}" {{-- Giả sử route --}}
                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Danh sách người dùng
                             </a>
@@ -195,7 +195,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                         </li>
                     </ul>
                 </li>
-                
+
                 {{-- 6. Quản lý đánh giá --}}
                 <li>
                     @php $isReviewsActive = request()->routeIs('admin.reviews.*'); @endphp
@@ -208,7 +208,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                         Quản lý đánh giá
                     </a>
                 </li>
-                
+
                 {{-- 7. Quản lý mã giảm giá --}}
                 <li>
                     @php $isCouponsActive = request()->routeIs('admin.coupons.*'); @endphp
@@ -221,7 +221,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                         Quản lý mã giảm giá
                     </a>
                 </li>
-                
+
                 {{-- 8. Quản lý phân quyền --}}
                 <li>
                     @php $isRolesActive = request()->routeIs('admin.roles.*'); @endphp
@@ -234,7 +234,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                         Quản lý phân quyền
                     </a>
                 </li>
-                
+
                 {{-- 9. Quản lý banner --}}
                 <li>
                     @php $isBannersActive = request()->routeIs('admin.banners.*'); @endphp
@@ -247,7 +247,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                         Quản lý banner
                     </a>
                 </li>
-                
+
                 {{-- 10. Quản lý danh mục bài viết --}}
                 <li>
                     @php $isPostCategoriesActive = request()->routeIs('admin.post-categories.*'); @endphp
@@ -277,7 +277,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                         </li>
                     </ul>
                 </li>
-                
+
                 {{-- 11. Quản lý nhân viên giao hàng --}}
                 <li>
                     @php $isShippersActive = request()->routeIs('admin.shippers.*'); @endphp
@@ -292,7 +292,7 @@ class="block w-full py-1.5 px-3 text-sm rounded-md
                 </li>
 
             </ul>
-            
+
             {{-- Phần Cài đặt & Trang phụ (Giữ nguyên) --}}
             <div class="border-t border-gray-200 pt-3 mt-3">
                 {{-- Giữ nguyên code của bạn cho "Cài đặt trang web" và "Thêm trang" --}}
