@@ -27,10 +27,19 @@
         <div class="col-span-12">
             <div class="relative bg-white rounded-lg shadow-md w-full max-w-full p-4 md:p-6">
                 @if (session('success'))
-                    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
+                    <div id="alert" class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 relative">
                         {{ session('success') }}
+                        <div class="progress-bar opacity-50"></div>
                     </div>
                 @endif
+
+                @if (session('error'))
+                    <div id="alert" class="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 relative">
+                        {{ session('error') }}
+                        <div class="progress-bar opacity-50"></div>
+                    </div>
+                @endif
+
                 <div class="w-full overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-600">
                         <thead>
@@ -96,9 +105,10 @@
                                             <form action="{{ route('admin.categories.destroy', $category->id) }}" 
                                                 method="POST" 
                                                 class="inline-block"
-                                                onsubmit="return confirm('Are you sure you want to delete this category?');">
+                                                onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này ?');">
                                                 @csrf
                                                 @method('DELETE')
+                                                <input type="hidden" name="current_page" value="{{ $categories->currentPage() }}">
                                                 <button type="submit"
                                                     class="inline-flex items-center justify-center w-10 h-10 text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-all"
                                                     title="Delete">
