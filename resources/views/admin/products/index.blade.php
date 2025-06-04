@@ -9,7 +9,7 @@
         .card-custom-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; display: flex; justify-content: space-between; align-items: center; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; }
         .card-custom-title { font-size: 1.25rem; font-weight: 600; color: #1f2937; }
         .card-custom-body { padding: 1.5rem; }
-        .card-custom-footer { background-color: #f9fafb; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
+        .card-custom-footer { background-color: #f9fafb; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; display: flex; justify-content: space-between; align-items: center; } /* Added flex for pagination layout */
         .btn { border-radius: 0.5rem; transition: all 0.2s ease-in-out; font-weight: 500; padding: 0.625rem 1.25rem; font-size: 0.875rem; display: inline-flex; align-items: center; justify-content: center; }
         .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; }
         .btn-primary { background-color: #4f46e5; color: white; } .btn-primary:hover { background-color: #4338ca; }
@@ -41,6 +41,19 @@
         .product-modal-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; padding: 1.25rem 1.5rem; border-top: 1px solid #e5e7eb; background-color: #f9fafb; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
         .product-modal-footer > :not(:first-child) { margin-left: .5rem; }
 
+        /* CSS cho hiệu ứng phóng to ảnh */
+        .table-custom td .img-thumbnail-custom {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            position: relative; /* Để z-index hoạt động */
+            cursor: zoom-in; /* Thay đổi con trỏ chuột khi di vào */
+        }
+
+        .table-custom td .img-thumbnail-custom:hover {
+            transform: scale(3); /* Tăng kích thước lên 3 lần, có thể điều chỉnh */
+            z-index: 20; /* Đảm bảo ảnh nổi lên trên các phần tử khác */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25); /* Thêm bóng đổ để nổi bật hơn */
+        }
+
         /* === CSS CHO HIỆU ỨNG QUAY ICON === */
         .icon-spin {
             animation: spin 0.8s linear infinite;
@@ -49,23 +62,43 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        /* === CSS CHO TOAST NOTIFICATION === */
+        .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1100; display: flex; flex-direction: column; gap: 0.75rem; }
+        .toast { opacity: 1; transform: translateX(0); transition: all 0.3s ease-in-out; }
+        .toast.hide { opacity: 0; transform: translateX(100%); }
     </style>
 @endpush
 
 @section('content')
 <div class="body-content px-4 sm:px-6 md:px-8 py-8">
     <div class="container mx-auto max-w-7xl">
-
+        {{-- Hiển thị thông báo (flash message) dưới dạng TOAST ở góc trên bên phải --}}
+    <div id="toast-container" class="toast-container">
         @if (session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
-                <p>{{ session('success') }}</p>
+            <div id="toast-success" class="toast flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-lg dark:text-gray-400 dark:bg-gray-800" role="alert">
+                <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
+                    <i class="fas fa-check"></i>
+                </div>
+                <div class="ml-3 text-sm font-normal">{{ session('success') }}</div>
+                <button type="button" class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700" data-dismiss-target="#toast-success" aria-label="Close">
+                    <span class="sr-only">Close</span>
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
         @endif
         @if (session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
-                <p>{{ session('error') }}</p>
+            <div id="toast-error" class="toast flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-lg dark:text-gray-400 dark:bg-gray-800" role="alert">
+                <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg dark:bg-red-800 dark:text-red-200">
+                     <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="ml-3 text-sm font-normal">{{ session('error') }}</div>
+                <button type="button" class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8 dark:text-gray-500 dark:hover:text-white dark:bg-gray-800 dark:hover:bg-gray-700" data-dismiss-target="#toast-error" aria-label="Close">
+                    <span class="sr-only">Close</span>
+                     <i class="fas fa-times"></i>
+                </button>
             </div>
         @endif
+    </div>
 
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Quản lý sản phẩm</h1>
@@ -144,7 +177,6 @@
                         </div>
                         <div class="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-2 xl:col-span-1 flex items-end">
                             <button type="submit" class="btn btn-primary w-full sm:w-auto"><i class="fas fa-filter mr-1"></i> Lọc</button>
-                            {{-- Nút Làm mới đã được chuyển lên header --}}
                         </div>
                     </div>
                 </form>
@@ -262,9 +294,25 @@
                     </table>
                 </div>
             </div>
+            @if ($products->hasPages())
             <div class="card-custom-footer">
-                {{ $products->links() }}
+                 <div>
+                    <p class="text-sm text-gray-700 leading-5">
+                        Hiển thị từ
+                        <span class="font-medium">{{ $products->firstItem() }}</span>
+                        đến
+                        <span class="font-medium">{{ $products->lastItem() }}</span>
+                        trên tổng số
+                        <span class="font-medium">{{ $products->total() }}</span>
+                        kết quả
+                    </p>
+                </div>
+                <div>
+                    {{-- Appends all current query parameters to pagination links --}}
+                    {!! $products->appends(request()->query())->links() !!}
+                </div>
             </div>
+            @endif
         </div>
     </div>
 </div>
@@ -277,7 +325,7 @@
     function openProductModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
-            modal.style.display = 'flex'; // Hoặc modal.classList.add('flex'); modal.classList.remove('hidden');
+            modal.style.display = 'flex'; 
             modal.classList.add('show');
             document.body.style.overflow = 'hidden';
         }
@@ -285,7 +333,7 @@
     function closeProductModal(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
-            modal.style.display = 'none'; // Hoặc modal.classList.remove('flex'); modal.classList.add('hidden');
+            modal.style.display = 'none'; 
             modal.classList.remove('show');
             document.body.style.overflow = 'auto';
         }
@@ -293,7 +341,7 @@
     window.addEventListener('click', function(event) {
         const modals = document.querySelectorAll('.product-modal.show');
         modals.forEach(modal => {
-            if (event.target == modal) { // Đóng khi click vào vùng nền mờ
+            if (event.target == modal) { 
                 closeProductModal(modal.id);
             }
         });
@@ -307,22 +355,45 @@
         }
     });
 
-    // Script cho nút Làm mới với hiệu ứng xoay
     document.addEventListener('DOMContentLoaded', function() {
+        // === SCRIPT CHO TOAST NOTIFICATION ===
+        const toasts = document.querySelectorAll('.toast');
+        const hideToast = (toastElement) => {
+            if (toastElement) {
+                toastElement.classList.add('hide');
+                setTimeout(() => {
+                    toastElement.remove();
+                }, 350); // Match transition duration
+            }
+        };
+        toasts.forEach(toast => {
+            const autoHideTimeout = setTimeout(() => {
+                hideToast(toast);
+            }, 5000); // Auto-hide after 5 seconds
+
+            const closeButton = toast.querySelector('[data-dismiss-target]');
+            if (closeButton) {
+                closeButton.addEventListener('click', function() {
+                    clearTimeout(autoHideTimeout); // Cancel auto-hide if manually closed
+                    const targetId = this.getAttribute('data-dismiss-target');
+                    const toastToHide = document.querySelector(targetId);
+                    hideToast(toastToHide);
+                });
+            }
+        });
+
+        // Script cho nút Làm mới với hiệu ứng xoay
         const refreshButton = document.getElementById('refresh-products-button');
         if (refreshButton) {
             refreshButton.addEventListener('click', function(event) {
-                // Không preventDefault vì đây là thẻ <a> và chúng ta muốn nó điều hướng
                 const icon = this.querySelector('i.fa-sync-alt');
                 if (icon) {
                     icon.classList.add('icon-spin');
                 }
-                // Animation sẽ hiển thị trong khi trang đang tải lại
-                // Không cần xóa class 'icon-spin' vì trang sẽ tải lại
             });
         }
 
-        // Thêm x-cloak cho dropdown của Alpine để tránh FOUC
+        // Thêm x-cloak cho dropdown của Alpine để tránh FOUC (Flash Of Unstyled Content)
         const sortDropdown = document.getElementById('sortDropdown');
         if(sortDropdown) {
             sortDropdown.setAttribute('x-cloak', '');
