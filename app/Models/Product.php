@@ -49,6 +49,10 @@ class Product extends Model
     {
         return $this->hasOne(ProductVariant::class)->where('is_default', true);
     }
+public function allUploadedFiles()
+    {
+        return $this->morphMany(UploadedFile::class, 'attachable');
+    }
 
     // Mối quan hệ đa hình cho ảnh bìa
     public function coverImage()
