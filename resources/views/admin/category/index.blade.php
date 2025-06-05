@@ -17,9 +17,12 @@
                         <li class="breadcrumb-item text-gray-500">Category List</li>
                     </ul>
                 </div>
-                <a href="{{ route('admin.categories.create') }}" class="tp-btn px-7 py-2">
-                    Add New Category
-                </a>
+                
+                <div class="w-full flex justify-end">
+                    <a href="{{ route('admin.categories.create') }}" class="tp-btn px-7 py-2">
+                        Add New Category
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -50,14 +53,14 @@
                                         <label for="selectAllProduct"></label>
                                     </div>
                                 </th>
-                                <th scope="col" class="py-3 px-4">ID</th>
-                                <th scope="col" class="py-3 px-4">Name</th>
-                                <th scope="col" class="py-3 px-4 text-right">Slug</th>
-                                <th scope="col" class="py-3 px-4 text-right">Parent</th>
-                                <th scope="col" class="py-3 px-4 text-right">Description</th>
-                                <th scope="col" class="py-3 px-4 text-right">Order</th>
-                                <th scope="col" class="py-3 px-4 text-right">Status</th>
-                                <th scope="col" class="py-3 px-4 text-right">Action</th>
+                                <th scope="col" class="py-3 px-4 text-sm">ID</th>
+                                <th scope="col" class="py-3 px-4 text-sm">Name</th>
+                                <th scope="col" class="py-3 px-4 text-sm ">Slug</th>
+                                <th scope="col" class="py-3 px-4 text-sm text-left">Parent</th>
+                                <th scope="col" class="py-3 px-4 text-sm text-left">Description</th>
+                                <th scope="col" class="py-3 px-4 text-sm text-left">Order</th>
+                                <th scope="col" class="py-3 px-4 text-sm text-left">Status</th>
+                                <th scope="col" class="py-3 px-4 text-sm text-left">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -69,23 +72,23 @@
                                             <label for="product-{{ $category->id }}"></label>
                                         </div>
                                     </td>
-                                    <td class="py-3 px-4 font-medium text-gray-700">{{ $category->id }}</td>
+                                    <td class="py-3 px-4 text-base text-gray-700">{{ $category->id }}</td>
                                     <td class="py-3 px-4">
                                         <a href="" class="flex items-center space-x-3 group">
-                                            <img class="w-8 h-8 rounded-full object-cover" src="{{ $category->getImageUrlAttribute() }}" alt="{{ $category->name }}">
-                                            <span class="font-medium text-gray-800 group-hover:text-blue-600 transition">{{ $category->name }}</span>
+                                            {{-- <img class="w-8 h-8 rounded-full object-cover" src="{{ $category->getImageUrlAttribute() }}" alt="{{ $category->name }}"> --}}
+                                            <span class="text-base text-gray-800 group-hover:text-blue-600 transition">{{ $category->name }}</span>
                                         </a>
                                     </td>
-                                    <td class="py-3 px-4 text-right text-gray-600">{{ $category->slug }}</td>
-                                    <td class="py-3 px-4 text-right text-gray-600">{{ $category->parent?->name ?? 'None' }}</td>
-                                    <td class="py-3 px-4 text-right text-gray-600">{{ Str::limit($category->description ?? '', 30, '...') }}</td>
-                                    <td class="py-3 px-4 text-right text-gray-600">{{ $category->order ?? 0 }}</td>
-                                    <td class="py-3 px-4 text-right">
-                                        <span class="inline-block px-2 py-1 text-xs font-medium rounded {{ $category->status === 'active' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600' }}">
+                                    <td class="py-3 px-4 text-left text-base text-gray-600">{{ $category->slug }}</td>
+                                    <td class="py-3 px-4 text-left text-base text-gray-600">{{ $category->parent?->name ?? 'None' }}</td>
+                                    <td class="py-3 px-4 text-left text-base text-gray-600">{{ Str::limit($category->description ?? '', 30, '...') }}</td>
+                                    <td class="py-3 px-4 text-left text-base text-gray-600">{{ $category->order ?? 0 }}</td>
+                                    <td class="py-3 px-4 text-left">
+                                        <span class="inline-block px-2 py-1 font-medium text-base rounded {{ $category->status === 'active' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600' }}">
                                             {{ ucfirst($category->status) }}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-4 text-right">
+                                    <td class="py-3 px-4 text-left">
                                         <div class="flex items-center justify-end space-x-2">
                                             <a href="{{ route('admin.categories.show', $category->id) }}"
                                                 class="inline-flex items-center justify-center w-10 h-10 text-blue-500 bg-blue-50 rounded-lg hover:bg-blue-100 transition-all"

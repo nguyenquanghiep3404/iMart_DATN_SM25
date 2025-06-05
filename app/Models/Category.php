@@ -46,9 +46,9 @@ class Category extends Model
     //     return $this->morphOne(UploadedFile::class, 'attachable')->where('type', 'category_image');
     // }
     public function images()
-{
-    return $this->morphMany(UploadedFile::class, 'attachable');
-}
+    {
+        return $this->morphMany(UploadedFile::class, 'attachable');
+    }
 
     // Helper để lấy URL ảnh
     public function getImageUrlAttribute()

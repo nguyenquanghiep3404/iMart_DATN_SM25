@@ -32,8 +32,17 @@ class CategoryController extends Controller
         Category::create($data);
         return redirect()->route('admin.categories.index')->with('success', 'Danh mục đã được tạo thành công.');
     }
-    public function show() {}
-    public function edit() {}
+    public function show(Category $category) {
+        $category->load('parent', 'children')->loadCount('products');
+        return view('admin.category.show', compact('category'));
+    }
+    public function edit(Category $category) {
+        $parents = Category::whereNull('parent_id')
+        ->whereNot('id', $category->id)
+        ->orderBy('name', "asc")
+        ->pluck('name', 'id');
+        return view('admin.category.edit', compact('category', 'parents'));
+    }
     public function update(CategoryRequest $request, Category $category)
     {
         $data = $request->validated();
