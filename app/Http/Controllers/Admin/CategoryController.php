@@ -30,17 +30,20 @@ class CategoryController extends Controller
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
         Category::create($data);
-        return redirect()->route('admin.categories.index')->with('success', 'Danh mục đã được tạo thành công.');
+        return redirect()->route('admin.categories.index')
+            ->with('success', 'Danh mục đã được tạo thành công.');
     }
-    public function show(Category $category) {
+    public function show(Category $category)
+    {
         $category->load('parent', 'children')->loadCount('products');
         return view('admin.category.show', compact('category'));
     }
-    public function edit(Category $category) {
+    public function edit(Category $category)
+    {
         $parents = Category::whereNull('parent_id')
-        ->whereNot('id', $category->id)
-        ->orderBy('name', "asc")
-        ->pluck('name', 'id');
+            ->whereNot('id', $category->id)
+            ->orderBy('name', "asc")
+            ->pluck('name', 'id');
         return view('admin.category.edit', compact('category', 'parents'));
     }
     public function update(CategoryRequest $request, Category $category)
@@ -57,7 +60,8 @@ class CategoryController extends Controller
         $perPage = request('per_page', 10);
         $children = $category->children()->pluck('name');
         if ($children->isNotEmpty()) {
-            return back()->with('error', 'Không thể xóa vì có danh mục con: ' . $children->implode(', '));
+            return back()
+                ->with('error', 'Không thể xóa vì có danh mục con: ' . $children->implode(', '));
         }
         $productCount = $category->products()->count();
         if ($productCount > 0) {

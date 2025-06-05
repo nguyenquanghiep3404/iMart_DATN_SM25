@@ -167,11 +167,17 @@
                     </div>
 
                     {{-- Buttons --}}
-                    <div class="mt-8 text-right">
+                    <div class="mt-8 text-right space-x-4">
                         <button type="submit" class="tp-btn px-7 py-2">Add Category</button>
+
+                        <button type="reset" 
+                            class="space-x-6 inline-block px-7 py-2 border border-yellow-500 text-yellow-600 rounded hover:bg-yellow-50 font-semibold shadow">
+                            Reset
+                        </button>
+
                         <a href="{{ route('admin.categories.index') }}" 
-                        class="ml-4 inline-block px-7 py-2 border border-red-500 text-red-500 rounded hover:bg-red-50 font-semibold shadow">
-                        Cancel
+                            class="space-x-6 inline-block px-7 py-2 border border-red-500 text-red-500 rounded hover:bg-red-50 font-semibold shadow">
+                            Cancel
                         </a>
                     </div>
                 </form>
