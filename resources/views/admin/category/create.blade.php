@@ -39,7 +39,12 @@
                         {{-- Form Fields --}}
                         <div class="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label for="name" class="block text-base font-bold text-gray-700 mb-1">Name</label>
+                                <label for="name" class="block text-base font-bold text-gray-700 mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                                    </svg>
+                                    Name
+                                </label>
                                 <input type="text" name="name" id="name" value="{{ old('name') }}" placeholder="Name" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 @error('name')
                                     <p class="mt-1 text-base text-red-600 dark:text-red-500 flex items-center">
@@ -52,7 +57,12 @@
                             </div>
 
                             <div>
-                                <label for="slug" class="block text-base font-bold text-gray-700 mb-1">Slug</label>
+                                <label for="slug" class="block text-base font-bold text-gray-700 mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                    </svg>
+                                    Slug
+                                </label>
                                 <input type="text" name="slug" id="slug" value="{{ old('slug') }}" placeholder="Slug" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 @error('slug')
                                     <span class="text-red-500 text-base mt-1 flex items-center">
@@ -65,7 +75,12 @@
                             </div>
 
                             <div>
-                                <label for="parent_id" class="block text-base font-bold text-gray-700 mb-1">Parent Category</label>
+                                <label for="parent_id" class="block text-base font-bold text-gray-700 mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                    </svg>
+                                    Parent Category
+                                </label>
                                 <select name="parent_id" id="parent_id" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                     <option value="">-- None (Parent) --</option>
                                     @foreach ($parents as $parent)
@@ -83,7 +98,12 @@
                             </div>
 
                             <div>
-                                <label for="order" class="block text-base font-bold text-gray-700 mb-1">Order</label>
+                                <label for="order" class="block text-base font-bold text-gray-700 mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"/>
+                                    </svg>
+                                    Order
+                                </label>
                                 <input type="number" name="order" id="order" min="0" value="{{ old('order', 0) }}" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 @error('order')
                                     <span class="text-red-500 text-base mt-1 flex items-center">
@@ -96,7 +116,12 @@
                             </div>
 
                             <div>
-                                <label for="status" class="block text-base font-bold text-gray-700 mb-1">Status</label>
+                                <label for="status" class="block text-base font-bold text-gray-700 mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Status
+                                </label>
                                 <select name="status" id="status" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                     <option value="" selected disabled>-- Select Status --</option>
                                     <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Active</option>
@@ -113,7 +138,12 @@
                             </div>
 
                             <div class="col-span-2">
-                                <label for="description" class="block text-base font-bold text-gray-700 mb-1">Description</label>
+                                <label for="description" class="block text-base font-bold text-gray-700 mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
+                                    </svg>
+                                    Description
+                                </label>
                                 <textarea name="description" id="description" rows="3" placeholder="Description here" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none">{{ old('description') }}</textarea>
                                 @error('description')
                                     <span class="text-red-500 text-base mt-1 flex items-center">
@@ -124,9 +154,20 @@
                                     </span>
                                 @enderror
                             </div>
+                            <h3 class="text-lg font-bold text-red-500 mb-6 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                SEO
+                            </h3>
 
                             <div class="col-span-2">
-                                <label for="meta_title" class="block text-base font-bold text-gray-700 mb-1">Meta Title</label>
+                                <label for="meta_title" class="block text-base font-bold text-gray-700 mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                    </svg>
+                                    Meta Title
+                                </label>
                                 <input type="text" name="meta_title" id="meta_title" value="{{ old('meta_title') }}" placeholder="Enter Meta Title" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 @error('meta_title')
                                     <span class="text-red-500 text-base mt-1 flex items-center">
@@ -139,7 +180,12 @@
                             </div>
 
                             <div class="col-span-2">
-                                <label for="meta_description" class="block text-base font-bold text-gray-700 mb-1">Meta Description</label>
+                                <label for="meta_description" class="block text-base font-bold text-gray-700 mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
+                                    </svg>
+                                    Meta Description
+                                </label>
                                 <textarea name="meta_description" id="meta_description" rows="2" placeholder="Enter Meta Description" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none">{{ old('meta_description') }}</textarea>
                                 @error('meta_description')
                                     <span class="text-red-500 text-base mt-1 flex items-center">
@@ -152,7 +198,12 @@
                             </div>
 
                             <div class="col-span-2">
-                                <label for="meta_keywords" class="block text-base font-bold text-gray-700 mb-1">Meta Keywords</label>
+                                <label for="meta_keywords" class="block text-base font-bold text-gray-700 mb-1 flex items-center">
+                                    <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                    </svg>
+                                    Meta Keywords
+                                </label>
                                 <input type="text" name="meta_keywords" id="meta_keywords" value="{{ old('meta_keywords') }}" placeholder="Enter Meta Keywords" class="w-full px-3 py-2 border border-gray-400 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                                 @error('meta_keywords')
                                     <span class="text-red-500 text-base mt-1 flex items-center">
