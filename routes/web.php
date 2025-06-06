@@ -3,7 +3,6 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardAdminController;
-// use App\Http\Controllers\Admin\DashboardController as DashboardAdminController; // Alias để tránh trùng tên
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
@@ -14,19 +13,15 @@ use App\Http\Controllers\Users\HomeController;
 //==========================================================================
 // FRONTEND ROUTES (PUBLIC)
 //==========================================================================
-Route::get('/', [HomeController::class, 'index'])->name('users.home');
+Route::get('/', [HomeController::class, 'index'])->name('users.home');  // Trang chủ, không cần đăng nhập
+// các trang không cần đăng nhập ở dưới đây
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
 
-// Routes yêu cầu xác thực cho người dùng thông thường
+// Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard mặc định của Breeze
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-
-    // Profile routes của Breeze
+    
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -38,10 +33,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 //==========================================================================
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth']) // Thêm middleware kiểm tra vai trò admin ở đây nếu cần, ví dụ: 'auth', 'role:admin'
+    ->middleware(['auth', 'role:admin,content_manager'])
     ->group(function () {
         // http://127.0.0.1:8000/admin/dashboard
-        Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
+        Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('dashboard');
 
         // Product routes
         // --- Routes cho Quản Lý Sản Phẩm ---
