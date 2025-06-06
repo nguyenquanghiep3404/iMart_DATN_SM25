@@ -32,8 +32,8 @@
                     <!-- Form luôn hiển thị -->
                     <div class="col-span-12 lg:col-span-6 md:w-[500px] mx-auto my-auto pt-[50px] py-[60px] px-5 md:px-[60px]">
                         <div class="text-center mb-5">
-                            <h4 class="text-[24px] mb-1">Reset Your Password</h4>
-                            <p>Already have an account? <a href="{{ route('login') }}" class="text-theme">Login</a></p>
+                            <h4 class="text-[24px] mb-1">Đặt lại mật khẩu của bạn</h4>
+                            <p>Bạn đã có tài khoản? <a href="{{ route('login') }}" class="text-theme">Đăng nhập</a></p>
                         </div>
 
                         <!-- Laravel Password Reset Form -->
@@ -45,7 +45,7 @@
 
                             <!-- Email -->
                             <div class="mb-5">
-                                <p class="mb-0 text-base text-black">Your Email <span class="text-red">*</span></p>
+                                <p class="mb-0 text-base text-black">Email của bạn <span class="text-red">*</span></p>
                                 <input name="email" type="email" value="{{ old('email', $request->email) }}"
                                     class="input w-full h-[46px] rounded-md border border-gray6 px-6 text-base @error('email') border-red-500 @enderror"
                                     placeholder="Enter Your Email" required>
@@ -56,10 +56,10 @@
 
                             <!-- Password -->
                             <div class="mb-5">
-                                <p class="mb-0 text-base text-black">New Password <span class="text-red">*</span></p>
+                                <p class="mb-0 text-base text-black">Mật khẩu mới<span class="text-red">*</span></p>
                                 <input name="password" type="password"
                                     class="input w-full h-[46px] rounded-md border border-gray6 px-6 text-base @error('password') border-red-500 @enderror"
-                                    placeholder="Enter New Password" required>
+                                    placeholder="Nhập mật khẩu mới" required>
                                 @error('password')
                                 <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
                                 @enderror
@@ -67,16 +67,16 @@
 
                             <!-- Confirm Password -->
                             <div class="mb-5">
-                                <p class="mb-0 text-base text-black">Confirm Password <span class="text-red">*</span></p>
+                                <p class="mb-0 text-base text-black">Xác nhận mật khẩu <span class="text-red">*</span></p>
                                 <input name="password_confirmation" type="password"
                                     class="input w-full h-[46px] rounded-md border border-gray6 px-6 text-base"
-                                    placeholder="Confirm New Password" required>
+                                    placeholder="Xác nhận mật khẩu mới" required>
                                 @error('password_confirmation')
                                 <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
 
-                            <button type="submit" class="tp-btn h-[49px] w-full justify-center">Reset Password</button>
+                            <button type="submit" class="tp-btn h-[49px] w-full justify-center">Đặt lại mật khẩu</button>
                         </form>
                         <!-- End Form -->
                     </div>

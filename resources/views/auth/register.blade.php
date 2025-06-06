@@ -49,7 +49,7 @@
     <!-- Customizer offcanvas -->
     <div class="offcanvas offcanvas-end" id="customizer" tabindex="-1">
         <div class="offcanvas-header border-bottom">
-            <h4 class="h5 offcanvas-title">Customize theme</h4>
+            <h4 class="h5 offcanvas-title">Tùy chỉnh chủ đề</h4>
             <button class="btn-close" type="button" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
@@ -61,11 +61,11 @@
                 <div class="pb-4 mb-2">
                     <div class="d-flex align-items-center mb-3">
                         <i class="ci-paint text-body-tertiary fs-5 me-2"></i>
-                        <h5 class="fs-lg mb-0">Colors</h5>
+                        <h5 class="fs-lg mb-0">Màu sắc</h5>
                     </div>
                     <div class="row row-cols-2 g-3" id="theme-colors">
                         <div class="col">
-                            <h6 class="fs-sm mb-2">Primary</h6>
+                            <h6 class="fs-sm mb-2">Sơ đẳng</h6>
                             <div class="color-swatch d-flex border rounded gap-3 p-2" id="theme-primary" data-color-labels="[&quot;theme-primary&quot;, &quot;primary&quot;, &quot;primary-rgb&quot;]">
                                 <input type="text" class="form-control bg-transparent border-0 rounded-0 p-1" value="#f55266">
                                 <label for="primary" class="ratio ratio-1x1 flex-shrink-0 w-100 cursor-pointer rounded-circle" style="max-width: 38px; background-color: #f55266"></label>
@@ -73,7 +73,7 @@
                             </div>
                         </div>
                         <div class="col">
-                            <h6 class="fs-sm mb-2">Success</h6>
+                            <h6 class="fs-sm mb-2">Thành công</h6>
                             <div class="color-swatch d-flex border rounded gap-3 p-2" id="theme-success" data-color-labels="[&quot;theme-success&quot;, &quot;success&quot;, &quot;success-rgb&quot;]">
                                 <input type="text" class="form-control bg-transparent border-0 rounded-0 p-1" value="#33b36b">
                                 <label for="success" class="ratio ratio-1x1 flex-shrink-0 w-100 cursor-pointer rounded-circle" style="max-width: 38px; background-color: #33b36b"></label>
@@ -81,7 +81,7 @@
                             </div>
                         </div>
                         <div class="col">
-                            <h6 class="fs-sm mb-2">Warning</h6>
+                            <h6 class="fs-sm mb-2">Cảnh báo</h6>
                             <div class="color-swatch d-flex border rounded gap-3 p-2" id="theme-warning" data-color-labels="[&quot;theme-warning&quot;, &quot;warning&quot;, &quot;warning-rgb&quot;]">
                                 <input type="text" class="form-control bg-transparent border-0 rounded-0 p-1" value="#fc9231">
                                 <label for="warning" class="ratio ratio-1x1 flex-shrink-0 w-100 cursor-pointer rounded-circle" style="max-width: 38px; background-color: #fc9231"></label>
@@ -89,7 +89,7 @@
                             </div>
                         </div>
                         <div class="col">
-                            <h6 class="fs-sm mb-2">Danger</h6>
+                            <h6 class="fs-sm mb-2">Nguy hiểm</h6>
                             <div class="color-swatch d-flex border rounded gap-2 p-2" id="theme-danger" data-color-labels="[&quot;theme-danger&quot;, &quot;danger&quot;, &quot;danger-rgb&quot;]">
                                 <input type="text" class="form-control bg-transparent border-0 rounded-0 p-1" value="#f03d3d">
                                 <label for="danger" class="ratio ratio-1x1 flex-shrink-0 w-100 cursor-pointer rounded-circle" style="max-width: 38px; background-color: #f03d3d"></label>
@@ -97,7 +97,7 @@
                             </div>
                         </div>
                         <div class="col">
-                            <h6 class="fs-sm mb-2">Info</h6>
+                            <h6 class="fs-sm mb-2">Thông tin</h6>
                             <div class="color-swatch d-flex border rounded gap-2 p-2" id="theme-info" data-color-labels="[&quot;theme-info&quot;, &quot;info&quot;, &quot;info-rgb&quot;]">
                                 <input type="text" class="form-control bg-transparent border-0 rounded-0 p-1" value="#2f6ed5">
                                 <label for="info" class="ratio ratio-1x1 flex-shrink-0 w-100 cursor-pointer rounded-circle" style="max-width: 38px; background-color: #2f6ed5"></label>
@@ -111,12 +111,12 @@
                 <div class="pb-4 mb-2">
                     <div class="d-flex align-items-center pb-1 mb-2">
                         <i class="ci-sort text-body-tertiary fs-lg me-2" style="transform: rotate(90deg)"></i>
-                        <h5 class="fs-lg mb-0">Direction</h5>
+                        <h5 class="fs-lg mb-0">Phương hướng</h5>
                     </div>
                     <div class="d-flex align-items-center justify-content-between border rounded p-3">
                         <div class="me-3">
                             <h6 class="mb-1">RTL</h6>
-                            <p class="fs-sm mb-0">Change text direction</p>
+                            <p class="fs-sm mb-0">Thay đổi hướng văn bản</p>
                         </div>
                         <div class="form-check form-switch m-0">
                             <input type="checkbox" class="form-check-input" role="switch" id="rtl-switch">
@@ -125,7 +125,7 @@
                     <div class="alert alert-info p-2 mt-2 mb-0">
                         <div class="d-flex text-body-emphasis fs-xs py-1 pe-1">
                             <i class="ci-info text-info fs-lg mb-2 mb-sm-0" style="margin-top: .125rem"></i>
-                            <div class="ps-2">To switch the text direction of your webpage from LTR to RTL, please consult the detailed instructions provided in the relevant section of our documentation.</div>
+                            <div class="ps-2">Để chuyển hướng văn bản trên trang web của bạn từ LTR sang RTL, vui lòng tham khảo hướng dẫn chi tiết được cung cấp trong phần có liên quan của tài liệu của chúng tôi.</div>
                         </div>
                     </div>
                 </div>
@@ -134,7 +134,7 @@
                 <div class="pb-4 mb-2">
                     <div class="d-flex align-items-center pb-1 mb-2">
                         <i class="ci-menu text-body-tertiary fs-lg me-2"></i>
-                        <h5 class="fs-lg mb-0">Border width, px</h5>
+                        <h5 class="fs-lg mb-0">Độ rộng đường viền, px</h5>
                     </div>
                     <div class="slider-input d-flex align-items-center gap-3 border rounded p-3" id="border-input">
                         <input type="range" class="form-range" min="0" max="10" step="1" value="1">
@@ -145,7 +145,7 @@
                 <!-- Rounding -->
                 <div class="d-flex align-items-center pb-1 mb-2">
                     <i class="ci-maximize text-body-tertiary fs-lg me-2"></i>
-                    <h5 class="fs-lg mb-0">Rounding, rem</h5>
+                    <h5 class="fs-lg mb-0">Làm tròn, rem</h5>
                 </div>
                 <div class="slider-input d-flex align-items-center gap-3 border rounded p-3">
                     <input type="range" class="form-range" min="0" max="5" step=".05" value="0.5">
@@ -215,10 +215,10 @@
                     </a>
                 </header>
 
-                <h1 class="h2 mt-auto">Welcome back</h1>
+                <h1 class="h2 mt-auto">Đăng ký tài khoản</h1>
                 <div class="nav fs-sm mb-4">
-                    Don't have an account?
-                    <a class="nav-link text-decoration-underline p-0 ms-2" href="account-signup.html">Create an account</a>
+                    Bạn đã có tài khoản?
+                    <a class="nav-link text-decoration-underline p-0 ms-2" href="{{ route('login') }}">Đăng nhập</a>
                 </div>
 
                 <!-- Form -->
@@ -229,7 +229,7 @@
                     <div class="position-relative mb-4">
                         <input type="text"
                             class="form-control form-control-lg @error('name') is-invalid @enderror"
-                            placeholder="Full Name"
+                            placeholder="Tên của bạn"
                             name="name"
                             value="{{ old('name') }}"
                             required
@@ -239,7 +239,7 @@
                             @error('name')
                             {{ $message }}
                             @else
-                            Please enter your name.
+                            Vui lòng nhập tên của bạn.
                             @enderror
                         </div>
                     </div>
@@ -257,7 +257,7 @@
                             @error('email')
                             {{ $message }}
                             @else
-                            Enter a valid email address!
+                            Vui lòng nhập địa chỉ email hợp lệ.
                             @enderror
                         </div>
                     </div>
@@ -266,7 +266,7 @@
                         <input
                             type="text"
                             class="form-control form-control-lg @error('phone_number') is-invalid @enderror"
-                            placeholder="Phone Number"
+                            placeholder="Số điện thoại"
                             name="phone_number"
                             value="{{ old('phone_number') }}"
                             required
@@ -275,7 +275,7 @@
                             @error('phone_number')
                             {{ $message }}
                             @else
-                            Please enter a valid phone number.
+                            Vui lòng nhập số điện thoại hợp lệ.
                             @enderror
                         </div>
                     </div>
@@ -285,7 +285,7 @@
                         <div class="password-toggle">
                             <input type="password"
                                 class="form-control form-control-lg @error('password') is-invalid @enderror"
-                                placeholder="Password (min 8 characters)"
+                                placeholder="Mật khẩu(8 ký tự trở lên)"
                                 name="password"
                                 required
                                 autocomplete="new-password">
@@ -293,7 +293,7 @@
                                 @error('password')
                                 {{ $message }}
                                 @else
-                                Password is incorrect!
+                                Vui lòng nhập mật khẩu của bạn! (ít nhất 8 ký tự)
                                 @enderror
                             </div>
                             <label class="password-toggle-button fs-lg" aria-label="Show/hide password">
@@ -307,7 +307,7 @@
                         <div class="password-toggle">
                             <input type="password"
                                 class="form-control form-control-lg @error('password_confirmation') is-invalid @enderror"
-                                placeholder="Confirm Password"
+                                placeholder="Xác nhận mật khẩu"
                                 name="password_confirmation"
                                 required
                                 autocomplete="new-password">
@@ -315,7 +315,7 @@
                                 @error('password_confirmation')
                                 {{ $message }}
                                 @else
-                                Please confirm your password!
+                                Vui lòng xác nhận mật khẩu của bạn!
                                 @enderror
                             </div>
                             <label class="password-toggle-button fs-lg" aria-label="Show/hide password">
@@ -328,23 +328,23 @@
                     <div class="d-flex align-items-center justify-content-between mb-4">
                         <div class="form-check me-2">
                             <input type="checkbox" class="form-check-input" id="remember-register">
-                            <label for="remember-register" class="form-check-label">Remember me</label>
+                            <label for="remember-register" class="form-check-label">Nhớ mật khẩu</label>
                         </div>
                         <div class="nav">
                             <a class="nav-link animate-underline p-0" href="{{ route('login') }}">
-                                <span class="animate-target">Already registered?</span>
+                                <span class="animate-target">Đã đăng ký chưa?</span>
                             </a>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-lg btn-primary w-100">Register</button>
+                    <button type="submit" class="btn btn-lg btn-primary w-100">Đăng ký</button>
                 </form>
 
 
                 <!-- Divider -->
                 <div class="d-flex align-items-center my-4">
                     <hr class="w-100 m-0">
-                    <span class="text-body-emphasis fw-medium text-nowrap mx-4">or continue with</span>
+                    <span class="text-body-emphasis fw-medium text-nowrap mx-4">hoặc tiếp tục với</span>
                     <hr class="w-100 m-0">
                 </div>
 
@@ -354,20 +354,12 @@
                         <i class="ci-google ms-1 me-1"></i>
                         Google
                     </button>
-                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 px-2">
-                        <i class="ci-facebook ms-1 me-1"></i>
-                        Facebook
-                    </button>
-                    <button type="button" class="btn btn-lg btn-outline-secondary w-100 px-2">
-                        <i class="ci-apple ms-1 me-1"></i>
-                        Apple
-                    </button>
                 </div>
 
                 <!-- Footer -->
                 <footer class="mt-auto">
                     <div class="nav mb-4">
-                        <a class="nav-link text-decoration-underline p-0" href="help-topics-v1.html">Need help?</a>
+                        <a class="nav-link text-decoration-underline p-0" href="help-topics-v1.html">Cần giúp đỡ?</a>
                     </div>
                     <p class="fs-xs mb-0">
                         © All rights reserved. Made by <span class="animate-underline"><a class="animate-target text-dark-emphasis text-decoration-none" href="https://createx.studio/" target="_blank" rel="noreferrer">Createx Studio</a></span>
@@ -375,14 +367,115 @@
                 </footer>
             </div>
 
-
-            <!-- Cover image visible on screens > 992px wide (lg breakpoint) -->
-            <div class="d-none d-lg-block w-100 py-4 ms-auto" style="max-width: 1034px">
-                <div class="d-flex flex-column justify-content-end h-100 rounded-5 overflow-hidden">
+            <!-- Benefits section that turns into offcanvas on screens < 992px wide (lg breakpoint) -->
+            <div class="offcanvas-lg offcanvas-end w-100 py-lg-4 ms-auto" id="benefits" style="max-width: 1034px">
+                <div class="offcanvas-header justify-content-end position-relative z-2 p-3">
+                    <button type="button" class="btn btn-icon btn-outline-dark text-dark border-dark bg-transparent rounded-circle d-none-dark" data-bs-dismiss="offcanvas" data-bs-target="#benefits" aria-label="Close">
+                        <i class="ci-close fs-lg"></i>
+                    </button>
+                    <button type="button" class="btn btn-icon btn-outline-dark text-light border-light bg-transparent rounded-circle d-none d-inline-flex-dark" data-bs-dismiss="offcanvas" data-bs-target="#benefits" aria-label="Close">
+                        <i class="ci-close fs-lg"></i>
+                    </button>
+                </div>
+                <div class="position-absolute top-0 start-0 w-100 h-100 d-lg-none">
                     <span class="position-absolute top-0 start-0 w-100 h-100 d-none-dark" style="background: linear-gradient(-90deg, #accbee 0%, #e7f0fd 100%)"></span>
                     <span class="position-absolute top-0 start-0 w-100 h-100 d-none d-block-dark" style="background: linear-gradient(-90deg, #1b273a 0%, #1f2632 100%)"></span>
-                    <div class="ratio position-relative z-2" style="--cz-aspect-ratio: calc(1030 / 1032 * 100%)">
-                        <img src="assets/users/img/account/cover.png" alt="Girl">
+                </div>
+                <div class="offcanvas-body position-relative z-2 d-lg-flex flex-column align-items-center justify-content-center h-100 pt-2 px-3 p-lg-0">
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-none d-lg-block">
+                        <span class="position-absolute top-0 start-0 w-100 h-100 rounded-5 d-none-dark" style="background: linear-gradient(-90deg, #accbee 0%, #e7f0fd 100%)"></span>
+                        <span class="position-absolute top-0 start-0 w-100 h-100 rounded-5 d-none d-block-dark" style="background: linear-gradient(-90deg, #1b273a 0%, #1f2632 100%)"></span>
+                    </div>
+                    <div class="position-relative z-2 w-100 text-center px-md-2 p-lg-5">
+                        <h2 class="h4 pb-3">Lợi ích của tài khoản iMart</h2>
+                        <div class="mx-auto" style="max-width: 790px">
+                            <div class="row row-cols-1 row-cols-sm-2 g-3 g-md-4 g-lg-3 g-xl-4">
+                                <div class="col">
+                                    <div class="card h-100 bg-transparent border-0">
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-25 border border-white border-opacity-50 rounded-4 d-none-dark"></span>
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white border rounded-4 d-none d-block-dark" style="--cz-bg-opacity: .05"></span>
+                                        <div class="card-body position-relative z-2">
+                                            <div class="d-inline-flex position-relative text-info p-3">
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-white rounded-pill d-none-dark"></span>
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-body-secondary rounded-pill d-none d-block-dark"></span>
+                                                <i class="ci-mail position-relative z-2 fs-4 m-1"></i>
+                                            </div>
+                                            <h3 class="h6 pt-2 my-2">Đăng ký sản phẩm yêu thích của bạns</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card h-100 bg-transparent border-0">
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-25 border border-white border-opacity-50 rounded-4 d-none-dark"></span>
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white border rounded-4 d-none d-block-dark" style="--cz-bg-opacity: .05"></span>
+                                        <div class="card-body position-relative z-2">
+                                            <div class="d-inline-flex position-relative text-info p-3">
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-white rounded-pill d-none-dark"></span>
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-body-secondary rounded-pill d-none d-block-dark"></span>
+                                                <i class="ci-settings position-relative z-2 fs-4 m-1"></i>
+                                            </div>
+                                            <h3 class="h6 pt-2 my-2">Xem và quản lý đơn hàng và danh sách mong muốn của bạn</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card h-100 bg-transparent border-0">
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-25 border border-white border-opacity-50 rounded-4 d-none-dark"></span>
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white border rounded-4 d-none d-block-dark" style="--cz-bg-opacity: .05"></span>
+                                        <div class="card-body position-relative z-2">
+                                            <div class="d-inline-flex position-relative text-info p-3">
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-white rounded-pill d-none-dark"></span>
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-body-secondary rounded-pill d-none d-block-dark"></span>
+                                                <i class="ci-gift position-relative z-2 fs-4 m-1"></i>
+                                            </div>
+                                            <h3 class="h6 pt-2 my-2">Kiếm phần thưởng cho những lần mua hàng trong tương lai</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card h-100 bg-transparent border-0">
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-25 border border-white border-opacity-50 rounded-4 d-none-dark"></span>
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white border rounded-4 d-none d-block-dark" style="--cz-bg-opacity: .05"></span>
+                                        <div class="card-body position-relative z-2">
+                                            <div class="d-inline-flex position-relative text-info p-3">
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-white rounded-pill d-none-dark"></span>
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-body-secondary rounded-pill d-none d-block-dark"></span>
+                                                <i class="ci-percent position-relative z-2 fs-4 m-1"></i>
+                                            </div>
+                                            <h3 class="h6 pt-2 my-2">Nhận ưu đãi và giảm giá độc quyền</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card h-100 bg-transparent border-0">
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-25 border border-white border-opacity-50 rounded-4 d-none-dark"></span>
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white border rounded-4 d-none d-block-dark" style="--cz-bg-opacity: .05"></span>
+                                        <div class="card-body position-relative z-2">
+                                            <div class="d-inline-flex position-relative text-info p-3">
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-white rounded-pill d-none-dark"></span>
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-body-secondary rounded-pill d-none d-block-dark"></span>
+                                                <i class="ci-heart position-relative z-2 fs-4 m-1"></i>
+                                            </div>
+                                            <h3 class="h6 pt-2 my-2">Tạo nhiều danh sách mong muốn</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="card h-100 bg-transparent border-0">
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-25 border border-white border-opacity-50 rounded-4 d-none-dark"></span>
+                                        <span class="position-absolute top-0 start-0 w-100 h-100 bg-white border rounded-4 d-none d-block-dark" style="--cz-bg-opacity: .05"></span>
+                                        <div class="card-body position-relative z-2">
+                                            <div class="d-inline-flex position-relative text-info p-3">
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-white rounded-pill d-none-dark"></span>
+                                                <span class="position-absolute top-0 start-0 w-100 h-100 bg-body-secondary rounded-pill d-none d-block-dark"></span>
+                                                <i class="ci-pie-chart position-relative z-2 fs-4 m-1"></i>
+                                            </div>
+                                            <h3 class="h6 pt-2 my-2">Thanh toán mua hàng theo từng đợt</h3>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

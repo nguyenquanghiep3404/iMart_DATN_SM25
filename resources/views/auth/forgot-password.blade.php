@@ -28,8 +28,8 @@
                 </div>
                 <div class="col-span-12 lg:col-span-6 md:w-[500px] mx-auto my-auto pt-[50px] py-[60px] px-5 md:px-[60px]">
                     <div class="text-center">
-                        <h4 class="text-[24px] mb-1">Forgot Password</h4>
-                        <p>No problem. Just enter your email and we'll send a reset link.</p>
+                        <h4 class="text-[24px] mb-1">Quên mật khẩu</h4>
+                        <p>Không vấn đề gì. Chỉ cần nhập email của bạn và chúng tôi sẽ gửi liên kết đặt lại.</p>
                     </div>
 
                     <!-- Session Status -->
@@ -48,21 +48,21 @@
                                 :value="old('email')"
                                 required
                                 autofocus
-                                placeholder="Enter Your Email"
+                                placeholder="Nhập email của bạn"
                             >
                             <x-input-error :messages="$errors->get('email')" class="mt-2 text-sm text-red-600" />
                         </div>
 
                         <div class="flex items-center justify-end mt-4">
                             <button class="tp-btn h-[49px] w-full justify-center">
-                                {{ __('Email Password Reset Link') }}
+                                {{ __('Liên kết đặt lại mật khẩu email') }}
                             </button>
                         </div>
                     </form>
 
                     <div class="mt-6 text-center">
                         <a href="{{ route('login') }}" class="text-sm text-theme hover:underline">
-                            Back to login
+                            Quay lại để đăng nhập
                         </a>
                     </div>
                 </div>
