@@ -7,14 +7,14 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Users\HomeController;
+use App\Http\Controllers\GoogleController;
 
 
 
 //==========================================================================
 // FRONTEND ROUTES (PUBLIC)
 //==========================================================================
-Route::get('/', [HomeController::class, 'index'])->name('users.home');  // Trang chủ, không cần đăng nhập
-// các trang không cần đăng nhập ở dưới đây
+
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
@@ -79,3 +79,5 @@ Route::prefix('admin')
         // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
     });
 
+Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
