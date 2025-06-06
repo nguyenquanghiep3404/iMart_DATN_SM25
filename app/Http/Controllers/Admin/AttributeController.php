@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AttributeRequest; // Import
+use App\Http\Requests\AttributeValueRequest; // Import
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -18,7 +19,7 @@ class AttributeController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Attribute::withCount('attributeValues')->orderBy('name');
+        $query = Attribute::withCount('attributeValues')->latest();
 
         if ($request->filled('search')) {
             $query->where('name', 'like', '%' . $request->search . '%');
@@ -39,13 +40,9 @@ class AttributeController extends Controller
     /**
      * Store a newly created attribute in storage.
      */
-    public function store(Request $request)
+    public function store(AttributeRequest $request) // <-- Sử dụng AttributeRequest
     {
-        $validatedData = $request->validate([
-            'name' => 'required|string|max:255|unique:attributes,name',
-            'slug' => 'nullable|string|max:255|unique:attributes,slug',
-            'display_type' => 'required|in:select,radio,color_swatch', // Thêm các kiểu hiển thị khác nếu cần
-        ]);
+        $validatedData = $request->validated();
 
         DB::beginTransaction();
         try {
@@ -66,11 +63,9 @@ class AttributeController extends Controller
 
     /**
      * Display the specified attribute and its values.
-     * This page will be used to manage attribute values.
      */
     public function show(Attribute $attribute)
     {
-        // Eager load attribute values, có thể phân trang nếu danh sách giá trị quá dài
         $attribute->load('attributeValues');
         return view('admin.attributes.show', compact('attribute'));
     }
@@ -86,13 +81,9 @@ class AttributeController extends Controller
     /**
      * Update the specified attribute in storage.
      */
-    public function update(Request $request, Attribute $attribute)
+    public function update(AttributeRequest $request, Attribute $attribute) // <-- Sử dụng AttributeRequest
     {
-        $validatedData = $request->validate([
-            'name' => ['required', 'string', 'max:255', Rule::unique('attributes')->ignore($attribute->id)],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('attributes')->ignore($attribute->id)],
-            'display_type' => 'required|in:select,radio,color_swatch',
-        ]);
+        $validatedData = $request->validated();
 
         DB::beginTransaction();
         try {
@@ -116,17 +107,10 @@ class AttributeController extends Controller
      */
     public function destroy(Attribute $attribute)
     {
-        // Kiểm tra xem thuộc tính có đang được sử dụng bởi bất kỳ biến thể sản phẩm nào không
-        // Logic này cần được triển khai nếu bạn muốn ngăn xóa thuộc tính đang dùng
-        // Ví dụ: if ($attribute->productVariants()->count() > 0) { ... }
-
+        // Bạn có thể thêm logic kiểm tra thuộc tính đang được sử dụng ở đây
         DB::beginTransaction();
         try {
-            // Xóa tất cả các giá trị thuộc tính liên quan trước (nếu có ràng buộc khóa ngoại)
-            // Hoặc nếu CSDL của bạn có 'on delete cascade' thì không cần dòng này.
-            $attribute->attributeValues()->delete();
-            $attribute->delete();
-
+            $attribute->delete(); // Giả sử đã có 'on delete cascade' trong CSDL
             DB::commit();
             return redirect()->route('admin.attributes.index')
                              ->with('success', 'Thuộc tính và các giá trị liên quan đã được xóa.');
@@ -137,89 +121,60 @@ class AttributeController extends Controller
         }
     }
 
+    //== CÁC PHƯƠNG THỨC QUẢN LÝ GIÁ TRỊ THUỘC TÍNH ==//
+
     /**
      * Store a new attribute value for the specified attribute.
      */
-    public function storeValue(Request $request, Attribute $attribute)
+    public function storeValue(AttributeValueRequest $request, Attribute $attribute) // <-- Sử dụng AttributeValueRequest
     {
-        $validatedData = $request->validate([
-            'value' => ['required', 'string', 'max:255',
-                // Đảm bảo giá trị là duy nhất cho thuộc tính này
-                Rule::unique('attribute_values')->where(function ($query) use ($attribute) {
-                    return $query->where('attribute_id', $attribute->id);
-                })
-            ],
-            'meta' => 'nullable|string|max:255', // Ví dụ: mã màu hex cho color_swatch
-        ]);
-
         try {
-            $attribute->attributeValues()->create($validatedData);
+            $attribute->attributeValues()->create($request->validated());
             return redirect()->route('admin.attributes.show', $attribute->id)
                              ->with('success_value', 'Giá trị thuộc tính đã được thêm thành công.');
         } catch (\Exception $e) {
             Log::error('Lỗi khi thêm giá trị thuộc tính: ' . $e->getMessage());
-            return back()->withInput()->with('error_value', 'Đã có lỗi xảy ra khi thêm giá trị thuộc tính.');
+            return back()->withInput()->with('error_value', 'Đã có lỗi xảy ra khi thêm giá trị.');
         }
     }
-
-    /**
-     * Show the form for editing an attribute value. (Sẽ dùng modal trong show)
-     * Nếu muốn trang riêng thì tạo view và route riêng.
-     */
-    // public function editValue(Attribute $attribute, AttributeValue $value) { ... }
-
 
     /**
      * Update the specified attribute value in storage.
      */
-    public function updateValue(Request $request, Attribute $attribute, AttributeValue $value)
+    public function updateValue(AttributeValueRequest $request, Attribute $attribute, AttributeValue $value) // <-- Sử dụng AttributeValueRequest
     {
-        if ($value->attribute_id !== $attribute->id) {
-            abort(404); // Hoặc xử lý lỗi khác
-        }
-
-        $validatedData = $request->validate([
-            'edit_value_name_' . $value->id => ['required', 'string', 'max:255',
-                Rule::unique('attribute_values', 'value')->where(function ($query) use ($attribute) {
-                    return $query->where('attribute_id', $attribute->id);
-                })->ignore($value->id)
-            ],
-            'edit_value_meta_' . $value->id => 'nullable|string|max:255',
-        ]);
-
-        try {
-            $value->update([
-                'value' => $validatedData['edit_value_name_' . $value->id],
-                'meta' => $validatedData['edit_value_meta_' . $value->id],
-            ]);
-            return redirect()->route('admin.attributes.show', $attribute->id)
-                             ->with('success_value', 'Giá trị thuộc tính đã được cập nhật.');
-        } catch (\Exception $e) {
-            Log::error('Lỗi khi cập nhật giá trị thuộc tính: ' . $e->getMessage());
-            return back()->withInput()->with('error_value', 'Đã có lỗi xảy ra khi cập nhật giá trị thuộc tính.');
-        }
-    }
-
-
-    /**
-     * Remove the specified attribute value from storage.
-     */
-    public function destroyValue(Attribute $attribute, AttributeValue $value)
-    {
+        // Kiểm tra này vẫn tốt để có thêm một lớp bảo vệ
         if ($value->attribute_id !== $attribute->id) {
             abort(404);
         }
 
-        // Kiểm tra xem giá trị thuộc tính có đang được sử dụng bởi biến thể sản phẩm nào không
-        // if ($value->productVariants()->count() > 0) { ... }
+        try {
+            $value->update($request->validated());
+            return redirect()->route('admin.attributes.show', $attribute->id)
+                             ->with('success_value', 'Giá trị thuộc tính đã được cập nhật.');
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi cập nhật giá trị thuộc tính: ' . $e->getMessage());
+            return back()->withInput()->with('error_value', 'Đã có lỗi xảy ra khi cập nhật giá trị.');
+        }
+    }
 
+    /**
+     * Remove the specified attribute value from storage.
+     */
+    public function destroyValue(Request $request, Attribute $attribute, AttributeValue $value)
+    {
+        if ($value->attribute_id !== $attribute->id) {
+            abort(404);
+        }
+        
+        // Bạn có thể thêm logic kiểm tra giá trị đang được sử dụng ở đây
         try {
             $value->delete();
             return redirect()->route('admin.attributes.show', $attribute->id)
                              ->with('success_value', 'Giá trị thuộc tính đã được xóa.');
         } catch (\Exception $e) {
             Log::error('Lỗi khi xóa giá trị thuộc tính: ' . $e->getMessage());
-            return back()->with('error_value', 'Đã có lỗi xảy ra khi xóa giá trị thuộc tính.');
+            return back()->with('error_value', 'Đã có lỗi xảy ra khi xóa giá trị.');
         }
     }
 }
