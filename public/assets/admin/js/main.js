@@ -722,6 +722,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     
 });
+// js thông báo của category
+// Auto hide alert after 5s
+function initAutoHideAlert() {
+    const alert = document.getElementById('alert');
+    if (alert) {
+        setTimeout(() => {
+            alert.style.transition = 'opacity 0.5s';
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 500);
+        }, 5000);
+    }
+}
 
+// Call when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initAutoHideAlert();
+});
 
 
