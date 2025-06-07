@@ -16,6 +16,9 @@ use App\Http\Controllers\Users\HomeController;
 //==========================================================================
 Route::get('/', [HomeController::class, 'index'])->name('users.home');
 Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.products.show');
+Route::get('/products', [HomeController::class, 'allProducts'])->name('users.products.all');
+
+
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
