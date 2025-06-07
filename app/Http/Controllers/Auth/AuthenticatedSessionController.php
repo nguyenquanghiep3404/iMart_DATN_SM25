@@ -24,11 +24,31 @@ class AuthenticatedSessionController extends Controller
      */
     public function store(LoginRequest $request): RedirectResponse
     {
+        // 1. Xác thực email + password
         $request->authenticate();
 
+        // 2. Regenerate session
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // 3. Lấy user vừa đăng nhập
+        $user = Auth::user();
+
+        // 4. Chuyển hướng theo role:
+        //    - Nếu user có role_id = 2 (customer) → chuyển đến /dashboard (user dashboard)
+        //    - Nếu user có role_id thuộc [1,4,5] (admin roles) → chuyển đến /admin/dashboard
+        if ($user->roles->contains('id', 2)) {
+            return redirect()->intended(route('users.home'));
+        }
+
+        if ($user->roles->contains('id', 1) ||
+            $user->roles->contains('id', 4) ||
+            $user->roles->contains('id', 5)
+        ) {
+            return redirect()->intended(route('admin.dashboard'));
+        }
+
+        // 5. Nếu không thuộc nhóm nào trên, dùng redirect mặc định
+        return redirect()->intended(route('users.home'));
     }
 
     /**
@@ -39,7 +59,6 @@ class AuthenticatedSessionController extends Controller
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');
