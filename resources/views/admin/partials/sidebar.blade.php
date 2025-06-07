@@ -235,10 +235,8 @@
                     </button>
                     <ul x-show="openNav === 4" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
-                            <a href="{{-- {{ route('admin.users.index') }}" {{-- Giả sử route --}}
-                               class="block w-full py-1.5
-                                px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.users.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                            <a href="{{  route('admin.users.index') }}" {{-- Giả sử route --}}
+                               class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Danh sách người dùng
                             </a>
                         </li>

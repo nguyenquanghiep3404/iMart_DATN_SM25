@@ -115,6 +115,7 @@ public function cart()
         }
         return false;
     }
+
     public function hasAnyRole(array $roles): bool
     {
         // Sử dụng whereIn để kiểm tra xem trong các vai trò của người dùng,
@@ -124,3 +125,6 @@ public function cart()
     }
 
 }
+
+}
+
