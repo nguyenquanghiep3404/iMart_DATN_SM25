@@ -99,37 +99,37 @@
 
           <!-- Account button visible on screens > 768px wide (md breakpoint) -->
           <li class="nav-item dropdown d-none d-md-inline-flex">
-    <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
-       href="#"
-       role="button"
-       data-bs-toggle="dropdown"
-       aria-expanded="false">
-        @auth
-            {{-- Hiển thị chữ cái đầu tên người dùng --}}
-            <span class="fw-bold text-uppercase">{{ strtoupper(Auth::user()->name[0]) }}</span>
-        @else
-            {{-- Biểu tượng người dùng mặc định --}}
-            <i class="ci-user animate-target"></i>
-        @endauth
-        <span class="visually-hidden">Account</span>
-    </a>
+            <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false">
+              @auth
+              {{-- Hiển thị chữ cái đầu tên người dùng --}}
+              <span class="fw-bold text-uppercase">{{ strtoupper(Auth::user()->name[0]) }}</span>
+              @else
+              {{-- Biểu tượng người dùng mặc định --}}
+              <i class="ci-user animate-target"></i>
+              @endauth
+              <span class="visually-hidden">Account</span>
+            </a>
 
-    <ul class="dropdown-menu dropdown-menu-end">
-        @guest
-            <li><a class="dropdown-item" href="{{ route('login') }}">Đăng nhập</a></li>
-            <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
-            <li><a class="dropdown-item" href="{{ route('password.request') }}">Quên mật khẩu</a></li>
-        @else
-            <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Chi tiết tài khoản</a></li>
-            <li>
+            <ul class="dropdown-menu dropdown-menu-end">
+              @guest
+              <li><a class="dropdown-item" href="{{ route('login') }}">Đăng nhập</a></li>
+              <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
+              <li><a class="dropdown-item" href="{{ route('password.request') }}">Quên mật khẩu</a></li>
+              @else
+              <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
+              <li>
                 <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button class="dropdown-item" type="submit">Đăng xuất</button>
+                  @csrf
+                  <button class="dropdown-item" type="submit">Đăng xuất</button>
                 </form>
-            </li>
-        @endguest
-    </ul>
-</li>
+              </li>
+              @endguest
+            </ul>
+          </li>
 
 
 
