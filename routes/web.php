@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Users\HomeController;
+use App\Http\Controllers\Users\WishlistController;
 
 
 
@@ -18,6 +19,9 @@ Route::get('/', [HomeController::class, 'index'])->name('users.home');
 Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.products.show');
 Route::get('/products', [HomeController::class, 'allProducts'])->name('users.products.all');
 
+
+// Hiển thị trang wishlist cho khách vãng lai và user
+Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
 
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
