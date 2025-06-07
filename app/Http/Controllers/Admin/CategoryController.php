@@ -23,6 +23,9 @@ class CategoryController extends Controller
         $sortDirection = in_array($request->direction, ['asc', 'desc']) ? $request->direction : 'desc';
         $query = Category::select('categories.*')
             ->with(['parent' => fn($q) => $q->select('id', 'name')]);
+        if ($search = $request->get('search')) {
+            $query->where('name', 'like', '%' . $search . '%');
+        }
         if ($sortField === 'parent') {
             $query->leftJoin('categories as parent_categories', 'categories.parent_id', '=', 'parent_categories.id')
                 ->orderBy('parent_categories.name', $sortDirection);
@@ -35,11 +38,13 @@ class CategoryController extends Controller
         $categories = $query->paginate(10)->withQueryString();
         return view('admin.category.index', compact('categories', 'sortField', 'sortDirection'));
     }
+
     public function create()
     {
         $parents = Category::whereNull('parent_id')->orderBy('name')->get();
         return view('admin.category.create', compact('parents'));
     }
+
     public function store(CategoryRequest $request)
     {
         $data = $request->validated();
@@ -48,11 +53,13 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')
             ->with('success', 'Danh mục đã được tạo thành công.');
     }
+
     public function show(Category $category)
     {
         $category->load('parent', 'children')->loadCount('products');
         return view('admin.category.show', compact('category'));
     }
+
     public function edit(Category $category)
     {
         $parents = Category::whereNull('parent_id')
@@ -61,6 +68,7 @@ class CategoryController extends Controller
             ->pluck('name', 'id');
         return view('admin.category.edit', compact('category', 'parents'));
     }
+
     public function update(CategoryRequest $request, Category $category)
     {
         $data = $request->validated();
@@ -69,6 +77,7 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')
             ->with('success', 'Danh mục đã được cập nhật thành công.');
     }
+
     public function destroy(Category $category)
     {
         $page = request('page', 1);

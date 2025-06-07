@@ -18,10 +18,40 @@
                     </ul>
                 </div>
                 
-                <div class="w-full flex justify-end">
-                    <a href="{{ route('admin.categories.create') }}" class="tp-btn px-7 py-2">
-                        Add New Category
-                    </a>
+                <div class="w-full flex justify-between items-center gap-4">
+                    <form action="{{ route('admin.categories.index') }}" method="GET" class="flex items-center">
+                        @if(request('sort'))
+                            <input type="hidden" name="sort" value="{{ request('sort') }}">
+                        @endif
+                        @if(request('direction'))
+                            <input type="hidden" name="direction" value="{{ request('direction') }}">
+                        @endif
+                        
+                        <div class="relative">
+                            <input type="text" 
+                                   name="search" 
+                                   value="{{ request('search') }}" 
+                                   placeholder="Tìm kiếm theo tên..." 
+                                   class="w-64 h-10 pl-4 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            <button type="submit" class="absolute right-0 top-0 h-full px-3 text-gray-600 hover:text-blue-500">
+                                🔍
+                            </button>
+                        </div>
+                        
+                        @if(request('search'))
+                            <a href="{{ route('admin.categories.index') }}" 
+                               class="ml-2 px-3 py-2 text-gray-500 hover:text-red-500" 
+                               title="Xóa tìm kiếm">
+                                ✕
+                            </a>
+                        @endif
+                    </form>
+
+                    <div class="w-full flex justify-end">
+                        <a href="{{ route('admin.categories.create') }}" class="tp-btn px-7 py-2">
+                            Add New Category
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -30,15 +60,27 @@
         <div class="col-span-12">
             <div class="relative bg-white rounded-lg shadow-md w-full max-w-full p-4 md:p-6">
                 @if (session('success'))
-                    <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4">
+                    <div id="alert" class="relative mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4">
                         {{ session('success') }}
+                        <div class="progress-bar bg-green-500"></div>
                     </div>
                 @endif
                 @if (session('error'))
-                    <div class="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
+                    <div id="alert" class="relative mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
                         {{ session('error') }}
+                        <div class="progress-bar bg-red-500"></div>
                     </div>
                 @endif
+
+                @if(request('search'))
+                    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <span class="text-blue-800">
+                            Tìm kiếm: "<strong>{{ request('search') }}</strong>" 
+                            - Tìm thấy {{ $categories->total() }} kết quả
+                        </span>
+                    </div>
+                @endif
+
                 <div class="w-full overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-600">
                         <thead>
@@ -153,8 +195,8 @@
                                     <td colspan="9" class="text-center py-6">
                                         <div class="flex flex-col items-center justify-center">
                                             <img src="{{ asset('assets/img/empty.svg') }}" alt="Empty" class="w-32 h-32 mb-4">
-                                            <h5 class="text-lg font-medium text-gray-500 mb-2">No Categories Found</h5>
-                                            <p class="text-sm text-gray-400">Create your first category by clicking the Add Category button.</p>
+                                            <h5 class="text-lg font-medium text-gray-500 mb-2">No Categories</h5>
+                                            <p class="text-sm text-gray-400">Add Category button.</p>
                                         </div>
                                     </td>
                                 </tr>
