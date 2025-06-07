@@ -17,6 +17,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_number',
         'status',
         'last_login_at',
+        'password',
     ];
 
     protected $hidden = [

@@ -50,29 +50,12 @@ php artisan db:seed
 Nếu dự án sử dụng NPM hoặc Yarn để quản lý các gói JavaScript:
 ```bash
 npm install
-# hoặc
-yarn install
 ```
-Sau đó, biên dịch tài sản (assets):
-```bash
-npm run dev
-# hoặc
-yarn dev
-```
-
-### 7. Cấp quyền cho thư mục `storage` và `bootstrap/cache`
-Laravel cần quyền ghi vào các thư mục này. Trên môi trường Linux hoặc macOS, có thể cần chạy lệnh:
-```bash
-chmod -R 775 storage
-chmod -R 775 bootstrap/cache
-```
-Đảm bảo web server (ví dụ: Nginx, Apache) cũng có quyền ghi vào các thư mục này.
-
 ---
 
 Sau khi hoàn thành các bước trên, họ sẽ có thể chạy dự án Laravel bằng lệnh:
 ```bash
-php artisan serve
+composer run dev
 ```
 Và truy cập ứng dụng qua URL đã cấu hình (thường là `http://localhost:8000`).
 ```
