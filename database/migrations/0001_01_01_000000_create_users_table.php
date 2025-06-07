@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -15,10 +14,14 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('phone_number')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // Cột 'avatar' đã được bỏ, sẽ dùng bảng 'uploaded_files'
+            $table->enum('status', ['active', 'inactive', 'banned'])->default('active');
+            $table->timestamp('last_login_at')->nullable();
             $table->rememberToken();
-            $table->timestamps();
+            $table->timestamps(); // created_at and updated_at
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
