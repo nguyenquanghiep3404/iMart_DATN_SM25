@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>iMart Trang Quản Trị - @yield('title')</title>
     <link rel="shortcut icon" href="{{ asset('assets/admin/img/logo/favicon.png') }}" type="image/x-icon">
-
     <link rel="stylesheet" href="{{ asset('assets/admin/css/perfect-scrollbar.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/choices.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/apexcharts.css') }}">
@@ -22,6 +21,7 @@
     
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+
 </head>
 
 <body>
