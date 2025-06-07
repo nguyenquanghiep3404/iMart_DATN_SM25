@@ -125,6 +125,3 @@ public function cart()
     }
 
 }
-
-
-
