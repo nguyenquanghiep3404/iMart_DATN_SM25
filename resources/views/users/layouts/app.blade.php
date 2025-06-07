@@ -72,7 +72,7 @@
 
 
     <!-- Bootstrap + Theme scripts -->
-    <script src="{{ asset ('assets/users/js/theme.min.js') }}"></script>
+    {{-- <script src="{{ asset ('assets/users/js/theme.min.js') }}"></script> --}}
 
     @stack('scripts') {{-- Cho phép các trang con thêm JS cụ thể --}}
 
