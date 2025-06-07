@@ -4,7 +4,7 @@
     $activeParentNav = null;
     $currentRouteName = request()->route()->getName();
 
-    if (str_starts_with($currentRouteName, 'admin.admin.dashboard')) {
+    if (str_starts_with($currentRouteName, 'admin.dashboard')) {
         $activeParentNav = 0;
     } elseif (
         str_starts_with($currentRouteName, 'admin.products.') ||
@@ -38,7 +38,7 @@
     :class="sideMenu ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
     <div>
         <div class="flex h-[65px] items-center border-b border-slate-200 px-6">
-            <a href="{{ route('admin.admin.dashboard') }}">
+            <a href="{{ route('admin.dashboard') }}">
                 {{-- Đặt chiều cao cho logo, chiều rộng sẽ tự động điều chỉnh --}}
                 <img class="h-8 w-auto" src="{{ asset('assets/admin/img/logo/logo.svg') }}" alt="Logo">
             </a>
@@ -47,8 +47,8 @@
             <ul class="space-y-1">
                 {{-- 1. Trang chủ --}}
                 <li>
-                    @php $isDashboardActive = request()->routeIs('admin.admin.dashboard'); @endphp
-                    <a href="{{ route('admin.admin.dashboard') }}"
+                    @php $isDashboardActive = request()->routeIs('admin.dashboard'); @endphp
+                    <a href="{{ route('admin.dashboard') }}"
                         class="group flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out
                               {{ $isDashboardActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
                         <span

@@ -44,7 +44,7 @@ class AuthenticatedSessionController extends Controller
             $user->roles->contains('id', 4) ||
             $user->roles->contains('id', 5)
         ) {
-            return redirect()->intended(route('admin.admin.dashboard'));
+            return redirect()->intended(route('admin.dashboard'));
         }
 
         // 5. Nếu không thuộc nhóm nào trên, dùng redirect mặc định
