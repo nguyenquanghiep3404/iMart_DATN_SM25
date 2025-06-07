@@ -15,9 +15,11 @@ use App\Http\Controllers\GoogleController;
 // FRONTEND ROUTES (PUBLIC)
 //==========================================================================
 
-
-// Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
-require __DIR__ . '/auth.php';
+Route::get('/', [HomeController::class, 'index'])->name('users.home');  // Trang chủ, không cần đăng nhập
+Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.products.show');
+Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+// các trang không cần đăng nhập ở dưới đây
 
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -79,5 +81,7 @@ Route::prefix('admin')
         // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
     });
 
-Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
-Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+
+
+// Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
+require __DIR__ . '/auth.php';

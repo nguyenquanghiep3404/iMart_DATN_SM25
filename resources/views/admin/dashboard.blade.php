@@ -699,3 +699,8 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+    <script src="{{ asset('assets/admin/js/chart.js') }}"></script>
+    <script src="{{ asset('assets/admin/js/apexchart.js') }}"></script>
+@endpush
