@@ -30,37 +30,63 @@
         <div class="col-span-12">
             <div class="relative bg-white rounded-lg shadow-md w-full max-w-full p-4 md:p-6">
                 @if (session('success'))
-                    <div id="alert" class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 relative">
+                    <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4">
                         {{ session('success') }}
-                        <div class="progress-bar opacity-50"></div>
                     </div>
                 @endif
-
                 @if (session('error'))
-                    <div id="alert" class="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 relative">
+                    <div class="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
                         {{ session('error') }}
-                        <div class="progress-bar opacity-50"></div>
                     </div>
                 @endif
-
                 <div class="w-full overflow-x-auto">
                     <table class="w-full text-sm text-left text-gray-600">
                         <thead>
                             <tr class="border-b border-gray-200 text-xs uppercase font-semibold text-gray-700">
-                                <th scope="col" class="py-3 px-4 w-[3%]">
+                                <th class="py-3 px-4 w-[3%]">
                                     <div class="tp-checkbox">
                                         <input id="selectAllProduct" type="checkbox" class="cursor-pointer">
                                         <label for="selectAllProduct"></label>
                                     </div>
                                 </th>
-                                <th scope="col" class="py-3 px-4 text-sm">ID</th>
-                                <th scope="col" class="py-3 px-4 text-sm">Name</th>
-                                <th scope="col" class="py-3 px-4 text-sm ">Slug</th>
-                                <th scope="col" class="py-3 px-4 text-sm text-left">Parent</th>
-                                <th scope="col" class="py-3 px-4 text-sm text-left">Description</th>
-                                <th scope="col" class="py-3 px-4 text-sm text-left">Order</th>
-                                <th scope="col" class="py-3 px-4 text-sm text-left">Status</th>
-                                <th scope="col" class="py-3 px-4 text-sm text-left">Action</th>
+                                @foreach([
+                                    'id' => 'ID',
+                                    'name' => 'Name',
+                                    'slug' => ['label' => 'Slug', 'sortable' => false],
+                                    'parent' => 'Parent',
+                                    'description' => 'Description',
+                                    'order' => 'Order',
+                                    'status' => 'Status'
+                                ] as $column => $config)
+                                    @php
+                                        $label = is_array($config) ? $config['label'] : $config;
+                                        $sortable = is_array($config) ? $config['sortable'] : true;
+                                    @endphp
+                                    <th class="py-3 px-4 text-sm">
+                                        @if($sortable)
+                                            <a href="{{ route('admin.categories.index', [
+                                                'sort' => $column,
+                                                'direction' => ($sortField === $column && $sortDirection === 'asc') ? 'desc' : 'asc'
+                                            ]) }}" 
+                                            class="inline-flex items-center gap-1 hover:text-blue-500">
+                                                {{ $label }}
+                                                @if($sortField === $column)
+                                                    @if($sortDirection === 'asc')
+                                                        <span class="text-blue-500">▲</span>
+                                                    @else
+                                                        <span class="text-blue-500">▼</span>
+                                                    @endif
+                                                @else
+                                                    <span class="text-gray-400">⇅</span>
+                                                @endif
+                                            </a>
+                                        @else
+                                            {{ $label }}
+                                        @endif
+                                    </th>
+                                @endforeach
+                                
+                                <th class="py-3 px-4 text-sm text-left">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -75,7 +101,6 @@
                                     <td class="py-3 px-4 text-base text-gray-700">{{ $category->id }}</td>
                                     <td class="py-3 px-4">
                                         <a href="" class="flex items-center space-x-3 group">
-                                            {{-- <img class="w-8 h-8 rounded-full object-cover" src="{{ $category->getImageUrlAttribute() }}" alt="{{ $category->name }}"> --}}
                                             <span class="text-base text-gray-800 group-hover:text-blue-600 transition">{{ $category->name }}</span>
                                         </a>
                                     </td>
@@ -111,7 +136,7 @@
                                                 onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này ?');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <input type="hidden" name="current_page" value="{{ $categories->currentPage() }}">
+                                                <input type="hidden" name="page" value="{{ $categories->currentPage() }}">
                                                 <button type="submit"
                                                     class="inline-flex items-center justify-center w-10 h-10 text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-all"
                                                     title="Delete">

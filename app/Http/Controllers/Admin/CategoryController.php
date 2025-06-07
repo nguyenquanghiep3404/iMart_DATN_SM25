@@ -10,15 +10,30 @@ use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
-    //
-    public function index()
+    public function index(Request $request)
     {
-        $categories = Category::with('parent')
-            ->orderBy('id', 'desc')
-            ->orderBy('order')
-            ->orderBy('name')
-            ->paginate(10);
-        return view('admin.category.index', compact('categories'));
+        $sortField = in_array($request->sort, [
+            'id',
+            'name',
+            'order',
+            'status',
+            'description',
+            'parent'
+        ]) ? $request->sort : 'id';
+        $sortDirection = in_array($request->direction, ['asc', 'desc']) ? $request->direction : 'desc';
+        $query = Category::select('categories.*')
+            ->with(['parent' => fn($q) => $q->select('id', 'name')]);
+        if ($sortField === 'parent') {
+            $query->leftJoin('categories as parent_categories', 'categories.parent_id', '=', 'parent_categories.id')
+                ->orderBy('parent_categories.name', $sortDirection);
+        } else {
+            $query->orderBy($sortField, $sortDirection);
+        }
+        if ($sortField !== 'id') {
+            $query->orderBy('id', 'desc');
+        }
+        $categories = $query->paginate(10)->withQueryString();
+        return view('admin.category.index', compact('categories', 'sortField', 'sortDirection'));
     }
     public function create()
     {
@@ -56,7 +71,7 @@ class CategoryController extends Controller
     }
     public function destroy(Category $category)
     {
-        $currentPage = request('current_page', 1);
+        $page = request('page', 1);
         $perPage = request('per_page', 10);
         $children = $category->children()->pluck('name');
         if ($children->isNotEmpty()) {
@@ -70,9 +85,9 @@ class CategoryController extends Controller
         $category->delete();
         $total = Category::count();
         $maxPage = max(ceil($total / $perPage), 1);
-        $currentPage = min($currentPage, $maxPage);
+        $page = min($page, $maxPage);
         return redirect()->route('admin.categories.index', [
-            'page' => $currentPage,
+            'page' => $page,
             'per_page' => $perPage
         ])->with('success', 'Danh mục đã được xóa thành công.');
     }
