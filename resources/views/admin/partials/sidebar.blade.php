@@ -240,14 +240,14 @@
                                 Danh sách người dùng
                             </a>
                         </li>
-                        <li>
+                        <!-- <li>
                             <a href="{{-- {{ route('admin.users.create') }}" {{-- Giả sử route --}}
                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('admin.users.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Thêm mới người dùng
                             </a>
-                        </li>
+                        </li> -->
                     </ul>
                 </li>
 
