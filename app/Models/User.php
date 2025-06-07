@@ -13,9 +13,11 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'name',
         'email',
+        'password',
         'phone_number',
         'status',
         'last_login_at',
+        'password',
     ];
 
     protected $hidden = [
@@ -113,4 +115,16 @@ public function cart()
         }
         return false;
     }
+
+    public function hasAnyRole(array $roles): bool
+    {
+        // Sử dụng whereIn để kiểm tra xem trong các vai trò của người dùng,
+        // có tên nào nằm trong mảng $roles được truyền vào không.
+        // exists() sẽ trả về true ngay khi tìm thấy một kết quả, rất hiệu quả.
+        return $this->roles()->whereIn('name', $roles)->exists();
+    }
+
 }
+
+}
+
