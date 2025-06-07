@@ -7,15 +7,33 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
     /**
      * Hiển thị danh sách người dùng.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::orderBy('created_at', 'desc')->paginate(10); // Lấy 10 user/trang
+        // 1. Bắt đầu một truy vấn Eloquent, chưa thực thi
+        $query = User::query();
+
+        // 2. Kiểm tra xem có từ khóa tìm kiếm được gửi lên không
+        if ($request->has('search') && $request->input('search') != '') {
+            $searchTerm = $request->input('search');
+
+            // 3. Thêm điều kiện `WHERE` vào truy vấn
+            // Tìm kiếm trong các cột 'name', 'email', và 'phone_number'
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('email', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('phone_number', 'LIKE', "%{$searchTerm}%");
+            });
+        }
+        $users = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        // 5. Trả về view với dữ liệu đã được lọc
         return view('admin.users.index', compact('users'));
     }
 
@@ -37,16 +55,23 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email',
             'password' => 'required|string|min:8|confirmed', // 'confirmed' yêu cầu có trường password_confirmation
             'phone_number' => 'nullable|string|max:255|unique:users,phone_number',
-            'status' => ['sometimes', 'required', Rule::in(['active', 'inactive', 'banned'])],
+            // 'status' => ['sometimes', 'required', Rule::in(['active', 'inactive', 'banned'])],
+
         ]);
+        $validatedData['status'] = 'inactive'; // Gán trạng thái chưa hoạt động từ đầu
+
 
         // Password đã được tự động băm bởi $casts['password'] = 'hashed' trong Model
         // Nếu không dùng $casts, bạn cần băm thủ công:
         // $validatedData['password'] = Hash::make($validatedData['password']);
 
-        User::create($validatedData);
+        $user = User::create($validatedData);
 
-        return redirect()->route('admin.users.index')->with('success', 'User created successfully!');
+        // Gửi email xác thực
+        // dd($validatedData);die;
+        $user->sendEmailVerificationNotification();
+
+        return redirect()->route('admin.users.index')->with('success', 'Người dùng đã được thêm thành công!');
     }
 
     /**
@@ -88,7 +113,7 @@ class UserController extends Controller
 
         $user->update($validatedData);
 
-        return redirect()->route('admin.users.index')->with('success', 'User updated successfully!');
+        return redirect()->route('admin.users.index')->with('success', 'Người dùng đã được cập nhật!');
     }
 
     /**
@@ -97,6 +122,6 @@ class UserController extends Controller
     public function destroy(User $user) // Route Model Binding
     {
         $user->delete();
-        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully!');
+        return redirect()->route('admin.users.index')->with('success', 'Người dùng đã bị xóa!');
     }
 }
