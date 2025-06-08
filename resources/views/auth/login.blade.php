@@ -279,14 +279,7 @@
                         <input type="checkbox" class="form-check-input" id="save-pass" name="remember">
                         <label for="save-pass" class="form-check-label">Nhớ mật khẩu</label>
                     </div>
-
-                    <!-- Optional Privacy Policy Checkbox -->
-                    <div class="form-check mb-4">
-                        <input type="checkbox" class="form-check-input" id="privacy" required>
-                        <label for="privacy" class="form-check-label">
-                            Tôi đã đọc và chấp nhận <a class="text-dark-emphasis" href="#!">Chính sách bảo mật</a>
-                        </label>
-                    </div>
+        
 
                     <!-- Forgot password & Submit -->
                     <div class="d-flex justify-content-between align-items-center mb-3">

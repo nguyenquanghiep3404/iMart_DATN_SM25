@@ -92,10 +92,18 @@
             </ul>
           </div>
 
-          <!-- Search toggle button visible on screens < 992px wide (lg breakpoint) -->
-          <button type="button" class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none" data-bs-toggle="collapse" data-bs-target="#searchBar" aria-expanded="false" aria-controls="searchBar" aria-label="Toggle search bar">
+          <!-- Nút bật/tắt thanh tìm kiếm (chỉ hiện trên màn hình nhỏ hơn 992px) -->
+          <button type="button"
+            class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none"
+            data-bs-toggle="collapse"
+            data-bs-target="#searchBar"
+            aria-expanded="false"
+            aria-controls="searchBar"
+            aria-label="Toggle search bar"
+            title="Tìm kiếm">
             <i class="ci-search animate-target"></i>
           </button>
+
 
           <!-- Account button visible on screens > 768px wide (md breakpoint) -->
           <li class="nav-item dropdown d-none d-md-inline-flex">
@@ -130,7 +138,6 @@
               @endguest
             </ul>
           </li>
-
 
 
           <!-- Wishlist button visible on screens > 768px wide (md breakpoint) -->
@@ -265,6 +272,7 @@
                     </li>
                   </ul>
                 </li>
+
                 <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop</a>
                   <div class="dropdown-menu rounded-4 p-4">

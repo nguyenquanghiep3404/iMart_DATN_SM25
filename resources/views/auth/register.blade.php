@@ -325,16 +325,17 @@
                     </div>
 
                     <!-- Login Redirect -->
-                    <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
                         <div class="form-check me-2">
                             <input type="checkbox" class="form-check-input" id="remember-register">
                             <label for="remember-register" class="form-check-label">Nhớ mật khẩu</label>
                         </div>
-                        <div class="nav">
-                            <a class="nav-link animate-underline p-0" href="{{ route('login') }}">
-                                <span class="animate-target">Đã đăng ký chưa?</span>
-                            </a>
-                        </div>
+                    </div>
+                    <div class="form-check mb-4">
+                        <input type="checkbox" class="form-check-input" id="privacy" required>
+                        <label for="privacy" class="form-check-label">
+                            Tôi đã đọc và chấp nhận <a class="text-dark-emphasis" href="#!">Chính sách bảo mật</a>
+                        </label>
                     </div>
 
                     <button type="submit" class="btn btn-lg btn-primary w-100">Đăng ký</button>
@@ -400,7 +401,7 @@
                                                 <span class="position-absolute top-0 start-0 w-100 h-100 bg-body-secondary rounded-pill d-none d-block-dark"></span>
                                                 <i class="ci-mail position-relative z-2 fs-4 m-1"></i>
                                             </div>
-                                            <h3 class="h6 pt-2 my-2">Đăng ký sản phẩm yêu thích của bạns</h3>
+                                            <h3 class="h6 pt-2 my-2">Đăng ký sản phẩm yêu thích của bạn</h3>
                                         </div>
                                     </div>
                                 </div>
