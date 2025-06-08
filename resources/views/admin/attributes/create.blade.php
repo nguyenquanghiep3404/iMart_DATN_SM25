@@ -103,7 +103,7 @@
                                 <input type="text" id="attribute_name" name="name" 
                                        class="form-input @error('name') is-invalid @enderror" 
                                        placeholder="Ví dụ: Màu sắc, Kích thước" 
-                                       value="{{ old('name') }}" required>
+                                       value="{{ old('name') }}">
                                 @error('name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -126,7 +126,7 @@
                             <div>
                                 <label for="display_type" class="form-label">Kiểu hiển thị <span class="text-red-500">*</span></label>
                                 <select id="display_type" name="display_type" 
-                                        class="form-select @error('display_type') is-invalid @enderror" required>
+                                        class="form-select @error('display_type') is-invalid @enderror">
                                     <option value="" disabled {{ old('display_type') ? '' : 'selected' }}>-- Chọn kiểu hiển thị --</option>
                                     {{-- Controller của bạn chỉ có 3 kiểu này, nếu thêm cần cập nhật cả ở controller --}}
                                     <option value="select" {{ old('display_type') == 'select' ? 'selected' : '' }}>Select Box</option>

@@ -3,53 +3,48 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardAdminController;
-// use App\Http\Controllers\Admin\DashboardController as DashboardAdminController; // Alias để tránh trùng tên
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Users\HomeController;
+use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\Users\WishlistController;
+
 
 
 
 //==========================================================================
 // FRONTEND ROUTES (PUBLIC)
 //==========================================================================
-Route::get('/', [HomeController::class, 'index'])->name('users.home');
+
+Route::get('/', [HomeController::class, 'index'])->name('users.home');  // Trang chủ, không cần đăng nhập
 Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.products.show');
-Route::get('/products', [HomeController::class, 'allProducts'])->name('users.products.all');
+Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+// các trang không cần đăng nhập ở dưới đây
 
-
-// Hiển thị trang wishlist cho khách vãng lai và user
-Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-
-
-// Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
-require __DIR__ . '/auth.php';
-
-// Routes yêu cầu xác thực cho người dùng thông thường
+// Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard mặc định của Breeze
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-
-    // Profile routes của Breeze
+    
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-
+// Hiển thị trang wishlist cho khách vãng lai và user
+Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
+Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSelected'])->name('wishlist.removeSelected');
 //==========================================================================
 // ADMIN ROUTES
 //==========================================================================
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth']) // Thêm middleware kiểm tra vai trò admin ở đây nếu cần, ví dụ: 'auth', 'role:admin'
+    ->middleware(['auth', 'role:admin,content_manager'])
     ->group(function () {
         // http://127.0.0.1:8000/admin/dashboard
-        Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('admin.dashboard');
+        Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('dashboard');
 
         // Product routes
         // --- Routes cho Quản Lý Sản Phẩm ---
@@ -61,6 +56,18 @@ Route::prefix('admin')
         // Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
         // Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
         // Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+
+        // User routes
+        // --- Routes cho Quản Lí Người Dùng ---
+        // Route::resource('users', UserController::class);
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
 
         // Route riêng cho việc xóa ảnh gallery của sản phẩm
         // {uploadedFile} ở đây sẽ là ID của bản ghi trong bảng uploaded_files
@@ -92,3 +99,7 @@ Route::prefix('admin')
         // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
     });
 
+
+
+// Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
+require __DIR__ . '/auth.php';
