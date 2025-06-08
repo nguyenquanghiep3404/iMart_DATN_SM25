@@ -37,6 +37,8 @@
     <link rel="preload" href="{{ asset ('assets/users/css/theme.rtl.min.css') }}" as="style">
     <link rel="stylesheet" href="{{ asset ('assets/users/css/theme.min.css') }}" id="theme-styles">
 
+    
+
     <!-- Customizer -->
     <script src="{{ asset ('assets/users/js/customizer.min.js') }}"></script>
     <!-- Scripts -->
@@ -66,10 +68,15 @@
     <!-- Vendor scripts -->
     <script src="{{ asset ('assets/users/vendor/swiper/swiper-bundle.min.js') }}"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
     <!-- Bootstrap + Theme scripts -->
-    <script src="{{ asset ('assets/users/js/theme.min.js') }}"></script>
+    {{-- <script src="{{ asset ('assets/users/js/theme.min.js') }}"></script> --}}
 
     @stack('scripts') {{-- Cho phép các trang con thêm JS cụ thể --}}
+
+
 
 </body>
 
