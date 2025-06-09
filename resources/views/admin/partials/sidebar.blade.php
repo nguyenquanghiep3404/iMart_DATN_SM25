@@ -171,7 +171,7 @@
 
                 {{-- 4. Đơn hàng --}}
                 <li>
-                    @php $isOrdersActive = request()->routeIs('admin.orders.*'); @endphp
+                    @php $isOrdersActive = request()->routeIs('admin.orders.index'); @endphp
                     <button @click="openNav !== 3 ? openNav = 3 : openNav = null"
                         :class="openNav === 3 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
                             'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
@@ -196,7 +196,7 @@
                     </button>
                     <ul x-show="openNav === 3" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
-                            <a href="{{-- {{ route('admin.orders.index') }}" {{-- Giả sử route --}}
+                            <a href="{{ route('admin.orders.index') }}" 
                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('admin.orders.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
