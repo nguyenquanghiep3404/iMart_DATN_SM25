@@ -45,6 +45,15 @@
         .modal-content::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
+
+        /* Pagination styles */
+        #pagination-controls button {
+            transition: all 0.2s ease;
+        }
+        #pagination-controls button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
 </style>
     <div class="max-w-screen-2xl mx-auto">
         <header class="mb-8">
@@ -54,7 +63,7 @@
                     <ol class="flex text-sm text-gray-500">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a></li>
                         <li class="breadcrumb-item text-gray-400 mx-2">/</li>
-                        <li class="breadcrumb-item active text-gray-700 font-medium" aria-current="page">Thuộc tính</li>
+                        <li class="breadcrumb-item active text-gray-700 font-medium" aria-current="page">Danh Sách</li>
                     </ol>
                 </nav>
             </div>
@@ -125,7 +134,12 @@
                 </tbody>
             </table>
             <div id="pagination" class="p-6 flex justify-between items-center">
-                 <!-- Pagination controls will be inserted here -->
+                <div id="pagination-info" class="text-sm text-gray-700">
+                    <!-- Pagination info will be inserted here -->
+                </div>
+                <div id="pagination-controls" class="flex items-center space-x-2">
+                    <!-- Pagination controls will be inserted here -->
+                </div>
             </div>
         </div>
     </div>
@@ -233,33 +247,17 @@
     </div>
 
     <script>
-    // --- MOCK DATA ---
-    const mockOrders = [
-        {
-            id: 1,
-            user_id: 101,
-            order_code: "DH-20230001",
-            customer_name: "Nguyễn Văn An",
-            customer_email: "an.nguyen@example.com",
-            customer_phone: "0987654321",
-            shipping_address_line1: "123 Đường Lê Lợi",
-            shipping_city: "TP. Hồ Chí Minh",
-            shipping_district: "Quận 1",
-            shipping_ward: "Phường Bến Nghé",
-            sub_total: 25000000,
-            shipping_fee: 50000,
-            discount_amount: 0,
-            grand_total: 25050000,
-            payment_method: "COD",
-            payment_status: "pending",
-            status: "pending_confirmation",
-            notes_from_customer: "Giao hàng trong giờ hành chính.",
-            created_at: "2023-10-27T10:00:00Z",
-            items: [
-                { name: "iPhone 15 Pro Max 256GB - Titan Tự nhiên", quantity: 1, price: 25000000 }
-            ]
+    // --- CONFIGURATION ---
+    const CONFIG = {
+        routes: {
+            index: '{{ route("admin.orders.index") }}',
         },
-    ];
+        csrfToken: '{{ csrf_token() }}'
+    };
+
+    // Global pagination state
+    let currentPage = 1;
+    let totalPages = 1;
 
     // --- UTILITY FUNCTIONS ---
     const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -304,14 +302,11 @@
                 <td class="p-6"><span class="status-badge ${paymentStatus.class}">${paymentStatus.text}</span></td>
                 <td class="p-6">${formatDate(order.created_at)}</td>
                 <td class="p-6 text-center">
-                    <button onclick='viewOrder(${JSON.stringify(order)})' class="text-indigo-600 hover:text-indigo-900 font-medium text-lg" title="Xem chi tiết">
+                    <button onclick='viewOrder(${order.id})' class="text-indigo-600 hover:text-indigo-900 font-medium text-lg" title="Xem chi tiết">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="text-green-600 hover:text-green-900 font-medium text-lg ml-4" title="Cập nhật trạng thái">
+                    <button onclick='showUpdateStatusModal(${order.id}, "${order.status}")' class="text-green-600 hover:text-green-900 font-medium text-lg ml-4" title="Cập nhật trạng thái">
                          <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="text-red-600 hover:text-red-900 font-medium text-lg ml-4" title="Hủy đơn hàng">
-                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
             </tr>
@@ -327,10 +322,131 @@
         tbody.innerHTML = orders.map(renderOrderRow).join('');
     }
 
+    // --- PAGINATION FUNCTIONS ---
+    function renderPagination(paginationData) {
+        const paginationInfo = document.getElementById('pagination-info');
+        const paginationControls = document.getElementById('pagination-controls');
+        
+        // Update pagination info
+        if (paginationData.total > 0) {
+            paginationInfo.innerHTML = `
+                Hiển thị ${paginationData.from} đến ${paginationData.to} trong tổng số ${paginationData.total} kết quả
+            `;
+        } else {
+            paginationInfo.innerHTML = 'Không có dữ liệu';
+        }
+        
+        // Update global state
+        currentPage = paginationData.current_page;
+        totalPages = paginationData.last_page;
+        
+        // Generate pagination controls
+        let paginationHtml = '';
+        
+        // Previous button
+        if (currentPage > 1) {
+            paginationHtml += `
+                <button onclick="goToPage(${currentPage - 1})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `;
+        } else {
+            paginationHtml += `
+                <button disabled class="px-3 py-2 text-sm leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-l-lg cursor-not-allowed">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `;
+        }
+        
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                paginationHtml += `
+                    <button class="px-3 py-2 text-sm leading-tight text-blue-600 bg-blue-50 border border-gray-300 hover:bg-blue-100 hover:text-blue-700">
+                        ${i}
+                    </button>
+                `;
+            } else {
+                paginationHtml += `
+                    <button onclick="goToPage(${i})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700">
+                        ${i}
+                    </button>
+                `;
+            }
+        }
+        
+        // Next button
+        if (currentPage < totalPages) {
+            paginationHtml += `
+                <button onclick="goToPage(${currentPage + 1})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+        } else {
+            paginationHtml += `
+                <button disabled class="px-3 py-2 text-sm leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-r-lg cursor-not-allowed">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+        }
+        
+        paginationControls.innerHTML = paginationHtml;
+    }
+
+    async function goToPage(page) {
+        if (page < 1 || page > totalPages || page === currentPage) return;
+        
+        const formData = new FormData();
+        formData.append('page', page);
+        
+        // Add current filters
+        if (searchInput.value) formData.append('search', searchInput.value);
+        if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
+        if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
+        if (dateFilter.value) formData.append('date_range', dateFilter.value);
+
+        try {
+            const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': CONFIG.csrfToken
+                }
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                renderTable(result.data);
+                renderPagination(result.pagination);
+            }
+        } catch (error) {
+            console.error('Error loading page:', error);
+        }
+    }
+
     // --- MODAL LOGIC ---
     const modal = document.getElementById('order-detail-modal');
 
-    function viewOrder(order) {
+    async function viewOrder(orderId) {
+        try {
+            const response = await fetch(CONFIG.routes.show.replace(':id', orderId));
+            const result = await response.json();
+            
+            if (result.success) {
+                const order = result.data;
+                populateModal(order);
+                modal.classList.add('is-open');
+                modal.querySelector('div').classList.remove('scale-95');
+            }
+        } catch (error) {
+            console.error('Error fetching order details:', error);
+            alert('Có lỗi xảy ra khi tải thông tin đơn hàng');
+        }
+    }
+
+    function populateModal(order) {
         document.getElementById('modal-order-code').textContent = order.order_code;
         document.getElementById('modal-customer-name').textContent = order.customer_name;
         document.getElementById('modal-customer-email').textContent = order.customer_email;
@@ -343,7 +459,6 @@
         `;
 
         document.getElementById('modal-customer-notes').textContent = order.notes_from_customer || "Không có ghi chú.";
-
         document.getElementById('modal-order-date').textContent = formatDate(order.created_at);
         
         const orderStatus = statusMap[order.status];
@@ -362,10 +477,10 @@
         const itemsTbody = document.getElementById('modal-order-items');
         itemsTbody.innerHTML = order.items.map(item => `
             <tr class="border-b last:border-none">
-                <td class="p-3 font-medium">${item.name}</td>
+                <td class="p-3 font-medium">${item.product_name}</td>
                 <td class="p-3 text-center">${item.quantity}</td>
                 <td class="p-3 text-right">${formatCurrency(item.price)}</td>
-                <td class="p-3 text-right font-semibold">${formatCurrency(item.price * item.quantity)}</td>
+                <td class="p-3 text-right font-semibold">${formatCurrency(item.total_price)}</td>
             </tr>
         `).join('');
 
@@ -374,9 +489,6 @@
         document.getElementById('modal-shipping-fee').textContent = formatCurrency(order.shipping_fee);
         document.getElementById('modal-discount').textContent = `- ${formatCurrency(order.discount_amount)}`;
         document.getElementById('modal-grand-total').textContent = formatCurrency(order.grand_total);
-        
-        modal.classList.add('is-open');
-        modal.querySelector('div').classList.remove('scale-95');
     }
 
     function closeModal() {
@@ -397,28 +509,33 @@
     const paymentStatusFilter = document.getElementById('payment-status');
     const dateFilter = document.getElementById('date-range');
     
-    function applyFilters() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const orderStatus = orderStatusFilter.value;
-        const paymentStatus = paymentStatusFilter.value;
-        const selectedDate = dateFilter.value;
+    async function applyFilters() {
+        const formData = new FormData();
+        
+        // Reset to page 1 when applying filters
+        formData.append('page', 1);
+        
+        if (searchInput.value) formData.append('search', searchInput.value);
+        if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
+        if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
+        if (dateFilter.value) formData.append('date_range', dateFilter.value);
 
-        let filteredOrders = mockOrders.filter(order => {
-            const matchesSearch = searchTerm === '' ||
-                order.order_code.toLowerCase().includes(searchTerm) ||
-                order.customer_name.toLowerCase().includes(searchTerm) ||
-                order.customer_email.toLowerCase().includes(searchTerm) ||
-                order.customer_phone.includes(searchTerm);
+        try {
+            const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': CONFIG.csrfToken
+                }
+            });
             
-            const matchesOrderStatus = orderStatus === '' || order.status === orderStatus;
-            const matchesPaymentStatus = paymentStatus === '' || order.payment_status === paymentStatus;
-
-            const matchesDate = selectedDate === '' || formatDate(order.created_at) === formatDate(selectedDate);
-
-            return matchesSearch && matchesOrderStatus && matchesPaymentStatus && matchesDate;
-        });
-
-        renderTable(filteredOrders);
+            const result = await response.json();
+            if (result.success) {
+                renderTable(result.data);
+                renderPagination(result.pagination);
+            }
+        } catch (error) {
+            console.error('Error applying filters:', error);
+        }
     }
     
     document.getElementById('apply-filters').addEventListener('click', applyFilters);
@@ -427,13 +544,47 @@
         orderStatusFilter.value = '';
         paymentStatusFilter.value = '';
         dateFilter.value = '';
-        renderTable(mockOrders);
+        loadOrders();
     });
 
+    // --- INITIAL LOAD ---
+    async function loadOrders() {
+        try {
+            const response = await fetch(CONFIG.routes.index, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': CONFIG.csrfToken
+                }
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                renderTable(result.data);
+                renderPagination(result.pagination);
+            }
+        } catch (error) {
+            console.error('Error loading orders:', error);
+            // Fallback to show initial data from server
+            @if(isset($orders))
+                renderTable(@json($orders->items()));
+            @endif
+        }
+    }
 
-    // --- INITIAL RENDER ---
     document.addEventListener('DOMContentLoaded', () => {
-        renderTable(mockOrders);
+        @if(isset($orders))
+            renderTable(@json($orders->items()));
+            renderPagination({
+                current_page: {{ $orders->currentPage() }},
+                last_page: {{ $orders->lastPage() }},
+                per_page: {{ $orders->perPage() }},
+                total: {{ $orders->total() }},
+                from: {{ $orders->firstItem() ?? 0 }},
+                to: {{ $orders->lastItem() ?? 0 }}
+            });
+        @else
+            loadOrders();
+        @endif
     });
 
     </script>
