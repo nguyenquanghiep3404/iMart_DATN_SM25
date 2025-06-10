@@ -59,4 +59,19 @@ class OrderController extends Controller
         }
         return view('admin.orders.index', compact('orders'));
     }
+    public function show(Order $order)
+    {
+        $order->load([
+            'user:id,name,email,phone_number',
+            'items.productVariant.product:id,name',
+            'items.productVariant.product.coverImage',
+            'processor:id,name',
+            'shipper:id,name'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $order
+        ]);
+    }
 }

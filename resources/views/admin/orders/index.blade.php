@@ -146,7 +146,7 @@
     
     <!-- Order Detail Modal -->
     <div id="order-detail-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl h-full max-h-[90vh] flex flex-col transform transition-transform duration-300 scale-95">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-6xl h-full max-h-[95vh] flex flex-col transform transition-transform duration-300 scale-95">
             <div class="p-6 border-b border-gray-200 flex justify-between items-center">
                 <h2 class="text-2xl font-bold text-gray-800">Chi tiết đơn hàng: <span id="modal-order-code" class="text-indigo-600"></span></h2>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
@@ -174,24 +174,28 @@
                     </div>
                     <!-- Right Column: Order Info & Items -->
                     <div class="lg:col-span-2">
-                        <div class="bg-gray-50 p-4 rounded-lg mb-6">
-                            <h3 class="font-bold text-lg text-gray-800 mb-4">Tổng quan đơn hàng</h3>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                                <div>
-                                    <p class="text-sm text-gray-500">Ngày đặt</p>
-                                    <p class="font-semibold text-gray-800" id="modal-order-date"></p>
+                        <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                            <h3 class="font-bold text-lg text-gray-800 mb-6">Tổng quan đơn hàng</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-4">
+                                    <div>
+                                        <p class="text-sm text-gray-500 mb-1">Ngày đặt</p>
+                                        <p class="font-semibold text-gray-800" id="modal-order-date"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500 mb-1">Trạng thái đơn hàng</p>
+                                        <span id="modal-order-status" class="status-badge"></span>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p class="text-sm text-gray-500">Trạng thái</p>
-                                    <span id="modal-order-status" class="status-badge"></span>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-500">Thanh toán</p>
-                                    <span id="modal-payment-status" class="status-badge"></span>
-                                </div>
-                                <div>
-                                    <p class="text-sm text-gray-500">Phương thức TT</p>
-                                    <p class="font-semibold text-gray-800" id="modal-payment-method"></p>
+                                <div class="space-y-4">
+                                    <div>
+                                        <p class="text-sm text-gray-500 mb-1">Trạng thái thanh toán</p>
+                                        <span id="modal-payment-status" class="status-badge"></span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500 mb-1">Phương thức thanh toán</p>
+                                        <p class="font-semibold text-gray-800" id="modal-payment-method"></p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -251,6 +255,7 @@
     const CONFIG = {
         routes: {
             index: '{{ route("admin.orders.index") }}',
+            show: '{{ route("admin.orders.show", ":id") }}',
         },
         csrfToken: '{{ csrf_token() }}'
     };
@@ -447,48 +452,52 @@
     }
 
     function populateModal(order) {
-        document.getElementById('modal-order-code').textContent = order.order_code;
-        document.getElementById('modal-customer-name').textContent = order.customer_name;
-        document.getElementById('modal-customer-email').textContent = order.customer_email;
-        document.getElementById('modal-customer-phone').textContent = order.customer_phone;
+        document.getElementById('modal-order-code').textContent = order.order_code || 'N/A';
+        document.getElementById('modal-customer-name').textContent = order.customer_name || 'N/A';
+        document.getElementById('modal-customer-email').textContent = order.customer_email || 'N/A';
+        document.getElementById('modal-customer-phone').textContent = order.customer_phone || 'N/A';
         
         document.getElementById('modal-shipping-address').innerHTML = `
-            ${order.shipping_address_line1}<br>
-            ${order.shipping_ward}, ${order.shipping_district},<br>
-            ${order.shipping_city}
+            ${order.shipping_address_line1 || 'N/A'}<br>
+            ${order.shipping_ward || 'N/A'}, ${order.shipping_district || 'N/A'},<br>
+            ${order.shipping_city || 'N/A'}
         `;
 
         document.getElementById('modal-customer-notes').textContent = order.notes_from_customer || "Không có ghi chú.";
-        document.getElementById('modal-order-date').textContent = formatDate(order.created_at);
+        document.getElementById('modal-order-date').textContent = order.created_at ? formatDate(order.created_at) : 'N/A';
         
-        const orderStatus = statusMap[order.status];
+        const orderStatus = statusMap[order.status] || { text: 'N/A', class: '' };
         const modalOrderStatusEl = document.getElementById('modal-order-status');
         modalOrderStatusEl.textContent = orderStatus.text;
         modalOrderStatusEl.className = `status-badge ${orderStatus.class}`;
 
-        const paymentStatus = paymentStatusMap[order.payment_status];
+        const paymentStatus = paymentStatusMap[order.payment_status] || { text: 'N/A', class: '' };
         const modalPaymentStatusEl = document.getElementById('modal-payment-status');
         modalPaymentStatusEl.textContent = paymentStatus.text;
         modalPaymentStatusEl.className = `status-badge ${paymentStatus.class}`;
 
-        document.getElementById('modal-payment-method').textContent = order.payment_method;
+        document.getElementById('modal-payment-method').textContent = order.payment_method || 'N/A';
 
         // Render items
         const itemsTbody = document.getElementById('modal-order-items');
-        itemsTbody.innerHTML = order.items.map(item => `
-            <tr class="border-b last:border-none">
-                <td class="p-3 font-medium">${item.product_name}</td>
-                <td class="p-3 text-center">${item.quantity}</td>
-                <td class="p-3 text-right">${formatCurrency(item.price)}</td>
-                <td class="p-3 text-right font-semibold">${formatCurrency(item.total_price)}</td>
-            </tr>
-        `).join('');
+        if (order.items && Array.isArray(order.items)) {
+            itemsTbody.innerHTML = order.items.map(item => `
+                <tr class="border-b last:border-none">
+                    <td class="p-3 font-medium">${item.product_name || 'N/A'}</td>
+                    <td class="p-3 text-center">${item.quantity || 0}</td>
+                    <td class="p-3 text-right">${formatCurrency(item.price || 0)}</td>
+                    <td class="p-3 text-right font-semibold">${formatCurrency(item.total_price || 0)}</td>
+                </tr>
+            `).join('');
+        } else {
+            itemsTbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-500">Không có sản phẩm</td></tr>';
+        }
 
         // Render totals
-        document.getElementById('modal-sub-total').textContent = formatCurrency(order.sub_total);
-        document.getElementById('modal-shipping-fee').textContent = formatCurrency(order.shipping_fee);
-        document.getElementById('modal-discount').textContent = `- ${formatCurrency(order.discount_amount)}`;
-        document.getElementById('modal-grand-total').textContent = formatCurrency(order.grand_total);
+        document.getElementById('modal-sub-total').textContent = formatCurrency(order.sub_total || 0);
+        document.getElementById('modal-shipping-fee').textContent = formatCurrency(order.shipping_fee || 0);
+        document.getElementById('modal-discount').textContent = `- ${formatCurrency(order.discount_amount || 0)}`;
+        document.getElementById('modal-grand-total').textContent = formatCurrency(order.grand_total || 0);
     }
 
     function closeModal() {
