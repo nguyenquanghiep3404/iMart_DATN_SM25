@@ -346,3 +346,16 @@
     cursor: pointer;
     font-weight: 400;
 }
+/* style thông báo category */
+@keyframes countdown {
+    from { width: 100% }
+    to { width: 0 }
+}
+.progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: currentColor;
+    animation: countdown 5s linear;
+}

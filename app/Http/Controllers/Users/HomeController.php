@@ -2,137 +2,141 @@
 
 namespace App\Http\Controllers\Users;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
 {
     public function index()
     {
-        /**
-         * Hàm xử lý tính trung bình số sao cho mỗi sản phẩm.
-         * Lấy trung bình các đánh giá (reviews) đã nạp sẵn trong collection $products,
-         * và gán vào thuộc tính động $product->average_rating (làm tròn 1 chữ số thập phân).
-         */
         $calculateAverageRating = function ($products) {
             foreach ($products as $product) {
                 $averageRating = $product->reviews->avg('rating') ?? 0;
                 $product->average_rating = round($averageRating, 1);
+
+                $now = now();
+                $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+
+                if ($variant) {
+                    $isOnSale = false;
+
+                    if (
+                        $variant->sale_price
+                        && $variant->sale_price_starts_at
+                        && $variant->sale_price_ends_at
+                        && $variant->price > 0
+                    ) {
+                        try {
+                            $startDate = Carbon::parse($variant->sale_price_starts_at);
+                            $endDate = Carbon::parse($variant->sale_price_ends_at);
+                            $isOnSale = $now->between($startDate, $endDate);
+                        } catch (\Exception $e) {
+                            Log::error('Error parsing dates for product ' . $product->name . ': ' . $e->getMessage());
+                            $isOnSale = false;
+                        }
+                    }
+
+                    $variant->discount_percent = $isOnSale
+                        ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                        : 0;
+                }
             }
         };
 
-        /**
-         * Lấy danh sách sản phẩm nổi bật (`is_featured` = 1)
-         * - Đã publish
-         * - Lấy thêm category, cover image, các biến thể (variants) và các đánh giá được duyệt (approved)
-         * - Đếm số lượng đánh giá đã được duyệt
-         */
+        // Truy vấn sản phẩm nổi bật trực tiếp, không cache
         $featuredProducts = Product::with([
-            'category',            // danh mục sản phẩm
-            'coverImage',          // ảnh bìa
-            'variants',            // các biến thể sản phẩm
+            'category',
+            'coverImage',
+            'variants' => function ($query) {
+                $query->where(function ($q) {
+                    $q->where('is_default', true)
+                        ->orWhereRaw('id = (
+                              select min(id) 
+                              from product_variants pv 
+                              where pv.product_id = product_variants.product_id 
+                              and pv.deleted_at is null
+                          )');
+                })
+                    ->whereNull('deleted_at')
+                    ->select([
+                        'id',
+                        'product_id',
+                        'price',
+                        'sale_price',
+                        'sale_price_starts_at',
+                        'sale_price_ends_at',
+                        'is_default'
+                    ]);
+            },
             'reviews' => function ($query) {
-                // Lọc chỉ lấy đánh giá có status = 'approved' và variant chưa bị xóa mềm
-                $query->where('reviews.status', 'approved')
-                    ->whereHas('productVariant', function ($q) {
-                        $q->whereNull('deleted_at');
-                    });
+                $query->where('reviews.status', 'approved');
             }
         ])
             ->withCount([
-                // Đếm số lượng đánh giá được duyệt (approved_reviews_count)
                 'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved')
-                        ->whereHas('productVariant', function ($q) {
-                            $q->whereNull('deleted_at');
-                        });
+                    $query->where('reviews.status', 'approved');
                 }
             ])
-            ->where('is_featured', 1)         // là sản phẩm nổi bật
-            ->where('status', 'published')    // đã được đăng
-            ->latest()                        // mới nhất
-            ->take(8)                         // lấy 8 sản phẩm
+            ->where('is_featured', 1)
+            ->where('status', 'published')
+            ->where(function ($query) {
+                $query->where('type', 'simple')
+                    ->orWhereHas('variants', function ($q) {
+                        $q->whereNull('deleted_at');
+                    });
+            })
+            ->latest()
+            ->take(8)
             ->get();
 
-        // Gán average_rating cho từng sản phẩm nổi bật
         $calculateAverageRating($featuredProducts);
 
-        /**
-         * Lấy các sản phẩm mới nhất
-         * - Điều kiện lọc & quan hệ tương tự như trên, chỉ không có `is_featured`
-         */
+        // Truy vấn sản phẩm mới nhất trực tiếp, không cache
         $latestProducts = Product::with([
             'category',
             'coverImage',
-            'variants',
+            'variants' => function ($query) {
+                $query->where('is_default', true)
+                    ->orWhereRaw('id = (
+                            select min(id) 
+                            from product_variants pv 
+                            where pv.product_id = product_variants.product_id 
+                            and pv.deleted_at is null
+                        )')
+                    ->whereNull('deleted_at');
+            },
             'reviews' => function ($query) {
-                $query->where('reviews.status', 'approved')
-                    ->whereHas('productVariant', function ($q) {
-                        $q->whereNull('deleted_at');
-                    });
+                $query->where('reviews.status', 'approved');
             }
         ])
             ->withCount([
                 'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved')
-                        ->whereHas('productVariant', function ($q) {
-                            $q->whereNull('deleted_at');
-                        });
+                    $query->where('reviews.status', 'approved');
                 }
             ])
             ->where('status', 'published')
+            ->where(function ($query) {
+                $query->where('type', 'simple')
+                    ->orWhereHas('variants', function ($q) {
+                        $q->whereNull('deleted_at');
+                    });
+            })
             ->latest()
             ->take(8)
             ->get();
 
-        // Gán average_rating cho từng sản phẩm mới
         $calculateAverageRating($latestProducts);
 
-        /**
-         * Lấy sản phẩm đang giảm giá (sale)
-         * - Biến thể sản phẩm có sale_price và nằm trong thời gian sale
-         */
-        $saleProducts = Product::with([
-            'category',
-            'coverImage',
-            'variants',
-            'reviews' => function ($query) {
-                $query->where('reviews.status', 'approved')
-                    ->whereHas('productVariant', function ($q) {
-                        $q->whereNull('deleted_at');
-                    });
-            }
-        ])
-            ->withCount([
-                'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved')
-                        ->whereHas('productVariant', function ($q) {
-                            $q->whereNull('deleted_at');
-                        });
-                }
-            ])
-            ->whereHas('variants', function ($query) {
-                $query->whereNotNull('sale_price')                  // có giá giảm
-                    ->where('sale_price_starts_at', '<=', now())  // đã bắt đầu giảm giá
-                    ->where('sale_price_ends_at', '>=', now());   // chưa hết giảm giá
-            })
-            ->where('status', 'published')
-            ->latest()
-            ->take(8)
-            ->get();
-
-        // Gán average_rating cho từng sản phẩm giảm giá
-        $calculateAverageRating($saleProducts);
-
-        /**
-         * Trả về view trang chủ với 3 danh sách sản phẩm:
-         * - featuredProducts: sản phẩm nổi bật
-         * - latestProducts: sản phẩm mới nhất
-         * - saleProducts: sản phẩm đang giảm giá
-         */
-        return view('users.home', compact('featuredProducts', 'latestProducts', 'saleProducts'));
+        return view('users.home', compact('featuredProducts', 'latestProducts'));
     }
+
+
 
 
     public function show($slug)
@@ -143,10 +147,13 @@ class HomeController extends Controller
             'coverImage',                        // Ảnh đại diện
             'galleryImages',                     // Thư viện ảnh
             'variants.attributeValues.attribute', // Biến thể và các giá trị thuộc tính (VD: màu sắc, dung lượng,...)
+            'variants.images' => function ($query) {
+                $query->where('type', 'variant_image')->orderBy('order');
+            },                                   // Lấy ảnh của biến thể
             'reviews' => function ($query) {
                 // Chỉ lấy các đánh giá đã được duyệt
                 $query->where('reviews.status', 'approved');
-            }
+            },
         ])
             ->withCount([
                 'reviews as reviews_count' => function ($query) {
@@ -181,12 +188,56 @@ class HomeController extends Controller
         }
 
         // Gom tất cả các giá trị thuộc tính từ các biến thể của sản phẩm
-        // Sau đó nhóm theo tên thuộc tính, loại bỏ các giá trị bị trùng theo 'value'
         $attributes = $product->variants
             ->flatMap(fn($variant) => $variant->attributeValues)               // Gom toàn bộ các attributeValues
             ->groupBy(fn($attrValue) => $attrValue->attribute->name)           // Nhóm theo tên thuộc tính (ví dụ: Màu sắc, Kích thước,...)
             ->map(fn($group) => $group->unique('value'));                      // Loại bỏ giá trị trùng (VD: tránh lặp lại "11 inch")
 
+        // Tạo mảng ánh xạ biến thể (variantData) để sử dụng trong JavaScript
+        $variantData = [];
+        foreach ($product->variants as $variant) {
+            $now = now();
+            $salePrice = (int) $variant->sale_price;
+            $originalPrice = (int) $variant->price;
+            $isOnSale = $variant->sale_price !== null &&
+                $variant->sale_price_starts_at <= $now &&
+                $variant->sale_price_ends_at >= $now;
+            $displayPrice = $isOnSale ? $salePrice : $originalPrice;
+
+            // Tạo key từ các thuộc tính của biến thể
+            $variantKey = [];
+            foreach ($variant->attributeValues as $attrValue) {
+                $attrName = $attrValue->attribute->name;
+                $attrValue = $attrValue->value;
+                $variantKey[$attrName] = $attrValue;
+            }
+            ksort($variantKey); // Sắp xếp để đảm bảo key nhất quán
+            $variantKey = implode('_', $variantKey); // Tạo key dạng "Xanh_256GB"
+
+            // Lấy danh sách ảnh của biến thể
+            $images = $variant->images->map(function ($image) {
+                return Storage::url($image->path); // Chuyển đổi đường dẫn ảnh thành URL
+            })->toArray();
+
+            // Nếu không có ảnh cụ thể cho biến thể, fallback về ảnh bìa hoặc gallery mặc định
+            if (empty($images)) {
+                $images = [];
+                if ($product->coverImage) {
+                    $images[] = Storage::url($product->coverImage->path);
+                }
+                foreach ($product->galleryImages as $galleryImage) {
+                    $images[] = Storage::url($galleryImage->path);
+                }
+            }
+
+            // Lưu thông tin biến thể, bao gồm danh sách ảnh
+            $variantData[$variantKey] = [
+                'price' => number_format($displayPrice),
+                'original_price' => $isOnSale && $originalPrice > $salePrice ? number_format($originalPrice) : null,
+                'status' => $variant->status,
+                'images' => $images, // Thêm danh sách ảnh vào variantData
+            ];
+        }
 
         // Lấy 4 sản phẩm liên quan (cùng category, không lấy chính sản phẩm hiện tại)
         $relatedProducts = Product::with(['category', 'coverImage'])
@@ -203,7 +254,79 @@ class HomeController extends Controller
             'ratingCounts',
             'ratingPercentages',
             'totalReviews',
-            'attributes'
+            'attributes',
+            'variantData' // Bổ sung biến $variantData
         ));
+    }
+
+    public function allProducts(Request $request)
+    {
+        $query = Product::with([
+            'category',
+            'coverImage',
+            'variants' => function ($query) {
+                $query->where(function ($q) {
+                    $q->where('is_default', true)
+                        ->orWhereRaw('id = (
+                        select min(id)
+                        from product_variants pv
+                        where pv.product_id = product_variants.product_id
+                        and pv.deleted_at is null
+                    )');
+                })
+                    ->whereNull('deleted_at');
+            },
+            'reviews' => function ($query) {
+                $query->where('reviews.status', 'approved');
+            }
+        ])
+            ->withCount([
+                'reviews as approved_reviews_count' => function ($query) {
+                    $query->where('reviews.status', 'approved');
+                }
+            ])
+            ->where('status', 'published');
+
+        // 🔍 Tìm kiếm theo tên
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        // 🗂 Lọc theo danh mục
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // 💰 Lọc theo khoảng giá
+        if ($request->filled('min_price')) {
+            $query->whereHas('variants', function ($q) use ($request) {
+                $q->where('price', '>=', $request->min_price);
+            });
+        }
+
+        if ($request->filled('max_price')) {
+            $query->whereHas('variants', function ($q) use ($request) {
+                $q->where('price', '<=', $request->max_price);
+            });
+        }
+
+        $products = $query->latest()->paginate(12); // phân trang 12 sản phẩm
+
+        // Tính rating trung bình
+        foreach ($products as $product) {
+            $product->average_rating = round($product->reviews->avg('rating') ?? 0, 1);
+            $variant = $product->variants->first();
+            if ($variant && $variant->sale_price && $variant->sale_price_starts_at && $variant->sale_price_ends_at) {
+                $now = now();
+                $onSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+                $variant->discount_percent = $onSale
+                    ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                    : 0;
+            }
+        }
+
+        $categories = Category::all();
+
+        return view('users.shop', compact('products', 'categories'));
     }
 }

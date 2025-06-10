@@ -110,7 +110,6 @@
     <!-- SẢN PHẨM NỔI BẬT -->
     <section class="container px-4 pt-5 mt-1 mt-sm-2 mt-md-3 mt-lg-4">
         <h2 class="h3 pb-2 pb-sm-3">Sản phẩm nổi bật</h2>
-        <!-- Debug -->
         <div class="d-none">
             Total featured products: {{ $featuredProducts->count() }}
             First 4 products: {{ $featuredProducts->take(4)->count() }}
@@ -124,7 +123,8 @@
                     style="background: #1d2c41 url({{ asset('assets/users/img/home/electronics/banner/background.jpg') }}) center/cover no-repeat">
                     <div class="ratio animate-up-down position-relative z-2 me-lg-4"
                         style="max-width: 320px; margin-bottom: -19%; --cz-aspect-ratio: calc(690 / 640 * 100%)">
-                        <img src="{{ asset('assets/users/img/home/electronics/banner/laptop.png') }}" alt="Laptop">
+                        <img src="{{ asset('assets/users/img/home/electronics/banner/laptop.png') }}" alt="Laptop"
+                            loading="lazy">
                     </div>
                     <h3 class="display-2 mb-2">MacBook</h3>
                     <p class="text-body fw-medium mb-4">Be Pro Anywhere</p>
@@ -135,13 +135,60 @@
                 </div>
             </div>
 
-            <!-- Product list -->
+            <!-- Product list (First 4 products) -->
             <div class="col-sm-6 col-lg-4 d-flex flex-column gap-3 pt-4 py-lg-4">
                 @foreach ($featuredProducts->take(4) as $product)
+                    @php
+                        $variant = $product->variants->first();
+                        $now = now();
+                        $isOnSale = false;
+                        
+                        // Debug raw data
+                        echo "<!-- Debug for {$product->name}:\n";
+                        echo "Variant exists: " . ($variant ? 'Yes' : 'No') . "\n";
+                        if ($variant) {
+                            echo "Raw data:\n";
+                            echo "- Price: " . $variant->price . "\n";
+                            echo "- Sale price: " . $variant->sale_price . "\n";
+                            echo "- Sale starts: " . $variant->sale_price_starts_at . "\n";
+                            echo "- Sale ends: " . $variant->sale_price_ends_at . "\n";
+                            echo "- Now: " . $now . "\n";
+                            echo "- Discount percent: " . ($variant->discount_percent ?? 'Not set') . "\n";
+                        }
+                        
+                        if ($variant 
+                            && $variant->sale_price 
+                            && $variant->sale_price_starts_at 
+                            && $variant->sale_price_ends_at) {
+                            try {
+                                $startDate = \Carbon\Carbon::parse($variant->sale_price_starts_at);
+                                $endDate = \Carbon\Carbon::parse($variant->sale_price_ends_at);
+                                $isOnSale = $now->between($startDate, $endDate);
+                                
+                                echo "Date comparison:\n";
+                                echo "- Start date parsed: " . $startDate . "\n";
+                                echo "- End date parsed: " . $endDate . "\n";
+                                echo "- Is between: " . ($isOnSale ? 'Yes' : 'No') . "\n";
+                            } catch (\Exception $e) {
+                                echo "Error parsing dates: " . $e->getMessage() . "\n";
+                                $isOnSale = false;
+                            }
+                        }
+                        echo "-->";
+                    @endphp
                     <div class="position-relative animate-underline d-flex align-items-center ps-xl-3">
+
+                        {{-- Label giảm giá --}}
+                        @if ($isOnSale && $variant && $variant->discount_percent > 0)
+                            <div class="position-absolute top-0 start-0 bg-danger text-white px-2 py-1 rounded-bottom-end"
+                                style="z-index: 10; font-weight: 600; font-size: 0.85rem;">
+                                Giảm {{ $variant->discount_percent }}%
+                            </div>
+                        @endif
+
                         <div class="ratio ratio-1x1 flex-shrink-0" style="width: 110px">
-                            <img src="{{ asset('assets/users/img/shop/electronics/thumbs/0' . ($loop->iteration * 2 - 1) . '.png') }}"
-                                alt="{{ $product->name }}">
+                            <img src="{{ $product->coverImage ? asset('storage/' . $product->coverImage->path) : asset('assets/users/img/shop/electronics/thumbs/placeholder.png') }}"
+                                alt="{{ $product->name }}" loading="lazy">
                         </div>
                         <div class="w-100 min-w-0 ps-2 ps-sm-3">
                             <div class="d-flex align-items-center gap-2 mb-2">
@@ -167,19 +214,75 @@
                                     <span class="animate-target">{{ $product->name }}</span>
                                 </a>
                             </h4>
-                            <div class="h5 mb-0">{{ number_format($product->variants->first()->price) }}đ</div>
+                            <div class="h5 mb-0">
+                                @if ($isOnSale)
+                                    <span class="text-danger">{{ number_format($variant->sale_price) }}đ</span>
+                                    <del class="text-muted fs-sm ms-2">{{ number_format($variant->price) }}đ</del>
+                                @elseif ($variant)
+                                    {{ number_format($variant->price) }}đ
+                                @else
+                                    <span class="text-muted">Giá không khả dụng</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @endforeach
             </div>
 
-            <!-- Product list -->
+            <!-- Product list (Last 4 products) -->
             <div class="col-sm-6 col-lg-4 d-flex flex-column gap-3 pt-3 py-lg-4">
                 @foreach ($featuredProducts->skip(4)->take(4) as $product)
+                    @php
+                        $variant = $product->variants->first();
+                        $now = now();
+                        $isOnSale = false;
+                        
+                        // Debug raw data
+                        echo "<!-- Debug for {$product->name}:\n";
+                        echo "Variant exists: " . ($variant ? 'Yes' : 'No') . "\n";
+                        if ($variant) {
+                            echo "Raw data:\n";
+                            echo "- Price: " . $variant->price . "\n";
+                            echo "- Sale price: " . $variant->sale_price . "\n";
+                            echo "- Sale starts: " . $variant->sale_price_starts_at . "\n";
+                            echo "- Sale ends: " . $variant->sale_price_ends_at . "\n";
+                            echo "- Now: " . $now . "\n";
+                            echo "- Discount percent: " . ($variant->discount_percent ?? 'Not set') . "\n";
+                        }
+                        
+                        if ($variant 
+                            && $variant->sale_price 
+                            && $variant->sale_price_starts_at 
+                            && $variant->sale_price_ends_at) {
+                            try {
+                                $startDate = \Carbon\Carbon::parse($variant->sale_price_starts_at);
+                                $endDate = \Carbon\Carbon::parse($variant->sale_price_ends_at);
+                                $isOnSale = $now->between($startDate, $endDate);
+                                
+                                echo "Date comparison:\n";
+                                echo "- Start date parsed: " . $startDate . "\n";
+                                echo "- End date parsed: " . $endDate . "\n";
+                                echo "- Is between: " . ($isOnSale ? 'Yes' : 'No') . "\n";
+                            } catch (\Exception $e) {
+                                echo "Error parsing dates: " . $e->getMessage() . "\n";
+                                $isOnSale = false;
+                            }
+                        }
+                        echo "-->";
+                    @endphp
                     <div class="position-relative animate-underline d-flex align-items-center ps-xl-3">
+
+                        {{-- Label giảm giá --}}
+                        @if ($isOnSale && $variant && $variant->discount_percent > 0)
+                            <div class="position-absolute top-0 start-0 bg-danger text-white px-2 py-1 rounded-bottom-end"
+                                style="z-index: 10; font-weight: 600; font-size: 0.85rem;">
+                                Giảm {{ $variant->discount_percent }}%
+                            </div>
+                        @endif
+
                         <div class="ratio ratio-1x1 flex-shrink-0" style="width: 110px">
-                            <img src="{{ asset('assets/users/img/shop/electronics/thumbs/0' . $loop->iteration * 2 . '.png') }}"
-                                alt="{{ $product->name }}">
+                            <img src="{{ $product->coverImage ? asset('storage/' . $product->coverImage->path) : asset('assets/users/img/shop/electronics/thumbs/placeholder.png') }}"
+                                alt="{{ $product->name }}" loading="lazy">
                         </div>
                         <div class="w-100 min-w-0 ps-2 ps-sm-3">
                             <div class="d-flex align-items-center gap-2 mb-2">
@@ -205,7 +308,16 @@
                                     <span class="animate-target">{{ $product->name }}</span>
                                 </a>
                             </h4>
-                            <div class="h5 mb-0">{{ number_format($product->variants->first()->price) }}đ</div>
+                            <div class="h5 mb-0">
+                                @if ($isOnSale)
+                                    <span class="text-danger">{{ number_format($variant->sale_price) }}đ</span>
+                                    <del class="text-muted fs-sm ms-2">{{ number_format($variant->price) }}đ</del>
+                                @elseif ($variant)
+                                    {{ number_format($variant->price) }}đ
+                                @else
+                                    <span class="text-muted">Giá không khả dụng</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @endforeach
@@ -220,7 +332,7 @@
         <div class="d-flex align-items-center justify-content-between border-bottom pb-3 pb-md-4">
             <h2 class="h3 mb-0">Sản phẩm mới nhất của chúng tôi</h2>
             <div class="nav ms-3">
-                <a class="nav-link animate-underline px-0 py-2" href="#">
+                <a class="nav-link animate-underline px-0 py-2" href="/products">
                     <span class="animate-target">Xem tất cả</span>
                     <i class="ci-chevron-right fs-base ms-1"></i>
                 </a>
@@ -232,41 +344,75 @@
                 <div class="col">
                     <div class="product-card animate-underline hover-effect-opacity bg-body rounded">
                         <div class="position-relative">
+                            @php
+                                $variant = $product->variants->first();
+                                $now = now();
+                                $onSale =
+                                    $variant &&
+                                    $variant->sale_price &&
+                                    $variant->sale_price_starts_at &&
+                                    $variant->sale_price_ends_at &&
+                                    $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+
+                                $price = $onSale ? $variant->sale_price : $variant->price;
+                                $originalPrice = $onSale ? $variant->price : null;
+                            @endphp
+
+                            @if ($onSale && $variant->discount_percent > 0)
+                                <div class="position-absolute top-0 start-0 bg-danger text-white px-2 py-1 rounded-bottom-end"
+                                    style="z-index: 10; font-weight: 600; font-size: 0.85rem;">
+                                    Giảm {{ $variant->discount_percent }}%
+                                </div>
+                            @endif
+
                             <a class="d-block rounded-top overflow-hidden p-3 p-sm-4"
                                 href="{{ route('users.products.show', $product->slug) }}">
                                 <div class="ratio" style="--cz-aspect-ratio: calc(240 / 258 * 100%)">
-                                    <img src="{{ asset('assets/users/img/shop/electronics/01.png') }}"
-                                        alt="{{ $product->name }}">
+                                    <img src="{{ $product->coverImage ? asset('storage/' . $product->coverImage->path) : asset('assets/users/img/shop/electronics/thumbs/placeholder.png') }}"
+                                        alt="{{ $product->name }}" loading="lazy">
                                 </div>
                             </a>
                         </div>
+
                         <div class="w-100 min-w-0 px-1 pb-2 px-sm-3 pb-sm-3">
                             <div class="d-flex align-items-center gap-2 mb-2">
                                 <div class="d-flex gap-1 fs-xs">
                                     @php
                                         $rating = $product->average_rating ?? 0;
                                         for ($i = 1; $i <= 5; $i++) {
-                                            if ($rating >= $i) {
-                                                echo '<i class="ci-star-filled text-warning"></i>';
-                                            } elseif ($rating > $i - 1 && $rating < $i) {
-                                                echo '<i class="ci-star-half text-warning"></i>';
-                                            } else {
-                                                echo '<i class="ci-star text-body-tertiary opacity-75"></i>';
-                                            }
+                                            echo $rating >= $i
+                                                ? '<i class="ci-star-filled text-warning"></i>'
+                                                : ($rating > $i - 1
+                                                    ? '<i class="ci-star-half text-warning"></i>'
+                                                    : '<i class="ci-star text-body-tertiary opacity-75"></i>');
                                         }
                                     @endphp
                                 </div>
                                 <span
                                     class="text-body-tertiary fs-xs">({{ $product->approved_reviews_count ?? 0 }})</span>
                             </div>
+
                             <h3 class="pb-1 mb-2">
                                 <a class="d-block fs-sm fw-medium text-truncate"
                                     href="{{ route('users.products.show', $product->slug) }}">
                                     <span class="animate-target">{{ $product->name }}</span>
                                 </a>
                             </h3>
+
                             <div class="d-flex align-items-center justify-content-between">
-                                <div class="h5 lh-1 mb-0">{{ number_format($product->variants->first()->price) }}đ</div>
+                                <div class="h5 lh-1 mb-0">
+                                    @if ($price)
+                                        @if ($onSale)
+                                            <span class="text-danger">{{ number_format($price) }}đ</span>
+                                            <del class="text-muted fs-sm ms-2">{{ number_format($originalPrice) }}đ</del>
+                                        @else
+                                            {{ number_format($price) }}đ
+                                        @endif
+                                    @else
+                                        <span class="text-muted">Giá không khả dụng</span>
+                                    @endif
+                                </div>
+
                                 <button type="button"
                                     class="product-card-button btn btn-icon btn-secondary animate-slide-end ms-2"
                                     aria-label="Add to Cart">
@@ -277,121 +423,6 @@
                     </div>
                 </div>
             @endforeach
-        </div>
-    </section>
-
-
-    <!-- SẢN PHẨM ĐANG GIẢM GIÁ -->
-    <!-- SẢN PHẨM ĐANG GIẢM GIÁ -->
-    <section class="container px-4 pt-5 mt-2 mt-sm-3 mt-lg-4">
-        <div class="d-flex align-items-start align-items-md-center justify-content-between border-bottom pb-3 pb-md-4">
-            <div class="d-md-flex align-items-center">
-                <h2 class="h3 pe-3 me-3 mb-md-0">Sản phẩm đang khuyến mãi</h2>
-            </div>
-            <div class="nav ms-3">
-                <a class="nav-link animate-underline px-0 py-2" href="#">
-                    <span class="animate-target text-nowrap">Xem tất cả</span>
-                    <i class="ci-chevron-right fs-base ms-1"></i>
-                </a>
-            </div>
-        </div>
-
-        <div class="position-relative mx-md-1">
-            <div class="swiper py-4 px-sm-3"
-                data-swiper='{
-                "slidesPerView": 2,
-                "spaceBetween": 24,
-                "loop": true,
-                "navigation": {
-                  "prevEl": ".offers-prev",
-                  "nextEl": ".offers-next"
-                },
-                "breakpoints": {
-                  "768": {
-                    "slidesPerView": 3
-                  },
-                  "992": {
-                    "slidesPerView": 4
-                  }
-                }
-            }'>
-                <div class="swiper-wrapper">
-                    @foreach ($saleProducts as $product)
-                        <div class="swiper-slide">
-                            <div class="product-card animate-underline hover-effect-opacity bg-body rounded">
-                                <div class="position-relative">
-                                    <a class="d-block rounded-top overflow-hidden p-3 p-sm-4"
-                                        href="{{ route('users.products.show', $product->slug) }}">
-                                        @if ($product->variants->first() && $product->variants->first()->sale_price)
-                                            <span
-                                                class="badge bg-danger position-absolute top-0 start-0 mt-2 ms-2 mt-lg-3 ms-lg-3">
-                                                -{{ round((($product->variants->first()->price - $product->variants->first()->sale_price) / $product->variants->first()->price) * 100) }}%
-                                            </span>
-                                        @endif
-                                        <div class="ratio" style="--cz-aspect-ratio: calc(240 / 258 * 100%)">
-                                            <img src="{{ asset('assets/users/img/shop/electronics/01.png') }}"
-                                                alt="{{ $product->name }}">
-                                        </div>
-                                    </a>
-                                </div>
-                                <div class="w-100 min-w-0 px-1 pb-2 px-sm-3 pb-sm-3">
-                                    {{-- Đánh giá sao --}}
-                                    <div class="d-flex align-items-center gap-2 mb-2">
-                                        <div class="d-flex gap-1 fs-xs">
-                                            @php
-                                                $fullStars = floor($product->average_rating);
-                                                $hasHalfStar = $product->average_rating - $fullStars >= 0.5;
-                                                $emptyStars = 5 - $fullStars - ($hasHalfStar ? 1 : 0);
-                                            @endphp
-
-                                            @for ($i = 0; $i < $fullStars; $i++)
-                                                <i class="ci-star-filled text-warning"></i>
-                                            @endfor
-
-                                            @if ($hasHalfStar)
-                                                <i class="ci-star-half text-warning"></i>
-                                            @endif
-
-                                            @for ($i = 0; $i < $emptyStars; $i++)
-                                                <i class="ci-star text-muted"></i>
-                                            @endfor
-                                        </div>
-                                        <span
-                                            class="text-body-tertiary fs-xs">({{ $product->approved_reviews_count }})</span>
-                                    </div>
-
-                                    {{-- Tên sản phẩm --}}
-                                    <h3 class="pb-1 mb-2">
-                                        <a class="d-block fs-sm fw-medium text-truncate"
-                                            href="{{ route('users.products.show', $product->slug) }}">
-                                            <span class="animate-target">{{ $product->name }}</span>
-                                        </a>
-                                    </h3>
-
-                                    {{-- Giá bán --}}
-                                    <div class="d-flex align-items-center justify-content-between pb-2 mb-1">
-                                        <div class="h5 lh-1 mb-0">
-                                            @if ($product->variants->first() && $product->variants->first()->sale_price)
-                                                {{ number_format($product->variants->first()->sale_price) }}đ
-                                                <del class="text-body-tertiary fs-sm fw-normal">
-                                                    {{ number_format($product->variants->first()->price) }}đ
-                                                </del>
-                                            @else
-                                                {{ number_format($product->variants->first()->price) }}đ
-                                            @endif
-                                        </div>
-                                        <button type="button"
-                                            class="product-card-button btn btn-icon btn-secondary animate-slide-end ms-2"
-                                            aria-label="Add to Cart">
-                                            <i class="ci-shopping-cart fs-base animate-target"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
         </div>
     </section>
 
@@ -467,6 +498,8 @@
             </div>
         </div>
     </section>
+
+
 @endsection
 
 @push('styles')

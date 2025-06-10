@@ -50,4 +50,12 @@ class Review extends Model
     {
         return $this->morphMany(Comment::class, 'commentable')->whereNull('parent_id')->orderBy('created_at');
     }
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+    public function variant()
+    {
+        return $this->belongsTo(\App\Models\ProductVariant::class, 'product_variant_id');
+    }
 }

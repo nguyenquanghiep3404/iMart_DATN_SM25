@@ -126,7 +126,6 @@
               @guest
               <li><a class="dropdown-item" href="{{ route('login') }}">Đăng nhập</a></li>
               <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
-              <li><a class="dropdown-item" href="{{ route('password.request') }}">Quên mật khẩu</a></li>
               @else
               <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
               <li>

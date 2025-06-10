@@ -158,7 +158,7 @@
             <nav aria-label="breadcrumb" class="mt-1">
                 <ol class="flex text-xs text-gray-500">
                     <li class="breadcrumb-item">
-                        <a href="{{ route('admin.admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a>
+                        <a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a>
                     </li>
                     <li class="breadcrumb-item text-gray-400 mx-2">/</li>
                     <li class="breadcrumb-item active text-gray-700" aria-current="page">Người dùng</li>

@@ -123,7 +123,4 @@ public function cart()
         // exists() sẽ trả về true ngay khi tìm thấy một kết quả, rất hiệu quả.
         return $this->roles()->whereIn('name', $roles)->exists();
     }
-
 }
-
-
