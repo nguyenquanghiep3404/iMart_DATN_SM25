@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use App\Http\Requests\OrderRequest;
+
 
 class OrderController extends Controller
 {
@@ -73,5 +75,115 @@ class OrderController extends Controller
             'success' => true,
             'data' => $order
         ]);
+    }
+
+    public function updateStatus(OrderRequest $request, Order $order)
+    {
+        // BƯỚC 1: Kiểm tra quyền chỉnh sửa
+        if (!$order->isEditable() && $order->status !== $request->status) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Đơn hàng đã hoàn thành hoặc bị hủy, không thể thay đổi trạng thái.',
+                'errors' => ['status' => ['Đơn hàng không thể chỉnh sửa.']]
+            ], 422);
+        }
+
+        try {
+            // BƯỚC 2: Lưu trạng thái cũ để ghi log
+            $oldStatus = $order->status;
+            
+            // BƯỚC 3: Chuẩn bị dữ liệu cập nhật cơ bản
+            $updateData = [
+                'status' => $request->status,
+                'processed_by' => auth()->id(), // Ai cập nhật
+            ];
+            
+            // Thêm ghi chú admin nếu có
+            if ($request->filled('admin_note')) {
+                $updateData['admin_note'] = $request->admin_note;
+            }
+            
+            // BƯỚC 4: Xử lý logic đặc biệt theo từng trạng thái
+            switch ($request->status) {
+                case Order::STATUS_SHIPPED: // Xuất kho
+                case Order::STATUS_OUT_FOR_DELIVERY: // Đang giao
+                    if ($request->filled('shipped_by')) {
+                        $updateData['shipped_by'] = $request->shipped_by;
+                    }
+                    break;
+                    
+                case Order::STATUS_DELIVERED: // Giao thành công
+                    $updateData['delivered_at'] = now();
+                    // TỰ ĐỘNG: COD + chưa thanh toán → đánh dấu đã thanh toán
+                    if ($order->payment_method === 'cod' && $order->payment_status === Order::PAYMENT_PENDING) {
+                        $updateData['payment_status'] = Order::PAYMENT_PAID;
+                    }
+                    break;
+                    
+                case Order::STATUS_CANCELLED: // Hủy đơn
+                    $updateData['cancelled_at'] = now();
+                    $updateData['cancellation_reason'] = $request->cancellation_reason;
+                    // TỰ ĐỘNG: Đã thanh toán → hoàn tiền
+                    if ($order->payment_status === Order::PAYMENT_PAID) {
+                        $updateData['payment_status'] = Order::PAYMENT_REFUNDED;
+                    }
+                    break;
+                    
+                case Order::STATUS_FAILED_DELIVERY: // Giao thất bại
+                    $updateData['failed_delivery_reason'] = $request->failed_delivery_reason;
+                    break;
+                    
+                case Order::STATUS_RETURNED: // Trả hàng
+                    $updateData['cancelled_at'] = now();
+                    $updateData['cancellation_reason'] = 'Returned by customer';
+                    // TỰ ĐỘNG: Hoàn tiền
+                    if ($order->payment_status === Order::PAYMENT_PAID) {
+                        $updateData['payment_status'] = Order::PAYMENT_REFUNDED;
+                    }
+                    break;
+            }
+            
+            // BƯỚC 5: Cập nhật database một lần duy nhất
+            $order->update($updateData);
+            
+            // BƯỚC 6: Ghi log để theo dõi
+            \Log::info('Order status updated', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'old_status' => $oldStatus,
+                'new_status' => $order->status,
+                'updated_by' => auth()->id(),
+                'admin_note' => $request->admin_note
+            ]);
+            
+            // BƯỚC 7: Trả về kết quả
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật trạng thái đơn hàng thành công!',
+                'data' => [
+                    'status' => $order->status,
+                    'status_text' => $order->status_text, // Sử dụng accessor trong Model
+                    'admin_note' => $order->admin_note,
+                    'cancellation_reason' => $order->cancellation_reason,
+                    'payment_status' => $order->payment_status,
+                    'delivered_at' => $order->delivered_at?->format('d/m/Y H:i'),
+                    'cancelled_at' => $order->cancelled_at?->format('d/m/Y H:i')
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            // Ghi log lỗi
+            \Log::error('Error updating order status:', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể cập nhật trạng thái đơn hàng. Vui lòng thử lại sau.',
+                'error' => app()->isLocal() ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
     }
 }

@@ -54,6 +54,103 @@
             transform: translateY(-1px);
             shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
+        /* Toast notification styles */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+        }
+        
+        .toast {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        
+        .toast.success {
+            border-left-color: #10b981;
+        }
+        
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+        
+        .toast.warning {
+            border-left-color: #f59e0b;
+        }
+        
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        .toast.success .toast-icon {
+            background: #10b981;
+        }
+        
+        .toast.error .toast-icon {
+            background: #ef4444;
+        }
+        
+        .toast.warning .toast-icon {
+            background: #f59e0b;
+        }
+        
+        .toast-content {
+            flex: 1;
+        }
+        
+        .toast-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+        
+        .toast-message {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+        
+        .toast-close {
+            margin-left: 12px;
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .toast-close:hover {
+            color: #6b7280;
+            background: #f3f4f6;
+        }
 </style>
     <div class="max-w-screen-2xl mx-auto">
         <header class="mb-8">
@@ -178,23 +275,23 @@
                             <h3 class="font-bold text-lg text-gray-800 mb-6">Tổng quan đơn hàng</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-4">
-                                    <div>
+                                <div>
                                         <p class="text-sm text-gray-500 mb-1">Ngày đặt</p>
-                                        <p class="font-semibold text-gray-800" id="modal-order-date"></p>
-                                    </div>
-                                    <div>
+                                    <p class="font-semibold text-gray-800" id="modal-order-date"></p>
+                                </div>
+                                <div>
                                         <p class="text-sm text-gray-500 mb-1">Trạng thái đơn hàng</p>
-                                        <span id="modal-order-status" class="status-badge"></span>
+                                    <span id="modal-order-status" class="status-badge"></span>
                                     </div>
                                 </div>
                                 <div class="space-y-4">
-                                    <div>
+                                <div>
                                         <p class="text-sm text-gray-500 mb-1">Trạng thái thanh toán</p>
-                                        <span id="modal-payment-status" class="status-badge"></span>
-                                    </div>
-                                    <div>
+                                    <span id="modal-payment-status" class="status-badge"></span>
+                                </div>
+                                <div>
                                         <p class="text-sm text-gray-500 mb-1">Phương thức thanh toán</p>
-                                        <p class="font-semibold text-gray-800" id="modal-payment-method"></p>
+                                    <p class="font-semibold text-gray-800" id="modal-payment-method"></p>
                                     </div>
                                 </div>
                             </div>
@@ -250,12 +347,68 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Update Status Modal -->
+    <div id="update-status-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-transform duration-300 scale-95">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800">Cập nhật trạng thái đơn hàng</h2>
+                <p class="text-sm text-gray-600 mt-1">Mã đơn hàng: <span id="update-order-code" class="font-medium text-indigo-600"></span></p>
+            </div>
+            <form id="update-status-form" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label for="new-status" class="block text-sm font-medium text-gray-700 mb-2">Trạng thái mới</label>
+                        <select id="new-status" name="status" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <option value="">-- Chọn trạng thái --</option>
+                            <option value="pending_confirmation">Chờ xác nhận</option>
+                            <option value="processing">Đang xử lý</option>
+                            <option value="awaiting_shipment">Chờ giao hàng</option>
+                            <option value="shipped">Đã xuất kho</option>
+                            <option value="out_for_delivery">Đang giao hàng</option>
+                            <option value="delivered">Giao thành công</option>
+                            <option value="cancelled">Đã hủy</option>
+                            <option value="returned">Đã trả hàng</option>
+                            <option value="failed_delivery">Giao hàng thất bại</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="admin-note" class="block text-sm font-medium text-gray-700 mb-2">Ghi chú (tùy chọn)</label>
+                        <textarea id="admin-note" name="admin_note" rows="3" 
+                                  class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                                  placeholder="Thêm ghi chú về việc thay đổi trạng thái..."></textarea>
+                    </div>
+                    <div id="cancellation-reason-field" style="display: none;">
+                        <label for="cancellation-reason" class="block text-sm font-medium text-gray-700 mb-2">Lý do hủy đơn <span class="text-red-500">*</span></label>
+                        <textarea id="cancellation-reason" name="cancellation_reason" rows="3" 
+                                  class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                                  placeholder="Nhập lý do hủy đơn hàng..."></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeUpdateStatusModal()" 
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
+                        Hủy
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center space-x-2">
+                        <i class="fas fa-save"></i>
+                        <span>Cập nhật</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
     // --- CONFIGURATION ---
     const CONFIG = {
         routes: {
             index: '{{ route("admin.orders.index") }}',
             show: '{{ route("admin.orders.show", ":id") }}',
+            updateStatus: '{{ route("admin.orders.updateStatus", ":id") }}',
         },
         csrfToken: '{{ csrf_token() }}'
     };
@@ -279,9 +432,13 @@
     const statusMap = {
         pending_confirmation: { text: "Chờ xác nhận", class: "status-pending_confirmation" },
         processing: { text: "Đang xử lý", class: "status-processing" },
-        shipped: { text: "Đã giao hàng", class: "status-shipped" },
+        awaiting_shipment: { text: "Chờ giao hàng", class: "status-processing" },
+        shipped: { text: "Đã xuất kho", class: "status-shipped" },
+        out_for_delivery: { text: "Đang giao hàng", class: "status-shipped" },
         delivered: { text: "Giao thành công", class: "status-delivered" },
-        cancelled: { text: "Đã hủy", class: "status-cancelled" }
+        cancelled: { text: "Đã hủy", class: "status-cancelled" },
+        returned: { text: "Đã trả hàng", class: "status-cancelled" },
+        failed_delivery: { text: "Giao hàng thất bại", class: "status-cancelled" }
     };
 
      const paymentStatusMap = {
@@ -428,6 +585,7 @@
             }
         } catch (error) {
             console.error('Error loading page:', error);
+            showToast('Không thể tải trang này. Vui lòng thử lại hoặc về trang trước.', 'warning', 'Tải trang thất bại');
         }
     }
 
@@ -447,7 +605,11 @@
             }
         } catch (error) {
             console.error('Error fetching order details:', error);
-            alert('Có lỗi xảy ra khi tải thông tin đơn hàng');
+            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                showToast('Không thể kết nối đến server. Kiểm tra mạng và thử lại.', 'error', 'Lỗi kết nối');
+            } else {
+                showToast('Không thể tải chi tiết đơn hàng. Đơn hàng có thể đã bị xóa hoặc bạn không có quyền truy cập.', 'error', 'Tải dữ liệu thất bại');
+            }
         }
     }
 
@@ -481,14 +643,14 @@
         // Render items
         const itemsTbody = document.getElementById('modal-order-items');
         if (order.items && Array.isArray(order.items)) {
-            itemsTbody.innerHTML = order.items.map(item => `
-                <tr class="border-b last:border-none">
+        itemsTbody.innerHTML = order.items.map(item => `
+            <tr class="border-b last:border-none">
                     <td class="p-3 font-medium">${item.product_name || 'N/A'}</td>
                     <td class="p-3 text-center">${item.quantity || 0}</td>
                     <td class="p-3 text-right">${formatCurrency(item.price || 0)}</td>
                     <td class="p-3 text-right font-semibold">${formatCurrency(item.total_price || 0)}</td>
-                </tr>
-            `).join('');
+            </tr>
+        `).join('');
         } else {
             itemsTbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-500">Không có sản phẩm</td></tr>';
         }
@@ -518,6 +680,35 @@
     const paymentStatusFilter = document.getElementById('payment-status');
     const dateFilter = document.getElementById('date-range');
     
+    async function refreshCurrentPage() {
+        // Keep current page and filters when refreshing
+        const formData = new FormData();
+        formData.append('page', currentPage);
+        
+        if (searchInput.value) formData.append('search', searchInput.value);
+        if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
+        if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
+        if (dateFilter.value) formData.append('date_range', dateFilter.value);
+
+        try {
+            const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': CONFIG.csrfToken
+                }
+            });
+            
+            const result = await response.json();
+            if (result.success) {
+                renderTable(result.data);
+                renderPagination(result.pagination);
+            }
+        } catch (error) {
+            console.error('Error refreshing page:', error);
+            showToast('Không thể làm mới dữ liệu. Vui lòng tải lại trang.', 'warning', 'Cảnh báo');
+        }
+    }
+    
     async function applyFilters() {
         const formData = new FormData();
         
@@ -544,6 +735,7 @@
             }
         } catch (error) {
             console.error('Error applying filters:', error);
+            showToast('Không thể áp dụng bộ lọc. Vui lòng thử lại hoặc làm mới trang.', 'warning', 'Lọc dữ liệu thất bại');
         }
     }
     
@@ -573,12 +765,235 @@
             }
         } catch (error) {
             console.error('Error loading orders:', error);
+            showToast('Không thể tải danh sách đơn hàng từ server. Hiển thị dữ liệu cache.', 'warning', 'Tải dữ liệu thất bại');
             // Fallback to show initial data from server
             @if(isset($orders))
                 renderTable(@json($orders->items()));
             @endif
         }
     }
+
+    // --- TOAST NOTIFICATION SYSTEM ---
+    function showToast(message, type = 'success', title = null) {
+        const toastContainer = document.getElementById('toast-container');
+        
+        // Determine title and icon based on type
+        let toastTitle = title;
+        let icon = '';
+        
+        if (!toastTitle) {
+            switch(type) {
+                case 'success':
+                    toastTitle = 'Thành công';
+                    icon = '✓';
+                    break;
+                case 'error':
+                    toastTitle = 'Lỗi';
+                    icon = '✕';
+                    break;
+                case 'warning':
+                    toastTitle = 'Cảnh báo';
+                    icon = '⚠';
+                    break;
+                default:
+                    toastTitle = 'Thông báo';
+                    icon = 'ℹ';
+            }
+        }
+        
+        // Create toast element
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <div class="toast-icon">${icon}</div>
+            <div class="toast-content">
+                <div class="toast-title">${toastTitle}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="removeToast(this.parentElement)">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M13 1L1 13M1 1l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        `;
+        
+        // Add to container
+        toastContainer.appendChild(toast);
+        
+        // Trigger animation
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            removeToast(toast);
+        }, 5000);
+    }
+    
+    function removeToast(toast) {
+        if (toast && toast.parentElement) {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.parentElement.removeChild(toast);
+                }
+            }, 300);
+        }
+    }
+
+    // --- UPDATE STATUS MODAL LOGIC ---
+    const updateStatusModal = document.getElementById('update-status-modal');
+    let currentOrderId = null;
+
+    function showUpdateStatusModal(orderId, currentStatus) {
+        currentOrderId = orderId;
+        
+        // Find order data to get order code
+        const orderRows = document.querySelectorAll('#orders-tbody tr');
+        let orderCode = '';
+        orderRows.forEach(row => {
+            const button = row.querySelector(`button[onclick*="${orderId}"]`);
+            if (button) {
+                orderCode = row.querySelector('td').textContent.trim();
+            }
+        });
+
+        document.getElementById('update-order-code').textContent = orderCode;
+        document.getElementById('new-status').value = currentStatus;
+        document.getElementById('admin-note').value = '';
+        document.getElementById('cancellation-reason').value = '';
+        
+        // Show/hide cancellation reason field
+        toggleCancellationField(currentStatus);
+        
+        updateStatusModal.classList.add('is-open');
+        updateStatusModal.querySelector('div').classList.remove('scale-95');
+    }
+
+    function closeUpdateStatusModal() {
+        updateStatusModal.classList.remove('is-open');
+        updateStatusModal.querySelector('div').classList.add('scale-95');
+        currentOrderId = null;
+    }
+
+    function toggleCancellationField(status) {
+        const cancellationField = document.getElementById('cancellation-reason-field');
+        const cancellationTextarea = document.getElementById('cancellation-reason');
+        
+        if (status === 'cancelled') {
+            cancellationField.style.display = 'block';
+            cancellationTextarea.setAttribute('required', 'required');
+        } else {
+            cancellationField.style.display = 'none';
+            cancellationTextarea.removeAttribute('required');
+        }
+    }
+
+    // Validate form before submit
+    function validateStatusForm() {
+        const newStatus = document.getElementById('new-status').value;
+        
+        if (!newStatus) {
+            showToast('Vui lòng chọn trạng thái mới cho đơn hàng.', 'warning', 'Thiếu thông tin');
+            return false;
+        }
+        
+        if (newStatus === 'cancelled') {
+            const cancellationReason = document.getElementById('cancellation-reason').value;
+            if (!cancellationReason.trim()) {
+                showToast('Vui lòng nhập lý do hủy đơn hàng.', 'warning', 'Thiếu thông tin');
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    // Listen for status change to show/hide cancellation field
+    document.getElementById('new-status').addEventListener('change', function() {
+        toggleCancellationField(this.value);
+    });
+
+    // Handle update status form submission
+    document.getElementById('update-status-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!currentOrderId) {
+            showToast('Không xác định được đơn hàng cần cập nhật.', 'error', 'Lỗi hệ thống');
+            return;
+        }
+
+        // Validate form
+        if (!validateStatusForm()) {
+            return;
+        }
+
+        const formData = new FormData(e.target);
+        
+        try {
+            const response = await fetch(CONFIG.routes.updateStatus.replace(':id', currentOrderId), {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': CONFIG.csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: formData.get('status'),
+                    admin_note: formData.get('admin_note'),
+                    cancellation_reason: formData.get('cancellation_reason')
+                })
+            });
+
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                // Show enhanced success message
+                const statusText = result.data?.status_text || 'trạng thái mới';
+                showToast(`Đơn hàng đã được cập nhật thành "${statusText}" thành công!`, 'success', 'Cập nhật thành công');
+                
+                // Close modal
+                closeUpdateStatusModal();
+                
+                // Refresh current page instead of going to page 1
+                refreshCurrentPage();
+            } else {
+                // Handle different types of errors
+                if (response.status === 422) {
+                    // Validation errors
+                    if (result.errors) {
+                        const errorMessages = Object.values(result.errors).flat();
+                        showToast(errorMessages.join('. '), 'error', 'Dữ liệu không hợp lệ');
+                    } else {
+                        showToast('Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra lại.', 'error', 'Validation Error');
+                    }
+                } else if (response.status === 403) {
+                    showToast('Bạn không có quyền thực hiện hành động này.', 'error', 'Không có quyền');
+                } else if (response.status === 404) {
+                    showToast('Không tìm thấy đơn hàng. Đơn hàng có thể đã bị xóa.', 'error', 'Không tìm thấy');
+                } else if (response.status >= 500) {
+                    showToast('Lỗi server. Vui lòng thử lại sau hoặc liên hệ IT Support.', 'error', 'Lỗi server');
+                } else {
+                    showToast(result.message || 'Không thể cập nhật trạng thái. Vui lòng thử lại.', 'error', 'Cập nhật thất bại');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating status:', error);
+            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                showToast('Mất kết nối mạng. Vui lòng kiểm tra internet và thử lại.', 'error', 'Lỗi kết nối');
+            } else {
+                showToast('Lỗi hệ thống không xác định. Vui lòng liên hệ IT Support hoặc thử lại sau.', 'error', 'Lỗi hệ thống');
+            }
+        }
+    });
+
+    // Close modal on escape key
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && updateStatusModal.classList.contains('is-open')) {
+            closeUpdateStatusModal();
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         @if(isset($orders))
