@@ -1,9 +1,8 @@
 @php
-    // Xác định mục nav cha nào đang active dựa trên route hiện tại
-    // Điều này giúp sidebar tự động mở đúng mục khi tải lại trang hoặc truy cập trực tiếp vào link con
-    $activeParentNav = null;
-    $currentRouteName = request()->route()->getName();
-
+// Xác định mục nav cha nào đang active dựa trên route hiện tại
+// Điều này giúp sidebar tự động mở đúng mục khi tải lại trang hoặc truy cập trực tiếp vào link con
+$activeParentNav = null;
+$currentRouteName = request()->route()->getName();
     if (str_starts_with($currentRouteName, 'admin.dashboard')) {
         $activeParentNav = 0;
     } elseif (
@@ -33,6 +32,7 @@
         $activeParentNav = 11; // Index của "Quản lý nhân viên giao hàng"
     }
     // Thêm các điều kiện khác nếu cần
+
 @endphp
 
 <aside
@@ -199,7 +199,7 @@
                     <ul x-show="openNav === 3" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
                             <a href="{{-- {{ route('admin.orders.index') }}" {{-- Giả sử route --}}
-                               class="block w-full py-1.5
+                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('admin.orders.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Danh sách đơn hàng
@@ -237,14 +237,15 @@
                     </button>
                     <ul x-show="openNav === 4" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
-                            <a href="{{ route('admin.users.index') }}" {{-- Giả sử route --}}
+
+                            <a href="{{  route('admin.users.index') }}" {{-- Giả sử route --}}
                                 class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Danh sách người dùng
                             </a>
                         </li>
                         <li>
                             <a href="{{-- {{ route('admin.users.create') }}" {{-- Giả sử route --}}
-                               class="block w-full py-1.5
+                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('admin.users.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Thêm mới người dùng
@@ -256,10 +257,8 @@
                 {{-- 6. Quản lý đánh giá --}}
                 <li>
                     @php $isReviewsActive = request()->routeIs('admin.reviews.*'); @endphp
-                    <a href="{{-- route('admin.reviews.index') }}" {{-- Giả sử route --}}
-                       class="group flex items-center px-4 py-2.5
-                        text-base rounded-md transition-all duration-200 ease-in-out
-                        {{ $isReviewsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                    <a href="{{ route('admin.reviews.index') }}"
+                        class="group flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out {{ $isReviewsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
                         <span
                             class="mr-3 text-lg {{ $isReviewsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
@@ -272,11 +271,12 @@
                     </a>
                 </li>
 
+
                 {{-- 7. Quản lý mã giảm giá --}}
                 <li>
                     @php $isCouponsActive = request()->routeIs('admin.coupons.*'); @endphp
                     <a href="{{-- {{ route('admin.coupons.index') }}" {{-- Giả sử route --}}
-                       class="group flex items-center px-4 py-2.5
+                        class="group flex items-center px-4 py-2.5
                         text-base rounded-md transition-all duration-200 ease-in-out
                         {{ $isCouponsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
                         <span
@@ -295,7 +295,7 @@
                 <li>
                     @php $isRolesActive = request()->routeIs('admin.roles.*'); @endphp
                     <a href="{{-- {{ route('admin.roles.index') }}" {{-- Giả sử route --}}
-                       class="group flex items-center px-4 py-2.5
+                        class="group flex items-center px-4 py-2.5
                         text-base rounded-md transition-all duration-200 ease-in-out
                         {{ $isRolesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
                         <span
@@ -326,8 +326,8 @@
                 {{-- 9. Quản lý banner --}}
                 <li>
                     @php $isBannersActive = request()->routeIs('admin.banners.*'); @endphp
-                    <a href="{{-- {{ route('admin.banners.index') }}"  {{-- Giả sử route --}}
-                       class="group flex items-center px-4 py-2.5
+                    <a href="{{-- {{ route('admin.banners.index') }}" {{-- Giả sử route --}}
+                        class="group flex items-center px-4 py-2.5
                         text-base rounded-md transition-all duration-200 ease-in-out
                         {{ $isBannersActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
                         <span
@@ -375,7 +375,7 @@
                     <ul x-show="openNav === 9" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
                             <a href="{{-- {{ route('admin.post-categories.index') }}" {{-- Giả sử route --}}
-                               class="block w-full py-1.5
+                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('admin.post-categories.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Danh sách danh mục
@@ -383,7 +383,7 @@
                         </li>
                         <li>
                             <a href="{{-- {{ route('admin.post-categories.create') }}" {{-- Giả sử route --}}
-                               class="block w-full py-1.5
+                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('admin.post-categories.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Thêm mới danh mục
@@ -396,7 +396,7 @@
                 <li>
                     @php $isShippersActive = request()->routeIs('admin.shippers.*'); @endphp
                     <a href="{{-- {{ route('admin.shippers.index') }}" {{-- Giả sử route --}}
-                       class="group flex items-center px-4 py-2.5
+                        class="group flex items-center px-4 py-2.5
                         text-base rounded-md transition-all duration-200 ease-in-out
                         {{ $isShippersActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
                         <span
