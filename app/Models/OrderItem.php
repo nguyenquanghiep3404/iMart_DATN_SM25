@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\ProductVariant;
 
 class OrderItem extends Model
 {
@@ -39,5 +40,9 @@ class OrderItem extends Model
     public function review()
     {
         return $this->hasOne(Review::class);
+    }
+    public function variant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
 }
