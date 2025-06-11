@@ -3,7 +3,8 @@
 @section('title', 'Thêm sản phẩm mới')
 
 @push('styles')
-    {{-- Các styles CSS từ HTML gốc được đưa vào đây --}}
+    {{-- 1. THÊM CSS CỦA TAGIFY --}}
+    <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
 
     <style>
         body {
@@ -67,7 +68,7 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
             background-color: white;
         }
-        
+
         /* Style cho trình soạn thảo TinyMCE để khớp với theme */
         .tox-tinymce {
             border-radius: 0.625rem !important;
@@ -80,6 +81,36 @@
         .tox .tox-statusbar {
              border-bottom-right-radius: 0.625rem !important;
             border-bottom-left-radius: 0.625rem !important;
+        }
+
+        /* 2. CUSTOM CSS CHO TAGIFY ĐỂ KHỚP VỚI THEME */
+        .tagify {
+            --tags-border-color: #cbd5e1;
+            --tag-bg: #2563eb;
+            --tag-hover: #1d4ed8;
+            --tag-text-color: white;
+            --tag-remove-btn-color: white;
+            border-radius: 0.625rem;
+            background-color: #f8fafc;
+        }
+        .tagify:hover {
+            --tags-border-color: #94a3b8;
+        }
+        .tagify.tagify--focus {
+            --tags-border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+            background-color: white;
+        }
+        .tagify__input {
+            padding: 0.875rem 1.125rem;
+        }
+        .tagify__tag {
+            border-radius: 0.375rem;
+            margin: 4px;
+        }
+        /* Style cho Tagify khi có lỗi validation từ Laravel */
+        .tagify-error .tagify {
+            --tags-border-color: #ef4444 !important;
         }
 
 
@@ -212,17 +243,14 @@
             background-color: #dc2626;
         }
 
-        /* Styles for variant image previews - START */
+        /* Styles for variant and simple product image previews */
         .variant-image-preview-item {
-            /* Class riêng cho từng item ảnh của biến thể */
             position: relative;
             width: 90px;
-            /* Kích thước nhỏ hơn */
             height: 90px;
             border-radius: 0.5rem;
             overflow: hidden;
             border: 2px solid #e2e8f0;
-            /* Viền mặc định */
             background-color: #f8fafc;
             display: flex;
             align-items: center;
@@ -237,14 +265,12 @@
 
         .variant-image-preview-item.is-primary {
             border: 3px solid #2563eb;
-            /* Viền xanh làm nổi bật ảnh chính */
             box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
         }
 
         .variant-image-preview-item .set-primary-btn {
             position: absolute;
             bottom: 4px;
-            /* Vị trí nút đặt làm chính */
             left: 4px;
             background-color: rgba(0, 0, 0, 0.6);
             color: white;
@@ -253,32 +279,28 @@
             font-size: 0.7rem;
             cursor: pointer;
             z-index: 10;
-            /* Nằm trên ảnh */
-            display: none; /* Ẩn mặc định, chỉ hiện khi hover */
+            display: none;
             align-items: center;
         }
-        
+
         .variant-image-preview-item:hover .set-primary-btn {
-            display: inline-flex; /* Hiện khi hover vào item */
+            display: inline-flex;
         }
         .variant-image-preview-item.is-primary .set-primary-btn {
-             display: none; /* Luôn ẩn nút khi đã là ảnh chính */
+             display: none;
         }
 
 
         .variant-image-preview-item .set-primary-btn:hover {
             background-color: rgba(37, 99, 235, 0.9);
-            /* Màu khi hover */
         }
 
         .variant-image-preview-item .set-primary-btn i {
-            /* Icon trong nút */
             width: 12px;
             height: 12px;
             margin-right: 3px;
         }
 
-        /* Styles for variant image previews - END */
 
         .variant-card {
             border: 1px solid #e2e8f0;
@@ -348,6 +370,31 @@
         .label-with-action label {
             margin-bottom: 0;
         }
+        /* Style cho SVG icons */
+        .svg-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            stroke-width: 1.5;
+            stroke: currentColor;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        
+        .icon-prefix {
+            width: 1rem;
+            height: 1rem;
+        }
+        
+        .card-header .svg-icon {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.5rem;
+        }
+        
+        button .svg-icon {
+            margin-right: 0.5rem;
+        }
     </style>
 @endpush
 
@@ -355,37 +402,49 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="mb-10 flex items-center justify-between">
-            <div>
+            <div >
                 <h1 class="text-4xl font-bold text-gray-800">
                     Thêm Sản Phẩm Mới <span class="text-2xl text-purple-600">✨AI</span>
                 </h1>
                 <p class="text-gray-600 mt-1">Cung cấp thông tin chi tiết để tạo sản phẩm Apple mới, với sự trợ giúp của AI!
                 </p>
             </div>
+            <!-- Nút quay lại -->
+        <div class="mb-6">
             <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">
-                <i data-lucide="arrow-left" class="mr-2 h-5 w-5"></i> Quay Lại Danh Sách
+                <svg class="svg-icon" viewBox="0 0 24 24">
+                    <polyline points="19 12 5 12"></polyline>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Quay Lại Danh Sách
             </a>
+        </div>
         </header>
         @if ($errors->any())
-            <div class="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 mb-6 rounded-md shadow-md" role="alert">
+            <div class="alert alert-danger mb-6">
                 <div class="flex items-center">
-                    <i data-lucide="alert-octagon" class="h-6 w-6 mr-3"></i>
-                    <div>
-                        <p class="font-bold">Có lỗi xảy ra trong quá trình xác thực:</p>
-                        <ul class="list-disc list-inside mt-1">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
+                    <svg class="svg-icon text-red-500 mr-2" viewBox="0 0 24 24">
+                        <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <h3 class="text-red-800 font-medium">Đã xảy ra lỗi:</h3>
                 </div>
+                <ul class="mt-2 list-disc list-inside text-sm text-red-700">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
             </div>
         @endif
         @if (session('success'))
             <div class="bg-green-50 border-l-4 border-green-400 text-green-700 p-4 mb-6 rounded-md shadow-md"
                 role="alert">
                 <div class="flex items-center">
-                    <i data-lucide="check-circle" class="h-6 w-6 mr-3"></i>
+                     <svg class="svg-icon text-green-500 mr-2" viewBox="0 0 24 24">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
                     <div>
                         <p class="font-bold">Thành công!</p>
                         <p>{{ session('success') }}</p>
@@ -396,7 +455,11 @@
         @if (session('error'))
             <div class="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 mb-6 rounded-md shadow-md" role="alert">
                 <div class="flex items-center">
-                    <i data-lucide="alert-triangle" class="h-6 w-6 mr-3"></i>
+                    <svg class="svg-icon text-red-500 mr-2" viewBox="0 0 24 24">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
                     <div>
                         <p class="font-bold">Lỗi!</p>
                         <p>{{ session('error') }}</p>
@@ -404,39 +467,54 @@
                 </div>
             </div>
         @endif
-        <form id="addProductForm" action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
+        <form id="addProductForm" action="{{ route('admin.products.store') }}" method="POST">
             @csrf
+             <div id="image_ids_container" class="hidden"></div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
                 {{-- Cột trái: Thông tin chính & Biến thể --}}
                 <div class="lg:col-span-2 space-y-6">
                     {{-- Card Thông Tin Chung --}}
                     <div class="card">
-                        <div class="card-header">
-                            <i data-lucide="file-text"></i>Thông Tin Chung
+                       <div class="card-header">
+                            <svg class="svg-icon" viewBox="0 0 24 24">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Thông Tin Chung
                         </div>
                         <div class="input-group">
-                            <label for="name">Tên sản phẩm <span class="required-star">*</span></label>
-                            <div class="input-with-icon">
-                                <i data-lucide="type" class="icon-prefix"></i>
-                                <input type="text" id="name" name="name"
-                                    class="input-field @error('name') border-red-500 @enderror" value="{{ old('name') }}">
+                                <label for="name">Tên sản phẩm <span class="required-star">*</span></label>
+                                <div class="input-with-icon">
+                                    <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                        <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                                        <line x1="9" y1="20" x2="15" y2="20"></line>
+                                        <line x1="12" y1="4" x2="12" y2="20"></line>
+                                    </svg>
+                                    <input type="text" id="name" name="name"
+                                        class="input-field @error('name') border-red-500 @enderror" value="{{ old('name') }}">
+                                </div>
+                                @error('name')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
-                            @error('name')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
                         <div class="input-group">
-                            <label for="slug">Đường dẫn thân thiện (Slug)</label>
-                            <div class="input-with-icon">
-                                <i data-lucide="link-2" class="icon-prefix"></i>
-                                <input type="text" id="slug" name="slug"
-                                    class="input-field @error('slug') border-red-500 @enderror" value="{{ old('slug') }}"
-                                    placeholder="Tự động tạo nếu để trống">
+                                <label for="slug">Đường dẫn thân thiện (Slug)</label>
+                                <div class="input-with-icon">
+                                    <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                    </svg>
+                                    <input type="text" id="slug" name="slug"
+                                        class="input-field @error('slug') border-red-500 @enderror" value="{{ old('slug') }}"
+                                        placeholder="Tự động tạo nếu để trống">
+                                </div>
+                                @error('slug')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
-                            @error('slug')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
                         <div class="input-group">
                             <div class="label-with-action">
                                 <label for="short_description">Mô tả ngắn</label>
@@ -451,8 +529,8 @@
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
-                        
-                        {{-- PHẦN THAY ĐỔI: Tích hợp trình soạn thảo WYSIWYG --}}
+
+                        {{-- Tích hợp trình soạn thảo WYSIWYG --}}
                         <div class="input-group">
                             <div class="label-with-action">
                                 <label for="description">Mô tả chi tiết</label>
@@ -461,21 +539,26 @@
                                     <span class="loading-spinner hidden"></span>
                                 </button>
                             </div>
-                            {{-- Giữ lại thẻ textarea, TinyMCE sẽ thay thế nó. Loại bỏ các class không cần thiết --}}
                             <textarea id="description" name="description"
                                 class="@error('description') border-red-500 @enderror">{{ old('description') }}</textarea>
                             @error('description')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
-                        {{-- KẾT THÚC PHẦN THAY ĐỔI --}}
 
                     </div>
 
                     {{-- Card Loại Sản Phẩm & Biến Thể --}}
                     <div class="card">
                         <div class="card-header">
-                            <i data-lucide="git-fork"></i>Loại Sản Phẩm & Biến Thể
+                            <svg class="svg-icon" viewBox="0 0 24 24">
+                                <circle cx="12" cy="18" r="3"></circle>
+                                <circle cx="6" cy="6" r="3"></circle>
+                                <circle cx="18" cy="6" r="3"></circle>
+                                <path d="M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"></path>
+                                <path d="M12 12v3"></path>
+                            </svg>
+                            Loại Sản Phẩm & Biến Thể
                         </div>
                         <div class="input-group">
                             <label>Loại sản phẩm <span class="required-star">*</span></label>
@@ -506,7 +589,11 @@
                                 <div class="input-group">
                                     <label for="simple_sku">SKU <span class="required-star">*</span></label>
                                     <div class="input-with-icon">
-                                        <i data-lucide="scan-barcode" class="icon-prefix"></i>
+                                        <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                                <path d="M4 7V4h16v3"></path>
+                                                <path d="M9 20h6"></path>
+                                                <path d="M12 4v16"></path>
+                                            </svg>
                                         <input type="text" id="simple_sku" name="simple_sku"
                                             class="input-field @error('simple_sku') border-red-500 @enderror"
                                             value="{{ old('simple_sku') }}">
@@ -518,7 +605,10 @@
                                 <div class="input-group">
                                     <label for="simple_price">Giá bán <span class="required-star">*</span> (VNĐ)</label>
                                     <div class="input-with-icon">
-                                        <i data-lucide="dollar-sign" class="icon-prefix"></i>
+                                        <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                            </svg>
                                         <input type="number" id="simple_price" name="simple_price"
                                             class="input-field @error('simple_price') border-red-500 @enderror"
                                             step="1000" min="0" value="{{ old('simple_price') }}">
@@ -530,7 +620,12 @@
                                 <div class="input-group">
                                     <label for="simple_sale_price">Giá khuyến mãi (VNĐ)</label>
                                     <div class="input-with-icon">
-                                        <i data-lucide="badge-percent" class="icon-prefix"></i>
+                                        <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                                <circle cx="12" cy="12" r="10"></circle>
+                                                <path d="M8 15l8-8"></path>
+                                                <path d="M9.5 9.5h.01"></path>
+                                                <path d="M14.5 14.5h.01"></path>
+                                            </svg>
                                         <input type="number" id="simple_sale_price" name="simple_sale_price"
                                             class="input-field @error('simple_sale_price') border-red-500 @enderror"
                                             step="1000" min="0" value="{{ old('simple_sale_price') }}">
@@ -543,7 +638,11 @@
                                     <label for="simple_stock_quantity">Số lượng tồn kho <span
                                             class="required-star">*</span></label>
                                     <div class="input-with-icon">
-                                        <i data-lucide="boxes" class="icon-prefix"></i>
+                                        <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                            </svg>
                                         <input type="number" id="simple_stock_quantity" name="simple_stock_quantity"
                                             class="input-field @error('simple_stock_quantity') border-red-500 @enderror"
                                             min="0" value="{{ old('simple_stock_quantity') }}">
@@ -552,6 +651,21 @@
                                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
+                                {{-- BẮT ĐẦU: KHỐI ẢNH MỚI CHO SẢN PHẨM ĐƠN GIẢN --}}
+                                <div class="input-group md:col-span-2">
+                                    <label for="simple_product_image_input">Ảnh Sản Phẩm <span class="required-star">*</span> (Chọn để upload)</label>
+                                    <input type="file" id="simple_product_image_input" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" multiple onchange="handleSimpleProductImages(event)">
+                                    <div id="simple_product_image_preview_container" class="image-preview-container mt-2">
+                                        {{-- Image previews and hidden inputs will appear here --}}
+                                    </div>
+                                    @error('cover_image_id')
+                                       <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                     @error('gallery_images')
+                                       <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                </div>
+                                {{-- KẾT THÚC: KHỐI ẢNH MỚI CHO SẢN PHẨM ĐƠN GIẢN --}}
                             </div>
                         </div>
 
@@ -562,7 +676,10 @@
                             <div class="input-group">
                                 <label for="sku_prefix">Tiền tố SKU (cho biến thể)</label>
                                 <div class="input-with-icon">
-                                    <i data-lucide="scan-line" class="icon-prefix"></i>
+<svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                            <path d="M17 7l-10 10"></path>
+                                            <path d="M8 7h9v9"></path>
+                                        </svg>
                                     <input type="text" id="sku_prefix" name="sku_prefix"
                                         class="input-field @error('sku_prefix') border-red-500 @enderror"
                                         value="{{ old('sku_prefix') }}" placeholder="Ví dụ: APPL-IP15P-">
@@ -574,7 +691,17 @@
 
                             <div class="input-group">
                                 <label class="flex items-center mb-2">
-                                    <i data-lucide="list-filter" class="mr-2 h-5 w-5 text-gray-500"></i>
+                                    <svg class="svg-icon mr-2 h-5 w-5 text-gray-500" viewBox="0 0 24 24">
+                                            <line x1="4" y1="21" x2="4" y2="14"></line>
+                                            <line x1="4" y1="10" x2="4" y2="3"></line>
+                                            <line x1="12" y1="21" x2="12" y2="12"></line>
+                                            <line x1="12" y1="8" x2="12" y2="3"></line>
+                                            <line x1="20" y1="21" x2="20" y2="16"></line>
+                                            <line x1="20" y1="12" x2="20" y2="3"></line>
+                                            <line x1="1" y1="14" x2="7" y2="14"></line>
+                                            <line x1="9" y1="8" x2="15" y2="8"></line>
+                                            <line x1="17" y1="16" x2="23" y2="16"></line>
+                                        </svg>
                                     Thuộc tính sử dụng cho biến thể
                                 </label>
                                 <div id="productAttributesContainer"
@@ -602,23 +729,40 @@
 
 
                             <button type="button" id="addVariantButton" class="btn btn-secondary mt-2">
-                                <i data-lucide="plus-circle" class="mr-2 h-5 w-5"></i> Thêm Biến Thể Mới
+                                 <svg class="svg-icon mr-2 h-5 w-5" viewBox="0 0 24 24">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                                    </svg> Thêm Biến Thể Mới
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {{-- Cột phải: Tổ chức, Hình ảnh, SEO, etc. --}}
+                {{-- Cột phải: Tổ chức, SEO, etc. --}}
                 <div class="lg:col-span-1 space-y-6">
                     {{-- Card Xuất Bản --}}
                     <div class="card">
                         <div class="card-header">
-                            <i data-lucide="send-to-back"></i>Xuất Bản
+                            <svg class="svg-icon" viewBox="0 0 24 24">
+                                <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                                <rect x="9" y="9" width="6" height="6"></rect>
+                                <line x1="9" y1="1" x2="9" y2="4"></line>
+                                <line x1="15" y1="1" x2="15" y2="4"></line>
+                                <line x1="9" y1="20" x2="9" y2="23"></line>
+                                <line x1="15" y1="20" x2="15" y2="23"></line>
+                                <line x1="20" y1="9" x2="23" y2="9"></line>
+                                <line x1="20" y1="14" x2="23" y2="14"></line>
+                                <line x1="1" y1="9" x2="4" y2="9"></line>
+                                <line x1="1" y1="14" x2="4" y2="14"></line>
+                            </svg>Xuất Bản
                         </div>
                         <div class="input-group">
                             <label for="status">Trạng thái <span class="required-star">*</span></label>
                             <div class="input-with-icon">
-                                <i data-lucide="activity" class="icon-prefix"></i>
+                                <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                                </svg>
                                 <select id="status" name="status"
                                     class="select-field @error('status') border-red-500 @enderror">
                                     <option value="published"
@@ -641,7 +785,9 @@
                                 class="flex items-center cursor-pointer p-2 rounded-md hover:bg-blue-50 transition-colors">
                                 <input type="checkbox" id="is_featured" name="is_featured" value="1"
                                     class="form-check-input mr-3" {{ old('is_featured') ? 'checked' : '' }}>
-                                <i data-lucide="star" class="mr-2 h-5 w-5 text-yellow-500"></i> Sản phẩm nổi bật
+                                <svg class="svg-icon mr-2 h-5 w-5 text-yellow-500" viewBox="0 0 24 24">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg></i> Sản phẩm nổi bật
                             </label>
                             @error('is_featured')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -652,12 +798,17 @@
                     {{-- Card Tổ Chức --}}
                     <div class="card">
                         <div class="card-header">
-                            <i data-lucide="folder-tree"></i>Tổ Chức
+                            <svg class="svg-icon" viewBox="0 0 24 24">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>Tổ Chức
                         </div>
                         <div class="input-group">
                             <label for="category_id">Danh mục <span class="required-star">*</span></label>
                             <div class="input-with-icon">
-                                <i data-lucide="folder-open" class="icon-prefix"></i>
+                                <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
                                 <select id="category_id" name="category_id"
                                     class="select-field @error('category_id') border-red-500 @enderror">
                                     <option value="">Chọn danh mục</option>
@@ -674,7 +825,9 @@
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
-                        <div class="input-group">
+
+                        {{-- PHẦN TAGIFY --}}
+                        <div class="input-group @error('tags') tagify-error @enderror">
                             <div class="label-with-action">
                                 <label for="tags">Thẻ sản phẩm (Tags)</label>
                                 <button type="button" id="generateTagsAI" class="btn btn-ai btn-sm">
@@ -682,54 +835,24 @@
                                     <span class="loading-spinner hidden"></span>
                                 </button>
                             </div>
-                            <div class="input-with-icon">
-                                <i data-lucide="tags" class="icon-prefix"></i>
-                                <input type="text" id="tags" name="tags"
-                                    class="input-field @error('tags') border-red-500 @enderror"
-                                    value="{{ old('tags') }}" placeholder="Ví dụ: iphone 15, apple, new">
-                            </div>
+                            <input type="text" id="tags" name="tags"
+                                value="{{ old('tags') }}"
+                                placeholder="Nhập thẻ và nhấn Enter">
                             @error('tags')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
-                            <small class="text-gray-500 mt-1 block">Cách nhau bởi dấu phẩy.</small>
-                        </div>
-                    </div>
-
-                    {{-- Card Hình Ảnh Sản Phẩm Chung --}}
-                    <div class="card">
-                        <div class="card-header">
-                            <i data-lucide="image"></i>Hình Ảnh Chung (Sản Phẩm)
-                        </div>
-                        <div class="input-group">
-                            <label for="cover_image_file">Ảnh bìa <span class="required-star">*</span></label>
-                            <input type="file" id="cover_image_file" name="cover_image_file"
-                                class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 @error('cover_image_file') border-red-500 @enderror"
-                                accept="image/*" onchange="previewCoverImage(event)">
-                            <div id="coverImagePreviewContainer" class="image-preview-container mt-3"></div>
-                            @error('cover_image_file')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div class="input-group">
-                            <label for="gallery_image_files">Thư viện ảnh chung (Nhiều ảnh)</label>
-                            <input type="file" id="gallery_image_files" name="gallery_image_files[]"
-                                class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 @error('gallery_image_files.*') border-red-500 @enderror"
-                                accept="image/*" multiple onchange="previewGalleryImages(event)">
-                            <div id="galleryImagesPreviewContainer" class="image-preview-container mt-3"></div>
-                            @foreach ($errors->get('gallery_image_files.*') as $key => $messages)
-                                {{-- Loop through errors for each gallery image --}}
-                                @foreach ($messages as $message)
-                                    <p class="text-red-500 text-xs mt-1">Lỗi ảnh thư viện (ảnh {{ $key + 1 }}):
-                                        {{ $message }}</p>
-                                @endforeach
-                            @endforeach
+                            <small class="text-gray-500 mt-1 block">Nhấn Enter hoặc dấu phẩy để thêm thẻ mới.</small>
                         </div>
                     </div>
 
                     {{-- Card SEO --}}
                     <div class="card">
                         <div class="card-header">
-                            <i data-lucide="search-check"></i>Tối Ưu Hóa SEO
+                             <svg class="svg-icon" viewBox="0 0 24 24">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <path d="M11 8l2 2"></path>
+                            </svg>Tối Ưu Hóa SEO
                             <button type="button" id="generateAllSeoAI" class="btn btn-ai btn-sm ml-auto">
                                 <span class="button-text">✨ Tạo Tất Cả SEO</span>
                                 <span class="loading-spinner hidden"></span>
@@ -766,7 +889,11 @@
                     {{-- Card Thông Tin Bổ Sung --}}
                     <div class="card">
                         <div class="card-header">
-                            <i data-lucide="info"></i>Thông Tin Bổ Sung
+                             <svg class="svg-icon" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>Thông Tin Bổ Sung
                         </div>
                         <div class="input-group">
                             <label for="warranty_information">Thông tin bảo hành</label>
@@ -783,10 +910,18 @@
             {{-- Các nút hành động của Form --}}
             <div class="mt-10 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
                 <a href="{{ route('admin.products.index') }}" class="btn btn-secondary w-full sm:w-auto">
-                    <i data-lucide="x-circle" class="mr-2 h-5 w-5"></i> Hủy Bỏ
+                    <svg class="svg-icon mr-2 h-5 w-5" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg> Hủy Bỏ
                 </a>
                 <button type="submit" class="btn btn-primary w-full sm:w-auto">
-                    <i data-lucide="save" class="mr-2 h-5 w-5"></i> Lưu Sản Phẩm
+                    <svg class="svg-icon mr-2 h-5 w-5" viewBox="0 0 24 24">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg> Lưu Sản Phẩm
                 </button>
             </div>
         </form>
@@ -811,25 +946,212 @@
                 </div>
             </div>
         </div>
-
-
     </div>
 @endsection
 
 @push('scripts')
 
-    {{-- THAY ĐỔI 1: THÊM SCRIPT CỦA TINYMCE TỪ CDN --}}
-    {{-- Lưu ý: Để sử dụng trong môi trường production không bị cảnh báo domain, bạn nên đăng ký một API Key miễn phí tại tiny.cloud --}}
+    {{-- THÊM SCRIPT CỦA TINYMCE TỪ CDN --}}
     <script src="https://cdn.tiny.cloud/1/polil4haaavbgscm984gn9lw0zb9xx9hjopkrx9k2ofql26b/tinymce/7/tinymce.min.js" referrerpolicy="origin"></script>
 
+    {{-- THÊM SCRIPT CỦA TAGIFY TỪ CDN --}}
+    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
 
     <script>
+        // =================================================================
+        // KHỐI LOGIC UPLOAD ẢNH VÀ QUẢN LÝ FORM
+        // =================================================================
+
+        /**
+         * Hàm trung tâm để upload file bằng AJAX đến server.
+         * @param {FileList} files - Danh sách file từ input.
+         * @returns {Promise<Object>} - Promise sẽ trả về dữ liệu JSON từ server.
+         */
+        async function uploadFilesViaAjax(files) {
+            const formData = new FormData();
+            Array.from(files).forEach(file => {
+                formData.append('files[]', file);
+            });
+
+            try {
+                const response = await fetch("{{ route('admin.media.store') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    }
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 422 && result.errors) {
+                        const errorMessages = Object.values(result.errors).flat().join('\n');
+                        throw new Error(errorMessages);
+                    }
+                    throw new Error(result.error || 'Upload không thành công.');
+                }
+                
+                return result;
+
+            } catch (error) {
+                console.error('Lỗi khi upload ảnh bằng AJAX:', error);
+                throw error;
+            }
+        }
+
+        // =========================================================================
+        // === SỬA LỖI: CÁC HÀM XỬ LÝ ẢNH SẢN PHẨM ĐƠN GIẢN ===
+        //      (Đã sửa lại logic theo yêu cầu, giống với xử lý ảnh của biến thể)
+        // =========================================================================
+
+        /**
+         * Xử lý khi người dùng chọn ảnh cho sản phẩm đơn giản.
+         * Upload ảnh, tạo preview, và tạo các input hidden cần thiết.
+         * LOGIC MỚI: Tất cả ID ảnh được lưu vào `gallery_images[]`, và một input `cover_image_id` riêng được tạo/cập nhật.
+         * @param {Event} event
+         */
+        async function handleSimpleProductImages(event) {
+            const input = event.target;
+            const files = input.files;
+            if (!files.length) return;
+
+            const previewContainer = document.getElementById('simple_product_image_preview_container');
+            const imageIdsContainer = document.getElementById('image_ids_container');
+            
+            const overlay = document.createElement('div');
+            overlay.className = 'upload-overlay';
+            overlay.innerHTML = `<div class="upload-spinner"></div><p class="text-sm text-gray-600">Đang tải ảnh lên...</p>`;
+            previewContainer.appendChild(overlay);
+
+            try {
+                const result = await uploadFilesViaAjax(files);
+                
+                if (result.files && result.files.length > 0) {
+                    // Xóa các preview và ID cũ trước khi thêm mới để TRÁNH TRÙNG LẶP
+                    previewContainer.innerHTML = '';
+                    imageIdsContainer.innerHTML = '';
+                    
+                    // Tạo preview và input hidden cho TẤT CẢ ảnh vừa upload
+                    result.files.forEach(fileData => {
+                        // Tạo thẻ input hidden cho gallery. TẤT CẢ ảnh đều được thêm vào đây.
+                        const galleryInput = document.createElement('input');
+                        galleryInput.type = 'hidden';
+                        galleryInput.name = 'gallery_images[]'; // Gán name là gallery
+                        galleryInput.className = 'simple-image-id'; // Dùng class để định danh
+                        galleryInput.dataset.id = fileData.id;
+                        galleryInput.value = fileData.id;
+                        imageIdsContainer.appendChild(galleryInput);
+
+                        // Tạo ảnh preview
+                        const previewDiv = document.createElement('div');
+                        previewDiv.className = 'image-preview variant-image-preview-item';
+                        previewDiv.dataset.id = fileData.id;
+                        previewDiv.innerHTML = `
+                            <img src="${fileData.url}" alt="${fileData.alt_text || 'Ảnh sản phẩm'}">
+                            <span class="remove-img-btn" onclick="removeSimpleProductImage(${fileData.id})"><i class="fas fa-times"></i></span>
+                            <button type="button" class="set-primary-btn" title="Đặt làm ảnh chính" onclick="setSimpleProductPrimaryImage(${fileData.id})">
+                                <i class="fas fa-star" style="color: white; pointer-events: none;"></i> Đặt chính
+                            </button>
+                        `;
+                        previewContainer.appendChild(previewDiv);
+                    });
+
+                    // Sau khi tạo xong, tự động đặt ảnh đầu tiên làm ảnh chính
+                    if (result.files.length > 0) {
+                        setSimpleProductPrimaryImage(result.files[0].id);
+                    }
+                    showMessageModal('Thành công', `${result.files.length} ảnh đã được tải lên!`, 'success');
+                }
+            } catch (error) {
+                showMessageModal('Lỗi Upload', error.message, 'error');
+            } finally {
+                previewContainer.querySelector('.upload-overlay')?.remove();
+                input.value = ''; // Reset input file
+            }
+        }
+
+        /**
+         * Đặt một ảnh làm ảnh chính cho sản phẩm đơn giản.
+         * LOGIC MỚI: Xóa input `cover_image_id` cũ và tạo một input mới với ID được chọn.
+         * @param {number} primaryImageId - ID của ảnh được chọn.
+         */
+        function setSimpleProductPrimaryImage(primaryImageId) {
+            const previewContainer = document.getElementById('simple_product_image_preview_container');
+            const imageIdsContainer = document.getElementById('image_ids_container');
+            if (!previewContainer || !imageIdsContainer) return;
+
+            // 1. Cập nhật giao diện (thêm viền xanh cho ảnh được chọn)
+            previewContainer.querySelectorAll('.variant-image-preview-item').forEach(preview => {
+                preview.classList.toggle('is-primary', parseInt(preview.dataset.id) === primaryImageId);
+            });
+
+            // 2. Cập nhật input `cover_image_id` (giống logic của biến thể)
+            // Xóa input cũ đi để tránh gửi nhiều ID ảnh chính
+            const oldCoverInput = imageIdsContainer.querySelector('input[name="cover_image_id"]');
+            if (oldCoverInput) {
+                oldCoverInput.remove();
+            }
+
+            // Tạo và thêm input mới cho ảnh chính
+            const newCoverInput = document.createElement('input');
+            newCoverInput.type = 'hidden';
+            newCoverInput.name = 'cover_image_id';
+            newCoverInput.value = primaryImageId;
+            imageIdsContainer.appendChild(newCoverInput);
+        }
+
+        /**
+         * Xóa một ảnh của sản phẩm đơn giản và cập nhật lại trạng thái.
+         * LOGIC MỚI: Xóa cả input trong gallery và kiểm tra/cập nhật lại input `cover_image_id`.
+         * @param {number} imageIdToRemove - ID của ảnh cần xóa.
+         */
+        function removeSimpleProductImage(imageIdToRemove) {
+            const previewContainer = document.getElementById('simple_product_image_preview_container');
+            const imageIdsContainer = document.getElementById('image_ids_container');
+
+            const previewToRemove = previewContainer.querySelector(`.variant-image-preview-item[data-id="${imageIdToRemove}"]`);
+            // Tìm đúng input trong gallery để xóa
+            const galleryInputToRemove = imageIdsContainer.querySelector(`input.simple-image-id[data-id="${imageIdToRemove}"]`);
+            const coverInput = imageIdsContainer.querySelector('input[name="cover_image_id"]');
+
+            if (!previewToRemove) return; // Không tìm thấy ảnh để xóa
+
+            const wasPrimary = coverInput && (parseInt(coverInput.value) === imageIdToRemove);
+
+            // Xóa preview và input trong gallery
+            previewToRemove.remove();
+            if (galleryInputToRemove) {
+                galleryInputToRemove.remove();
+            }
+
+            // Nếu ảnh bị xóa là ảnh chính
+            if (wasPrimary) {
+                // Xóa input cover_image_id
+                if (coverInput) coverInput.remove();
+                
+                // Và nếu vẫn còn ảnh khác, chọn ảnh đầu tiên còn lại làm ảnh chính mới
+                const remainingPreviews = previewContainer.querySelectorAll('.variant-image-preview-item');
+                if (remainingPreviews.length > 0) {
+                    const newPrimaryId = parseInt(remainingPreviews[0].dataset.id);
+                    setSimpleProductPrimaryImage(newPrimaryId);
+                }
+            }
+        }
+        
+        // =========================================================================
+        // PHẦN CÒN LẠI CỦA SCRIPT (GIỮ NGUYÊN)
+        // =========================================================================
+        
         // Global variables for the script
         let selectedProductAttributes = [];
-        let variantIndexGlobal = 0; // Renamed to avoid conflict with loop var `index`
+        let variantIndexGlobal = 0;
+        let tagify;
+
         // --- Data from PHP (Laravel Backend) ---
         @php
-            // Prepare categories data for JS
             $jsCategoriesData = [];
             if (isset($categories) && $categories instanceof \Illuminate\Support\Collection) {
                 $jsCategoriesData = $categories
@@ -840,23 +1162,10 @@
                     ->all();
             }
 
-            // Prepare attributes data for JS, including a default icon logic
             $jsAttributesData = [];
             if (isset($attributes) && $attributes instanceof \Illuminate\Support\Collection) {
                 $jsAttributesData = $attributes
                     ->map(function ($attr) {
-                        $icon = 'tag'; // default icon
-                        if (isset($attr->name)) {
-                            // Determine icon based on attribute name
-                            if (str_contains(strtolower($attr->name), 'màu') || (isset($attr->display_type) && $attr->display_type === 'color_swatch')) {
-                                $icon = 'palette';
-                            } elseif (str_contains(strtolower($attr->name), 'dung lượng') || str_contains(strtolower($attr->name), 'bộ nhớ')) {
-                                $icon = 'hard-drive';
-                            } elseif (str_contains(strtolower($attr->name), 'kích thước')) {
-                                $icon = 'maximize';
-                            }
-                        }
-                        // Ensure attributeValues is an array of objects
                         $attributeValuesData = [];
                         if (isset($attr->attributeValues) && ($attr->attributeValues instanceof \Illuminate\Support\Collection || is_array($attr->attributeValues))) {
                             foreach ($attr->attributeValues as $val) {
@@ -871,7 +1180,6 @@
                             'id' => $attr->id,
                             'name' => $attr->name ?? 'N/A',
                             'slug' => $attr->slug ?? '',
-                            'icon' => $icon,
                             'attributeValues' => $attributeValuesData,
                         ];
                     })
@@ -881,12 +1189,12 @@
         @endphp
         const categoriesFromPHP = @json($jsCategoriesData, JSON_UNESCAPED_UNICODE);
         const allAttributesFromPHP = @json($jsAttributesData, JSON_UNESCAPED_UNICODE);
-        const oldVariantsData = @json(old('variants', []), JSON_UNESCAPED_UNICODE); // For repopulating form
+        const oldVariantsData = @json(old('variants', []), JSON_UNESCAPED_UNICODE);
+
         // --- DOM Elements ---
         const productNameInput = document.getElementById('name');
         const categorySelectElement = document.getElementById('category_id');
         const shortDescriptionTextarea = document.getElementById('short_description');
-        //const longDescriptionTextarea = document.getElementById('description'); // Sẽ được quản lý bởi TinyMCE
         const metaTitleInput = document.getElementById('meta_title');
         const metaDescriptionTextarea = document.getElementById('meta_description');
         const metaKeywordsInput = document.getElementById('meta_keywords');
@@ -904,40 +1212,33 @@
         const productAttributesContainer = document.getElementById('productAttributesContainer');
         const variantsContainer = document.getElementById('variantsContainer');
         const addVariantButton = document.getElementById('addVariantButton');
-        // --- Utility and AI Functions (Keep existing) ---
+
+        // --- Utility and AI Functions ---
         function showMessageModal(title, text, type = 'info') {
-            /* ... Keep existing ... */
             if (!messageModal || !messageModalTitle || !messageModalText || !messageModalIconContainer) return;
             messageModalTitle.textContent = title;
             messageModalText.textContent = text;
             messageModalIconContainer.innerHTML = '';
-            let iconName = 'info',
-                iconColorClass = 'text-blue-600',
+            let iconSvg = '';
+            let iconColorClass = 'text-blue-600',
                 iconBgClass = 'bg-blue-100';
             if (type === 'success') {
-                iconName = 'check-circle';
+                iconSvg = '<svg class="h-6 w-6 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
                 iconColorClass = 'text-green-600';
                 iconBgClass = 'bg-green-100';
             } else if (type === 'error') {
-                iconName = 'alert-triangle';
+                iconSvg = '<svg class="h-6 w-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
                 iconColorClass = 'text-red-600';
                 iconBgClass = 'bg-red-100';
+            } else {
+                iconSvg = '<svg class="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
             }
-            const icon = document.createElement('i');
-            icon.dataset.lucide = iconName;
-            icon.className = `h-6 w-6 ${iconColorClass}`;
-            messageModalIconContainer.className =
-                `mx-auto flex items-center justify-center h-12 w-12 rounded-full ${iconBgClass}`;
-            messageModalIconContainer.appendChild(icon);
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+            messageModalIconContainer.className = `mx-auto flex items-center justify-center h-12 w-12 rounded-full ${iconBgClass}`;
+            messageModalIconContainer.innerHTML = iconSvg;
             messageModal.classList.remove('hidden');
-        }
-        if (messageModalCloseButton) {
-            messageModalCloseButton.addEventListener('click', () => messageModal.classList.add('hidden'));
         }
 
         function toggleButtonLoading(button, isLoading) {
-            /* ... Keep existing ... */
             if (!button) return;
             const textSpan = button.querySelector('.button-text');
             const spinnerSpan = button.querySelector('.loading-spinner');
@@ -947,60 +1248,55 @@
             }
             button.disabled = isLoading;
         }
+
         async function callGeminiAPI(prompt, isStructured = false, schema = null) {
-            /* ... Keep existing ... */
-            const apiKey = ""; // IMPORTANT: API Key is missing here.
-            const apiUrl =
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            const backendApiUrl = "{{ route('admin.products.ai.generate') }}"; 
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
             let payload = {
-                contents: [{
-                    role: "user",
-                    parts: [{
-                        text: prompt
-                    }]
-                }]
+                prompt: prompt,
+                isStructured: isStructured,
+                schema: schema
             };
-            if (isStructured && schema) {
-                payload.generationConfig = {
-                    responseMimeType: "application/json",
-                    // The new Gemini 1.5 API uses a different structure for schema
-                    responseSchema: {
-                        type: schema.type,
-                        properties: schema.properties,
-                        required: schema.required
-                    }
-                };
-            }
+
             try {
-                const response = await fetch(apiUrl, {
+                const response = await fetch(backendApiUrl, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
                     },
                     body: JSON.stringify(payload)
                 });
+
                 if (!response.ok) {
                     const errorData = await response.json();
-                    console.error("API Error:", errorData);
-                    throw new Error(`API request failed: ${errorData.error?.message || response.statusText}`);
+                    console.error("Backend API Error:", errorData);
+                    const errorMessage = errorData.details?.error?.message || errorData.error || `Request failed with status ${response.status}`;
+                    throw new Error(errorMessage);
                 }
+
                 const result = await response.json();
+
                 if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
                     const responseText = result.candidates[0].content.parts[0].text;
                     return isStructured ? JSON.parse(responseText) : responseText;
                 } else {
-                    console.error("Unexpected API response structure:", result);
+                    if (result.promptFeedback && result.promptFeedback.blockReason) {
+                        throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
+                    }
+                    console.error("Unexpected API response structure from backend:", result);
                     throw new Error("Không nhận được nội dung hợp lệ từ AI.");
                 }
             } catch (error) {
-                console.error("Error calling Gemini API:", error);
-                showMessageModal("Lỗi API", `Không thể xử lý yêu cầu từ AI: ${error.message}`, "error");
+                console.error("Error calling backend for Gemini API:", error);
+                showMessageModal("Lỗi Hệ Thống", `Không thể kết nối đến máy chủ AI: ${error.message}`, "error");
                 return null;
             }
         }
 
         function getProductContext() {
-            /* ... Keep existing ... */
             const productName = productNameInput ? productNameInput.value.trim() : "";
             const categoryName = categorySelectElement ? (categorySelectElement.options[categorySelectElement.selectedIndex]
                 ?.text || "") : "";
@@ -1010,7 +1306,7 @@
                 const firstVariantCard = variantsContainer ? variantsContainer.querySelector('.variant-card') : null;
                 if (firstVariantCard) {
                     const attributeSelects = firstVariantCard.querySelectorAll(
-                    'select[name$="[attributes]"]'); // Simplified selector
+                        'select[name$="[attributes]"]');
                     let tempAttrs = [];
                     attributeSelects.forEach(select => {
                         const attrNameLabel = select.closest('.input-group')?.querySelector('label');
@@ -1031,22 +1327,18 @@
             }
             return `Sản phẩm: ${productName}, thuộc danh mục: ${categoryName}${attributesString}. Tập trung vào các sản phẩm của Apple.`;
         }
-        // AI Event Listeners (Keep existing)
+
+        // AI Event Listeners
         const seoSchema = {
             type: "OBJECT",
             properties: {
-                meta_title: {
-                    type: "STRING"
-                },
-                meta_description: {
-                    type: "STRING"
-                },
-                meta_keywords: {
-                    type: "STRING"
-                }
+                meta_title: { type: "STRING" },
+                meta_description: { type: "STRING" },
+                meta_keywords: { type: "STRING" }
             },
             required: ["meta_title", "meta_description", "meta_keywords"]
         };
+
         if (generateShortDescBtn) {
             generateShortDescBtn.addEventListener('click', async () => {
                 const context = getProductContext();
@@ -1062,14 +1354,11 @@
                 toggleButtonLoading(generateShortDescBtn, false);
             });
         }
-        
-        // THAY ĐỔI 3: CẬP NHẬT EVENT LISTENER CỦA NÚT TẠO MÔ TẢ DÀI BẰNG AI
+
         if (generateLongDescBtn) {
             generateLongDescBtn.addEventListener('click', async () => {
                 const context = getProductContext();
-                // Thay vì check longDescriptionTextarea, ta check sự tồn tại của TinyMCE instance
                 if (!context || typeof tinymce === 'undefined' || !tinymce.get('description')) return;
-
                 const shortDesc = shortDescriptionTextarea ? shortDescriptionTextarea.value.trim() : '';
                 toggleButtonLoading(generateLongDescBtn, true);
                 let prompt =
@@ -1077,26 +1366,23 @@
                 prompt += shortDesc ? `\nCó thể dựa trên mô tả ngắn sau: "${shortDesc}".` : '';
                 prompt +=
                     `\nHãy viết bằng giọng văn chuyên nghiệp, phù hợp để đăng bán trên website thương mại điện tử. Tránh các từ ngữ quá quảng cáo, tập trung vào thông tin hữu ích. Sử dụng thẻ <h3> cho tiêu đề phụ và <ul><li> cho danh sách nếu cần.`;
-                
                 const generatedText = await callGeminiAPI(prompt);
-
                 if (generatedText) {
-                    // Cập nhật nội dung cho trình soạn thảo TinyMCE thay vì textarea
                     tinymce.get('description').setContent(generatedText);
                     showMessageModal("Hoàn tất", "Đã tạo mô tả chi tiết bằng AI!", "success");
                 }
                 toggleButtonLoading(generateLongDescBtn, false);
             });
         }
+
         if (generateAllSeoBtn) {
             generateAllSeoBtn.addEventListener('click', async () => {
                 const context = getProductContext();
                 if (!context || !shortDescriptionTextarea || !metaTitleInput || !
                     metaDescriptionTextarea || !metaKeywordsInput) return;
-                
-                // Lấy nội dung từ trình soạn thảo TinyMCE thay vì textarea
-                const productDescription = (typeof tinymce !== 'undefined' && tinymce.get('description')) ? tinymce.get('description').getContent({format: 'text'}) : (shortDescriptionTextarea.value.trim());
-
+                const productDescription = (typeof tinymce !== 'undefined' && tinymce.get('description')) ? tinymce.get('description').getContent({
+                    format: 'text'
+                }) : (shortDescriptionTextarea.value.trim());
                 if (!productDescription) {
                     showMessageModal("Thiếu thông tin", "Vui lòng có mô tả sản phẩm trước khi tạo SEO.",
                         "error");
@@ -1115,22 +1401,24 @@
                 toggleButtonLoading(generateAllSeoBtn, false);
             });
         }
+
         if (generateTagsBtn) {
             generateTagsBtn.addEventListener('click', async () => {
                 const context = getProductContext();
-                if (!context || !tagsInput) return;
+                if (!context || !tagify) return;
                 toggleButtonLoading(generateTagsBtn, true);
                 const prompt =
                     `Gợi ý 5-7 thẻ (tags) phù hợp nhất cho sản phẩm Apple sau: ${context}. Các thẻ nên ngắn gọn, tập trung vào tên sản phẩm, dòng sản phẩm, tính năng chính hoặc đối tượng người dùng. Trả về dưới dạng danh sách các từ khóa cách nhau bởi dấu phẩy.`;
                 const generatedTags = await callGeminiAPI(prompt);
                 if (generatedTags) {
-                    tagsInput.value = generatedTags;
+                    tagify.addTags(generatedTags);
                     showMessageModal("Hoàn tất", "Đã gợi ý thẻ sản phẩm bằng AI!", "success");
                 }
                 toggleButtonLoading(generateTagsBtn, false);
             });
         }
-        // --- Product Type and Variant Logic (UPDATED) ---
+
+        // --- Product Type and Variant Logic ---
         function updateSelectedAttributesForVariants() {
             selectedProductAttributes = [];
             document.querySelectorAll('.product-attribute-checkbox:checked').forEach(checkbox => {
@@ -1149,11 +1437,9 @@
             const type = typeRadio.value;
             const simpleFields = document.getElementById('simpleProductFields');
             const variableFields = document.getElementById('variableProductFields');
-            const simpleInputs = ['simple_sku', 'simple_price', 'simple_stock_quantity'];
 
             if (simpleFields) simpleFields.style.display = (type === 'simple' ? 'block' : 'none');
             if (variableFields) variableFields.style.display = (type === 'variable' ? 'block' : 'none');
-            // simpleInputs.forEach(id => { const input = document.getElementById(id); if (input) input.required = (type === 'simple'); });
 
             if (type === 'simple') {
                 if (variantsContainer) variantsContainer.innerHTML = '';
@@ -1161,7 +1447,6 @@
                 document.querySelectorAll('.product-attribute-checkbox').forEach(cb => cb.checked = false);
                 updateSelectedAttributesForVariants();
             }
-            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
         if (productAttributesContainer && Array.isArray(allAttributesFromPHP)) {
             allAttributesFromPHP.forEach(attr => {
@@ -1182,69 +1467,61 @@
                         .attributes === 'object' && oldVar.attributes[attr.id.toString()]);
                     if (usedInOld) checkbox.checked = true;
                 }
-                const iconEl = document.createElement('i');
-                iconEl.dataset.lucide = attr.icon || 'tag';
-                iconEl.className = 'mr-1.5 h-4 w-4 text-gray-500';
+
                 const textNode = document.createTextNode(attr.name);
                 labelEl.appendChild(checkbox);
-                labelEl.appendChild(iconEl);
                 labelEl.appendChild(textNode);
                 productAttributesContainer.appendChild(labelEl);
             });
-            if (typeof lucide !== 'undefined') lucide.createIcons();
             updateSelectedAttributesForVariants();
         }
         if (addVariantButton) {
             addVariantButton.addEventListener('click', () => {
-                const currentVariantIndex = variantIndexGlobal; // Use a local copy for this specific variant
-                const productTypeRadio = document.querySelector('input[name="type"]:checked');
-                if (!productTypeRadio || (productTypeRadio.value === 'variable' && selectedProductAttributes
-                        .length === 0)) {
-                    showMessageModal('Thông báo',
-                        'Vui lòng chọn ít nhất một thuộc tính cho sản phẩm trước khi thêm biến thể.', 'info');
+                const currentVariantIndex = variantIndexGlobal;
+                if (selectedProductAttributes.length === 0) {
+                    showMessageModal('Thông báo', 'Vui lòng chọn ít nhất một thuộc tính cho sản phẩm trước khi thêm biến thể.', 'info');
                     return;
                 }
+                
                 const variantCard = document.createElement('div');
                 variantCard.className = 'variant-card';
-                variantCard.dataset.variantIndex = currentVariantIndex; // Store index
+                variantCard.dataset.variantIndex = currentVariantIndex;
 
                 let variantHeaderHTML =
-                    `<div class="variant-header"><div class="flex items-center"><i data-lucide="puzzle" class="mr-2 h-5 w-5 text-blue-600"></i><h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4></div><button type="button" class="remove-variant-btn btn btn-danger btn-sm p-1.5 rounded-md"><i data-lucide="trash-2" class="h-4 w-4"></i></button></div>`;
+                    `<div class="variant-header"><div class="flex items-center"><h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4></div><button type="button" class="remove-variant-btn btn btn-danger btn-sm">Xóa</button></div>`;
 
                 let attributesHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4">';
                 selectedProductAttributes.forEach(attr => {
                     if (!attr || !Array.isArray(attr.attributeValues)) return;
                     attributesHTML +=
-                        `<div class="input-group"><label for="variants_${currentVariantIndex}_attr_${attr.id}" class="text-sm font-medium">${attr.name} <span class="required-star">*</span></label><div class="input-with-icon"><i data-lucide="${attr.icon || 'tag'}" class="icon-prefix"></i><select name="variants[${currentVariantIndex}][attributes][${attr.id}]" id="variants_${currentVariantIndex}_attr_${attr.id}" class="select-field text-sm" ><option value="">Chọn ${attr.name}</option>${attr.attributeValues.map(val => `<option value="${val.id}">${val.value}</option>`).join('')}</select></div></div>`;
+                        `<div class="input-group"><label for="variants_${currentVariantIndex}_attr_${attr.id}" class="text-sm font-medium">${attr.name} <span class="required-star">*</span></label><div><select name="variants[${currentVariantIndex}][attributes][${attr.id}]" id="variants_${currentVariantIndex}_attr_${attr.id}" class="select-field text-sm" ><option value="">Chọn ${attr.name}</option>${attr.attributeValues.map(val => `<option value="${val.id}">${val.value}</option>`).join('')}</select></div></div>`;
                 });
                 attributesHTML += '</div>';
 
                 let variantFieldsHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-            <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div class="input-with-icon"><i data-lucide="scan-barcode" class="icon-prefix"></i><input type="text" name="variants[${currentVariantIndex}][sku]" id="variants_${currentVariantIndex}_sku" class="input-field text-sm" ></div></div>
-            <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div class="input-with-icon"><i data-lucide="dollar-sign" class="icon-prefix"></i><input type="number" name="variants[${currentVariantIndex}][price]" id="variants_${currentVariantIndex}_price" class="input-field text-sm" step="1000" min="0" ></div></div>
-            <div class="input-group"><label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM Biến Thể (VNĐ)</label><div class="input-with-icon"><i data-lucide="badge-percent" class="icon-prefix"></i><input type="number" name="variants[${currentVariantIndex}][sale_price]" id="variants_${currentVariantIndex}_sale_price" class="input-field text-sm" step="1000" min="0"></div></div>
-            <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div class="input-with-icon"><i data-lucide="boxes" class="icon-prefix"></i><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" id="variants_${currentVariantIndex}_stock_quantity" class="input-field text-sm" min="0" ></div></div>
-            
-            {{-- Input for multiple variant images --}}
-            <div class="input-group md:col-span-2">
-                <label for="variants_${currentVariantIndex}_image_files" class="text-sm font-medium">Ảnh Biến Thể (chọn nhiều)</label>
-                <input type="file" name="variants[${currentVariantIndex}][image_files][]" id="variants_${currentVariantIndex}_image_files" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" multiple onchange="previewVariantImages(event, ${currentVariantIndex})">
-                <input type="hidden" name="variants[${currentVariantIndex}][primary_image_filename]" id="variants_${currentVariantIndex}_primary_image_filename">
-                <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2" style="justify-content: flex-start; gap: 0.5rem;">
-                    {{-- Variant image previews will appear here --}}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" id="variants_${currentVariantIndex}_sku" class="input-field text-sm" ></div></div>
+                <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" id="variants_${currentVariantIndex}_price" class="input-field text-sm" step="1000" min="0" ></div></div>
+                <div class="input-group"><label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM Biến Thể (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][sale_price]" id="variants_${currentVariantIndex}_sale_price" class="input-field text-sm" step="1000" min="0"></div></div>
+                <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" id="variants_${currentVariantIndex}_stock_quantity" class="input-field text-sm" min="0" ></div></div>
+                
+                <div class="input-group md:col-span-2">
+                    <label for="variant_${currentVariantIndex}_image_input" class="text-sm font-medium">Ảnh Biến Thể (Chọn để upload)</label>
+                    <input type="file" id="variant_${currentVariantIndex}_image_input" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
+                    
+                    <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
+                    
+                    <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
                 </div>
-                {{-- Error messages for variant images can be handled by Laravel's validation if needed --}}
             </div>
-        </div>
-        <div class="mt-4">
-            <label class="flex items-center text-sm cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors">
-                <input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio">
-                <input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input">
-                Đặt làm biến thể mặc định
-            </label>
-        </div>
-    `;
+            <div class="mt-4">
+                <label class="flex items-center text-sm cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors">
+                    <input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio">
+                    <input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input">
+                    Đặt làm biến thể mặc định
+                </label>
+            </div>
+        `;
 
                 variantCard.innerHTML = variantHeaderHTML + attributesHTML + variantFieldsHTML;
                 if (variantsContainer) variantsContainer.appendChild(variantCard);
@@ -1258,26 +1535,22 @@
                 const defaultRadioEl = variantCard.querySelector('.variant-default-radio');
                 if (defaultRadioEl) defaultRadioEl.addEventListener('change', handleDefaultVariantChange);
 
-                variantIndexGlobal++; // Increment global counter for the *next* new variant
-                if (typeof lucide !== 'undefined') lucide.createIcons();
+                variantIndexGlobal++;
                 updateDefaultVariantRadioAndHiddenFields();
             });
         }
 
         function handleDefaultVariantChange(event) {
-            /* ... Keep existing ... */
             document.querySelectorAll('.variant-default-radio').forEach(radio => {
                 const card = radio.closest('.variant-card');
                 if (card) {
                     const hiddenInput = card.querySelector('.is-default-hidden-input');
-                    if (hiddenInput) hiddenInput.value = (radio === event.target && radio.checked) ? "true" :
-                        "false";
+                    if (hiddenInput) hiddenInput.value = (radio === event.target && radio.checked) ? "true" : "false";
                 }
             });
         }
 
         function updateDefaultVariantRadioAndHiddenFields() {
-            /* ... Keep existing ... */
             const defaultRadios = document.querySelectorAll('.variant-default-radio');
             let oneIsChecked = false;
             defaultRadios.forEach(radio => {
@@ -1293,169 +1566,6 @@
                     if (hiddenInput) hiddenInput.value = radio.checked ? "true" : "false";
                 }
             });
-        }
-        function previewCoverImage(event) {
-            const container = document.getElementById('coverImagePreviewContainer');
-            if (!container) return;
-            container.innerHTML = '';
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'image-preview';
-                    div.innerHTML =
-                        `<img src="${e.target.result}" alt="Cover Image Preview"><span class="remove-img-btn" onclick="removeCoverImage(event)"><i data-lucide="x" class="h-3 w-3"></i></span>`;
-                    container.appendChild(div);
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function removeCoverImage(event) {
-            const coverImageInput = document.getElementById('cover_image_file');
-            if (coverImageInput) coverImageInput.value = '';
-            const previewElement = event.target.closest('.image-preview');
-            if (previewElement) previewElement.remove();
-        }
-
-        function previewGalleryImages(event) {
-            const container = document.getElementById('galleryImagesPreviewContainer');
-            if (!container) return;
-            container.innerHTML = '';
-            const files = event.target.files;
-            const dataTransfer = new DataTransfer();
-            
-            Array.from(files).forEach((file, index) => {
-                 dataTransfer.items.add(file);
-                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'image-preview';
-                     div.dataset.filename = file.name;
-                    div.innerHTML =
-                        `<img src="${e.target.result}" alt="Gallery Image ${index + 1}"><span class="remove-img-btn" onclick="removeSpecificGalleryImage(this, '${file.name}')"><i data-lucide="x" class="h-3 w-3"></i></span>`;
-                    container.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-             event.target.files = dataTransfer.files;
-
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
-        function removeSpecificGalleryImage(element, fileNameToRemove) {
-            const galleryInput = document.getElementById('gallery_image_files');
-            if (!galleryInput) return;
-            const currentFiles = Array.from(galleryInput.files);
-            const newFiles = currentFiles.filter(file => file.name !== fileNameToRemove);
-            const dataTransfer = new DataTransfer();
-            newFiles.forEach(file => dataTransfer.items.add(file));
-            galleryInput.files = dataTransfer.files;
-            const previewElement = element.closest('.image-preview');
-            if (previewElement) previewElement.remove();
-        }
-
-        function previewVariantImages(event, vIndex) {
-            const input = event.target;
-            const previewContainer = document.getElementById(`variant_${vIndex}_image_preview_container`);
-            const primaryImageInput = document.getElementById(`variants_${vIndex}_primary_image_filename`);
-            if (!previewContainer || !primaryImageInput) return;
-
-            // Use DataTransfer to manage the file list, allowing removal
-            const dataTransfer = new DataTransfer();
-            const existingFiles = Array.from(input.files);
-            existingFiles.forEach(file => dataTransfer.items.add(file));
-            
-            previewContainer.innerHTML = ''; // Clear current previews
-            let primaryFilename = primaryImageInput.value;
-
-            Array.from(dataTransfer.files).forEach((file, idx) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = 'image-preview variant-image-preview-item';
-                    div.dataset.filename = file.name;
-                    div.innerHTML = `
-                <img src="${e.target.result}" alt="Ảnh biến thể ${idx + 1}">
-                <span class="remove-img-btn" onclick="removeSpecificVariantImage(this, ${vIndex}, '${file.name}')"><i data-lucide="x" class="h-3 w-3"></i></span>
-                <button type="button" class="set-primary-btn" title="Đặt làm ảnh chính" onclick="setVariantPrimaryImage(${vIndex}, '${file.name}')">
-                   <i data-lucide="star"></i>
-                </button>
-            `;
-                    previewContainer.appendChild(div);
-                }
-                reader.readAsDataURL(file);
-            });
-
-             // After loop, re-evaluate the primary image
-            setTimeout(() => {
-                const allPreviews = previewContainer.querySelectorAll('.variant-image-preview-item');
-                let hasPrimary = false;
-
-                // Check if current primary still exists
-                if(primaryFilename) {
-                    const primaryEl = previewContainer.querySelector(`[data-filename="${primaryFilename}"]`);
-                    if(primaryEl) {
-                        primaryEl.classList.add('is-primary');
-                        hasPrimary = true;
-                    } else {
-                        primaryImageInput.value = ''; // It was removed
-                    }
-                }
-                
-                // If no primary is set (or was removed), set the first one
-                if(!hasPrimary && allPreviews.length > 0) {
-                     const firstPreview = allPreviews[0];
-                     firstPreview.classList.add('is-primary');
-                     primaryImageInput.value = firstPreview.dataset.filename;
-                }
-
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-            }, 150); // Delay to ensure images render
-        }
-
-        function removeSpecificVariantImage(buttonElement, vIndex, fileNameToRemove) {
-            const input = document.getElementById(`variants_${vIndex}_image_files`);
-            const primaryImageInput = document.getElementById(`variants_${vIndex}_primary_image_filename`);
-            if (!input || !primaryImageInput) return;
-
-            const dt = new DataTransfer();
-            const files = Array.from(input.files);
-            files.forEach(file => {
-                if (file.name !== fileNameToRemove) dt.items.add(file);
-            });
-            input.files = dt.files;
-
-            buttonElement.closest('.variant-image-preview-item').remove();
-
-            if (primaryImageInput.value === fileNameToRemove) {
-                primaryImageInput.value = '';
-                const previewContainer = document.getElementById(`variant_${vIndex}_image_preview_container`);
-                const remainingPreviews = previewContainer.querySelectorAll('.variant-image-preview-item');
-                if (remainingPreviews.length > 0) {
-                    const newPrimaryPreview = remainingPreviews[0];
-                    setVariantPrimaryImage(vIndex, newPrimaryPreview.dataset.filename);
-                }
-            }
-             if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
-        function setVariantPrimaryImage(vIndex, fileName) {
-            const primaryImageInput = document.getElementById(`variants_${vIndex}_primary_image_filename`);
-            const previewContainer = document.getElementById(`variant_${vIndex}_image_preview_container`);
-            if (!primaryImageInput || !previewContainer) return;
-
-            primaryImageInput.value = fileName;
-
-            previewContainer.querySelectorAll('.variant-image-preview-item').forEach(preview => {
-                preview.classList.remove('is-primary');
-                if (preview.dataset.filename === fileName) {
-                    preview.classList.add('is-primary');
-                }
-            });
-             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         if (productNameInput && slugInput) {
@@ -1474,18 +1584,124 @@
             return text.toString().toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd')
                 .replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
         }
-        
-        document.addEventListener('DOMContentLoaded', () => {
 
-            // THAY ĐỔI 2: KHỞI TẠO TINYMCE
+        async function handleVariantImages(event, variantIndex) {
+            const input = event.target;
+            const files = input.files;
+            if (!files.length) return;
+
+            const previewContainer = document.getElementById(`variant_${variantIndex}_image_preview_container`);
+            const idsContainer = document.getElementById(`variant_${variantIndex}_image_ids_container`);
+
+            const overlay = document.createElement('div');
+            overlay.className = 'upload-overlay';
+            overlay.innerHTML = `<div class="upload-spinner"></div><p class="text-sm text-gray-600">Đang tải ảnh lên...</p>`;
+            previewContainer.appendChild(overlay);
+
+            try {
+                const result = await uploadFilesViaAjax(files);
+                
+                if (result.files && result.files.length > 0) {
+                    previewContainer.innerHTML = ''; 
+                    idsContainer.innerHTML = '';
+                    
+                    result.files.forEach(fileData => {
+                        const hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.className = 'variant-image-id';
+                        hiddenInput.name = `variants[${variantIndex}][image_ids][]`;
+                        hiddenInput.value = fileData.id;
+                        hiddenInput.dataset.id = fileData.id;
+                        idsContainer.appendChild(hiddenInput);
+
+                        const previewDiv = document.createElement('div');
+                        previewDiv.className = 'image-preview variant-image-preview-item';
+                        previewDiv.dataset.id = fileData.id;
+                        previewDiv.innerHTML = `
+                                <img src="${fileData.url}" alt="${fileData.alt_text || 'Ảnh biến thể'}">
+                                <span class="remove-img-btn" onclick="removeVariantImage(this, ${variantIndex}, ${fileData.id})"><i class="fas fa-times"></i></span>
+                                <button type="button" class="set-primary-btn" title="Đặt làm ảnh chính" onclick="setVariantPrimaryImage(${variantIndex}, ${fileData.id})">
+                                    <i class="fas fa-star"></i> Đặt chính
+                                </button>
+                        `;
+                        previewContainer.appendChild(previewDiv);
+                    });
+
+                    setVariantPrimaryImage(variantIndex, result.files[0].id);
+                    showMessageModal('Thành công', `${result.files.length} ảnh đã được tải lên!`, 'success');
+                }
+            } catch (error) {
+                showMessageModal('Lỗi Upload', error.message, 'error');
+                previewContainer.querySelector('.upload-overlay')?.remove();
+            } finally {
+                input.value = '';
+            }
+        }
+        
+        function setVariantPrimaryImage(variantIndex, primaryImageId) {
+            const previewContainer = document.getElementById(`variant_${variantIndex}_image_preview_container`);
+            const idsContainer = document.getElementById(`variant_${variantIndex}_image_ids_container`);
+
+            previewContainer.querySelectorAll('.variant-image-preview-item').forEach(preview => {
+                preview.classList.toggle('is-primary', parseInt(preview.dataset.id) === primaryImageId);
+            });
+            
+            let oldPrimaryInput = idsContainer.querySelector(`input[name="variants[${variantIndex}][primary_image_id]"]`);
+            if(oldPrimaryInput) oldPrimaryInput.remove();
+
+            const primaryInput = document.createElement('input');
+            primaryInput.type = 'hidden';
+            primaryInput.name = `variants[${variantIndex}][primary_image_id]`;
+            primaryInput.value = primaryImageId;
+            idsContainer.appendChild(primaryInput);
+        }
+        
+        function removeVariantImage(buttonElement, variantIndex, imageIdToRemove) {
+            const idsContainer = document.getElementById(`variant_${variantIndex}_image_ids_container`);
+            
+            buttonElement.closest('.variant-image-preview-item').remove();
+            
+            const inputToRemove = idsContainer.querySelector(`input.variant-image-id[data-id="${imageIdToRemove}"]`);
+            const primaryInput = idsContainer.querySelector(`input[name="variants[${variantIndex}][primary_image_id]"]`);
+            
+            let wasPrimary = false;
+            if(primaryInput && parseInt(primaryInput.value) === imageIdToRemove){
+                wasPrimary = true;
+                primaryInput.remove();
+            }
+
+            if (inputToRemove) {
+                inputToRemove.remove();
+            }
+            
+            if(wasPrimary) {
+                const remainingInputs = idsContainer.querySelectorAll('.variant-image-id');
+                if (remainingInputs.length > 0) {
+                    const newPrimaryId = parseInt(remainingInputs[0].dataset.id);
+                    setVariantPrimaryImage(variantIndex, newPrimaryId);
+                }
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            if (messageModalCloseButton && messageModal) {
+                messageModalCloseButton.addEventListener('click', () => {
+                    messageModal.classList.add('hidden');
+                });
+                messageModal.addEventListener('click', (event) => {
+                    if (event.target === messageModal) {
+                        messageModal.classList.add('hidden');
+                    }
+                });
+            }
+
             tinymce.init({
                 selector: 'textarea#description',
                 plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
                 menubar: 'file edit view insert format tools table help',
                 toolbar: 'undo redo | blocks | bold italic underline strikethrough | fontfamily fontsize | align numlist bullist | link image media | table | lineheight | strikethrough superscript subscript | accordions | removeformat',
                 height: 500,
-                skin: 'oxide', // 'oxide' là skin mặc định, bạn có thể dùng 'oxide-dark' nếu có dark mode
-                content_css: 'default', // Có thể trỏ đến file CSS của bạn để đồng bộ style
+                skin: 'oxide',
+                content_css: 'default',
                 content_style: "body { font-family: 'Inter', sans-serif; font-size: 16px; }",
                 autosave_ask_before_unload: true,
                 autosave_interval: '30s',
@@ -1494,21 +1710,26 @@
                 autosave_retention: '2m',
                 image_advtab: true,
                 importcss_append: true,
-                // Cấu hình upload ảnh (cần có backend xử lý)
-                // images_upload_url: '/admin/upload-image', // URL để xử lý upload ảnh
-                // images_upload_credentials: true,
-                // file_picker_types: 'image',
-                // file_picker_callback: function (cb, value, meta) { /* ... */ }
                 setup: function(editor) {
                     editor.on('change', function() {
-                        // Bắt sự kiện change để đảm bảo form validation của trình duyệt hoạt động nếu cần
                         editor.save();
                     });
                 }
             });
 
+            if (tagsInput) {
+                tagify = new Tagify(tagsInput, {
+                    duplicates: false,
+                    dropdown: {
+                        maxItems: 20,
+                        classname: "tags-look",
+                        enabled: 0,
+                        closeOnSelect: false
+                    }
+                });
+            }
+
             toggleProductTypeFields();
-            if (typeof lucide !== 'undefined') lucide.createIcons();
             if (slugInput) slugInput.dataset.auto = "true";
             updateDefaultVariantRadioAndHiddenFields();
 
@@ -1529,12 +1750,11 @@
                 updateSelectedAttributesForVariants();
 
                 oldVariantsData.forEach((oldVariant, loopIndex) => {
-                    if (addVariantButton) addVariantButton.click(); 
-                    
-                    const currentVariantIndex = variantIndexGlobal - 1; // Index của card vừa được tạo
+                    if (addVariantButton) addVariantButton.click();
+                    const currentVariantIndex = variantIndexGlobal - 1;
                     const currentVariantCard = variantsContainer ? variantsContainer.querySelector(
-                        `.variant-card[data-variant-index="${currentVariantIndex}"]`) :
-                    null; 
+                            `.variant-card[data-variant-index="${currentVariantIndex}"]`) :
+                        null;
                     if (currentVariantCard) {
                         const skuInput = currentVariantCard.querySelector(
                             `input[name="variants[${currentVariantIndex}][sku]"]`);
@@ -1553,7 +1773,7 @@
                             Object.entries(oldVariant.attributes).forEach(([attrId, attrValueId]) => {
                                 const attrSelect = currentVariantCard.querySelector(
                                     `select[name="variants[${currentVariantIndex}][attributes][${attrId}]"]`
-                                    );
+                                );
                                 if (attrSelect) attrSelect.value = attrValueId;
                             });
                         }
@@ -1562,15 +1782,9 @@
                         const defaultHidden = currentVariantCard.querySelector(
                             `input[name="variants[${currentVariantIndex}][is_default]"]`);
                         const isDefault = oldVariant.is_default === "true" || oldVariant.is_default ===
-                        true;
+                            true;
                         if (defaultRadio) defaultRadio.checked = isDefault;
                         if (defaultHidden) defaultHidden.value = isDefault ? "true" : "false";
-
-                        const primaryImageHiddenInput = currentVariantCard.querySelector(
-                            `input[name="variants[${currentVariantIndex}][primary_image_filename]"]`);
-                        if (primaryImageHiddenInput && oldVariant.primary_image_filename) {
-                            primaryImageHiddenInput.value = oldVariant.primary_image_filename;
-                        }
                     }
                 });
                 updateDefaultVariantRadioAndHiddenFields();
@@ -1580,7 +1794,6 @@
         const form = document.getElementById('addProductForm');
         if (form) {
             form.addEventListener('submit', function(event) {
-                // Trigger save on TinyMCE editor to ensure textarea has the latest content before submission
                 if (typeof tinymce !== 'undefined' && tinymce.get('description')) {
                     tinymce.get('description').save();
                 }
@@ -1592,6 +1805,23 @@
                     return;
                 }
                 const type = typeRadio.value;
+
+                if (type === 'simple') {
+                    const imageIdInputs = document.querySelectorAll('#image_ids_container .simple-image-id');
+                    
+                    if (imageIdInputs.length === 0) {
+                        showMessageModal('Cảnh báo', 'Sản phẩm đơn giản phải có ít nhất một hình ảnh.', 'error');
+                        event.preventDefault();
+                        return;
+                    }
+
+                    const coverImageInput = document.querySelector('#image_ids_container input[name="cover_image_id"]');
+                    if (!coverImageInput) {
+                        showMessageModal('Cảnh báo', 'Vui lòng chọn một ảnh làm ảnh chính cho sản phẩm.', 'error');
+                        event.preventDefault();
+                        return;
+                    }
+                }
 
                 if (type === 'variable') {
                     if (!variantsContainer || variantsContainer.children.length === 0) {
@@ -1609,61 +1839,8 @@
                         event.preventDefault();
                         return;
                     }
-
-                    const variantCards = variantsContainer.querySelectorAll('.variant-card');
-                    for (let i = 0; i < variantCards.length; i++) {
-                        const vCard = variantCards[i];
-                        const vIndexFromCard = vCard.dataset.variantIndex;
-                        const imageFilesInput = vCard.querySelector(
-                            `input[id="variants_${vIndexFromCard}_image_files"]`);
-                        const primaryImageFilenameInput = vCard.querySelector(
-                            `input[id="variants_${vIndexFromCard}_primary_image_filename"]`);
-
-                        if (imageFilesInput && imageFilesInput.files.length > 0 && (!primaryImageFilenameInput || !
-                                primaryImageFilenameInput.value)) {
-                            event.preventDefault();
-                            showMessageModal("Lỗi Biến Thể #" + (parseInt(vIndexFromCard) + 1),
-                                "Vui lòng chọn một ảnh chính cho biến thể này (hoặc xóa tất cả ảnh của nó nếu không cần).",
-                                "error");
-                            vCard.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'center'
-                            });
-                            const imageSection = vCard.querySelector(
-                                `#variant_${vIndexFromCard}_image_preview_container`);
-                            if (imageSection) {
-                                imageSection.style.outline = '2px solid red';
-                                setTimeout(() => {
-                                    imageSection.style.outline = '';
-                                }, 3500);
-                            }
-                            return;
-                        }
-                    }
                 }
             });
         }
-        const observer = new MutationObserver(mutations => {
-            for (const mutation of mutations) {
-                if (mutation.type === 'childList' && typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
-            }
-        });
-        if (variantsContainer) observer.observe(variantsContainer, {
-            childList: true,
-            subtree: true
-        });
-        if (productAttributesContainer) observer.observe(productAttributesContainer, {
-            childList: true
-        });
-        const coverPreviewContainer = document.getElementById('coverImagePreviewContainer');
-        const galleryPreviewContainer = document.getElementById('galleryImagesPreviewContainer');
-        if (coverPreviewContainer) observer.observe(coverPreviewContainer, {
-            childList: true
-        });
-        if (galleryPreviewContainer) observer.observe(galleryPreviewContainer, {
-            childList: true
-        });
     </script>
 @endpush
