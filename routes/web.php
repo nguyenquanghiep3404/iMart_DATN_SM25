@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 
 
 
@@ -92,6 +93,13 @@ Route::prefix('admin')
         Route::post('attributes/{attribute}/values', [AttributeController::class, 'storeValue'])->name('attributes.values.store');
         Route::put('attributes/{attribute}/values/{value}', [AttributeController::class, 'updateValue'])->name('attributes.values.update');
         Route::delete('attributes/{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
+
+        // Review routes
+        // Admin - Quản lý đánh giá
+        Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
+        Route::put('/reviews/{review}', [AdminReviewController::class, 'update'])->name('reviews.update');
+        Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
 
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:

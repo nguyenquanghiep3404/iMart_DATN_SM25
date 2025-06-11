@@ -47,7 +47,7 @@ class ReviewController extends Controller
             'order_item_id'      => 'nullable|exists:order_items,id',
             'rating'             => 'required|integer|min:1|max:5',
             'title'              => 'nullable|string|max:255',
-            'comment'            => 'required|string|min:10',
+            'comment'            => 'required|string|min:5',
         ], [
             'product_variant_id.required' => 'Vui lòng chọn phiên bản sản phẩm.',
             'product_variant_id.exists' => 'Phiên bản sản phẩm không hợp lệ.',
