@@ -9,6 +9,58 @@
 @endsection
 
 @section('content')
+    <style>
+        
+        /* Responsive cho thumbnails */
+        @media (max-width: 768px) {
+            .swiper-thumbs {
+                width: 100% !important;
+                height: auto !important;
+            }
+
+            .swiper-thumbs .swiper-slide {
+                width: 60px !important;
+                height: 60px !important;
+                margin-right: 8px !important;
+            }
+        }
+
+        .ratio-4x3 {
+            --bs-aspect-ratio: 75%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 20px;
+        }
+
+        /* Điều chỉnh vị trí của nút điều hướng */
+        .btn-prev,
+        .btn-next {
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+        }
+
+        /* Thêm margin-top để đẩy gallery xuống */
+        .swiper {
+            margin-top: 1.5rem;
+        }
+
+        /* Thêm margin-top để đẩy phần thông tin product options xuống */
+        .col-md-6.col-xl-5.offset-xl-1 {
+            margin-top: 100px;
+        }
+
+        /* Thêm viền khi chọn màu sắc */
+        .color-swatch-option {
+            border: 1px solid #8d9196;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .color-swatch-option.selected {
+            border: 2px solid #0d6efd !important;
+            box-shadow: 0 0 5px rgba(13, 110, 253, 0.5) !important;
+        }
+    </style>
     <main class="content-wrapper">
         <!-- Breadcrumb -->
         <nav class="container pt-3 my-3 my-md-4" aria-label="breadcrumb">
@@ -55,23 +107,21 @@
                     <!-- Preview (Large image) -->
                     <div class="swiper"
                         data-swiper='{
-             "loop": true,
-             "navigation": {
-                 "prevEl": ".btn-prev",
-                 "nextEl": ".btn-next"
-             },
-             "thumbs": {
-                 "swiper": "#thumbs"
-             }
-         }'>
+                            "loop": true,
+                            "navigation": {
+                                "prevEl": ".btn-prev",
+                                "nextEl": ".btn-next"
+                            },
+                            "thumbs": {
+                                "swiper": "#thumbs"
+                            }
+                        }'>
                         <div class="swiper-wrapper">
                             <!-- Hiển thị ảnh bìa trước -->
                             @if ($product->coverImage)
                                 <div class="swiper-slide">
                                     <div class="ratio ratio-4x3">
-                                        <img src="{{ Storage::url($product->coverImage->path) }}"
-                                            data-zoom="{{ Storage::url($product->coverImage->path) }}"
-                                            class="drift-demo-trigger"
+                                        <img id="variant-image" src="{{ Storage::url($product->coverImage->path) }}"
                                             alt="{{ $product->name }}"
                                             style="max-height: 400px; object-fit: contain; margin: 40px 0 20px 0;">
                                     </div>
@@ -81,10 +131,7 @@
                             @foreach ($product->galleryImages as $image)
                                 <div class="swiper-slide" style="align-items: center">
                                     <div class="ratio ratio-4x3">
-                                        <img src="{{ Storage::url($image->path) }}"
-                                            data-zoom="{{ Storage::url($image->path) }}"
-                                            class="drift-demo-trigger"
-                                            alt="{{ $product->name }}"
+                                        <img src="{{ Storage::url($image->path) }}" alt="{{ $product->name }}"
                                             style="max-height: 400px; object-fit: contain; margin: 40px 0 20px 0;">
                                     </div>
                                 </div>
@@ -122,32 +169,32 @@
                     <!-- Thumbnails -->
                     <div class="swiper swiper-load swiper-thumbs pt-2 mt-1" id="thumbs"
                         data-swiper='{
-             "loop": true,
-             "spaceBetween": 10,
-             "slidesPerView": 4,
-             "watchSlidesProgress": true,
-             "breakpoints": {
-                 "340": {
-                     "slidesPerView": 4
-                 },
-                 "500": {
-                     "slidesPerView": 5
-                 },
-                 "600": {
-                     "slidesPerView": 5
-                 },
-                 "768": {
-                     "slidesPerView": 4
-                 },
-                 "992": {
-                     "slidesPerView": 5
-                 },
-                 "1200": {
-                     "slidesPerView": 5
-                 }
-             }
-         }'>
-                        <div class="swiper-wrapper">
+                            "loop": true,
+                            "spaceBetween": 10,
+                            "slidesPerView": 4,
+                            "watchSlidesProgress": true,
+                            "breakpoints": {
+                                "340": {
+                                    "slidesPerView": 4
+                                },
+                                "500": {
+                                    "slidesPerView": 5
+                                },
+                                "600": {
+                                    "slidesPerView": 5
+                                },
+                                "768": {
+                                    "slidesPerView": 4
+                                },
+                                "992": {
+                                    "slidesPerView": 5
+                                },
+                                "1200": {
+                                    "slidesPerView": 5
+                                }
+                            }
+                        }'>
+                        <div class="swiper-wrapper" id="variant-gallery">
                             <!-- Thumbnail cho ảnh bìa -->
                             @if ($product->coverImage)
                                 <div class="swiper-slide swiper-thumb">
@@ -177,201 +224,223 @@
                             @endif
                         </div>
                     </div>
-
-                    <!-- Zoom Pane -->
-                    <div id="zoomPane" class="drift-zoom-pane"></div>
                 </div>
 
                 <!-- Product options -->
                 <div class="col-md-6 col-xl-5 offset-xl-1">
                     <div class="ps-md-4 ps-xl-0 pt-md-0">
-                        <div class="position-relative" id="zoomPane">
-                            @php
-                                // Gom nhóm các attributeValue của tất cả variants theo attribute name
-                                $attributesGrouped = collect();
+                        @php
+                            // Gom nhóm các attributeValue của tất cả variants theo attribute name
+                            $attributesGrouped = collect();
+                            $variantCombinations = [];
 
-                                foreach ($product->variants as $variant) {
-                                    foreach ($variant->attributeValues as $attrValue) {
-                                        $attrName = $attrValue->attribute->name;
+                            // Lấy variant mặc định
+                            $defaultVariant = $product->variants->first();
+                            $initialVariantAttributes = [];
 
-                                        if (!$attributesGrouped->has($attrName)) {
-                                            $attributesGrouped[$attrName] = collect();
-                                        }
+                            // Tạo map các tổ hợp thuộc tính có sẵn
+                            foreach ($product->variants as $variant) {
+                                $combination = [];
+                                foreach ($variant->attributeValues as $attrValue) {
+                                    $attrName = $attrValue->attribute->name;
+                                    $value = $attrValue->value;
+                                    $combination[$attrName] = $value;
 
-                                        // Thêm vào nếu chưa có giá trị trùng (unique theo 'value')
-                                        if (!$attributesGrouped[$attrName]->contains('value', $attrValue->value)) {
-                                            $attributesGrouped[$attrName]->push($attrValue);
-                                        }
+                                    if (!$attributesGrouped->has($attrName)) {
+                                        $attributesGrouped[$attrName] = collect();
+                                    }
+                                    if (!$attributesGrouped[$attrName]->contains('value', $attrValue->value)) {
+                                        $attributesGrouped[$attrName]->push($attrValue);
+                                    }
+
+                                    // Populate initialVariantAttributes if this is the default variant
+                                    if ($defaultVariant && $variant->id === $defaultVariant->id) {
+                                        $initialVariantAttributes[$attrName] = $value;
                                     }
                                 }
-                            @endphp
+                                $variantCombinations[] = $combination;
+                            }
+                        @endphp
 
-                            @foreach ($attributesGrouped as $attrName => $attrValues)
-                                <div class="pb-3 mb-2 mb-lg-3">
-                                    <label class="form-label fw-semibold pb-1 mb-2">{{ $attrName }}</label>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        @foreach ($attrValues as $index => $attrValue)
-                                            @php
-                                                $inputName = strtolower(str_replace(' ', '-', $attrName)) . '-options';
-                                                $inputId = $inputName . '-' . $attrValue->id;
-                                            @endphp
+                        @foreach ($attributesGrouped as $attrName => $attrValues)
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold d-block mb-2">
+                                    {{ $attrName }}
+                                    @if ($attrName === 'Màu sắc')
+                                        : <span id="selected-color-name" class="fw-normal"></span>
+                                    @endif
+                                </label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach ($attrValues as $index => $attrValue)
+                                        @php
+                                            $inputName = strtolower(str_replace(' ', '-', $attrName)) . '-options';
+                                            $inputId = $inputName . '-' . $attrValue->id;
+                                            $isColor =
+                                                $attrValue->attribute->display_type === 'color_swatch' &&
+                                                $attrValue->meta;
 
+                                            // isAvailable logic removed from here as it's now handled by JS for initial state
+
+                                        @endphp
+
+                                        <div class="option-container" data-attr-name="{{ $attrName }}"
+                                            data-attr-value="{{ $attrValue->value }}" style="display: none;">
                                             <input type="radio" class="btn-check" name="{{ $inputName }}"
                                                 id="{{ $inputId }}" value="{{ $attrValue->value }}"
-                                                data-attr-name="{{ $attrName }}" {{ $index === 0 ? 'checked' : '' }}>
+                                                data-attr-name="{{ $attrName }}" {{-- 'checked' attribute now managed by JavaScript --}}>
 
-                                            @if ($attrValue->attribute->display_type === 'color_swatch' && $attrValue->meta)
-                                                <label for="{{ $inputId }}"
-                                                    class="btn btn-sm p-1 color-swatch-option"
-                                                    style="width: 32px; height: 32px; background-color: {{ $attrValue->meta }}; border: 1px solid #ccc; border-radius: 4px;"
-                                                    title="{{ $attrValue->value }}">&nbsp;</label>
+                                            @if ($isColor)
+                                                <label for="{{ $inputId }}" class="color-swatch-option rounded"
+                                                    title="{{ $attrValue->value }}"
+                                                    style="
+                                    width: 36px;
+                                    height: 36px;
+                                    display: inline-block;
+                                    background-color: {{ $attrValue->meta }};
+                                    cursor: pointer;
+                                    transition: transform 0.2s;
+                                ">
+                                                </label>
                                             @else
                                                 <label for="{{ $inputId }}"
-                                                    class="btn btn-sm btn-outline-secondary">
+                                                    class="btn btn-outline-secondary btn-sm text-nowrap">
                                                     {{ $attrValue->value }}
                                                 </label>
                                             @endif
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endforeach
-
-                            <!-- Price -->
-                            <div class="d-flex flex-wrap align-items-center mb-3">
-                                @php
-                                    $variant = $product->variants->first();
-                                    $now = now();
-
-                                    $salePrice = (int) $variant->sale_price;
-                                    $originalPrice = (int) $variant->price;
-
-                                    $isOnSale =
-                                        $variant->sale_price !== null &&
-                                        $variant->sale_price_starts_at <= $now &&
-                                        $variant->sale_price_ends_at >= $now;
-
-                                    $displayPrice = $isOnSale ? $salePrice : $originalPrice;
-                                @endphp
-
-                                <div class="d-flex align-items-center mb-3 flex-wrap">
-                                    <div class="d-flex align-items-baseline me-3">
-                                        <div class="h4 mb-0 text-danger" id="variant-price">
-                                            {{ number_format($displayPrice) }}đ
                                         </div>
-
-                                        <div class="ms-2 text-muted text-decoration-line-through"
-                                            id="variant-original-price"
-                                            style="{{ $isOnSale && $originalPrice > $salePrice ? '' : 'display: none;' }}">
-                                            {{ $isOnSale && $originalPrice > $salePrice ? number_format($originalPrice) . 'đ' : '' }}
-                                        </div>
-                                    </div>
-
-                                    <div class="d-flex align-items-center text-success fs-sm ms-auto">
-                                        <i class="ci-check-circle fs-base me-2"></i>
-                                        <span id="variant-status">{{ $variant->status }}</span>
-                                    </div>
+                                    @endforeach
                                 </div>
                             </div>
+                        @endforeach
 
-                            <!-- Count + Buttons -->
-                            <div
-                                class="d-flex flex-wrap flex-sm-nowrap flex-md-wrap flex-lg-nowrap gap-3 gap-lg-2 gap-xl-3 mb-4">
-                                <div class="count-input flex-shrink-0 order-sm-1">
-                                    <button type="button" class="btn btn-icon btn-lg" data-decrement=""
-                                        aria-label="Decrement quantity">
-                                        <i class="ci-minus"></i>
-                                    </button>
-                                    <input type="number" class="form-control form-control-lg" value="1"
-                                        min="1" max="5" readonly>
-                                    <button type="button" class="btn btn-icon btn-lg" data-increment=""
-                                        aria-label="Increment quantity">
-                                        <i class="ci-plus"></i>
-                                    </button>
+                        <!-- Price -->
+                        <div class="d-flex flex-wrap align-items-center mb-3">
+                            @php
+                                $variant = $product->variants->first();
+                                $now = now();
+
+                                $salePrice = (int) $variant->sale_price;
+                                $originalPrice = (int) $variant->price;
+
+                                $isOnSale =
+                                    $variant->sale_price !== null &&
+                                    $variant->sale_price_starts_at <= $now &&
+                                    $variant->sale_price_ends_at >= $now;
+
+                                $displayPrice = $isOnSale ? $salePrice : $originalPrice;
+                            @endphp
+
+                            <div class="d-flex align-items-center mb-3 flex-wrap">
+                                <div class="d-flex align-items-baseline me-3">
+                                    <div class="h4 mb-0 text-danger" id="product-price">
+                                        {{ number_format($displayPrice) }}đ
+                                    </div>
+
+                                    <div class="ms-2 text-muted text-decoration-line-through" id="original-price"
+                                        style="{{ $isOnSale && $originalPrice > $salePrice ? '' : 'display: none;' }}">
+                                        {{ $isOnSale && $originalPrice > $salePrice ? number_format($originalPrice) . 'đ' : '' }}
+                                    </div>
                                 </div>
-                                <button type="button"
-                                    class="btn btn-icon btn-lg btn-secondary animate-pulse order-sm-3 order-md-2 order-lg-3"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="tooltip-sm"
-                                    data-bs-title="Add to Wishlist" aria-label="Add to Wishlist">
-                                    <i class="ci-heart fs-lg animate-target"></i>
+
+                                <div class="d-flex align-items-center text-success fs-sm ms-auto">
+                                    <i class="ci-check-circle fs-base me-2"></i>
+                                    <span id="variant-status">{{ $variant->status }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Count + Buttons -->
+                        <div
+                            class="d-flex flex-wrap flex-sm-nowrap flex-md-wrap flex-lg-nowrap gap-3 gap-lg-2 gap-xl-3 mb-4">
+                            <div class="count-input flex-shrink-0 order-sm-1">
+                                <button type="button" class="btn btn-icon btn-lg" data-decrement=""
+                                    aria-label="Decrement quantity">
+                                    <i class="ci-minus"></i>
                                 </button>
-                                <button type="button"
-                                    class="btn btn-icon btn-lg btn-secondary animate-rotate order-sm-4 order-md-3 order-lg-4"
-                                    data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="tooltip-sm"
-                                    data-bs-title="Compare" aria-label="Compare">
-                                    <i class="ci-refresh-cw fs-lg animate-target"></i>
-                                </button>
-                                <button type="button"
-                                    class="btn btn-lg btn-primary w-100 animate-slide-end order-sm-2 order-md-4 order-lg-2">
-                                    <i class="ci-shopping-cart fs-lg animate-target ms-n1 me-2"></i>
-                                    Thêm vào giỏ hàng
+                                <input type="number" class="form-control form-control-lg" value="1" min="1"
+                                    max="5" readonly>
+                                <button type="button" class="btn btn-icon btn-lg" data-increment=""
+                                    aria-label="Increment quantity">
+                                    <i class="ci-plus"></i>
                                 </button>
                             </div>
+                            <button type="button"
+                                class="btn btn-icon btn-lg btn-secondary animate-pulse order-sm-3 order-md-2 order-lg-3"
+                                data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="tooltip-sm"
+                                data-bs-title="Add to Wishlist" aria-label="Add to Wishlist">
+                                <i class="ci-heart fs-lg animate-target"></i>
+                            </button>
+                            <button type="button"
+                                class="btn btn-icon btn-lg btn-secondary animate-rotate order-sm-4 order-md-3 order-lg-4"
+                                data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="tooltip-sm"
+                                data-bs-title="Compare" aria-label="ive">
+                                <i class="ci-refresh-cw fs-lg animate-target"></i>
+                            </button>
+                            <button type="button"
+                                class="btn btn-lg btn-primary w-100 animate-slide-end order-sm-2 order-md-4 order-lg-2">
+                                <i class="ci-shopping-cart fs-lg animate-target ms-n1 me-2"></i>
+                                Thêm vào giỏ hàng
+                            </button>
+                        </div>
 
-                            <!-- Warranty + Payment info accordion -->
-                            <div class="accordion" id="infoAccordion">
-                                <!-- Accordion item: Thông tin bảo hành -->
-                                <div class="accordion-item border-top">
-                                    <h3 class="accordion-header" id="headingWarranty">
-                                        <button type="button" class="accordion-button collapsed"
-                                            data-bs-toggle="collapse" data-bs-target="#warranty" aria-expanded="false"
-                                            aria-controls="warranty">
-                                            Thông tin bảo hành
-                                        </button>
-                                    </h3>
-                                    <div id="warranty" class="accordion-collapse collapse"
-                                        aria-labelledby="headingWarranty" data-bs-parent="#infoAccordion">
-                                        <div class="accordion-body">
-                                            <div class="alert d-flex alert-info mb-3" role="alert">
-                                                <i class="ci-check-shield fs-xl mt-1 me-2"></i>
-                                                <div class="fs-sm">
-                                                    <span class="fw-semibold">Bảo hành:</span> 12 tháng bảo hành chính
-                                                    hãng.
-                                                    Đổi/trả sản phẩm trong vòng 14 ngày.
-                                                </div>
+                        <!-- Warranty + Payment info accordion -->
+                        <div class="accordion" id="infoAccordion">
+                            <div class="accordion-item border-top">
+                                <h3 class="accordion-header" id="headingWarranty">
+                                    <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
+                                        data-bs-target="#warranty" aria-expanded="false" aria-controls="warranty">
+                                        Thông tin bảo hành
+                                    </button>
+                                </h3>
+                                <div id="warranty" class="accordion-collapse collapse" aria-labelledby="headingWarranty"
+                                    data-bs-parent="#infoAccordion">
+                                    <div class="accordion-body">
+                                        <div class="alert d-flex alert-info mb-3" role="alert">
+                                            <i class="ci-check-shield fs-xl mt-1 me-2"></i>
+                                            <div class="fs-sm">
+                                                <span class="fw-semibold">Bảo hành:</span> 12 tháng bảo hành chính hãng.
+                                                Đổi/trả sản phẩm trong vòng 14 ngày.
                                             </div>
-                                            <p class="mb-0">
-                                                Khám phá chi tiết về <a class="fw-medium" href="#!">chính sách bảo
-                                                    hành sản phẩm</a>,
-                                                bao gồm thời hạn, phạm vi bảo hành và các gói bảo vệ bổ sung có sẵn. Chúng
-                                                tôi ưu tiên
-                                                sự hài lòng của bạn, và thông tin bảo hành được thiết kế để giúp bạn nắm rõ
-                                                và tự tin khi
-                                                mua hàng.
-                                            </p>
                                         </div>
+                                        <p class="mb-0">
+                                            Khám phá chi tiết về <a class="fw-medium" href="#!">chính sách bảo
+                                                hành sản phẩm</a>,
+                                            bao gồm thời hạn, phạm vi bảo hành và các gói bảo vệ bổ sung có sẵn. Chúng tôi
+                                            ưu tiên
+                                            sự hài lòng của bạn, và thông tin bảo hành được thiết kế để giúp bạn nắm rõ
+                                            và tự tin khi mua hàng.
+                                        </p>
                                     </div>
                                 </div>
+                            </div>
 
-                                <!-- Accordion item: Thanh toán và thẻ tín dụng -->
-                                <div class="accordion-item">
-                                    <h3 class="accordion-header" id="headingPayment">
-                                        <button type="button" class="accordion-button collapsed"
-                                            data-bs-toggle="collapse" data-bs-target="#payment" aria-expanded="false"
-                                            aria-controls="payment">
-                                            Thanh toán và thẻ tín dụng
-                                        </button>
-                                    </h3>
-                                    <div id="payment" class="accordion-collapse collapse"
-                                        aria-labelledby="headingPayment" data-bs-parent="#infoAccordion">
-                                        <div class="accordion-body">
-                                            <p class="mb-0">
-                                                Trải nghiệm giao dịch dễ dàng với <a class="fw-medium" href="#!">các
-                                                    phương thức thanh toán linh hoạt</a>
-                                                và dịch vụ tín dụng. Tìm hiểu thêm về các phương thức thanh toán được chấp
-                                                nhận, kế hoạch trả góp
-                                                và các ưu đãi tín dụng độc quyền có sẵn để làm cho trải nghiệm mua sắm của
-                                                bạn trở nên suôn sẻ.
-                                            </p>
-                                        </div>
+                            <div class="accordion-item">
+                                <h3 class="accordion-header" id="headingPayment">
+                                    <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
+                                        data-bs-target="#payment" aria-expanded="false" aria-controls="payment">
+                                        Thanh toán và thẻ tín dụng
+                                    </button>
+                                </h3>
+                                <div id="payment" class="accordion-collapse collapse" aria-labelledby="headingPayment"
+                                    data-bs-parent="#infoAccordion">
+                                    <div class="accordion-body">
+                                        <p class="mb-0">
+                                            Trải nghiệm giao dịch dễ dàng với <a class="fw-medium" href="#!">các
+                                                phương thức thanh toán linh hoạt</a>
+                                            và dịch vụ tín dụng. Tìm hiểu thêm về các phương thức thanh toán được chấp nhận,
+                                            kế hoạch trả góp
+                                            và các ưu đãi tín dụng độc quyền có sẵn để làm cho trải nghiệm mua sắm của bạn
+                                            trở nên suôn sẻ.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </section>
-
 
         <!-- Product details and Reviews shared container -->
         <section class="container pb-5 mb-2 mb-md-3 mb-lg-4 mb-xl-5">
@@ -628,284 +697,242 @@
         </section>
 
         <section style="margin: 80px 0;">
-
         </section>
 
-
         <div>
-
         </div>
     </main>
 @endsection
 
-@push('styles')
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/drift-zoom/1.4.0/drift-basic.min.css"
-        integrity="sha512-jJb8DLCLPyx1AA/sNtaVAt1UoOCcIpZ7wD9H8DHD6ndJFlWiIS+48Xt7+mB+AnS1z1P4H6SMW1uKoH4ml4UBOw=="
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <style>
-        /* CSS cho zoom pane */
-        .drift-zoom-pane {
-            position: fixed !important;
-            top: 50% !important;
-            right: 20px !important;
-            transform: translateY(-50%) !important;
-            width: 400px !important;
-            height: 400px !important;
-            border: 1px solid #ddd !important;
-            background: white !important;
-            z-index: 999 !important;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1) !important;
-            overflow: hidden !important;
-            display: none !important;
-        }
-
-        .drift-zoom-pane.drift-inline {
-            display: block !important;
-        }
-
-        .drift-zoom-pane img {
-            max-width: none !important;
-            max-height: none !important;
-        }
-
-        /* Highlight khi hover */
-        .drift-bounding-box {
-            background: rgba(255, 255, 255, 0.4) !important;
-            border: 1px solid rgba(0, 0, 0, 0.2) !important;
-        }
-
-        /* Cursor style */
-        .drift-demo-trigger {
-            cursor: zoom-in;
-        }
-
-        /* CSS không sử dụng nhưng giữ lại nếu cần tích hợp sau */
-        .product-gallery {
-            position: relative;
-        }
-
-        .product-gallery-preview {
-            position: relative;
-            margin-bottom: 1rem;
-        }
-
-        .product-gallery-preview-item {
-            display: none;
-        }
-
-        .product-gallery-preview-item.active {
-            display: block;
-        }
-
-        .product-gallery-thumblist {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .product-gallery-thumblist-item {
-            width: 80px;
-            height: 80px;
-            border: 1px solid #dee2e6;
-            border-radius: 0.25rem;
-            overflow: hidden;
-        }
-
-        .product-gallery-thumblist-item.active {
-            border-color: #0d6efd;
-        }
-
-        .product-gallery-thumblist-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* CSS cho Swiper gallery */
-        .swiper-slide img {
-            width: 100%;
-            max-height: 400px;
-            object-fit: contain;
-            margin: 40px 0 20px 0;
-        }
-
-        .swiper-thumbs {
-            height: 400px !important;
-            width: 80px !important;
-            margin: 0 auto;
-        }
-
-        .swiper-thumbs .swiper-wrapper {
-            flex-direction: column !important;
-        }
-
-        .swiper-thumbs .swiper-slide {
-            width: 80px !important;
-            height: 80px !important;
-            opacity: 0.5;
-            transition: opacity 0.3s;
-            border: 1px solid #dee2e6;
-            border-radius: 0.25rem;
-            overflow: hidden;
-            margin-bottom: 10px !important;
-        }
-
-        .swiper-thumbs .swiper-slide-thumb-active {
-            opacity: 1;
-            border-color: #0d6efd;
-        }
-
-        .swiper-thumbs img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Responsive cho thumbnails */
-        @media (max-width: 768px) {
-            .swiper-thumbs {
-                height: 300px !important;
-                width: 60px !important;
-            }
-
-            .swiper-thumbs .swiper-slide {
-                width: 60px !important;
-                height: 60px !important;
-            }
-        }
-
-        .ratio-4x3 {
-            --bs-aspect-ratio: 75%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding-top: 20px;
-        }
-
-        /* Điều chỉnh vị trí của nút điều hướng */
-        .btn-prev,
-        .btn-next {
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-        }
-
-        /* Thêm margin-top để đẩy gallery xuống */
-        .swiper {
-            margin-top: 1.5rem;
-        }
-
-        /* Thêm margin-top để đẩy phần thông tin product options xuống */
-        .col-md-6.col-xl-5.offset-xl-1 {
-            margin-top: 100px;
-        }
-
-        /* Căn chỉnh gallery và product options */
-        @media (min-width: 768px) {
-            .row.align-items-start {
-                align-items: flex-start !important;
-            }
-
-            .col-md-6 {
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-start;
-            }
-
-            .ps-md-4 {
-                padding-left: 1.5rem !important;
-            }
-        }
-
-        /* Thêm viền khi chọn màu sắc */
-        .color-swatch-option {
-            transition: border-color 0.3s ease;
-        }
-
-        .color-swatch-option.selected {
-            border: 2px solid #0d6efd !important;
-            box-shadow: 0 0 5px rgba(13, 110, 253, 0.5) !important;
-        }
-    </style>
-@endpush
-
 @push('scripts')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/drift-zoom/1.4.0/Drift.min.js"
-        integrity="sha512-K0yTqZsLkFwzN+wdMnJgbc+HnHgZLEzZ0aPCw5PXULz8TcGp3nP7ipJY4I7oWIEJ2NRCdoRrL8MmcJik9JHtTw=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Khởi tạo Drift cho tất cả ảnh có class drift-demo-trigger
-            document.querySelectorAll('.drift-demo-trigger').forEach(img => {
-                new Drift(img, {
-                    paneContainer: document.querySelector('#zoomPane'),
-                    inlinePane: false,
-                    containInline: true,
-                    hoverBoundingBox: true,
-                    injectBaseStyles: true,
-                    zoomFactor: 3,
-                    handleTouch: true,
-                    hoverDelay: 0,
-                    touchDelay: 0,
-                    onShow: function() {
-                        document.querySelector('#zoomPane').classList.add('drift-inline');
-                    },
-                    onHide: function() {
-                        document.querySelector('#zoomPane').classList.remove('drift-inline');
+            const variantInputs = document.querySelectorAll('input[type="radio"]');
+            const priceElement = document.querySelector('#product-price');
+            const originalPriceElement = document.querySelector('#original-price');
+            const addToCartBtn = document.getElementById('add-to-cart-btn');
+            const quantityInput = document.getElementById('quantity');
+            const variantImage = document.getElementById('variant-image');
+            const variantGallery = document.getElementById('variant-gallery');
+            const selectedColorName = document.getElementById('selected-color-name');
+
+            // Lưu trữ tất cả các tổ hợp variant có sẵn
+            const availableCombinations = @json($variantCombinations);
+            const variantData = @json($variantData);
+            const attributes = @json($attributes);
+
+            console.log('Initial Variant Attributes from PHP:', @json($initialVariantAttributes));
+            // Khởi tạo lựa chọn hiện tại với các thuộc tính của biến thể mặc định
+            let currentSelections = @json($initialVariantAttributes);
+
+            console.log('Initial Current Selections:', currentSelections);
+            console.log('Available Combinations:', availableCombinations);
+            console.log('Variant Data:', variantData);
+            console.log('Attributes:', attributes);
+
+            function updateAvailableOptions() {
+                console.log('Starting updateAvailableOptions with currentSelections:', currentSelections);
+
+                // Lấy tất cả các input radio
+                const allOptions = document.querySelectorAll('.option-container');
+
+                // Ẩn tất cả các option trước khi xác định lại
+                allOptions.forEach(container => {
+                    container.style.display = 'none';
+                    container.querySelector('input[type="radio"]').checked = false;
+                });
+
+                // Lưu trữ các lựa chọn khả dụng dựa trên các lựa chọn hiện tại
+                let newlyAvailableOptions = {};
+
+                // Lặp qua tất cả các tên thuộc tính (Màu sắc, Bộ nhớ, v.v.)
+                Object.keys(attributes).forEach(attrName => {
+                    newlyAvailableOptions[attrName] = new Set();
+                    console.log(`Processing attribute: ${attrName}`);
+
+                    if (attrName === 'Bộ nhớ') {
+                        // Đối với Bộ nhớ, hiển thị tất cả các tùy chọn có sẵn
+                        availableCombinations.forEach(combination => {
+                            if (combination[attrName]) {
+                                newlyAvailableOptions[attrName].add(combination[attrName]);
+                                const input = document.querySelector(
+                                    `input[data-attr-name="${attrName}"][value="${combination[attrName]}"]`
+                                    );
+                                if (input) {
+                                    const container = input.closest('.option-container');
+                                    if (container) {
+                                        container.style.display = 'inline-block';
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        // Đối với các thuộc tính khác (như Màu sắc), chỉ xét đến lựa chọn Bộ nhớ hiện tại
+                        const selectedMemory = currentSelections['Bộ nhớ'];
+                        if (selectedMemory) {
+                            availableCombinations.forEach(combination => {
+                                if (combination['Bộ nhớ'] === selectedMemory && combination[
+                                        attrName]) {
+                                    newlyAvailableOptions[attrName].add(combination[attrName]);
+                                    const input = document.querySelector(
+                                        `input[data-attr-name="${attrName}"][value="${combination[attrName]}"]`
+                                        );
+                                    if (input) {
+                                        const container = input.closest('.option-container');
+                                        if (container) {
+                                            container.style.display = 'inline-block';
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    console.log(`Available options for ${attrName}:`, Array.from(newlyAvailableOptions[
+                        attrName]));
+                });
+
+                // Xử lý lựa chọn cho mỗi loại thuộc tính (Bộ nhớ, Màu sắc, v.v.)
+                Object.keys(attributes).forEach(attrName => {
+                    const valuesSet = newlyAvailableOptions[attrName];
+                    const currentSelectedValue = currentSelections[attrName];
+                    const isCurrentValueStillAvailable = valuesSet.has(currentSelectedValue);
+
+                    console.log(`Processing selection for ${attrName}:`, {
+                        currentSelectedValue,
+                        isCurrentValueStillAvailable,
+                        availableValues: Array.from(valuesSet)
+                    });
+
+                    if (valuesSet.size > 0) {
+                        if (isCurrentValueStillAvailable && currentSelectedValue !== null) {
+                            // Nếu giá trị đã chọn vẫn khả dụng và không phải null, chọn lại nó
+                            document.querySelector(
+                                    `input[data-attr-name="${attrName}"][value="${currentSelectedValue}"]`)
+                                .checked = true;
+                        } else {
+                            // Nếu không có giá trị nào được chọn hoặc giá trị đã chọn không còn khả dụng, tự động chọn giá trị đầu tiên
+                            const firstAvailableValue = Array.from(valuesSet)[0];
+                            document.querySelector(
+                                    `input[data-attr-name="${attrName}"][value="${firstAvailableValue}"]`)
+                                .checked = true;
+                            currentSelections[attrName] = firstAvailableValue;
+                        }
+                    } else {
+                        // Không có giá trị nào khả dụng cho thuộc tính này
+                        currentSelections[attrName] = null;
                     }
                 });
-            });
-        });
 
-        // JS để cập nhật giá và trạng thái khi chọn biến thể khác
-        const variantData = @json($variantData);
-
-        document.querySelectorAll('input[name$="-options"]').forEach(radio => {
-            radio.addEventListener('change', updateVariantInfo);
-        });
-
-        function updateVariantInfo() {
-            // Lấy tất cả các giá trị được chọn
-            const selectedAttributes = {};
-            document.querySelectorAll('input[name$="-options"]:checked').forEach(radio => {
-                const attrName = radio.getAttribute('data-attr-name');
-                const attrValue = radio.value;
-                selectedAttributes[attrName] = attrValue;
-            });
-
-            // Tạo key từ các thuộc tính được chọn
-            const attrKeys = Object.keys(selectedAttributes).sort(); // Sắp xếp để nhất quán với PHP
-            const variantKey = attrKeys.map(key => selectedAttributes[key]).join('_');
-
-            // Cập nhật thông tin biến thể
-            if (variantData[variantKey]) {
-                document.getElementById('variant-price').textContent = variantData[variantKey].price + 'đ';
-                document.getElementById('variant-status').textContent = variantData[variantKey].status;
-
-                const originalPriceEl = document.getElementById('variant-original-price');
-                if (variantData[variantKey].original_price) {
-                    originalPriceEl.style.display = 'block';
-                    originalPriceEl.textContent = variantData[variantKey].original_price + 'đ';
-                } else {
-                    originalPriceEl.style.display = 'none';
+                // Cập nhật tên màu hiển thị
+                if (selectedColorName && currentSelections['Màu sắc']) {
+                    selectedColorName.textContent = currentSelections['Màu sắc'];
+                } else if (selectedColorName) {
+                    selectedColorName.textContent = 'N/A';
                 }
-            } else {
-                // Xử lý trường hợp không tìm thấy biến thể
-                document.getElementById('variant-price').textContent = 'N/A';
-                document.getElementById('variant-status').textContent = 'Không có sẵn';
-                document.getElementById('variant-original-price').style.display = 'none';
+                updateSelectedColorClass(); // Cập nhật class selected sau khi chọn màu
+                console.log('Finished updateAvailableOptions with final currentSelections:', currentSelections);
             }
 
-            // Cập nhật viền cho màu sắc đã chọn
-            document.querySelectorAll('.color-swatch-option').forEach(label => {
-                const radio = document.querySelector(`input[id="${label.getAttribute('for')}"]`);
-                if (radio && radio.checked) {
-                    label.classList.add('selected');
-                } else {
-                    label.classList.remove('selected');
+            function updateSelectedColorClass() {
+                document.querySelectorAll('.color-swatch-option').forEach(label => {
+                    label.classList.remove('selected'); // Xóa lớp selected khỏi tất cả các ô màu
+                });
+                const checkedColorInput = document.querySelector('input[data-attr-name="Màu sắc"]:checked');
+                if (checkedColorInput) {
+                    const label = document.querySelector(`label[for="${checkedColorInput.id}"]`);
+                    if (label) {
+                        label.classList.add('selected');
+                    }
                 }
+            }
+
+            function updateVariantInfo() {
+                // Tạo key cho variant từ các lựa chọn hiện tại
+                const memory = currentSelections['Bộ nhớ'] || '';
+                const color = currentSelections['Màu sắc'] || '';
+                const variantKey = `${memory}_${color}`;
+                console.log('Updating variant info for key:', variantKey);
+
+                // Lấy thông tin variant từ variantData
+                const variant = variantData[variantKey];
+                console.log('Found variant data:', variant);
+
+                if (variant) {
+                    // Cập nhật giá
+                    const priceElement = document.getElementById('product-price');
+                    if (priceElement) {
+                        priceElement.textContent = new Intl.NumberFormat('vi-VN').format(variant.price) + 'đ';
+                    }
+
+                    // Cập nhật giá gốc nếu có
+                    const originalPriceElement = document.getElementById('original-price');
+                    if (originalPriceElement) {
+                        if (variant.original_price) {
+                            originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(variant
+                                .original_price) + 'đ';
+                            originalPriceElement.style.display = '';
+                        } else {
+                            originalPriceElement.style.display = 'none';
+                        }
+                    }
+
+                    // Cập nhật trạng thái
+                    const statusElement = document.getElementById('variant-status');
+                    if (statusElement) {
+                        statusElement.textContent = variant.status;
+                    }
+                }
+            }
+
+            // Thêm event listener cho các input radio
+            document.querySelectorAll('input[type="radio"]').forEach(input => {
+                input.addEventListener('change', function() {
+                    const attrName = this.dataset.attrName;
+                    const attrValue = this.value;
+                    currentSelections[attrName] = attrValue;
+
+                    // Nếu thay đổi Bộ nhớ, reset lựa chọn Màu sắc
+                    if (attrName === 'Bộ nhớ') {
+                        currentSelections['Màu sắc'] = null;
+                    }
+
+                    updateAvailableOptions();
+                    updateMainImage();
+                    updateVariantInfo(); // Thêm lại việc cập nhật thông tin variant
+                });
             });
+
+            // Gọi lần đầu khi trang tải để thiết lập trạng thái ban đầu
+            updateAvailableOptions();
+            updateSelectedColorClass(); // Cập nhật class selected cho màu sắc ban đầu
+            updateMainImage(); // Cập nhật ảnh chính ban đầu
+            updateVariantInfo(); // Thêm lại việc cập nhật thông tin variant ban đầu
+        });
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(price);
         }
 
-        // Gọi hàm ngay khi trang tải để hiển thị thông tin biến thể mặc định
-        document.addEventListener('DOMContentLoaded', updateVariantInfo);
+        function updateMainImage(src) {
+            const variantImage = document.getElementById('variant-image');
+            if (variantImage) {
+                variantImage.src = src;
+            }
+            // Cập nhật Swiper chính để chuyển đến slide tương ứng
+            const mainSwiperEl = document.querySelector('.swiper');
+            if (mainSwiperEl && mainSwiperEl.swiper) {
+                const mainSwiper = mainSwiperEl.swiper;
+                const slideIndex = Array.from(mainSwiper.slides).findIndex(slide => {
+                    const img = slide.querySelector('img');
+                    return img && img.src.includes(src);
+                });
+                if (slideIndex !== -1) {
+                    mainSwiper.slideTo(slideIndex);
+                }
+            }
+        }
     </script>
 @endpush

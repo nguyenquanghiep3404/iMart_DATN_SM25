@@ -40,7 +40,8 @@
         <div class="flex h-[65px] items-center border-b border-slate-200 px-6">
             <a href="{{ route('admin.dashboard') }}">
                 {{-- Đặt chiều cao cho logo, chiều rộng sẽ tự động điều chỉnh --}}
-                <img class="h-8 w-auto" src="{{ asset('assets/admin/img/logo/logo.svg') }}" alt="Logo">
+                <img src="{{ asset('assets/users/logo/bfc4baa4-0e46-4289-8f62-2aea6a7d2a4b.png') }}" alt="" width="200px" style="margin-left: 30px;">
+
             </a>
         </div>
         <div class="px-3 py-5" x-data="{ openNav: {{ $activeParentNav ?? 'null' }} }">
