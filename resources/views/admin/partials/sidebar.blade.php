@@ -270,6 +270,23 @@
                     </a>
                 </li>
 
+                {{-- 6. Quản lý bình luận --}}
+                <li>
+                    @php $isReviewsActive = request()->routeIs('admin.comment.*'); @endphp {{-- Đã sửa tên route tại đây --}}
+                    <a href="{{ route('admin.comment.index') }}"
+                    class="group flex items-center px-4 py-2.5
+                            text-base rounded-md transition-all duration-200 ease-in-out
+                            {{ $isReviewsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                        <span
+                            class="mr-3 text-lg {{ $isReviewsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                                <path
+                                    d="M20 2H4C2.897 2 2 2.897 2 4v16l4-4h14c1.103 0 2-.897 2-2V4c0-1.103-.897-2-2-2z" />
+                            </svg>
+                        </span>
+                        Quản lý bình luận
+                    </a>
+                </li>
                 {{-- 7. Quản lý mã giảm giá --}}
                 <li>
                     @php $isCouponsActive = request()->routeIs('admin.coupons.*'); @endphp
