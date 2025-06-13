@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Requests\OrderRequest;
 
@@ -182,6 +183,104 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Không thể cập nhật trạng thái đơn hàng. Vui lòng thử lại sau.',
+                'error' => app()->isLocal() ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
+    public function getShippers()
+    {
+        try {
+            $shippers = User::whereHas('roles', function($query) {
+                $query->where('name', 'shipper');
+            })->select('id', 'name', 'email', 'phone_number')
+              ->where('status', 'active')
+              ->orderBy('name')
+              ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $shippers
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching shippers:', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể tải danh sách shipper.',
+                'error' => app()->isLocal() ? $e->getMessage() : 'Internal server'
+            ], 500);
+        }
+    }
+
+    public function assignShipper(Request $request, Order $order)
+    {
+        $request->validate([
+            'shipper_id' => 'required|exists:users,id'
+        ]);
+
+        try {
+            // Kiểm tra xem user có phải là shipper không
+            $shipper = User::whereHas('roles', function($query) {
+                $query->where('name', 'shipper');
+            })->find($request->shipper_id);
+
+            if (!$shipper) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Người dùng được chọn không phải là shipper.',
+                ], 422);
+            }
+
+            // Kiểm tra trạng thái đơn hàng có thể gán shipper không
+            if ($order->status !== Order::STATUS_AWAITING_SHIPMENT) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Chỉ có thể gán shipper cho đơn hàng đang ở trạng thái "Chờ giao hàng".',
+                ], 422);
+            }
+
+            // Cập nhật shipper cho đơn hàng
+            $order->update([
+                'shipped_by' => $request->shipper_id,
+                'processed_by' => auth()->id()
+            ]);
+
+            // Load lại dữ liệu để trả về
+            $order->load('shipper:id,name,email,phone_number');
+
+            // Ghi log
+            \Log::info('Shipper assigned to order', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'shipper_id' => $request->shipper_id,
+                'shipper_name' => $shipper->name,
+                'assigned_by' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Gán shipper thành công!',
+                'data' => [
+                    'order' => $order,
+                    'shipper' => $order->shipper
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi chỉ định người gửi hàng:', [
+                'order_id' => $order->id,
+                'shipper_id' => $request->shipper_id,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể gán shipper. Vui lòng thử lại sau.',
                 'error' => app()->isLocal() ? $e->getMessage() : 'Internal server error'
             ], 500);
         }

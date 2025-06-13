@@ -184,9 +184,13 @@
                         <option value="">Tất cả</option>
                         <option value="pending_confirmation">Chờ xác nhận</option>
                         <option value="processing">Đang xử lý</option>
-                        <option value="shipped">Đã giao hàng</option>
+                        <option value="awaiting_shipment">Chờ giao hàng</option>
+                        <option value="shipped">Đã xuất kho</option>
+                        <option value="out_for_delivery">Đang giao hàng</option>
                         <option value="delivered">Giao thành công</option>
                         <option value="cancelled">Đã hủy</option>
+                        <option value="returned">Đã trả hàng</option>
+                        <option value="failed_delivery">Giao hàng thất bại</option>
                     </select>
                 </div>
                  <div>
@@ -196,6 +200,8 @@
                         <option value="pending">Chờ thanh toán</option>
                         <option value="paid">Đã thanh toán</option>
                         <option value="failed">Thất bại</option>
+                        <option value="refunded">Đã hoàn tiền</option>
+                        <option value="partially_refunded">Hoàn tiền một phần</option>
                     </select>
                 </div>
                 <div>
@@ -223,6 +229,7 @@
                         <th scope="col" class="p-6">Trạng thái ĐH</th>
                         <th scope="col" class="p-6">TT Thanh toán</th>
                         <th scope="col" class="p-6">Ngày tạo</th>
+                        <th scope="col" class="p-6">Shipper</th>
                         <th scope="col" class="p-6 text-center">Hành động</th>
                     </tr>
                 </thead>
@@ -350,6 +357,41 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
+    <!-- Assign Shipper Modal -->
+    <div id="assign-shipper-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-transform duration-300 scale-95">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-xl font-bold text-gray-800">Gán Shipper</h2>
+                <p class="text-sm text-gray-600 mt-1">Mã đơn hàng: <span id="assign-shipper-order-code" class="font-medium text-indigo-600"></span></p>
+            </div>
+            <form id="assign-shipper-form" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label for="shipper-select" class="block text-sm font-medium text-gray-700 mb-2">Chọn Shipper <span class="text-red-500">*</span></label>
+                        <select id="shipper-select" name="shipper_id" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <option value="">-- Chọn Shipper --</option>
+                        </select>
+                        <div id="shipper-loading" class="text-sm text-gray-500 mt-1" style="display: none;">
+                            <i class="fas fa-spinner fa-spin mr-1"></i>
+                            Đang tải danh sách shipper...
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" onclick="closeAssignShipperModal()" 
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
+                        Hủy
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center space-x-2">
+                        <i class="fas fa-user-check"></i>
+                        <span>Gán Shipper</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Update Status Modal -->
     <div id="update-status-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-transform duration-300 scale-95">
@@ -409,6 +451,8 @@
             index: '{{ route("admin.orders.index") }}',
             show: '{{ route("admin.orders.show", ":id") }}',
             updateStatus: '{{ route("admin.orders.updateStatus", ":id") }}',
+            getShippers: '{{ route("admin.orders.shippers") }}',
+            assignShipper: '{{ route("admin.orders.assignShipper", ":id") }}',
         },
         csrfToken: '{{ csrf_token() }}'
     };
@@ -444,13 +488,33 @@
      const paymentStatusMap = {
         pending: { text: "Chờ thanh toán", class: "payment-pending" },
         paid: { text: "Đã thanh toán", class: "payment-paid" },
-        failed: { text: "Thất bại", class: "payment-failed" }
+        failed: { text: "Thất bại", class: "payment-failed" },
+        refunded: { text: "Đã hoàn tiền", class: "payment-failed" },
+        partially_refunded: { text: "Hoàn tiền một phần", class: "payment-pending" }
     };
 
     // --- RENDER FUNCTIONS ---
     function renderOrderRow(order) {
         const orderStatus = statusMap[order.status] || { text: 'N/A', class: '' };
         const paymentStatus = paymentStatusMap[order.payment_status] || { text: 'N/A', class: '' };
+        
+        // Determine shipper display
+        let shipperDisplay = '<span class="text-gray-400 italic">Chưa gán</span>';
+        if (order.shipper && order.shipper.name) {
+            shipperDisplay = `<span class="text-gray-700 font-medium">${order.shipper.name}</span>`;
+        }
+        
+        // Show assign shipper button only for "awaiting_shipment" status
+        let assignShipperButton = '';
+        if (order.status === 'awaiting_shipment') {
+            assignShipperButton = `
+                <button onclick='showAssignShipperModal(${order.id}, "${order.order_code}")' 
+                        class="text-blue-600 hover:text-blue-900 font-medium text-lg ml-4" 
+                        title="Gán Shipper">
+                    <i class="fas fa-user-plus"></i>
+                </button>
+            `;
+        }
         
         return `
             <tr class="bg-white border-b hover:bg-gray-50">
@@ -463,6 +527,7 @@
                 <td class="p-6"><span class="status-badge ${orderStatus.class}">${orderStatus.text}</span></td>
                 <td class="p-6"><span class="status-badge ${paymentStatus.class}">${paymentStatus.text}</span></td>
                 <td class="p-6">${formatDate(order.created_at)}</td>
+                <td class="p-6">${shipperDisplay}</td>
                 <td class="p-6 text-center">
                     <button onclick='viewOrder(${order.id})' class="text-indigo-600 hover:text-indigo-900 font-medium text-lg" title="Xem chi tiết">
                         <i class="fas fa-eye"></i>
@@ -470,6 +535,7 @@
                     <button onclick='showUpdateStatusModal(${order.id}, "${order.status}")' class="text-green-600 hover:text-green-900 font-medium text-lg ml-4" title="Cập nhật trạng thái">
                          <i class="fas fa-edit"></i>
                     </button>
+                    ${assignShipperButton}
                 </td>
             </tr>
         `;
@@ -478,7 +544,7 @@
     const tbody = document.getElementById('orders-tbody');
     function renderTable(orders) {
         if (orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào.</td></tr>`;
             return;
         }
         tbody.innerHTML = orders.map(renderOrderRow).join('');
@@ -992,6 +1058,152 @@
     window.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && updateStatusModal.classList.contains('is-open')) {
             closeUpdateStatusModal();
+        }
+        if (event.key === 'Escape' && assignShipperModal.classList.contains('is-open')) {
+            closeAssignShipperModal();
+        }
+    });
+
+    // --- ASSIGN SHIPPER MODAL LOGIC ---
+    const assignShipperModal = document.getElementById('assign-shipper-modal');
+    let currentAssignOrderId = null;
+    let shippersCache = null; // Cache for shippers list
+
+    async function showAssignShipperModal(orderId, orderCode) {
+        currentAssignOrderId = orderId;
+        
+        // Set order code
+        document.getElementById('assign-shipper-order-code').textContent = orderCode;
+        
+        // Reset form
+        document.getElementById('shipper-select').value = '';
+        
+        // Show modal
+        assignShipperModal.classList.add('is-open');
+        assignShipperModal.querySelector('div').classList.remove('scale-95');
+        
+        // Load shippers
+        await loadShippers();
+    }
+
+    function closeAssignShipperModal() {
+        assignShipperModal.classList.remove('is-open');
+        assignShipperModal.querySelector('div').classList.add('scale-95');
+        currentAssignOrderId = null;
+    }
+
+    async function loadShippers() {
+        const shipperSelect = document.getElementById('shipper-select');
+        const loadingDiv = document.getElementById('shipper-loading');
+        
+        // Show loading
+        loadingDiv.style.display = 'block';
+        shipperSelect.disabled = true;
+        
+        try {
+            // Use cache if available
+            if (shippersCache) {
+                populateShipperSelect(shippersCache);
+                return;
+            }
+            
+            const response = await fetch(CONFIG.routes.getShippers, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': CONFIG.csrfToken
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                shippersCache = result.data; // Cache the result
+                populateShipperSelect(result.data);
+            } else {
+                showToast('Không thể tải danh sách shipper.', 'error', 'Lỗi tải dữ liệu');
+            }
+        } catch (error) {
+            console.error('Error loading shippers:', error);
+            showToast('Lỗi kết nối khi tải danh sách shipper.', 'error', 'Lỗi kết nối');
+        } finally {
+            loadingDiv.style.display = 'none';
+            shipperSelect.disabled = false;
+        }
+    }
+
+    function populateShipperSelect(shippers) {
+        const shipperSelect = document.getElementById('shipper-select');
+        
+        // Clear existing options except the first one
+        shipperSelect.innerHTML = '<option value="">-- Chọn Shipper --</option>';
+        
+        // Add shipper options
+        shippers.forEach(shipper => {
+            const option = document.createElement('option');
+            option.value = shipper.id;
+            option.textContent = `${shipper.name} - ${shipper.email}`;
+            shipperSelect.appendChild(option);
+        });
+    }
+
+    // Handle assign shipper form submission
+    document.getElementById('assign-shipper-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!currentAssignOrderId) {
+            showToast('Không xác định được đơn hàng cần gán shipper.', 'error', 'Lỗi hệ thống');
+            return;
+        }
+
+        const formData = new FormData(e.target);
+        const shipperId = formData.get('shipper_id');
+        
+        if (!shipperId) {
+            showToast('Vui lòng chọn shipper để gán.', 'warning', 'Thiếu thông tin');
+            return;
+        }
+        
+        try {
+            const response = await fetch(CONFIG.routes.assignShipper.replace(':id', currentAssignOrderId), {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': CONFIG.csrfToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    shipper_id: shipperId
+                })
+            });
+
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                showToast(`Đã gán shipper "${result.data.shipper.name}" cho đơn hàng thành công!`, 'success', 'Gán shipper thành công');
+                
+                // Close modal
+                closeAssignShipperModal();
+                
+                // Refresh current page
+                refreshCurrentPage();
+            } else {
+                if (response.status === 422) {
+                    showToast(result.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.', 'error', 'Dữ liệu không hợp lệ');
+                } else if (response.status === 403) {
+                    showToast('Bạn không có quyền thực hiện hành động này.', 'error', 'Không có quyền');
+                } else if (response.status === 404) {
+                    showToast('Không tìm thấy đơn hàng hoặc shipper.', 'error', 'Không tìm thấy');
+                } else {
+                    showToast(result.message || 'Không thể gán shipper. Vui lòng thử lại.', 'error', 'Gán shipper thất bại');
+                }
+            }
+        } catch (error) {
+            console.error('Error assigning shipper:', error);
+            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                showToast('Mất kết nối mạng. Vui lòng kiểm tra internet và thử lại.', 'error', 'Lỗi kết nối');
+            } else {
+                showToast('Lỗi hệ thống không xác định. Vui lòng thử lại sau.', 'error', 'Lỗi hệ thống');
+            }
         }
     });
 
