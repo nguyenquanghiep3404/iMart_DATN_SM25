@@ -274,11 +274,13 @@ $currentRouteName = request()->route()->getName();
 
                 {{-- 7. Quản lý mã giảm giá --}}
                 <li>
-                    @php $isCouponsActive = request()->routeIs('admin.coupons.*'); @endphp
-                    <a href="{{-- {{ route('admin.coupons.index') }}" {{-- Giả sử route --}}
-                        class="group flex items-center px-4 py-2.5
-                        text-base rounded-md transition-all duration-200 ease-in-out
-                        {{ $isCouponsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                    @php
+                        $isCouponsActive = request()->routeIs('admin.coupons.*');
+                    @endphp
+                    <button @click="openNav !== 7 ? openNav = 7 : openNav = null"
+                        :class="openNav === 7 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
                         <span
                             class="mr-3 text-lg {{ $isCouponsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
@@ -288,7 +290,31 @@ $currentRouteName = request()->route()->getName();
                             </svg>
                         </span>
                         Quản lý mã giảm giá
-                    </a>
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 7 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 7" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.coupons.index') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md
+                                    {{ request()->routeIs('admin.coupons.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách mã giảm giá
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.coupons.create') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md
+                                    {{ request()->routeIs('admin.coupons.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thêm mã mới
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 {{-- 8. Quản lý phân quyền --}}

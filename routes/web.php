@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+ use App\Http\Controllers\Admin\CouponController;
 
 
 //==========================================================================
@@ -120,6 +121,9 @@ Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->na
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:
         // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
+        
+        // Routes Coupon
+        Route::resource('coupons', CouponController::class);
     });
 
 
