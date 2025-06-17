@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Coupon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Validator;
 
 class CouponController extends Controller
 {
@@ -78,5 +80,50 @@ class CouponController extends Controller
 
         return redirect()->route('admin.coupons.index')
             ->with('success', 'Coupon created successfully.');
+    }
+        /**
+     * Show the form for editing the specified coupon.
+     */
+    public function edit(Coupon $coupon)
+    {
+        return view('admin.coupons.edit', compact('coupon'));
+    }
+
+    /**
+     * Update the specified coupon in storage.
+     */
+    public function update(Request $request, Coupon $coupon)
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => ['required', 'string', 'max:20', Rule::unique('coupons')->ignore($coupon->id)],
+            'description' => 'nullable|string|max:255',
+            'type' => 'required|in:percentage,fixed_amount',
+            'value' => 'required|numeric|min:0',
+            'max_uses' => 'nullable|integer|min:1',
+            'max_uses_per_user' => 'nullable|integer|min:1',
+            'min_order_amount' => 'nullable|numeric|min:0',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'status' => 'required|in:active,inactive,expired',
+            'is_public' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Validate value based on type
+        if ($request->type == 'percentage' && $request->value > 100) {
+            return redirect()->back()
+                ->withErrors(['value' => 'Percentage discount cannot exceed 100%'])
+                ->withInput();
+        }
+
+        $coupon->update($request->all());
+
+        return redirect()->route('admin.coupons.index')
+            ->with('success', 'Coupon updated successfully.');
     }
 }
