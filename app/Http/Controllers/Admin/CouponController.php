@@ -37,14 +37,14 @@ class CouponController extends Controller
         return view('admin.coupons.index', compact('coupons'));
     }
     /**
-     * Show the form for creating a new coupon.
+     * .
      */
     public function create()
     {
         return view('admin.coupons.create');
     }
     /**
-     * Store a newly created coupon in storage.
+     * .
      */
     public function store(Request $request)
     {
@@ -68,7 +68,6 @@ class CouponController extends Controller
                 ->withInput();
         }
 
-        // Validate value based on type
         if ($request->type == 'percentage' && $request->value > 100) {
             return redirect()->back()
                 ->withErrors(['value' => 'Phần trăm chiết khấu không được vượt quá 100%'])
@@ -83,7 +82,7 @@ class CouponController extends Controller
             ->with('success', 'Phiếu giảm giá đã được tạo thành công.');
     }
     /**
-     * Show the form for editing the specified coupon.
+     * .
      */
     public function edit(Coupon $coupon)
     {
@@ -91,7 +90,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Update the specified coupon in storage.
+     * .
      */
     public function update(Request $request, Coupon $coupon)
     {
@@ -115,7 +114,6 @@ class CouponController extends Controller
                 ->withInput();
         }
 
-        // Validate value based on type
         if ($request->type == 'percentage' && $request->value > 100) {
             return redirect()->back()
                 ->withErrors(['value' => 'Phần trăm chiết khấu không được vượt quá 100%'])
@@ -132,10 +130,10 @@ class CouponController extends Controller
         try {
             DB::beginTransaction();
 
-            // First delete related usage records
+            // xóa các bản ghi sử dụng liên quan
             $coupon->usages()->delete();
 
-            // Then delete the coupon
+            // xóa phiếu giảm giá
             $coupon->delete();
 
             DB::commit();
@@ -147,5 +145,16 @@ class CouponController extends Controller
             return redirect()->route('admin.coupons.index')
                 ->with('error', 'Error deleting coupon: ' . $e->getMessage());
         }
+    }
+    public function show(Coupon $coupon)
+    {
+        //  thông tin sử dụng phiếu giảm giá với người dùng và đơn hàng
+        $coupon->load(['usages.user', 'usages.order', 'createdBy']);
+
+        // Nhận số liệu thống kê sử dụng
+        $totalUsages = $coupon->usages->count();
+        $usagesByUser = $coupon->usages->groupBy('user_id')->map->count();
+
+        return view('admin.coupons.show', compact('coupon', 'totalUsages', 'usagesByUser'));
     }
 }
