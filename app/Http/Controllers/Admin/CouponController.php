@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Coupon;
+use App\Models\CouponUsage;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
@@ -156,5 +157,158 @@ class CouponController extends Controller
         $usagesByUser = $coupon->usages->groupBy('user_id')->map->count();
 
         return view('admin.coupons.show', compact('coupon', 'totalUsages', 'usagesByUser'));
+    }
+    public function changeStatus(Coupon $coupon, $status)
+    {
+        if (!in_array($status, ['active', 'inactive', 'expired'])) {
+            return redirect()->back()->with('error', 'Trạng thái không hợp lệ.');
+        }
+
+        $coupon->status = $status;
+        $coupon->save();
+
+        return redirect()->back()->with('success', "Trạng thái phiếu giảm giá đã được thay đổi thành {$status}.");
+    }
+
+    /**
+     * Hiển thị lịch sử sử dụng cho một phiếu giảm giá cụ thể.
+     */
+    public function usageHistory(Coupon $coupon)
+    {
+        $query = CouponUsage::with(['user', 'order'])
+            ->where('coupon_id', $coupon->id);
+
+        // Áp dụng sắp xếp nếu được yêu cầu
+        if (request('sort') == 'oldest') {
+            $query->orderBy('created_at', 'asc');
+        } elseif (request('sort') == 'highest_amount') {
+            $query->join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+                ->orderBy('orders.discount_amount', 'desc')
+                ->select('coupon_usages.*');
+        } elseif (request('sort') == 'lowest_amount') {
+            $query->join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+                ->orderBy('orders.discount_amount', 'asc')
+                ->select('coupon_usages.*');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $usages = $query->paginate(15);
+
+        // Tính tổng số tiền tiết kiệm tổng số tiền giảm giá từ các đơn hàng
+        $totalSavings = $coupon->usages()
+            ->join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+            ->sum('orders.discount_amount');
+
+        // Tính tổng giá trị đơn hàng
+        $totalOrderValue = $coupon->usages()
+            ->join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+            ->sum('orders.grand_total');
+
+        return view('admin.coupons.usage-history', compact('coupon', 'usages', 'totalSavings', 'totalOrderValue'));
+    }
+
+    /**
+     * Xác thực mã phiếu giảm giá
+     */
+    public function validateCoupon(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|exists:coupons,code',
+            'user_id' => 'nullable|exists:users,id',
+            'order_amount' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'valid' => false,
+                'message' => $validator->errors()->first()
+            ]);
+        }
+
+        $code = $request->code;
+        $userId = $request->user_id;
+        $orderAmount = $request->order_amount;
+
+        $coupon = Coupon::where('code', $code)->first();
+
+        // Kiểm tra xem phiếu giảm giá có tồn tại không
+        if (!$coupon) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Invalid coupon code.'
+            ]);
+        }
+
+        // Kiểm tra trạng thái phiếu giảm giá
+        if ($coupon->status !== 'active') {
+            return response()->json([
+                'valid' => false,
+                'message' => 'This coupon is ' . $coupon->status . '.'
+            ]);
+        }
+
+        // Kiểm tra ngày
+        $now = now();
+        if ($coupon->start_date && $now < $coupon->start_date) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'This coupon is not valid yet.'
+            ]);
+        }
+
+        if ($coupon->end_date && $now > $coupon->end_date) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'This coupon has expired.'
+            ]);
+        }
+
+        // Kiểm tra số tiền đơn hàng tối thiểu
+        if ($coupon->min_order_amount && $orderAmount < $coupon->min_order_amount) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Số tiền đơn hàng không đạt yêu cầu tối thiểu là ' . number_format($coupon->min_order_amount) . ' VND.'
+            ]);
+        }
+
+        // Kiểm tra số lượt sử dụng tối đa
+        if ($coupon->max_uses && $coupon->usages()->count() >= $coupon->max_uses) {
+            return response()->json([
+                'valid' => false,
+                'message' => 'Phiếu giảm giá này đã đạt số lượt sử dụng tối đa.'
+            ]);
+        }
+
+        // Kiểm tra số lượt sử dụng tối đa theo người dùng
+        if ($userId && $coupon->max_uses_per_user) {
+            $userUsages = $coupon->usages()->where('user_id', $userId)->count();
+            if ($userUsages >= $coupon->max_uses_per_user) {
+                return response()->json([
+                    'valid' => false,
+                    'message' => 'Bạn đã sử dụng phiếu giảm giá này đủ số lần tối đa.'
+                ]);
+            }
+        }
+
+        // Tính toán số tiền giảm giá
+        $discountAmount = 0;
+        if ($coupon->type === 'percentage') {
+            $discountAmount = ($orderAmount * $coupon->value) / 100;
+        } else {
+            $discountAmount = $coupon->value;
+        }
+
+        return response()->json([
+            'valid' => true,
+            'message' => 'Phiếu giảm giá hợp lệ.',
+            'discount_amount' => $discountAmount,
+            'coupon' => [
+                'id' => $coupon->id,
+                'code' => $coupon->code,
+                'type' => $coupon->type,
+                'value' => $coupon->value,
+            ]
+        ]);
     }
 }

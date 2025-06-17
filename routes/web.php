@@ -14,7 +14,7 @@ use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
- use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\CouponController;
 
 
 //==========================================================================
@@ -60,7 +60,7 @@ Route::prefix('admin')
         // Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
         // Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
         Route::post('/products/ai/generate-content', [AiController::class, 'generateContent'])
-         ->name('products.ai.generate');
+            ->name('products.ai.generate');
         //  Route::post('/ai/generate-content', [AiController::class, 'generateContent'])->name('ai.generateContent');
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
@@ -73,19 +73,19 @@ Route::prefix('admin')
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
-       // --- Routes cho Thư viện Media ---
-    // 1. Route hiển thị trang chính của thư viện
-    Route::get('/media', [UploadedFileController::class, 'index'])->name('media.index');
+        // --- Routes cho Thư viện Media ---
+        // 1. Route hiển thị trang chính của thư viện
+        Route::get('/media', [UploadedFileController::class, 'index'])->name('media.index');
 
-    // 2. Route xử lý việc tải file lên (sẽ được gọi bằng AJAX)
-    Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
+        // 2. Route xử lý việc tải file lên (sẽ được gọi bằng AJAX)
+        Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
 
-    // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
-    Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
+        // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
+        Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
 
-    // 4. Route xử lý việc xóa một file (AJAX)
-    Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
-Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('admin.media.fetch');
+        // 4. Route xử lý việc xóa một file (AJAX)
+        Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
+        Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('admin.media.fetch');
         // Route riêng cho việc xóa ảnh gallery của sản phẩm
         // {uploadedFile} ở đây sẽ là ID của bản ghi trong bảng uploaded_files
         // Laravel sẽ tự động thực hiện Route Model Binding nếu tham số trong controller là UploadedFile $uploadedFile
@@ -121,9 +121,12 @@ Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->na
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:
         // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
-        
+
         // Routes Coupon
         Route::resource('coupons', CouponController::class);
+        Route::get('coupons/{coupon}/usage-history', [CouponController::class, 'usageHistory'])->name('coupons.usageHistory');
+        Route::get('coupons/{coupon}/status/{status}', [CouponController::class, 'changeStatus'])->name('coupons.changeStatus');
+        Route::post('coupons/validate', [CouponController::class, 'validateCoupon'])->name('coupons.validate');
     });
 
 
