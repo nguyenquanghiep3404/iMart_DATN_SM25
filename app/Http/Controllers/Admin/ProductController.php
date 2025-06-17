@@ -15,9 +15,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ProductController extends Controller
 {
+    use AuthorizesRequests;
+    // Phân quyền
+     public function __construct()
+    {
+        // Tự động phân quyền cho tất cả các phương thức CRUD
+        $this->authorizeResource(Product::class, 'product');
+    }
     /**
      * Hiển thị danh sách sản phẩm với bộ lọc và sắp xếp
      * (Logic từ controller gốc của bạn)
@@ -81,7 +89,7 @@ class ProductController extends Controller
         $sortBy = $request->input('sort_by', 'created_at');
         $sortDir = $request->input('sort_dir', 'desc');
         $allowedSortColumns = ['name', 'created_at', 'price'];
-        
+
         if (in_array($sortBy, $allowedSortColumns)) {
             if ($sortBy === 'price') {
                 $query->leftJoin('product_variants as pv_sort_index', function($join) {
@@ -168,7 +176,7 @@ class ProductController extends Controller
                     ]);
                 }
             }
-            
+
             // Xử lý Biến thể (Logic gốc của bạn)
             // ProductRequest đã validate 'type', 'simple_sku', 'variants', etc.
             // Logic gốc của bạn sử dụng $request->input() hoặc $request->property
@@ -302,7 +310,7 @@ class ProductController extends Controller
                     ]);
                 }
             }
-            
+
             // Xử lý Biến thể (Logic gốc của bạn)
             // ProductRequest đã validate các trường cần thiết
             // Type sản phẩm được giả định không thay đổi khi update trong logic gốc này
@@ -358,7 +366,7 @@ class ProductController extends Controller
                 if (!empty($variantsToDelete)) {
                     ProductVariant::whereIn('id', $variantsToDelete)->where('product_id', $product->id)->delete();
                 }
-                
+
                 $currentVariants = $product->refresh()->variants;
                 if ($currentVariants->isNotEmpty()) {
                     $currentVariants->each(fn($v) => $v->update(['is_default' => false]));

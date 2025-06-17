@@ -128,6 +128,29 @@
     .pagination li.active span { background-color: #4f46e5; color: white; border-color: #4f46e5; }
     .pagination li.disabled span { color: #6c757d; pointer-events: none; background-color: #fff; border-color: #dee2e6; }
 
+    /* Thêm vào trong thẻ <style> của file users.index.blade.php */
+    .badge-role {
+        display: inline-block;
+        padding: 0.25em 0.6em;
+        font-size: 75%;
+        font-weight: 700;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        vertical-align: baseline;
+        border-radius: 0.375rem;
+        margin: 0.1rem;
+        color: #fff;
+        background-color: #6c757d; /* Màu mặc định */
+    }
+
+    /* Các màu cụ thể cho từng vai trò nếu muốn */
+    .badge-role-admin { background-color: #dc3545; } /* Màu đỏ */
+    .badge-role-content_manager { background-color: #ffc107; color: #212529; } /* Màu vàng */
+    .badge-role-order_manager { background-color: #17a2b8; } /* Màu xanh dương */
+    .badge-role-shipper { background-color: #28a745; } /* Màu xanh lá */
+    .badge-role-customer { background-color: #6c757d; } /* Màu xám */
+
 </style>
 @endpush
 
@@ -199,6 +222,7 @@
                         <tr>
                             <th class="w-16">ID</th>
                             <th>Thông tin người dùng</th>
+                            <th>Vai trò</th>
                             <th class="text-center">Trạng thái</th>
                             <th>Ngày tạo</th>
                             <th class="w-32 text-center">Thao tác</th>
@@ -219,6 +243,16 @@
                                             @endif
                                         </div>
                                     </div>
+                                </td>
+                                <td>
+                                    @if($user->roles->isNotEmpty())
+                                        @foreach($user->roles as $role)
+                                            {{-- Dùng class CSS đã tạo ở trên để hiển thị badge --}}
+                                            <span class="badge-role badge-role-{{ str_replace(' ', '_', $role->name) }}">{{ $role->name }}</span>
+                                        @endforeach
+                                    @else
+                                        <span class="text-xs text-gray-500">Chưa có vai trò</span>
+                                    @endif
                                 </td>
                                 <td class="text-center">
                                     @php
