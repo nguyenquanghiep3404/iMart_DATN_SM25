@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Coupon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
@@ -70,7 +71,7 @@ class CouponController extends Controller
         // Validate value based on type
         if ($request->type == 'percentage' && $request->value > 100) {
             return redirect()->back()
-                ->withErrors(['value' => 'Percentage discount cannot exceed 100%'])
+                ->withErrors(['value' => 'Phần trăm chiết khấu không được vượt quá 100%'])
                 ->withInput();
         }
 
@@ -79,9 +80,9 @@ class CouponController extends Controller
         $coupon->save();
 
         return redirect()->route('admin.coupons.index')
-            ->with('success', 'Coupon created successfully.');
+            ->with('success', 'Phiếu giảm giá đã được tạo thành công.');
     }
-        /**
+    /**
      * Show the form for editing the specified coupon.
      */
     public function edit(Coupon $coupon)
@@ -117,13 +118,34 @@ class CouponController extends Controller
         // Validate value based on type
         if ($request->type == 'percentage' && $request->value > 100) {
             return redirect()->back()
-                ->withErrors(['value' => 'Percentage discount cannot exceed 100%'])
+                ->withErrors(['value' => 'Phần trăm chiết khấu không được vượt quá 100%'])
                 ->withInput();
         }
 
         $coupon->update($request->all());
 
         return redirect()->route('admin.coupons.index')
-            ->with('success', 'Coupon updated successfully.');
+            ->with('success', 'Phiếu giảm giá đã được cập nhật thành công.');
+    }
+    public function destroy(Coupon $coupon)
+    {
+        try {
+            DB::beginTransaction();
+
+            // First delete related usage records
+            $coupon->usages()->delete();
+
+            // Then delete the coupon
+            $coupon->delete();
+
+            DB::commit();
+
+            return redirect()->route('admin.coupons.index')
+                ->with('success', 'Đã xóa phiếu giảm giá thành công.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('admin.coupons.index')
+                ->with('error', 'Error deleting coupon: ' . $e->getMessage());
+        }
     }
 }
