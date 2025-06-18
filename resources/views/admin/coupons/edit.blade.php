@@ -14,16 +14,7 @@
         </a>
     </div>
 
-    @if ($errors->any())
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
-            <p class="font-medium mb-2">Đã xảy ra lỗi:</p>
-            <ul class="list-disc pl-5">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+
 
     <div class="bg-white rounded-xl shadow-sm p-6">
         <form action="{{ route('admin.coupons.update', $coupon->id) }}" method="POST">
@@ -35,43 +26,57 @@
                     <div class="mb-5">
                         <label for="code" class="block text-sm font-medium text-gray-700 mb-1">Mã giảm giá <span class="text-red-500">*</span></label>
                         <input type="text" id="code" name="code" 
-                            class="block w-full rounded-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
-                            value="{{ old('code', $coupon->code) }}" 
-                            required>
-                        <p class="mt-1 text-sm text-gray-500">Mã duy nhất không trùng lặp. Chỉ nên dùng chữ và số.</p>
+                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('code') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
+                            value="{{ old('code', $coupon->code) }}">
+                        @error('code')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @else
+                            <p class="mt-1 text-sm text-gray-500">Mã duy nhất không trùng lặp. Chỉ nên dùng chữ và số.</p>
+                        @enderror
                     </div>
                     
                     <div class="mb-5">
                         <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
                         <textarea id="description" name="description" rows="3" 
-                            class="block w-full rounded-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">{{ old('description', $coupon->description) }}</textarea>
-                        <p class="mt-1 text-sm text-gray-500">Mô tả ngắn về chương trình khuyến mãi.</p>
+                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('description') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror">{{ old('description', $coupon->description) }}</textarea>
+                        @error('description')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @else
+                            <p class="mt-1 text-sm text-gray-500">Mô tả ngắn về chương trình khuyến mãi.</p>
+                        @enderror
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5">
                         <div class="mb-5">
                             <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Loại giảm giá <span class="text-red-500">*</span></label>
                             <select id="type" name="type" 
-                                class="block w-full rounded-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
-                                required>
+                                class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('type') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror">
+                                <option value="">Chọn loại giảm giá</option>
                                 <option value="fixed_amount" {{ old('type', $coupon->type) == 'fixed_amount' ? 'selected' : '' }}>Số tiền cố định</option>
                                 <option value="percentage" {{ old('type', $coupon->type) == 'percentage' ? 'selected' : '' }}>Phần trăm</option>
                             </select>
-                            <p class="mt-1 text-sm text-gray-500">Giảm theo số tiền hoặc phần trăm.</p>
+                            @error('type')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @else
+                                <p class="mt-1 text-sm text-gray-500">Giảm theo số tiền hoặc phần trăm.</p>
+                            @enderror
                         </div>
                         
                         <div class="mb-5">
                             <label for="value" class="block text-sm font-medium text-gray-700 mb-1">Giá trị giảm <span class="text-red-500">*</span></label>
                             <div class="flex rounded-md">
                                 <input type="number" step="0.01" min="0" id="value" name="value" 
-                                    class="block w-full rounded-l-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
-                                    value="{{ old('value', $coupon->value) }}" 
-                                    required>
-                                <span class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-gray-500" id="value-addon">{{ $coupon->type == 'percentage' ? '%' : 'VND' }}</span>
+                                    class="block w-full rounded-l-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('value') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
+                                    value="{{ old('value', $coupon->value) }}">
+                                <span class="inline-flex items-center rounded-r-md border border-l-0 bg-gray-50 px-3 text-gray-500 @error('value') border-red-300 @else border-gray-300 @enderror" id="value-addon">{{ $coupon->type == 'percentage' ? '%' : 'VND' }}</span>
                             </div>
-                            <p class="mt-1 text-sm text-gray-500" id="value-help">
-                                {{ $coupon->type == 'percentage' ? 'Phần trăm giảm giá (1-100).' : 'Số tiền giảm (VND).' }}
-                            </p>
+                            @error('value')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @else
+                                <p class="mt-1 text-sm text-gray-500" id="value-help">
+                                    {{ $coupon->type == 'percentage' ? 'Phần trăm giảm giá (1-100).' : 'Số tiền giảm (VND).' }}
+                                </p>
+                            @enderror
                         </div>
                     </div>
                     
@@ -79,22 +84,30 @@
                         <div class="mb-5">
                             <label for="max_uses" class="block text-sm font-medium text-gray-700 mb-1">Số lần sử dụng tối đa</label>
                             <input type="number" min="1" id="max_uses" name="max_uses" 
-                                class="block w-full rounded-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
+                                class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('max_uses') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
                                 value="{{ old('max_uses', $coupon->max_uses) }}">
-                            <p class="mt-1 text-sm text-gray-500">
-                                Để trống nếu không giới hạn.
-                                <span class="text-indigo-600 font-medium">
-                                    Đã sử dụng: {{ $coupon->usages->count() }} lần
-                                </span>
-                            </p>
+                            @error('max_uses')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @else
+                                <p class="mt-1 text-sm text-gray-500">
+                                    Để trống nếu không giới hạn.
+                                    <span class="text-indigo-600 font-medium">
+                                        Đã sử dụng: {{ $coupon->usages->count() }} lần
+                                    </span>
+                                </p>
+                            @enderror
                         </div>
                         
                         <div class="mb-5">
                             <label for="max_uses_per_user" class="block text-sm font-medium text-gray-700 mb-1">Số lần sử dụng tối đa/người</label>
                             <input type="number" min="1" id="max_uses_per_user" name="max_uses_per_user" 
-                                class="block w-full rounded-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
+                                class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('max_uses_per_user') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
                                 value="{{ old('max_uses_per_user', $coupon->max_uses_per_user) }}">
-                            <p class="mt-1 text-sm text-gray-500">Để trống nếu không giới hạn.</p>
+                            @error('max_uses_per_user')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @else
+                                <p class="mt-1 text-sm text-gray-500">Để trống nếu không giới hạn.</p>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -104,48 +117,67 @@
                         <label for="min_order_amount" class="block text-sm font-medium text-gray-700 mb-1">Giá trị đơn hàng tối thiểu</label>
                         <div class="flex rounded-md">
                             <input type="number" min="0" id="min_order_amount" name="min_order_amount" 
-                                class="block w-full rounded-l-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
+                                class="block w-full rounded-l-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('min_order_amount') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
                                 value="{{ old('min_order_amount', $coupon->min_order_amount) }}">
-                            <span class="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 bg-gray-50 px-3 text-gray-500">VND</span>
+                            <span class="inline-flex items-center rounded-r-md border border-l-0 bg-gray-50 px-3 text-gray-500 @error('min_order_amount') border-red-300 @else border-gray-300 @enderror">VND</span>
                         </div>
-                        <p class="mt-1 text-sm text-gray-500">Giá trị đơn hàng tối thiểu để áp dụng mã giảm giá.</p>
+                        @error('min_order_amount')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @else
+                            <p class="mt-1 text-sm text-gray-500">Giá trị đơn hàng tối thiểu để áp dụng mã giảm giá.</p>
+                        @enderror
                     </div>
                     
                     <div class="mb-5">
                         <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu</label>
                         <input type="datetime-local" id="start_date" name="start_date" 
-                            class="block w-full rounded-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
+                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('start_date') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
                             value="{{ old('start_date', $coupon->start_date ? $coupon->start_date->format('Y-m-d\TH:i:s') : '') }}">
-                        <p class="mt-1 text-sm text-gray-500">Để trống nếu mã giảm giá có hiệu lực ngay lập tức.</p>
+                        @error('start_date')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @else
+                            <p class="mt-1 text-sm text-gray-500">Để trống nếu mã giảm giá có hiệu lực ngay lập tức.</p>
+                        @enderror
                     </div>
                     
                     <div class="mb-5">
                         <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc</label>
                         <input type="datetime-local" id="end_date" name="end_date" 
-                            class="block w-full rounded-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
+                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
                             value="{{ old('end_date', $coupon->end_date ? $coupon->end_date->format('Y-m-d\TH:i:s') : '') }}">
-                        <p class="mt-1 text-sm text-gray-500">Để trống nếu mã giảm giá không hết hạn.</p>
+                        @error('end_date')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @else
+                            <p class="mt-1 text-sm text-gray-500">Để trống nếu mã giảm giá không hết hạn.</p>
+                        @enderror
                     </div>
                     
                     <div class="mb-5">
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái <span class="text-red-500">*</span></label>
                         <select id="status" name="status" 
-                            class="block w-full rounded-md border border-gray-300 py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
-                            required>
+                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('status') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror">
+                            <option value="">Chọn trạng thái</option>
                             <option value="active" {{ old('status', $coupon->status) == 'active' ? 'selected' : '' }}>Hoạt động</option>
                             <option value="inactive" {{ old('status', $coupon->status) == 'inactive' ? 'selected' : '' }}>Vô hiệu</option>
                             <option value="expired" {{ old('status', $coupon->status) == 'expired' ? 'selected' : '' }}>Hết hạn</option>
                         </select>
+                        @error('status')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
                     
                     <div class="mb-5">
                         <label class="flex items-center">
                             <input type="checkbox" name="is_public" value="1" 
-                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" 
+                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 @error('is_public') border-red-300 focus:ring-red-500 @enderror" 
                                 {{ old('is_public', $coupon->is_public) ? 'checked' : '' }}>
                             <span class="ml-2 text-sm text-gray-700">Mã giảm giá công khai</span>
                         </label>
-                        <p class="mt-1 ml-6 text-sm text-gray-500">Nếu không chọn, mã giảm giá này chỉ dành cho người dùng được chọn.</p>
+                        @error('is_public')
+                            <p class="mt-1 ml-6 text-sm text-red-600">{{ $message }}</p>
+                        @else
+                            <p class="mt-1 ml-6 text-sm text-gray-500">Nếu không chọn, mã giảm giá này chỉ dành cho người dùng được chọn.</p>
+                        @enderror
                     </div>
                 </div>
             </div>

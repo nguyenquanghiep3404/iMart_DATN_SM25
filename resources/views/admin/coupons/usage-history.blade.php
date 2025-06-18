@@ -201,5 +201,3 @@
     </div>
 </div>
 @endsection 
-
-usage-history.blade

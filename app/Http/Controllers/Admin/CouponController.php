@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\CouponRequest;
+use App\Http\Requests\ValidateCouponRequest;
 
 class CouponController extends Controller
 {
@@ -47,35 +47,9 @@ class CouponController extends Controller
     /**
      * .
      */
-    public function store(Request $request)
+    public function store(CouponRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'code' => 'required|string|unique:coupons,code|max:20',
-            'description' => 'nullable|string|max:255',
-            'type' => 'required|in:percentage,fixed_amount',
-            'value' => 'required|numeric|min:0',
-            'max_uses' => 'nullable|integer|min:1',
-            'max_uses_per_user' => 'nullable|integer|min:1',
-            'min_order_amount' => 'nullable|numeric|min:0',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'status' => 'required|in:active,inactive',
-            'is_public' => 'boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        if ($request->type == 'percentage' && $request->value > 100) {
-            return redirect()->back()
-                ->withErrors(['value' => 'Phần trăm chiết khấu không được vượt quá 100%'])
-                ->withInput();
-        }
-
-        $coupon = new Coupon($request->all());
+        $coupon = new Coupon($request->validated());
         $coupon->created_by = auth()->id();
         $coupon->save();
 
@@ -93,35 +67,9 @@ class CouponController extends Controller
     /**
      * .
      */
-    public function update(Request $request, Coupon $coupon)
+    public function update(CouponRequest $request, Coupon $coupon)
     {
-        $validator = Validator::make($request->all(), [
-            'code' => ['required', 'string', 'max:20', Rule::unique('coupons')->ignore($coupon->id)],
-            'description' => 'nullable|string|max:255',
-            'type' => 'required|in:percentage,fixed_amount',
-            'value' => 'required|numeric|min:0',
-            'max_uses' => 'nullable|integer|min:1',
-            'max_uses_per_user' => 'nullable|integer|min:1',
-            'min_order_amount' => 'nullable|numeric|min:0',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'status' => 'required|in:active,inactive,expired',
-            'is_public' => 'boolean',
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        if ($request->type == 'percentage' && $request->value > 100) {
-            return redirect()->back()
-                ->withErrors(['value' => 'Phần trăm chiết khấu không được vượt quá 100%'])
-                ->withInput();
-        }
-
-        $coupon->update($request->all());
+        $coupon->update($request->validated());
 
         return redirect()->route('admin.coupons.index')
             ->with('success', 'Phiếu giảm giá đã được cập nhật thành công.');
@@ -171,7 +119,7 @@ class CouponController extends Controller
     }
 
     /**
-     * Hiển thị lịch sử sử dụng cho một phiếu giảm giá cụ thể.
+     * Hiển thị lịch sử sử dụng mã giảm giá cụ thể.
      */
     public function usageHistory(Coupon $coupon)
     {
@@ -211,21 +159,8 @@ class CouponController extends Controller
     /**
      * Xác thực mã phiếu giảm giá
      */
-    public function validateCoupon(Request $request)
+    public function validateCoupon(ValidateCouponRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'code' => 'required|string|exists:coupons,code',
-            'user_id' => 'nullable|exists:users,id',
-            'order_amount' => 'required|numeric|min:0',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'valid' => false,
-                'message' => $validator->errors()->first()
-            ]);
-        }
-
         $code = $request->code;
         $userId = $request->user_id;
         $orderAmount = $request->order_amount;
