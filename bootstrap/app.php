@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role'       => \App\Http\Middleware\CheckUserRole::class,
             'permission' => \App\Http\Middleware\CheckUserPermission::class,
+            'check.content.access' => \App\Http\Middleware\CheckContentAccess::class
+
+            
             
             // Bạn cũng có thể thêm các alias khác ở đây
             // 'auth' => \App\Http\Middleware\Authenticate::class, // (Ví dụ)

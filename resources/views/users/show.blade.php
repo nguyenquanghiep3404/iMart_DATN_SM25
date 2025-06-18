@@ -10,7 +10,6 @@
 
 @section('content')
     <style>
-        
         /* Responsive cho thumbnails */
         @media (max-width: 768px) {
             .swiper-thumbs {
@@ -229,104 +228,107 @@
                 <!-- Product options -->
                 <div class="col-md-6 col-xl-5 offset-xl-1">
                     <div class="ps-md-4 ps-xl-0 pt-md-0">
-                        @php
-                            // Gom nhóm các attributeValue của tất cả variants theo attribute name
-                            $attributesGrouped = collect();
-                            $variantCombinations = [];
+                       {{-- Tạo dữ liệu --}}
+@php
+    $attributesGrouped = collect();
+    $variantCombinations = [];
+    $variantData = [];
+    $initialVariantAttributes = [];
 
-                            // Lấy variant mặc định
-                            $defaultVariant = $product->variants->first();
-                            $initialVariantAttributes = [];
+    if ($defaultVariant) {
+        foreach ($defaultVariant->attributeValues as $attrValue) {
+            $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
+        }
+    }
 
-                            // Tạo map các tổ hợp thuộc tính có sẵn
-                            foreach ($product->variants as $variant) {
-                                $combination = [];
-                                foreach ($variant->attributeValues as $attrValue) {
-                                    $attrName = $attrValue->attribute->name;
-                                    $value = $attrValue->value;
-                                    $combination[$attrName] = $value;
+    foreach ($product->variants as $variant) {
+        $combination = [];
+        foreach ($variant->attributeValues as $attrValue) {
+            $attrName = $attrValue->attribute->name;
+            $value = $attrValue->value;
+            $combination[$attrName] = $value;
 
-                                    if (!$attributesGrouped->has($attrName)) {
-                                        $attributesGrouped[$attrName] = collect();
-                                    }
-                                    if (!$attributesGrouped[$attrName]->contains('value', $attrValue->value)) {
-                                        $attributesGrouped[$attrName]->push($attrValue);
-                                    }
+            if (!$attributesGrouped->has($attrName)) {
+                $attributesGrouped[$attrName] = collect();
+            }
 
-                                    // Populate initialVariantAttributes if this is the default variant
-                                    if ($defaultVariant && $variant->id === $defaultVariant->id) {
-                                        $initialVariantAttributes[$attrName] = $value;
-                                    }
-                                }
-                                $variantCombinations[] = $combination;
-                            }
-                        @endphp
+            if (!$attributesGrouped[$attrName]->contains('value', $attrValue->value)) {
+                $attributesGrouped[$attrName]->push($attrValue);
+            }
+        }
 
-                        @foreach ($attributesGrouped as $attrName => $attrValues)
-                            <div class="mb-4">
-                                <label class="form-label fw-semibold d-block mb-2">
-                                    {{ $attrName }}
-                                    @if ($attrName === 'Màu sắc')
-                                        : <span id="selected-color-name" class="fw-normal"></span>
-                                    @endif
-                                </label>
-                                <div class="d-flex flex-wrap gap-2">
-                                    @foreach ($attrValues as $index => $attrValue)
-                                        @php
-                                            $inputName = strtolower(str_replace(' ', '-', $attrName)) . '-options';
-                                            $inputId = $inputName . '-' . $attrValue->id;
-                                            $isColor =
-                                                $attrValue->attribute->display_type === 'color_swatch' &&
-                                                $attrValue->meta;
+        $variantCombinations[] = $combination;
 
-                                            // isAvailable logic removed from here as it's now handled by JS for initial state
+        $key = collect($combination)->implode('_');
+        $now = now();
+        $salePrice = $variant->sale_price;
+        $isOnSale = $salePrice !== null &&
+                    $variant->sale_price_starts_at <= $now &&
+                    $variant->sale_price_ends_at >= $now;
 
-                                        @endphp
+        $variantData[$key] = [
+            'price' => (int) ($isOnSale ? $salePrice : $variant->price),
+            'original_price' => (int) $variant->price,
+            'status' => $variant->status,
+            'image' => $variant->image_url ?? null,
+        ];
+    }
+@endphp
 
-                                        <div class="option-container" data-attr-name="{{ $attrName }}"
-                                            data-attr-value="{{ $attrValue->value }}" style="display: none;">
-                                            <input type="radio" class="btn-check" name="{{ $inputName }}"
-                                                id="{{ $inputId }}" value="{{ $attrValue->value }}"
-                                                data-attr-name="{{ $attrName }}" {{-- 'checked' attribute now managed by JavaScript --}}>
+{{-- Hiển thị các lựa chọn thuộc tính --}}
+@foreach ($attributesGrouped as $attrName => $attrValues)
+    <div class="mb-4">
+        <label class="form-label fw-semibold d-block mb-2">
+            {{ $attrName }}
+            @if (strtolower($attrName) === 'màu sắc')
+                : <span id="selected-color-name" class="fw-normal"></span>
+            @endif
+        </label>
+        <div class="d-flex flex-wrap gap-2">
+            @foreach ($attrValues as $attrValue)
+                @php
+                    $inputName = strtolower(str_replace(' ', '-', $attrName)) . '-options';
+                    $inputId = $inputName . '-' . $attrValue->id;
+                    $isColor = $attrValue->attribute->display_type === 'color_swatch' && $attrValue->meta;
+                    $isChecked = isset($initialVariantAttributes[$attrName]) && $initialVariantAttributes[$attrName] === $attrValue->value;
+                @endphp
 
-                                            @if ($isColor)
-                                                <label for="{{ $inputId }}" class="color-swatch-option rounded"
-                                                    title="{{ $attrValue->value }}"
-                                                    style="
-                                    width: 36px;
-                                    height: 36px;
-                                    display: inline-block;
-                                    background-color: {{ $attrValue->meta }};
-                                    cursor: pointer;
-                                    transition: transform 0.2s;
-                                ">
-                                                </label>
-                                            @else
-                                                <label for="{{ $inputId }}"
-                                                    class="btn btn-outline-secondary btn-sm text-nowrap">
-                                                    {{ $attrValue->value }}
-                                                </label>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endforeach
+                <div class="option-container" data-attr-name="{{ $attrName }}" data-attr-value="{{ $attrValue->value }}">
+                    <input type="radio" class="btn-check" name="{{ $inputName }}"
+                        id="{{ $inputId }}" value="{{ $attrValue->value }}"
+                        data-attr-name="{{ $attrName }}" {{ $isChecked ? 'checked' : '' }}>
+
+                    @if ($isColor)
+                        <label for="{{ $inputId }}" class="color-swatch-option rounded"
+                            title="{{ $attrValue->value }}"
+                            style="width: 36px; height: 36px; display: inline-block;
+                            background-color: {{ $attrValue->meta }};
+                            cursor: pointer; transition: transform 0.2s;">
+                        </label>
+                    @else
+                        <label for="{{ $inputId }}"
+                            class="btn btn-outline-secondary btn-sm text-nowrap">
+                            {{ $attrValue->value }}
+                        </label>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    </div>
+@endforeach
+
 
                         <!-- Price -->
                         <div class="d-flex flex-wrap align-items-center mb-3">
                             @php
-                                $variant = $product->variants->first();
+                                $variant = $defaultVariant ?? $product->variants->first();
                                 $now = now();
-
                                 $salePrice = (int) $variant->sale_price;
                                 $originalPrice = (int) $variant->price;
-
                                 $isOnSale =
                                     $variant->sale_price !== null &&
                                     $variant->sale_price_starts_at <= $now &&
                                     $variant->sale_price_ends_at >= $now;
-
                                 $displayPrice = $isOnSale ? $salePrice : $originalPrice;
                             @endphp
 
@@ -335,13 +337,11 @@
                                     <div class="h4 mb-0 text-danger" id="product-price">
                                         {{ number_format($displayPrice) }}đ
                                     </div>
-
                                     <div class="ms-2 text-muted text-decoration-line-through" id="original-price"
                                         style="{{ $isOnSale && $originalPrice > $salePrice ? '' : 'display: none;' }}">
                                         {{ $isOnSale && $originalPrice > $salePrice ? number_format($originalPrice) . 'đ' : '' }}
                                     </div>
                                 </div>
-
                                 <div class="d-flex align-items-center text-success fs-sm ms-auto">
                                     <i class="ci-check-circle fs-base me-2"></i>
                                     <span id="variant-status">{{ $variant->status }}</span>
@@ -366,14 +366,12 @@
                             </div>
                             <button type="button"
                                 class="btn btn-icon btn-lg btn-secondary animate-pulse order-sm-3 order-md-2 order-lg-3"
-                                data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="tooltip-sm"
-                                data-bs-title="Add to Wishlist" aria-label="Add to Wishlist">
+                                data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Add to Wishlist">
                                 <i class="ci-heart fs-lg animate-target"></i>
                             </button>
                             <button type="button"
                                 class="btn btn-icon btn-lg btn-secondary animate-rotate order-sm-4 order-md-3 order-lg-4"
-                                data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="tooltip-sm"
-                                data-bs-title="Compare" aria-label="ive">
+                                data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Compare">
                                 <i class="ci-refresh-cw fs-lg animate-target"></i>
                             </button>
                             <button type="button"
@@ -383,62 +381,19 @@
                             </button>
                         </div>
 
-                        <!-- Warranty + Payment info accordion -->
-                        <div class="accordion" id="infoAccordion">
-                            <div class="accordion-item border-top">
-                                <h3 class="accordion-header" id="headingWarranty">
-                                    <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
-                                        data-bs-target="#warranty" aria-expanded="false" aria-controls="warranty">
-                                        Thông tin bảo hành
-                                    </button>
-                                </h3>
-                                <div id="warranty" class="accordion-collapse collapse" aria-labelledby="headingWarranty"
-                                    data-bs-parent="#infoAccordion">
-                                    <div class="accordion-body">
-                                        <div class="alert d-flex alert-info mb-3" role="alert">
-                                            <i class="ci-check-shield fs-xl mt-1 me-2"></i>
-                                            <div class="fs-sm">
-                                                <span class="fw-semibold">Bảo hành:</span> 12 tháng bảo hành chính hãng.
-                                                Đổi/trả sản phẩm trong vòng 14 ngày.
-                                            </div>
-                                        </div>
-                                        <p class="mb-0">
-                                            Khám phá chi tiết về <a class="fw-medium" href="#!">chính sách bảo
-                                                hành sản phẩm</a>,
-                                            bao gồm thời hạn, phạm vi bảo hành và các gói bảo vệ bổ sung có sẵn. Chúng tôi
-                                            ưu tiên
-                                            sự hài lòng của bạn, và thông tin bảo hành được thiết kế để giúp bạn nắm rõ
-                                            và tự tin khi mua hàng.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                        <!-- Accordion -->
+                        {{-- accordion giữ nguyên như bạn cũ --}}
 
-                            <div class="accordion-item">
-                                <h3 class="accordion-header" id="headingPayment">
-                                    <button type="button" class="accordion-button collapsed" data-bs-toggle="collapse"
-                                        data-bs-target="#payment" aria-expanded="false" aria-controls="payment">
-                                        Thanh toán và thẻ tín dụng
-                                    </button>
-                                </h3>
-                                <div id="payment" class="accordion-collapse collapse" aria-labelledby="headingPayment"
-                                    data-bs-parent="#infoAccordion">
-                                    <div class="accordion-body">
-                                        <p class="mb-0">
-                                            Trải nghiệm giao dịch dễ dàng với <a class="fw-medium" href="#!">các
-                                                phương thức thanh toán linh hoạt</a>
-                                            và dịch vụ tín dụng. Tìm hiểu thêm về các phương thức thanh toán được chấp nhận,
-                                            kế hoạch trả góp
-                                            và các ưu đãi tín dụng độc quyền có sẵn để làm cho trải nghiệm mua sắm của bạn
-                                            trở nên suôn sẻ.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- Truyền dữ liệu biến thể xuống JS -->
+                        <script>
+                            const variantData = @json($variantData);
+                            const availableCombinations = @json($variantCombinations);
+                            const attributes = @json($attributesGrouped->map(fn($values) => $values->pluck('value')));
+                            const initialVariantAttributes = @json($initialVariantAttributes);
+                        </script>
                     </div>
-
                 </div>
+
             </div>
         </section>
 
@@ -705,223 +660,130 @@
 @endsection
 
 @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const variantInputs = document.querySelectorAll('input[type="radio"]');
-            const priceElement = document.querySelector('#product-price');
-            const originalPriceElement = document.querySelector('#original-price');
-            const addToCartBtn = document.getElementById('add-to-cart-btn');
-            const quantityInput = document.getElementById('quantity');
-            const variantImage = document.getElementById('variant-image');
-            const variantGallery = document.getElementById('variant-gallery');
-            const selectedColorName = document.getElementById('selected-color-name');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const priceElement = document.querySelector('#product-price');
+        const originalPriceElement = document.querySelector('#original-price');
+        const variantImage = document.getElementById('variant-image');
+        const selectedColorName = document.getElementById('selected-color-name');
 
-            // Lưu trữ tất cả các tổ hợp variant có sẵn
-            const availableCombinations = @json($variantCombinations);
-            const variantData = @json($variantData);
-            const attributes = @json($attributes);
+        const availableCombinations = @json($variantCombinations);
+        const variantData = @json($variantData);
+        const attributes = @json($attributesGrouped->map(fn($values) => $values->pluck('value')));
+        const attributeOrder = Object.keys(attributes);
+        let currentSelections = @json($initialVariantAttributes);
 
-            console.log('Initial Variant Attributes from PHP:', @json($initialVariantAttributes));
-            // Khởi tạo lựa chọn hiện tại với các thuộc tính của biến thể mặc định
-            let currentSelections = @json($initialVariantAttributes);
+        function updateAvailableOptions() {
+            let newlyAvailableOptions = {};
 
-            console.log('Initial Current Selections:', currentSelections);
-            console.log('Available Combinations:', availableCombinations);
-            console.log('Variant Data:', variantData);
-            console.log('Attributes:', attributes);
+            attributeOrder.forEach((attrName, attrIndex) => {
+                newlyAvailableOptions[attrName] = new Set();
 
-            function updateAvailableOptions() {
-                console.log('Starting updateAvailableOptions with currentSelections:', currentSelections);
-
-                // Lấy tất cả các input radio
-                const allOptions = document.querySelectorAll('.option-container');
-
-                // Ẩn tất cả các option trước khi xác định lại
-                allOptions.forEach(container => {
-                    container.style.display = 'none';
-                    container.querySelector('input[type="radio"]').checked = false;
+                availableCombinations.forEach(combination => {
+                    let isMatch = true;
+                    for (let i = 0; i < attrIndex; i++) {
+                        let prevAttr = attributeOrder[i];
+                        if (currentSelections[prevAttr] !== combination[prevAttr]) {
+                            isMatch = false;
+                            break;
+                        }
+                    }
+                    if (isMatch && combination[attrName]) {
+                        newlyAvailableOptions[attrName].add(combination[attrName]);
+                    }
                 });
 
-                // Lưu trữ các lựa chọn khả dụng dựa trên các lựa chọn hiện tại
-                let newlyAvailableOptions = {};
-
-                // Lặp qua tất cả các tên thuộc tính (Màu sắc, Bộ nhớ, v.v.)
-                Object.keys(attributes).forEach(attrName => {
-                    newlyAvailableOptions[attrName] = new Set();
-                    console.log(`Processing attribute: ${attrName}`);
-
-                    if (attrName === 'Bộ nhớ') {
-                        // Đối với Bộ nhớ, hiển thị tất cả các tùy chọn có sẵn
-                        availableCombinations.forEach(combination => {
-                            if (combination[attrName]) {
-                                newlyAvailableOptions[attrName].add(combination[attrName]);
-                                const input = document.querySelector(
-                                    `input[data-attr-name="${attrName}"][value="${combination[attrName]}"]`
-                                    );
-                                if (input) {
-                                    const container = input.closest('.option-container');
-                                    if (container) {
-                                        container.style.display = 'inline-block';
-                                    }
-                                }
-                            }
-                        });
+                document.querySelectorAll(`.option-container[data-attr-name="${attrName}"]`).forEach(container => {
+                    const value = container.getAttribute('data-attr-value');
+                    const input = container.querySelector('input[type="radio"]');
+                    if (newlyAvailableOptions[attrName].has(value)) {
+                        container.style.display = 'inline-block';
                     } else {
-                        // Đối với các thuộc tính khác (như Màu sắc), chỉ xét đến lựa chọn Bộ nhớ hiện tại
-                        const selectedMemory = currentSelections['Bộ nhớ'];
-                        if (selectedMemory) {
-                            availableCombinations.forEach(combination => {
-                                if (combination['Bộ nhớ'] === selectedMemory && combination[
-                                        attrName]) {
-                                    newlyAvailableOptions[attrName].add(combination[attrName]);
-                                    const input = document.querySelector(
-                                        `input[data-attr-name="${attrName}"][value="${combination[attrName]}"]`
-                                        );
-                                    if (input) {
-                                        const container = input.closest('.option-container');
-                                        if (container) {
-                                            container.style.display = 'inline-block';
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    }
-                    console.log(`Available options for ${attrName}:`, Array.from(newlyAvailableOptions[
-                        attrName]));
-                });
-
-                // Xử lý lựa chọn cho mỗi loại thuộc tính (Bộ nhớ, Màu sắc, v.v.)
-                Object.keys(attributes).forEach(attrName => {
-                    const valuesSet = newlyAvailableOptions[attrName];
-                    const currentSelectedValue = currentSelections[attrName];
-                    const isCurrentValueStillAvailable = valuesSet.has(currentSelectedValue);
-
-                    console.log(`Processing selection for ${attrName}:`, {
-                        currentSelectedValue,
-                        isCurrentValueStillAvailable,
-                        availableValues: Array.from(valuesSet)
-                    });
-
-                    if (valuesSet.size > 0) {
-                        if (isCurrentValueStillAvailable && currentSelectedValue !== null) {
-                            // Nếu giá trị đã chọn vẫn khả dụng và không phải null, chọn lại nó
-                            document.querySelector(
-                                    `input[data-attr-name="${attrName}"][value="${currentSelectedValue}"]`)
-                                .checked = true;
-                        } else {
-                            // Nếu không có giá trị nào được chọn hoặc giá trị đã chọn không còn khả dụng, tự động chọn giá trị đầu tiên
-                            const firstAvailableValue = Array.from(valuesSet)[0];
-                            document.querySelector(
-                                    `input[data-attr-name="${attrName}"][value="${firstAvailableValue}"]`)
-                                .checked = true;
-                            currentSelections[attrName] = firstAvailableValue;
-                        }
-                    } else {
-                        // Không có giá trị nào khả dụng cho thuộc tính này
-                        currentSelections[attrName] = null;
+                        container.style.display = 'none';
+                        if (input && input.checked) input.checked = false;
                     }
                 });
 
-                // Cập nhật tên màu hiển thị
-                if (selectedColorName && currentSelections['Màu sắc']) {
-                    selectedColorName.textContent = currentSelections['Màu sắc'];
-                } else if (selectedColorName) {
-                    selectedColorName.textContent = 'N/A';
+                const valuesSet = newlyAvailableOptions[attrName];
+                const currentSelectedValue = currentSelections[attrName];
+                if (!valuesSet.has(currentSelectedValue)) {
+                    const firstValue = Array.from(valuesSet)[0];
+                    currentSelections[attrName] = firstValue || null;
                 }
-                updateSelectedColorClass(); // Cập nhật class selected sau khi chọn màu
-                console.log('Finished updateAvailableOptions with final currentSelections:', currentSelections);
-            }
 
-            function updateSelectedColorClass() {
-                document.querySelectorAll('.color-swatch-option').forEach(label => {
-                    label.classList.remove('selected'); // Xóa lớp selected khỏi tất cả các ô màu
-                });
-                const checkedColorInput = document.querySelector('input[data-attr-name="Màu sắc"]:checked');
-                if (checkedColorInput) {
-                    const label = document.querySelector(`label[for="${checkedColorInput.id}"]`);
-                    if (label) {
-                        label.classList.add('selected');
-                    }
+                if (currentSelections[attrName]) {
+                    const radio = document.querySelector(
+                        `input[data-attr-name="${attrName}"][value="${currentSelections[attrName]}"]`
+                    );
+                    if (radio) radio.checked = true;
                 }
-            }
-
-            function updateVariantInfo() {
-                // Tạo key cho variant từ các lựa chọn hiện tại
-                const memory = currentSelections['Bộ nhớ'] || '';
-                const color = currentSelections['Màu sắc'] || '';
-                const variantKey = `${memory}_${color}`;
-                console.log('Updating variant info for key:', variantKey);
-
-                // Lấy thông tin variant từ variantData
-                const variant = variantData[variantKey];
-                console.log('Found variant data:', variant);
-
-                if (variant) {
-                    // Cập nhật giá
-                    const priceElement = document.getElementById('product-price');
-                    if (priceElement) {
-                        priceElement.textContent = new Intl.NumberFormat('vi-VN').format(variant.price) + 'đ';
-                    }
-
-                    // Cập nhật giá gốc nếu có
-                    const originalPriceElement = document.getElementById('original-price');
-                    if (originalPriceElement) {
-                        if (variant.original_price) {
-                            originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(variant
-                                .original_price) + 'đ';
-                            originalPriceElement.style.display = '';
-                        } else {
-                            originalPriceElement.style.display = 'none';
-                        }
-                    }
-
-                    // Cập nhật trạng thái
-                    const statusElement = document.getElementById('variant-status');
-                    if (statusElement) {
-                        statusElement.textContent = variant.status;
-                    }
-                }
-            }
-
-            // Thêm event listener cho các input radio
-            document.querySelectorAll('input[type="radio"]').forEach(input => {
-                input.addEventListener('change', function() {
-                    const attrName = this.dataset.attrName;
-                    const attrValue = this.value;
-                    currentSelections[attrName] = attrValue;
-
-                    // Nếu thay đổi Bộ nhớ, reset lựa chọn Màu sắc
-                    if (attrName === 'Bộ nhớ') {
-                        currentSelections['Màu sắc'] = null;
-                    }
-
-                    updateAvailableOptions();
-                    updateMainImage();
-                    updateVariantInfo(); // Thêm lại việc cập nhật thông tin variant
-                });
             });
 
-            // Gọi lần đầu khi trang tải để thiết lập trạng thái ban đầu
-            updateAvailableOptions();
-            updateSelectedColorClass(); // Cập nhật class selected cho màu sắc ban đầu
-            updateMainImage(); // Cập nhật ảnh chính ban đầu
-            updateVariantInfo(); // Thêm lại việc cập nhật thông tin variant ban đầu
-        });
+            if (selectedColorName && currentSelections['Màu sắc']) {
+                selectedColorName.textContent = currentSelections['Màu sắc'];
+            } else if (selectedColorName) {
+                selectedColorName.textContent = 'N/A';
+            }
 
-        function formatPrice(price) {
-            return new Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND'
-            }).format(price);
+            updateSelectedColorClass();
+        }
+
+        function updateSelectedColorClass() {
+            document.querySelectorAll('.color-swatch-option').forEach(label => {
+                label.classList.remove('selected');
+            });
+            const checkedColorInput = document.querySelector('input[data-attr-name="Màu sắc"]:checked');
+            if (checkedColorInput) {
+                const label = document.querySelector(`label[for="${checkedColorInput.id}"]`);
+                if (label) label.classList.add('selected');
+            }
+        }
+
+        function updateVariantInfo() {
+            const variantKey = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
+            const variant = variantData[variantKey];
+
+            console.log('🟡 Variant Key:', variantKey);
+            console.log('🟢 Variant Data:', variant);
+
+            if (variant) {
+                if (priceElement) {
+                    priceElement.textContent = new Intl.NumberFormat('vi-VN').format(variant.price) + 'đ';
+                }
+                if (originalPriceElement) {
+                    if (variant.original_price > variant.price) {
+                        originalPriceElement.textContent = new Intl.NumberFormat('vi-VN').format(variant.original_price) + 'đ';
+                        originalPriceElement.style.display = '';
+                    } else {
+                        originalPriceElement.style.display = 'none';
+                    }
+                }
+
+                const statusElement = document.getElementById('variant-status');
+                if (statusElement) {
+                    statusElement.textContent = variant.status;
+                }
+            }
+        }
+
+        function updateMainImageFromSelection() {
+            const variantKey = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
+            const variant = variantData[variantKey];
+
+            console.log('🔵 Main Image Variant Key:', variantKey);
+            console.log('🔴 Variant Image:', variant?.image);
+
+            if (variant && variant.image && variant.image !== '') {
+                updateMainImage(variant.image);
+            }
         }
 
         function updateMainImage(src) {
             const variantImage = document.getElementById('variant-image');
-            if (variantImage) {
+            if (variantImage && src) {
                 variantImage.src = src;
             }
-            // Cập nhật Swiper chính để chuyển đến slide tương ứng
+
             const mainSwiperEl = document.querySelector('.swiper');
             if (mainSwiperEl && mainSwiperEl.swiper) {
                 const mainSwiper = mainSwiperEl.swiper;
@@ -934,5 +796,24 @@
                 }
             }
         }
-    </script>
+
+        document.querySelectorAll('input[type="radio"]').forEach(input => {
+            input.addEventListener('change', function() {
+                const attrName = this.dataset.attrName;
+                const attrValue = this.value;
+                console.log('🧩 Changed', attrName + ':', attrValue);
+
+                currentSelections[attrName] = attrValue;
+
+                updateAvailableOptions();
+                updateVariantInfo();
+                updateMainImageFromSelection();
+            });
+        });
+
+        updateAvailableOptions();
+        updateVariantInfo();
+        updateMainImageFromSelection();
+    });
+</script>
 @endpush

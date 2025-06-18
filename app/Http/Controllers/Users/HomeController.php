@@ -183,134 +183,139 @@ class HomeController extends Controller
 
 
     public function show($slug)
-    {
-        // Lấy sản phẩm theo slug, kèm các quan hệ cần thiết
-        $product = Product::with([
-            'category',
-            'coverImage',
-            'galleryImages',
-            'variants.attributeValues.attribute',
-            'variants.images' => function ($query) {
-                $query->where('type', 'variant_image')->orderBy('order');
-            },
-            'reviews' => function ($query) {
+{
+    // Lấy sản phẩm theo slug, kèm các quan hệ cần thiết
+    $product = Product::with([
+        'category',
+        'coverImage',
+        'galleryImages',
+        'variants.attributeValues.attribute',
+        'variants.images' => function ($query) {
+            $query->where('type', 'variant_image')->orderBy('order');
+        },
+        'reviews' => function ($query) {
+            $query->where('reviews.status', 'approved');
+        },
+    ])
+        ->withCount([
+            'reviews as reviews_count' => function ($query) {
                 $query->where('reviews.status', 'approved');
-            },
+            }
         ])
-            ->withCount([
-                'reviews as reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved');
-                }
-            ])
-            ->where('slug', $slug)
-            ->where('status', 'published')
-            ->firstOrFail();
+        ->where('slug', $slug)
+        ->where('status', 'published')
+        ->firstOrFail();
 
-        $product->increment('view_count');
+    $product->increment('view_count');
 
-        $averageRating = $product->reviews->avg('rating') ?? 0;
-        $product->average_rating = round($averageRating, 1);
+    $averageRating = $product->reviews->avg('rating') ?? 0;
+    $product->average_rating = round($averageRating, 1);
 
-        $ratingCounts = [];
-        for ($i = 1; $i <= 5; $i++) {
-            $ratingCounts[$i] = $product->reviews->where('rating', $i)->count();
-        }
-
-        $totalReviews = $product->reviews_count;
-
-        $ratingPercentages = [];
-        foreach ($ratingCounts as $star => $count) {
-            $ratingPercentages[$star] = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
-        }
-
-        // Chuẩn bị dữ liệu biến thể
-        $variantData = [];
-        $attributes = [];
-        $availableCombinations = [];
-
-        // Đầu tiên, tạo map các tổ hợp thuộc tính có sẵn
-        foreach ($product->variants as $variant) {
-            $combination = [];
-            foreach ($variant->attributeValues as $attrValue) {
-                $attrName = $attrValue->attribute->name;
-                $value = $attrValue->value;
-                $combination[$attrName] = $value;
-
-                // Thêm vào danh sách thuộc tính
-                if (!isset($attributes[$attrName])) {
-                    $attributes[$attrName] = collect();
-                }
-                if (!$attributes[$attrName]->contains('value', $value)) {
-                    $attributes[$attrName]->push($attrValue);
-                }
-            }
-            $availableCombinations[] = $combination;
-        }
-
-        // Sau đó, xử lý thông tin variant
-        foreach ($product->variants as $variant) {
-            $now = now();
-            $salePrice = (int) $variant->sale_price;
-            $originalPrice = (int) $variant->price;
-            $isOnSale = $variant->sale_price !== null &&
-                $variant->sale_price_starts_at <= $now &&
-                $variant->sale_price_ends_at >= $now;
-            $displayPrice = $isOnSale ? $salePrice : $originalPrice;
-
-            // Tạo key cho variant dựa trên các thuộc tính
-            $variantKey = [];
-            foreach ($variant->attributeValues as $attrValue) {
-                $attrName = $attrValue->attribute->name;
-                $value = $attrValue->value;
-                $variantKey[$attrName] = $value;
-            }
-
-            // Sắp xếp key để đảm bảo thứ tự nhất quán
-            ksort($variantKey);
-            $variantKeyStr = implode('_', array_values($variantKey));
-
-            // Lấy hình ảnh cho variant
-            $images = $variant->images->map(fn($image) => Storage::url($image->path))->toArray();
-            if (empty($images)) {
-                $images = [];
-                if ($product->coverImage) {
-                    $images[] = Storage::url($product->coverImage->path);
-                }
-                foreach ($product->galleryImages as $galleryImage) {
-                    $images[] = Storage::url($galleryImage->path);
-                }
-            }
-            $mainImage = !empty($images) ? $images[0] : null;
-
-            // Lưu thông tin variant
-            $variantData[$variantKeyStr] = [
-                'price' => $displayPrice,
-                'original_price' => $isOnSale && $originalPrice > $salePrice ? $originalPrice : null,
-                'status' => $variant->status,
-                'image' => $mainImage,
-                'images' => $images,
-            ];
-        }
-
-        // Lấy 4 sản phẩm liên quan
-        $relatedProducts = Product::with(['category', 'coverImage'])
-            ->where('category_id', $product->category_id)
-            ->where('id', '!=', $product->id)
-            ->where('status', 'published')
-            ->take(4)
-            ->get();
-
-        return view('users.show', compact(
-            'product',
-            'relatedProducts',
-            'ratingCounts',
-            'ratingPercentages',
-            'totalReviews',
-            'attributes',
-            'variantData',
-            'availableCombinations'
-        ));
+    $ratingCounts = [];
+    for ($i = 1; $i <= 5; $i++) {
+        $ratingCounts[$i] = $product->reviews->where('rating', $i)->count();
     }
+
+    $totalReviews = $product->reviews_count;
+
+    $ratingPercentages = [];
+    foreach ($ratingCounts as $star => $count) {
+        $ratingPercentages[$star] = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
+    }
+
+    // Chuẩn bị dữ liệu biến thể
+    $variantData = [];
+    $attributes = [];
+    $availableCombinations = [];
+
+    // Lấy biến thể mặc định
+    $defaultVariant = $product->variants->firstWhere('is_default', true);
+
+    // Đầu tiên, tạo map các tổ hợp thuộc tính có sẵn
+    foreach ($product->variants as $variant) {
+        $combination = [];
+        foreach ($variant->attributeValues as $attrValue) {
+            $attrName = $attrValue->attribute->name;
+            $value = $attrValue->value;
+            $combination[$attrName] = $value;
+
+            // Thêm vào danh sách thuộc tính
+            if (!isset($attributes[$attrName])) {
+                $attributes[$attrName] = collect();
+            }
+            if (!$attributes[$attrName]->contains('value', $value)) {
+                $attributes[$attrName]->push($attrValue);
+            }
+        }
+        $availableCombinations[] = $combination;
+    }
+
+    // Sau đó, xử lý thông tin variant
+    foreach ($product->variants as $variant) {
+        $now = now();
+        $salePrice = (int) $variant->sale_price;
+        $originalPrice = (int) $variant->price;
+        $isOnSale = $variant->sale_price !== null &&
+            $variant->sale_price_starts_at <= $now &&
+            $variant->sale_price_ends_at >= $now;
+        $displayPrice = $isOnSale ? $salePrice : $originalPrice;
+
+        // Tạo key cho variant dựa trên các thuộc tính
+        $variantKey = [];
+        foreach ($variant->attributeValues as $attrValue) {
+            $attrName = $attrValue->attribute->name;
+            $value = $attrValue->value;
+            $variantKey[$attrName] = $value;
+        }
+
+        // Sắp xếp key để đảm bảo thứ tự nhất quán
+        ksort($variantKey);
+        $variantKeyStr = implode('_', array_values($variantKey));
+
+        // Lấy hình ảnh cho variant
+        $images = $variant->images->map(fn($image) => Storage::url($image->path))->toArray();
+        if (empty($images)) {
+            $images = [];
+            if ($product->coverImage) {
+                $images[] = Storage::url($product->coverImage->path);
+            }
+            foreach ($product->galleryImages as $galleryImage) {
+                $images[] = Storage::url($galleryImage->path);
+            }
+        }
+        $mainImage = !empty($images) ? $images[0] : null;
+
+        // Lưu thông tin variant
+        $variantData[$variantKeyStr] = [
+            'price' => $displayPrice,
+            'original_price' => $isOnSale && $originalPrice > $salePrice ? $originalPrice : null,
+            'status' => $variant->status,
+            'image' => $mainImage,
+            'images' => $images,
+        ];
+    }
+
+    // Lấy 4 sản phẩm liên quan
+    $relatedProducts = Product::with(['category', 'coverImage'])
+        ->where('category_id', $product->category_id)
+        ->where('id', '!=', $product->id)
+        ->where('status', 'published')
+        ->take(4)
+        ->get();
+
+    return view('users.show', compact(
+        'product',
+        'relatedProducts',
+        'ratingCounts',
+        'ratingPercentages',
+        'totalReviews',
+        'attributes',
+        'variantData',
+        'availableCombinations',
+        'defaultVariant' // 👈 Truyền về view
+    ));
+}
+
 
 
     public function allProducts(Request $request)

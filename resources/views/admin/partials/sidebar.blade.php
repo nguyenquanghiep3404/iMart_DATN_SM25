@@ -40,7 +40,8 @@
         <div class="flex h-[65px] items-center border-b border-slate-200 px-6">
             <a href="{{ route('admin.dashboard') }}">
                 {{-- Đặt chiều cao cho logo, chiều rộng sẽ tự động điều chỉnh --}}
-                <img src="{{ asset('assets/users/logo/bfc4baa4-0e46-4289-8f62-2aea6a7d2a4b.png') }}" alt="" width="200px" style="margin-left: 30px;">
+                <img src="{{ asset('assets/users/logo/bfc4baa4-0e46-4289-8f62-2aea6a7d2a4b.png') }}" alt=""
+                    width="200px" style="margin-left: 30px;">
 
             </a>
         </div>
@@ -236,8 +237,8 @@
                     </button>
                     <ul x-show="openNav === 4" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
-                            <a href="{{  route('admin.users.index') }}" {{-- Giả sử route --}}
-                               class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                            <a href="{{ route('admin.users.index') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Danh sách người dùng
                             </a>
                         </li>
@@ -361,7 +362,7 @@
                                 <path d="M17,15H7a1,1,0,0,0,0,2H17a1,1,0,0,0,0-2Z" />
                             </svg>
                         </span>
-                        Quản lý danh mục bài viết
+                        Quản lý bài viết
                         <span class="ml-auto transition-transform duration-200 ease-in-out"
                             :class="openNav === 9 ? 'rotate-90' : ''">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
@@ -372,22 +373,24 @@
                         </span>
                     </button>
                     <ul x-show="openNav === 9" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        
                         <li>
-                            <a href="{{-- {{ route('admin.post-categories.index') }}" {{-- Giả sử route --}}
-                               class="block w-full py-1.5
+                            <a href="{{ route('admin.post-tags.index') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.post-categories.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Danh sách danh mục
+                                {{ request()->routeIs('admin.post-tags.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách thẻ bài viết
                             </a>
                         </li>
                         <li>
-                            <a href="{{-- {{ route('admin.post-categories.create') }}" {{-- Giả sử route --}}
-                               class="block w-full py-1.5
+                            <a href="{{ route('admin.posts.index') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.post-categories.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Thêm mới danh mục
+                                {{ request()->routeIs('admin.posts.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách bài viết
                             </a>
                         </li>
+                        
                     </ul>
                 </li>
 

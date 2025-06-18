@@ -9,6 +9,9 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\Admin\PostController;
+use App\Http\Controllers\Admin\PostCategoryController;
+use App\Http\Controllers\Admin\PostTagController;
 
 
 
@@ -24,7 +27,7 @@ Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallb
 
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
-    
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -36,7 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 //==========================================================================
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'role:admin,content_manager'])
+    ->middleware(['auth', 'role:admin,content_manager', 'check.content.access'])
     ->group(function () {
         // http://127.0.0.1:8000/admin/dashboard
         Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('dashboard');
@@ -55,7 +58,7 @@ Route::prefix('admin')
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
         // Route::resource('users', UserController::class);
-       Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
@@ -88,6 +91,18 @@ Route::prefix('admin')
         Route::post('attributes/{attribute}/values', [AttributeController::class, 'storeValue'])->name('attributes.values.store');
         Route::put('attributes/{attribute}/values/{value}', [AttributeController::class, 'updateValue'])->name('attributes.values.update');
         Route::delete('attributes/{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
+
+        // Post routes
+        Route::get('posts/trashed', [PostController::class, 'trashed'])->name('posts.trashed'); // Danh sách bài đã xóa
+        Route::get('posts/preview/{id}', [PostController::class, 'preview'])->name('posts.preview');
+        Route::put('posts/{id}/restore', [PostController::class, 'restore'])->name('posts.restore'); // Khôi phục
+        Route::delete('posts/{id}/force-delete', [PostController::class, 'forceDelete'])->name('posts.forceDelete'); // Xóa vĩnh viễn
+        Route::post('posts/upload-image', [PostController::class, 'uploadImage'])->name('posts.uploadImage');
+
+        Route::resource('posts', PostController::class);
+        Route::resource('post-tags', PostTagController::class);
+
+
 
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:
