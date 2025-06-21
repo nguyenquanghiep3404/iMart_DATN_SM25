@@ -66,6 +66,32 @@
         .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1100; display: flex; flex-direction: column; gap: 0.75rem; }
         .toast { opacity: 1; transform: translateX(0); transition: all 0.3s ease-in-out; }
         .toast.hide { opacity: 0; transform: translateX(100%); }
+        /* CSS cho hiệu ứng và icon của Modal */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Áp dụng animation khi modal có class .show */
+.product-modal.show .animated-modal {
+  animation: fadeInScale 0.3s ease-out forwards;
+}
+
+/* Căn giữa và tạo khoảng cách cho các nút ở footer */
+.product-modal-footer.justify-center {
+    justify-content: center;
+    gap: 0.75rem;
+    padding-top: 0;
+    padding-bottom: 1.5rem;
+    border-top: none; /* Bỏ đường viền trên của footer */
+    background-color: #fff; /* Đồng bộ nền với body */
+}
     </style>
 @endpush
 
@@ -199,7 +225,7 @@
                     <table class="table-custom table-striped">
                         <thead>
                             <tr>
-                                <th style="width: 50px">ID</th>
+                                <th style="width: 50px">STT</th>
                                 <th style="width: 80px">Ảnh</th>
                                 <th>Tên sản phẩm</th>
                                 <th>Danh mục</th>
@@ -213,10 +239,27 @@
                         <tbody>
                             @forelse ($products as $product)
                             <tr>
-                                <td>{{ $product->id }}</td>
+                                <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}</td>
                                 <td>
-                                    <img src="{{ $product->coverImage ? Storage::url($product->coverImage->path) : asset('assets/admin/img/placeholder-image.png') }}" 
-                                         alt="{{ $product->coverImage->alt_text ?? $product->name }}" 
+                                    @php
+                                        // Lấy biến thể đầu tiên. Do query trong controller đã sắp xếp `is_default` giảm dần,
+                                        // nên biến thể đầu tiên sẽ là biến thể mặc định (nếu có) hoặc là biến thể duy nhất (cho sản phẩm simple).
+                                        $displayVariant = $product->variants->first();
+
+                                        // Lấy ảnh chính của biến thể đó.
+                                        // Dùng `?->` (optional chaining) để tránh lỗi nếu $displayVariant là null.
+                                        $imageToShow = $displayVariant?->primaryImage;
+
+                                        // URL của ảnh. Nếu không có ảnh chính, sẽ fallback về ảnh bìa của sản phẩm gốc,
+                                        // cuối cùng là ảnh placeholder.
+                                        $imageUrl = $imageToShow ? Storage::url($imageToShow->path) : ($product->coverImage ? Storage::url($product->coverImage->path) : asset('assets/admin/img/placeholder-image.png'));
+                                        
+                                        // Alt text cho ảnh.
+                                        $altText = $imageToShow?->alt_text ?? $product->name;
+                                    @endphp
+
+                                    <img src="{{ $imageUrl }}" 
+                                         alt="{{ $altText }}" 
                                          class="img-thumbnail-custom"
                                          onerror="this.onerror=null;this.src='{{ asset('assets/admin/img/placeholder-image.png') }}';">
                                 </td>
@@ -227,9 +270,12 @@
                                 <td>{{ $product->category->name ?? 'N/A' }}</td>
                                 <td>
                                     @if($product->variants->isNotEmpty())
-                                        {{ number_format($product->variants->first()->price, 0, ',', '.') }} ₫
-                                        @if($product->variants->first()->sale_price && $product->variants->first()->sale_price < $product->variants->first()->price)
-                                            <small class="block text-red-500 line-through">{{ number_format($product->variants->first()->sale_price, 0, ',', '.') }} ₫</small>
+                                        {{-- Hiển thị giá của biến thể đầu tiên (mặc định) --}}
+                                        @php $firstVariant = $product->variants->first(); @endphp
+                                        <span class="font-semibold">{{ number_format($firstVariant->price, 0, ',', '.') }} ₫</span>
+                                        @if($firstVariant->sale_price && $firstVariant->sale_price < $firstVariant->price)
+                                            <small class="block text-gray-500 line-through">{{ number_format($firstVariant->price, 0, ',', '.') }} ₫</small>
+                                            <span class="font-semibold text-red-600">{{ number_format($firstVariant->sale_price, 0, ',', '.') }} ₫</span>
                                         @endif
                                     @else
                                         N/A
@@ -237,12 +283,18 @@
                                 </td>
                                 <td>
                                     {{ $product->variants->sum('stock_quantity') }}
-                                    @if($product->type == 'variable') <small>(Tổng)</small> @endif
+                                    @if($product->type == 'variable') <small class="text-gray-500"> (Tổng)</small> @endif
                                 </td>
                                 <td>
-                                    @if($product->type == 'simple') <span class="badge-custom badge-info-custom">Đơn giản</span>
-                                    @elseif($product->type == 'variable') <span class="badge-custom badge-warning-custom">Có biến thể</span>
-                                    @else <span class="badge-custom badge-secondary-custom">{{ Str::title($product->type) }}</span>
+                                    @if($product->type == 'simple') 
+                                        <span class="badge-custom badge-info-custom">Đơn giản</span>
+                                    @elseif($product->type == 'variable') 
+                                        {{-- Thêm số lượng biến thể đếm được --}}
+                                        <span class="badge-custom badge-warning-custom">
+                                            Có biến thể ({{ $product->variants->count() }})
+                                        </span>
+                                    @else 
+                                        <span class="badge-custom badge-secondary-custom">{{ Str::title($product->type) }}</span>
                                     @endif
                                 </td>
                                 <td>
@@ -260,25 +312,40 @@
                                 </td>
                             </tr>
                             <div id="deleteProductModal{{ $product->id }}" class="product-modal" tabindex="-1">
-                                <div class="product-modal-content">
-                                    <div class="product-modal-header">
-                                        <h5 class="product-modal-title">Xác nhận xóa sản phẩm</h5>
-                                        <button type="button" class="product-close" onclick="closeProductModal('deleteProductModal{{ $product->id }}')"><span aria-hidden="true">&times;</span></button>
-                                    </div>
-                                    <div class="product-modal-body">
-                                        <p>Bạn có chắc chắn muốn xóa sản phẩm "<strong>{{ $product->name }}</strong>" không?</p>
-                                        <p class="text-red-600 mt-2">Hành động này sẽ xóa sản phẩm và tất cả các biến thể, hình ảnh liên quan. Không thể hoàn tác!</p>
-                                    </div>
-                                    <div class="product-modal-footer">
-                                        <button type="button" class="btn btn-secondary" onclick="closeProductModal('deleteProductModal{{ $product->id }}')">Hủy</button>
-                                        <form action="{{ route('admin.products.destroy', $product) }}" method="POST" style="display: inline-block;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger">Xóa vĩnh viễn</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+    {{-- Thêm class 'animated-modal' để áp dụng hiệu ứng --}}
+    <div class="product-modal-content animated-modal">
+        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
+            @csrf
+            @method('DELETE')
+            
+            {{-- Bỏ phần header và tích hợp vào body để có giao diện gọn gàng hơn --}}
+            <div class="product-modal-body text-center p-6">
+                
+                {{-- Icon cảnh báo --}}
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4">
+                     <i class="fas fa-trash-alt fa-2x text-red-500"></i>
+                </div>
+
+                {{-- Tiêu đề Modal --}}
+                <h5 class="text-xl font-semibold text-gray-800">Chuyển vào thùng rác?</h5>
+
+                {{-- Nội dung giải thích --}}
+                <p class="text-gray-600 mt-2">
+                    Bạn có chắc chắn muốn chuyển sản phẩm<br>"<strong>{{ $product->name }}</strong>" vào thùng rác không?
+                </p>
+                <p class="text-gray-500 mt-2 text-sm">
+                    Bạn vẫn có thể khôi phục lại sản phẩm này sau.
+                </p>
+            </div>
+
+            {{-- Căn giữa các nút bấm trong footer --}}
+            <div class="product-modal-footer justify-center">
+                <button type="button" class="btn btn-secondary" onclick="closeProductModal('deleteProductModal{{ $product->id }}')">Hủy bỏ</button>
+                <button type="submit" class="btn btn-danger">Đồng ý, chuyển đi</button>
+            </div>
+        </form>
+    </div>
+</div>
                             @empty
                             <tr>
                                 <td colspan="9" class="text-center py-10 text-gray-500">
@@ -296,7 +363,7 @@
             </div>
             @if ($products->hasPages())
             <div class="card-custom-footer">
-                 <div>
+                <div>
                     <p class="text-sm text-gray-700 leading-5">
                         Hiển thị từ
                         <span class="font-medium">{{ $products->firstItem() }}</span>

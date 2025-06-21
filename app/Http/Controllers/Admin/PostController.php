@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\Post;
-use App\Models\PostCategory;
-use App\Models\PostTag;
-use App\Models\UploadedFile;
 use App\Models\User;
+use App\Models\PostTag;
+use Illuminate\Support\Str;
+use App\Models\PostCategory;
+use App\Models\UploadedFile;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -85,7 +86,8 @@ class PostController extends Controller
             'meta_keywords' => 'nullable|string|max:500',
             'published_at' => 'nullable|date',
         ]);
-
+        
+        $data['slug'] = Str::slug($request->input('slug'));
         $data['is_featured'] = $request->boolean('is_featured');
         $data['user_id'] = auth()->id();
         $data['published_at'] = $data['status'] === 'published' ? now() : null;

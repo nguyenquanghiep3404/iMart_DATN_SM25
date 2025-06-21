@@ -9,11 +9,8 @@
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <img src="{{ asset('assets/users/logo/Screenshot_2025-06-07_150152-removebg-preview.png') }}" alt="" style="width: 250px">
-
-
         <!-- Navbar brand (Logo) -->
-        {{-- <a href="index.html" class="navbar-brand me-0">
+        <a href="index.html" class="navbar-brand me-0">
           <span class="d-none d-sm-flex flex-shrink-0 text-primary me-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
               <path d="M36 18.01c0 8.097-5.355 14.949-12.705 17.2a18.12 18.12 0 0 1-5.315.79C9.622 36 2.608 30.313.573 22.611.257 21.407.059 20.162 0 18.879v-1.758c.02-.395.059-.79.099-1.185.099-.908.277-1.817.514-2.686C2.687 5.628 9.682 0 18 0c5.572 0 10.551 2.528 13.871 6.517 1.502 1.797 2.648 3.91 3.359 6.201.494 1.659.771 3.436.771 5.292z" fill="currentColor"></path>
@@ -28,14 +25,14 @@
             </svg>
           </span>
           Cartzilla
-        </a> --}}
+        </a>
       </div>
       <div class="col col-lg-9 d-flex align-items-center justify-content-end">
 
         <!-- Search visible on screens > 991px wide (lg breakpoint) -->
         <div class="position-relative flex-fill d-none d-lg-block pe-4 pe-xl-5">
           <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
-          <input type="search" class="form-control form-control-lg form-icon-start border-white rounded-pill" placeholder="Tìm kiếm sản phẩm" data-autofocus="true" aria-label="Search products">
+          <input type="search" class="form-control form-control-lg form-icon-start border-white rounded-pill" placeholder="Search the products">
         </div>
 
         <!-- Sale link visible on screens > 1200px wide (xl breakpoint) -->
@@ -95,10 +92,18 @@
             </ul>
           </div>
 
-          <!-- Search toggle button visible on screens < 992px wide (lg breakpoint) -->
-          <button type="button" class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none" data-bs-toggle="collapse" data-bs-target="#searchBar" aria-expanded="false" aria-controls="searchBar" aria-label="Toggle search bar">
+          <!-- Nút bật/tắt thanh tìm kiếm (chỉ hiện trên màn hình nhỏ hơn 992px) -->
+          <button type="button"
+            class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none"
+            data-bs-toggle="collapse"
+            data-bs-target="#searchBar"
+            aria-expanded="false"
+            aria-controls="searchBar"
+            aria-label="Toggle search bar"
+            title="Tìm kiếm">
             <i class="ci-search animate-target"></i>
           </button>
+
 
           <!-- Account button visible on screens > 768px wide (md breakpoint) -->
           <li class="nav-item dropdown d-none d-md-inline-flex">
@@ -121,7 +126,6 @@
               @guest
               <li><a class="dropdown-item" href="{{ route('login') }}">Đăng nhập</a></li>
               <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
-              <li><a class="dropdown-item" href="{{ route('password.request') }}">Quên mật khẩu</a></li>
               @else
               <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
               <li>
@@ -133,7 +137,6 @@
               @endguest
             </ul>
           </li>
-
 
 
           <!-- Wishlist button visible on screens > 768px wide (md breakpoint) -->
@@ -173,16 +176,207 @@
       <div class="offcanvas-body py-3 py-lg-0">
         <div class="container px-0 px-lg-3">
           <div class="row">
+
+
+
             <!-- Navbar nav -->
             <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
               <ul class="navbar-nav position-relative">
                 <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle active" aria-current="page" href="/" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Trang chủ</a>
-                  
+                  <a class="nav-link dropdown-toggle active" aria-current="page" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Home</a>
+                  <ul class="dropdown-menu">
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-electronics.html">
+                        <span class="fw-medium">Electronics Store</span>
+                        <span class="d-block fs-xs text-body-secondary">Megamenu + Hero slider</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/electronics-light.jpg" alt="Electronics Store">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/electronics-dark.jpg" alt="Electronics Store">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-fashion-v1.html">
+                        <span class="fw-medium">Fashion Store v.1</span>
+                        <span class="d-block fs-xs text-body-secondary">Hero promo slider</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/fashion-1-light.jpg" alt="Fashion Store v.1">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/fashion-1-dark.jpg" alt="Fashion Store v.1">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-fashion-v2.html">
+                        <span class="fw-medium">Fashion Store v.2</span>
+                        <span class="d-block fs-xs text-body-secondary">Hero banner with hotspots</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/fashion-2-light.jpg" alt="Fashion Store v.2">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/fashion-2-dark.jpg" alt="Fashion Store v.2">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-furniture.html">
+                        <span class="fw-medium">Furniture Store</span>
+                        <span class="d-block fs-xs text-body-secondary">Fancy product carousel</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/furniture-light.jpg" alt="Furniture Store">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/furniture-dark.jpg" alt="Furniture Store">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-grocery.html">
+                        <span class="fw-medium">Grocery Store</span>
+                        <span class="d-block fs-xs text-body-secondary">Hero slider + Category cards</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/grocery-light.jpg" alt="Grocery Store">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/grocery-dark.jpg" alt="Grocery Store">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-marketplace.html">
+                        <span class="fw-medium">Marketplace</span>
+                        <span class="d-block fs-xs text-body-secondary">Multi-vendor, digital goods</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/marketplace-light.jpg" alt="Marketplace">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/marketplace-dark.jpg" alt="Marketplace">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-single-store.html">
+                        <span class="fw-medium">Single Product Store</span>
+                        <span class="d-block fs-xs text-body-secondary">Single product / mono brand</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/single-store-light.jpg" alt="Single Product Store">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/single-store-dark.jpg" alt="Single Product Store">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
                 </li>
+
                 <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="/danh-muc-san-pham" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Danh mục</a>
-                 
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop</a>
+                  <div class="dropdown-menu rounded-4 p-4">
+                    <div class="d-flex flex-column flex-lg-row gap-4">
+                      <div style="min-width: 190px">
+                        <div class="h6 mb-2">Electronics Store</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-categories-electronics.html">Categories Page</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-electronics.html">Catalog with Side Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-general-electronics.html">Product General Info</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-details-electronics.html">Product Details</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-reviews-electronics.html">Product Reviews</a>
+                          </li>
+                        </ul>
+                        <div class="h6 pt-4 mb-2">Fashion Store</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-fashion.html">Catalog with Side Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-fashion.html">Product Page</a>
+                          </li>
+                        </ul>
+                        <div class="h6 pt-4 mb-2">Furniture Store</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-furniture.html">Catalog with Top Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-furniture.html">Product Page</a>
+                          </li>
+                        </ul>
+                      </div>
+                      <div style="min-width: 190px">
+                        <div class="h6 mb-2">Grocery Store</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-grocery.html">Catalog with Side Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-grocery.html">Product Page</a>
+                          </li>
+                        </ul>
+                        <div class="h6 pt-4 mb-2">Marketplace</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-marketplace.html">Catalog with Top Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-marketplace.html">Digital Product Page</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-marketplace.html">Cart / Checkout</a>
+                          </li>
+                        </ul>
+                      </div>
+                      <div style="min-width: 190px">
+                        <div class="h6 mb-2">Checkout v.1</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-cart.html">Shopping Cart</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-delivery-1.html">Delivery Info (Step 1)</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-delivery-2.html">Delivery Info (Step 2)</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-shipping.html">Shipping Address</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-payment.html">Payment</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-thankyou.html">Thank You Page</a>
+                          </li>
+                        </ul>
+                        <div class="h6 pt-4 mb-2">Checkout v.2</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-cart.html">Shopping Cart</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-delivery.html">Delivery Info</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-pickup.html">Pickup from Store</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-thankyou.html">Thank You Page</a>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                 </li>
                 <li class="nav-item dropdown me-lg-n1 me-xl-0">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Account</a>

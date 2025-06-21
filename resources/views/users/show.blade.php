@@ -541,10 +541,12 @@
                     @if ($product->reviews->isEmpty())
                         <p class="text-center text-muted">Chưa có đánh giá nào cho sản phẩm này.</p>
                     @endif
+                    <!-- Review -->
+                   @include('users.review')
+                    <!-- Review -->
                 </div>
             </div>
         </section>
-
         <!-- Related Products -->
         <section class="container px-4 pt-5 mt-2 mt-sm-3 mt-lg-4">
             <div class="d-flex align-items-center justify-content-between border-bottom pb-3 pb-md-4">

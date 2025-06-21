@@ -1,23 +1,24 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        <!-- SEO Meta Tags -->
-        <title>{{ config('app.name', 'iMart') }}</title>
-        {{-- <title>Cartzilla | Electronics Store</title> --}}
-        <meta name="description" content="Cartzilla - Multipurpose E-Commerce Bootstrap HTML Template">
-        <meta name="keywords" content="online shop, e-commerce, online store, market, multipurpose, product landing, cart, checkout, ui kit, light and dark mode, bootstrap, html5, css3, javascript, gallery, slider, mobile, pwa">
-        <meta name="author" content="Createx Studio">
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-        <!-- Webmanifest + Favicon / App icons -->
-        <meta name="apple-mobile-web-app-status-bar-style" content="black">
-        <link rel="manifest" href="{{asset('frontend/manifest.json')}}">
-        <link rel="icon" type="image/png" href="{{ asset ('assets/users/app-icons/icon-32x32.png') }}" sizes="32x32">
-        <link rel="apple-touch-icon" href="{{ asset ('assets/users/app-icons/icon-180x180.png') }}">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- SEO Meta Tags -->
+    <title>{{ config('app.name', 'iMart') }}</title>
+    {{-- <title>Cartzilla | Electronics Store</title> --}}
+    <meta name="description" content="Cartzilla - Multipurpose E-Commerce Bootstrap HTML Template">
+    <meta name="keywords" content="online shop, e-commerce, online store, market, multipurpose, product landing, cart, checkout, ui kit, light and dark mode, bootstrap, html5, css3, javascript, gallery, slider, mobile, pwa">
+    <meta name="author" content="Createx Studio">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <!-- Webmanifest + Favicon / App icons -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="manifest" href="{{asset('frontend/manifest.json')}}">
+    <link rel="icon" type="image/png" href="{{ asset ('assets/users/app-icons/icon-32x32.png') }}" sizes="32x32">
+    <link rel="apple-touch-icon" href="{{ asset ('assets/users/app-icons/icon-180x180.png') }}">
 
     <!-- Theme switcher (color modes) -->
     <script src="{{ asset ('assets/users/js/theme-switcher.js')}}"></script>
@@ -40,7 +41,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 
-    
+
 
     <!-- Customizer -->
     <script src="{{ asset ('assets/users/js/customizer.min.js') }}"></script>
@@ -49,15 +50,16 @@
     @stack('styles') {{-- Cho phép các trang con thêm CSS cụ thể --}}
     </head>
     <body>
+
     <!-- Customizer offcanvas -->
-    @include('users.partials.customizer_offcanvas')
+    @include('users.partials.ai_chatbot')
 
     <!-- Shopping cart offcanvas -->
     @include('users.partials.cart_offcanvas')
 
     <!-- Navigation bar (Page header) -->
     @include('users.partials.header')
-    
+
     <!-- Page content -->
     <main class="content-wrapper">
         @yield('content')
@@ -65,23 +67,17 @@
 
     <!-- Page footer -->
     @include('users.partials.footer')
-    
+
     <!-- Back to top button -->
     @include('users.partials.back_to_top_button')
 
     <!-- Vendor scripts -->
     <script src="{{ asset ('assets/users/vendor/swiper/swiper-bundle.min.js') }}"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
     <!-- Bootstrap + Theme scripts -->
     <script src="{{ asset ('assets/users/js/theme.min.js') }}"></script>
 
     @stack('scripts') {{-- Cho phép các trang con thêm JS cụ thể --}}
-
-
-
 </body>
 
 </html>

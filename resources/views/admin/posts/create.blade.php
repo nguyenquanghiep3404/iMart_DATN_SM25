@@ -272,13 +272,17 @@
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
     <script>
         function slugify(str) {
-            return str.toString().toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                .replace(/[^a-z0-9 -]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/^-+|-+$/g, '');
-        }
+    return str.toLowerCase()
+        .replace(/đ/g, 'd') // ✅ xử lý ngoại lệ duy nhất
+        .replace(/Đ/g, 'd') // ✅ nếu hỗ trợ chữ hoa
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // ✅ bỏ toàn bộ dấu
+        .replace(/[^a-z0-9\s-]/g, '')    // ❌ bỏ ký tự đặc biệt
+        .trim()
+        .replace(/\s+/g, '-')            // khoảng trắng → -
+        .replace(/-+/g, '-');            // bỏ dấu gạch lặp
+}
+
 
         document.addEventListener('DOMContentLoaded', function() {
             const titleInput = document.getElementById('title');

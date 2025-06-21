@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Comment;
+use Illuminate\Support\Str;
+
 
 class HomeController extends Controller
 {

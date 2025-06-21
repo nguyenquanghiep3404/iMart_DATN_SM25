@@ -1,9 +1,11 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Auth\Events\Verified;
 
 class GoogleController extends Controller
 {
@@ -20,12 +22,18 @@ class GoogleController extends Controller
             ['email' => $googleUser->getEmail()],
             [
                 'name' => $googleUser->getName(),
-                'password' => bcrypt(uniqid()), // Tạm thời tạo mật khẩu ngẫu nhiên
+                'password' => bcrypt(uniqid()),
             ]
         );
 
+        if (!$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+            event(new Verified($user));
+        }
+
         Auth::login($user);
 
-        return redirect()->route('users.home'); // chuyển về dashboard hoặc trang chính
+
+        return redirect()->route('users.home'); 
     }
 }
