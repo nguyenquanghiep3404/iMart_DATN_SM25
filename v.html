@@ -3,377 +3,239 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý Bình luận</title>
+    <title>Quản lý Đánh giá</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons CDN -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts: Be Vietnam Pro -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #f8f9fa;
         }
-        input[type="checkbox"]:indeterminate {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 16 16'%3e%3cpath stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8h8'/%3e%3c/svg%3e");
-            background-color: #4f46e5; /* indigo-600 */
-            border-color: #4f46e5;
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
         }
-        .reply-indent {
-            padding-left: 2.5rem; /* pl-10 */
-        }
-        .reply-line::before {
-            content: '';
-            position: absolute;
-            left: 20px;
-            top: -20px;
-            height: calc(100% + 10px);
-            width: 2px;
-            background-color: #e5e7eb; /* gray-200 */
-        }
+        .status-approved { background-color: #dcfce7; color: #16a34a; }
+        .status-pending { background-color: #fef3c7; color: #d97706; }
+        .status-rejected { background-color: #fee2e2; color: #dc2626; }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="p-4 md:p-8">
 
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-screen-2xl mx-auto">
         <!-- Header -->
         <header class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Quản lý Bình luận</h1>
-            <p class="mt-1 text-sm text-gray-600">Xem, duyệt và quản lý tất cả các bình luận trên bài viết của bạn.</p>
+            <h1 class="text-3xl font-bold text-gray-800">Quản lý Đánh giá</h1>
+            <p class="text-gray-500 mt-1">Xem, duyệt và quản lý tất cả các đánh giá sản phẩm của bạn.</p>
         </header>
 
-        <!-- Thống kê nhanh -->
-        <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <!-- Stats will be rendered here by JS -->
-        </div>
-
-        <!-- Thanh công cụ: Filter và Search -->
-        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                 <!-- Filters -->
-                <div id="filter-buttons" class="flex items-center space-x-2 border border-gray-200 p-1 rounded-lg">
-                    <button data-status="all" class="filter-btn px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ease-in-out bg-indigo-600 text-white shadow-sm">Tất cả</button>
-                    <button data-status="pending" class="filter-btn px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ease-in-out text-gray-600 hover:bg-gray-100">Chờ duyệt</button>
-                    <button data-status="approved" class="filter-btn px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ease-in-out text-gray-600 hover:bg-gray-100">Đã duyệt</button>
-                    <button data-status="rejected" class="filter-btn px-4 py-1.5 rounded-md text-sm font-medium transition-colors duration-200 ease-in-out text-gray-600 hover:bg-gray-100">Từ chối</button>
-                </div>
-
-                <!-- Search -->
-                <div class="relative w-full md:max-w-xs">
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                        <i data-lucide="search" class="h-5 w-5 text-gray-400"></i>
+        <!-- Filter Section -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div>
+                    <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </span>
+                        <input type="text" id="search-input" placeholder="Tên sản phẩm, người đánh giá..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
-                    <input type="text" id="search-input" placeholder="Tìm kiếm bình luận..." class="block w-full rounded-md border-gray-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm shadow-sm" />
+                </div>
+                <div>
+                    <label for="review-status-filter" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                    <select id="review-status-filter" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="pending">Chờ duyệt</option>
+                        <option value="approved">Đã duyệt</option>
+                        <option value="rejected">Từ chối</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="rating-filter" class="block text-sm font-medium text-gray-700 mb-1">Xếp hạng</label>
+                    <select id="rating-filter" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Tất cả</option>
+                        <option value="5">5 sao</option>
+                        <option value="4">4 sao</option>
+                        <option value="3">3 sao</option>
+                        <option value="2">2 sao</option>
+                        <option value="1">1 sao</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="date-filter" class="block text-sm font-medium text-gray-700 mb-1">Ngày đánh giá</label>
+                    <input type="date" id="date-filter" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
             </div>
-             <!-- Bulk Actions -->
-             <div id="bulk-actions-bar" class="hidden mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg items-center justify-between">
-                <p class="text-sm font-medium text-indigo-700"><span id="selected-count">0</span> bình luận được chọn</p>
-                <div class="flex items-center space-x-2">
-                     <button data-action="bulk-approve" class="bulk-action-btn flex items-center gap-2 text-sm bg-green-500 text-white px-3 py-1.5 rounded-md hover:bg-green-600"><i data-lucide="thumbs-up" class="h-4 w-4"></i> Duyệt</button>
-                     <button data-action="bulk-reject" class="bulk-action-btn flex items-center gap-2 text-sm bg-red-500 text-white px-3 py-1.5 rounded-md hover:bg-red-600"><i data-lucide="thumbs-down" class="h-4 w-4"></i> Từ chối</button>
-                     <button data-action="bulk-delete" class="bulk-action-btn flex items-center gap-2 text-sm bg-gray-500 text-white px-3 py-1.5 rounded-md hover:bg-gray-600"><i data-lucide="trash-2" class="h-4 w-4"></i> Xóa</button>
-                </div>
+            <div class="mt-4 flex justify-end space-x-3">
+                <button id="clear-filters-btn" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Xóa lọc</button>
+                <button id="apply-filters-btn" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2">
+                    <i class="fas fa-filter"></i>
+                    <span>Áp dụng</span>
+                </button>
             </div>
         </div>
 
-        <!-- Bảng dữ liệu -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="p-4">
-                                <input type="checkbox" id="select-all-checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"/>
-                            </th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Người bình luận</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nội dung bình luận</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phản hồi cho</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày gửi</th>
-                            <th scope="col" class="relative px-6 py-3"><span class="sr-only">Hành động</span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="comments-table-body" class="bg-white divide-y divide-gray-200">
-                        <!-- Rows will be injected here by JS -->
-                    </tbody>
-                </table>
-                <div id="no-results" class="hidden text-center py-16">
-                     <i data-lucide="message-square-off" class="mx-auto h-12 w-12 text-gray-400"></i>
-                     <h3 class="mt-2 text-sm font-medium text-gray-900">Không tìm thấy bình luận</h3>
-                     <p class="mt-1 text-sm text-gray-500">Hãy thử thay đổi bộ lọc hoặc từ khóa tìm kiếm của bạn.</p>
-                 </div>
-            </div>
+        <!-- Reviews Table -->
+        <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+             <table class="w-full text-sm text-left text-gray-600">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th scope="col" class="p-6">Người đánh giá</th>
+                        <th scope="col" class="p-6">Đánh giá</th>
+                        <th scope="col" class="p-6">Sản phẩm</th>
+                        <th scope="col" class="p-6">Ngày gửi</th>
+                        <th scope="col" class="p-6">Trạng thái</th>
+                        <th scope="col" class="p-6 text-center">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="reviews-tbody">
+                    <!-- Review rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+             <div id="no-results" class="hidden text-center p-12 text-gray-500">
+                 <i class="fas fa-comment-slash fa-3x text-gray-400 mb-4"></i>
+                 <h3 class="text-lg font-semibold text-gray-700">Không tìm thấy đánh giá</h3>
+                 <p class="text-gray-500">Vui lòng thử lại với bộ lọc khác.</p>
+             </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- MOCK DATA ---
-            let comments = [
-                { id: 1, parent_id: null, content: 'Bài viết rất hay và chi tiết, cảm ơn tác giả!', user: { id: 101, name: 'Nguyễn Văn An', avatar: 'https://placehold.co/40x40/EFEFEF/333333?text=A' }, commentable: { type: 'Post', title: '10 Mẹo Tối Ưu Hóa SEO Cho Website' }, status: 'approved', created_at: '2025-06-20T10:30:00Z' },
-                { id: 2, parent_id: 1, content: 'Đồng ý với bạn, mình đã áp dụng và thấy hiệu quả rõ rệt.', user: { id: 102, name: 'Trần Thị Bích', avatar: 'https://placehold.co/40x40/E0F7FA/00796B?text=B' }, commentable: { type: 'Post', title: '10 Mẹo Tối Ưu Hóa SEO Cho Website' }, status: 'approved', created_at: '2025-06-20T11:00:00Z' },
-                { id: 3, parent_id: null, content: 'Giao diện trang web này cần cải thiện thêm, hơi khó dùng.', user: { id: 103, name: 'Lê Minh Cường', avatar: 'https://placehold.co/40x40/FFF9C4/F57F17?text=C' }, commentable: { type: 'General', title: 'Trang chủ' }, status: 'pending', created_at: '2025-06-21T14:00:00Z' },
-                { id: 4, parent_id: null, content: 'Sản phẩm này có hàng lại chưa ạ?', user: { id: 104, name: 'Phạm Thị Dung', avatar: 'https://placehold.co/40x40/FCE4EC/880E4F?text=D' }, commentable: { type: 'Product', title: 'Điện thoại V-Phone X Pro' }, status: 'rejected', created_at: '2025-06-19T09:00:00Z' },
-                { id: 5, parent_id: 2, content: 'Bạn có thể chia sẻ thêm về kết quả được không?', user: { id: 101, name: 'Nguyễn Văn An', avatar: 'https://placehold.co/40x40/EFEFEF/333333?text=A' }, commentable: { type: 'Post', title: '10 Mẹo Tối Ưu Hóa SEO Cho Website' }, status: 'approved', created_at: '2025-06-21T18:20:00Z' }
+            const mockReviews = [
+                { id: 1, user: { id: 101, name: 'Nguyễn Văn An', avatar: 'https://placehold.co/40x40/EFEFEF/333333?text=A' }, product: { id: 202, name: 'Điện thoại V-Phone X Pro', image: 'https://placehold.co/60x60/CCCCCC/FFFFFF?text=V-Phone' }, rating: 5, title: 'Sản phẩm tuyệt vời!', comment: 'Điện thoại dùng rất mượt, pin trâu, camera chụp ảnh siêu nét. Rất đáng tiền.', status: 'approved', created_at: '2025-06-20T10:30:00Z' },
+                { id: 2, user: { id: 102, name: 'Trần Thị Bích', avatar: 'https://placehold.co/40x40/E0F7FA/00796B?text=B' }, product: { id: 203, name: 'Laptop UltraBook Zen 14', image: 'https://placehold.co/60x60/CCCCCC/FFFFFF?text=Laptop' }, rating: 3, title: 'Tạm ổn trong tầm giá', comment: 'Máy hơi nóng khi chạy tác vụ nặng. Bàn phím gõ khá thích nhưng touchpad không nhạy lắm.', status: 'pending', created_at: '2025-06-21T14:00:00Z' },
+                { id: 3, user: { id: 103, name: 'Lê Minh Cường', avatar: 'https://placehold.co/40x40/FFF9C4/F57F17?text=C' }, product: { id: 202, name: 'Điện thoại V-Phone X Pro', image: 'https://placehold.co/60x60/CCCCCC/FFFFFF?text=V-Phone' }, rating: 1, title: 'Quá tệ', comment: 'Sản phẩm không như quảng cáo, dùng được 2 ngày đã lỗi.', status: 'rejected', created_at: '2025-06-19T09:00:00Z' },
+                { id: 4, user: { id: 104, name: 'Phạm Thị Dung', avatar: 'https://placehold.co/40x40/FCE4EC/880E4F?text=D' }, product: { id: 204, name: 'Tai nghe SoundMax Pro', image: 'https://placehold.co/60x60/CCCCCC/FFFFFF?text=Tai+Nghe' }, rating: 4, title: 'Chất âm tốt', comment: 'Tai nghe đeo êm, không bị đau tai. Chất âm trong trẻo, bass ổn.', status: 'approved', created_at: '2025-06-18T11:45:00Z' },
+                { id: 5, user: { id: 105, name: 'Hoàng Văn E', avatar: 'https://placehold.co/40x40/D1C4E9/4527A0?text=E' }, product: { id: 203, name: 'Laptop UltraBook Zen 14', image: 'https://placehold.co/60x60/CCCCCC/FFFFFF?text=Laptop' }, rating: 5, title: 'Rất hài lòng', comment: 'Laptop mỏng nhẹ, thiết kế sang trọng, hiệu năng mạnh mẽ.', status: 'pending', created_at: '2025-06-21T18:20:00Z' }
             ];
 
-            // --- STATE ---
-            let currentFilter = 'all';
-            let searchTerm = '';
-            let selectedCommentIds = new Set();
-            
             // --- DOM ELEMENTS ---
-            const tableBody = document.getElementById('comments-table-body');
-            const searchInput = document.getElementById('search-input');
-            const filterButtonsContainer = document.getElementById('filter-buttons');
-            const selectAllCheckbox = document.getElementById('select-all-checkbox');
-            const bulkActionsBar = document.getElementById('bulk-actions-bar');
-            const selectedCountSpan = document.getElementById('selected-count');
+            const tbody = document.getElementById('reviews-tbody');
             const noResultsDiv = document.getElementById('no-results');
-            const statsContainer = document.getElementById('stats-container');
+            const searchInput = document.getElementById('search-input');
+            const statusFilter = document.getElementById('review-status-filter');
+            const ratingFilter = document.getElementById('rating-filter');
+            const dateFilter = document.getElementById('date-filter');
 
-            // --- TEMPLATE/HELPER FUNCTIONS ---
-            const createStatusBadge = (status) => {
-                const configs = {
-                    approved: { icon: 'check-circle', text: 'Đã duyệt', className: 'bg-green-100 text-green-800' },
-                    pending: { icon: 'clock', text: 'Chờ duyệt', className: 'bg-yellow-100 text-yellow-800' },
-                    rejected: { icon: 'x-circle', text: 'Đã từ chối', className: 'bg-red-100 text-red-800' }
-                };
-                const config = configs[status];
-                return `<span class="inline-flex items-center gap-x-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${config.className}">
-                            <i data-lucide="${config.icon}" class="h-4 w-4"></i>${config.text}
-                        </span>`;
+            // --- UTILITY FUNCTIONS ---
+            const formatDate = (dateString) => {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
             };
 
-            const createActionMenu = (comment) => {
-                return `
-                    <div class="relative action-menu">
-                        <button data-action="toggle-menu" class="p-2 rounded-full hover:bg-gray-100">
-                            <i data-lucide="more-vertical" class="h-5 w-5 text-gray-500"></i>
-                        </button>
-                        <div class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
-                            <div class="py-1">
-                                ${comment.status !== 'approved' ? `<button data-action="approve" data-id="${comment.id}" class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i data-lucide="thumbs-up" class="h-4 w-4 mr-3 text-green-500"></i>Duyệt</button>` : ''}
-                                ${comment.status !== 'rejected' ? `<button data-action="reject" data-id="${comment.id}" class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i data-lucide="thumbs-down" class="h-4 w-4 mr-3 text-red-500"></i>Từ chối</button>` : ''}
-                                <button data-action="delete" data-id="${comment.id}" class="w-full text-left flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i data-lucide="trash-2" class="h-4 w-4 mr-3 text-gray-500"></i>Xóa</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            const statusMap = {
+                approved: { text: 'Đã duyệt', class: 'status-approved' },
+                pending: { text: 'Chờ duyệt', class: 'status-pending' },
+                rejected: { text: 'Từ chối', class: 'status-rejected' }
             };
-            
+
+            const createStarRating = (rating) => {
+                let stars = '';
+                for (let i = 1; i <= 5; i++) {
+                    stars += `<i class="fas fa-star ${i <= rating ? 'text-yellow-400' : 'text-gray-300'}"></i>`;
+                }
+                return `<div class="flex items-center space-x-1">${stars}</div>`;
+            };
+
             // --- RENDER FUNCTIONS ---
-            const renderComments = () => {
-                const filteredComments = comments
-                    .filter(comment => currentFilter === 'all' || comment.status === currentFilter)
-                    .filter(comment => {
-                        const search = searchTerm.toLowerCase();
-                        return comment.user.name.toLowerCase().includes(search) ||
-                               comment.content.toLowerCase().includes(search) ||
-                               comment.commentable.title.toLowerCase().includes(search);
-                    });
+            function renderReviewRow(review) {
+                const reviewStatus = statusMap[review.status] || { text: 'N/A', class: '' };
                 
-                // Build a tree for threaded comments
-                const commentMap = new Map(comments.map(c => [c.id, {...c, children: []}]));
-                const rootComments = [];
-                for(const comment of commentMap.values()){
-                    if(comment.parent_id && commentMap.has(comment.parent_id)){
-                        commentMap.get(comment.parent_id).children.push(comment);
-                    } else {
-                        rootComments.push(comment);
-                    }
-                }
-
-                const finalCommentsToRender = [];
-                const flatten = (comment, depth) => {
-                    finalCommentsToRender.push({...comment, depth});
-                    comment.children.forEach(child => flatten(child, depth + 1));
-                }
-                rootComments.forEach(c => flatten(c, 0));
-                
-                // Filter the flattened list
-                const displayList = finalCommentsToRender.filter(c => filteredComments.some(fc => fc.id === c.id));
-
-
-                tableBody.innerHTML = ''; // Clear existing rows
-                
-                if(displayList.length === 0) {
-                    noResultsDiv.classList.remove('hidden');
-                } else {
-                    noResultsDiv.classList.add('hidden');
-                }
-
-                displayList.forEach(comment => {
-                    const row = document.createElement('tr');
-                    row.className = 'hover:bg-gray-50';
-                    
-                    const parentComment = comment.parent_id ? comments.find(c => c.id === comment.parent_id) : null;
-                    const replyInfo = parentComment ? `Bình luận của <strong>${parentComment.user.name}</strong>` : `<span class="text-gray-500 italic">${comment.commentable.type}:</span> ${comment.commentable.title}`;
-
-                    row.innerHTML = `
-                        <td class="p-4 relative">
-                           ${comment.depth > 0 ? '<div class="reply-line"></div>' : ''}
-                            <input type="checkbox" data-id="${comment.id}" class="row-checkbox h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" ${selectedCommentIds.has(comment.id) ? 'checked' : ''}>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center" style="padding-left: ${comment.depth * 2}rem;">
-                                ${comment.depth > 0 ? `<i data-lucide="corner-down-right" class="h-4 w-4 text-gray-400 mr-2"></i>` : ''}
-                                <div class="flex-shrink-0 h-10 w-10">
-                                    <img class="h-10 w-10 rounded-full object-cover" src="${comment.user.avatar}" alt="">
-                                </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">${comment.user.name}</div>
+                return `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="p-6">
+                            <div class="flex items-center">
+                                <img src="${review.user.avatar}" class="w-10 h-10 rounded-full mr-4 object-cover">
+                                <div>
+                                    <div class="font-semibold">${review.user.name}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4">
-                            <p class="text-sm text-gray-600 w-80" title="${comment.content}">${comment.content}</p>
+                        <td class="p-6">
+                            ${createStarRating(review.rating)}
+                            <p class="font-semibold my-1">${review.title}</p>
+                            <p class="text-gray-600">${review.comment}</p>
                         </td>
-                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">${replyInfo}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">${createStatusBadge(comment.status)}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(comment.created_at).toLocaleDateString('vi-VN')}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">${createActionMenu(comment)}</td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-                
-                updateBulkActionsBar();
-                updateSelectAllCheckboxState(displayList);
-                updateStats();
-                lucide.createIcons();
-            };
-
-            const updateBulkActionsBar = () => {
-                if (selectedCommentIds.size > 0) {
-                    bulkActionsBar.classList.remove('hidden');
-                    bulkActionsBar.classList.add('flex');
-                    selectedCountSpan.textContent = selectedCommentIds.size;
-                } else {
-                    bulkActionsBar.classList.add('hidden');
-                    bulkActionsBar.classList.remove('flex');
-                }
-            };
-            
-            const updateSelectAllCheckboxState = (displayList) => {
-                if (displayList.length > 0 && selectedCommentIds.size === displayList.length) {
-                    selectAllCheckbox.checked = true;
-                    selectAllCheckbox.indeterminate = false;
-                } else if (selectedCommentIds.size > 0) {
-                    selectAllCheckbox.checked = false;
-                    selectAllCheckbox.indeterminate = true;
-                } else {
-                    selectAllCheckbox.checked = false;
-                    selectAllCheckbox.indeterminate = false;
-                }
-            };
-            
-            const updateStats = () => {
-                const summary = {
-                    total: comments.length,
-                    pending: comments.filter(r => r.status === 'pending').length,
-                    approved: comments.filter(r => r.status === 'approved').length,
-                    rejected: comments.filter(r => r.status === 'rejected').length,
-                };
-                statsContainer.innerHTML = `
-                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200"><h3 class="text-sm font-medium text-gray-500">Tổng số bình luận</h3><p class="mt-2 text-3xl font-semibold text-gray-900">${summary.total}</p></div>
-                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200"><h3 class="text-sm font-medium text-gray-500">Chờ duyệt</h3><p class="mt-2 text-3xl font-semibold text-yellow-500">${summary.pending}</p></div>
-                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200"><h3 class="text-sm font-medium text-gray-500">Đã duyệt</h3><p class="mt-2 text-3xl font-semibold text-green-500">${summary.approved}</p></div>
-                    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200"><h3 class="text-sm font-medium text-gray-500">Đã từ chối</h3><p class="mt-2 text-3xl font-semibold text-red-500">${summary.rejected}</p></div>
+                        <td class="p-6">
+                             <div class="flex items-center">
+                                <img src="${review.product.image}" class="w-12 h-12 rounded-md mr-4 object-cover">
+                                <div>
+                                    <div class="font-semibold">${review.product.name}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-6">${formatDate(review.created_at)}</td>
+                        <td class="p-6"><span class="status-badge ${reviewStatus.class}">${reviewStatus.text}</span></td>
+                        <td class="p-6 text-center">
+                            <button class="text-indigo-600 hover:text-indigo-900 text-lg" title="Sửa"><i class="fas fa-edit"></i></button>
+                            <button class="text-red-600 hover:text-red-900 text-lg ml-4" title="Xóa"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
                 `;
-            };
-
-            // --- EVENT HANDLERS ---
-            filterButtonsContainer.addEventListener('click', (e) => {
-                const button = e.target.closest('.filter-btn');
-                if (button) {
-                    currentFilter = button.dataset.status;
-                    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm'));
-                    button.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
-                    renderComments();
-                }
-            });
-
-            searchInput.addEventListener('input', (e) => {
-                searchTerm = e.target.value;
-                renderComments();
-            });
-
-            selectAllCheckbox.addEventListener('change', (e) => {
-                const filteredCommentIds = comments
-                    .filter(comment => currentFilter === 'all' || comment.status === currentFilter)
-                    .map(c => c.id);
-                    
-                if (e.target.checked) {
-                    filteredCommentIds.forEach(id => selectedCommentIds.add(id));
-                } else {
-                    selectedCommentIds.clear();
-                }
-                renderComments();
-            });
-
-            tableBody.addEventListener('change', (e) => {
-                if (e.target.classList.contains('row-checkbox')) {
-                    const id = parseInt(e.target.dataset.id, 10);
-                    if (e.target.checked) selectedCommentIds.add(id); else selectedCommentIds.delete(id);
-                    updateBulkActionsBar();
-                    const displayList = comments.filter(c => currentFilter === 'all' || c.status === currentFilter);
-                    updateSelectAllCheckboxState(displayList);
-                }
-            });
+            }
             
-            tableBody.addEventListener('click', (e) => {
-                const actionButton = e.target.closest('[data-action]');
-                if (actionButton && actionButton.dataset.action === 'toggle-menu') {
-                    actionButton.nextElementSibling.classList.toggle('hidden');
+            function renderTable(reviewsToRender) {
+                if (!reviewsToRender || reviewsToRender.length === 0) {
+                    tbody.innerHTML = '';
+                    noResultsDiv.classList.remove('hidden');
                     return;
                 }
                 
-                if (actionButton) {
-                    const action = actionButton.dataset.action;
-                    const id = parseInt(actionButton.dataset.id, 10);
-                    if (action === 'approve') comments = comments.map(c => c.id === id ? { ...c, status: 'approved' } : c);
-                    else if (action === 'reject') comments = comments.map(c => c.id === id ? { ...c, status: 'rejected' } : c);
-                    else if (action === 'delete') {
-                        if (confirm('Bạn có chắc chắn muốn xóa bình luận này và các trả lời của nó?')) {
-                            const idsToDelete = new Set([id]);
-                            const findChildren = (parentId) => {
-                                comments.filter(c => c.parent_id === parentId).forEach(child => {
-                                    idsToDelete.add(child.id);
-                                    findChildren(child.id);
-                                });
-                            };
-                            findChildren(id);
-                            comments = comments.filter(c => !idsToDelete.has(c.id));
-                        }
-                    }
-                    idsToDelete.forEach(id => selectedCommentIds.delete(id));
-                    renderComments();
-                }
-            });
-            
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.action-menu')) {
-                    document.querySelectorAll('.action-menu > div').forEach(menu => menu.classList.add('hidden'));
-                }
-            });
+                noResultsDiv.classList.add('hidden');
+                tbody.innerHTML = reviewsToRender.map(renderReviewRow).join('');
+            }
 
-            bulkActionsBar.addEventListener('click', (e) => {
-                const button = e.target.closest('.bulk-action-btn');
-                if (!button) return;
-                const action = button.dataset.action;
-                const idsToAction = Array.from(selectedCommentIds);
-                if (action === 'bulk-approve') comments = comments.map(c => idsToAction.includes(c.id) ? { ...c, status: 'approved' } : c);
-                else if (action === 'bulk-reject') comments = comments.map(c => idsToAction.includes(c.id) ? { ...c, status: 'rejected' } : c);
-                else if (action === 'bulk-delete') {
-                     if (confirm(`Bạn có chắc chắn muốn xóa ${selectedCommentIds.size} bình luận đã chọn?`)) {
-                        comments = comments.filter(c => !idsToAction.includes(c.id));
-                    }
-                }
-                selectedCommentIds.clear();
-                renderComments();
-            });
+            // --- FILTERING LOGIC ---
+            function applyFilters() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const status = statusFilter.value;
+                const rating = ratingFilter.value;
+                const selectedDate = dateFilter.value;
+
+                let filteredReviews = mockReviews.filter(review => {
+                    const matchesSearch = searchTerm === '' ||
+                        review.comment.toLowerCase().includes(searchTerm) ||
+                        review.title.toLowerCase().includes(searchTerm) ||
+                        review.user.name.toLowerCase().includes(searchTerm) ||
+                        review.product.name.toLowerCase().includes(searchTerm);
+                    
+                    const matchesStatus = status === '' || review.status === status;
+                    
+                    const matchesRating = rating === '' || review.rating.toString() === rating;
+                    
+                    const matchesDate = selectedDate === '' || review.created_at.startsWith(selectedDate);
+
+                    return matchesSearch && matchesStatus && matchesRating && matchesDate;
+                });
+                
+                renderTable(filteredReviews);
+            }
+
+            function clearFilters() {
+                searchInput.value = '';
+                statusFilter.value = '';
+                ratingFilter.value = '';
+                dateFilter.value = '';
+                renderTable(mockReviews);
+            }
+            
+            document.getElementById('apply-filters-btn').addEventListener('click', applyFilters);
+            document.getElementById('clear-filters-btn').addEventListener('click', clearFilters);
 
             // --- INITIAL RENDER ---
-            renderComments();
+            renderTable(mockReviews);
         });
     </script>
 </body>
