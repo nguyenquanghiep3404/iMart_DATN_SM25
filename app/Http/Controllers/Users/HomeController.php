@@ -19,11 +19,9 @@ class HomeController extends Controller
 {
     public function index()
     {
-<<<<<<< HEAD
+
         // Định nghĩa một hàm ẩn danh để tính và gán điểm đánh giá trung bình cũng như phần trăm giảm giá cho sản phẩm
-=======
         $banners = Banner::with('desktopImage')->where('status', 'active')->orderBy('order')->get();
->>>>>>> b723a868d5270040ce79920c4e6c5d0fcb664e04
         $calculateAverageRating = function ($products) {
             // Duyệt qua từng sản phẩm trong tập hợp được cung cấp
             foreach ($products as $product) {
@@ -183,12 +181,10 @@ class HomeController extends Controller
         // Áp dụng hàm tính điểm đánh giá trung bình và phần trăm giảm giá cho sản phẩm mới nhất
         $calculateAverageRating($latestProducts);
 
-<<<<<<< HEAD
+
         // Trả về giao diện 'users.home' với dữ liệu sản phẩm nổi bật và mới nhất
-        return view('users.home', compact('featuredProducts', 'latestProducts'));
-=======
         return view('users.home', compact('featuredProducts', 'latestProducts', 'banners'));
->>>>>>> b723a868d5270040ce79920c4e6c5d0fcb664e04
+
     }
 
 

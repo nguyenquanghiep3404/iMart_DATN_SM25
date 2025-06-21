@@ -485,7 +485,6 @@
 @endsection
 
 @push('styles')
-<<<<<<< HEAD
     <style>
         .hero-banner {
             margin-top: -16px;
@@ -496,13 +495,7 @@
         border-radius: 8px;
     }
     </style>
-=======
-<style>
-    .hero-banner {
-        margin-top: -16px;
-    }
-</style>
->>>>>>> b723a868d5270040ce79920c4e6c5d0fcb664e04
+
 @endpush
 
 @push('scripts')
