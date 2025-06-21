@@ -11,6 +11,7 @@ use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\Users\WishlistController;
 use App\Http\Controllers\Admin\CommentController;
+use App\Http\Controllers\Admin\PostCategoryController;
 
 
 
@@ -108,7 +109,17 @@ Route::prefix('admin')
         Route::post('comments/{comment}/status', [CommentController::class, 'updateStatus'])->name('comments.updateStatus');
         Route::post('comment/replies', [CommentController::class, 'replyStore'])->name('replies.store');
 
+        //quản lý danh mục bài viết 
+        Route::get('categories_post/create-with-children', [PostCategoryController::class, 'createWithChildren'])
+        ->name('categories_post.createWithChildren');
 
+        // Route để lưu danh mục cha và con
+        Route::post('categories_post/store-with-children', [PostCategoryController::class, 'storeWithChildren'])
+        ->name('categories_post.storeWithChildren');
+
+        // Route resource mặc định
+        Route::resource('categories_post', PostCategoryController::class)
+        ->names('categories_post');
 
         // 
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
