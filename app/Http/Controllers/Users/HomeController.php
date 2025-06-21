@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Comment;
+use Illuminate\Support\Str;
+
 
 class HomeController extends Controller
 {
@@ -247,7 +250,20 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
+        // hiển thị comment lên trang chi tiết sản phẩm
+        $product = Product::where('slug', $slug)->firstOrFail();
+
+        // Lấy bình luận cha đã duyệt kèm người dùng và các trả lời
+        $comments = $product->comments()
+            ->where('status', 'approved')
+            ->whereNull('parent_id') // chỉ lấy comment cha
+            ->with(['user', 'replies.user']) // eager load user và replies
+            ->orderByDesc('created_at')
+            ->get();
+
+            
         // Trả dữ liệu về view hiển thị chi tiết sản phẩm
+        // var_dump($comments);
         return view('users.show', compact(
             'product',
             'relatedProducts',
@@ -255,7 +271,8 @@ class HomeController extends Controller
             'ratingPercentages',
             'totalReviews',
             'attributes',
-            'variantData' // Bổ sung biến $variantData
+            'variantData', // Bổ sung biến $variantData
+            'comments'
         ));
     }
 

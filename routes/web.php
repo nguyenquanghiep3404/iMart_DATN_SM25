@@ -9,6 +9,10 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\CommentController;
+use App\Http\Controllers\Admin\PostCategoryController;
+
 
 
 
@@ -30,6 +34,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+// Hiển thị trang wishlist cho khách vãng lai và user
+Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
+Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSelected'])->name('wishlist.removeSelected');
 
 //==========================================================================
 // ADMIN ROUTES
@@ -55,7 +63,7 @@ Route::prefix('admin')
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
         // Route::resource('users', UserController::class);
-       Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
@@ -89,6 +97,30 @@ Route::prefix('admin')
         Route::put('attributes/{attribute}/values/{value}', [AttributeController::class, 'updateValue'])->name('attributes.values.update');
         Route::delete('attributes/{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
 
+
+        // Quản lý comment
+        Route::get('/comments', [CommentController::class, 'index'])->name('comment.index');
+        Route::get('products/{id}-{slug}', [ProductController::class, 'show'])->name('products.show');
+        Route::get('posts/{id}-{slug}', [PostController::class, 'show'])->name('posts.show');
+
+        Route::get('comments/{comment}', [CommentController::class, 'show'])->name('comments.show');
+        Route::get('comments/{comment}/edit', [CommentController::class, 'edit'])->name('comments.edit');
+        Route::post('comments/{comment}/status', [CommentController::class, 'updateStatus'])->name('comments.updateStatus');
+        Route::post('comment/replies', [CommentController::class, 'replyStore'])->name('replies.store');
+
+        //quản lý danh mục bài viết 
+        Route::get('categories_post/create-with-children', [PostCategoryController::class, 'createWithChildren'])
+        ->name('categories_post.createWithChildren');
+
+        // Route để lưu danh mục cha và con
+        Route::post('categories_post/store-with-children', [PostCategoryController::class, 'storeWithChildren'])
+        ->name('categories_post.storeWithChildren');
+
+        // Route resource mặc định
+        Route::resource('categories_post', PostCategoryController::class)
+        ->names('categories_post');
+
+        // 
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:
         // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
