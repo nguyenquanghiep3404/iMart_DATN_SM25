@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Banner;
 use App\Models\Comment;
 use Illuminate\Support\Str;
 
@@ -18,6 +19,7 @@ class HomeController extends Controller
 {
     public function index()
     {
+        $banners = Banner::with('desktopImage')->where('status', 'active')->orderBy('order')->get();
         $calculateAverageRating = function ($products) {
             foreach ($products as $product) {
                 $averageRating = $product->reviews->avg('rating') ?? 0;
@@ -136,7 +138,7 @@ class HomeController extends Controller
 
         $calculateAverageRating($latestProducts);
 
-        return view('users.home', compact('featuredProducts', 'latestProducts'));
+        return view('users.home', compact('featuredProducts', 'latestProducts', 'banners'));
     }
 
 

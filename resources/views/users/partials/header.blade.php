@@ -67,6 +67,108 @@
                 </div>
             </div> --}}
 
+  <!-- Main navigation that turns into offcanvas on screens < 992px wide (lg breakpoint) -->
+  <div class="collapse navbar-stuck-hide" id="stuckNav">
+    <nav class="offcanvas offcanvas-start" id="navbarNav" tabindex="-1" aria-labelledby="navbarNavLabel">
+      <div class="offcanvas-header py-3">
+        <h5 class="offcanvas-title" id="navbarNavLabel">Browse Cartzilla</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body py-3 py-lg-0">
+        <div class="container px-0 px-lg-3">
+          <div class="row">
+            <!-- Navbar nav -->
+            <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
+              <ul class="navbar-nav position-relative">
+                <li class="nav-item dropdown me-lg-n1 me-xl-0">
+                  <a class="nav-link dropdown-toggle active" aria-current="page" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Home</a>
+                  <ul class="dropdown-menu">
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-electronics.html">
+                        <span class="fw-medium">Electronics Store</span>
+                        <span class="d-block fs-xs text-body-secondary">Megamenu + Hero slider</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/electronics-light.jpg" alt="Electronics Store">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/electronics-dark.jpg" alt="Electronics Store">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-fashion-v1.html">
+                        <span class="fw-medium">Fashion Store v.1</span>
+                        <span class="d-block fs-xs text-body-secondary">Hero promo slider</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/fashion-1-light.jpg" alt="Fashion Store v.1">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/fashion-1-dark.jpg" alt="Fashion Store v.1">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-fashion-v2.html">
+                        <span class="fw-medium">Fashion Store v.2</span>
+                        <span class="d-block fs-xs text-body-secondary">Hero banner with hotspots</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/fashion-2-light.jpg" alt="Fashion Store v.2">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/fashion-2-dark.jpg" alt="Fashion Store v.2">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-furniture.html">
+                        <span class="fw-medium">Furniture Store</span>
+                        <span class="d-block fs-xs text-body-secondary">Fancy product carousel</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/furniture-light.jpg" alt="Furniture Store">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/furniture-dark.jpg" alt="Furniture Store">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-grocery.html">
+                        <span class="fw-medium">Grocery Store</span>
+                        <span class="d-block fs-xs text-body-secondary">Hero slider + Category cards</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/grocery-light.jpg" alt="Grocery Store">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/grocery-dark.jpg" alt="Grocery Store">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-marketplace.html">
+                        <span class="fw-medium">Marketplace</span>
+                        <span class="d-block fs-xs text-body-secondary">Multi-vendor, digital goods</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/marketplace-light.jpg" alt="Marketplace">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/marketplace-dark.jpg" alt="Marketplace">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                    <li class="hover-effect-opacity px-2 mx-n2">
+                      <a class="dropdown-item d-block mb-0" href="home-single-store.html">
+                        <span class="fw-medium">Single Product Store</span>
+                        <span class="d-block fs-xs text-body-secondary">Single product / mono brand</span>
+                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
+                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/single-store-light.jpg" alt="Single Product Store">
+                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/single-store-dark.jpg" alt="Single Product Store">
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
+                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
+                        </div>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
             {{-- [MỚI] Nút xem trang chủ --}}
             <a href="{{ url('/') }}" target="_blank" class="flex items-center justify-center w-10 h-10 rounded-full text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors duration-300" title="Xem trang chủ">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>

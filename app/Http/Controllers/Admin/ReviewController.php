@@ -10,18 +10,33 @@ class ReviewController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Review::with(['user', 'variant.product']);
+        $query = Review::query()->with(['user', 'variant.product']);
 
-        if ($keyword = $request->input('keyword')) {
-            $query->whereHas('variant.product', function ($q) use ($keyword) {
-                $q->where('name', 'like', '%' . $keyword . '%');
-            });
+        if ($request->filled('search')) {
+            $keyword = $request->search;
+            $query->whereHas('user', fn($q) => $q->where('name', 'like', "%$keyword%"))
+                ->orWhereHas('variant.product', fn($q) => $q->where('name', 'like', "%$keyword%"))
+                ->orWhere('comment', 'like', "%$keyword%")
+                ->orWhere('title', 'like', "%$keyword%");
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('rating')) {
+            $query->where('rating', $request->rating);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
         }
 
         $reviews = $query->latest()->paginate(10);
 
         return view('admin.reviews.index', compact('reviews'));
     }
+
 
 
     public function show($id)
@@ -37,11 +52,5 @@ class ReviewController extends Controller
         $review->save();
 
         return redirect()->route('admin.reviews.index')->with('success', 'Đánh giá đã được cập nhật.');
-    }
-
-    public function destroy($id)
-    {
-        Review::destroy($id);
-        return redirect()->route('admin.reviews.index')->with('success', 'Đánh giá đã bị xoá.');
     }
 }
