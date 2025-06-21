@@ -16,13 +16,12 @@ use App\Http\Controllers\Admin\PostCategoryController;
 
 
 
-
 //==========================================================================
 // FRONTEND ROUTES (PUBLIC)
 //==========================================================================
-
 Route::get('/', [HomeController::class, 'index'])->name('users.home');  // Trang chủ, không cần đăng nhập
 Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.products.show');
+Route::get('/products', [HomeController::class, 'allProducts'])->name('users.products.all');
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 // các trang không cần đăng nhập ở dưới đây
