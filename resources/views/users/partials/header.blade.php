@@ -1,71 +1,170 @@
-{{-- Giả sử bạn có biến $unreadNotificationsCount và $recentNotifications từ Controller --}}
-@php
-    $unreadNotificationsCount = 5; // Ví dụ
-    $recentNotifications = [
-        ['type' => 'order', 'title' => 'Đơn hàng #12345 vừa được tạo', 'time' => '5 phút trước', 'icon' => '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>'],
-        ['type' => 'user', 'title' => 'Người dùng mới: An Nguyễn', 'time' => '1 giờ trước', 'icon' => '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>'],
-        ['type' => 'review', 'title' => 'Có một đánh giá sản phẩm mới', 'time' => '3 giờ trước', 'icon' => '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.196-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118L2.05 10.1c-.783-.57-.38-1.81.588-1.81h4.914a1 1 0 00.95-.69L11.049 2.927z" /></svg>'],
-    ];
-    // Giả lập thông tin user để hiển thị
-    $user = auth()->user() ?? (object)[
-        'name' => 'Anh Tuấn',
-        'email' => 'admin@gmail.com',
-        'avatar_url' => 'https://placehold.co/100x100/E2E8F0/4A5568?text=A',
-        'role' => 'Super Admin'
-    ];
-@endphp
+<header class="navbar navbar-expand-lg navbar-dark bg-dark d-block z-fixed p-0" data-sticky-navbar="{&quot;offset&quot;: 500}">
+  <div class="container d-block py-1 py-lg-3" data-bs-theme="dark">
+    <div class="navbar-stuck-hide pt-1"></div>
+    <div class="row flex-nowrap align-items-center g-0">
+      <div class="col col-lg-3 d-flex align-items-center">
 
-{{-- Thêm `x-data` cho dark mode và ` :class="{'dark': darkMode}"` vào thẻ <html> của bạn --}}
-<header class="relative z-30 bg-white dark:bg-slate-800 dark:border-b dark:border-slate-700 shadow-sm print:hidden">
-    <div class="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center space-x-4">
-            {{-- Nút hamburger --}}
-            <button type="button" class="block lg:hidden text-2xl text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400" x-on:click="sideMenu = !sideMenu">
-                <svg width="20" height="14" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M1 1H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M1 7H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <path d="M1 13H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </button>
+        <!-- Mobile offcanvas menu toggler (Hamburger) -->
+        <button type="button" class="navbar-toggler me-4 me-lg-0" data-bs-toggle="offcanvas" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-            {{-- Thanh tìm kiếm --}}
-            <div class="hidden md:block">
-                <form action="#">
-                    <div class="relative group">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500">
-                            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path><path d="M18.9999 19L14.6499 14.65" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                        </span>
-                        <input class="w-52 lg:w-72 h-10 pl-10 pr-4 bg-slate-100 dark:bg-slate-700 border border-transparent rounded-lg focus:bg-white dark:focus:bg-slate-600 focus:border-indigo-400 focus:ring-indigo-400 focus:ring-1 transition-all duration-300 outline-none text-slate-700 dark:text-slate-200" type="text" placeholder="Tìm kiếm...">
-                    </div>
-                </form>
-            </div>
+        <!-- Navbar brand (Logo) -->
+        <a href="index.html" class="navbar-brand me-0">
+          <span class="d-none d-sm-flex flex-shrink-0 text-primary me-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
+              <path d="M36 18.01c0 8.097-5.355 14.949-12.705 17.2a18.12 18.12 0 0 1-5.315.79C9.622 36 2.608 30.313.573 22.611.257 21.407.059 20.162 0 18.879v-1.758c.02-.395.059-.79.099-1.185.099-.908.277-1.817.514-2.686C2.687 5.628 9.682 0 18 0c5.572 0 10.551 2.528 13.871 6.517 1.502 1.797 2.648 3.91 3.359 6.201.494 1.659.771 3.436.771 5.292z" fill="currentColor"></path>
+              <g fill="#fff">
+                <path d="M17.466 21.624c-.514 0-.988-.316-1.146-.829-.198-.632.138-1.303.771-1.501l7.666-2.469-1.205-8.254-13.317 4.621a1.19 1.19 0 0 1-1.521-.75 1.19 1.19 0 0 1 .751-1.521l13.89-4.818c.553-.197 1.166-.138 1.64.158a1.82 1.82 0 0 1 .85 1.284l1.344 9.183c.138.987-.494 1.994-1.482 2.33l-7.864 2.528-.375.04zm7.31.138c-.178-.632-.85-1.007-1.482-.81l-5.177 1.58c-2.331.79-3.28.02-3.418-.099l-6.56-8.412a4.25 4.25 0 0 0-4.406-1.758l-3.122.987c-.237.889-.415 1.777-.514 2.686l4.228-1.363a1.84 1.84 0 0 1 1.857.81l6.659 8.551c.751.948 2.015 1.323 3.359 1.323.909 0 1.857-.178 2.687-.474l5.078-1.54c.632-.178 1.008-.829.81-1.481z"></path>
+                <use href="#czlogo"></use>
+                <use href="#czlogo" x="8.516" y="-2.172"></use>
+              </g>
+              <defs>
+                <path id="czlogo" d="M18.689 28.654a1.94 1.94 0 0 1-1.936 1.935 1.94 1.94 0 0 1-1.936-1.935 1.94 1.94 0 0 1 1.936-1.935 1.94 1.94 0 0 1 1.936 1.935z"></path>
+              </defs>
+            </svg>
+          </span>
+          Cartzilla
+        </a>
+      </div>
+      <div class="col col-lg-9 d-flex align-items-center justify-content-end">
+
+        <!-- Search visible on screens > 991px wide (lg breakpoint) -->
+        <div class="position-relative flex-fill d-none d-lg-block pe-4 pe-xl-5">
+          <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
+          <input type="search" class="form-control form-control-lg form-icon-start border-white rounded-pill" placeholder="Search the products">
         </div>
 
-        <div class="flex items-center space-x-2 sm:space-x-3">
-            {{-- [MỚI] Nút "Tạo Mới" --}}
-            {{-- <div class="hidden sm:block">
-                <div class="relative" x-data="{ createMenuOpen: false }">
-                    <button @click="createMenuOpen = !createMenuOpen" class="flex items-center justify-center gap-2 h-10 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                        </svg>
-                        <span class="hidden lg:block">Tạo Mới</span>
-                    </button>
-                    <div x-show="createMenuOpen" @click.outside="createMenuOpen = false"
-                         x-transition:enter="transition ease-out duration-200 origin-top"
-                         x-transition:enter-start="opacity-0 scale-y-90"
-                         x-transition:enter-end="opacity-100 scale-y-100"
-                         x-transition:leave="transition ease-in duration-150 origin-top"
-                         x-transition:leave-start="opacity-100 scale-y-100"
-                         x-transition:leave-end="opacity-0 scale-y-90"
-                         class="absolute w-52 top-full right-0 mt-2 shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 py-1.5"
-                         style="display: none;">
-                        <a href="{{ route('admin.products.create') }}" class="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600">Thêm sản phẩm</a>
-                        <a href="{{ route('admin.categories.create') }}" class="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600">Thêm danh mục</a>
-                        <a href="{{ route('admin.users.create') }}" class="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600">Thêm người dùng</a>
-                    </div>
-                </div>
-            </div> --}}
+        <!-- Sale link visible on screens > 1200px wide (xl breakpoint) -->
+        <a class="d-none d-xl-flex align-items-center text-decoration-none animate-shake navbar-stuck-hide me-3 me-xl-4 me-xxl-5" href="shop-catalog-electronics.html">
+          <div class="btn btn-icon btn-lg fs-lg text-primary bg-body-secondary bg-opacity-75 pe-none rounded-circle">
+            <i class="ci-percent animate-target"></i>
+          </div>
+          <div class="ps-2 text-nowrap">
+            <div class="fs-xs text-body">Only this month</div>
+            <div class="fw-medium text-white">Super Sale 20%</div>
+          </div>
+        </a>
+
+        <!-- Button group -->
+        <div class="d-flex align-items-center">
+
+          <!-- Navbar stuck nav toggler -->
+          <button type="button" class="navbar-toggler d-none navbar-stuck-show me-3" data-bs-toggle="collapse" data-bs-target="#stuckNav" aria-controls="stuckNav" aria-expanded="false" aria-label="Toggle navigation in navbar stuck state">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <!-- Theme switcher (light/dark/auto) -->
+          <div class="dropdown">
+            <button type="button" class="theme-switcher btn btn-icon btn-lg btn-outline-secondary fs-lg border-0 rounded-circle animate-scale" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Toggle theme (light)">
+              <span class="theme-icon-active d-flex animate-target">
+                <i class="ci-sun"></i>
+              </span>
+            </button>
+            <ul class="dropdown-menu" style="--cz-dropdown-min-width: 9rem">
+              <li>
+                <button type="button" class="dropdown-item active" data-bs-theme-value="light" aria-pressed="true">
+                  <span class="theme-icon d-flex fs-base me-2">
+                    <i class="ci-sun"></i>
+                  </span>
+                  <span class="theme-label">Light</span>
+                  <i class="item-active-indicator ci-check ms-auto"></i>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="dropdown-item" data-bs-theme-value="dark" aria-pressed="false">
+                  <span class="theme-icon d-flex fs-base me-2">
+                    <i class="ci-moon"></i>
+                  </span>
+                  <span class="theme-label">Dark</span>
+                  <i class="item-active-indicator ci-check ms-auto"></i>
+                </button>
+              </li>
+              <li>
+                <button type="button" class="dropdown-item" data-bs-theme-value="auto" aria-pressed="false">
+                  <span class="theme-icon d-flex fs-base me-2">
+                    <i class="ci-auto"></i>
+                  </span>
+                  <span class="theme-label">Auto</span>
+                  <i class="item-active-indicator ci-check ms-auto"></i>
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Nút bật/tắt thanh tìm kiếm (chỉ hiện trên màn hình nhỏ hơn 992px) -->
+          <button type="button"
+            class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none"
+            data-bs-toggle="collapse"
+            data-bs-target="#searchBar"
+            aria-expanded="false"
+            aria-controls="searchBar"
+            aria-label="Toggle search bar"
+            title="Tìm kiếm">
+            <i class="ci-search animate-target"></i>
+          </button>
+
+
+          <!-- Account button visible on screens > 768px wide (md breakpoint) -->
+          <li class="nav-item dropdown d-none d-md-inline-flex">
+            <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false">
+              @auth
+              {{-- Hiển thị chữ cái đầu tên người dùng --}}
+              <span class="fw-bold text-uppercase">{{ strtoupper(Auth::user()->name[0]) }}</span>
+              @else
+              {{-- Biểu tượng người dùng mặc định --}}
+              <i class="ci-user animate-target"></i>
+              @endauth
+              <span class="visually-hidden">Account</span>
+            </a>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+              @guest
+              <li><a class="dropdown-item" href="{{ route('login') }}">Đăng nhập</a></li>
+              <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
+              @else
+              <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
+              <li>
+                <form action="{{ route('logout') }}" method="POST">
+                  @csrf
+                  <button class="dropdown-item" type="submit">Đăng xuất</button>
+                </form>
+              </li>
+              @endguest
+            </ul>
+          </li>
+
+
+          <!-- Wishlist button visible on screens > 768px wide (md breakpoint) -->
+          <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-pulse d-none d-md-inline-flex" href="account-wishlist.html">
+            <i class="ci-heart animate-target"></i>
+            <span class="visually-hidden">Wishlist</span>
+          </a>
+
+          <!-- Cart button -->
+          <button type="button" class="btn btn-icon btn-lg btn-secondary position-relative rounded-circle ms-2" data-bs-toggle="offcanvas" data-bs-target="#shoppingCart" aria-controls="shoppingCart" aria-label="Shopping cart">
+            <span class="position-absolute top-0 start-100 mt-n1 ms-n3 badge text-bg-success border border-3 border-dark rounded-pill" style="--cz-badge-padding-y: .25em; --cz-badge-padding-x: .42em">3</span>
+            <span class="position-absolute top-0 start-0 d-flex align-items-center justify-content-center w-100 h-100 rounded-circle animate-slide-end fs-lg">
+              <i class="ci-shopping-cart animate-target ms-n1"></i>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="navbar-stuck-hide pb-1"></div>
+  </div>
+
+  <!-- Search visible on screens < 992px wide (lg breakpoint). It is hidden inside collapse by default -->
+  <div class="collapse position-absolute top-100 z-2 w-100 bg-dark d-lg-none" id="searchBar">
+    <div class="container position-relative my-3" data-bs-theme="dark">
+      <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
+      <input type="search" class="form-control form-icon-start border-white rounded-pill" placeholder="Search the products" data-autofocus="collapse">
+    </div>
+  </div>
 
   <!-- Main navigation that turns into offcanvas on screens < 992px wide (lg breakpoint) -->
   <div class="collapse navbar-stuck-hide" id="stuckNav">
@@ -77,6 +176,9 @@
       <div class="offcanvas-body py-3 py-lg-0">
         <div class="container px-0 px-lg-3">
           <div class="row">
+
+
+
             <!-- Navbar nav -->
             <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
               <ul class="navbar-nav position-relative">
@@ -169,117 +271,222 @@
                     </li>
                   </ul>
                 </li>
-            {{-- [MỚI] Nút xem trang chủ --}}
-            <a href="{{ url('/') }}" target="_blank" class="flex items-center justify-center w-10 h-10 rounded-full text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors duration-300" title="Xem trang chủ">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-            </a>
 
-            {{-- [MỚI] Nút Sáng/Tối --}}
-            {{-- <button @click="darkMode = !darkMode" class="flex items-center justify-center w-10 h-10 rounded-full text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors duration-300">
-                <svg x-show="!darkMode" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                <svg x-show="darkMode" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" style="display: none;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-            </button> --}}
-
-            {{-- Thông báo --}}
-            <div class="relative" x-data="{ notificationOpen: false }">
-                <button @click="notificationOpen = !notificationOpen" class="flex items-center justify-center w-10 h-10 rounded-full text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors duration-300">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                    @if($unreadNotificationsCount > 0)
-                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span class="relative inline-flex items-center justify-center text-xs text-white rounded-full h-4 w-4 bg-red-500">{{ $unreadNotificationsCount }}</span>
-                        </span>
-                    @endif
-                </button>
-
-                <div x-show="notificationOpen" @click.outside="notificationOpen = false"
-                     x-transition:enter="transition ease-out duration-200 origin-top"
-                     x-transition:enter-start="opacity-0 scale-y-90"
-                     x-transition:enter-end="opacity-100 scale-y-100"
-                     x-transition:leave="transition ease-in duration-150 origin-top"
-                     x-transition:leave-start="opacity-100 scale-y-100"
-                     x-transition:leave-end="opacity-0 scale-y-90"
-                     class="absolute w-80 sm:w-96 max-h-[80vh] overflow-y-auto top-full right-0 sm:-right-10 mt-2 shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600"
-                     style="display: none;">
-                    <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-600">
-                        <h4 class="font-semibold text-slate-800 dark:text-slate-100">Thông báo</h4>
+                <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop</a>
+                  <div class="dropdown-menu rounded-4 p-4">
+                    <div class="d-flex flex-column flex-lg-row gap-4">
+                      <div style="min-width: 190px">
+                        <div class="h6 mb-2">Electronics Store</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-categories-electronics.html">Categories Page</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-electronics.html">Catalog with Side Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-general-electronics.html">Product General Info</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-details-electronics.html">Product Details</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-reviews-electronics.html">Product Reviews</a>
+                          </li>
+                        </ul>
+                        <div class="h6 pt-4 mb-2">Fashion Store</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-fashion.html">Catalog with Side Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-fashion.html">Product Page</a>
+                          </li>
+                        </ul>
+                        <div class="h6 pt-4 mb-2">Furniture Store</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-furniture.html">Catalog with Top Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-furniture.html">Product Page</a>
+                          </li>
+                        </ul>
+                      </div>
+                      <div style="min-width: 190px">
+                        <div class="h6 mb-2">Grocery Store</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-grocery.html">Catalog with Side Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-grocery.html">Product Page</a>
+                          </li>
+                        </ul>
+                        <div class="h6 pt-4 mb-2">Marketplace</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-marketplace.html">Catalog with Top Filters</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-marketplace.html">Digital Product Page</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-marketplace.html">Cart / Checkout</a>
+                          </li>
+                        </ul>
+                      </div>
+                      <div style="min-width: 190px">
+                        <div class="h6 mb-2">Checkout v.1</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-cart.html">Shopping Cart</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-delivery-1.html">Delivery Info (Step 1)</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-delivery-2.html">Delivery Info (Step 2)</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-shipping.html">Shipping Address</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-payment.html">Payment</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-thankyou.html">Thank You Page</a>
+                          </li>
+                        </ul>
+                        <div class="h6 pt-4 mb-2">Checkout v.2</div>
+                        <ul class="nav flex-column gap-2 mt-0">
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-cart.html">Shopping Cart</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-delivery.html">Delivery Info</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-pickup.html">Pickup from Store</a>
+                          </li>
+                          <li class="d-flex w-100 pt-1">
+                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-thankyou.html">Thank You Page</a>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
-                    <ul class="divide-y divide-slate-200 dark:divide-slate-600">
-                        @forelse($recentNotifications as $notification)
-                        <li class="hover:bg-slate-50 dark:hover:bg-slate-600">
-                            <a class="block p-4" href="#">
-                                <div class="flex items-start space-x-3">
-                                    <div class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-500 flex items-center justify-center">
-                                        {!! $notification['icon'] !!}
-                                    </div>
-                                    <div class="flex-1">
-                                        <p class="text-sm text-slate-700 dark:text-slate-200 leading-tight">{{ $notification['title'] }}</p>
-                                        <span class="text-xs text-slate-500 dark:text-slate-400">{{ $notification['time'] }}</span>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                        @empty
-                        <li class="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                            Không có thông báo mới.
-                        </li>
-                        @endforelse
-                    </ul>
-                    <div class="px-4 py-2 border-t border-slate-200 dark:border-slate-600">
-                        <a href="#" class="block w-full text-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
-                            Xem tất cả
-                        </a>
-                    </div>
-                </div>
+                  </div>
+                </li>
+                <li class="nav-item dropdown me-lg-n1 me-xl-0">
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Account</a>
+                  <ul class="dropdown-menu">
+                    <li class="dropend">
+                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Auth Pages</a>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="account-signin.html">Sign In</a></li>
+                        <li><a class="dropdown-item" href="account-signup.html">Sign Up</a></li>
+                        <li><a class="dropdown-item" href="account-password-recovery.html">Password Recovery</a></li>
+                      </ul>
+                    </li>
+                    <li class="dropend">
+                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop User</a>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="account-orders.html">Orders History</a></li>
+                        <li><a class="dropdown-item" href="account-wishlist.html">Wishlist</a></li>
+                        <li><a class="dropdown-item" href="account-payment.html">Payment Methods</a></li>
+                        <li><a class="dropdown-item" href="account-reviews.html">My Reviews</a></li>
+                        <li><a class="dropdown-item" href="account-info.html">Personal Info</a></li>
+                        <li><a class="dropdown-item" href="account-addresses.html">Addresses</a></li>
+                        <li><a class="dropdown-item" href="account-notifications.html">Notifications</a></li>
+                      </ul>
+                    </li>
+                    <li class="dropend">
+                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Marketplace User</a>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="account-marketplace-dashboard.html">Dashboard</a></li>
+                        <li><a class="dropdown-item" href="account-marketplace-products.html">Products</a></li>
+                        <li><a class="dropdown-item" href="account-marketplace-sales.html">Sales</a></li>
+                        <li><a class="dropdown-item" href="account-marketplace-payouts.html">Payouts</a></li>
+                        <li><a class="dropdown-item" href="account-marketplace-purchases.html">Purchases</a></li>
+                        <li><a class="dropdown-item" href="account-marketplace-favorites.html">Favorites</a></li>
+                        <li><a class="dropdown-item" href="account-marketplace-settings.html">Settings</a></li>
+                      </ul>
+                    </li>
+                  </ul>
+                </li>
+                <li class="nav-item dropdown me-lg-n1 me-xl-0">
+                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Pages</a>
+                  <ul class="dropdown-menu">
+                    <li class="dropend">
+                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">About</a>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="about-v1.html">About v.1</a></li>
+                        <li><a class="dropdown-item" href="about-v2.html">About v.2</a></li>
+                      </ul>
+                    </li>
+                    <li class="dropend">
+                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Blog</a>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="blog-grid-v1.html">Grid View v.1</a></li>
+                        <li><a class="dropdown-item" href="blog-grid-v2.html">Grid View v.2</a></li>
+                        <li><a class="dropdown-item" href="blog-list.html">List View</a></li>
+                        <li><a class="dropdown-item" href="blog-single-v1.html">Single Post v.1</a></li>
+                        <li><a class="dropdown-item" href="blog-single-v2.html">Single Post v.2</a></li>
+                      </ul>
+                    </li>
+                    <li class="dropend">
+                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Contact</a>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="contact-v1.html">Contact v.1</a></li>
+                        <li><a class="dropdown-item" href="contact-v2.html">Contact v.2</a></li>
+                        <li><a class="dropdown-item" href="contact-v3.html">Contact v.3</a></li>
+                      </ul>
+                    </li>
+                    <li class="dropend">
+                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Help Center</a>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="help-topics-v1.html">Help Topics v.1</a></li>
+                        <li><a class="dropdown-item" href="help-topics-v2.html">Help Topics v.2</a></li>
+                        <li><a class="dropdown-item" href="help-single-article-v1.html">Help Single Article v.1</a></li>
+                        <li><a class="dropdown-item" href="help-single-article-v2.html">Help Single Article v.2</a></li>
+                      </ul>
+                    </li>
+                    <li class="dropend">
+                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">404 Error</a>
+                      <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="404-electronics.html">404 Electronics</a></li>
+                        <li><a class="dropdown-item" href="404-fashion.html">404 Fashion</a></li>
+                        <li><a class="dropdown-item" href="404-furniture.html">404 Furniture</a></li>
+                        <li><a class="dropdown-item" href="404-grocery.html">404 Grocery</a></li>
+                      </ul>
+                    </li>
+                    <li><a class="dropdown-item" href="terms-and-conditions.html">Terms &amp; Conditions</a></li>
+                  </ul>
+                </li>
+                <li class="nav-item me-lg-n2 me-xl-0">
+                  <a class="nav-link" href="docs/installation.html">Docs</a>
+                </li>
+                <li class="nav-item me-lg-n2 me-xl-0">
+                  <a class="nav-link" href="docs/typography.html">Components</a>
+                </li>
+              </ul>
             </div>
-
-            <div class="h-6 w-px bg-slate-200 dark:bg-slate-600 hidden sm:block"></div>
-
-            {{-- Profile User --}}
-            <div class="relative" x-data="{ userMenuOpen: false }">
-                <button @click="userMenuOpen = !userMenuOpen" class="flex items-center space-x-2">
-                    <img class="w-9 h-9 rounded-full object-cover" src="{{ $user->avatar_url }}" alt="{{ $user->name }}">
-                    <div class="hidden md:block text-left">
-                        <p class="text-sm font-medium text-slate-800 dark:text-slate-100 leading-tight">{{ $user->name }}</p>
-                        <span class="text-xs text-slate-500 dark:text-slate-400 capitalize">{{ $user->role }}</span>
-                    </div>
-                    <svg class="h-4 w-4 text-slate-400 hidden md:block" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
-                </button>
-
-                <div x-show="userMenuOpen" @click.outside="userMenuOpen = false"
-                     x-transition:enter="transition ease-out duration-200 origin-top"
-                     x-transition:enter-start="opacity-0 scale-y-90"
-                     x-transition:enter-end="opacity-100 scale-y-100"
-                     x-transition:leave="transition ease-in duration-150 origin-top"
-                     x-transition:leave-start="opacity-100 scale-y-100"
-                     x-transition:leave-end="opacity-0 scale-y-90"
-                     class="absolute w-60 top-full right-0 mt-2 shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 py-1"
-                     style="display: none;">
-                    <div class="px-3 py-2 border-b border-slate-200 dark:border-slate-600 md:hidden">
-                        <p class="font-semibold text-slate-800 dark:text-slate-100">{{ $user->name }}</p>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 truncate">{{ $user->email }}</p>
-                    </div>
-                    <div class="py-1">
-                        <a href="#" class="flex items-center px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600">
-                           <svg class="w-4 h-4 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            Hồ sơ của tôi
-                        </a>
-                        <a href="#" class="flex items-center px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600">
-                           <svg class="w-4 h-4 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.159-.223 1.71 0 .55.223 1.02.684 1.11 1.226l.094.542c.063.372.333.672.688.746.354.074.72.003 1.022-.192.302-.195.652-.217 1.003-.06.35.156.623.44.745.81.122.37.066.766-.144 1.082-.21.316-.277.688-.223 1.047.054.359.26.672.543.896.284.224.55.537.667.896.117.36.117.75 0 1.11-.117.36-.383.672-.667.896-.283.224-.489.537-.543.896-.054.359.012.73.223 1.047.21.316.21.712.144 1.082-.122.37-.4.654-.745.81-.35.156-.692.144-1.003-.06-.302-.195-.668-.217-1.022-.192-.354.074-.625.374-.688.746l-.094.542c-.09.542-.56.993-1.11 1.226-.55.223-1.159.223-1.71 0-.55-.223-1.02-.684-1.11-1.226l-.094-.542c-.063-.372-.333-.672-.688-.746-.354-.074-.72-.003-1.022.192-.302-.195-.652-.217-1.003-.06-.35-.156-.623-.44-.745-.81-.122.37-.066.766-.144 1.082.21.316.277.688-.223 1.047-.054.359-.26.672.543.896-.284.224-.55.537-.667.896-.117.36-.117.75 0 1.11.117.36.383.672.667.896.283.224.489.537-.543.896.054.359-.012.73-.223 1.047-.21.316-.21.712-.144 1.082.122.37.4.654.745.81.35.156.692.144 1.003-.06.302-.195.668-.217 1.022-.192.354.074.625.374-.688.746l.094.542z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                            Cài đặt
-                        </a>
-                    </div>
-                    <div class="border-t border-slate-200 dark:border-slate-600">
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="w-full flex items-center px-3 py-3 text-sm text-slate-700 dark:text-slate-200 hover:bg-red-50 dark:hover:bg-red-500/20 hover:text-red-600 dark:hover:text-red-500">
-                               <svg class="w-4 h-4 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
-                                Đăng xuất
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+          </div>
         </div>
-    </div>
+      </div>
+      <div class="offcanvas-header border-top px-0 py-3 mt-3 d-md-none">
+        <div class="nav nav-justified w-100">
+          <a class="nav-link border-end" href="account-signin.html">
+            <i class="ci-user fs-lg opacity-60 me-2"></i>
+            Account
+          </a>
+          <a class="nav-link" href="account-wishlist.html">
+            <i class="ci-heart fs-lg opacity-60 me-2"></i>
+            Wishlist
+          </a>
+        </div>
+      </div>
+    </nav>
+  </div>
 </header>
