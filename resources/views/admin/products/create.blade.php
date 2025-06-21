@@ -1038,7 +1038,7 @@
                 return isStructured ? JSON.parse(responseText) : responseText;
             } else {
                  if (result.promptFeedback && result.promptFeedback.blockReason) {
-                      throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
+                     throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
                  }
                 throw new Error("Không nhận được nội dung hợp lệ từ AI.");
             }
@@ -1164,14 +1164,121 @@
         }
 
         // --- GẮN SỰ KIỆN CHO CÁC NÚT AI ---
+        // **BẮT ĐẦU PHẦN SỬA ĐỔI QUAN TRỌNG**
         const generateShortDescBtn = document.getElementById('generateShortDescAI');
-        if (generateShortDescBtn) { generateShortDescBtn.addEventListener('click', async () => { /* ... code đã có ... */ }); }
+        if (generateShortDescBtn) {
+             generateShortDescBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+
+                toggleButtonLoading(generateShortDescBtn, true);
+                try {
+                    const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một mô tả ngắn gọn (khoảng 2-3 câu) cho sản phẩm với giọng văn bán hàng chuyên nghiệp.
+                    Yêu cầu:
+                    - Tập trung vào các điểm nổi bật chính, thu hút khách hàng.
+                    - KHÔNG sử dụng Markdown (như dấu ** hay #).
+                    - Chỉ trả về duy nhất phần nội dung mô tả, không có lời dẫn như "Đây là mô tả:" hay tương tự.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result) {
+                        shortDescriptionTextarea.value = result.replace(/[\*#`]/g, '').trim();
+                    }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`, 'error');
+                } finally {
+                    toggleButtonLoading(generateShortDescBtn, false);
+                }
+            });
+        }
+
         const generateLongDescBtn = document.getElementById('generateLongDescAI');
-        if (generateLongDescBtn) { generateLongDescBtn.addEventListener('click', async () => { /* ... code đã có ... */ }); }
+        if (generateLongDescBtn) {
+            generateLongDescBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+                toggleButtonLoading(generateLongDescBtn, true);
+                try {
+                    const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm.
+                    Yêu cầu:
+                    - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng.
+                    - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp).
+                    - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo.
+                    - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result && typeof tinymce !== 'undefined' && tinymce.get('description')) {
+                        tinymce.get('description').setContent(result);
+                    }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo mô tả chi tiết: ${error.message}`, 'error');
+                } finally {
+                    toggleButtonLoading(generateLongDescBtn, false);
+                }
+            });
+        }
+
         const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
-        if (generateAllSeoBtn) { generateAllSeoBtn.addEventListener('click', async () => { /* ... code đã có ... */ }); }
+        if (generateAllSeoBtn) {
+            generateAllSeoBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+                toggleButtonLoading(generateAllSeoBtn, true);
+                try {
+                     const schema = {
+                        type: "OBJECT",
+                        properties: {
+                            meta_title: { type: "STRING", description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính." },
+                            meta_description: { type: "STRING", description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động." },
+                            meta_keywords: { type: "STRING", description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy." }
+                        },
+                        required: ["meta_title", "meta_description", "meta_keywords"]
+                    };
+                    const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO.
+                    Yêu cầu:
+                    - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu.
+                    - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay").
+                    - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan.
+                    - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
+
+                    const result = await callGeminiAPI(prompt, true, schema);
+                    if (result) {
+                        document.getElementById('meta_title').value = result.meta_title || '';
+                        document.getElementById('meta_description').value = result.meta_description || '';
+                        document.getElementById('meta_keywords').value = result.meta_keywords || '';
+                    }
+                } catch (error) {
+                     showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`, 'error');
+                } finally {
+                    toggleButtonLoading(generateAllSeoBtn, false);
+                }
+            });
+        }
+
         const generateTagsBtn = document.getElementById('generateTagsAI');
-        if (generateTagsBtn) { generateTagsBtn.addEventListener('click', async () => { /* ... code đã có ... */ }); }
+        if (generateTagsBtn) {
+            generateTagsBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+                toggleButtonLoading(generateTagsBtn, true);
+                try {
+                    const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm.
+                    Yêu cầu:
+                    - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật.
+                    - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy.
+                    - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro
+                    - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result && tagify) {
+                        // Làm sạch kết quả để đảm bảo chỉ có chuỗi thẻ
+                        const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g, '').trim();
+                        tagify.loadOriginalValues(cleanedResult);
+                    }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo thẻ: ${error.message}`, 'error');
+                } finally {
+                    toggleButtonLoading(generateTagsBtn, false);
+                }
+            });
+        }
+        // **KẾT THÚC PHẦN SỬA ĐỔI QUAN TRỌNG**
 
 
         // --- LOGIC CHO BIẾN THỂ ---
@@ -1211,25 +1318,25 @@
                 });
                 attributesHTML += '</div>';
                 let variantFieldsHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
-                        <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" ></div></div>
-                        <div class="input-group"><label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM Biến Thể (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0"></div></div>
-                        <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" class="input-field text-sm" min="0" ></div></div>
-                        <div class="input-group md:col-span-2">
-                            <label class="text-sm font-medium">Ảnh Biến Thể</label>
-                            <div class="flex space-x-2 mb-3">
-                                <label for="variant_${currentVariantIndex}_image_input" class="btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
-                                <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
-                                <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><i class="fas fa-photo-film mr-2"></i> Thêm từ thư viện</button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" ></div></div>
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM Biến Thể (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0"></div></div>
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" class="input-field text-sm" min="0" ></div></div>
+                            <div class="input-group md:col-span-2">
+                                <label class="text-sm font-medium">Ảnh Biến Thể</label>
+                                <div class="flex space-x-2 mb-3">
+                                    <label for="variant_${currentVariantIndex}_image_input" class="btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
+                                    <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
+                                    <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><i class="fas fa-photo-film mr-2"></i> Thêm từ thư viện</button>
+                                </div>
+                                <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
+                                <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
                             </div>
-                            <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
-                            <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
                         </div>
-                    </div>
-                    <div class="mt-4">
-                        <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio"><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input"> Đặt làm biến thể mặc định</label>
-                    </div>
+                        <div class="mt-4">
+                            <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio"><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input"> Đặt làm biến thể mặc định</label>
+                        </div>
                 `;
                 variantCard.innerHTML = variantHeaderHTML + attributesHTML + variantFieldsHTML;
                 if (variantsContainer) variantsContainer.appendChild(variantCard);

@@ -89,4 +89,8 @@ public function allUploadedFiles()
         }
         return 'https://via.placeholder.com/300?text=No+Cover'; // Placeholder
     }
+    public function deletedBy()
+    {
+    return $this->belongsTo(\App\Models\User::class, 'deleted_by');
+    }
 }

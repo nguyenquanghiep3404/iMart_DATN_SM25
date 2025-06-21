@@ -46,7 +46,7 @@ class UploadedFileController extends Controller
             'context' => [
                 'required',
                 'string',
-                Rule::in(['products', 'avatars', 'banners', 'categories', 'posts']) // Chỉ cho phép các thư mục này
+                Rule::in(['products', 'avatars', 'banners', 'categories', 'posts', 'general']) // Chỉ cho phép các thư mục này
             ],
         ]);
 

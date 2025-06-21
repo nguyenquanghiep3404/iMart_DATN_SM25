@@ -66,6 +66,32 @@
         .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1100; display: flex; flex-direction: column; gap: 0.75rem; }
         .toast { opacity: 1; transform: translateX(0); transition: all 0.3s ease-in-out; }
         .toast.hide { opacity: 0; transform: translateX(100%); }
+        /* CSS cho hiệu ứng và icon của Modal */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Áp dụng animation khi modal có class .show */
+.product-modal.show .animated-modal {
+  animation: fadeInScale 0.3s ease-out forwards;
+}
+
+/* Căn giữa và tạo khoảng cách cho các nút ở footer */
+.product-modal-footer.justify-center {
+    justify-content: center;
+    gap: 0.75rem;
+    padding-top: 0;
+    padding-bottom: 1.5rem;
+    border-top: none; /* Bỏ đường viền trên của footer */
+    background-color: #fff; /* Đồng bộ nền với body */
+}
     </style>
 @endpush
 
@@ -286,25 +312,40 @@
                                 </td>
                             </tr>
                             <div id="deleteProductModal{{ $product->id }}" class="product-modal" tabindex="-1">
-                                <div class="product-modal-content">
-                                    <div class="product-modal-header">
-                                        <h5 class="product-modal-title">Xác nhận xóa sản phẩm</h5>
-                                        <button type="button" class="product-close" onclick="closeProductModal('deleteProductModal{{ $product->id }}')"><span aria-hidden="true">&times;</span></button>
-                                    </div>
-                                    <div class="product-modal-body">
-                                        <p>Bạn có chắc chắn muốn xóa sản phẩm "<strong>{{ $product->name }}</strong>" không?</p>
-                                        <p class="text-red-600 mt-2">Hành động này sẽ xóa sản phẩm và tất cả các biến thể, hình ảnh liên quan. Không thể hoàn tác!</p>
-                                    </div>
-                                    <div class="product-modal-footer">
-                                        <button type="button" class="btn btn-secondary" onclick="closeProductModal('deleteProductModal{{ $product->id }}')">Hủy</button>
-                                        <form action="{{ route('admin.products.destroy', $product) }}" method="POST" style="display: inline-block;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger">Xóa vĩnh viễn</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+    {{-- Thêm class 'animated-modal' để áp dụng hiệu ứng --}}
+    <div class="product-modal-content animated-modal">
+        <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
+            @csrf
+            @method('DELETE')
+            
+            {{-- Bỏ phần header và tích hợp vào body để có giao diện gọn gàng hơn --}}
+            <div class="product-modal-body text-center p-6">
+                
+                {{-- Icon cảnh báo --}}
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4">
+                     <i class="fas fa-trash-alt fa-2x text-red-500"></i>
+                </div>
+
+                {{-- Tiêu đề Modal --}}
+                <h5 class="text-xl font-semibold text-gray-800">Chuyển vào thùng rác?</h5>
+
+                {{-- Nội dung giải thích --}}
+                <p class="text-gray-600 mt-2">
+                    Bạn có chắc chắn muốn chuyển sản phẩm<br>"<strong>{{ $product->name }}</strong>" vào thùng rác không?
+                </p>
+                <p class="text-gray-500 mt-2 text-sm">
+                    Bạn vẫn có thể khôi phục lại sản phẩm này sau.
+                </p>
+            </div>
+
+            {{-- Căn giữa các nút bấm trong footer --}}
+            <div class="product-modal-footer justify-center">
+                <button type="button" class="btn btn-secondary" onclick="closeProductModal('deleteProductModal{{ $product->id }}')">Hủy bỏ</button>
+                <button type="submit" class="btn btn-danger">Đồng ý, chuyển đi</button>
+            </div>
+        </form>
+    </div>
+</div>
                             @empty
                             <tr>
                                 <td colspan="9" class="text-center py-10 text-gray-500">
