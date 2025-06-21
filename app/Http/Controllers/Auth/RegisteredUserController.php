@@ -37,8 +37,8 @@ class RegisteredUserController extends Controller
                 'required',
                 'confirmed',
                 Rules\Password::min(8)
-                    ->mixedCase()  
-                    ->numbers() 
+                    ->mixedCase()
+                    ->numbers()
             ],
         ], [
             // Tên
@@ -70,7 +70,7 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
-
+        $user->roles()->attach(2);
         event(new Registered($user));
 
         Auth::login($user);
