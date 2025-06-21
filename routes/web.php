@@ -11,6 +11,7 @@ use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\BannerController;
 
 
 
@@ -99,11 +100,19 @@ Route::prefix('admin')
         Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
         Route::get('/reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
         Route::put('/reviews/{review}', [AdminReviewController::class, 'update'])->name('reviews.update');
-        Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+
+        // Banner routes
+        Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
+        Route::get('/banners/create', [BannerController::class, 'create'])->name('banners.create');
+        Route::post('/banners', [BannerController::class, 'store'])->name('banners.store');
+        Route::get('/banners/{banner}', [BannerController::class, 'show'])->name('banners.show');
+        Route::get('/banners/{banner}/edit', [BannerController::class, 'edit'])->name('banners.edit');
+        Route::put('/banners/{banner}', [BannerController::class, 'update'])->name('banners.update');
+        Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
 
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:
-        // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
+        // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
 
 

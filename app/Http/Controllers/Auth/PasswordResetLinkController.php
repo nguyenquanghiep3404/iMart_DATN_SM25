@@ -37,8 +37,8 @@ class PasswordResetLinkController extends Controller
         );
 
         return $status == Password::RESET_LINK_SENT
-                    ? back()->with('status', __($status))
-                    : back()->withInput($request->only('email'))
-                        ->withErrors(['email' => __($status)]);
+            ? back()->with('status', 'Chúng tôi đã gửi email khôi phục mật khẩu! Vui lòng hãy kiểm tra hộp thư của bạn.')
+            : back()->withInput($request->only('email'))
+            ->withErrors(['email' => 'Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại sau.']);
     }
 }

@@ -176,9 +176,6 @@
       <div class="offcanvas-body py-3 py-lg-0">
         <div class="container px-0 px-lg-3">
           <div class="row">
-
-
-
             <!-- Navbar nav -->
             <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
               <ul class="navbar-nav position-relative">
