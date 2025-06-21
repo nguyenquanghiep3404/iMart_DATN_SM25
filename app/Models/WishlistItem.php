@@ -28,4 +28,16 @@ class WishlistItem extends Model
     {
         return $this->belongsTo(ProductVariant::class);
     }
+
+    /**
+     * Xóa wishlist items theo user và product variant id
+     */
+    public static function deleteByUserAndProductVariants($userId, $productVariantIds)
+{
+    $wishlistIds = \App\Models\Wishlist::where('user_id', $userId)->pluck('id');
+
+    return self::whereIn('wishlist_id', $wishlistIds)
+                ->whereIn('product_variant_id', $productVariantIds)
+                ->delete();
+}
 }

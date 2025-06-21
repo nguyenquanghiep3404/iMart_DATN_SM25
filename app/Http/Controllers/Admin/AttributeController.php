@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\AttributeRequest; // Import
-use App\Http\Requests\AttributeValueRequest; // Import
+use App\Http\Requests\AttributeRequest;
+use App\Http\Requests\AttributeValueRequest;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use Illuminate\Http\Request;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 class AttributeController extends Controller
 {
     /**
-     * Display a listing of the attributes.
+     * Hiển thị danh sách các thuộc tính.
      */
     public function index(Request $request)
     {
@@ -30,7 +30,7 @@ class AttributeController extends Controller
     }
 
     /**
-     * Show the form for creating a new attribute.
+     * Hiển thị form để tạo mới một thuộc tính.
      */
     public function create()
     {
@@ -38,15 +38,16 @@ class AttributeController extends Controller
     }
 
     /**
-     * Store a newly created attribute in storage.
+     * Lưu một thuộc tính mới vào cơ sở dữ liệu.
      */
-    public function store(AttributeRequest $request) // <-- Sử dụng AttributeRequest
+    public function store(AttributeRequest $request)
     {
         $validatedData = $request->validated();
 
         DB::beginTransaction();
         try {
             $attributeData = $validatedData;
+            // Tự động tạo slug từ name nếu slug không được cung cấp
             $attributeData['slug'] = $request->slug ? Str::slug($request->slug) : Str::slug($request->name);
 
             Attribute::create($attributeData);
@@ -62,16 +63,17 @@ class AttributeController extends Controller
     }
 
     /**
-     * Display the specified attribute and its values.
+     * Hiển thị chi tiết một thuộc tính và các giá trị của nó.
      */
     public function show(Attribute $attribute)
     {
+        // Eager load các giá trị để tối ưu truy vấn
         $attribute->load('attributeValues');
         return view('admin.attributes.show', compact('attribute'));
     }
 
     /**
-     * Show the form for editing the specified attribute.
+     * Hiển thị form để chỉnh sửa một thuộc tính.
      */
     public function edit(Attribute $attribute)
     {
@@ -79,9 +81,9 @@ class AttributeController extends Controller
     }
 
     /**
-     * Update the specified attribute in storage.
+     * Cập nhật một thuộc tính trong cơ sở dữ liệu.
      */
-    public function update(AttributeRequest $request, Attribute $attribute) // <-- Sử dụng AttributeRequest
+    public function update(AttributeRequest $request, Attribute $attribute)
     {
         $validatedData = $request->validated();
 
@@ -103,14 +105,14 @@ class AttributeController extends Controller
     }
 
     /**
-     * Remove the specified attribute from storage.
+     * Xóa một thuộc tính khỏi cơ sở dữ liệu.
      */
     public function destroy(Attribute $attribute)
     {
-        // Bạn có thể thêm logic kiểm tra thuộc tính đang được sử dụng ở đây
+        // Cân nhắc thêm logic kiểm tra xem thuộc tính có đang được sản phẩm nào sử dụng không trước khi xóa.
         DB::beginTransaction();
         try {
-            $attribute->delete(); // Giả sử đã có 'on delete cascade' trong CSDL
+            $attribute->delete(); // Giả định đã thiết lập 'on delete cascade' trong migration cho các giá trị.
             DB::commit();
             return redirect()->route('admin.attributes.index')
                              ->with('success', 'Thuộc tính và các giá trị liên quan đã được xóa.');
@@ -124,9 +126,9 @@ class AttributeController extends Controller
     //== CÁC PHƯƠNG THỨC QUẢN LÝ GIÁ TRỊ THUỘC TÍNH ==//
 
     /**
-     * Store a new attribute value for the specified attribute.
+     * Lưu một giá trị thuộc tính mới.
      */
-    public function storeValue(AttributeValueRequest $request, Attribute $attribute) // <-- Sử dụng AttributeValueRequest
+    public function storeValue(AttributeValueRequest $request, Attribute $attribute)
     {
         try {
             $attribute->attributeValues()->create($request->validated());
@@ -139,11 +141,12 @@ class AttributeController extends Controller
     }
 
     /**
-     * Update the specified attribute value in storage.
+     * Cập nhật một giá trị thuộc tính.
+     * Logic để hiển thị lỗi đúng form đã được xử lý trong file `show.blade.php`.
      */
-    public function updateValue(AttributeValueRequest $request, Attribute $attribute, AttributeValue $value) // <-- Sử dụng AttributeValueRequest
+    public function updateValue(AttributeValueRequest $request, Attribute $attribute, AttributeValue $value)
     {
-        // Kiểm tra này vẫn tốt để có thêm một lớp bảo vệ
+        // Lớp bảo vệ để đảm bảo giá trị này thuộc đúng thuộc tính đang xem.
         if ($value->attribute_id !== $attribute->id) {
             abort(404);
         }
@@ -154,12 +157,13 @@ class AttributeController extends Controller
                              ->with('success_value', 'Giá trị thuộc tính đã được cập nhật.');
         } catch (\Exception $e) {
             Log::error('Lỗi khi cập nhật giá trị thuộc tính: ' . $e->getMessage());
+            // withInput() sẽ tự động gửi lại các input cũ, bao gồm cả 'attribute_value_id' mà chúng ta đã thêm.
             return back()->withInput()->with('error_value', 'Đã có lỗi xảy ra khi cập nhật giá trị.');
         }
     }
 
     /**
-     * Remove the specified attribute value from storage.
+     * Xóa một giá trị thuộc tính.
      */
     public function destroyValue(Request $request, Attribute $attribute, AttributeValue $value)
     {
@@ -167,7 +171,7 @@ class AttributeController extends Controller
             abort(404);
         }
         
-        // Bạn có thể thêm logic kiểm tra giá trị đang được sử dụng ở đây
+        // Cân nhắc thêm logic kiểm tra giá trị này có đang được biến thể sản phẩm nào dùng không.
         try {
             $value->delete();
             return redirect()->route('admin.attributes.show', $attribute->id)

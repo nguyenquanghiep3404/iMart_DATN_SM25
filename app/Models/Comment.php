@@ -23,6 +23,19 @@ class Comment extends Model
         return $this->morphTo();
     }
 
+    public function getReadableTypeAttribute()
+    {
+        return class_basename($this->commentable_type);
+    }
+
+    public function getCommentableDisplayAttribute()
+    {
+        $type = $this->readable_type;
+        $name = $this->commentable->name ?? $this->commentable->title ?? 'Không rõ';
+        $name = \Str::limit($name, 20); 
+        return "{$type}: {$name} (ID: {$this->commentable_id})";
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -36,5 +49,14 @@ class Comment extends Model
     public function replies()
     {
         return $this->hasMany(Comment::class, 'parent_id')->orderBy('created_at');
+    }
+    public static function getAvailableStatuses(): array
+    {
+        return ['pending', 'approved', 'rejected', 'spam'];
+    }
+
+    public function getReadableStatusAttribute(): string
+    {
+        return ucfirst($this->status);
     }
 }
