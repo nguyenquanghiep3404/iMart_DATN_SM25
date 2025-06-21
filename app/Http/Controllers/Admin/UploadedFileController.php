@@ -8,54 +8,72 @@ use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule; // Import Rule để sử dụng validation 'in'
 
 class UploadedFileController extends Controller
 {
     protected FileService $fileService;
 
-    // Inject FileService qua hàm khởi tạo
+    // ... (phần __construct và index giữ nguyên) ...
     public function __construct(FileService $fileService)
     {
         $this->fileService = $fileService;
     }
 
-    /**
-     * Hiển thị trang quản lý media.
-     */
     public function index(Request $request)
-        {
-            $files = UploadedFile::latest()->paginate(30);
-            $files->through(fn ($file) => $file->append(['url', 'formatted_size', 'attachable_display']));
-            // Nếu có tham số context=modal, trả về một layout khác
-            if ($request->query('context') === 'modal') {
-                return view('admin.media.modal-index', compact('files'));
-            }
-            
-            return view('admin.media.index', compact('files'));
+    {
+        $files = UploadedFile::latest()->paginate(18);
+        $files->through(fn ($file) => $file->append(['url', 'formatted_size', 'attachable_display']));
+        if ($request->query('context') === 'modal') {
+            return view('admin.media.modal-index', compact('files'));
         }
+        
+        return view('admin.media.index', compact('files'));
+    }
+
 
     /**
      * Xử lý việc upload file mới.
+     * ĐÃ ĐƯỢC CẬP NHẬT ĐỂ TƯƠNG THÍCH VỚI FILESERVICE MỚI.
      */
     public function store(Request $request)
     {
+        // === THAY ĐỔI 1: THÊM VALIDATION CHO 'CONTEXT' ===
+        // Validation này đảm bảo frontend phải gửi lên ngữ cảnh lưu trữ
+        // và ngữ cảnh đó phải hợp lệ để tăng cường bảo mật.
         $validator = Validator::make($request->all(), [
             'files.*' => 'required|file|mimes:jpg,jpeg,png,gif,webp,svg|max:5120', // Tối đa 5MB
+            'context' => [
+                'required',
+                'string',
+                Rule::in(['products', 'avatars', 'banners', 'categories', 'posts']) // Chỉ cho phép các thư mục này
+            ],
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
+
         $uploadedFilesData = [];
+        
+        // === THAY ĐỔI 2: LẤY NGỮ CẢNH TỪ REQUEST ===
+        $contextFolder = $request->input('context');
+
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $file) {
                 try {
-                    // Dùng hàm store() trong service để upload độc lập
-                    $uploadedFile = $this->fileService->store($file);
+                    // === THAY ĐỔI 3: TRUYỀN NGỮ CẢNH VÀO FILESERVICE ===
+                    // Bây giờ chúng ta gọi hàm store với 2 tham số bắt buộc.
+                    $uploadedFile = $this->fileService->store($file, $contextFolder);
+                    
                     $request->session()->push('temp_uploaded_file_ids', $uploadedFile->id);
+                    $uploadedFile->append('url'); // Thêm URL vào response để JS có thể hiển thị preview
                     $uploadedFilesData[] = $uploadedFile; // Thu thập dữ liệu file đã upload
                 } catch (\Exception $e) {
-                    Log::error('File upload failed: ' . $e->getMessage());
+                    Log::error('File upload failed: ' . $e->getMessage(), [
+                        'context' => $contextFolder,
+                        'file' => $file->getClientOriginalName()
+                    ]);
                     return response()->json(['error' => 'Đã có lỗi xảy ra khi tải file lên.'], 500);
                 }
             }
@@ -65,9 +83,8 @@ class UploadedFileController extends Controller
         return response()->json(['files' => $uploadedFilesData], 201);
     }
 
-    /**
-     * Cập nhật thông tin của một file (ví dụ: alt text).
-     */
+    // ... (Các phương thức update, destroy, fetchForModal giữ nguyên vì chúng không liên quan đến logic upload) ...
+
     public function update(Request $request, UploadedFile $uploadedFile)
     {
         $validator = Validator::make($request->all(), [
@@ -83,9 +100,6 @@ class UploadedFileController extends Controller
         return response()->json(['message' => 'Cập nhật thông tin file thành công.']);
     }
 
-    /**
-     * Xóa một file.
-     */
     public function destroy(UploadedFile $uploadedFile)
     {
         try {
@@ -96,6 +110,7 @@ class UploadedFileController extends Controller
             return response()->json(['error' => 'Không thể xóa file.'], 500);
         }
     }
+ 
     public function fetchForModal(Request $request)
     {
         $query = UploadedFile::latest();
@@ -107,10 +122,7 @@ class UploadedFileController extends Controller
             });
         }
 
-        // Phân trang với số lượng nhỏ hơn cho modal
         $files = $query->paginate(16); 
-
-        // Quan trọng: Thêm thuộc tính 'url' và các thuộc tính ảo khác vào mỗi item
         $files->through(fn ($file) => $file->append(['url', 'formatted_size', 'attachable_display']));
         
         return response()->json($files);

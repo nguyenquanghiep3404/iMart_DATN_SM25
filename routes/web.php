@@ -21,6 +21,7 @@ Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.pro
 Route::get('/products', [HomeController::class, 'allProducts'])->name('users.products.all');
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+Route::post('/gemini-chat', [AiController::class, 'generateContent']);
 // các trang không cần đăng nhập ở dưới đây
 
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
@@ -78,7 +79,7 @@ Route::prefix('admin')
 
     // 4. Route xử lý việc xóa một file (AJAX)
     Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
-Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('admin.media.fetch');
+Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('media.fetchForModal');
         // Route riêng cho việc xóa ảnh gallery của sản phẩm
         // {uploadedFile} ở đây sẽ là ID của bản ghi trong bảng uploaded_files
         // Laravel sẽ tự động thực hiện Route Model Binding nếu tham số trong controller là UploadedFile $uploadedFile

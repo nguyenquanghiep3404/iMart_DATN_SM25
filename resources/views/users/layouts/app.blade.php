@@ -46,7 +46,7 @@
     </head>
     <body>
     <!-- Customizer offcanvas -->
-    @include('users.partials.customizer_offcanvas')
+    @include('users.partials.ai_chatbot')
 
     <!-- Shopping cart offcanvas -->
     @include('users.partials.cart_offcanvas')

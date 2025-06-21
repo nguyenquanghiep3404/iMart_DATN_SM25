@@ -29,6 +29,7 @@ class ProductController extends Controller
             'variants' => function ($q) {
                 $q->orderBy('is_default', 'desc')->orderBy('created_at', 'asc');
             },
+            'variants.primaryImage',
             'coverImage'
         ]);
 
@@ -107,19 +108,15 @@ class ProductController extends Controller
      * Lưu sản phẩm mới vào CSDL.
      * Logic đã được cập nhật để xử lý ảnh cho từng biến thể.
      */
+    // dd($request->all());
     public function store(ProductRequest $request)
     {
         DB::beginTransaction();
         try {
             // 1. Tạo sản phẩm với các thông tin cơ bản
             $productData = $request->except([
-                'cover_image_id',
-                'gallery_images',
-                'variants',
-                'simple_sku',
-                'simple_price',
-                'simple_sale_price',
-                'simple_stock_quantity'
+                'cover_image_id', 'gallery_images', 'variants',
+                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity'
             ]);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
@@ -127,21 +124,9 @@ class ProductController extends Controller
 
             $product = Product::create($productData);
 
-            // 2. Xử lý logic cho sản phẩm đơn giản (bao gồm cả ảnh)
+            // 2. Xử lý logic cho sản phẩm đơn giản
             if ($request->input('type') === 'simple') {
-                // Đính kèm ảnh bìa
-                if ($request->filled('cover_image_id')) {
-                    $coverImage = UploadedFile::find($request->input('cover_image_id'));
-                    if ($coverImage) {
-                        $coverImage->update([
-                            'attachable_id' => $product->id,
-                            'attachable_type' => Product::class,
-                            'type' => 'cover_image'
-                        ]);
-                    }
-                }
-
-                // Đính kèm thư viện ảnh
+                // **SỬA LỖI**: Xử lý thư viện ảnh TRƯỚC
                 if ($request->has('gallery_images') && is_array($request->input('gallery_images'))) {
                     foreach ($request->input('gallery_images') as $order => $imageId) {
                         $galleryImage = UploadedFile::find($imageId);
@@ -149,10 +134,19 @@ class ProductController extends Controller
                             $galleryImage->update([
                                 'attachable_id' => $product->id,
                                 'attachable_type' => Product::class,
-                                'type' => 'gallery_image',
+                                'type' => 'gallery_image', // Gán tất cả là 'gallery_image' trước
                                 'order' => $order + 1
                             ]);
                         }
+                    }
+                }
+
+                // **SỬA LỖI**: Đặt ảnh bìa SAU CÙNG để ghi đè `type` cho đúng
+                if ($request->filled('cover_image_id')) {
+                    $coverImage = UploadedFile::find($request->input('cover_image_id'));
+                    if ($coverImage) {
+                        // File này đã được đính kèm ở trên, giờ chỉ cần cập nhật lại `type`
+                        $coverImage->update(['type' => 'cover_image']);
                     }
                 }
 
@@ -166,11 +160,9 @@ class ProductController extends Controller
                     'is_default' => true,
                     'status' => 'active',
                 ]);
-
             }
             // 3. Xử lý logic cho sản phẩm có biến thể
             elseif ($request->input('type') === 'variable' && $request->has('variants')) {
-                // Lấy index của biến thể được chọn làm mặc định từ form
                 $defaultVariantKey = $request->input('variant_is_default_radio_group');
 
                 foreach ($request->input('variants') as $key => $variantData) {
@@ -180,29 +172,18 @@ class ProductController extends Controller
                         'price' => $variantData['price'],
                         'sale_price' => $variantData['sale_price'] ?? null,
                         'stock_quantity' => $variantData['stock_quantity'],
-                        // Cải thiện logic: Dựa vào input từ radio button thay vì key=0
                         'is_default' => ($defaultVariantKey == $key),
                         'status' => 'active',
                     ]);
 
-                    // Gắn các giá trị thuộc tính cho biến thể
                     $variant->attributeValues()->attach(array_values($variantData['attributes']));
-
-                    // =========================================================
-                    // === BẮT ĐẦU LOGIC MỚI: XỬ LÝ ẢNH CHO BIẾN THỂ ===
-                    // =========================================================
-                    // Giả định frontend sẽ gửi lên 'image_ids' và 'primary_image_id' cho mỗi biến thể
+                    
                     if (isset($variantData['image_ids']) && is_array($variantData['image_ids'])) {
-
                         $primaryImageId = $variantData['primary_image_id'] ?? null;
-
-                        // Lấy tất cả các file hợp lệ một lần để tối ưu truy vấn
                         $images = UploadedFile::whereIn('id', $variantData['image_ids'])->get();
 
                         foreach ($images as $order => $image) {
                             $isPrimary = ($image->id == $primaryImageId);
-
-                            // Cập nhật bản ghi trong bảng uploaded_files để liên kết nó với biến thể này
                             $image->update([
                                 'attachable_id' => $variant->id,
                                 'attachable_type' => ProductVariant::class,
@@ -210,9 +191,6 @@ class ProductController extends Controller
                                 'order' => $order + 1,
                             ]);
 
-                            // Nếu là ảnh chính, cập nhật cột `primary_image_id` của biến thể
-                            // LƯU Ý: Bạn cần tạo một migration để thêm cột này vào bảng `product_variants`
-                            // Ví dụ: `Schema::table('product_variants', function (Blueprint $table) { $table->foreignId('primary_image_id')->nullable()->constrained('uploaded_files')->onDelete('set null'); });`
                             if ($isPrimary && $variant->getConnection()->getSchemaBuilder()->hasColumn($variant->getTable(), 'primary_image_id')) {
                                 $variant->update(['primary_image_id' => $image->id]);
                             }

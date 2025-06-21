@@ -199,7 +199,7 @@
                     <table class="table-custom table-striped">
                         <thead>
                             <tr>
-                                <th style="width: 50px">ID</th>
+                                <th style="width: 50px">STT</th>
                                 <th style="width: 80px">Ảnh</th>
                                 <th>Tên sản phẩm</th>
                                 <th>Danh mục</th>
@@ -213,10 +213,27 @@
                         <tbody>
                             @forelse ($products as $product)
                             <tr>
-                                <td>{{ $product->id }}</td>
+                                <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}</td>
                                 <td>
-                                    <img src="{{ $product->coverImage ? Storage::url($product->coverImage->path) : asset('assets/admin/img/placeholder-image.png') }}" 
-                                         alt="{{ $product->coverImage->alt_text ?? $product->name }}" 
+                                    @php
+                                        // Lấy biến thể đầu tiên. Do query trong controller đã sắp xếp `is_default` giảm dần,
+                                        // nên biến thể đầu tiên sẽ là biến thể mặc định (nếu có) hoặc là biến thể duy nhất (cho sản phẩm simple).
+                                        $displayVariant = $product->variants->first();
+
+                                        // Lấy ảnh chính của biến thể đó.
+                                        // Dùng `?->` (optional chaining) để tránh lỗi nếu $displayVariant là null.
+                                        $imageToShow = $displayVariant?->primaryImage;
+
+                                        // URL của ảnh. Nếu không có ảnh chính, sẽ fallback về ảnh bìa của sản phẩm gốc,
+                                        // cuối cùng là ảnh placeholder.
+                                        $imageUrl = $imageToShow ? Storage::url($imageToShow->path) : ($product->coverImage ? Storage::url($product->coverImage->path) : asset('assets/admin/img/placeholder-image.png'));
+                                        
+                                        // Alt text cho ảnh.
+                                        $altText = $imageToShow?->alt_text ?? $product->name;
+                                    @endphp
+
+                                    <img src="{{ $imageUrl }}" 
+                                         alt="{{ $altText }}" 
                                          class="img-thumbnail-custom"
                                          onerror="this.onerror=null;this.src='{{ asset('assets/admin/img/placeholder-image.png') }}';">
                                 </td>
@@ -227,9 +244,12 @@
                                 <td>{{ $product->category->name ?? 'N/A' }}</td>
                                 <td>
                                     @if($product->variants->isNotEmpty())
-                                        {{ number_format($product->variants->first()->price, 0, ',', '.') }} ₫
-                                        @if($product->variants->first()->sale_price && $product->variants->first()->sale_price < $product->variants->first()->price)
-                                            <small class="block text-red-500 line-through">{{ number_format($product->variants->first()->sale_price, 0, ',', '.') }} ₫</small>
+                                        {{-- Hiển thị giá của biến thể đầu tiên (mặc định) --}}
+                                        @php $firstVariant = $product->variants->first(); @endphp
+                                        <span class="font-semibold">{{ number_format($firstVariant->price, 0, ',', '.') }} ₫</span>
+                                        @if($firstVariant->sale_price && $firstVariant->sale_price < $firstVariant->price)
+                                            <small class="block text-gray-500 line-through">{{ number_format($firstVariant->price, 0, ',', '.') }} ₫</small>
+                                            <span class="font-semibold text-red-600">{{ number_format($firstVariant->sale_price, 0, ',', '.') }} ₫</span>
                                         @endif
                                     @else
                                         N/A
@@ -237,12 +257,18 @@
                                 </td>
                                 <td>
                                     {{ $product->variants->sum('stock_quantity') }}
-                                    @if($product->type == 'variable') <small>(Tổng)</small> @endif
+                                    @if($product->type == 'variable') <small class="text-gray-500"> (Tổng)</small> @endif
                                 </td>
                                 <td>
-                                    @if($product->type == 'simple') <span class="badge-custom badge-info-custom">Đơn giản</span>
-                                    @elseif($product->type == 'variable') <span class="badge-custom badge-warning-custom">Có biến thể</span>
-                                    @else <span class="badge-custom badge-secondary-custom">{{ Str::title($product->type) }}</span>
+                                    @if($product->type == 'simple') 
+                                        <span class="badge-custom badge-info-custom">Đơn giản</span>
+                                    @elseif($product->type == 'variable') 
+                                        {{-- Thêm số lượng biến thể đếm được --}}
+                                        <span class="badge-custom badge-warning-custom">
+                                            Có biến thể ({{ $product->variants->count() }})
+                                        </span>
+                                    @else 
+                                        <span class="badge-custom badge-secondary-custom">{{ Str::title($product->type) }}</span>
                                     @endif
                                 </td>
                                 <td>
@@ -296,7 +322,7 @@
             </div>
             @if ($products->hasPages())
             <div class="card-custom-footer">
-                 <div>
+                <div>
                     <p class="text-sm text-gray-700 leading-5">
                         Hiển thị từ
                         <span class="font-medium">{{ $products->firstItem() }}</span>
