@@ -126,7 +126,8 @@ Route::prefix('admin')
         // Admin - Quản lý đánh giá
         Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
         Route::get('/reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
-        Route::put('/reviews/{review}', [AdminReviewController::class, 'update'])->name('reviews.update');
+        Route::post('/reviews/{review}/update-status', [AdminReviewController::class, 'updateStatus'])->name('admin.reviews.updateStatus');
+
 
         // Banner routes
         Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
