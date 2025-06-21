@@ -9,11 +9,16 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\CommentController;
+use App\Http\Controllers\Admin\PostCategoryController;
+
 
 use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\BannerController;
 
 
 //==========================================================================
@@ -24,6 +29,7 @@ Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.pro
 Route::get('/products', [HomeController::class, 'allProducts'])->name('users.products.all');
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
+Route::post('/gemini-chat', [AiController::class, 'generateContent']);
 // các trang không cần đăng nhập ở dưới đây
 
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
@@ -37,6 +43,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
 });
 
+// Hiển thị trang wishlist cho khách vãng lai và user
+Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
+Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSelected'])->name('wishlist.removeSelected');
 
 //==========================================================================
 // ADMIN ROUTES
@@ -48,19 +58,21 @@ Route::prefix('admin')
         // http://127.0.0.1:8000/admin/dashboard
         Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('dashboard');
 
-        // Product routes
-        // --- Routes cho Quản Lý Sản Phẩm ---
+        // --- START: Routes cho Quản Lý Sản Phẩm ---
+        // Routes chính cho Product
         Route::resource('products', ProductController::class);
-        // Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-        // Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
-        // Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-        // Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
-        // Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
-        // Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
-        // Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+        // Route cho Thùng rác
+        Route::get('/products/trash', [ProductController::class, 'trash'])->name('products.trash');
+        // Route để Khôi phục sản phẩm
+        Route::patch('/products/{id}/restore', [ProductController::class, 'restore'])->name('products.restore');
+        // Route để Xóa vĩnh viễn sản phẩm
+        Route::delete('/products/{id}/force-delete', [ProductController::class, 'force-delete'])->name('products.force-delete');
+        // Route cho AI
         Route::post('/products/ai/generate-content', [AiController::class, 'generateContent'])
          ->name('products.ai.generate');
-        //  Route::post('/ai/generate-content', [AiController::class, 'generateContent'])->name('ai.generateContent');
+        // Route riêng cho việc xóa ảnh gallery
+        Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
+            ->name('products.gallery.delete');
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
         // Route::resource('users', UserController::class);
@@ -73,18 +85,15 @@ Route::prefix('admin')
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
        // --- Routes cho Thư viện Media ---
-    // 1. Route hiển thị trang chính của thư viện
-    Route::get('/media', [UploadedFileController::class, 'index'])->name('media.index');
-
-    // 2. Route xử lý việc tải file lên (sẽ được gọi bằng AJAX)
-    Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
-
-    // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
-    Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
-
-    // 4. Route xử lý việc xóa một file (AJAX)
-    Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
-Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('admin.media.fetch');
+        // 1. Route hiển thị trang chính của thư viện
+        Route::get('/media', [UploadedFileController::class, 'index'])->name('media.index');
+        // 2. Route xử lý việc tải file lên (sẽ được gọi bằng AJAX)
+        Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
+        // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
+        Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
+        // 4. Route xử lý việc xóa một file (AJAX)
+        Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
+        Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('media.fetchForModal');
         // Route riêng cho việc xóa ảnh gallery của sản phẩm
         // {uploadedFile} ở đây sẽ là ID của bản ghi trong bảng uploaded_files
         // Laravel sẽ tự động thực hiện Route Model Binding nếu tham số trong controller là UploadedFile $uploadedFile
@@ -109,17 +118,48 @@ Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->na
         Route::post('attributes/{attribute}/values', [AttributeController::class, 'storeValue'])->name('attributes.values.store');
         Route::put('attributes/{attribute}/values/{value}', [AttributeController::class, 'updateValue'])->name('attributes.values.update');
         Route::delete('attributes/{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
-
         // Review routes
         // Admin - Quản lý đánh giá
         Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
         Route::get('/reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
         Route::put('/reviews/{review}', [AdminReviewController::class, 'update'])->name('reviews.update');
-        Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+
+        // Banner routes
+        Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
+        Route::get('/banners/create', [BannerController::class, 'create'])->name('banners.create');
+        Route::post('/banners', [BannerController::class, 'store'])->name('banners.store');
+        Route::get('/banners/{banner}', [BannerController::class, 'show'])->name('banners.show');
+        Route::get('/banners/{banner}/edit', [BannerController::class, 'edit'])->name('banners.edit');
+        Route::put('/banners/{banner}', [BannerController::class, 'update'])->name('banners.update');
+        Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
+
+
+
+        // Quản lý comment
+        Route::get('/comments', [CommentController::class, 'index'])->name('comment.index');
+        Route::get('products/{id}-{slug}', [ProductController::class, 'show'])->name('products.show');
+        Route::get('posts/{id}-{slug}', [PostController::class, 'show'])->name('posts.show');
+
+        Route::get('comments/{comment}', [CommentController::class, 'show'])->name('comments.show');
+        Route::get('comments/{comment}/edit', [CommentController::class, 'edit'])->name('comments.edit');
+        Route::post('comments/{comment}/status', [CommentController::class, 'updateStatus'])->name('comments.updateStatus');
+        Route::post('comment/replies', [CommentController::class, 'replyStore'])->name('replies.store');
+
+        //quản lý danh mục bài viết 
+        Route::get('categories_post/create-with-children', [PostCategoryController::class, 'createWithChildren'])
+        ->name('categories_post.createWithChildren');
+
+        // Route để lưu danh mục cha và con
+        Route::post('categories_post/store-with-children', [PostCategoryController::class, 'storeWithChildren'])
+        ->name('categories_post.storeWithChildren');
+
+        // Route resource mặc định
+        Route::resource('categories_post', PostCategoryController::class)
+        ->names('categories_post');
 
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:
-        // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
+        // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
 
 
