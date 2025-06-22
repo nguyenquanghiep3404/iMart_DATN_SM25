@@ -4,6 +4,7 @@
 
 @section('content')
 <!-- Hero slider -->
+ 
 <section class="w-100">
     <div class="position-relative">
         <span class="position-absolute top-0 start-0 w-100 h-100 rounded-0 d-none-dark rtl-flip"
