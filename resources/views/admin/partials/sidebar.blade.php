@@ -270,11 +270,16 @@
                             </a>
                         </li>
                         <li>
+<<<<<<< HEAD
+                            <a href="{{  route('admin.roles.index') }}" {{-- Giả sử route --}}
+                               class="block w-full py-1.5
+=======
                             <a href="{{ route('admin.users.create') }}"
                                 class="block w-full py-1.5
+>>>>>>> 2502f64cee9a9f82f1e68a73aa5fe5f15d215300
                                 px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.users.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Thêm mới người dùng
+                                {{ request()->routeIs('admin.roles.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Vai trò của người dùng
                             </a>
                         </li>
                     </ul>

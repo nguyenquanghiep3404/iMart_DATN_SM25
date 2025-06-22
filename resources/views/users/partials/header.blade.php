@@ -32,9 +32,11 @@
         <!-- Search visible on screens > 991px wide (lg breakpoint) -->
         <div class="position-relative flex-fill d-none d-lg-block pe-4 pe-xl-5">
           <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
-          <input type="search" class="form-control form-control-lg form-icon-start border-white rounded-pill" placeholder="Search the products">
-        </div>
+          <input type="search"
+            class="form-control form-control-lg form-icon-start border-white rounded-pill bg-transparent text-white"
+            placeholder="Tìm kiếm sản phẩm">
 
+        </div>
         <!-- Sale link visible on screens > 1200px wide (xl breakpoint) -->
         <a class="d-none d-xl-flex align-items-center text-decoration-none animate-shake navbar-stuck-hide me-3 me-xl-4 me-xxl-5" href="shop-catalog-electronics.html">
           <div class="btn btn-icon btn-lg fs-lg text-primary bg-body-secondary bg-opacity-75 pe-none rounded-circle">
@@ -105,6 +107,9 @@
           </button>
 
 
+          @php
+          $user = Auth::user();
+          @endphp
           <!-- Account button visible on screens > 768px wide (md breakpoint) -->
           <li class="nav-item dropdown d-none d-md-inline-flex">
             <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
@@ -128,6 +133,16 @@
               <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
               @else
               <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
+
+              {{-- Nếu là admin, hiển thị nút quay lại admin --}}
+              @if(
+              $user->roles->contains('id', 1) ||
+              $user->roles->contains('id', 4) ||
+              $user->roles->contains('id', 5)
+              )
+              <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Truy cập trang Quản Trị</a></li>
+              @endif
+
               <li>
                 <form action="{{ route('logout') }}" method="POST">
                   @csrf
@@ -137,6 +152,7 @@
               @endguest
             </ul>
           </li>
+
 
 
           <!-- Wishlist button visible on screens > 768px wide (md breakpoint) -->
