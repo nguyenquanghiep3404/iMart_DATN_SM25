@@ -112,7 +112,7 @@
               <span class="animate-target">Back to settings</span>
             </a>
           </div>
-          <p class="fs-sm pb-1">To apply the provided styles to your webpage, enclose them within a <code>&lt;style&gt;</code> tag and insert this tag into the <code>&lt;head&gt;</code> section of your HTML document after the following link to the main stylesheet:<br><code>&lt;link href="{{ asset ('assets/users/css/theme.mincss') }}"&gt;</code></p>
+          <p class="fs-sm pb-1">To apply the provided styles to your webpage, enclose them within a <code>&lt;style&gt;</code> tag and insert this tag into the <code>&lt;head&gt;</code> section of your HTML document after the following link to the main stylesheet:<br><code>&lt;link href="assets/css/theme.min.css"&gt;</code></p>
           <div class="position-relative bg-body-tertiary rounded overflow-hidden pt-3">
             <div class="position-absolute top-0 start-0 w-100 p-3">
               <button type="button" class="btn btn-sm btn-outline-dark w-100" data-copy-text-from="#generated-styles" data-done-label="Code copied">
@@ -136,4 +136,4 @@
           Show code
         </button>
       </div>
-    </div>
+</div>

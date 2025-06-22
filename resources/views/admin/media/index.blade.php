@@ -398,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < files.length; i++) {
             formData.append('files[]', files[i]);
         }
-        
+        formData.append('context', 'general');
         progressBar.style.display = 'block';
         
         try {
