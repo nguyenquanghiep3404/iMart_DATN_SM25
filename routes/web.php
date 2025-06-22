@@ -96,9 +96,12 @@ Route::prefix('admin')
         Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
         // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
         Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
-        // 4. Route xử lý việc xóa một file (AJAX)
         Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
         Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('media.fetchForModal');
+        Route::get('/media/trash', [UploadedFileController::class, 'trash'])->name('media.trash');
+        Route::post('/media/restore/{id}', [UploadedFileController::class, 'restore'])->name('media.restore');
+        Route::delete('/media/force-delete/{id}', [UploadedFileController::class, 'forceDelete'])->name('media.forceDelete');
+        Route::post('media/bulk-delete', [UploadedFileController::class, 'bulkDelete'])->name('media.bulk-delete');
         // Route riêng cho việc xóa ảnh gallery của sản phẩm
         // {uploadedFile} ở đây sẽ là ID của bản ghi trong bảng uploaded_files
         // Laravel sẽ tự động thực hiện Route Model Binding nếu tham số trong controller là UploadedFile $uploadedFile

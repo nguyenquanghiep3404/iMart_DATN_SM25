@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth; 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\SoftDeletes;
 class UploadedFile extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'attachable_id',
@@ -54,6 +55,22 @@ class UploadedFile extends Model
         }
         return null;
     }
+    protected static function booted(): void
+    {
+        static::deleting(function (UploadedFile $uploadedFile) {
+            // Chỉ xóa file vật lý nếu đây là hành động xóa vĩnh viễn
+            if ($uploadedFile->isForceDeleting()) {
+                if (Storage::disk($uploadedFile->disk)->exists($uploadedFile->path)) {
+                    Storage::disk($uploadedFile->disk)->delete($uploadedFile->path);
+                }
+            }
+        });
+    }
+public function deletedBy()
+{
+    // Mối quan hệ một-một đến model User
+    return $this->belongsTo(User::class, 'deleted_by');
+}
     /**
      * Xử lý xóa file vật lý khi model bị xóa.
      */
