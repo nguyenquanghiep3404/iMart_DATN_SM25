@@ -11,9 +11,17 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class AttributeController extends Controller
 {
+    use AuthorizesRequests;
+    // Phân quyền
+     public function __construct()
+    {
+        // Tự động phân quyền cho tất cả các phương thức CRUD
+        $this->authorizeResource(Attribute::class, 'attribute');
+    }
     /**
      * Hiển thị danh sách các thuộc tính.
      */
@@ -170,8 +178,8 @@ class AttributeController extends Controller
         if ($value->attribute_id !== $attribute->id) {
             abort(404);
         }
-        
-        // Cân nhắc thêm logic kiểm tra giá trị này có đang được biến thể sản phẩm nào dùng không.
+
+        // Bạn có thể thêm logic kiểm tra giá trị đang được sử dụng ở đây
         try {
             $value->delete();
             return redirect()->route('admin.attributes.show', $attribute->id)
@@ -182,3 +190,4 @@ class AttributeController extends Controller
         }
     }
 }
+
