@@ -96,7 +96,6 @@ Route::prefix('admin')
         Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
         // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
         Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
-        // 4. Route xử lý việc xóa một file (AJAX)
         Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
         Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('media.fetchForModal');
         Route::get('/media/trash', [UploadedFileController::class, 'trash'])->name('media.trash');
