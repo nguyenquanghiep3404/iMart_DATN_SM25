@@ -135,5 +135,10 @@ class User extends Authenticatable implements MustVerifyEmail
         // exists() sẽ trả về true ngay khi tìm thấy một kết quả, rất hiệu quả.
         return $this->roles()->whereIn('name', $roles)->exists();
     }
-
+    
+    public function shipperOrders()
+    {
+        // Quan hệ: Một user (shipper) có thể có nhiều đơn hàng
+        return $this->hasMany(Order::class, 'shipped_by');
+    }
 }

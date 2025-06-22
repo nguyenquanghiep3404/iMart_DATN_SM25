@@ -10,7 +10,12 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\Shipper\ShipperController;
 
+use App\Http\Controllers\Admin\UploadedFileController;
+use App\Http\Controllers\Admin\AiController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 
 
 //==========================================================================
@@ -26,9 +31,13 @@ Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallb
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
 
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
+    Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
 });
 
 
@@ -52,7 +61,9 @@ Route::prefix('admin')
         // Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
         // Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
         // Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
-
+        Route::post('/products/ai/generate-content', [AiController::class, 'generateContent'])
+         ->name('products.ai.generate');
+        //  Route::post('/ai/generate-content', [AiController::class, 'generateContent'])->name('ai.generateContent');
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
         // Route::resource('users', UserController::class);
@@ -63,6 +74,22 @@ Route::prefix('admin')
             Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+
+
+       // --- Routes cho Thư viện Media ---
+    // 1. Route hiển thị trang chính của thư viện
+    Route::get('/media', [UploadedFileController::class, 'index'])->name('media.index');
+
+    // 2. Route xử lý việc tải file lên (sẽ được gọi bằng AJAX)
+    Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
+
+    // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
+    Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
+
+    // 4. Route xử lý việc xóa một file (AJAX)
+    Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
+Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('admin.media.fetch');
 
         // Route quản lí vai trò
             Route::resource('roles', RoleController::class);
@@ -94,11 +121,32 @@ Route::prefix('admin')
             Route::post('attributes/{attribute}/values', [AttributeController::class, 'storeValue'])->name('attributes.values.store');
             Route::put('attributes/{attribute}/values/{value}', [AttributeController::class, 'updateValue'])->name('attributes.values.update');
             Route::delete('attributes/{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
+
+            // Review routes
+        // Admin - Quản lý đánh giá
+        Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+        Route::get('/reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
+        Route::put('/reviews/{review}', [AdminReviewController::class, 'update'])->name('reviews.update');
+        Route::delete('/reviews/{review}', [AdminReviewController::class, 'destroy'])->name('reviews.destroy');
+
         // });
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:
         // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
     });
+
+            // Group các route dành cho shipper và bảo vệ chúng
+        Route::middleware(['auth', 'verified'])->prefix('shipper')->name('shipper.')->group(function () {
+
+            // Màn hình Dashboard chính
+            Route::get('/dashboard', [ShipperController::class, 'dashboard'])->name('dashboard');
+
+            // Route để lấy thông tin chi tiết của một đơn hàng (dùng cho AJAX)
+            Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
+            // Route để cập nhật trạng thái đơn hàng (dùng cho AJAX)
+            Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus');
+
+        });
 
 
 

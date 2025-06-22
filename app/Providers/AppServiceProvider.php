@@ -1,8 +1,8 @@
 <?php
 
 namespace App\Providers;
-
 use Illuminate\Pagination\Paginator;
+
 use Illuminate\Support\ServiceProvider;
 
 // Import các lớp cho xác thực người dùng

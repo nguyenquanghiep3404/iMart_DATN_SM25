@@ -254,7 +254,7 @@
                                         <span class="text-xs text-gray-500">Chưa có vai trò</span>
                                     @endif
                                 </td>
-                                <td class="text-center">
+                                <td class="">
                                     @php
                                         $statusClass = '';
                                         switch ($user->status) {
