@@ -75,10 +75,10 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->morphOne(UploadedFile::class, 'attachable')->where('type', 'avatar');
     }
-public function cart()
-{
-    return $this->hasOne(Cart::class);
-}
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
     // Helper để lấy đường dẫn avatar
     public function getAvatarUrlAttribute()
     {
@@ -90,30 +90,42 @@ public function cart()
     }
 
 
-    public function hasRole($roleName)
+   public function hasRole($role): bool
     {
-        if (is_string($roleName)) {
-            return $this->roles->contains('name', $roleName);
+        // Nếu đầu vào là một mảng các tên vai trò
+        if (is_array($role)) {
+            // Dùng whereIn để kiểm tra sự tồn tại của bất kỳ vai trò nào trong mảng
+            // Đây là cách hiệu quả nhất, chỉ cần 1 truy vấn CSDL
+            return $this->roles()->whereIn('name', $role)->exists();
         }
-        if (is_array($roleName)) {
-            foreach ($roleName as $rName) {
-                if ($this->roles->contains('name', $rName)) {
-                    return true;
-                }
-            }
-            return false;
+
+        // Nếu đầu vào là một đối tượng Role
+        if ($role instanceof Role) {
+            // Kiểm tra bằng id của đối tượng Role
+            return $this->roles()->where('id', $role->id)->exists();
         }
-        return $this->roles->contains('id', $roleName->id);
+
+        // Nếu đầu vào là một chuỗi (tên vai trò)
+        // Đây là trường hợp phổ biến nhất, nên để ở cuối để tối ưu
+        if (is_string($role)) {
+            return $this->roles()->where('name', $role)->exists();
+        }
+
+        return false;
     }
 
-    public function hasPermissionTo($permissionName)
+
+    public function hasPermissionTo($permissionNames): bool
     {
-        foreach ($this->roles as $role) {
-            if ($role->permissions->contains('name', $permissionName)) {
-                return true;
-            }
-        }
-        return false;
+        // Đảm bảo đầu vào luôn là một mảng để xử lý đồng nhất
+        $permissionNames = is_array($permissionNames) ? $permissionNames : [$permissionNames];
+
+        return $this->roles()
+            ->whereHas('permissions', function ($query) use ($permissionNames) {
+                // Sửa lại: Dùng whereIn và biến $permissionNames
+                $query->whereIn('name', $permissionNames);
+            })
+            ->exists();
     }
 
     public function hasAnyRole(array $roles): bool
@@ -122,5 +134,11 @@ public function cart()
         // có tên nào nằm trong mảng $roles được truyền vào không.
         // exists() sẽ trả về true ngay khi tìm thấy một kết quả, rất hiệu quả.
         return $this->roles()->whereIn('name', $roles)->exists();
+    }
+    
+    public function shipperOrders()
+    {
+        // Quan hệ: Một user (shipper) có thể có nhiều đơn hàng
+        return $this->hasMany(Order::class, 'shipped_by');
     }
 }

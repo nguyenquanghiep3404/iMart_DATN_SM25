@@ -7,9 +7,17 @@ use App\Http\Requests\CategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CategoryController extends Controller
 {
+    use AuthorizesRequests;
+    // Phân quyền
+     public function __construct()
+    {
+        // Tự động phân quyền cho tất cả các phương thức CRUD
+        $this->authorizeResource(Category::class, 'category');
+    }
     public function index(Request $request)
     {
         $sortField = in_array($request->sort, [
