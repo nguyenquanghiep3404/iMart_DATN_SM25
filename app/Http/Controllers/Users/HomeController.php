@@ -192,7 +192,6 @@ class HomeController extends Controller
 
     public function show($slug)
 {
-    // Lấy sản phẩm theo slug, kèm các quan hệ cần thiết
     $product = Product::with([
         'category',
         'coverImage',
@@ -231,15 +230,12 @@ class HomeController extends Controller
         $ratingPercentages[$star] = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
     }
 
-    // Chuẩn bị dữ liệu biến thể
     $variantData = [];
     $attributes = [];
     $availableCombinations = [];
 
-    // Lấy biến thể mặc định
     $defaultVariant = $product->variants->firstWhere('is_default', true);
 
-    // Đầu tiên, tạo map các tổ hợp thuộc tính có sẵn
     foreach ($product->variants as $variant) {
         $combination = [];
         foreach ($variant->attributeValues as $attrValue) {
@@ -247,7 +243,6 @@ class HomeController extends Controller
             $value = $attrValue->value;
             $combination[$attrName] = $value;
 
-            // Thêm vào danh sách thuộc tính
             if (!isset($attributes[$attrName])) {
                 $attributes[$attrName] = collect();
             }
@@ -256,10 +251,7 @@ class HomeController extends Controller
             }
         }
         $availableCombinations[] = $combination;
-    }
 
-    // Sau đó, xử lý thông tin variant
-    foreach ($product->variants as $variant) {
         $now = now();
         $salePrice = (int) $variant->sale_price;
         $originalPrice = (int) $variant->price;
@@ -268,19 +260,15 @@ class HomeController extends Controller
             $variant->sale_price_ends_at >= $now;
         $displayPrice = $isOnSale ? $salePrice : $originalPrice;
 
-        // Tạo key cho variant dựa trên các thuộc tính
         $variantKey = [];
         foreach ($variant->attributeValues as $attrValue) {
             $attrName = $attrValue->attribute->name;
             $value = $attrValue->value;
             $variantKey[$attrName] = $value;
         }
-
-        // Sắp xếp key để đảm bảo thứ tự nhất quán
         ksort($variantKey);
         $variantKeyStr = implode('_', array_values($variantKey));
 
-        // Lấy hình ảnh cho variant
         $images = $variant->images->map(fn($image) => Storage::url($image->path))->toArray();
         if (empty($images)) {
             $images = [];
@@ -293,7 +281,6 @@ class HomeController extends Controller
         }
         $mainImage = !empty($images) ? $images[0] : null;
 
-        // Lưu thông tin variant
         $variantData[$variantKeyStr] = [
             'price' => $displayPrice,
             'original_price' => $isOnSale && $originalPrice > $salePrice ? $originalPrice : null,
@@ -303,12 +290,18 @@ class HomeController extends Controller
         ];
     }
 
-    // Lấy 4 sản phẩm liên quan
     $relatedProducts = Product::with(['category', 'coverImage'])
         ->where('category_id', $product->category_id)
         ->where('id', '!=', $product->id)
         ->where('status', 'published')
         ->take(4)
+        ->get();
+
+    $comments = $product->comments()
+        ->where('status', 'approved')
+        ->whereNull('parent_id')
+        ->with(['user', 'replies.user'])
+        ->orderByDesc('created_at')
         ->get();
 
     return view('users.show', compact(
@@ -320,232 +313,175 @@ class HomeController extends Controller
         'attributes',
         'variantData',
         'availableCombinations',
-        'defaultVariant' // 👈 Truyền về view
+        'defaultVariant',
+        'comments'
     ));
 }
 
 
 
-    public function allProducts(Request $request)
-    {
-        // Lấy thời điểm hiện tại sử dụng Carbon để xử lý ngày giờ
-        $now = Carbon::now();
+    public function allProducts(Request $request, $id = null, $slug = null)
+{
+    $now = Carbon::now();
 
-        // Khởi tạo truy vấn cơ bản để lấy danh sách sản phẩm
-        $query = Product::with([
-            // Nạp quan hệ với danh mục của sản phẩm
-            'category',
-            // Nạp hình ảnh bìa của sản phẩm
-            'coverImage',
-            // Nạp các biến thể của sản phẩm với điều kiện động
-            'variants' => function ($query) use ($now, $request) {
-                // Nếu người dùng lọc theo sản phẩm đang giảm giá
-                if ($request->has('sort') && $request->sort === 'dang_giam_gia') {
-                    // Chỉ lấy các biến thể đang có chương trình giảm giá hợp lệ
-                    $query->where('sale_price', '>', 0) // Giá giảm giá lớn hơn 0
-                        ->where('sale_price_starts_at', '<=', $now) // Bắt đầu trước hoặc tại thời điểm hiện tại
-                        ->where('sale_price_ends_at', '>=', $now) // Kết thúc sau hoặc tại thời điểm hiện tại
-                        ->whereNull('deleted_at') // Không lấy biến thể bị xóa mềm
-                        ->orderBy('id'); // Sắp xếp theo id
-                } else {
-                    // Nếu không lọc theo giảm giá, lấy biến thể mặc định hoặc biến thể có id nhỏ nhất
-                    $query->where(function ($q) {
-                        $q->where('is_default', true)
-                            ->orWhereRaw('id = (
+    // Nếu có ID trong route, thì kiểm tra danh mục và slug
+    $categoryId = null;
+    if ($id) {
+        $category = Category::findOrFail($id);
+        $categoryId = $category->id;
+
+        // Nếu slug sai thì redirect về đúng slug
+        if ($slug !== Str::slug($category->name)) {
+            return redirect()->route('products.byCategory', [
+                'id' => $category->id,
+                'slug' => Str::slug($category->name),
+            ]);
+        }
+    }
+
+    $query = Product::with([
+        'category',
+        'coverImage',
+        'variants' => function ($query) use ($now, $request) {
+            if ($request->has('sort') && $request->sort === 'dang_giam_gia') {
+                $query->where('sale_price', '>', 0)
+                    ->where('sale_price_starts_at', '<=', $now)
+                    ->where('sale_price_ends_at', '>=', $now)
+                    ->whereNull('deleted_at')
+                    ->orderBy('id');
+            } else {
+                $query->where(function ($q) {
+                    $q->where('is_default', true)
+                        ->orWhereRaw('id = (
                             select min(id) 
                             from product_variants pv 
                             where pv.product_id = product_variants.product_id 
                             and pv.deleted_at is null
                         )');
-                    })
-                        ->whereNull('deleted_at'); // Không lấy biến thể bị xóa mềm
-                }
-            },
-            // Nạp các đánh giá của sản phẩm với trạng thái 'approved'
-            'reviews' => function ($query) {
-                $query->where('reviews.status', 'approved');
+                })->whereNull('deleted_at');
             }
-        ])
-            // Đếm số lượng đánh giá được phê duyệt và gán vào thuộc tính approved_reviews_count
-            ->withCount([
-                'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved');
-                }
-            ])
-            // Chỉ lấy các sản phẩm có trạng thái 'published'
-            ->where('status', 'published');
-
-        // 🔍 Tìm kiếm theo tên sản phẩm
-        if ($request->filled('search')) {
-            // Thêm điều kiện tìm kiếm tên sản phẩm chứa chuỗi nhập vào
-            $query->where('name', 'like', '%' . $request->search . '%');
+        },
+        'reviews' => function ($query) {
+            $query->where('reviews.status', 'approved');
         }
-
-        // 🗂 Lọc theo danh mục
-        if ($request->filled('category_id')) {
-            // Thêm điều kiện lọc sản phẩm thuộc danh mục được chọn
-            $query->where('category_id', $request->category_id);
+    ])
+    ->withCount([
+        'reviews as approved_reviews_count' => function ($query) {
+            $query->where('reviews.status', 'approved');
         }
+    ])
+    ->where('status', 'published');
 
-        // 💰 Lọc theo khoảng giá tối thiểu
-        if ($request->filled('min_price')) {
-            // Lọc các sản phẩm có biến thể với giá lớn hơn hoặc bằng giá tối thiểu
-            $query->whereHas('variants', function ($q) use ($request) {
-                $q->where('price', '>=', $request->min_price);
-            });
-        }
-
-        // 💰 Lọc theo khoảng giá tối đa
-        if ($request->filled('max_price')) {
-            // Lọc các sản phẩm có biến thể với giá nhỏ hơn hoặc bằng giá tối đa
-            $query->whereHas('variants', function ($q) use ($request) {
-                $q->where('price', '<=', $request->max_price);
-            });
-        }
-
-        // Sắp xếp và lọc kết quả dựa trên giá trị của tham số 'sort' từ request
-        switch ($request->sort) {
-            // Trường hợp 1: Sắp xếp theo sản phẩm mới ra mắt
-            case 'mới_ra_mắt':
-                // Tạo biến $oneWeekAgo để lưu thời điểm cách đây 1 tuần từ hiện tại
-                $oneWeekAgo = Carbon::now()->subWeek();
-                // Thêm điều kiện lọc sản phẩm được tạo từ thời điểm $oneWeekAgo trở đi
-                $query->where(function ($q) use ($oneWeekAgo) {
-                    // Chỉ lấy các sản phẩm có thời gian tạo lớn hơn hoặc bằng 1 tuần trước
-                    $q->where('created_at', '>=', $oneWeekAgo);
-                })
-                    // Sắp xếp kết quả theo thời gian tạo giảm dần (mới nhất lên đầu)
-                    ->orderByDesc('created_at');
-                // Thoát khỏi case này
-                break;
-
-            // Trường hợp 2: Sắp xếp theo giá từ thấp đến cao
-            case 'giá_thấp_đến_cao':
-                // Đảm bảo chỉ lấy các sản phẩm có biến thể chưa bị xóa mềm
-                $query->whereHas('variants', function ($q) {
-                    // Kiểm tra biến thể không bị xóa mềm (deleted_at là null)
-                    $q->whereNull('deleted_at');
-                })
-                    // Sắp xếp sản phẩm dựa trên giá của biến thể
-                    ->orderBy(function ($query) {
-                        // Chọn cột 'price' từ bảng product_variants
-                        $query->select('price')
-                            // Lấy từ bảng product_variants
-                            ->from('product_variants')
-                            // Liên kết biến thể với sản phẩm thông qua product_id
-                            ->whereColumn('product_id', 'products.id')
-                            // Chỉ lấy biến thể chưa bị xóa mềm
-                            ->whereNull('deleted_at')
-                            // Lựa chọn biến thể mặc định hoặc biến thể có id nhỏ nhất
-                            ->where(function ($q) {
-                                // Ưu tiên biến thể được đánh dấu là mặc định
-                                $q->where('is_default', true)
-                                    // Nếu không có biến thể mặc định, lấy biến thể có id nhỏ nhất
-                                    ->orWhereRaw('id = (
-                                select min(id) 
-                                from product_variants pv 
-                                where pv.product_id = product_variants.product_id 
-                                and pv.deleted_at is null
-                            )');
-                            })
-                            // Giới hạn chỉ lấy 1 biến thể để sử dụng giá của nó cho việc sắp xếp
-                            ->limit(1);
-                    });
-                // Thoát khỏi case này
-                break;
-
-            // Trường hợp 3: Sắp xếp theo giá từ cao đến thấp
-            case 'giá_cao_đến_thấp':
-                // Đảm bảo chỉ lấy các sản phẩm có biến thể chưa bị xóa mềm
-                $query->whereHas('variants', function ($q) {
-                    // Kiểm tra biến thể không bị xóa mềm (deleted_at là null)
-                    $q->whereNull('deleted_at');
-                })
-                    // Sắp xếp sản phẩm dựa trên giá của biến thể, theo thứ tự giảm dần
-                    ->orderByDesc(function ($query) {
-                        // Chọn cột 'price' từ bảng product_variants
-                        $query->select('price')
-                            // Lấy từ bảng product_variants
-                            ->from('product_variants')
-                            // Liên kết biến thể với sản phẩm thông qua product_id
-                            ->whereColumn('product_id', 'products.id')
-                            // Chỉ lấy biến thể chưa bị xóa mềm
-                            ->whereNull('deleted_at')
-                            // Lựa chọn biến thể mặc định hoặc biến thể có id nhỏ nhất
-                            ->where(function ($q) {
-                                // Ưu tiên biến thể được đánh dấu là mặc định
-                                $q->where('is_default', true)
-                                    // Nếu không có biến thể mặc định, lấy biến thể có id nhỏ nhất
-                                    ->orWhereRaw('id = (
-                                select min(id) 
-                                from product_variants pv 
-                                where pv.product_id = product_variants.product_id 
-                                and pv.deleted_at is null
-                            )');
-                            })
-                            // Giới hạn chỉ lấy 1 biến thể để sử dụng giá của nó cho việc sắp xếp
-                            ->limit(1);
-                    });
-                // Thoát khỏi case này
-                break;
-
-            // Trường hợp 4: Lọc và sắp xếp theo sản phẩm đang giảm giá
-            case 'dang_giam_gia':
-                // Lọc các sản phẩm có biến thể đang trong chương trình giảm giá
-                $query->whereHas('variants', function ($q) use ($now) {
-                    // Kiểm tra biến thể có giá giảm giá (sale_price) không null
-                    $q->whereNotNull('sale_price')
-                        // Kiểm tra biến thể có thời gian bắt đầu giảm giá không null
-                        ->whereNotNull('sale_price_starts_at')
-                        // Kiểm tra biến thể có thời gian kết thúc giảm giá không null
-                        ->whereNotNull('sale_price_ends_at')
-                        // Đảm bảo giá giảm giá lớn hơn 0
-                        ->where('sale_price', '>', 0)
-                        // Thời gian bắt đầu giảm giá phải nhỏ hơn hoặc bằng thời điểm hiện tại
-                        ->where('sale_price_starts_at', '<=', $now)
-                        // Thời gian kết thúc giảm giá phải lớn hơn hoặc bằng thời điểm hiện tại
-                        ->where('sale_price_ends_at', '>=', $now);
-                })
-                    // Sắp xếp kết quả theo thời gian tạo giảm dần (mới nhất lên đầu)
-                    ->orderByDesc('created_at');
-                // Thoát khỏi case này
-                break;
-
-            // Trường hợp mặc định: Khi không có tham số sort hoặc giá trị không hợp lệ
-            default:
-                // Chỉ lấy các sản phẩm được đánh dấu là nổi bật (is_featured = 1)
-                $query->where('is_featured', 1)
-                    // Sắp xếp theo thời gian tạo giảm dần (mới nhất lên đầu)
-                    ->orderByDesc('created_at');
-                // Thoát khỏi case mặc định
-                break;
-        }
-
-        // Phân trang kết quả, mỗi trang 15 sản phẩm
-        $products = $query->paginate(15);
-
-        // Tính điểm đánh giá trung bình và phần trăm giảm giá cho từng sản phẩm
-        foreach ($products as $product) {
-            // Tính điểm đánh giá trung bình, làm tròn đến 1 chữ số thập phân
-            $product->average_rating = round($product->reviews->avg('rating') ?? 0, 1);
-
-            // Lấy biến thể đầu tiên của sản phẩm
-            $variant = $product->variants->first();
-            // Kiểm tra nếu biến thể tồn tại và có thông tin giảm giá
-            if ($variant && $variant->sale_price && $variant->sale_price_starts_at && $variant->sale_price_ends_at) {
-                // Kiểm tra xem sản phẩm có đang trong thời gian giảm giá không
-                $onSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
-                // Tính phần trăm giảm giá nếu đang giảm giá, nếu không thì gán bằng 0
-                $variant->discount_percent = $onSale
-                    ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                    : 0;
-            }
-        }
-
-        // Lấy tất cả danh mục để hiển thị trong giao diện (ví dụ: bộ lọc danh mục)
-        $categories = Category::all();
-
-        // Trả về giao diện 'users.shop' với dữ liệu sản phẩm và danh mục
-        return view('users.shop', compact('products', 'categories'));
+    // 🔍 Tìm kiếm theo tên sản phẩm
+    if ($request->filled('search')) {
+        $query->where('name', 'like', '%' . $request->search . '%');
     }
+
+    // 🗂 Lọc theo danh mục (bao gồm cả con)
+    if ($categoryId) {
+        $categoryIds = Category::where('parent_id', $categoryId)->pluck('id')->toArray();
+        $categoryIds[] = $categoryId;
+        $query->whereIn('category_id', $categoryIds);
+    }
+
+    // 💰 Lọc theo khoảng giá
+    if ($request->filled('min_price')) {
+        $query->whereHas('variants', function ($q) use ($request) {
+            $q->where('price', '>=', $request->min_price);
+        });
+    }
+    if ($request->filled('max_price')) {
+        $query->whereHas('variants', function ($q) use ($request) {
+            $q->where('price', '<=', $request->max_price);
+        });
+    }
+
+    // 🔃 Sắp xếp theo yêu cầu
+    switch ($request->sort) {
+        case 'mới_ra_mắt':
+            $query->where('created_at', '>=', $now->copy()->subWeek())
+                ->orderByDesc('created_at');
+            break;
+
+        case 'giá_thấp_đến_cao':
+            $query->whereHas('variants', function ($q) {
+                $q->whereNull('deleted_at');
+            })->orderBy(function ($q) {
+                $q->select('price')
+                    ->from('product_variants')
+                    ->whereColumn('product_id', 'products.id')
+                    ->whereNull('deleted_at')
+                    ->where(function ($q2) {
+                        $q2->where('is_default', true)
+                            ->orWhereRaw('id = (
+                                select min(id) 
+                                from product_variants pv 
+                                where pv.product_id = product_variants.product_id 
+                                and pv.deleted_at is null
+                            )');
+                    })
+                    ->limit(1);
+            });
+            break;
+
+        case 'giá_cao_đến_thấp':
+            $query->whereHas('variants', function ($q) {
+                $q->whereNull('deleted_at');
+            })->orderByDesc(function ($q) {
+                $q->select('price')
+                    ->from('product_variants')
+                    ->whereColumn('product_id', 'products.id')
+                    ->whereNull('deleted_at')
+                    ->where(function ($q2) {
+                        $q2->where('is_default', true)
+                            ->orWhereRaw('id = (
+                                select min(id) 
+                                from product_variants pv 
+                                where pv.product_id = product_variants.product_id 
+                                and pv.deleted_at is null
+                            )');
+                    })
+                    ->limit(1);
+            });
+            break;
+
+        case 'dang_giam_gia':
+            $query->whereHas('variants', function ($q) use ($now) {
+                $q->whereNotNull('sale_price')
+                    ->where('sale_price', '>', 0)
+                    ->where('sale_price_starts_at', '<=', $now)
+                    ->where('sale_price_ends_at', '>=', $now);
+            })->orderByDesc('created_at');
+            break;
+
+        default:
+            $query->where('is_featured', 1)->orderByDesc('created_at');
+            break;
+    }
+
+    // 📄 Phân trang
+    $products = $query->paginate(15);
+
+    // 🎯 Tính đánh giá trung bình và % giảm giá
+    foreach ($products as $product) {
+        $product->average_rating = round($product->reviews->avg('rating') ?? 0, 1);
+
+        $variant = $product->variants->first();
+        if ($variant && $variant->sale_price && $variant->sale_price_starts_at && $variant->sale_price_ends_at) {
+            $onSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+            $variant->discount_percent = $onSale
+                ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                : 0;
+        }
+    }
+
+    // 📚 Lấy tất cả danh mục (sử dụng ở sidebar hoặc filter)
+    $categories = Category::all();
+
+    $currentCategory = $categoryId ? $category : null;
+
+    return view('users.shop', compact('products', 'categories', 'currentCategory'));
+}
+
+
 }

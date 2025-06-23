@@ -37,9 +37,6 @@
     <link rel="preload" href="{{ asset ('assets/users/css/theme.min.css') }}" as="style">
     <link rel="preload" href="{{ asset ('assets/users/css/theme.rtl.min.css') }}" as="style">
     <link rel="stylesheet" href="{{ asset ('assets/users/css/theme.min.css') }}" id="theme-styles">
-    <!-- Bootstrap JS (v5.x) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
 
 
 
@@ -47,10 +44,10 @@
     <script src="{{ asset ('assets/users/js/customizer.min.js') }}"></script>
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @stack('styles') {{-- Cho phép các trang con thêm CSS cụ thể --}}
-    </head>
-    <body>
+    
+</head>
 
+<body>
     <!-- Customizer offcanvas -->
     @include('users.partials.ai_chatbot')
 
