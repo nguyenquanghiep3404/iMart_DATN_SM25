@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardAdminController;
@@ -136,6 +137,15 @@ Route::prefix('admin')
         Route::post('/reviews/{review}/update-status', [AdminReviewController::class, 'updateStatus'])->name('admin.reviews.updateStatus');
 
 
+        // Routes Order
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+        Route::get('/orders/shippers/list', [OrderController::class, 'getShippers'])->name('orders.shippers');
+        Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
+
+
+
         // Banner routes
         Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
         Route::get('/banners/create', [BannerController::class, 'create'])->name('banners.create');
@@ -170,6 +180,7 @@ Route::prefix('admin')
         ->names('categories_post');
 
         // });
+
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
