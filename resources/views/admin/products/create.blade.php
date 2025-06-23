@@ -3,7 +3,7 @@
 @section('title', 'Thêm sản phẩm mới')
 
 @push('styles')
-    {{-- 1. THÊM CSS CỦA TAGIFY --}}
+    {{-- 1. CSS CỦA TAGIFY --}}
     <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
 
     <style>
@@ -36,365 +36,94 @@
             height: 24px;
             width: 24px;
         }
-
-        .input-group {
-            margin-bottom: 1.25rem;
+        
+        .input-group { margin-bottom: 1.25rem; }
+        .input-group label { display: block; color: #4b5563; font-weight: 500; }
+        .input-field, .select-field, .textarea-field {
+            width: 100%; padding: 0.875rem 1.125rem; border: 1px solid #cbd5e1; border-radius: 0.625rem;
+            box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.03); transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; background-color: #f8fafc;
+        }
+        .input-field:focus, .select-field:focus, .textarea-field:focus {
+            outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); background-color: white;
         }
 
-        .input-group label {
-            display: block;
-            color: #4b5563;
-            font-weight: 500;
-            margin-bottom: 0.625rem;
-        }
+        /* Style cho trình soạn thảo TinyMCE */
+        .tox-tinymce { border-radius: 0.625rem !important; border: 1px solid #cbd5e1 !important; }
+        .tox:not(.tox-fullscreen) .tox-toolbar-overlord { border-top-right-radius: 0.625rem !important; border-top-left-radius: 0.625rem !important; }
+        .tox .tox-statusbar { border-bottom-right-radius: 0.625rem !important; border-bottom-left-radius: 0.625rem !important; }
 
-        .input-field,
-        .select-field,
-        .textarea-field {
-            width: 100%;
-            padding: 0.875rem 1.125rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.625rem;
-            box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.03);
-            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            background-color: #f8fafc;
-        }
+        /* 2. CUSTOM CSS CHO TAGIFY */
+        .tagify { --tags-border-color: #cbd5e1; --tag-bg: #2563eb; --tag-hover: #1d4ed8; --tag-text-color: white; --tag-remove-btn-color: white; border-radius: 0.625rem; background-color: #f8fafc; }
+        .tagify:hover { --tags-border-color: #94a3b8; }
+        .tagify.tagify--focus { --tags-border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); background-color: white; }
+        .tagify__input { padding: 0.875rem 1.125rem; }
+        .tagify__tag { border-radius: 0.375rem; margin: 4px; }
+        .tagify-error .tagify { --tags-border-color: #ef4444 !important; }
 
-        .input-field:focus,
-        .select-field:focus,
-        .textarea-field:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-            background-color: white;
-        }
+        .btn { padding: 0.875rem 1.75rem; border-radius: 0.625rem; font-weight: 600; transition: all 0.2s ease-in-out; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-transform: uppercase; letter-spacing: 0.025em; border: 1px solid transparent; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
+        .btn-primary { background-color: #2563eb; color: white; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3), 0 2px 4px -2px rgba(37, 99, 235, 0.2); }
+        .btn-primary:hover { background-color: #1d4ed8; box-shadow: 0 6px 10px -1px rgba(29, 78, 216, 0.4), 0 4px 6px -2px rgba(29, 78, 216, 0.3); transform: translateY(-1px); }
+        .btn-secondary { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .btn-secondary:hover { background-color: #e2e8f0; border-color: #cbd5e1; transform: translateY(-1px); }
+        .btn-danger { background-color: #ef4444; color: white; box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3), 0 2px 4px -2px rgba(239, 68, 68, 0.2); }
+        .btn-danger:hover { background-color: #dc2626; box-shadow: 0 6px 10px -1px rgba(220, 38, 38, 0.4), 0 4px 6px -2px rgba(220, 38, 38, 0.3); transform: translateY(-1px); }
+        .btn-ai { background: linear-gradient(to right, #6366f1, #a855f7); color: white; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4), 0 2px 4px -2px rgba(168, 85, 247, 0.3); }
+        .btn-ai:hover { box-shadow: 0 6px 10px -1px rgba(99, 102, 241, 0.5), 0 4px 6px -2px rgba(168, 85, 247, 0.4); transform: translateY(-1px); }
+        .btn-ai .loading-spinner { width: 16px; height: 16px; border: 2px solid rgba(255, 255, 255, 0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Style cho trình soạn thảo TinyMCE để khớp với theme */
-        .tox-tinymce {
-            border-radius: 0.625rem !important;
-            border: 1px solid #cbd5e1 !important;
-        }
-        .tox:not(.tox-fullscreen) .tox-toolbar-overlord {
-            border-top-right-radius: 0.625rem !important;
-            border-top-left-radius: 0.625rem !important;
-        }
-        .tox .tox-statusbar {
-             border-bottom-right-radius: 0.625rem !important;
-            border-bottom-left-radius: 0.625rem !important;
-        }
-
-        /* 2. CUSTOM CSS CHO TAGIFY ĐỂ KHỚP VỚI THEME */
-        .tagify {
-            --tags-border-color: #cbd5e1;
-            --tag-bg: #2563eb;
-            --tag-hover: #1d4ed8;
-            --tag-text-color: white;
-            --tag-remove-btn-color: white;
-            border-radius: 0.625rem;
-            background-color: #f8fafc;
-        }
-        .tagify:hover {
-            --tags-border-color: #94a3b8;
-        }
-        .tagify.tagify--focus {
-            --tags-border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-            background-color: white;
-        }
-        .tagify__input {
-            padding: 0.875rem 1.125rem;
-        }
-        .tagify__tag {
-            border-radius: 0.375rem;
-            margin: 4px;
-        }
-        /* Style cho Tagify khi có lỗi validation từ Laravel */
-        .tagify-error .tagify {
-            --tags-border-color: #ef4444 !important;
-        }
-
-
-        .btn {
-            padding: 0.875rem 1.75rem;
-            border-radius: 0.625rem;
-            font-weight: 600;
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-transform: uppercase;
-            letter-spacing: 0.025em;
-        }
-
-        .btn-sm {
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-        }
-
-        .btn-primary {
-            background-color: #2563eb;
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3), 0 2px 4px -2px rgba(37, 99, 235, 0.2);
-        }
-
-        .btn-primary:hover {
-            background-color: #1d4ed8;
-            box-shadow: 0 6px 10px -1px rgba(29, 78, 216, 0.4), 0 4px 6px -2px rgba(29, 78, 216, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-        }
-
-        .btn-secondary:hover {
-            background-color: #e2e8f0;
-            border-color: #cbd5e1;
-            transform: translateY(-1px);
-        }
-
-        .btn-danger {
-            background-color: #ef4444;
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.3), 0 2px 4px -2px rgba(239, 68, 68, 0.2);
-        }
-
-        .btn-danger:hover {
-            background-color: #dc2626;
-            box-shadow: 0 6px 10px -1px rgba(220, 38, 38, 0.4), 0 4px 6px -2px rgba(220, 38, 38, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .btn-ai {
-            background: linear-gradient(to right, #6366f1, #a855f7);
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4), 0 2px 4px -2px rgba(168, 85, 247, 0.3);
-        }
-
-        .btn-ai:hover {
-            box-shadow: 0 6px 10px -1px rgba(99, 102, 241, 0.5), 0 4px 6px -2px rgba(168, 85, 247, 0.4);
-            transform: translateY(-1px);
-        }
-
-        .btn-ai .loading-spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .image-preview-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-top: 0.75rem;
-        }
-
-        .image-preview {
-            /* Dùng chung cho ảnh bìa, thư viện */
-            position: relative;
-            width: 120px;
-            height: 120px;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            border: 2px dashed #cbd5e1;
-            background-color: #f8fafc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .image-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .image-preview .remove-img-btn {
-            position: absolute;
-            top: 6px;
-            right: 6px;
-            background-color: rgba(220, 38, 38, 0.8);
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-            z-index: 10;
-        }
-
-        .image-preview .remove-img-btn:hover {
-            background-color: #dc2626;
-        }
+        .image-preview-container { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.75rem; }
+        .image-preview { position: relative; width: 120px; height: 120px; border-radius: 0.5rem; overflow: hidden; border: 2px dashed #cbd5e1; background-color: #f8fafc; display: flex; align-items: center; justify-content: center; }
+        .image-preview img { width: 100%; height: 100%; object-fit: cover; }
+        .image-preview .remove-img-btn { position: absolute; top: 6px; right: 6px; background-color: rgba(220, 38, 38, 0.8); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; transition: background-color 0.2s; z-index: 10; }
+        .image-preview .remove-img-btn:hover { background-color: #dc2626; }
 
         /* Styles for variant and simple product image previews */
-        .variant-image-preview-item {
-            position: relative;
-            width: 90px;
-            height: 90px;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            border: 2px solid #e2e8f0;
-            background-color: #f8fafc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .variant-image-preview-item { position: relative; width: 90px; height: 90px; border-radius: 0.5rem; overflow: hidden; border: 2px solid #e2e8f0; background-color: #f8fafc; display: flex; align-items: center; justify-content: center; }
+        .variant-image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+        .variant-image-preview-item.is-primary { border: 3px solid #2563eb; box-shadow: 0 0 8px rgba(37, 99, 235, 0.5); }
+        .variant-image-preview-item .set-primary-btn { position: absolute; bottom: 4px; left: 4px; background-color: rgba(0, 0, 0, 0.6); color: white; padding: 3px 5px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; z-index: 10; display: none; align-items: center; }
+        .variant-image-preview-item:hover .set-primary-btn { display: inline-flex; }
+        .variant-image-preview-item.is-primary .set-primary-btn { display: none; }
+        .variant-image-preview-item .set-primary-btn:hover { background-color: rgba(37, 99, 235, 0.9); }
+        .variant-image-preview-item .set-primary-btn i { width: 12px; height: 12px; margin-right: 3px; }
 
-        .variant-image-preview-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .variant-image-preview-item.is-primary {
-            border: 3px solid #2563eb;
-            box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
-        }
-
-        .variant-image-preview-item .set-primary-btn {
-            position: absolute;
-            bottom: 4px;
-            left: 4px;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: white;
-            padding: 3px 5px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            z-index: 10;
-            display: none;
-            align-items: center;
-        }
-
-        .variant-image-preview-item:hover .set-primary-btn {
-            display: inline-flex;
-        }
-        .variant-image-preview-item.is-primary .set-primary-btn {
-             display: none;
-        }
-
-
-        .variant-image-preview-item .set-primary-btn:hover {
-            background-color: rgba(37, 99, 235, 0.9);
-        }
-
-        .variant-image-preview-item .set-primary-btn i {
-            width: 12px;
-            height: 12px;
-            margin-right: 3px;
-        }
-
-
-        .variant-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 0.625rem;
-            padding: 1.25rem;
-            margin-bottom: 1.25rem;
-            background-color: #f8fafc;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
-        }
-
-        .variant-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .variant-title {
-            font-weight: 600;
-            color: #0f172a;
-            font-size: 1.1rem;
-        }
-
-        .form-check-input {
-            height: 1.125rem;
-            width: 1.125rem;
-            margin-top: 0.125rem;
-            border-color: #94a3b8;
-        }
-
-        .form-check-input:checked {
-            background-color: #2563eb;
-            border-color: #2563eb;
-        }
-
-        .required-star {
-            color: #ef4444;
-            font-weight: bold;
-        }
-
-        .input-with-icon {
-            position: relative;
-        }
-
-        .input-with-icon .icon-prefix {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94a3b8;
-        }
-
-        .input-with-icon .input-field,
-        .input-with-icon .select-field {
-            padding-left: 2.75rem;
-        }
-
-        .label-with-action {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.625rem;
-        }
-
-        .label-with-action label {
-            margin-bottom: 0;
-        }
-        /* Style cho SVG icons */
-        .svg-icon {
-            width: 1.25rem;
-            height: 1.25rem;
-            stroke-width: 1.5;
-            stroke: currentColor;
-            fill: none;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
+        .variant-card { border: 1px solid #e2e8f0; border-radius: 0.625rem; padding: 1.25rem; margin-bottom: 1.25rem; background-color: #f8fafc; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03); }
+        .variant-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0; }
+        .variant-title { font-weight: 600; color: #0f172a; font-size: 1.1rem; }
         
-        .icon-prefix {
-            width: 1rem;
-            height: 1rem;
-        }
-        
-        .card-header .svg-icon {
-            width: 1.25rem;
-            height: 1.25rem;
-            margin-right: 0.5rem;
-        }
-        
-        button .svg-icon {
-            margin-right: 0.5rem;
-        }
+        .form-check-input { height: 1.125rem; width: 1.125rem; margin-top: 0.125rem; border-color: #94a3b8; }
+        .form-check-input:checked { background-color: #2563eb; border-color: #2563eb; }
+        .required-star { color: #ef4444; font-weight: bold; }
+        .input-with-icon { position: relative; }
+        .input-with-icon .icon-prefix { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; }
+        .input-with-icon .input-field, .input-with-icon .select-field { padding-left: 2.75rem; }
+        .label-with-action { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.625rem; }
+        .label-with-action label { margin-bottom: 0; }
+        .svg-icon { width: 1.25rem; height: 1.25rem; stroke-width: 1.5; stroke: currentColor; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .icon-prefix { width: 1rem; height: 1rem; }
+        .card-header .svg-icon { width: 1.25rem; height: 1.25rem; margin-right: 0.5rem; }
+        button .svg-icon { margin-right: 0.5rem; }
+
+        /* CSS cho Media Library Modal */
+        .modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; background-color: rgba(0,0,0,0.6); }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-content { background-color: #fff; margin: auto; border: none; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); border-radius: 0.75rem; display: flex; flex-direction: column; }
+        .modal-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { margin-bottom: 0; line-height: 1.5; font-size: 1.25rem; font-weight: 600; color: #1f2937; }
+        .close-btn { font-size: 1.75rem; font-weight: 500; color: #6b7280; opacity: .75; background-color: transparent; border: 0; cursor: pointer; }
+        .close-btn:hover { opacity: 1; color: #1f2937; }
+        .modal-body { position: relative; flex: 1 1 auto; padding: 0; color: #374151; overflow-y: hidden; }
+        .modal-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background-color: #f9fafb; }
+        #selection-modal .modal-content { max-width: 90vw; width: 1280px; height: 90vh; }
+        .image-card.selected { box-shadow: 0 0 0 3px #2563eb; border-color: #2563eb; }
+        .tab-link { padding: 0.75rem 1.25rem; border-bottom: 3px solid transparent; color: #6b7280; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .tab-link.active { color: #2563eb; border-color: #2563eb; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        #drop-zone { border: 2px dashed #d1d5db; border-radius: 0.75rem; padding: 2rem; text-align: center; transition: all 0.2s; background-color: #f8fafc; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #drop-zone.drag-over { border-color: #3b82f6; background-color: #eff6ff; }
     </style>
 @endpush
 
@@ -651,21 +380,36 @@
                                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                {{-- BẮT ĐẦU: KHỐI ẢNH MỚI CHO SẢN PHẨM ĐƠN GIẢN --}}
-                                <div class="input-group md:col-span-2">
-                                    <label for="simple_product_image_input">Ảnh Sản Phẩm <span class="required-star">*</span> (Chọn để upload)</label>
-                                    <input type="file" id="simple_product_image_input" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" multiple onchange="handleSimpleProductImages(event)">
-                                    <div id="simple_product_image_preview_container" class="image-preview-container mt-2">
-                                        {{-- Image previews and hidden inputs will appear here --}}
-                                    </div>
-                                    @error('cover_image_id')
-                                       <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                    @enderror
-                                     @error('gallery_images')
-                                       <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                                {{-- KẾT THÚC: KHỐI ẢNH MỚI CHO SẢN PHẨM ĐƠN GIẢN --}}
+                                {{-- THAY THẾ KHỐI DIV NÀY --}}
+        <div class="input-group md:col-span-2">
+            <label>Ảnh Sản Phẩm <span class="required-star">*</span></label>
+            
+            {{-- Nhóm các nút hành động --}}
+            <div class="flex space-x-2 mb-3">
+                <label for="simple_product_image_input" class="btn btn-secondary btn-sm cursor-pointer">
+                    <i class="fas fa-upload mr-2"></i> Tải ảnh lên
+                </label>
+                <input type="file" id="simple_product_image_input" class="hidden" accept="image/*" multiple onchange="handleSimpleProductImages(event)">
+
+                {{-- NÚT MỞ MODAL THƯ VIỆN ĐƯỢC THÊM VÀO ĐÂY --}}
+                <button type="button" id="open-library-btn-simple" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-photo-film mr-2"></i> Thêm từ thư viện
+                </button>
+            </div>
+            
+            {{-- Vùng xem trước chung --}}
+            <div id="simple_product_image_preview_container" class="image-preview-container mt-2">
+                {{-- Ảnh xem trước từ cả upload và thư viện sẽ hiện ở đây --}}
+            </div>
+            
+            {{-- Container ẩn cho các ID ảnh (để submit form) --}}
+            <div id="simple_product_image_ids_container" class="hidden"></div>
+            
+            @error('cover_image_id')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
+        </div>
+        {{-- KẾT THÚC KHỐI CẦN THAY THẾ --}}
                             </div>
                         </div>
 
@@ -947,6 +691,7 @@
             </div>
         </div>
     </div>
+     @include('admin.partials.media_selection_modal')
 @endsection
 
 @push('scripts')
@@ -958,523 +703,603 @@
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
 
-    <script>
-        // =================================================================
-        // KHỐI LOGIC UPLOAD ẢNH VÀ QUẢN LÝ FORM
-        // =================================================================
+   <script>
+    // =================================================================
+    // KHỞI TẠO BIẾN TOÀN CỤC VÀ DỮ LIỆU TỪ PHP
+    // =================================================================
+    let variantIndexGlobal = 0;
+    let tagify;
+    // Biến để theo dõi "ngữ cảnh" khi mở thư viện media
+    window.mediaLibraryTarget = null;
 
-        /**
-         * Hàm trung tâm để upload file bằng AJAX đến server.
-         * @param {FileList} files - Danh sách file từ input.
-         * @returns {Promise<Object>} - Promise sẽ trả về dữ liệu JSON từ server.
-         */
-        async function uploadFilesViaAjax(files) {
-            const formData = new FormData();
-            Array.from(files).forEach(file => {
-                formData.append('files[]', file);
+    // --- Data from PHP (Laravel Backend) ---
+    @php
+        $jsCategoriesData = [];
+        if (isset($categories) && $categories instanceof \Illuminate\Support\Collection) {
+            $jsCategoriesData = $categories->map(fn($cat) => ['id' => $cat->id, 'name' => $cat->name])->values()->all();
+        }
+        $jsAttributesData = [];
+        if (isset($attributes) && $attributes instanceof \Illuminate\Support\Collection) {
+            $jsAttributesData = $attributes->map(function ($attr) {
+                $attributeValuesData = collect($attr->attributeValues ?? [])->map(fn($val) => [
+                    'id' => $val->id ?? ($val['id'] ?? null),
+                    'value' => $val->value ?? ($val['value'] ?? ''),
+                    'meta' => $val->meta ?? ($val['meta'] ?? null),
+                ])->all();
+                return [
+                    'id' => $attr->id,
+                    'name' => $attr->name ?? 'N/A',
+                    'slug' => $attr->slug ?? '',
+                    'attributeValues' => $attributeValuesData,
+                ];
+            })->values()->all();
+        }
+    @endphp
+    const categoriesFromPHP = @json($jsCategoriesData, JSON_UNESCAPED_UNICODE);
+    const allAttributesFromPHP = @json($jsAttributesData, JSON_UNESCAPED_UNICODE);
+    const oldVariantsData = @json(old('variants', []), JSON_UNESCAPED_UNICODE);
+
+
+    // =================================================================
+    // KHỐI LOGIC UPLOAD ẢNH VÀ QUẢN LÝ ẢNH
+    // =================================================================
+
+    /**
+     * Hàm trung tâm để upload file bằng AJAX đến server.
+     */
+    async function uploadFilesViaAjax(files, context = 'products') {
+        const formData = new FormData();
+        Array.from(files).forEach(file => formData.append('files[]', file));
+        formData.append('context', context);
+        try {
+            const response = await fetch("{{ route('admin.media.store') }}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json',
+                }
             });
-
-            try {
-                const response = await fetch("{{ route('admin.media.store') }}", {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Accept': 'application/json',
-                    }
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    if (response.status === 422 && result.errors) {
-                        const errorMessages = Object.values(result.errors).flat().join('\n');
-                        throw new Error(errorMessages);
-                    }
-                    throw new Error(result.error || 'Upload không thành công.');
+            const result = await response.json();
+            if (!response.ok) {
+                if (response.status === 422 && result.errors) {
+                    const errorMessages = Object.values(result.errors).flat().join('\n');
+                    throw new Error(errorMessages);
                 }
-                
-                return result;
-
-            } catch (error) {
-                console.error('Lỗi khi upload ảnh bằng AJAX:', error);
-                throw error;
+                throw new Error(result.error || 'Upload không thành công.');
             }
+            return result;
+        } catch (error) {
+            console.error('Lỗi khi upload ảnh bằng AJAX:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Hàm trung tâm để render ảnh vào các container từ upload hoặc từ thư viện
+     * Đã được sửa đổi để sử dụng `idsContainer` một cách nhất quán.
+     */
+    function addImagesToProductForm(images, previewContainer, idsContainer, type = 'simple', variantIndex = null) {
+        if (!images || images.length === 0 || !previewContainer || !idsContainer) {
+             console.error("Thiếu thông tin để thêm ảnh vào form", {images, previewContainer, idsContainer});
+             return;
         }
 
-        // =========================================================================
-        // === SỬA LỖI: CÁC HÀM XỬ LÝ ẢNH SẢN PHẨM ĐƠN GIẢN ===
-        //      (Đã sửa lại logic theo yêu cầu, giống với xử lý ảnh của biến thể)
-        // =========================================================================
+        const hasPrimaryAlready = (type === 'simple') ?
+            !!document.querySelector('#image_ids_container input[name="cover_image_id"]') :
+            !!idsContainer.querySelector(`input[name="variants[${variantIndex}][primary_image_id]"]`);
 
-        /**
-         * Xử lý khi người dùng chọn ảnh cho sản phẩm đơn giản.
-         * Upload ảnh, tạo preview, và tạo các input hidden cần thiết.
-         * LOGIC MỚI: Tất cả ID ảnh được lưu vào `gallery_images[]`, và một input `cover_image_id` riêng được tạo/cập nhật.
-         * @param {Event} event
-         */
-        async function handleSimpleProductImages(event) {
-            const input = event.target;
-            const files = input.files;
-            if (!files.length) return;
+        images.forEach(fileData => {
+            if (previewContainer.querySelector(`.variant-image-preview-item[data-id="${fileData.id}"]`)) {
+                return;
+            }
 
-            const previewContainer = document.getElementById('simple_product_image_preview_container');
-            const imageIdsContainer = document.getElementById('image_ids_container');
-            
-            const overlay = document.createElement('div');
-            overlay.className = 'upload-overlay';
-            overlay.innerHTML = `<div class="upload-spinner"></div><p class="text-sm text-gray-600">Đang tải ảnh lên...</p>`;
-            previewContainer.appendChild(overlay);
+            const galleryInput = document.createElement('input');
+            galleryInput.type = 'hidden';
+            galleryInput.dataset.id = fileData.id;
+            galleryInput.value = fileData.id;
 
-            try {
-                const result = await uploadFilesViaAjax(files);
-                
-                if (result.files && result.files.length > 0) {
-                    // Xóa các preview và ID cũ trước khi thêm mới để TRÁNH TRÙNG LẶP
-                    previewContainer.innerHTML = '';
-                    imageIdsContainer.innerHTML = '';
-                    
-                    // Tạo preview và input hidden cho TẤT CẢ ảnh vừa upload
-                    result.files.forEach(fileData => {
-                        // Tạo thẻ input hidden cho gallery. TẤT CẢ ảnh đều được thêm vào đây.
-                        const galleryInput = document.createElement('input');
-                        galleryInput.type = 'hidden';
-                        galleryInput.name = 'gallery_images[]'; // Gán name là gallery
-                        galleryInput.className = 'simple-image-id'; // Dùng class để định danh
-                        galleryInput.dataset.id = fileData.id;
-                        galleryInput.value = fileData.id;
-                        imageIdsContainer.appendChild(galleryInput);
+            // SỬA ĐỔI: Sử dụng idsContainer được truyền vào cho cả hai loại sản phẩm
+            // để đảm bảo tính nhất quán.
+            if (type === 'simple') {
+                galleryInput.name = 'gallery_images[]';
+                galleryInput.className = 'simple-image-id';
+            } else {
+                galleryInput.name = `variants[${variantIndex}][image_ids][]`;
+                galleryInput.className = 'variant-image-id';
+            }
+            idsContainer.appendChild(galleryInput);
 
-                        // Tạo ảnh preview
-                        const previewDiv = document.createElement('div');
-                        previewDiv.className = 'image-preview variant-image-preview-item';
-                        previewDiv.dataset.id = fileData.id;
-                        previewDiv.innerHTML = `
-                            <img src="${fileData.url}" alt="${fileData.alt_text || 'Ảnh sản phẩm'}">
-                            <span class="remove-img-btn" onclick="removeSimpleProductImage(${fileData.id})"><i class="fas fa-times"></i></span>
-                            <button type="button" class="set-primary-btn" title="Đặt làm ảnh chính" onclick="setSimpleProductPrimaryImage(${fileData.id})">
-                                <i class="fas fa-star" style="color: white; pointer-events: none;"></i> Đặt chính
-                            </button>
-                        `;
-                        previewContainer.appendChild(previewDiv);
-                    });
 
-                    // Sau khi tạo xong, tự động đặt ảnh đầu tiên làm ảnh chính
-                    if (result.files.length > 0) {
-                        setSimpleProductPrimaryImage(result.files[0].id);
-                    }
-                    showMessageModal('Thành công', `${result.files.length} ảnh đã được tải lên!`, 'success');
-                }
-            } catch (error) {
-                showMessageModal('Lỗi Upload', error.message, 'error');
-            } finally {
-                previewContainer.querySelector('.upload-overlay')?.remove();
-                input.value = ''; // Reset input file
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'image-preview variant-image-preview-item';
+            previewDiv.dataset.id = fileData.id;
+
+            const removeFunction = type === 'simple' ? `removeSimpleProductImage(${fileData.id})` : `removeVariantImage(this, ${variantIndex}, ${fileData.id})`;
+            const setPrimaryFunction = type === 'simple' ? `setSimpleProductPrimaryImage(${fileData.id})` : `setVariantPrimaryImage(${variantIndex}, ${fileData.id})`;
+
+            previewDiv.innerHTML = `
+                <img src="${fileData.url}" alt="${fileData.alt_text || 'Ảnh sản phẩm'}">
+                <span class="remove-img-btn" onclick="${removeFunction}">×</span>
+                <button type="button" class="set-primary-btn" title="Đặt làm ảnh chính" onclick="${setPrimaryFunction}">
+                    <i class="fas fa-star" style="color: white; pointer-events: none;"></i> Đặt chính
+                </button>
+            `;
+            previewContainer.appendChild(previewDiv);
+        });
+
+        const allPreviews = previewContainer.querySelectorAll('.variant-image-preview-item');
+        if (!hasPrimaryAlready && allPreviews.length > 0) {
+             const firstImageId = parseInt(allPreviews[0].dataset.id);
+             if (type === 'simple') {
+                 setSimpleProductPrimaryImage(firstImageId);
+             } else {
+                 setVariantPrimaryImage(variantIndex, firstImageId);
+             }
+        }
+    }
+
+    /**
+     * --- Xử lý cho sản phẩm ĐƠN GIẢN ---
+     * Sửa đổi để dùng đúng idsContainer.
+     */
+    async function handleSimpleProductImages(event) {
+        const files = event.target.files;
+        if (!files.length) return;
+        try {
+            const result = await uploadFilesViaAjax(files);
+            if (result.files && result.files.length > 0) {
+                const previewContainer = document.getElementById('simple_product_image_preview_container');
+                // SỬA ĐỔI: Luôn sử dụng container chính `image_ids_container` để nhất quán với flow từ thư viện.
+                const idsContainer = document.getElementById('image_ids_container');
+                addImagesToProductForm(result.files, previewContainer, idsContainer, 'simple');
+                showMessageModal('Thành công', `${result.files.length} ảnh đã được tải lên!`, 'success');
+            }
+        } catch (error) {
+            showMessageModal('Lỗi Upload', error.message, 'error');
+        } finally {
+            event.target.value = '';
+        }
+    }
+
+    function setSimpleProductPrimaryImage(primaryImageId) {
+        const previewContainer = document.getElementById('simple_product_image_preview_container');
+        // Hàm này luôn tác động đến container chính, điều này là đúng.
+        const imageIdsContainer = document.getElementById('image_ids_container');
+        if (!previewContainer || !imageIdsContainer) return;
+
+        previewContainer.querySelectorAll('.variant-image-preview-item').forEach(preview => {
+            preview.classList.toggle('is-primary', parseInt(preview.dataset.id) === primaryImageId);
+        });
+
+        let oldCoverInput = imageIdsContainer.querySelector('input[name="cover_image_id"]');
+        if (oldCoverInput) oldCoverInput.remove();
+
+        const newCoverInput = document.createElement('input');
+        newCoverInput.type = 'hidden';
+        newCoverInput.name = 'cover_image_id';
+        newCoverInput.value = primaryImageId;
+        imageIdsContainer.appendChild(newCoverInput);
+    }
+
+    function removeSimpleProductImage(imageIdToRemove) {
+        const previewContainer = document.getElementById('simple_product_image_preview_container');
+        const imageIdsContainer = document.getElementById('image_ids_container');
+        const previewToRemove = previewContainer.querySelector(`.variant-image-preview-item[data-id="${imageIdToRemove}"]`);
+        // Sửa đổi để đảm bảo xóa đúng input gallery
+        const galleryInputToRemove = imageIdsContainer.querySelector(`input.simple-image-id[value="${imageIdToRemove}"]`);
+        const coverInput = imageIdsContainer.querySelector('input[name="cover_image_id"]');
+
+        if (!previewToRemove) return;
+        const wasPrimary = coverInput && (parseInt(coverInput.value) === imageIdToRemove);
+
+        previewToRemove.remove();
+        if (galleryInputToRemove) galleryInputToRemove.remove();
+
+        if (wasPrimary) {
+            if (coverInput) coverInput.remove();
+            const remainingPreviews = previewContainer.querySelectorAll('.variant-image-preview-item');
+            if (remainingPreviews.length > 0) {
+                const newPrimaryId = parseInt(remainingPreviews[0].dataset.id);
+                setSimpleProductPrimaryImage(newPrimaryId);
             }
         }
+    }
 
-        /**
-         * Đặt một ảnh làm ảnh chính cho sản phẩm đơn giản.
-         * LOGIC MỚI: Xóa input `cover_image_id` cũ và tạo một input mới với ID được chọn.
-         * @param {number} primaryImageId - ID của ảnh được chọn.
-         */
-        function setSimpleProductPrimaryImage(primaryImageId) {
-            const previewContainer = document.getElementById('simple_product_image_preview_container');
-            const imageIdsContainer = document.getElementById('image_ids_container');
-            if (!previewContainer || !imageIdsContainer) return;
-
-            // 1. Cập nhật giao diện (thêm viền xanh cho ảnh được chọn)
-            previewContainer.querySelectorAll('.variant-image-preview-item').forEach(preview => {
-                preview.classList.toggle('is-primary', parseInt(preview.dataset.id) === primaryImageId);
-            });
-
-            // 2. Cập nhật input `cover_image_id` (giống logic của biến thể)
-            // Xóa input cũ đi để tránh gửi nhiều ID ảnh chính
-            const oldCoverInput = imageIdsContainer.querySelector('input[name="cover_image_id"]');
-            if (oldCoverInput) {
-                oldCoverInput.remove();
+    // --- Xử lý cho sản phẩm BIẾN THỂ ---
+    async function handleVariantImages(event, variantIndex) {
+        const files = event.target.files;
+        if (!files.length) return;
+        try {
+            const result = await uploadFilesViaAjax(files);
+            if (result.files && result.files.length > 0) {
+                const previewContainer = document.getElementById(`variant_${variantIndex}_image_preview_container`);
+                const idsContainer = document.getElementById(`variant_${variantIndex}_image_ids_container`);
+                addImagesToProductForm(result.files, previewContainer, idsContainer, 'variant', variantIndex);
+                showMessageModal('Thành công', `${result.files.length} ảnh đã được tải lên!`, 'success');
             }
-
-            // Tạo và thêm input mới cho ảnh chính
-            const newCoverInput = document.createElement('input');
-            newCoverInput.type = 'hidden';
-            newCoverInput.name = 'cover_image_id';
-            newCoverInput.value = primaryImageId;
-            imageIdsContainer.appendChild(newCoverInput);
+        } catch (error) {
+            showMessageModal('Lỗi Upload', error.message, 'error');
+        } finally {
+            event.target.value = '';
         }
+    }
 
-        /**
-         * Xóa một ảnh của sản phẩm đơn giản và cập nhật lại trạng thái.
-         * LOGIC MỚI: Xóa cả input trong gallery và kiểm tra/cập nhật lại input `cover_image_id`.
-         * @param {number} imageIdToRemove - ID của ảnh cần xóa.
-         */
-        function removeSimpleProductImage(imageIdToRemove) {
-            const previewContainer = document.getElementById('simple_product_image_preview_container');
-            const imageIdsContainer = document.getElementById('image_ids_container');
+    function setVariantPrimaryImage(variantIndex, primaryImageId) {
+        const previewContainer = document.getElementById(`variant_${variantIndex}_image_preview_container`);
+        const idsContainer = document.getElementById(`variant_${variantIndex}_image_ids_container`);
+        if (!previewContainer || !idsContainer) return;
 
-            const previewToRemove = previewContainer.querySelector(`.variant-image-preview-item[data-id="${imageIdToRemove}"]`);
-            // Tìm đúng input trong gallery để xóa
-            const galleryInputToRemove = imageIdsContainer.querySelector(`input.simple-image-id[data-id="${imageIdToRemove}"]`);
-            const coverInput = imageIdsContainer.querySelector('input[name="cover_image_id"]');
+        previewContainer.querySelectorAll('.variant-image-preview-item').forEach(preview => {
+            preview.classList.toggle('is-primary', parseInt(preview.dataset.id) === primaryImageId);
+        });
 
-            if (!previewToRemove) return; // Không tìm thấy ảnh để xóa
+        let oldPrimaryInput = idsContainer.querySelector(`input[name="variants[${variantIndex}][primary_image_id]"]`);
+        if (oldPrimaryInput) oldPrimaryInput.remove();
 
-            const wasPrimary = coverInput && (parseInt(coverInput.value) === imageIdToRemove);
+        const primaryInput = document.createElement('input');
+        primaryInput.type = 'hidden';
+        primaryInput.name = `variants[${variantIndex}][primary_image_id]`;
+        primaryInput.value = primaryImageId;
+        idsContainer.appendChild(primaryInput);
+    }
 
-            // Xóa preview và input trong gallery
-            previewToRemove.remove();
-            if (galleryInputToRemove) {
-                galleryInputToRemove.remove();
-            }
+    function removeVariantImage(buttonElement, variantIndex, imageIdToRemove) {
+        const idsContainer = document.getElementById(`variant_${variantIndex}_image_ids_container`);
+        const previewItem = buttonElement.closest('.variant-image-preview-item');
 
-            // Nếu ảnh bị xóa là ảnh chính
-            if (wasPrimary) {
-                // Xóa input cover_image_id
-                if (coverInput) coverInput.remove();
-                
-                // Và nếu vẫn còn ảnh khác, chọn ảnh đầu tiên còn lại làm ảnh chính mới
-                const remainingPreviews = previewContainer.querySelectorAll('.variant-image-preview-item');
-                if (remainingPreviews.length > 0) {
-                    const newPrimaryId = parseInt(remainingPreviews[0].dataset.id);
-                    setSimpleProductPrimaryImage(newPrimaryId);
-                }
+        if (!previewItem || !idsContainer) return;
+
+        const inputToRemove = idsContainer.querySelector(`input.variant-image-id[value="${imageIdToRemove}"]`);
+        const primaryInput = idsContainer.querySelector(`input[name="variants[${variantIndex}][primary_image_id]"]`);
+        const wasPrimary = primaryInput && parseInt(primaryInput.value) === imageIdToRemove;
+
+        previewItem.remove();
+        if (inputToRemove) inputToRemove.remove();
+
+        if (wasPrimary) {
+            if (primaryInput) primaryInput.remove();
+            const remainingInputs = idsContainer.querySelectorAll('.variant-image-id');
+            if (remainingInputs.length > 0) {
+                const newPrimaryId = parseInt(remainingInputs[0].value);
+                setVariantPrimaryImage(variantIndex, newPrimaryId);
             }
         }
-        
-        // =========================================================================
-        // PHẦN CÒN LẠI CỦA SCRIPT (GIỮ NGUYÊN)
-        // =========================================================================
-        
-        // Global variables for the script
-        let selectedProductAttributes = [];
-        let variantIndexGlobal = 0;
-        let tagify;
+    }
 
-        // --- Data from PHP (Laravel Backend) ---
-        @php
-            $jsCategoriesData = [];
-            if (isset($categories) && $categories instanceof \Illuminate\Support\Collection) {
-                $jsCategoriesData = $categories
-                    ->map(function ($cat) {
-                        return ['id' => $cat->id, 'name' => $cat->name];
-                    })
-                    ->values()
-                    ->all();
-            }
 
-            $jsAttributesData = [];
-            if (isset($attributes) && $attributes instanceof \Illuminate\Support\Collection) {
-                $jsAttributesData = $attributes
-                    ->map(function ($attr) {
-                        $attributeValuesData = [];
-                        if (isset($attr->attributeValues) && ($attr->attributeValues instanceof \Illuminate\Support\Collection || is_array($attr->attributeValues))) {
-                            foreach ($attr->attributeValues as $val) {
-                                $attributeValuesData[] = [
-                                    'id' => $val->id ?? ($val['id'] ?? null),
-                                    'value' => $val->value ?? ($val['value'] ?? ''),
-                                    'meta' => $val->meta ?? ($val['meta'] ?? null),
-                                ];
-                            }
-                        }
-                        return [
-                            'id' => $attr->id,
-                            'name' => $attr->name ?? 'N/A',
-                            'slug' => $attr->slug ?? '',
-                            'attributeValues' => $attributeValuesData,
-                        ];
-                    })
-                    ->values()
-                    ->all();
-            }
-        @endphp
-        const categoriesFromPHP = @json($jsCategoriesData, JSON_UNESCAPED_UNICODE);
-        const allAttributesFromPHP = @json($jsAttributesData, JSON_UNESCAPED_UNICODE);
-        const oldVariantsData = @json(old('variants', []), JSON_UNESCAPED_UNICODE);
+    // =================================================================
+    // KHỐI LOGIC KHỞI TẠO VÀ XỬ LÝ FORM CHUNG (AI, Slug, Variants, etc.)
+    // =================================================================
+    const productNameInput = document.getElementById('name');
+    const slugInput = document.getElementById('slug');
+    const categorySelectElement = document.getElementById('category_id');
+    const shortDescriptionTextarea = document.getElementById('short_description');
+    const variantsContainer = document.getElementById('variantsContainer');
+    const addVariantButton = document.getElementById('addVariantButton');
 
-        // --- DOM Elements ---
-        const productNameInput = document.getElementById('name');
-        const categorySelectElement = document.getElementById('category_id');
-        const shortDescriptionTextarea = document.getElementById('short_description');
-        const metaTitleInput = document.getElementById('meta_title');
-        const metaDescriptionTextarea = document.getElementById('meta_description');
-        const metaKeywordsInput = document.getElementById('meta_keywords');
-        const tagsInput = document.getElementById('tags');
-        const slugInput = document.getElementById('slug');
-        const generateShortDescBtn = document.getElementById('generateShortDescAI');
-        const generateLongDescBtn = document.getElementById('generateLongDescAI');
-        const generateTagsBtn = document.getElementById('generateTagsAI');
-        const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
+    function showMessageModal(title, text, type = 'info') {
         const messageModal = document.getElementById('messageModal');
-        const messageModalIconContainer = document.getElementById('messageModalIconContainer');
         const messageModalTitle = document.getElementById('messageModalTitle');
         const messageModalText = document.getElementById('messageModalText');
-        const messageModalCloseButton = document.getElementById('messageModalCloseButton');
-        const productAttributesContainer = document.getElementById('productAttributesContainer');
-        const variantsContainer = document.getElementById('variantsContainer');
-        const addVariantButton = document.getElementById('addVariantButton');
+        const messageModalIconContainer = document.getElementById('messageModalIconContainer');
 
-        // --- Utility and AI Functions ---
-        function showMessageModal(title, text, type = 'info') {
-            if (!messageModal || !messageModalTitle || !messageModalText || !messageModalIconContainer) return;
-            messageModalTitle.textContent = title;
-            messageModalText.textContent = text;
-            messageModalIconContainer.innerHTML = '';
-            let iconSvg = '';
-            let iconColorClass = 'text-blue-600',
-                iconBgClass = 'bg-blue-100';
-            if (type === 'success') {
-                iconSvg = '<svg class="h-6 w-6 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
-                iconColorClass = 'text-green-600';
-                iconBgClass = 'bg-green-100';
-            } else if (type === 'error') {
-                iconSvg = '<svg class="h-6 w-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
-                iconColorClass = 'text-red-600';
-                iconBgClass = 'bg-red-100';
+        if (!messageModal || !messageModalTitle || !messageModalText || !messageModalIconContainer) return;
+        messageModalTitle.textContent = title;
+        messageModalText.textContent = text;
+        messageModalIconContainer.innerHTML = '';
+        let iconSvg = '';
+        let iconBgClass = 'bg-blue-100';
+
+        if (type === 'success') {
+            iconSvg = '<svg class="h-6 w-6 text-green-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+            iconBgClass = 'bg-green-100';
+        } else if (type === 'error') {
+            iconSvg = '<svg class="h-6 w-6 text-red-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+            iconBgClass = 'bg-red-100';
+        } else {
+            iconSvg = '<svg class="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+        }
+        messageModalIconContainer.className = `mx-auto flex items-center justify-center h-12 w-12 rounded-full ${iconBgClass}`;
+        messageModalIconContainer.innerHTML = iconSvg;
+        messageModal.classList.remove('hidden');
+    }
+
+    function toggleButtonLoading(button, isLoading) {
+        if (!button) return;
+        const textSpan = button.querySelector('.button-text');
+        const spinnerSpan = button.querySelector('.loading-spinner');
+        if (textSpan && spinnerSpan) {
+            textSpan.classList.toggle('hidden', isLoading);
+            spinnerSpan.classList.toggle('hidden', !isLoading);
+        }
+        button.disabled = isLoading;
+    }
+
+    async function callGeminiAPI(prompt, isStructured = false, schema = null) {
+        const backendApiUrl = "{{ route('admin.products.ai.generate') }}";
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        let payload = { prompt, isStructured, schema };
+
+        try {
+            const response = await fetch(backendApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                const errorData = await response.json();
+                const errorMessage = errorData.details?.error?.message || errorData.error || `Request failed with status ${response.status}`;
+                throw new Error(errorMessage);
+            }
+            const result = await response.json();
+            if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
+                const responseText = result.candidates[0].content.parts[0].text;
+                return isStructured ? JSON.parse(responseText) : responseText;
             } else {
-                iconSvg = '<svg class="h-6 w-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>';
+                 if (result.promptFeedback && result.promptFeedback.blockReason) {
+                     throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
+                 }
+                throw new Error("Không nhận được nội dung hợp lệ từ AI.");
             }
-            messageModalIconContainer.className = `mx-auto flex items-center justify-center h-12 w-12 rounded-full ${iconBgClass}`;
-            messageModalIconContainer.innerHTML = iconSvg;
-            messageModal.classList.remove('hidden');
+        } catch (error) {
+            console.error("Error calling backend for Gemini API:", error);
+            showMessageModal("Lỗi Hệ Thống", `Không thể kết nối đến máy chủ AI: ${error.message}`, "error");
+            return null;
+        }
+    }
+
+    function getProductContext() {
+        const productName = productNameInput ? productNameInput.value.trim() : "";
+        const categoryName = categorySelectElement ? (categorySelectElement.options[categorySelectElement.selectedIndex]?.text || "") : "";
+        if (!productName) {
+            showMessageModal("Thiếu thông tin", "Vui lòng nhập tên sản phẩm trước khi sử dụng tính năng AI.", "error");
+            return null;
+        }
+        return `Sản phẩm: ${productName}, thuộc danh mục: ${categoryName}. Tập trung vào các sản phẩm của Apple.`;
+    }
+
+    function slugify(text) {
+        if (!text) return '';
+        return text.toString().toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd')
+            .replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+    }
+
+    function toggleProductTypeFields() {
+        const typeRadio = document.querySelector('input[name="type"]:checked');
+        if (!typeRadio) return;
+        const type = typeRadio.value;
+        const simpleFields = document.getElementById('simpleProductFields');
+        const variableFields = document.getElementById('variableProductFields');
+
+        if (simpleFields) simpleFields.style.display = (type === 'simple' ? 'block' : 'none');
+        if (variableFields) variableFields.style.display = (type === 'variable' ? 'block' : 'none');
+
+        if (type === 'simple' && variantsContainer) {
+            variantsContainer.innerHTML = '';
+            variantIndexGlobal = 0;
+            document.querySelectorAll('.product-attribute-checkbox').forEach(cb => cb.checked = false);
+            updateSelectedAttributesForVariants();
+        }
+    }
+
+    function updateSelectedAttributesForVariants() {
+        selectedProductAttributes = [];
+        document.querySelectorAll('.product-attribute-checkbox:checked').forEach(checkbox => {
+            const attrId = parseInt(checkbox.value);
+            if (Array.isArray(allAttributesFromPHP)) {
+                const attribute = allAttributesFromPHP.find(a => a && typeof a.id !== 'undefined' && a.id === attrId);
+                if (attribute) selectedProductAttributes.push(attribute);
+            }
+        });
+    }
+
+    function handleDefaultVariantChange(event) {
+        document.querySelectorAll('.variant-default-radio').forEach(radio => {
+            const card = radio.closest('.variant-card');
+            if (card) {
+                const hiddenInput = card.querySelector('.is-default-hidden-input');
+                if (hiddenInput) hiddenInput.value = (radio === event.target && radio.checked) ? "true" : "false";
+            }
+        });
+    }
+
+    function updateDefaultVariantRadioAndHiddenFields() {
+        const defaultRadios = document.querySelectorAll('.variant-default-radio');
+        let oneIsChecked = false;
+        defaultRadios.forEach(radio => {
+            if (radio.checked) oneIsChecked = true;
+        });
+        if (!oneIsChecked && defaultRadios.length > 0) {
+            defaultRadios[0].checked = true;
+        }
+        defaultRadios.forEach(radio => {
+            const card = radio.closest('.variant-card');
+            if (card) {
+                const hiddenInput = card.querySelector('.is-default-hidden-input');
+                if (hiddenInput) hiddenInput.value = radio.checked ? "true" : "false";
+            }
+        });
+    }
+
+
+    // =================================================================
+    // PHẦN DOMContentLoaded: KHỞI TẠO CÁC THÀNH PHẦN
+    // =================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // --- KHỞI TẠO CÁC THÀNH PHẦN CHUNG ---
+        const messageModalCloseButton = document.getElementById('messageModalCloseButton');
+        const messageModal = document.getElementById('messageModal');
+        if (messageModalCloseButton && messageModal) {
+            messageModalCloseButton.addEventListener('click', () => messageModal.classList.add('hidden'));
+            messageModal.addEventListener('click', (event) => { if (event.target === messageModal) messageModal.classList.add('hidden'); });
         }
 
-        function toggleButtonLoading(button, isLoading) {
-            if (!button) return;
-            const textSpan = button.querySelector('.button-text');
-            const spinnerSpan = button.querySelector('.loading-spinner');
-            if (textSpan && spinnerSpan) {
-                textSpan.classList.toggle('hidden', isLoading);
-                spinnerSpan.classList.toggle('hidden', !isLoading);
-            }
-            button.disabled = isLoading;
-        }
+        tinymce.init({
+            selector: 'textarea#description',
+            plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
+            menubar: 'file edit view insert format tools table help',
+            toolbar: 'undo redo | blocks | bold italic underline strikethrough | fontfamily fontsize | align numlist bullist | link image media | table | lineheight | strikethrough superscript subscript | accordions | removeformat',
+            height: 500,
+            skin: 'oxide',
+            content_css: 'default',
+            content_style: "body { font-family: 'Inter', sans-serif; font-size: 16px; }",
+            autosave_ask_before_unload: true,
+            autosave_interval: '30s',
+            autosave_prefix: '{path}{query}-{id}-',
+            autosave_restore_when_empty: false,
+            autosave_retention: '2m',
+            image_advtab: true,
+            importcss_append: true,
+            setup: function(editor) { editor.on('change', function() { editor.save(); }); }
+        });
 
-        async function callGeminiAPI(prompt, isStructured = false, schema = null) {
-            const backendApiUrl = "{{ route('admin.products.ai.generate') }}"; 
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-
-            let payload = {
-                prompt: prompt,
-                isStructured: isStructured,
-                schema: schema
-            };
-
-            try {
-                const response = await fetch(backendApiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                        'Accept': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error("Backend API Error:", errorData);
-                    const errorMessage = errorData.details?.error?.message || errorData.error || `Request failed with status ${response.status}`;
-                    throw new Error(errorMessage);
-                }
-
-                const result = await response.json();
-
-                if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
-                    const responseText = result.candidates[0].content.parts[0].text;
-                    return isStructured ? JSON.parse(responseText) : responseText;
-                } else {
-                    if (result.promptFeedback && result.promptFeedback.blockReason) {
-                        throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
-                    }
-                    console.error("Unexpected API response structure from backend:", result);
-                    throw new Error("Không nhận được nội dung hợp lệ từ AI.");
-                }
-            } catch (error) {
-                console.error("Error calling backend for Gemini API:", error);
-                showMessageModal("Lỗi Hệ Thống", `Không thể kết nối đến máy chủ AI: ${error.message}`, "error");
-                return null;
-            }
-        }
-
-        function getProductContext() {
-            const productName = productNameInput ? productNameInput.value.trim() : "";
-            const categoryName = categorySelectElement ? (categorySelectElement.options[categorySelectElement.selectedIndex]
-                ?.text || "") : "";
-            let attributesString = "";
-            const productTypeRadio = document.querySelector('input[name="type"]:checked');
-            if (productTypeRadio && productTypeRadio.value === 'variable') {
-                const firstVariantCard = variantsContainer ? variantsContainer.querySelector('.variant-card') : null;
-                if (firstVariantCard) {
-                    const attributeSelects = firstVariantCard.querySelectorAll(
-                        'select[name$="[attributes]"]');
-                    let tempAttrs = [];
-                    attributeSelects.forEach(select => {
-                        const attrNameLabel = select.closest('.input-group')?.querySelector('label');
-                        if (attrNameLabel) {
-                            const attrName = attrNameLabel.textContent.replace('*', '').trim();
-                            const attrValue = select.options[select.selectedIndex]?.text;
-                            if (attrValue && attrValue !== `Chọn ${attrName}`) {
-                                tempAttrs.push(`${attrName}: ${attrValue}`);
-                            }
-                        }
-                    });
-                    if (tempAttrs.length > 0) attributesString = ` với các thuộc tính nổi bật: ${tempAttrs.join(', ')}`;
-                }
-            }
-            if (!productName) {
-                showMessageModal("Thiếu thông tin", "Vui lòng nhập tên sản phẩm trước khi sử dụng tính năng AI.", "error");
-                return null;
-            }
-            return `Sản phẩm: ${productName}, thuộc danh mục: ${categoryName}${attributesString}. Tập trung vào các sản phẩm của Apple.`;
-        }
-
-        // AI Event Listeners
-        const seoSchema = {
-            type: "OBJECT",
-            properties: {
-                meta_title: { type: "STRING" },
-                meta_description: { type: "STRING" },
-                meta_keywords: { type: "STRING" }
-            },
-            required: ["meta_title", "meta_description", "meta_keywords"]
-        };
-
-        if (generateShortDescBtn) {
-            generateShortDescBtn.addEventListener('click', async () => {
-                const context = getProductContext();
-                if (!context || !shortDescriptionTextarea) return;
-                toggleButtonLoading(generateShortDescBtn, true);
-                const prompt =
-                    `Viết một mô tả ngắn (khoảng 1-2 câu, tối đa 50 từ) thật hấp dẫn cho sản phẩm Apple sau: ${context}. Tập trung vào điểm nổi bật nhất, giọng văn chuyên nghiệp.`;
-                const generatedText = await callGeminiAPI(prompt);
-                if (generatedText) {
-                    shortDescriptionTextarea.value = generatedText;
-                    showMessageModal("Hoàn tất", "Đã tạo mô tả ngắn bằng AI!", "success");
-                }
-                toggleButtonLoading(generateShortDescBtn, false);
+        const tagsInput = document.getElementById('tags');
+        if (tagsInput) {
+            tagify = new Tagify(tagsInput, {
+                duplicates: false,
+                dropdown: { maxItems: 20, classname: "tags-look", enabled: 0, closeOnSelect: false }
             });
         }
 
+        // --- GẮN SỰ KIỆN CHO CÁC NÚT AI ---
+        // **BẮT ĐẦU PHẦN SỬA ĐỔI QUAN TRỌNG**
+        const generateShortDescBtn = document.getElementById('generateShortDescAI');
+        if (generateShortDescBtn) {
+             generateShortDescBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+
+                toggleButtonLoading(generateShortDescBtn, true);
+                try {
+                    const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một mô tả ngắn gọn (khoảng 2-3 câu) cho sản phẩm với giọng văn bán hàng chuyên nghiệp.
+                    Yêu cầu:
+                    - Tập trung vào các điểm nổi bật chính, thu hút khách hàng.
+                    - KHÔNG sử dụng Markdown (như dấu ** hay #).
+                    - Chỉ trả về duy nhất phần nội dung mô tả, không có lời dẫn như "Đây là mô tả:" hay tương tự.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result) {
+                        shortDescriptionTextarea.value = result.replace(/[\*#`]/g, '').trim();
+                    }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`, 'error');
+                } finally {
+                    toggleButtonLoading(generateShortDescBtn, false);
+                }
+            });
+        }
+
+        const generateLongDescBtn = document.getElementById('generateLongDescAI');
         if (generateLongDescBtn) {
             generateLongDescBtn.addEventListener('click', async () => {
                 const context = getProductContext();
-                if (!context || typeof tinymce === 'undefined' || !tinymce.get('description')) return;
-                const shortDesc = shortDescriptionTextarea ? shortDescriptionTextarea.value.trim() : '';
+                if (!context) return;
                 toggleButtonLoading(generateLongDescBtn, true);
-                let prompt =
-                    `Viết một mô tả chi tiết (khoảng 3-5 đoạn văn, có thể dùng markdown cho tiêu đề và danh sách) cho sản phẩm Apple sau: ${context}.`;
-                prompt += shortDesc ? `\nCó thể dựa trên mô tả ngắn sau: "${shortDesc}".` : '';
-                prompt +=
-                    `\nHãy viết bằng giọng văn chuyên nghiệp, phù hợp để đăng bán trên website thương mại điện tử. Tránh các từ ngữ quá quảng cáo, tập trung vào thông tin hữu ích. Sử dụng thẻ <h3> cho tiêu đề phụ và <ul><li> cho danh sách nếu cần.`;
-                const generatedText = await callGeminiAPI(prompt);
-                if (generatedText) {
-                    tinymce.get('description').setContent(generatedText);
-                    showMessageModal("Hoàn tất", "Đã tạo mô tả chi tiết bằng AI!", "success");
+                try {
+                    const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm.
+                    Yêu cầu:
+                    - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng.
+                    - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp).
+                    - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo.
+                    - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result && typeof tinymce !== 'undefined' && tinymce.get('description')) {
+                        tinymce.get('description').setContent(result);
+                    }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo mô tả chi tiết: ${error.message}`, 'error');
+                } finally {
+                    toggleButtonLoading(generateLongDescBtn, false);
                 }
-                toggleButtonLoading(generateLongDescBtn, false);
             });
         }
 
+        const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
         if (generateAllSeoBtn) {
             generateAllSeoBtn.addEventListener('click', async () => {
                 const context = getProductContext();
-                if (!context || !shortDescriptionTextarea || !metaTitleInput || !
-                    metaDescriptionTextarea || !metaKeywordsInput) return;
-                const productDescription = (typeof tinymce !== 'undefined' && tinymce.get('description')) ? tinymce.get('description').getContent({
-                    format: 'text'
-                }) : (shortDescriptionTextarea.value.trim());
-                if (!productDescription) {
-                    showMessageModal("Thiếu thông tin", "Vui lòng có mô tả sản phẩm trước khi tạo SEO.",
-                        "error");
-                    return;
-                }
+                if (!context) return;
                 toggleButtonLoading(generateAllSeoBtn, true);
-                const prompt =
-                    `Dựa trên thông tin sản phẩm Apple: "${context}" và mô tả: "${productDescription}", hãy tạo các thẻ meta SEO (meta title, meta description, meta keywords) cho một trang web bán sản phẩm này.`;
-                const seoData = await callGeminiAPI(prompt, true, seoSchema);
-                if (seoData) {
-                    metaTitleInput.value = seoData.meta_title || '';
-                    metaDescriptionTextarea.value = seoData.meta_description || '';
-                    metaKeywordsInput.value = seoData.meta_keywords || '';
-                    showMessageModal("Hoàn tất", "Đã tạo thông tin SEO bằng AI!", "success");
+                try {
+                     const schema = {
+                        type: "OBJECT",
+                        properties: {
+                            meta_title: { type: "STRING", description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính." },
+                            meta_description: { type: "STRING", description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động." },
+                            meta_keywords: { type: "STRING", description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy." }
+                        },
+                        required: ["meta_title", "meta_description", "meta_keywords"]
+                    };
+                    const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO.
+                    Yêu cầu:
+                    - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu.
+                    - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay").
+                    - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan.
+                    - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
+
+                    const result = await callGeminiAPI(prompt, true, schema);
+                    if (result) {
+                        document.getElementById('meta_title').value = result.meta_title || '';
+                        document.getElementById('meta_description').value = result.meta_description || '';
+                        document.getElementById('meta_keywords').value = result.meta_keywords || '';
+                    }
+                } catch (error) {
+                     showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`, 'error');
+                } finally {
+                    toggleButtonLoading(generateAllSeoBtn, false);
                 }
-                toggleButtonLoading(generateAllSeoBtn, false);
             });
         }
 
+        const generateTagsBtn = document.getElementById('generateTagsAI');
         if (generateTagsBtn) {
             generateTagsBtn.addEventListener('click', async () => {
                 const context = getProductContext();
-                if (!context || !tagify) return;
+                if (!context) return;
                 toggleButtonLoading(generateTagsBtn, true);
-                const prompt =
-                    `Gợi ý 5-7 thẻ (tags) phù hợp nhất cho sản phẩm Apple sau: ${context}. Các thẻ nên ngắn gọn, tập trung vào tên sản phẩm, dòng sản phẩm, tính năng chính hoặc đối tượng người dùng. Trả về dưới dạng danh sách các từ khóa cách nhau bởi dấu phẩy.`;
-                const generatedTags = await callGeminiAPI(prompt);
-                if (generatedTags) {
-                    tagify.addTags(generatedTags);
-                    showMessageModal("Hoàn tất", "Đã gợi ý thẻ sản phẩm bằng AI!", "success");
-                }
-                toggleButtonLoading(generateTagsBtn, false);
-            });
-        }
-
-        // --- Product Type and Variant Logic ---
-        function updateSelectedAttributesForVariants() {
-            selectedProductAttributes = [];
-            document.querySelectorAll('.product-attribute-checkbox:checked').forEach(checkbox => {
-                const attrId = parseInt(checkbox.value);
-                if (Array.isArray(allAttributesFromPHP)) {
-                    const attribute = allAttributesFromPHP.find(a => a && typeof a.id !== 'undefined' && a.id ===
-                        attrId);
-                    if (attribute) selectedProductAttributes.push(attribute);
+                try {
+                    const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm.
+                    Yêu cầu:
+                    - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật.
+                    - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy.
+                    - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro
+                    - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result && tagify) {
+                        // Làm sạch kết quả để đảm bảo chỉ có chuỗi thẻ
+                        const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g, '').trim();
+                        tagify.loadOriginalValues(cleanedResult);
+                    }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo thẻ: ${error.message}`, 'error');
+                } finally {
+                    toggleButtonLoading(generateTagsBtn, false);
                 }
             });
         }
+        // **KẾT THÚC PHẦN SỬA ĐỔI QUAN TRỌNG**
 
-        function toggleProductTypeFields() {
-            const typeRadio = document.querySelector('input[name="type"]:checked');
-            if (!typeRadio) return;
-            const type = typeRadio.value;
-            const simpleFields = document.getElementById('simpleProductFields');
-            const variableFields = document.getElementById('variableProductFields');
 
-            if (simpleFields) simpleFields.style.display = (type === 'simple' ? 'block' : 'none');
-            if (variableFields) variableFields.style.display = (type === 'variable' ? 'block' : 'none');
-
-            if (type === 'simple') {
-                if (variantsContainer) variantsContainer.innerHTML = '';
-                variantIndexGlobal = 0;
-                document.querySelectorAll('.product-attribute-checkbox').forEach(cb => cb.checked = false);
-                updateSelectedAttributesForVariants();
-            }
-        }
+        // --- LOGIC CHO BIẾN THỂ ---
+        const productAttributesContainer = document.getElementById('productAttributesContainer');
         if (productAttributesContainer && Array.isArray(allAttributesFromPHP)) {
-            allAttributesFromPHP.forEach(attr => {
-                if (!attr || typeof attr.id === 'undefined' || typeof attr.name === 'undefined') return;
-                const labelEl = document.createElement('label');
-                labelEl.className =
-                    'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = `attr_${attr.id}`;
-                checkbox.value = attr.id;
-                checkbox.dataset.attributeName = attr.name;
-                checkbox.className = 'product-attribute-checkbox form-check-input mr-2';
-                checkbox.onchange = updateSelectedAttributesForVariants;
-
-                if (Array.isArray(oldVariantsData) && oldVariantsData.length > 0) {
-                    const usedInOld = oldVariantsData.some(oldVar => oldVar.attributes && typeof oldVar
-                        .attributes === 'object' && oldVar.attributes[attr.id.toString()]);
-                    if (usedInOld) checkbox.checked = true;
-                }
-
-                const textNode = document.createTextNode(attr.name);
-                labelEl.appendChild(checkbox);
-                labelEl.appendChild(textNode);
-                productAttributesContainer.appendChild(labelEl);
-            });
-            updateSelectedAttributesForVariants();
+             allAttributesFromPHP.forEach(attr => {
+                 if (!attr || typeof attr.id === 'undefined' || typeof attr.name === 'undefined') return;
+                 const labelEl = document.createElement('label');
+                 labelEl.className = 'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
+                 const checkbox = document.createElement('input');
+                 checkbox.type = 'checkbox';
+                 checkbox.id = `attr_${attr.id}`;
+                 checkbox.value = attr.id;
+                 checkbox.className = 'product-attribute-checkbox form-check-input mr-2';
+                 checkbox.onchange = updateSelectedAttributesForVariants;
+                 labelEl.append(checkbox, attr.name);
+                 productAttributesContainer.appendChild(labelEl);
+             });
+             updateSelectedAttributesForVariants();
         }
+
         if (addVariantButton) {
             addVariantButton.addEventListener('click', () => {
                 const currentVariantIndex = variantIndexGlobal;
@@ -1482,365 +1307,131 @@
                     showMessageModal('Thông báo', 'Vui lòng chọn ít nhất một thuộc tính cho sản phẩm trước khi thêm biến thể.', 'info');
                     return;
                 }
-                
                 const variantCard = document.createElement('div');
                 variantCard.className = 'variant-card';
                 variantCard.dataset.variantIndex = currentVariantIndex;
-
-                let variantHeaderHTML =
-                    `<div class="variant-header"><div class="flex items-center"><h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4></div><button type="button" class="remove-variant-btn btn btn-danger btn-sm">Xóa</button></div>`;
-
+                let variantHeaderHTML = `<div class="variant-header"><div class="flex items-center"><h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4></div><button type="button" class="remove-variant-btn btn btn-danger btn-sm">Xóa</button></div>`;
                 let attributesHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4">';
                 selectedProductAttributes.forEach(attr => {
                     if (!attr || !Array.isArray(attr.attributeValues)) return;
-                    attributesHTML +=
-                        `<div class="input-group"><label for="variants_${currentVariantIndex}_attr_${attr.id}" class="text-sm font-medium">${attr.name} <span class="required-star">*</span></label><div><select name="variants[${currentVariantIndex}][attributes][${attr.id}]" id="variants_${currentVariantIndex}_attr_${attr.id}" class="select-field text-sm" ><option value="">Chọn ${attr.name}</option>${attr.attributeValues.map(val => `<option value="${val.id}">${val.value}</option>`).join('')}</select></div></div>`;
+                    attributesHTML += `<div class="input-group"><label for="variants_${currentVariantIndex}_attr_${attr.id}" class="text-sm font-medium">${attr.name} <span class="required-star">*</span></label><div><select name="variants[${currentVariantIndex}][attributes][${attr.id}]" id="variants_${currentVariantIndex}_attr_${attr.id}" class="select-field text-sm" ><option value="">Chọn ${attr.name}</option>${attr.attributeValues.map(val => `<option value="${val.id}">${val.value}</option>`).join('')}</select></div></div>`;
                 });
                 attributesHTML += '</div>';
-
                 let variantFieldsHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" id="variants_${currentVariantIndex}_sku" class="input-field text-sm" ></div></div>
-                <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" id="variants_${currentVariantIndex}_price" class="input-field text-sm" step="1000" min="0" ></div></div>
-                <div class="input-group"><label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM Biến Thể (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][sale_price]" id="variants_${currentVariantIndex}_sale_price" class="input-field text-sm" step="1000" min="0"></div></div>
-                <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" id="variants_${currentVariantIndex}_stock_quantity" class="input-field text-sm" min="0" ></div></div>
-                
-                <div class="input-group md:col-span-2">
-                    <label for="variant_${currentVariantIndex}_image_input" class="text-sm font-medium">Ảnh Biến Thể (Chọn để upload)</label>
-                    <input type="file" id="variant_${currentVariantIndex}_image_input" class="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
-                    
-                    <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
-                    
-                    <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
-                </div>
-            </div>
-            <div class="mt-4">
-                <label class="flex items-center text-sm cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors">
-                    <input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio">
-                    <input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input">
-                    Đặt làm biến thể mặc định
-                </label>
-            </div>
-        `;
-
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" ></div></div>
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM Biến Thể (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0"></div></div>
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" class="input-field text-sm" min="0" ></div></div>
+                            <div class="input-group md:col-span-2">
+                                <label class="text-sm font-medium">Ảnh Biến Thể</label>
+                                <div class="flex space-x-2 mb-3">
+                                    <label for="variant_${currentVariantIndex}_image_input" class="btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
+                                    <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
+                                    <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><i class="fas fa-photo-film mr-2"></i> Thêm từ thư viện</button>
+                                </div>
+                                <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
+                                <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio"><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input"> Đặt làm biến thể mặc định</label>
+                        </div>
+                `;
                 variantCard.innerHTML = variantHeaderHTML + attributesHTML + variantFieldsHTML;
                 if (variantsContainer) variantsContainer.appendChild(variantCard);
-
-                const removeBtn = variantCard.querySelector('.remove-variant-btn');
-                if (removeBtn) removeBtn.addEventListener('click', function() {
-                    this.closest('.variant-card').remove();
-                    updateDefaultVariantRadioAndHiddenFields();
-                });
-
-                const defaultRadioEl = variantCard.querySelector('.variant-default-radio');
-                if (defaultRadioEl) defaultRadioEl.addEventListener('change', handleDefaultVariantChange);
-
+                variantCard.querySelector('.remove-variant-btn').addEventListener('click', function() { this.closest('.variant-card').remove(); updateDefaultVariantRadioAndHiddenFields(); });
+                variantCard.querySelector('.variant-default-radio').addEventListener('change', handleDefaultVariantChange);
                 variantIndexGlobal++;
                 updateDefaultVariantRadioAndHiddenFields();
             });
         }
 
-        function handleDefaultVariantChange(event) {
-            document.querySelectorAll('.variant-default-radio').forEach(radio => {
-                const card = radio.closest('.variant-card');
-                if (card) {
-                    const hiddenInput = card.querySelector('.is-default-hidden-input');
-                    if (hiddenInput) hiddenInput.value = (radio === event.target && radio.checked) ? "true" : "false";
-                }
+
+        // --- GẮN SỰ KIỆN CHO CÁC NÚT "THÊM TỪ THƯ VIỆN" ---
+        const openLibraryBtnSimple = document.getElementById('open-library-btn-simple');
+        if (openLibraryBtnSimple) {
+            openLibraryBtnSimple.addEventListener('click', () => {
+                // SỬA ĐỔI: Luôn nhắm đến `image_ids_container` là container chứa ID
+                window.mediaLibraryTarget = {
+                    type: 'simple',
+                    previewContainer: document.getElementById('simple_product_image_preview_container'),
+                    idsContainer: document.getElementById('image_ids_container') // Sửa ở đây để nhất quán
+                };
+                if (window.openMediaLibrary) { window.openMediaLibrary(); }
+                else { alert('Lỗi: Không tìm thấy hàm thư viện media (window.openMediaLibrary).'); }
             });
         }
-
-        function updateDefaultVariantRadioAndHiddenFields() {
-            const defaultRadios = document.querySelectorAll('.variant-default-radio');
-            let oneIsChecked = false;
-            defaultRadios.forEach(radio => {
-                if (radio.checked) oneIsChecked = true;
-            });
-            if (!oneIsChecked && defaultRadios.length > 0) {
-                defaultRadios[0].checked = true;
-            }
-            defaultRadios.forEach(radio => {
-                const card = radio.closest('.variant-card');
-                if (card) {
-                    const hiddenInput = card.querySelector('.is-default-hidden-input');
-                    if (hiddenInput) hiddenInput.value = radio.checked ? "true" : "false";
-                }
-            });
-        }
-
-        if (productNameInput && slugInput) {
-            productNameInput.addEventListener('keyup', () => {
-                if (slugInput.placeholder === 'Tự động tạo nếu để trống' || slugInput.dataset.auto === "true") {
-                    slugInput.value = slugify(productNameInput.value);
-                }
-            });
-            slugInput.addEventListener('input', () => {
-                slugInput.dataset.auto = slugInput.value.trim() === "" ? "true" : "false";
-            });
-        }
-
-        function slugify(text) {
-            if (!text) return '';
-            return text.toString().toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd')
-                .replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
-        }
-
-        async function handleVariantImages(event, variantIndex) {
-            const input = event.target;
-            const files = input.files;
-            if (!files.length) return;
-
-            const previewContainer = document.getElementById(`variant_${variantIndex}_image_preview_container`);
-            const idsContainer = document.getElementById(`variant_${variantIndex}_image_ids_container`);
-
-            const overlay = document.createElement('div');
-            overlay.className = 'upload-overlay';
-            overlay.innerHTML = `<div class="upload-spinner"></div><p class="text-sm text-gray-600">Đang tải ảnh lên...</p>`;
-            previewContainer.appendChild(overlay);
-
-            try {
-                const result = await uploadFilesViaAjax(files);
-                
-                if (result.files && result.files.length > 0) {
-                    previewContainer.innerHTML = ''; 
-                    idsContainer.innerHTML = '';
-                    
-                    result.files.forEach(fileData => {
-                        const hiddenInput = document.createElement('input');
-                        hiddenInput.type = 'hidden';
-                        hiddenInput.className = 'variant-image-id';
-                        hiddenInput.name = `variants[${variantIndex}][image_ids][]`;
-                        hiddenInput.value = fileData.id;
-                        hiddenInput.dataset.id = fileData.id;
-                        idsContainer.appendChild(hiddenInput);
-
-                        const previewDiv = document.createElement('div');
-                        previewDiv.className = 'image-preview variant-image-preview-item';
-                        previewDiv.dataset.id = fileData.id;
-                        previewDiv.innerHTML = `
-                                <img src="${fileData.url}" alt="${fileData.alt_text || 'Ảnh biến thể'}">
-                                <span class="remove-img-btn" onclick="removeVariantImage(this, ${variantIndex}, ${fileData.id})"><i class="fas fa-times"></i></span>
-                                <button type="button" class="set-primary-btn" title="Đặt làm ảnh chính" onclick="setVariantPrimaryImage(${variantIndex}, ${fileData.id})">
-                                    <i class="fas fa-star"></i> Đặt chính
-                                </button>
-                        `;
-                        previewContainer.appendChild(previewDiv);
-                    });
-
-                    setVariantPrimaryImage(variantIndex, result.files[0].id);
-                    showMessageModal('Thành công', `${result.files.length} ảnh đã được tải lên!`, 'success');
-                }
-            } catch (error) {
-                showMessageModal('Lỗi Upload', error.message, 'error');
-                previewContainer.querySelector('.upload-overlay')?.remove();
-            } finally {
-                input.value = '';
-            }
-        }
-        
-        function setVariantPrimaryImage(variantIndex, primaryImageId) {
-            const previewContainer = document.getElementById(`variant_${variantIndex}_image_preview_container`);
-            const idsContainer = document.getElementById(`variant_${variantIndex}_image_ids_container`);
-
-            previewContainer.querySelectorAll('.variant-image-preview-item').forEach(preview => {
-                preview.classList.toggle('is-primary', parseInt(preview.dataset.id) === primaryImageId);
-            });
-            
-            let oldPrimaryInput = idsContainer.querySelector(`input[name="variants[${variantIndex}][primary_image_id]"]`);
-            if(oldPrimaryInput) oldPrimaryInput.remove();
-
-            const primaryInput = document.createElement('input');
-            primaryInput.type = 'hidden';
-            primaryInput.name = `variants[${variantIndex}][primary_image_id]`;
-            primaryInput.value = primaryImageId;
-            idsContainer.appendChild(primaryInput);
-        }
-        
-        function removeVariantImage(buttonElement, variantIndex, imageIdToRemove) {
-            const idsContainer = document.getElementById(`variant_${variantIndex}_image_ids_container`);
-            
-            buttonElement.closest('.variant-image-preview-item').remove();
-            
-            const inputToRemove = idsContainer.querySelector(`input.variant-image-id[data-id="${imageIdToRemove}"]`);
-            const primaryInput = idsContainer.querySelector(`input[name="variants[${variantIndex}][primary_image_id]"]`);
-            
-            let wasPrimary = false;
-            if(primaryInput && parseInt(primaryInput.value) === imageIdToRemove){
-                wasPrimary = true;
-                primaryInput.remove();
-            }
-
-            if (inputToRemove) {
-                inputToRemove.remove();
-            }
-            
-            if(wasPrimary) {
-                const remainingInputs = idsContainer.querySelectorAll('.variant-image-id');
-                if (remainingInputs.length > 0) {
-                    const newPrimaryId = parseInt(remainingInputs[0].dataset.id);
-                    setVariantPrimaryImage(variantIndex, newPrimaryId);
-                }
-            }
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-            if (messageModalCloseButton && messageModal) {
-                messageModalCloseButton.addEventListener('click', () => {
-                    messageModal.classList.add('hidden');
-                });
-                messageModal.addEventListener('click', (event) => {
-                    if (event.target === messageModal) {
-                        messageModal.classList.add('hidden');
-                    }
-                });
-            }
-
-            tinymce.init({
-                selector: 'textarea#description',
-                plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
-                menubar: 'file edit view insert format tools table help',
-                toolbar: 'undo redo | blocks | bold italic underline strikethrough | fontfamily fontsize | align numlist bullist | link image media | table | lineheight | strikethrough superscript subscript | accordions | removeformat',
-                height: 500,
-                skin: 'oxide',
-                content_css: 'default',
-                content_style: "body { font-family: 'Inter', sans-serif; font-size: 16px; }",
-                autosave_ask_before_unload: true,
-                autosave_interval: '30s',
-                autosave_prefix: '{path}{query}-{id}-',
-                autosave_restore_when_empty: false,
-                autosave_retention: '2m',
-                image_advtab: true,
-                importcss_append: true,
-                setup: function(editor) {
-                    editor.on('change', function() {
-                        editor.save();
-                    });
-                }
-            });
-
-            if (tagsInput) {
-                tagify = new Tagify(tagsInput, {
-                    duplicates: false,
-                    dropdown: {
-                        maxItems: 20,
-                        classname: "tags-look",
-                        enabled: 0,
-                        closeOnSelect: false
-                    }
-                });
-            }
-
-            toggleProductTypeFields();
-            if (slugInput) slugInput.dataset.auto = "true";
-            updateDefaultVariantRadioAndHiddenFields();
-
-            // Repopulate variants if old input exists
-            const productTypeRadio = document.querySelector('input[name="type"]:checked');
-            if (productTypeRadio && productTypeRadio.value === 'variable' && Array.isArray(oldVariantsData) &&
-                oldVariantsData.length > 0) {
-                let usedAttributeIdsInOld = new Set();
-                oldVariantsData.forEach(oldVar => {
-                    if (oldVar.attributes && typeof oldVar.attributes === 'object') {
-                        Object.keys(oldVar.attributes).forEach(attrId => usedAttributeIdsInOld.add(parseInt(
-                            attrId)));
-                    }
-                });
-                document.querySelectorAll('.product-attribute-checkbox').forEach(cb => {
-                    if (usedAttributeIdsInOld.has(parseInt(cb.value))) cb.checked = true;
-                });
-                updateSelectedAttributesForVariants();
-
-                oldVariantsData.forEach((oldVariant, loopIndex) => {
-                    if (addVariantButton) addVariantButton.click();
-                    const currentVariantIndex = variantIndexGlobal - 1;
-                    const currentVariantCard = variantsContainer ? variantsContainer.querySelector(
-                            `.variant-card[data-variant-index="${currentVariantIndex}"]`) :
-                        null;
-                    if (currentVariantCard) {
-                        const skuInput = currentVariantCard.querySelector(
-                            `input[name="variants[${currentVariantIndex}][sku]"]`);
-                        if (skuInput) skuInput.value = oldVariant.sku || '';
-                        const priceInput = currentVariantCard.querySelector(
-                            `input[name="variants[${currentVariantIndex}][price]"]`);
-                        if (priceInput) priceInput.value = oldVariant.price || '';
-                        const salePriceInput = currentVariantCard.querySelector(
-                            `input[name="variants[${currentVariantIndex}][sale_price]"]`);
-                        if (salePriceInput) salePriceInput.value = oldVariant.sale_price || '';
-                        const stockInput = currentVariantCard.querySelector(
-                            `input[name="variants[${currentVariantIndex}][stock_quantity]"]`);
-                        if (stockInput) stockInput.value = oldVariant.stock_quantity || '';
-
-                        if (oldVariant.attributes && typeof oldVariant.attributes === 'object') {
-                            Object.entries(oldVariant.attributes).forEach(([attrId, attrValueId]) => {
-                                const attrSelect = currentVariantCard.querySelector(
-                                    `select[name="variants[${currentVariantIndex}][attributes][${attrId}]"]`
-                                );
-                                if (attrSelect) attrSelect.value = attrValueId;
-                            });
-                        }
-                        const defaultRadio = currentVariantCard.querySelector(
-                            `input[name="variant_is_default_radio_group"][value="${currentVariantIndex}"]`);
-                        const defaultHidden = currentVariantCard.querySelector(
-                            `input[name="variants[${currentVariantIndex}][is_default]"]`);
-                        const isDefault = oldVariant.is_default === "true" || oldVariant.is_default ===
-                            true;
-                        if (defaultRadio) defaultRadio.checked = isDefault;
-                        if (defaultHidden) defaultHidden.value = isDefault ? "true" : "false";
-                    }
-                });
-                updateDefaultVariantRadioAndHiddenFields();
+        document.body.addEventListener('click', function(e) {
+            if (e.target && e.target.matches('.open-library-btn-variant')) {
+                const variantIndex = e.target.dataset.variantIndex;
+                window.mediaLibraryTarget = {
+                    type: 'variant',
+                    variantIndex: variantIndex,
+                    previewContainer: document.getElementById(`variant_${variantIndex}_image_preview_container`),
+                    idsContainer: document.getElementById(`variant_${variantIndex}_image_ids_container`)
+                };
+                if (window.openMediaLibrary) { window.openMediaLibrary(); }
+                else { alert('Lỗi: Không tìm thấy hàm thư viện media (window.openMediaLibrary).'); }
             }
         });
 
+        // --- KHỞI TẠO FORM VÀ VALIDATION ---
+        toggleProductTypeFields();
+        if (slugInput) {
+            slugInput.dataset.auto = "true";
+            productNameInput.addEventListener('keyup', () => { if (slugInput.dataset.auto === "true") { slugInput.value = slugify(productNameInput.value); } });
+            slugInput.addEventListener('input', () => { slugInput.dataset.auto = slugInput.value.trim() === "" ? "true" : "false"; });
+        }
+        updateDefaultVariantRadioAndHiddenFields();
+
+        // Xử lý old('variants')
+        const productTypeRadio = document.querySelector('input[name="type"]:checked');
+        if (productTypeRadio && productTypeRadio.value === 'variable' && Array.isArray(oldVariantsData) && oldVariantsData.length > 0) {
+            let usedAttributeIdsInOld = new Set();
+            oldVariantsData.forEach(oldVar => { if (oldVar.attributes && typeof oldVar.attributes === 'object') { Object.keys(oldVar.attributes).forEach(attrId => usedAttributeIdsInOld.add(parseInt(attrId))); } });
+            document.querySelectorAll('.product-attribute-checkbox').forEach(cb => { if (usedAttributeIdsInOld.has(parseInt(cb.value))) cb.checked = true; });
+            updateSelectedAttributesForVariants();
+
+            oldVariantsData.forEach((oldVariant, loopIndex) => {
+                if (addVariantButton) addVariantButton.click();
+                const currentVariantIndex = variantIndexGlobal - 1;
+                const currentVariantCard = variantsContainer ? variantsContainer.querySelector(`.variant-card[data-variant-index="${currentVariantIndex}"]`) : null;
+                if (currentVariantCard) {
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sku]"]`).value = oldVariant.sku || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][price]"]`).value = oldVariant.price || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sale_price]"]`).value = oldVariant.sale_price || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][stock_quantity]"]`).value = oldVariant.stock_quantity || '';
+                    if (oldVariant.attributes && typeof oldVariant.attributes === 'object') { Object.entries(oldVariant.attributes).forEach(([attrId, attrValueId]) => { const attrSelect = currentVariantCard.querySelector(`select[name="variants[${currentVariantIndex}][attributes][${attrId}]"]`); if (attrSelect) attrSelect.value = attrValueId; }); }
+                    const isDefault = oldVariant.is_default === "true" || oldVariant.is_default === true;
+                    currentVariantCard.querySelector(`input[name="variant_is_default_radio_group"][value="${currentVariantIndex}"]`).checked = isDefault;
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][is_default]"]`).value = isDefault ? "true" : "false";
+                }
+            });
+            updateDefaultVariantRadioAndHiddenFields();
+        }
+
+        // Xử lý submit form
         const form = document.getElementById('addProductForm');
         if (form) {
             form.addEventListener('submit', function(event) {
-                if (typeof tinymce !== 'undefined' && tinymce.get('description')) {
-                    tinymce.get('description').save();
-                }
-
-                const typeRadio = document.querySelector('input[name="type"]:checked');
-                if (!typeRadio) {
+                if (typeof tinymce !== 'undefined' && tinymce.get('description')) { tinymce.get('description').save(); }
+                const type = document.querySelector('input[name="type"]:checked')?.value;
+                if (!type) {
                     showMessageModal('Cảnh báo', 'Vui lòng chọn loại sản phẩm.', 'error');
-                    event.preventDefault();
-                    return;
+                    event.preventDefault(); return;
                 }
-                const type = typeRadio.value;
-
                 if (type === 'simple') {
-                    const imageIdInputs = document.querySelectorAll('#image_ids_container .simple-image-id');
-                    
-                    if (imageIdInputs.length === 0) {
-                        showMessageModal('Cảnh báo', 'Sản phẩm đơn giản phải có ít nhất một hình ảnh.', 'error');
-                        event.preventDefault();
-                        return;
-                    }
-
-                    const coverImageInput = document.querySelector('#image_ids_container input[name="cover_image_id"]');
-                    if (!coverImageInput) {
-                        showMessageModal('Cảnh báo', 'Vui lòng chọn một ảnh làm ảnh chính cho sản phẩm.', 'error');
-                        event.preventDefault();
-                        return;
-                    }
+                    if (document.querySelectorAll('#image_ids_container .simple-image-id').length === 0) { showMessageModal('Cảnh báo', 'Sản phẩm đơn giản phải có ít nhất một hình ảnh.', 'error'); event.preventDefault(); return; }
+                    if (!document.querySelector('#image_ids_container input[name="cover_image_id"]')) { showMessageModal('Cảnh báo', 'Vui lòng chọn một ảnh làm ảnh chính cho sản phẩm.', 'error'); event.preventDefault(); return; }
                 }
-
                 if (type === 'variable') {
-                    if (!variantsContainer || variantsContainer.children.length === 0) {
-                        showMessageModal('Cảnh báo',
-                            'Sản phẩm có biến thể phải có ít nhất một biến thể được thêm vào.', 'error');
-                        event.preventDefault();
-                        return;
-                    }
-                    let oneDefaultRadioSelected = false;
-                    document.querySelectorAll('.variant-default-radio').forEach(radio => {
-                        if (radio.checked) oneDefaultRadioSelected = true;
-                    });
-                    if (!oneDefaultRadioSelected && variantsContainer && variantsContainer.children.length > 0) {
-                        showMessageModal('Cảnh báo', 'Vui lòng chọn một biến thể làm mặc định.', 'error');
-                        event.preventDefault();
-                        return;
-                    }
+                    if (!variantsContainer || variantsContainer.children.length === 0) { showMessageModal('Cảnh báo', 'Sản phẩm có biến thể phải có ít nhất một biến thể được thêm vào.', 'error'); event.preventDefault(); return; }
+                    if (!document.querySelector('.variant-default-radio:checked') && variantsContainer.children.length > 0) { showMessageModal('Cảnh báo', 'Vui lòng chọn một biến thể làm mặc định.', 'error'); event.preventDefault(); return; }
                 }
             });
         }
-    </script>
+    });
+</script>
+
 @endpush

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Product extends Model
 {
@@ -88,5 +89,14 @@ public function allUploadedFiles()
             return asset('storage/' . $this->coverImage->path);
         }
         return 'https://via.placeholder.com/300?text=No+Cover'; // Placeholder
+    }
+    public function deletedBy()
+    {
+    return $this->belongsTo(\App\Models\User::class, 'deleted_by');
+    }
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(\App\Models\Comment::class, 'commentable');
+
     }
 }

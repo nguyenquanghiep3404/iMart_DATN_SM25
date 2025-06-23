@@ -8,16 +8,29 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+// use Illuminate\Support\Facades\Gate;
+use App\Models\Role;
+use App\Rules\ExclusiveRole;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Arr;
 
 class UserController extends Controller
 {
+    use AuthorizesRequests;
+    // Phân quyền
+    public function __construct()
+    {
+        // Tự động phân quyền cho tất cả các phương thức CRUD
+        $this->authorizeResource(User::class, 'user');
+    }
+
     /**
      * Hiển thị danh sách người dùng.
      */
     public function index(Request $request)
     {
         // 1. Bắt đầu một truy vấn Eloquent, chưa thực thi
-        $query = User::query();
+         $query = User::with('roles')->orderBy('created_at', 'desc');
 
         // 2. Kiểm tra xem có từ khóa tìm kiếm được gửi lên không
         if ($request->has('search') && $request->input('search') != '') {
@@ -42,7 +55,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('admin.users.create');
+        $roles = Role::all();
+        return view('admin.users.create', compact('roles'));
     }
 
     /**
@@ -56,22 +70,28 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed', // 'confirmed' yêu cầu có trường password_confirmation
             'phone_number' => 'nullable|string|max:255|unique:users,phone_number',
             // 'status' => ['sometimes', 'required', Rule::in(['active', 'inactive', 'banned'])],
+            'roles' => ['required', 'array', new ExclusiveRole], // <-- SỬ DỤNG RULE MỚI
+            'roles.*' => 'exists:roles,id'
 
         ]);
         $validatedData['status'] = 'inactive'; // Gán trạng thái chưa hoạt động từ đầu
+
 
 
         // Password đã được tự động băm bởi $casts['password'] = 'hashed' trong Model
         // Nếu không dùng $casts, bạn cần băm thủ công:
         // $validatedData['password'] = Hash::make($validatedData['password']);
 
-        $user = User::create($validatedData);
+         // TẠO USER VỚI DỮ LIỆU ĐÃ LOẠI BỎ 'roles'
+        $user = User::create(Arr::except($validatedData, ['roles']));
 
+        // Gán vai trò sau khi đã tạo user
+        $user->roles()->sync($request->input('roles'));
         // Gửi email xác thực
         // dd($validatedData);die;
         $user->sendEmailVerificationNotification();
 
-        return redirect()->route('admin.users.index')->with('success', 'Người dùng đã được thêm thành công!');
+        return redirect()->route('admin.users.index')->with('success', 'Thêm mới người dùng thành công!');
     }
 
     /**
@@ -87,7 +107,8 @@ class UserController extends Controller
      */
     public function edit(User $user) // Route Model Binding
     {
-        return view('admin.users.edit', compact('user'));
+        $roles = Role::all();
+        return view('admin.users.edit', compact('user' , 'roles'));
     }
 
     /**
@@ -101,7 +122,11 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed', // Cho phép thay đổi mật khẩu, nếu không nhập thì không đổi
             'phone_number' => 'nullable|string|max:255|unique:users,phone_number,' . $user->id,
             'status' => ['sometimes', 'required', Rule::in(['active', 'inactive', 'banned'])],
+            'roles' => ['required', 'array', new ExclusiveRole], // <-- SỬ DỤNG RULE MỚI
+            'roles.*' => 'exists:roles,id'
         ]);
+        $updateData = Arr::except($validatedData, ['roles', 'password', 'password_confirmation']);
+
 
         // Chỉ cập nhật password nếu nó được cung cấp
         if (!empty($validatedData['password'])) {
@@ -111,7 +136,11 @@ class UserController extends Controller
             unset($validatedData['password']); // Bỏ qua việc cập nhật password nếu không có giá trị mới
         }
 
-        $user->update($validatedData);
+        // Cập nhật thông tin user
+    $user->update($updateData);
+
+    // Cập nhật vai trò
+    $user->roles()->sync($request->input('roles', []));
 
         return redirect()->route('admin.users.index')->with('success', 'Người dùng đã được cập nhật!');
     }
@@ -121,7 +150,12 @@ class UserController extends Controller
      */
     public function destroy(User $user) // Route Model Binding
     {
+    //     if (Gate::denies('is-admin')) {
+    //     abort(403, 'BẠN KHÔNG CÓ QUYỀN THỰC HIỆN HÀNH ĐỘNG NÀY.');
+    // }
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'Người dùng đã bị xóa!');
     }
+
+
 }

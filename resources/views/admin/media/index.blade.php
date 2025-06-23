@@ -4,13 +4,12 @@
 
 @push('styles')
     <style>
-        /* --- LẤY TỪ FILE attributes/index.blade.php ĐỂ ĐỒNG BỘ GIAO DIỆN --- */
         .card { border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         .btn { border-radius: 0.5rem; transition: all 0.2s ease-in-out; font-weight: 500; }
         .btn-primary { background-color: #4f46e5; color: white; }
         .btn-primary:hover { background-color: #4338ca; }
-        .btn-secondary { background-color: #e5e7eb; color: #374151; border: 1px solid #d1d5db; }
-        .btn-secondary:hover { background-color: #d1d5db; }
+        .btn-secondary { background-color: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; }
+        .btn-secondary:hover { background-color: #cbd5e1; }
         .btn-danger { background-color: #ef4444; color: white; }
         .btn-danger:hover { background-color: #dc2626; }
         .btn-success { background-color: #10b981; color: white; }
@@ -60,6 +59,31 @@
             font-size: 0.75rem;
             line-height: 1.25rem;
         }
+        /* === UPDATED ACTIVE FILTER BUTTON COLOR === */
+        .btn-filter.active {
+            background-color: #3b82f6; /* Blue-500 */
+            color: white;
+            border-color: #3b82f6;
+        }
+        /* Style cho card thống kê */
+        .stat-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+        }
+        .stat-card .icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.5rem;
+        }
     </style>
 @endpush
 
@@ -81,24 +105,96 @@
             </nav>
         </div>
 
+        {{-- === KHU VỰC THỐNG KÊ === --}}
+        {{-- Ghi chú: Cần truyền biến $stats từ Controller, ví dụ: $stats = ['total' => 100, 'attached' => 80, 'unattached' => 20] --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Card Tổng số files -->
+            <div class="stat-card">
+                <div class="icon bg-blue-100 text-blue-600">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Tổng số Files</p>
+                    <p class="text-3xl font-bold text-gray-800">{{ $stats['total'] ?? 0 }}</p>
+                </div>
+            </div>
+            <!-- Card Files đã gán -->
+            <div class="stat-card">
+                <div class="icon bg-green-100 text-green-600">
+                    <i class="fas fa-link"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Đã gán</p>
+                    <p class="text-3xl font-bold text-gray-800">{{ $stats['attached'] ?? 0 }}</p>
+                </div>
+            </div>
+            <!-- Card Files chưa gán -->
+            <div class="stat-card">
+                <div class="icon bg-yellow-100 text-yellow-600">
+                    <i class="fas fa-unlink"></i>
+                </div>
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Chưa gán (mồ côi)</p>
+                    <p class="text-3xl font-bold text-gray-800">{{ $stats['unattached'] ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+
         <div class="card bg-white">
             <div class="bg-gray-50 p-5 border-b border-gray-200">
-                <div class="flex flex-col sm:flex-row justify-between items-center">
-                     <div class="w-full md:w-2/5 mb-4 sm:mb-0">
+                <form id="filter-form" action="{{ route('admin.media.index') }}" method="GET">
+                    <div class="flex flex-col md:flex-row md:items-end gap-4">
                         {{-- Form tìm kiếm --}}
-                        <form id="search-form" class="flex">
-                            <div class="relative flex-grow">
-                                <input type="text" id="search-input" class="form-input w-full pl-4 pr-12 py-2.5 text-sm" placeholder="Tìm kiếm theo tên file, alt text..." value="{{ request('search') }}">
+                        <div class="flex-grow">
+                            <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                            <div class="relative">
+                                <input type="text" name="search" id="search-input" class="form-input w-full pl-4 pr-12 py-2.5 text-sm" placeholder="Tên file, alt text..." value="{{ request('search') }}">
                                 <div class="absolute inset-y-0 right-0 flex items-center">
-                                    <button class="btn bg-indigo-50 hover:bg-indigo-100 text-indigo-600 py-2.5 px-4 border-0" type="submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                    <button class="btn bg-indigo-50 hover:bg-indigo-100 text-indigo-600 py-2.5 px-4 border-0 h-full" type="submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
                                         <i class="fas fa-search"></i>
                                     </button>
                                 </div>
                             </div>
-                        </form>
+                        </div>
+
+                        {{-- BỘ LỌC NGÀY --}}
+                        <div>
+                             <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                            <input type="date" name="start_date" id="start_date" class="form-input py-2.5 text-sm" value="{{ request('start_date') }}">
+                        </div>
+                        <div>
+                             <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                            <input type="date" name="end_date" id="end_date" class="form-input py-2.5 text-sm" value="{{ request('end_date') }}">
+                        </div>
+                        
+                        {{-- Nút lọc và xóa lọc --}}
+                        <div class="flex items-center gap-2">
+                             <button type="submit" class="btn btn-primary py-2.5 px-5 text-sm">Lọc</button>
+                             <a href="{{ route('admin.media.index') }}" class="btn btn-secondary py-2.5 px-5 text-sm">Xóa lọc</a>
+                        </div>
                     </div>
 
-                    <div class="w-full sm:w-auto flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                    {{-- Giữ lại các tham số khác khi submit --}}
+                    @if(request('filter'))
+                        <input type="hidden" name="filter" value="{{ request('filter') }}">
+                    @endif
+                </form>
+
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 pt-4 border-t">
+                    <div class="flex space-x-2">
+                        <a href="{{ route('admin.media.index', request()->except('filter')) }}" class="btn btn-filter btn-secondary py-2.5 px-5 text-sm {{ !request('filter') ? 'active' : '' }}">Tất cả</a>
+                        <a href="{{ route('admin.media.index', array_merge(request()->except('filter'), ['filter' => 'unattached'])) }}" class="btn btn-filter btn-secondary py-2.5 px-5 text-sm {{ request('filter') === 'unattached' ? 'active' : '' }}">Ảnh chưa gán</a>
+                    </div>
+                    
+                    <div class="w-full sm:w-auto flex flex-col sm:flex-row flex-wrap justify-end items-center sm:space-x-2 space-y-2 sm:space-y-0">
+                        @if(request('filter') === 'unattached')
+                        <button id="select-all-btn" class="btn btn-success py-2.5 px-5 inline-flex items-center text-sm justify-center">
+                            <i class="fas fa-check-double mr-2"></i>
+                            <span>Chọn tất cả</span>
+                        </button>
+                        @endif
+
                         <button id="delete-selected-btn" class="btn btn-danger py-2.5 px-5 inline-flex items-center text-sm justify-center hidden">
                             <i class="fas fa-trash-alt mr-2"></i>
                             <span>Xóa mục đã chọn</span>
@@ -121,7 +217,8 @@
             </div>
              @if ($files->hasPages())
             <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
-                {!! $files->links() !!}
+                {{-- Đảm bảo link phân trang giữ lại query string (search, filter, dates) --}}
+                {!! $files->appends(request()->query())->links() !!}
             </div>
             @endif
         </div>
@@ -171,10 +268,12 @@
                     </div>
                 </form>
             </div>
+            <!-- === UPDATED BUTTON LAYOUT === -->
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary py-2 px-4 text-sm flex-1 sm:flex-none" onclick="closeModal('detail-modal')">Đóng</button>
-                <button type="button" id="delete-btn" class="btn btn-danger py-2 px-4 text-sm flex-1 sm:flex-none">Xóa vĩnh viễn</button>
-                <button type="button" id="update-btn" class="btn btn-primary py-2 px-4 text-sm flex-1 sm:flex-none">Lưu thay đổi</button>
+                <div class="flex w-full gap-x-3">
+                    <button type="button" id="delete-btn" class="btn btn-danger w-full py-2 px-4 text-sm flex-1">Chuyển vào thùng rác</button>
+                    <button type="button" id="update-btn" class="btn btn-primary w-full py-2 px-4 text-sm flex-1">Lưu thay đổi</button>
+                </div>
             </div>
         </div>
     </div>
@@ -227,10 +326,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let allFiles = @json($files->items());
     
     const imageGrid = document.getElementById('image-grid');
-    const searchForm = document.getElementById('search-form');
-    const searchInput = document.getElementById('search-input');
     const uploadInput = document.getElementById('upload-input');
     const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+    const selectAllBtn = document.getElementById('select-all-btn'); // Nút chọn tất cả mới
     const progressBar = document.getElementById('upload-progress-bar');
     const progressBarFill = progressBar.querySelector('.progress-bar-fill');
     
@@ -253,32 +351,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
     
-    /**
-     * SỬA LỖI: Tạo một hàm riêng để lấy URL một cách an toàn.
-     */
     function getFileUrl(file) {
-        // Ưu tiên thuộc tính 'url' nếu có (từ API response)
         if (file && file.url) {
             return file.url;
         }
-        // Nếu không, tạo thủ công từ 'path' (cho dữ liệu ban đầu từ server)
         if (file && file.path) {
-            // SỬA LỖI: Tạo đường dẫn tương đối (relative path) thay vì tuyệt đối.
-            // Cách này sẽ hoạt động chính xác với cả 127.0.0.1 và tên miền ảo như .test
-            // Nó giả định rằng bạn đã chạy `php artisan storage:link`.
             return `/storage/${file.path}`;
         }
-        // Fallback nếu không có cả hai
         return 'https://placehold.co/400x400/cccccc/ffffff?text=Invalid+Path';
     }
 
-
     function createToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
-        if (!container) {
-            console.error('Toast container not found!');
-            return;
-        }
+        if (!container) return;
 
         const colors = {
             success: 'bg-green-500',
@@ -301,7 +386,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderImages() {
         imageGrid.innerHTML = ''; // Xóa lưới cũ
         if (allFiles.length === 0) {
-            imageGrid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">Không tìm thấy file nào.</p>`;
+            const searchTerm = "{{ request('search', '') }}";
+            const filter = "{{ request('filter', '') }}";
+            const startDate = "{{ request('start_date', '') }}";
+            let message = 'Không tìm thấy file nào.';
+            if (searchTerm || startDate) {
+                 message = `Không tìm thấy file nào phù hợp với tiêu chí lọc.`;
+            } else if (filter === 'unattached') {
+                message = 'Không có ảnh mồ côi nào.';
+            }
+            imageGrid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">${message}</p>`;
             return;
         }
 
@@ -314,9 +408,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const img = document.createElement('img');
-            img.src = getFileUrl(file); // SỬA LỖI: Sử dụng hàm getFileUrl
-            img.alt = file.alt_text;
+            img.src = getFileUrl(file);
+            img.alt = file.alt_text || '';
             img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
+            img.loading = 'lazy'; // Thêm lazy loading
             img.onerror = () => { img.src = 'https://placehold.co/400x400/cccccc/ffffff?text=Error'; };
 
             const filename = document.createElement('p');
@@ -354,7 +449,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = parseInt(card.dataset.id);
             const isSelected = selectedFiles.has(id);
             card.classList.toggle('selected', isSelected);
-            card.querySelector('input[type="checkbox"]').checked = isSelected;
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = isSelected;
         });
 
         const deleteBtnText = deleteSelectedBtn.querySelector('span');
@@ -372,19 +468,16 @@ document.addEventListener('DOMContentLoaded', function() {
         currentFileId = fileId;
         const file = allFiles.find(f => f.id === fileId);
 
-        if (!file) {
-            console.error("Không tìm thấy file với ID:", fileId);
-            return;
-        }
+        if (!file) return;
         
-        const fileUrl = getFileUrl(file); // SỬA LỖI: Sử dụng hàm getFileUrl
+        const fileUrl = getFileUrl(file);
         document.getElementById('modal-image').src = fileUrl;
         document.getElementById('modal-alt').value = file.alt_text || '';
         document.getElementById('modal-filename').value = file.original_name;
         document.getElementById('modal-url').value = fileUrl;
         document.getElementById('modal-date').textContent = new Date(file.created_at).toLocaleDateString('vi-VN');
         document.getElementById('modal-type').textContent = file.mime_type;
-        document.getElementById('modal-size').textContent = formatBytes(file.size);
+        document.getElementById('modal-size').textContent = file.formatted_size || formatBytes(file.size);
         document.getElementById('modal-attachable').textContent = file.attachable_display || 'Không đính kèm';
         
         openModal('detail-modal');
@@ -398,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < files.length; i++) {
             formData.append('files[]', files[i]);
         }
-        
+        formData.append('context', 'general'); // Mặc định context
         progressBar.style.display = 'block';
         
         try {
@@ -411,28 +504,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            const newFiles = response.data.files;
-            allFiles = [...newFiles, ...allFiles];
-            renderImages();
-            createToast(`Đã tải lên thành công ${newFiles.length} file!`, 'success');
+            // Sau khi upload thành công, làm mới trang để hiển thị file mới nhất
+            createToast(`Đã tải lên thành công ${response.data.files.length} file! Đang làm mới...`, 'success');
+            setTimeout(() => window.location.reload(), 1500);
+
         } catch (error) {
             console.error('Upload error details:', error.response?.data || error);
-
             let errorMessage = 'Đã có lỗi xảy ra khi tải lên.';
-            if (error.response && error.response.data) {
-                if (error.response.data.errors && error.response.data.errors.files) {
-                    errorMessage = error.response.data.errors.files[0];
-                } else if (error.response.data.message) {
-                    errorMessage = error.response.data.message;
-                }
+            if (error.response && error.response.data && error.response.data.message) {
+                 errorMessage = error.response.data.message;
             }
             createToast(errorMessage, 'error');
         } finally {
              setTimeout(() => {
-                progressBar.style.display = 'none';
-                progressBarFill.style.width = '0%';
-                progressBarFill.textContent = '0%';
-             }, 1000);
+                 progressBar.style.display = 'none';
+                 progressBarFill.style.width = '0%';
+                 progressBarFill.textContent = '0%';
+               }, 1000);
              uploadInput.value = ''; // Reset input
         }
     }
@@ -449,6 +537,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const fileIndex = allFiles.findIndex(f => f.id === currentFileId);
             if (fileIndex > -1) {
                 allFiles[fileIndex].alt_text = newAltText;
+                // Cập nhật alt text trên card ảnh luôn
+                const card = imageGrid.querySelector(`.image-card[data-id="${currentFileId}"]`);
+                if(card) {
+                    card.querySelector('img').alt = newAltText;
+                }
             }
             closeModal('detail-modal');
             createToast(response.data.message, 'success');
@@ -458,17 +551,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Sửa lại handleDelete để dùng soft delete
     async function handleDelete(fileId) {
-        if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn file này?')) return;
+        if (!confirm('Bạn có chắc chắn muốn chuyển file này vào thùng rác?')) return;
 
         try {
+            // Controller đã dùng soft delete, nên chỉ cần gọi API
             const response = await axios.delete(`/admin/media/${fileId}`);
+            
+            // Xóa file khỏi mảng và render lại
             allFiles = allFiles.filter(f => f.id !== fileId);
             renderImages();
+
             if (detailModal.classList.contains('show')) {
                 closeModal('detail-modal');
             }
-            createToast(response.data.message, 'success');
+            createToast(response.data.message || 'Đã chuyển file vào thùng rác.', 'success');
         } catch (error) {
             const errorMessage = error.response?.data?.message || 'Xóa file thất bại.';
             createToast(errorMessage, 'error');
@@ -477,26 +575,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function handleDeleteSelected() {
         if (selectedFiles.size === 0) return;
-        if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn ${selectedFiles.size} file đã chọn?`)) return;
+        if (!confirm(`Bạn có chắc chắn muốn chuyển ${selectedFiles.size} file đã chọn vào thùng rác?`)) return;
 
         const idsToDelete = Array.from(selectedFiles);
-        let successCount = 0;
-        for (const id of idsToDelete) {
-             try {
-                await axios.delete(`/admin/media/${id}`);
-                successCount++;
-             } catch (error) {
-                console.error(`Failed to delete file with ID ${id}`, error);
-             }
+        
+        try {
+            // Thay vì lặp, gửi một request duy nhất để xóa hàng loạt
+            const response = await axios.post('{{ route("admin.media.bulk-delete") }}', {
+                ids: idsToDelete
+            });
+
+            allFiles = allFiles.filter(f => !idsToDelete.includes(f.id));
+            selectedFiles.clear();
+            renderImages();
+            updateSelectionUI();
+            createToast(response.data.message, 'success');
+
+        } catch (error) {
+            console.error('Bulk delete failed:', error);
+            const errorMessage = error.response?.data?.message || 'Xóa hàng loạt thất bại.';
+            createToast(errorMessage, 'error');
         }
-        allFiles = allFiles.filter(f => !idsToDelete.includes(f.id));
-        selectedFiles.clear();
-        renderImages();
+    }
+
+    function handleSelectAll() {
+        // Lấy tất cả ID từ `allFiles` (danh sách file hiện tại trên trang)
+        const allCurrentFileIds = allFiles.map(file => file.id);
+        
+        // Kiểm tra xem tất cả đã được chọn hay chưa
+        const allAreSelected = allCurrentFileIds.every(id => selectedFiles.has(id));
+
+        if (allAreSelected) {
+            // Nếu tất cả đã được chọn -> Bỏ chọn tất cả
+             allCurrentFileIds.forEach(id => selectedFiles.delete(id));
+             createToast('Đã bỏ chọn tất cả file trên trang này.', 'info');
+        } else {
+            // Nếu chưa -> Chọn tất cả
+            allCurrentFileIds.forEach(id => selectedFiles.add(id));
+            createToast(`Đã chọn tất cả ${allCurrentFileIds.length} file trên trang này.`, 'success');
+        }
         updateSelectionUI();
-        createToast(`Đã xóa thành công ${successCount} file.`, 'success');
-        if (successCount < idsToDelete.length) {
-            createToast(`Xóa thất bại ${idsToDelete.length - successCount} file.`, 'error');
-        }
     }
     
     // --- GẮN CÁC EVENT LISTENER ---
@@ -504,20 +622,12 @@ document.addEventListener('DOMContentLoaded', function() {
     updateBtn.addEventListener('click', handleUpdate);
     deleteBtn.addEventListener('click', () => handleDelete(currentFileId));
     deleteSelectedBtn.addEventListener('click', handleDeleteSelected);
-    searchForm.addEventListener('submit', (e) => e.preventDefault());
     
-    searchInput.addEventListener('input', () => {
-        // Implement real-time search via AJAX for better performance
-        const searchTerm = searchInput.value.toLowerCase();
-        const initialData = @json($files->items());
-        const filtered = initialData.filter(file => 
-            file.original_name.toLowerCase().includes(searchTerm) || 
-            (file.alt_text && file.alt_text.toLowerCase().includes(searchTerm))
-        );
-        allFiles = filtered;
-        renderImages();
-    });
-
+    // Chỉ gắn event cho nút "Chọn tất cả" nếu nó tồn tại
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', handleSelectAll);
+    }
+    
     copyUrlBtn.addEventListener('click', (e) => {
         const urlInput = document.getElementById('modal-url');
         navigator.clipboard.writeText(urlInput.value).then(() => {
@@ -534,6 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- KHỞI TẠO BAN ĐẦU ---
     renderImages();
+    updateSelectionUI(); // Cập nhật nút xóa nếu có file được chọn sẵn (hiếm)
 });
 </script>
 @endpush
