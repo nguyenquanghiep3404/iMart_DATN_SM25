@@ -19,7 +19,11 @@ use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+
+use App\Http\Controllers\Admin\CouponController;
+
 use App\Http\Controllers\Admin\BannerController;
+
 
 
 //==========================================================================
@@ -71,10 +75,14 @@ Route::prefix('admin')
         Route::delete('/products/{id}/force-delete', [ProductController::class, 'force-delete'])->name('products.force-delete');
         // Route cho AI
         Route::post('/products/ai/generate-content', [AiController::class, 'generateContent'])
-         ->name('products.ai.generate');
+
+            ->name('products.ai.generate');
+        //  Route::post('/ai/generate-content', [AiController::class, 'generateContent'])->name('ai.generateContent');
+
         // Route riêng cho việc xóa ảnh gallery
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
             ->name('products.gallery.delete');
+
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
         // Route::resource('users', UserController::class);
@@ -85,6 +93,21 @@ Route::prefix('admin')
             Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+
+        // --- Routes cho Thư viện Media ---
+        // 1. Route hiển thị trang chính của thư viện
+        Route::get('/media', [UploadedFileController::class, 'index'])->name('media.index');
+
+        // 2. Route xử lý việc tải file lên (sẽ được gọi bằng AJAX)
+        Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
+
+        // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
+        Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
+
+        // 4. Route xử lý việc xóa một file (AJAX)
+        Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
+        Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('admin.media.fetch');
 
 
         // Route quản lí vai trò
@@ -183,6 +206,14 @@ Route::prefix('admin')
 
         // Thêm các resource controller khác cho Orders, Users, Banners, Posts, etc.
         // Ví dụ:
+        // Route::resource('orders', \App\Http\Controllers\Admin\OrderController::class)->except(['create', 'store']);
+
+        // Routes Coupon
+        Route::resource('coupons', CouponController::class);
+        Route::get('coupons/{coupon}/usage-history', [CouponController::class, 'usageHistory'])->name('coupons.usageHistory');
+        Route::get('coupons/{coupon}/status/{status}', [CouponController::class, 'changeStatus'])->name('coupons.changeStatus');
+        Route::post('coupons/validate', [CouponController::class, 'validateCoupon'])->name('coupons.validate');
+
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
 
