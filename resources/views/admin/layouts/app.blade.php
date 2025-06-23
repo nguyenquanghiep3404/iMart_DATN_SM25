@@ -47,11 +47,13 @@
 
 
     {{-- Các script chung cho toàn bộ trang --}}
-    <script src="{{ asset('assets/admin/js/alpine.js') }}"></script>
+    <!-- <script src="{{ asset('assets/admin/js/alpine.js') }}"></script> -->
     <script src="{{ asset('assets/admin/js/perfect-scrollbar.js') }}"></script>
     <script src="{{ asset('assets/admin/js/choices.js') }}"></script>
     <script src="{{ asset('assets/admin/js/main.js') }}"></script>
     <script src="{{ asset('assets/admin/js/media-library.js') }}"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     
     {{-- Nơi để các trang con chèn script riêng --}}
     @stack('scripts')

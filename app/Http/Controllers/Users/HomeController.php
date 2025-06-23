@@ -18,174 +18,110 @@ use Illuminate\Support\Str;
 class HomeController extends Controller
 {
     public function index()
-    {
+{
+    $banners = Banner::with('desktopImage')
+        ->where('status', 'active')
+        ->orderBy('order')
+        ->get();
 
-        // Định nghĩa một hàm ẩn danh để tính và gán điểm đánh giá trung bình cũng như phần trăm giảm giá cho sản phẩm
-        $banners = Banner::with('desktopImage')->where('status', 'active')->orderBy('order')->get();
-        $calculateAverageRating = function ($products) {
-            // Duyệt qua từng sản phẩm trong tập hợp được cung cấp
-            foreach ($products as $product) {
-                // Tính điểm đánh giá trung bình từ các đánh giá của sản phẩm, mặc định là 0 nếu không có đánh giá
-                $averageRating = $product->reviews->avg('rating') ?? 0;
-                // Làm tròn điểm đánh giá trung bình đến 1 chữ số thập phân và gán vào thuộc tính của sản phẩm
-                $product->average_rating = round($averageRating, 1);
+    // Hàm xử lý đánh giá và phần trăm giảm giá
+    $calculateAverageRating = function ($products) {
+        foreach ($products as $product) {
+            $averageRating = $product->reviews->avg('rating') ?? 0;
+            $product->average_rating = round($averageRating, 1);
 
-                // Lấy thời gian hiện tại bằng hàm trợ giúp của Laravel
-                $now = now();
-                // Chọn biến thể mặc định (is_default = true) hoặc biến thể đầu tiên nếu không có biến thể mặc định
-                $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+            $now = now();
+            $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
 
-                // Kiểm tra nếu biến thể tồn tại
-                if ($variant) {
-                    // Khởi tạo biến kiểm tra sản phẩm có đang giảm giá hay không
-                    $isOnSale = false;
+            if ($variant) {
+                $isOnSale = false;
 
-                    // Kiểm tra điều kiện để xác định sản phẩm có đang giảm giá
-                    if (
-                        $variant->sale_price // Giá giảm tồn tại
-                        && $variant->sale_price_starts_at // Thời gian bắt đầu giảm giá tồn tại
-                        && $variant->sale_price_ends_at // Thời gian kết thúc giảm giá tồn tại
-                        && $variant->price > 0 // Giá gốc lớn hơn 0
-                    ) {
-                        try {
-                            // Chuyển đổi thời gian bắt đầu giảm giá thành đối tượng Carbon
-                            $startDate = Carbon::parse($variant->sale_price_starts_at);
-                            // Chuyển đổi thời gian kết thúc giảm giá thành đối tượng Carbon
-                            $endDate = Carbon::parse($variant->sale_price_ends_at);
-                            // Kiểm tra xem thời gian hiện tại có nằm trong khoảng thời gian giảm giá không
-                            $isOnSale = $now->between($startDate, $endDate);
-                        } catch (\Exception $e) {
-                            // Ghi log lỗi nếu việc phân tích ngày tháng gặp lỗi và giữ trạng thái không giảm giá
-                            Log::error('Lỗi phân tích ngày tháng cho sản phẩm ' . $product->name . ': ' . $e->getMessage());
-                            $isOnSale = false;
-                        }
+                if (
+                    $variant->sale_price &&
+                    $variant->sale_price_starts_at &&
+                    $variant->sale_price_ends_at &&
+                    $variant->price > 0
+                ) {
+                    try {
+                        $startDate = \Carbon\Carbon::parse($variant->sale_price_starts_at);
+                        $endDate = \Carbon\Carbon::parse($variant->sale_price_ends_at);
+                        $isOnSale = $now->between($startDate, $endDate);
+                    } catch (\Exception $e) {
+                        \Log::error('Lỗi phân tích ngày tháng: ' . $e->getMessage());
                     }
-
-                    // Tính phần trăm giảm giá nếu sản phẩm đang giảm giá, nếu không thì gán bằng 0
-                    $variant->discount_percent = $isOnSale
-                        ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                        : 0;
                 }
+
+                $variant->discount_percent = $isOnSale
+                    ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                    : 0;
             }
-        };
+        }
+    };
 
-        // Truy vấn danh sách sản phẩm nổi bật trực tiếp, không sử dụng bộ nhớ đệm
-        $featuredProducts = Product::with([
-            // Nạp quan hệ danh mục của sản phẩm
-            'category',
-            // Nạp hình ảnh bìa của sản phẩm
-            'coverImage',
-            // Nạp các biến thể của sản phẩm với điều kiện cụ thể
-            'variants' => function ($query) {
-                // Lấy biến thể mặc định hoặc biến thể có id nhỏ nhất chưa bị xóa
-                $query->where(function ($q) {
-                    $q->where('is_default', true)
-                        ->orWhereRaw('id = (
-                        select min(id) 
-                        from product_variants pv 
-                        where pv.product_id = product_variants.product_id 
-                        and pv.deleted_at is null
-                    )');
-                })
-                    // Chỉ lấy các biến thể chưa bị xóa mềm
-                    ->whereNull('deleted_at')
-                    // Chỉ chọn các cột cần thiết để tối ưu hiệu suất
-                    ->select([
-                        'id',
-                        'product_id',
-                        'price',
-                        'sale_price',
-                        'sale_price_starts_at',
-                        'sale_price_ends_at',
-                        'is_default'
-                    ]);
-            },
-            // Nạp các đánh giá của sản phẩm với trạng thái 'approved'
-            'reviews' => function ($query) {
-                $query->where('reviews.status', 'approved');
-            }
-        ])
-            // Đếm số lượng đánh giá được phê duyệt và gán vào thuộc tính approved_reviews_count
-            ->withCount([
-                'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved');
-                }
-            ])
-            // Chỉ lấy các sản phẩm được đánh dấu là nổi bật
-            ->where('is_featured', 1)
-            // Chỉ lấy các sản phẩm đã được xuất bản
-            ->where('status', 'published')
-            // Lấy sản phẩm loại 'simple' hoặc có biến thể chưa bị xóa
-            ->where(function ($query) {
-                $query->where('type', 'simple')
-                    ->orWhereHas('variants', function ($q) {
-                        $q->whereNull('deleted_at');
-                    });
-            })
-            // Sắp xếp theo thứ tự mới nhất
-            ->latest()
-            // Giới hạn lấy 8 sản phẩm
-            ->take(8)
-            // Thực thi truy vấn và lấy kết quả
-            ->get();
+    // === Danh sách sản phẩm nổi bật ===
+    $featuredProducts = Product::with([
+        'category',
+        'coverImage',
+        'galleryImages',
+        'variants.primaryImage', // 👈 Load primaryImage
+        'variants.images',        // 👈 Load images của variant nếu có
+        'reviews' => function ($query) {
+            $query->where('reviews.status', 'approved');
+        }
+    ])
+    ->withCount([
+        'reviews as approved_reviews_count' => function ($query) {
+            $query->where('reviews.status', 'approved');
+        }
+    ])
+    ->where('is_featured', 1)
+    ->where('status', 'published')
+    ->where(function ($query) {
+        $query->where('type', 'simple')
+            ->orWhereHas('variants', function ($q) {
+                $q->whereNull('deleted_at');
+            });
+    })
+    ->latest()
+    ->take(8)
+    ->get();
 
-        // Áp dụng hàm tính điểm đánh giá trung bình và phần trăm giảm giá cho sản phẩm nổi bật
-        $calculateAverageRating($featuredProducts);
+    // Áp dụng tính toán
+    $calculateAverageRating($featuredProducts);
 
-        // Truy vấn danh sách sản phẩm mới nhất trực tiếp, không sử dụng bộ nhớ đệm
-        $latestProducts = Product::with([
-            // Nạp quan hệ danh mục của sản phẩm
-            'category',
-            // Nạp hình ảnh bìa của sản phẩm
-            'coverImage',
-            // Nạp các biến thể của sản phẩm với điều kiện cụ thể
-            'variants' => function ($query) {
-                // Lấy biến thể mặc định hoặc biến thể có id nhỏ nhất chưa bị xóa
-                $query->where('is_default', true)
-                    ->orWhereRaw('id = (
-                    select min(id) 
-                    from product_variants pv 
-                    where pv.product_id = product_variants.product_id 
-                    and pv.deleted_at is null
-                )')
-                    // Chỉ lấy các biến thể chưa bị xóa mềm
-                    ->whereNull('deleted_at');
-            },
-            // Nạp các đánh giá của sản phẩm với trạng thái 'approved'
-            'reviews' => function ($query) {
-                $query->where('reviews.status', 'approved');
-            }
-        ])
-            // Đếm số lượng đánh giá được phê duyệt và gán vào thuộc tính approved_reviews_count
-            ->withCount([
-                'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved');
-                }
-            ])
-            // Chỉ lấy các sản phẩm đã được xuất bản
-            ->where('status', 'published')
-            // Lấy sản phẩm loại 'simple' hoặc có biến thể chưa bị xóa
-            ->where(function ($query) {
-                $query->where('type', 'simple')
-                    ->orWhereHas('variants', function ($q) {
-                        $q->whereNull('deleted_at');
-                    });
-            })
-            // Sắp xếp theo thứ tự mới nhất
-            ->latest()
-            // Giới hạn lấy 8 sản phẩm
-            ->take(8)
-            // Thực thi truy vấn và lấy kết quả
-            ->get();
+    // === Danh sách sản phẩm mới nhất ===
+    $latestProducts = Product::with([
+        'category',
+        'coverImage',
+        'galleryImages',
+        'variants.primaryImage',
+        'variants.images',
+        'reviews' => function ($query) {
+            $query->where('reviews.status', 'approved');
+        }
+    ])
+    ->withCount([
+        'reviews as approved_reviews_count' => function ($query) {
+            $query->where('reviews.status', 'approved');
+        }
+    ])
+    ->where('status', 'published')
+    ->where(function ($query) {
+        $query->where('type', 'simple')
+            ->orWhereHas('variants', function ($q) {
+                $q->whereNull('deleted_at');
+            });
+    })
+    ->latest()
+    ->take(8)
+    ->get();
 
-        // Áp dụng hàm tính điểm đánh giá trung bình và phần trăm giảm giá cho sản phẩm mới nhất
-        $calculateAverageRating($latestProducts);
+    // Tính rating & discount
+    $calculateAverageRating($latestProducts);
 
+    return view('users.home', compact('featuredProducts', 'latestProducts', 'banners'));
+}
 
-        // Trả về giao diện 'users.home' với dữ liệu sản phẩm nổi bật và mới nhất
-        return view('users.home', compact('featuredProducts', 'latestProducts', 'banners'));
-
-    }
 
 
 
@@ -200,6 +136,7 @@ class HomeController extends Controller
         'variants.images' => function ($query) {
             $query->where('type', 'variant_image')->orderBy('order');
         },
+        'variants.primaryImage',
         'reviews' => function ($query) {
             $query->where('reviews.status', 'approved');
         },
@@ -236,6 +173,14 @@ class HomeController extends Controller
 
     $defaultVariant = $product->variants->firstWhere('is_default', true);
 
+    // ✅ Lấy thứ tự thuộc tính dựa trên attribute_id tăng dần
+    $attributeOrder = $product->variants
+        ->flatMap(fn ($variant) => $variant->attributeValues)
+        ->sortBy(fn ($attrValue) => $attrValue->attribute->id)
+        ->pluck('attribute.name')
+        ->unique()
+        ->values();
+
     foreach ($product->variants as $variant) {
         $combination = [];
         foreach ($variant->attributeValues as $attrValue) {
@@ -250,6 +195,7 @@ class HomeController extends Controller
                 $attributes[$attrName]->push($attrValue);
             }
         }
+
         $availableCombinations[] = $combination;
 
         $now = now();
@@ -260,14 +206,13 @@ class HomeController extends Controller
             $variant->sale_price_ends_at >= $now;
         $displayPrice = $isOnSale ? $salePrice : $originalPrice;
 
+        // ✅ Tạo variantKey theo đúng thứ tự trong $attributeOrder
         $variantKey = [];
-        foreach ($variant->attributeValues as $attrValue) {
-            $attrName = $attrValue->attribute->name;
-            $value = $attrValue->value;
-            $variantKey[$attrName] = $value;
+        foreach ($attributeOrder as $attrName) {
+            $attrValue = $variant->attributeValues->firstWhere('attribute.name', $attrName);
+            $variantKey[] = $attrValue?->value ?? '';
         }
-        ksort($variantKey);
-        $variantKeyStr = implode('_', array_values($variantKey));
+        $variantKeyStr = implode('_', $variantKey);
 
         $images = $variant->images->map(fn($image) => Storage::url($image->path))->toArray();
         if (empty($images)) {
@@ -279,7 +224,7 @@ class HomeController extends Controller
                 $images[] = Storage::url($galleryImage->path);
             }
         }
-        $mainImage = !empty($images) ? $images[0] : null;
+        $mainImage = $variant->primaryImage ? Storage::url($variant->primaryImage->path) : ($images[0] ?? null);
 
         $variantData[$variantKeyStr] = [
             'price' => $displayPrice,
@@ -287,6 +232,8 @@ class HomeController extends Controller
             'status' => $variant->status,
             'image' => $mainImage,
             'images' => $images,
+            'primary_image_id' => $variant->primary_image_id,
+            'variant_id' => $variant->id,
         ];
     }
 
@@ -314,174 +261,196 @@ class HomeController extends Controller
         'variantData',
         'availableCombinations',
         'defaultVariant',
-        'comments'
+        'comments',
+        'attributeOrder' // 👈 THÊM DÒNG NÀY để truyền xuống view
     ));
 }
 
 
 
+
     public function allProducts(Request $request, $id = null, $slug = null)
-{
-    $now = Carbon::now();
+    {
 
-    // Nếu có ID trong route, thì kiểm tra danh mục và slug
-    $categoryId = null;
-    if ($id) {
-        $category = Category::findOrFail($id);
-        $categoryId = $category->id;
+        $now = Carbon::now();
 
-        // Nếu slug sai thì redirect về đúng slug
-        if ($slug !== Str::slug($category->name)) {
-            return redirect()->route('products.byCategory', [
-                'id' => $category->id,
-                'slug' => Str::slug($category->name),
-            ]);
+        // Nếu có ID trong route, thì kiểm tra danh mục và slug
+        $categoryId = null;
+        if ($id) {
+            $category = Category::findOrFail($id);
+            $categoryId = $category->id;
+
+            // Nếu slug sai thì redirect về đúng slug
+            if ($slug !== Str::slug($category->name)) {
+                return redirect()->route('products.byCategory', [
+                    'id' => $category->id,
+                    'slug' => Str::slug($category->name),
+                ]);
+            }
         }
-    }
 
-    $query = Product::with([
-        'category',
-        'coverImage',
-        'variants' => function ($query) use ($now, $request) {
-            if ($request->has('sort') && $request->sort === 'dang_giam_gia') {
-                $query->where('sale_price', '>', 0)
-                    ->where('sale_price_starts_at', '<=', $now)
-                    ->where('sale_price_ends_at', '>=', $now)
-                    ->whereNull('deleted_at')
-                    ->orderBy('id');
-            } else {
-                $query->where(function ($q) {
-                    $q->where('is_default', true)
-                        ->orWhereRaw('id = (
+        $query = Product::with([
+            'category',
+            'coverImage',
+            'variants' => function ($query) use ($now, $request) {
+                if ($request->has('sort') && $request->sort === 'dang_giam_gia') {
+                    $query->where('sale_price', '>', 0)
+                        ->where('sale_price_starts_at', '<=', $now)
+                        ->where('sale_price_ends_at', '>=', $now)
+                        ->whereNull('deleted_at')
+                        ->orderBy('id');
+                } else {
+                    $query->where(function ($q) {
+                        $q->where('is_default', true)
+                            ->orWhereRaw('id = (
                             select min(id) 
                             from product_variants pv 
                             where pv.product_id = product_variants.product_id 
                             and pv.deleted_at is null
                         )');
-                })->whereNull('deleted_at');
+                    })->whereNull('deleted_at');
+                }
+            },
+            'reviews' => function ($query) {
+                $query->where('reviews.status', 'approved');
             }
-        },
-        'reviews' => function ($query) {
-            $query->where('reviews.status', 'approved');
+        ])
+            ->withCount([
+                'reviews as approved_reviews_count' => function ($query) {
+                    $query->where('reviews.status', 'approved');
+                }
+            ])
+            ->where('status', 'published');
+
+        // 🔍 Tìm kiếm theo tên sản phẩm
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
         }
-    ])
-    ->withCount([
-        'reviews as approved_reviews_count' => function ($query) {
-            $query->where('reviews.status', 'approved');
+
+        // 🗂 Lọc theo danh mục (bao gồm cả con)
+        if ($categoryId) {
+            $categoryIds = Category::where('parent_id', $categoryId)->pluck('id')->toArray();
+            $categoryIds[] = $categoryId;
+            $query->whereIn('category_id', $categoryIds);
         }
-    ])
-    ->where('status', 'published');
 
-    // 🔍 Tìm kiếm theo tên sản phẩm
-    if ($request->filled('search')) {
-        $query->where('name', 'like', '%' . $request->search . '%');
-    }
+        // ⭐ Lọc theo đánh giá
+        if ($request->filled('rating')) {
+            $rating = (int) $request->rating;
+            $query->whereHas('reviews', function ($q) {
+                $q->where('status', 'approved');
+            })->withAvg([
+                'reviews as approved_reviews_avg_rating' => function ($q) {
+                    $q->where('status', 'approved');
+                }
+            ], 'rating')->having('approved_reviews_avg_rating', '>=', $rating);
+        }
 
-    // 🗂 Lọc theo danh mục (bao gồm cả con)
-    if ($categoryId) {
-        $categoryIds = Category::where('parent_id', $categoryId)->pluck('id')->toArray();
-        $categoryIds[] = $categoryId;
-        $query->whereIn('category_id', $categoryIds);
-    }
+        // 💰 Lọc theo khoảng giá
+        if ($request->filled('min_price')) {
+            $query->whereHas('variants', function ($q) use ($request) {
+                $q->where('price', '>=', $request->min_price);
+            });
+        }
+        if ($request->filled('max_price')) {
+            $query->whereHas('variants', function ($q) use ($request) {
+                $q->where('price', '<=', $request->max_price);
+            });
+        }
 
-    // 💰 Lọc theo khoảng giá
-    if ($request->filled('min_price')) {
-        $query->whereHas('variants', function ($q) use ($request) {
-            $q->where('price', '>=', $request->min_price);
-        });
-    }
-    if ($request->filled('max_price')) {
-        $query->whereHas('variants', function ($q) use ($request) {
-            $q->where('price', '<=', $request->max_price);
-        });
-    }
+        // 🔃 Sắp xếp theo yêu cầu
+        switch ($request->sort) {
+            case 'moi_nhat':
+                $query->where('created_at', '>=', $now->copy()->subWeek())
+                    ->orderByDesc('created_at');
+                break;
 
-    // 🔃 Sắp xếp theo yêu cầu
-    switch ($request->sort) {
-        case 'mới_ra_mắt':
-            $query->where('created_at', '>=', $now->copy()->subWeek())
-                ->orderByDesc('created_at');
-            break;
-
-        case 'giá_thấp_đến_cao':
-            $query->whereHas('variants', function ($q) {
-                $q->whereNull('deleted_at');
-            })->orderBy(function ($q) {
-                $q->select('price')
-                    ->from('product_variants')
-                    ->whereColumn('product_id', 'products.id')
-                    ->whereNull('deleted_at')
-                    ->where(function ($q2) {
-                        $q2->where('is_default', true)
-                            ->orWhereRaw('id = (
+            case 'giá_thấp_đến_cao':
+                $query->whereHas('variants', function ($q) {
+                    $q->whereNull('deleted_at');
+                })->orderBy(function ($q) {
+                    $q->select('price')
+                        ->from('product_variants')
+                        ->whereColumn('product_id', 'products.id')
+                        ->whereNull('deleted_at')
+                        ->where(function ($q2) {
+                            $q2->where('is_default', true)
+                                ->orWhereRaw('id = (
                                 select min(id) 
                                 from product_variants pv 
                                 where pv.product_id = product_variants.product_id 
                                 and pv.deleted_at is null
                             )');
-                    })
-                    ->limit(1);
-            });
-            break;
+                        })
+                        ->limit(1);
+                });
+                break;
 
-        case 'giá_cao_đến_thấp':
-            $query->whereHas('variants', function ($q) {
-                $q->whereNull('deleted_at');
-            })->orderByDesc(function ($q) {
-                $q->select('price')
-                    ->from('product_variants')
-                    ->whereColumn('product_id', 'products.id')
-                    ->whereNull('deleted_at')
-                    ->where(function ($q2) {
-                        $q2->where('is_default', true)
-                            ->orWhereRaw('id = (
+            case 'giá_cao_đến_thấp':
+                $query->whereHas('variants', function ($q) {
+                    $q->whereNull('deleted_at');
+                })->orderByDesc(function ($q) {
+                    $q->select('price')
+                        ->from('product_variants')
+                        ->whereColumn('product_id', 'products.id')
+                        ->whereNull('deleted_at')
+                        ->where(function ($q2) {
+                            $q2->where('is_default', true)
+                                ->orWhereRaw('id = (
                                 select min(id) 
                                 from product_variants pv 
                                 where pv.product_id = product_variants.product_id 
                                 and pv.deleted_at is null
                             )');
-                    })
-                    ->limit(1);
-            });
-            break;
+                        })
+                        ->limit(1);
+                });
+                break;
 
-        case 'dang_giam_gia':
-            $query->whereHas('variants', function ($q) use ($now) {
-                $q->whereNotNull('sale_price')
-                    ->where('sale_price', '>', 0)
-                    ->where('sale_price_starts_at', '<=', $now)
-                    ->where('sale_price_ends_at', '>=', $now);
-            })->orderByDesc('created_at');
-            break;
+            case 'dang_giam_gia':
+                $query->whereHas('variants', function ($q) use ($now) {
+                    $q->whereNotNull('sale_price')
+                        ->where('sale_price', '>', 0)
+                        ->where('sale_price_starts_at', '<=', $now)
+                        ->where('sale_price_ends_at', '>=', $now);
+                })->orderByDesc('created_at');
+                break;
 
-        default:
-            $query->where('is_featured', 1)->orderByDesc('created_at');
-            break;
-    }
+            case 'pho_bien':
+                $query->where('is_featured', 1)->orderByDesc('created_at');
+                break;
 
-    // 📄 Phân trang
-    $products = $query->paginate(15);
-
-    // 🎯 Tính đánh giá trung bình và % giảm giá
-    foreach ($products as $product) {
-        $product->average_rating = round($product->reviews->avg('rating') ?? 0, 1);
-
-        $variant = $product->variants->first();
-        if ($variant && $variant->sale_price && $variant->sale_price_starts_at && $variant->sale_price_ends_at) {
-            $onSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
-            $variant->discount_percent = $onSale
-                ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                : 0;
+            case 'tat_ca':
+            default:
+                $query->orderByDesc('created_at');
+                break;
         }
+
+        // 📄 Phân trang
+        $products = $query->paginate(12);
+
+        // 🎯 Tính đánh giá trung bình và % giảm giá
+        foreach ($products as $product) {
+            $product->average_rating = round($product->reviews->avg('rating') ?? 0, 1);
+
+            $variant = $product->variants->first();
+            if ($variant && $variant->sale_price && $variant->sale_price_starts_at && $variant->sale_price_ends_at) {
+                $onSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+                $variant->discount_percent = $onSale
+                    ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                    : 0;
+            }
+        }
+
+        // 📚 Lấy tất cả danh mục (sử dụng ở sidebar hoặc filter)
+        $categories = Category::all();
+
+        $currentCategory = $categoryId ? $category : null;
+
+        if ($request->ajax()) {
+            return view('users.partials.shop_products', compact('products'))->render();
+        }
+
+        return view('users.shop', compact('products', 'categories', 'currentCategory'));
     }
-
-    // 📚 Lấy tất cả danh mục (sử dụng ở sidebar hoặc filter)
-    $categories = Category::all();
-
-    $currentCategory = $categoryId ? $category : null;
-
-    return view('users.shop', compact('products', 'categories', 'currentCategory'));
-}
-
-
 }

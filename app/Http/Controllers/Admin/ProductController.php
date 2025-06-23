@@ -15,9 +15,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ProductController extends Controller
 {
+    use AuthorizesRequests;
+    // Phân quyền
+     public function __construct()
+    {
+        // Tự động phân quyền cho tất cả các phương thức CRUD
+        $this->authorizeResource(Product::class, 'product');
+    }
     /**
      * Hiển thị danh sách sản phẩm.
      * Logic lọc và sắp xếp được giữ nguyên.
@@ -56,8 +64,19 @@ class ProductController extends Controller
 
         $sortBy = $request->input('sort_by', 'created_at');
         $sortDir = $request->input('sort_dir', 'desc');
-        if (in_array($sortBy, ['name', 'created_at'])) {
-            $query->orderBy($sortBy, $sortDir);
+        $allowedSortColumns = ['name', 'created_at', 'price'];
+
+        if (in_array($sortBy, $allowedSortColumns)) {
+            if ($sortBy === 'price') {
+                $query->leftJoin('product_variants as pv_sort_index', function($join) {
+                    $join->on('products.id', '=', 'pv_sort_index.product_id')
+                         ->whereRaw('pv_sort_index.id = (SELECT id FROM product_variants WHERE product_id = products.id ORDER BY is_default DESC, created_at ASC LIMIT 1)');
+                })
+                ->orderBy('pv_sort_index.price', $sortDir)
+                ->select('products.*');
+            } else {
+                $query->orderBy($sortBy, $sortDir);
+            }
         } else {
             $query->latest();
         }
@@ -75,7 +94,7 @@ class ProductController extends Controller
     {
         try {
         $tempFileIds = session('temp_uploaded_file_ids', []);
-        
+
         Log::info('--- Bắt đầu phiên tạo sản phẩm mới ---');
         Log::info('Các ID file tạm trong session:', $tempFileIds);
 
@@ -88,6 +107,8 @@ class ProductController extends Controller
 
             foreach ($filesToDelete as $file) {
                 Log::info("Đang yêu cầu xóa file ID: {$file->id}, Path: {$file->path}");
+                // Hàm deleteFile trong service của bạn sẽ gọi $file->delete()
+                // và kích hoạt event 'deleting' trong Model ở Bước 1.
                 app(FileService::class)->deleteFile($file);
             }
         }
@@ -124,6 +145,19 @@ class ProductController extends Controller
 
             // 2. Xử lý logic cho sản phẩm đơn giản
             if ($request->input('type') === 'simple') {
+                // Đính kèm ảnh bìa
+                if ($request->filled('cover_image_id')) {
+                    $coverImage = UploadedFile::find($request->input('cover_image_id'));
+                    if ($coverImage) {
+                        $coverImage->update([
+                            'attachable_id' => $product->id,
+                            'attachable_type' => Product::class,
+                            'type' => 'cover_image'
+                        ]);
+                    }
+                }
+
+                // Đính kèm thư viện ảnh
                 if ($request->has('gallery_images') && is_array($request->input('gallery_images'))) {
                     foreach ($request->input('gallery_images') as $order => $imageId) {
                         $galleryImage = UploadedFile::find($imageId);
@@ -138,13 +172,7 @@ class ProductController extends Controller
                     }
                 }
 
-                if ($request->filled('cover_image_id')) {
-                    $coverImage = UploadedFile::find($request->input('cover_image_id'));
-                    if ($coverImage) {
-                        $coverImage->update(['type' => 'cover_image']);
-                    }
-                }
-
+                // Tạo một biến thể duy nhất cho sản phẩm đơn giản
                 ProductVariant::create([
                     'product_id' => $product->id,
                     'sku' => $request->input('simple_sku'),
@@ -171,7 +199,7 @@ class ProductController extends Controller
                     ]);
 
                     $variant->attributeValues()->attach(array_values($variantData['attributes']));
-                    
+
                     if (isset($variantData['image_ids']) && is_array($variantData['image_ids'])) {
                         $primaryImageId = $variantData['primary_image_id'] ?? null;
                         $images = UploadedFile::whereIn('id', $variantData['image_ids'])->get();
@@ -279,7 +307,9 @@ class ProductController extends Controller
                 }
             }
 
-            // 4. Xử lý Biến thể
+            // Xử lý Biến thể (Logic gốc của bạn)
+            // ProductRequest đã validate các trường cần thiết
+            // Type sản phẩm được giả định không thay đổi khi update trong logic gốc này
             if ($product->type === 'simple') {
                 $defaultVariant = $product->variants()->first();
                 if ($defaultVariant) {
@@ -325,6 +355,7 @@ class ProductController extends Controller
                 if (!empty($variantsToDelete)) {
                     ProductVariant::whereIn('id', $variantsToDelete)->where('product_id', $product->id)->delete();
                 }
+
 
                 $currentVariants = $product->refresh()->variants;
                 if ($currentVariants->isNotEmpty()) {
@@ -402,7 +433,7 @@ class ProductController extends Controller
     {
         // Tìm sản phẩm chỉ trong danh sách đã xóa
         $product = Product::onlyTrashed()->findOrFail($id);
-        
+
         // (Tùy chọn) Kiểm tra quyền khôi phục
         // $this->authorize('restore', $product);
 
@@ -429,7 +460,7 @@ class ProductController extends Controller
     public function forceDelete($id)
     {
         $product = Product::onlyTrashed()->findOrFail($id);
-        
+
         // Nên có Policy để kiểm tra quyền xóa vĩnh viễn
         // Ví dụ: $this->authorize('forceDelete', $product);
         if (Auth::check() && !Auth::user()->isAdmin()) {
@@ -457,9 +488,9 @@ class ProductController extends Controller
             if ($product->coverImage) {
                 $fileService->deleteFile($product->coverImage, true);
             }
-            
+
             // Xóa các biến thể và các mối quan hệ của nó
-            $product->variants()->delete(); 
+            $product->variants()->delete();
 
             // Xóa vĩnh viễn sản phẩm
             $product->forceDelete();

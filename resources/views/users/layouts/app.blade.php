@@ -38,6 +38,9 @@
     <link rel="preload" href="{{ asset ('assets/users/css/theme.rtl.min.css') }}" as="style">
     <link rel="stylesheet" href="{{ asset ('assets/users/css/theme.min.css') }}" id="theme-styles">
 
+    @stack('styles')
+
+
 
 
     <!-- Customizer -->

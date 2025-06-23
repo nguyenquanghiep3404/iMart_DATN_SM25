@@ -159,6 +159,29 @@
                                        placeholder="Nhập lại mật khẩu" >
                                 {{-- Lỗi cho password_confirmation thường được gộp chung với lỗi 'password' nếu có 'confirmed' rule --}}
                             </div>
+                                <div class="mb-4">
+                                    <label class="form-label">Vai trò người dùng <span class="text-red-500">*</span></label>
+                                    <div class="space-y-2">
+                                        @foreach($roles as $role)
+                                            <div class="flex items-center">
+                                                <input type="checkbox"
+                                                id="role_{{ $role->id }}"
+                                                name="roles[]"
+                                                value="{{ $role->id }}"
+                                                class="form-checkbox"
+                                                data-role-name="{{ $role->name }}"
+                                                @if(isset($user) && $user->roles->contains($role->id))
+                                                    checked
+                                                @endif
+                                            >
+                                                <label for="role_{{ $role->id }}" class="ml-2">{{ $role->name }} ({{ $role->description }})</label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    @error('roles')
+                                        <div class="text-red-500 text-sm mt-1">{{ $message }}</div>
+                                    @enderror
+                            </div>
 
                             {{-- Trạng thái --}}
                             <div>
@@ -238,6 +261,50 @@ document.addEventListener('DOMContentLoaded', function() {
              toast.addEventListener('click', () => hideToast(toast));
         }
     });
+});
+document.addEventListener('DOMContentLoaded', function () {
+    const roleCheckboxes = document.querySelectorAll('input[name="roles[]"]');
+    const exclusiveRoles = ['admin', 'customer'];
+
+    function handleRoleChange() {
+        const checkedRoles = [];
+        let isExclusiveRoleChecked = false;
+
+        // Lấy danh sách các role đang được chọn và kiểm tra có role độc quyền không
+        roleCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                checkedRoles.push(checkbox.dataset.roleName);
+                if (exclusiveRoles.includes(checkbox.dataset.roleName)) {
+                    isExclusiveRoleChecked = true;
+                }
+            }
+        });
+
+        // Nếu một vai trò độc quyền (admin/customer) đang được chọn
+        if (isExclusiveRoleChecked) {
+            roleCheckboxes.forEach(checkbox => {
+                // Nếu checkbox không phải là vai trò độc quyền đang được chọn -> vô hiệu hóa nó
+                if (!checkbox.checked) {
+                    checkbox.disabled = true;
+                }
+            });
+        }
+        // Nếu không có vai trò độc quyền nào được chọn
+        else {
+            // Kích hoạt lại tất cả các checkbox
+            roleCheckboxes.forEach(checkbox => {
+                checkbox.disabled = false;
+            });
+        }
+    }
+
+    // Thêm sự kiện 'change' cho mỗi checkbox
+    roleCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', handleRoleChange);
+    });
+
+    // Chạy một lần khi tải trang để xử lý trạng thái ban đầu (quan trọng cho trang edit)
+    handleRoleChange();
 });
 </script>
 @endpush
