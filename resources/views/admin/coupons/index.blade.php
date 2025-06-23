@@ -216,7 +216,7 @@
                                             </svg>
                                         </button>
                                         <div class="dropdown-menu hidden absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10" role="menu">
-                                            {{-- <div class="py-1" role="none">
+                                            <div class="py-1" role="none">
                                                 <a href="{{ route('admin.coupons.changeStatus', ['coupon' => $coupon->id, 'status' => 'active']) }}" 
                                                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
                                                    <span class="h-2 w-2 rounded-full bg-green-600 mr-2"></span> Hoạt động
@@ -229,7 +229,7 @@
                                                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
                                                    <span class="h-2 w-2 rounded-full bg-red-600 mr-2"></span> Hết hạn
                                                 </a>
-                                            </div> --}}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
