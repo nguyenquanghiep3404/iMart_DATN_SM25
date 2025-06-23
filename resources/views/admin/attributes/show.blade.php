@@ -113,6 +113,9 @@
             font-size: 0.875rem;
             margin-top: 0.25rem;
         }
+        .invalid-feedback.block {
+            display: block;
+        }
 
         .input-group {
             display: flex;
@@ -321,7 +324,6 @@
             top: 1rem;
             right: 1rem;
             z-index: 1100;
-            /* Cao hơn modal */
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
@@ -339,10 +341,8 @@
         }
 
         .loading-spinner {
-            border: 2px solid #f3f3f3;
-            /* Light grey */
-            border-top: 2px solid #4f46e5;
-            /* Blue */
+            border: 2px solid #f3f3f3; /* Light grey */
+            border-top: 2px solid #4f46e5; /* Blue */
             border-radius: 50%;
             width: 16px;
             height: 16px;
@@ -466,6 +466,7 @@
                         <div class="card-custom-header card-custom-header-success">
                             <h3 class="card-custom-title">Thêm giá trị mới cho "{{ $attribute->name }}"</h3>
                         </div>
+                        {{-- Quan trọng: Form thêm mới này không bị ảnh hưởng bởi lỗi của form sửa --}}
                         <form method="POST" action="{{ route('admin.attributes.values.store', $attribute->id) }}">
                             @csrf
                             <div class="card-custom-body space-y-4">
@@ -473,10 +474,13 @@
                                     <label for="value_name_add" class="form-label">Tên giá trị <span
                                             class="text-red-500">*</span></label>
                                     <input type="text" id="value_name_add" name="value"
-                                        class="form-input @error('value') is-invalid @enderror"
-                                        placeholder="Ví dụ: Đỏ, Xanh lá" value="{{ old('value') }}">
+                                        class="form-input @error('value') @if(!old('attribute_value_id')) is-invalid @endif @enderror"
+                                        placeholder="Ví dụ: Đỏ, Xanh lá" value="{{ !old('attribute_value_id') ? old('value') : '' }}">
                                     @error('value')
+                                      {{-- Chỉ hiển thị lỗi của form thêm mới --}}
+                                      @if(!old('attribute_value_id'))
                                         <div class="invalid-feedback">{{ $message }}</div>
+                                      @endif
                                     @enderror
                                 </div>
 
@@ -505,9 +509,9 @@
                                         <label for="value_meta_color_add" class="form-label">Mã màu (Meta) <span
                                                 class="text-red-500">*</span></label>
                                         <div class="input-group colorpicker-group-add">
-                                            <input type="text" class="form-input @error('meta') is-invalid @enderror"
+                                            <input type="text" class="form-input @error('meta') @if(!old('attribute_value_id')) is-invalid @endif @enderror"
                                                 id="value_meta_color_add" name="meta" placeholder="Ví dụ: #FF0000"
-                                                value="{{ old('meta') }}">
+                                                value="{{ !old('attribute_value_id') ? old('meta') : '' }}">
                                             <div class="input-group-append">
                                                 <span class="input-group-text"><i class="fas fa-square"
                                                         style="color: {{ old('meta', '#FFFFFF') }};"></i></span>
@@ -517,12 +521,15 @@
                                     @else
                                         <label for="value_meta_other_add" class="form-label">Thông tin Meta (Tùy
                                             chọn)</label>
-                                        <input type="text" class="form-input @error('meta') is-invalid @enderror"
+                                        <input type="text" class="form-input @error('meta') @if(!old('attribute_value_id')) is-invalid @endif @enderror"
                                             id="value_meta_other_add" name="meta"
-                                            placeholder="Thông tin bổ sung nếu cần" value="{{ old('meta') }}">
+                                            placeholder="Thông tin bổ sung nếu cần" value="{{ !old('attribute_value_id') ? old('meta') : '' }}">
                                     @endif
                                     @error('meta')
+                                      {{-- Chỉ hiển thị lỗi của form thêm mới --}}
+                                      @if(!old('attribute_value_id'))
                                         <div class="invalid-feedback">{{ $message }}</div>
+                                      @endif
                                     @enderror
                                 </div>
                             </div>
@@ -561,50 +568,63 @@
                                             @foreach ($attribute->attributeValues as $value)
                                                 <tr>
                                                     <td>{{ $value->id }}</td>
-                                                    {{-- Inline Form for Editing Attribute Value --}}
+                                                    {{-- Form sửa cho mỗi giá trị --}}
                                                     <form
                                                         action="{{ route('admin.attributes.values.update', [$attribute->id, $value->id]) }}"
                                                         method="POST" id="formEditValue{{ $value->id }}"
-                                                        class="contents"> {{-- 'contents' class to make form not break table layout --}}
+                                                        class="contents">
                                                         @csrf
                                                         @method('PUT')
+
+                                                        {{-- ĐÂY LÀ THAY ĐỔI QUAN TRỌNG: Thêm input ẩn này để xác định form nào đã được submit --}}
+                                                        <input type="hidden" name="attribute_value_id" value="{{ $value->id }}">
+
+                                                        {{-- Tên giá trị --}}
                                                         <td>
-                                                            <input type="text"
-                                                                name="edit_value_name_{{ $value->id }}"
-                                                                class="form-control-sm @error('edit_value_name_' . $value->id) is-invalid @enderror"
-                                                                value="{{ old('edit_value_name_' . $value->id, $value->value) }}">
-                                                            @error('edit_value_name_' . $value->id)
-                                                                <span
-                                                                    class="invalid-feedback block">{{ $message }}</span>
-                                                            @enderror
+                                                            {{-- Sửa: name="value" và kiểm tra lỗi/old() dựa vào attribute_value_id --}}
+                                                            <input type="text" name="value"
+                                                                class="form-control-sm @if(old('attribute_value_id') == $value->id) @error('value') is-invalid @enderror @endif"
+                                                                value="{{ old('attribute_value_id') == $value->id ? old('value') : $value->value }}">
+
+                                                            {{-- Chỉ hiển thị lỗi nếu nó thuộc về hàng này --}}
+                                                            @if (old('attribute_value_id') == $value->id)
+                                                                @error('value')
+                                                                    <span class="invalid-feedback block">{{ $message }}</span>
+                                                                @enderror
+                                                            @endif
                                                         </td>
+
+                                                        {{-- Meta (Mã màu hoặc thông tin khác) --}}
                                                         <td>
                                                             @if ($attribute->display_type === 'color_swatch')
-                                                                <div
-                                                                    class="input-group input-group-sm colorpicker-group-edit-{{ $value->id }}">
-                                                                    <input type="text"
-                                                                        name="edit_value_meta_{{ $value->id }}"
-                                                                        class="form-control-sm @error('edit_value_meta_' . $value->id) is-invalid @enderror"
-                                                                        value="{{ old('edit_value_meta_' . $value->id, $value->meta) }}"
+                                                                <div class="input-group input-group-sm colorpicker-group-edit-{{ $value->id }}">
+                                                                    {{-- Sửa: name="meta" và kiểm tra lỗi/old() --}}
+                                                                    <input type="text" name="meta"
+                                                                        class="form-control-sm @if(old('attribute_value_id') == $value->id) @error('meta') is-invalid @enderror @endif"
+                                                                        value="{{ old('attribute_value_id') == $value->id ? old('meta') : $value->meta }}"
                                                                         placeholder="#FF0000">
                                                                     <div class="input-group-append">
-                                                                        <span class="input-group-text"><i
-                                                                                class="fas fa-square"
-                                                                                style="color: {{ old('edit_value_meta_' . $value->id, $value->meta ?? '#FFFFFF') }};"></i></span>
+                                                                        <span class="input-group-text"><i class="fas fa-square"
+                                                                                style="color: {{ old('attribute_value_id') == $value->id ? old('meta', $value->meta) : ($value->meta ?? '#FFFFFF') }};"></i></span>
                                                                     </div>
                                                                 </div>
                                                             @else
-                                                                <input type="text"
-                                                                    name="edit_value_meta_{{ $value->id }}"
-                                                                    class="form-control-sm @error('edit_value_meta_' . $value->id) is-invalid @enderror"
-                                                                    value="{{ old('edit_value_meta_' . $value->id, $value->meta) }}">
+                                                                {{-- Sửa: name="meta" và kiểm tra lỗi/old() --}}
+                                                                <input type="text" name="meta"
+                                                                    class="form-control-sm @if(old('attribute_value_id') == $value->id) @error('meta') is-invalid @enderror @endif"
+                                                                    value="{{ old('attribute_value_id') == $value->id ? old('meta') : $value->meta }}">
                                                             @endif
-                                                            @error('edit_value_meta_' . $value->id)
-                                                                <span
-                                                                    class="invalid-feedback block">{{ $message }}</span>
-                                                            @enderror
+
+                                                            {{-- Chỉ hiển thị lỗi nếu nó thuộc về hàng này --}}
+                                                            @if (old('attribute_value_id') == $value->id)
+                                                                @error('meta')
+                                                                    <span class="invalid-feedback block">{{ $message }}</span>
+                                                                @enderror
+                                                            @endif
                                                         </td>
                                                     </form>
+
+                                                    {{-- Các nút thao tác --}}
                                                     <td class="text-center">
                                                         <div class="inline-flex space-x-1">
                                                             <button type="submit"
@@ -620,6 +640,7 @@
                                                         </div>
                                                     </td>
                                                 </tr>
+                                                
                                                 {{-- Delete Modal for each value --}}
                                                 <div id="deleteValueModal{{ $value->id }}"
                                                     class="attribute-value-modal" tabindex="-1" role="dialog">
@@ -676,7 +697,6 @@
     {{-- jQuery is required by bootstrap-colorpicker --}}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     {{-- Bootstrap Bundle JS (includes Popper for popovers) - Load BEFORE colorpicker --}}
-    {{-- Using a stable Bootstrap 5.1.3 version --}}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"
         xintegrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous">
     </script>
@@ -684,7 +704,6 @@
         xintegrity="sha512-94dgCw8xWrVcgkmOc2fwKjO4dqK/XsdX1hKaUnQLWCUPsMo4yW5MhXlEVlU3j4G+m87zS6G8rLTrrK3L3eVHIw=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
-        // Đảm bảo tất cả script chạy sau khi DOM đã được tải
         document.addEventListener('DOMContentLoaded', function() {
 
             // === SCRIPT CHO TOAST NOTIFICATION ===
@@ -755,60 +774,39 @@
             const addColorPickerGroup = $('.colorpicker-group-add');
             if (addColorPickerGroup.length) {
                 try {
-                    // Ensure Bootstrap's popover is available
                     if (typeof $.fn.popover === 'undefined' || typeof bootstrap.Popover === 'undefined') {
-                        console.error(
-                            'Bootstrap Popover or bootstrap.Popover is not loaded. Colorpicker might not work correctly.'
-                            );
-                        const aiColorErrorAdd = document.getElementById('ai_color_error_add');
-                        if (aiColorErrorAdd) {
-                            aiColorErrorAdd.textContent =
-                                'Lỗi: Bootstrap Popover chưa được tải. Colorpicker có thể không hoạt động.';
-                            aiColorErrorAdd.style.display = 'block';
-                        }
+                        console.error('Bootstrap Popover not loaded. Colorpicker might not work.');
                     }
                     addColorPickerGroup.colorpicker().on('colorpickerChange', function(event) {
                         $(this).find('.fa-square').css('color', event.color.toString());
                     });
                 } catch (e) {
                     console.error("Error initializing color picker for Add form:", e);
-                    const aiColorErrorAdd = document.getElementById('ai_color_error_add');
-                    if (aiColorErrorAdd) {
-                        aiColorErrorAdd.textContent = 'Lỗi khởi tạo color picker: ' + e.message;
-                        aiColorErrorAdd.style.display = 'block';
-                    }
                 }
             }
-
 
             // For Edit Value forms in the table
             @if (isset($attribute) && $attribute->attributeValues)
                 @foreach ($attribute->attributeValues as $value)
                     @if ($attribute->display_type === 'color_swatch')
-                        const editColorPickerGroup_{{ $value->id }} = $(
-                            '.colorpicker-group-edit-{{ $value->id }}');
+                        const editColorPickerGroup_{{ $value->id }} = $('.colorpicker-group-edit-{{ $value->id }}');
                         if (editColorPickerGroup_{{ $value->id }}.length) {
                             try {
-                                if (typeof $.fn.popover === 'undefined' || typeof bootstrap.Popover ===
-                                    'undefined') {
-                                    console.error(
-                                        'Bootstrap Popover or bootstrap.Popover is not loaded for edit form. Colorpicker might not work correctly.'
-                                        );
-                                }
+                                 if (typeof $.fn.popover === 'undefined' || typeof bootstrap.Popover === 'undefined') {
+                                    console.error('Bootstrap Popover not loaded for edit form. Colorpicker might not work.');
+                                 }
                                 editColorPickerGroup_{{ $value->id }}.colorpicker().on('colorpickerChange',
                                     function(event) {
                                         $(this).find('.fa-square').css('color', event.color.toString());
                                     });
                             } catch (e) {
-                                console.error(
-                                    "Error initializing color picker for Edit form (ID: {{ $value->id }}):",
-                                    e);
+                                console.error("Error initializing color picker for Edit form (ID: {{ $value->id }}):",e);
                             }
                         }
                     @endif
                 @endforeach
             @endif
-
+            
             // === SCRIPT CHO GEMINI AI COLOR SUGGESTION ===
             const suggestButtonAdd = document.getElementById('btn_suggest_color_add');
             const aiPromptInputAdd = document.getElementById('value_ai_prompt_add');
@@ -829,147 +827,59 @@
                     spinnerAdd.style.display = 'inline-block';
                     suggestButtonAdd.disabled = true;
 
-                    // Prompt for Gemini, asking for a HEX code based on the user's description
-                    const fullPrompt = `Bạn là một AI chuyên gia về màu sắc và thiết kế web. Nhiệm vụ của bạn là cung cấp mã màu HEX cho một trang web thương mại điện tử chuyên bán các sản phẩm của Apple. Phong cách màu sắc phải hiện đại, tinh tế, tối giản và cao cấp, phù hợp với thẩm mỹ của Apple.
-
-Dựa trên mô tả của người dùng, bạn CHỈ được trả về một mã màu HEX duy nhất.
-
-QUY TẮC TUYỆT ĐỐI:
-1.  Định dạng trả về phải là #XXXXXX. Không thêm bất kỳ giải thích, mô tả hay ký tự nào khác.
-2.  Nếu mô tả của người dùng vô nghĩa, không liên quan đến màu sắc, là một câu hỏi ngẫu nhiên, hoặc không thể chuyển thành một màu sắc cụ thể (ví dụ: "aaa", "con chó", "bạn thích gì?", "tôi không biết"), bạn PHẢI trả về chính xác chuỗi "null".
-
-Dưới đây là các ví dụ:
-User: màu của tình yêu
-AI: #FF4B4B
-
-User: iphone 15 hồng baby
-AI: #FBE2DD
-
-User: màu xanh của cốm Làng Vòng
-AI: #A8E063
-
-User: màu của bia Sài Gòn
-AI: #F2B705
-
-User: xanh đại dương sâu thẳm
-AI: #003973
-
-User: một màu xám trung tính
-AI: #8E8E93
-
-User: con mèo
-AI: null
-
-User: mày là ai?
-AI: null
-
-User: asdfghjkl
-AI: null
-
-User: màu của sự phản bội
-AI: null
-
-Bây giờ, hãy xử lý yêu cầu sau.
-
-User: ${userPrompt}
-AI:
-`;
+                    const fullPrompt = `Bạn là một AI chuyên gia về màu sắc và thiết kế web. Nhiệm vụ của bạn là cung cấp mã màu HEX cho một trang web thương mại điện tử chuyên bán các sản phẩm của Apple. Phong cách màu sắc phải hiện đại, tinh tế, tối giản và cao cấp, phù hợp với thẩm mỹ của Apple. Dựa trên mô tả của người dùng, bạn CHỈ được trả về một mã màu HEX duy nhất. QUY TẮC TUYỆT ĐỐI: 1. Định dạng trả về phải là #XXXXXX. Không thêm bất kỳ giải thích, mô tả hay ký tự nào khác. 2. Nếu mô tả của người dùng vô nghĩa, không liên quan đến màu sắc, là một câu hỏi ngẫu nhiên, hoặc không thể chuyển thành một màu sắc cụ thể (ví dụ: "aaa", "con chó", "bạn thích gì?", "tôi không biết"), bạn PHẢI trả về chính xác chuỗi "null". Ví dụ: User: iphone 15 hồng baby. AI: #FBE2DD. User: con mèo. AI: null. Bây giờ, hãy xử lý yêu cầu sau. User: ${userPrompt}. AI:`;
 
                     try {
-                        let chatHistory = [];
-                        chatHistory.push({
-                            role: "user",
-                            parts: [{
-                                text: fullPrompt
-                            }]
-                        });
                         const payload = {
-                            contents: chatHistory
+                            contents: [{ role: "user", parts: [{ text: fullPrompt }] }]
                         };
-                        // The API key should be an empty string.
-                        // The Canvas environment will automatically provide it during the fetch call.
                         const apiKey = '{{ env('GOOGLE_API_KEY') }}';
-                        const apiUrl =
-                            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                         const response = await fetch(apiUrl, {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
 
                         if (!response.ok) {
-                            const errorData = await response.json().catch(() => ({
-                                error: {
-                                    message: "Không thể phân tích phản hồi lỗi từ API."
-                                }
-                            }));
-                            console.error('Gemini API Error Response:', errorData);
-                            throw new Error(
-                                `Lỗi từ API Gemini: ${errorData.error?.message || response.statusText}`
-                                );
+                            const errorData = await response.json().catch(() => ({ error: { message: "Không thể phân tích phản hồi lỗi từ API." } }));
+                            throw new Error(`Lỗi từ API Gemini: ${errorData.error?.message || response.statusText}`);
                         }
 
                         const result = await response.json();
-                        console.log('Gemini API Success Response:', result);
 
-
-                        if (result.candidates && result.candidates.length > 0 &&
-                            result.candidates[0].content && result.candidates[0].content.parts &&
-                            result.candidates[0].content.parts.length > 0) {
-                            let suggestedColor = result.candidates[0].content.parts[0].text.trim();
-
-                            // Validate if the response is a hex color
-                            // Also try to extract hex if it's embedded in a longer string like "Here is your color: #FF0000."
+                        if (result.candidates?.[0]?.content?.parts?.[0]) {
+                            const suggestedColor = result.candidates[0].content.parts[0].text.trim();
                             const hexMatch = suggestedColor.match(/#[0-9A-F]{6}|#[0-9A-F]{3}/i);
 
-                            if (hexMatch && hexMatch[0]) {
+                            if (hexMatch?.[0]) {
                                 metaColorInputAdd.value = hexMatch[0];
-                                // Trigger change for color picker to update its visual
                                 if (addColorPickerGroup.length) {
                                     try {
                                         addColorPickerGroup.colorpicker('setValue', hexMatch[0]);
                                     } catch (e) {
                                         console.error("Error updating color picker with AI value:", e);
-                                        aiColorErrorAdd.textContent = 'Lỗi cập nhật color picker: ' + e
-                                            .message + '. Vui lòng thử lại.';
-                                        aiColorErrorAdd.style.display = 'block';
                                     }
                                 }
                                 aiColorErrorAdd.style.display = 'none';
                             } else {
-                                console.warn(
-                                    'Gemini API did not return a valid HEX color in the expected format:',
-                                    suggestedColor);
-                                aiColorErrorAdd.textContent =
-                                    'AI không trả về mã màu HEX hợp lệ. Vui lòng thử lại hoặc nhập thủ công.';
+                                aiColorErrorAdd.textContent = 'AI không trả về mã màu HEX hợp lệ. Vui lòng thử lại hoặc nhập thủ công.';
                                 aiColorErrorAdd.style.display = 'block';
                             }
                         } else {
-                            console.warn('Gemini API response structure unexpected:', result);
-                            aiColorErrorAdd.textContent =
-                                'Không nhận được phản hồi hợp lệ từ AI. Vui lòng thử lại.';
+                            aiColorErrorAdd.textContent = 'Không nhận được phản hồi hợp lệ từ AI. Vui lòng thử lại.';
                             aiColorErrorAdd.style.display = 'block';
                         }
                     } catch (error) {
                         console.error('Error fetching color from AI:', error);
-                        aiColorErrorAdd.textContent =
-                            `Lỗi khi gợi ý màu: ${error.message}. Vui lòng thử lại.`;
+                        aiColorErrorAdd.textContent = `Lỗi khi gợi ý màu: ${error.message}. Vui lòng thử lại.`;
                         aiColorErrorAdd.style.display = 'block';
                     } finally {
                         spinnerAdd.style.display = 'none';
                         suggestButtonAdd.disabled = false;
                     }
                 });
-            } else {
-                console.warn("Một hoặc nhiều phần tử DOM cho tính năng gợi ý màu AI không được tìm thấy.");
-                if (aiColorErrorAdd) { // Check if error display element exists
-                    aiColorErrorAdd.textContent =
-                        'Lỗi thiết lập: Không tìm thấy các thành phần cần thiết cho gợi ý màu AI.';
-                    aiColorErrorAdd.style.display = 'block';
-                }
             }
         });
     </script>

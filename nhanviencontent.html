@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Nhân viên Content</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Be Vietnam Pro -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .status-active { background-color: #dcfce7; color: #16a34a; }
+        .status-inactive { background-color: #f3f4f6; color: #4b5563; }
+        
+        /* Modal styles */
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .modal-content {
+             transform: scale(0.95);
+             transition: transform 0.3s ease;
+        }
+        .modal:not(.hidden) .modal-content {
+            transform: scale(1);
+        }
+
+        /* Calendar Styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+        .calendar-day {
+            min-height: 110px;
+        }
+        .calendar-day.other-month {
+            background-color: #f9fafb;
+        }
+        .shift-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: none;
+        }
+        .shift-select.shift-Sang { background-color: #e0f2fe; color: #0284c7;}
+        .shift-select.shift-Chieu { background-color: #fef3c7; color: #d97706;}
+        .shift-select.shift-Toi { background-color: #e0e7ff; color: #4338ca;}
+        .shift-select.shift-Nghi { background-color: #f3f4f6; color: #4b5563;}
+
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-screen-2xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 flex justify-between items-center">
+            <div>
+                 <h1 class="text-3xl font-bold text-gray-800">Quản lý Nhân viên Content</h1>
+                 <p class="text-gray-500 mt-1">Thêm mới, tìm kiếm và quản lý thông tin các biên tập viên.</p>
+            </div>
+            <button onclick="openModal()" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2">
+                <i class="fas fa-plus"></i>
+                <span>Thêm nhân viên mới</span>
+            </button>
+        </header>
+
+        <!-- Filter Section -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                    <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </span>
+                        <input type="text" id="search-input" placeholder="Tên, Email..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái tài khoản</label>
+                    <select id="status-filter" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Tất cả</option>
+                        <option value="active">Đang hoạt động</option>
+                        <option value="inactive">Không hoạt động</option>
+                    </select>
+                </div>
+                 <div class="flex items-end space-x-3">
+                    <button id="apply-filters-btn" class="w-full px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center justify-center space-x-2">
+                        <i class="fas fa-filter"></i>
+                        <span>Áp dụng</span>
+                    </button>
+                    <button id="clear-filters-btn" class="w-full px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Xóa lọc</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Staff Table -->
+        <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+             <table class="w-full text-sm text-left text-gray-600">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th scope="col" class="p-6">Nhân viên</th>
+                        <th scope="col" class="p-6">Hiệu suất</th>
+                        <th scope="col" class="p-6">Ngày tham gia</th>
+                        <th scope="col" class="p-6">Trạng thái</th>
+                        <th scope="col" class="p-6 text-center">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="staff-tbody">
+                    <!-- Staff rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+             <div id="no-results" class="hidden text-center p-12 text-gray-500">
+                 <i class="fas fa-user-slash fa-3x text-gray-400 mb-4"></i>
+                 <h3 class="text-lg font-semibold text-gray-700">Không tìm thấy nhân viên</h3>
+                 <p class="text-gray-500">Vui lòng thử lại với bộ lọc khác.</p>
+             </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Staff Modal -->
+    <div id="staff-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <form id="staff-form" class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-2xl">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 id="modal-title" class="text-xl font-bold text-gray-800">Thêm nhân viên mới</h2>
+                <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times fa-lg"></i>
+                </button>
+            </div>
+            <div class="p-8 space-y-6">
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Họ và Tên <span class="text-red-500">*</span></label>
+                        <input type="text" id="name" required class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Nguyễn Văn A">
+                    </div>
+                     <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
+                         <input type="email" id="email" required class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="example@email.com">
+                    </div>
+                 </div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                        <input type="password" id="password" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Để trống nếu không đổi">
+                    </div>
+                     <div>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                        <select id="status" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="active">Đang hoạt động</option>
+                            <option value="inactive">Không hoạt động</option>
+                        </select>
+                    </div>
+                 </div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3 rounded-b-2xl">
+                <button type="button" onclick="closeModal()" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Hủy</button>
+                <button type="submit" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">Lưu thông tin</button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Schedule Modal -->
+    <div id="schedule-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-4xl">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h2 id="schedule-modal-title" class="text-xl font-bold text-gray-800">Lịch làm việc</h2>
+                    <button type="button" onclick="closeScheduleModal()" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                    <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-100"><i class="fas fa-chevron-left"></i></button>
+                    <h3 id="current-month-year" class="text-lg font-semibold"></h3>
+                    <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-100"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="calendar-grid text-center font-semibold text-gray-700 mb-2">
+                    <div>CN</div><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div>
+                </div>
+                <div id="calendar-body" class="calendar-grid">
+                    <!-- Calendar days will be generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- MOCK DATA ---
+            let mockStaff = [
+                { id: 1, name: 'Bùi Phương Nga', email: 'nga.bp@content.com', avatar: 'https://placehold.co/40x40/EC4899/FFFFFF?text=N', status: 'active', createdAt: '2024-01-10T10:00:00Z', stats: { posts: 45, views: 15230 }, schedule: [{date: '2025-06-23', shift: 'Sáng'}, {date: '2025-06-24', shift: 'Chiều'}] },
+                { id: 2, name: 'Đặng Minh Khôi', email: 'khoi.dm@content.com', avatar: 'https://placehold.co/40x40/3B82F6/FFFFFF?text=K', status: 'active', createdAt: '2023-11-20T11:00:00Z', stats: { posts: 68, views: 28910 }, schedule: [{date: '2025-06-23', shift: 'Chiều'}, {date: '2025-06-25', shift: 'Sáng'}] },
+                { id: 3, name: 'Phan Thị Thảo', email: 'thao.pt@content.com', avatar: 'https://placehold.co/40x40/F59E0B/FFFFFF?text=T', status: 'inactive', createdAt: '2023-09-05T09:00:00Z', stats: { posts: 21, views: 8500 }, schedule: [] },
+                { id: 4, name: 'Lý Quốc Bảo', email: 'bao.lq@content.com', avatar: 'https://placehold.co/40x40/10B981/FFFFFF?text=B', status: 'active', createdAt: '2024-03-18T14:00:00Z', stats: { posts: 32, views: 11200 }, schedule: [{date: '2025-06-26', shift: 'Tối'}] },
+            ];
+
+            // --- STATE ---
+            let currentEditingId = null;
+            let currentScheduleStaffId = null;
+            let currentScheduleDate = new Date(2025, 5, 22); // June 2025 for demo data
+
+            // --- DOM ELEMENTS ---
+            const tbody = document.getElementById('staff-tbody');
+            const noResultsDiv = document.getElementById('no-results');
+            const searchInput = document.getElementById('search-input');
+            const statusFilter = document.getElementById('status-filter');
+            
+            // Staff Modal elements
+            const staffModal = document.getElementById('staff-modal');
+            const staffForm = document.getElementById('staff-form');
+            const modalTitle = document.getElementById('modal-title');
+
+            // Schedule Modal elements
+            const scheduleModal = document.getElementById('schedule-modal');
+            const scheduleModalTitle = document.getElementById('schedule-modal-title');
+            const currentMonthYearEl = document.getElementById('current-month-year');
+            const calendarBody = document.getElementById('calendar-body');
+            const prevMonthBtn = document.getElementById('prev-month-btn');
+            const nextMonthBtn = document.getElementById('next-month-btn');
+
+            // --- UTILITY FUNCTIONS ---
+            const formatDate = (dateString) => {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            };
+
+            const formatViews = (views) => new Intl.NumberFormat('en-US').format(views);
+
+            const statusMap = {
+                active: { text: 'Hoạt động', class: 'status-active' },
+                inactive: { text: 'Tạm nghỉ', class: 'status-inactive' },
+            };
+            const shifts = { 'Nghi': 'Nghỉ', 'Sang': 'Sáng', 'Chieu': 'Chiều', 'Toi': 'Tối' };
+
+            // --- RENDER FUNCTIONS ---
+            function renderStaffRow(staff) {
+                const staffStatus = statusMap[staff.status] || { text: 'N/A', class: '' };
+                
+                return `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="p-6">
+                            <div class="flex items-center">
+                                <img src="${staff.avatar}" class="w-10 h-10 rounded-full mr-4 object-cover">
+                                <div>
+                                    <div class="font-semibold text-gray-800">${staff.name}</div>
+                                    <div class="text-gray-500">${staff.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-6">
+                            <div class="flex items-center text-sm">
+                               <i class="fas fa-file-alt text-blue-500 mr-2"></i> Số bài viết: <strong>${staff.stats.posts}</strong>
+                            </div>
+                             <div class="flex items-center text-sm mt-1">
+                               <i class="fas fa-eye text-green-500 mr-2"></i> Lượt xem: <strong>${formatViews(staff.stats.views)}</strong>
+                            </div>
+                        </td>
+                        <td class="p-6">${formatDate(staff.createdAt)}</td>
+                        <td class="p-6"><span class="status-badge ${staffStatus.class}">${staffStatus.text}</span></td>
+                        <td class="p-6 text-center">
+                            <button onclick='openScheduleModal(${staff.id})' class="text-purple-600 hover:text-purple-900 text-lg" title="Lịch làm việc"><i class="fas fa-calendar-alt"></i></button>
+                            <button onclick='openModal(${staff.id})' class="text-indigo-600 hover:text-indigo-900 text-lg ml-4" title="Chỉnh sửa"><i class="fas fa-edit"></i></button>
+                            <button class="text-red-600 hover:text-red-900 text-lg ml-4" title="Xóa"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            function renderTable(staffToRender) {
+                if (!staffToRender || staffToRender.length === 0) {
+                    tbody.innerHTML = '';
+                    noResultsDiv.classList.remove('hidden');
+                    return;
+                }
+                noResultsDiv.classList.add('hidden');
+                tbody.innerHTML = staffToRender.map(renderStaffRow).join('');
+            }
+            
+            // --- STAFF MODAL LOGIC ---
+            window.openModal = (staffId = null) => {
+                staffForm.reset();
+                currentEditingId = staffId;
+                if (staffId !== null) {
+                    modalTitle.textContent = "Chỉnh sửa thông tin nhân viên";
+                    const staff = mockStaff.find(s => s.id === staffId);
+                    if (staff) {
+                        document.getElementById('name').value = staff.name;
+                        document.getElementById('email').value = staff.email;
+                        document.getElementById('status').value = staff.status;
+                        document.getElementById('password').required = false;
+                    }
+                } else {
+                    modalTitle.textContent = "Thêm nhân viên mới";
+                    document.getElementById('password').required = true;
+                }
+                staffModal.classList.remove('hidden');
+            };
+            window.closeModal = () => {
+                staffModal.classList.add('hidden');
+                currentEditingId = null;
+                document.getElementById('password').required = false;
+            };
+            staffForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const status = document.getElementById('status').value;
+
+                if (currentEditingId !== null) {
+                    const index = mockStaff.findIndex(s => s.id === currentEditingId);
+                    if (index !== -1) mockStaff[index] = { ...mockStaff[index], name, email, status };
+                } else {
+                    const newId = Math.max(...mockStaff.map(s => s.id)) + 1;
+                    mockStaff.unshift({ id: newId, name, email, status, avatar: `https://placehold.co/40x40/8B5CF6/FFFFFF?text=${name.charAt(0)}`, createdAt: new Date().toISOString(), stats: { posts: 0, views: 0 }, schedule: [] });
+                }
+                applyFilters();
+                closeModal();
+            });
+
+            // --- SCHEDULE MODAL LOGIC ---
+            window.openScheduleModal = (staffId) => {
+                const staff = mockStaff.find(s => s.id === staffId);
+                if (!staff) return;
+                currentScheduleStaffId = staffId;
+                scheduleModalTitle.textContent = `Lịch làm việc - ${staff.name}`;
+                renderCalendar();
+                scheduleModal.classList.remove('hidden');
+            };
+            window.closeScheduleModal = () => {
+                scheduleModal.classList.add('hidden');
+                currentScheduleStaffId = null;
+            };
+            
+            function renderCalendar() {
+                const month = currentScheduleDate.getMonth();
+                const year = currentScheduleDate.getFullYear();
+                currentMonthYearEl.textContent = `Tháng ${month + 1}, ${year}`;
+                calendarBody.innerHTML = '';
+
+                const staff = mockStaff.find(s => s.id === currentScheduleStaffId);
+                if (!staff) return;
+
+                const firstDayOfMonth = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const today = new Date();
+                today.setHours(0,0,0,0);
+
+                // Add empty cells for days before the 1st
+                for (let i = 0; i < firstDayOfMonth; i++) {
+                    calendarBody.innerHTML += `<div class="calendar-day other-month"></div>`;
+                }
+
+                // Add cells for each day of the month
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const cellDate = new Date(year, month, day);
+                    const dateStr = cellDate.toISOString().split('T')[0];
+                    const scheduleEntry = staff.schedule.find(s => s.date === dateStr);
+                    const shift = scheduleEntry ? scheduleEntry.shift : 'Nghi';
+
+                    let optionsHtml = '';
+                    for (const [key, value] of Object.entries(shifts)) {
+                        optionsHtml += `<option value="${key}" ${key === shift ? 'selected' : ''}>${value}</option>`;
+                    }
+
+                    const isToday = cellDate.getTime() === today.getTime();
+                    
+                    calendarBody.innerHTML += `
+                        <div class="calendar-day border border-gray-200 rounded-lg p-2 flex flex-col ${isToday ? 'bg-indigo-50' : ''}">
+                            <div class="font-bold ${isToday ? 'text-indigo-600' : 'text-gray-800'}">${day}</div>
+                            <select onchange="updateShift(${day}, event.target.value)" class="mt-auto w-full text-center text-sm font-semibold rounded-md border-0 p-1.5 shift-select shift-${shift}">
+                                ${optionsHtml}
+                            </select>
+                        </div>
+                    `;
+                }
+            }
+            
+            window.updateShift = (day, newShift) => {
+                if (currentScheduleStaffId === null) return;
+                const staffIndex = mockStaff.findIndex(s => s.id === currentScheduleStaffId);
+                if (staffIndex === -1) return;
+
+                const date = new Date(currentScheduleDate.getFullYear(), currentScheduleDate.getMonth(), day);
+                const dateStr = date.toISOString().split('T')[0];
+
+                const scheduleIndex = mockStaff[staffIndex].schedule.findIndex(s => s.date === dateStr);
+                
+                if (newShift === 'Nghi') {
+                    // Remove from schedule if it exists
+                    if (scheduleIndex > -1) mockStaff[staffIndex].schedule.splice(scheduleIndex, 1);
+                } else {
+                    if (scheduleIndex > -1) {
+                        // Update existing shift
+                        mockStaff[staffIndex].schedule[scheduleIndex].shift = newShift;
+                    } else {
+                        // Add new shift
+                        mockStaff[staffIndex].schedule.push({ date: dateStr, shift: newShift });
+                    }
+                }
+                 // Visually update the select box color
+                 event.target.className = `mt-auto w-full text-center text-sm font-semibold rounded-md border-0 p-1.5 shift-select shift-${newShift}`;
+            };
+            
+            prevMonthBtn.addEventListener('click', () => {
+                currentScheduleDate.setMonth(currentScheduleDate.getMonth() - 1);
+                renderCalendar();
+            });
+            nextMonthBtn.addEventListener('click', () => {
+                currentScheduleDate.setMonth(currentScheduleDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            // --- FILTERING LOGIC ---
+            function applyFilters() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const status = statusFilter.value;
+                let filteredStaff = mockStaff.filter(staff => {
+                    const matchesSearch = searchTerm === '' ||
+                        staff.name.toLowerCase().includes(searchTerm) ||
+                        staff.email.toLowerCase().includes(searchTerm);
+                    const matchesStatus = status === '' || staff.status === status;
+                    return matchesSearch && matchesStatus;
+                });
+                renderTable(filteredStaff);
+            }
+
+            function clearFilters() {
+                searchInput.value = '';
+                statusFilter.value = '';
+                renderTable(mockStaff);
+            }
+            
+            document.getElementById('apply-filters-btn').addEventListener('click', applyFilters);
+            document.getElementById('clear-filters-btn').addEventListener('click', clearFilters);
+
+            // --- INITIAL RENDER ---
+            renderTable(mockStaff);
+        });
+    </script>
+</body>
+</html>

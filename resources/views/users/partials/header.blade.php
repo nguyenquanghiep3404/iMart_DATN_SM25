@@ -32,9 +32,11 @@
         <!-- Search visible on screens > 991px wide (lg breakpoint) -->
         <div class="position-relative flex-fill d-none d-lg-block pe-4 pe-xl-5">
           <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
-          <input type="search" class="form-control form-control-lg form-icon-start border-white rounded-pill" placeholder="Search the products">
-        </div>
+          <input type="search"
+            class="form-control form-control-lg form-icon-start border-white rounded-pill bg-transparent text-white"
+            placeholder="Tìm kiếm sản phẩm">
 
+        </div>
         <!-- Sale link visible on screens > 1200px wide (xl breakpoint) -->
         <a class="d-none d-xl-flex align-items-center text-decoration-none animate-shake navbar-stuck-hide me-3 me-xl-4 me-xxl-5" href="shop-catalog-electronics.html">
           <div class="btn btn-icon btn-lg fs-lg text-primary bg-body-secondary bg-opacity-75 pe-none rounded-circle">
@@ -92,11 +94,22 @@
             </ul>
           </div>
 
-          <!-- Search toggle button visible on screens < 992px wide (lg breakpoint) -->
-          <button type="button" class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none" data-bs-toggle="collapse" data-bs-target="#searchBar" aria-expanded="false" aria-controls="searchBar" aria-label="Toggle search bar">
+          <!-- Nút bật/tắt thanh tìm kiếm (chỉ hiện trên màn hình nhỏ hơn 992px) -->
+          <button type="button"
+            class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none"
+            data-bs-toggle="collapse"
+            data-bs-target="#searchBar"
+            aria-expanded="false"
+            aria-controls="searchBar"
+            aria-label="Toggle search bar"
+            title="Tìm kiếm">
             <i class="ci-search animate-target"></i>
           </button>
 
+
+          @php
+          $user = Auth::user();
+          @endphp
           <!-- Account button visible on screens > 768px wide (md breakpoint) -->
           <li class="nav-item dropdown d-none d-md-inline-flex">
             <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
@@ -118,9 +131,18 @@
               @guest
               <li><a class="dropdown-item" href="{{ route('login') }}">Đăng nhập</a></li>
               <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
-              <li><a class="dropdown-item" href="{{ route('password.request') }}">Quên mật khẩu</a></li>
               @else
               <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
+
+              {{-- Nếu là admin, hiển thị nút quay lại admin --}}
+              @if(
+              $user->roles->contains('id', 1) ||
+              $user->roles->contains('id', 4) ||
+              $user->roles->contains('id', 5)
+              )
+              <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Truy cập trang Quản Trị</a></li>
+              @endif
+
               <li>
                 <form action="{{ route('logout') }}" method="POST">
                   @csrf
@@ -170,6 +192,9 @@
       <div class="offcanvas-body py-3 py-lg-0">
         <div class="container px-0 px-lg-3">
           <div class="row">
+
+
+
             <!-- Navbar nav -->
             <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
               <ul class="navbar-nav position-relative">
@@ -262,6 +287,7 @@
                     </li>
                   </ul>
                 </li>
+
                 <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop</a>
                   <div class="dropdown-menu rounded-4 p-4">

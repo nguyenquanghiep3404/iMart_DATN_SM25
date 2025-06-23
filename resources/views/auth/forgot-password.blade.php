@@ -1,87 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('auth.layouts.app')
+@section('main')
+<main class="content-wrapper w-100 px-3 ps-lg-5 pe-lg-4 mx-auto" style="max-width: 1920px">
+  <div class="d-lg-flex">
 
-<!-- Mirrored from html.hixstudio.net/ebazer/login.html by HTTrack Website Copier/3.x [XR&CO'2014], Sun, 25 May 2025 14:06:53 GMT -->
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Bán sản phẩm iMart</title>
-    <link rel="shortcut icon" href="assets/admin/img/logo/favicon.png" type="image/x-icon">
-
-    <!-- css links -->
-    <link rel="stylesheet" href="assets/admin/css/perfect-scrollbar.css">
-    <link rel="stylesheet" href="assets/admin/css/choices.css">
-    <link rel="stylesheet" href="assets/admin/css/apexcharts.css">
-    <link rel="stylesheet" href="assets/admin/css/quill.css">
-    <link rel="stylesheet" href="assets/admin/css/rangeslider.css">
-    <link rel="stylesheet" href="assets/admin/css/custom.css">
-    <link rel="stylesheet" href="assets/admin/css/main.css">
-</head>
-<body>
-<div class="tp-main-wrapper h-screen">
-    <div class="container mx-auto my-auto h-full flex items-center justify-center">
-        <div class="pt-[120px] pb-[120px]">
-            <div class="grid grid-cols-12 shadow-lg bg-white overflow-hidden rounded-md">
-                <div class="col-span-4 lg:col-span-6 relative h-full hidden lg:block">
-                    <div class="data-bg absolute top-0 left-0 w-full h-full bg-cover bg-no-repeat" data-bg="assets/admin/img/bg/login-bg.jpg"></div>
-                </div>
-                <div class="col-span-12 lg:col-span-6 md:w-[500px] mx-auto my-auto pt-[50px] py-[60px] px-5 md:px-[60px]">
-                    <div class="text-center">
-                        <h4 class="text-[24px] mb-1">Quên mật khẩu</h4>
-                        <p>Không vấn đề gì. Chỉ cần nhập email của bạn và chúng tôi sẽ gửi liên kết đặt lại.</p>
-                    </div>
-
-                    <!-- Session Status -->
-                    <x-auth-session-status class="mb-4" :status="session('status')" />
-
-                    <form method="POST" action="{{ route('password.email') }}">
-                        @csrf
-
-                        <div class="mb-5">
-                            <p class="mb-0 text-base text-black">Email <span class="text-red">*</span></p>
-                            <input
-                                id="email"
-                                class="input w-full h-[49px] rounded-md border border-gray6 px-6 text-base @error('email') border-red-500 @enderror"
-                                type="email"
-                                name="email"
-                                :value="old('email')"
-                                required
-                                autofocus
-                                placeholder="Nhập email của bạn"
-                            >
-                            <x-input-error :messages="$errors->get('email')" class="mt-2 text-sm text-red-600" />
-                        </div>
-
-                        <div class="flex items-center justify-end mt-4">
-                            <button class="tp-btn h-[49px] w-full justify-center">
-                                {{ __('Liên kết đặt lại mật khẩu email') }}
-                            </button>
-                        </div>
-                    </form>
-
-                    <div class="mt-6 text-center">
-                        <a href="{{ route('login') }}" class="text-sm text-theme hover:underline">
-                            Quay lại để đăng nhập
-                        </a>
-                    </div>
-                </div>
-            </div>
+    <!-- Left form -->
+    <div class="d-flex flex-column min-vh-100 w-100 py-4 mx-auto me-lg-5" style="max-width: 416px">
+      <!-- Logo -->
+      <header class="navbar align-items-center px-0 pb-4 mt-n2 mt-sm-0 mb-2 mb-md-3 mb-lg-4">
+        <a href="{{ url('/') }}" class="navbar-brand pt-0">
+          <span class="d-flex flex-shrink-0 text-primary me-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor"><path d="..."/></svg>
+          </span>
+          iMart
+        </a>
+        <div class="nav">
+          <a class="nav-link fs-base animate-underline p-0" href="{{ route('login') }}">
+            <i class="ci-chevron-left fs-lg ms-n1 me-1"></i>
+            <span class="animate-target">Quay lại đăng nhập</span>
+          </a>
         </div>
+      </header>
+
+      <h1 class="h3 mt-auto">Quên mật khẩu</h1>
+      <p class="pb-2 pb-md-3">Nhập email đã đăng ký, chúng tôi sẽ gửi liên kết đặt lại mật khẩu.</p>
+
+      <!-- Session Status -->
+      @if (session('status'))
+        <div class="alert alert-success" role="alert">
+          {{ session('status') }}
+        </div>
+      @endif
+
+      <!-- Form -->
+      <form method="POST" action="{{ route('password.email') }}" class="needs-validation pb-4 mb-3 mb-lg-4" novalidate>
+        @csrf
+
+        <div class="position-relative mb-4">
+          <i class="ci-mail position-absolute top-50 start-0 translate-middle-y fs-lg ms-3"></i>
+          <input id="email" name="email" type="email"
+                 class="form-control form-control-lg form-icon-start @error('email') is-invalid @enderror"
+                 placeholder="Địa chỉ email" value="{{ old('email') }}" required autofocus>
+          @error('email')
+            <div class="invalid-feedback d-block">
+              {{ $message }}
+            </div>
+          @enderror
+        </div>
+
+        <button type="submit" class="btn btn-lg btn-primary w-100">
+          Gửi liên kết đặt lại mật khẩu
+        </button>
+      </form>
+
+      <!-- Footer -->
+      <footer class="mt-auto">
+            <div class="nav mb-4">
+                <a class="nav-link text-decoration-underline p-0" href="help-topics-v1.html">Cần giúp đỡ?</a>
+            </div>
+            <p class="fs-xs mb-0">
+                © Mọi quyền được bảo lưu. Được thực hiện bởi <span class="animate-underline"><a class="animate-target text-dark-emphasis text-decoration-none" href="https://createx.studio/" target="_blank" rel="noreferrer">iMart Dev</a></span>
+            </p>
+        </footer>
     </div>
-</div>
 
+    <!-- Right Image (large screen only) -->
+    <div class="d-none d-lg-block w-100 py-4 ms-auto" style="max-width: 1034px">
+      <div class="d-flex flex-column justify-content-end h-100 rounded-5 overflow-hidden">
+        <span class="position-absolute top-0 start-0 w-100 h-100 d-none-dark" style="background: linear-gradient(-90deg, #accbee 0%, #e7f0fd 100%)"></span>
+        <div class="ratio position-relative z-2" style="--cz-aspect-ratio: calc(1030 / 1032 * 100%)">
+          <img src="{{ asset('assets/admin/img/bg/login-bg.jpg') }}" alt="Ảnh nền">
+        </div>
+      </div>
+    </div>
 
-    <script src="assets/admin/js/alpine.js"></script>
-    <script src="assets/admin/js/perfect-scrollbar.js"></script>
-    <script src="assets/admin/js/choices.js"></script>
-    <script src="assets/admin/js/chart.js"></script>
-    <script src="assets/admin/js/apexchart.js"></script>
-    <script src="assets/admin/js/quill.js"></script>
-    <script src="assets/admin/js/rangeslider.min.js"></script>
-    <script src="assets/admin/js/main.js"></script>
-    
-</body>
+  </div>
 
-<!-- Mirrored from html.hixstudio.net/ebazer/login.html by HTTrack Website Copier/3.x [XR&CO'2014], Sun, 25 May 2025 14:06:53 GMT -->
-</html>
+@endsection

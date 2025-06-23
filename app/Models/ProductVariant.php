@@ -21,6 +21,7 @@ class ProductVariant extends Model
         'manage_stock',
         'stock_status',
         'weight',
+        'primary_image_id',
         'dimensions_length',
         'dimensions_width',
         'dimensions_height',
@@ -40,6 +41,7 @@ class ProductVariant extends Model
         'dimensions_width' => 'decimal:2',
         'dimensions_height' => 'decimal:2',
         'is_default' => 'boolean',
+
     ];
 
     public function product()
@@ -67,4 +69,10 @@ class ProductVariant extends Model
     {
         return $this->morphMany(UploadedFile::class, 'attachable')->where('type', 'variant_image')->orderBy('order');
     }
+    public function primaryImage()
+{
+    // Giả định bạn có cột `primary_image_id` trong bảng `product_variants`
+    // và nó liên kết với bảng `uploaded_files`.
+    return $this->belongsTo(UploadedFile::class, 'primary_image_id');
+}
 }
