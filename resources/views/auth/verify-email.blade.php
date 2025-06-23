@@ -1,67 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Email - iMart</title>
-    <link rel="shortcut icon" href="{{ asset('assets/admin/img/logo/favicon.png') }}" type="image/x-icon">
+@extends('auth.layouts.app')
 
-    <!-- css links -->
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/perfect-scrollbar.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/choices.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/apexcharts.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/quill.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/rangeslider.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/admin/css/main.css') }}">
-</head>
-<body>
-    <div class="tp-main-wrapper h-screen bg-gray-100">
-        <div class="container mx-auto h-full flex items-center justify-center">
-            <div class="md:w-[500px] mx-auto shadow-lg bg-white pt-[50px] pb-[50px] px-10 sm:px-[60px] rounded-lg">
-                
-                <!-- Laravel verification message -->
-                <div class="mb-4 text-sm text-gray-600 text-center">
-                    {{ __('Cảm ơn bạn đã đăng ký! Trước khi bắt đầu, bạn có thể xác minh địa chỉ email của mình bằng cách nhấp vào liên kết mà chúng tôi vừa gửi qua email cho bạn không? Nếu bạn không nhận được email, chúng tôi sẽ vui lòng gửi cho bạn một email khác.') }}
-                </div>
+@section('main')
+  <div class="d-lg-flex">
 
-                @if (session('status') == 'verification-link-sent')
-                    <div class="mb-4 font-medium text-sm text-green-600 text-center">
-                        {{ __('Một liên kết xác minh mới đã được gửi đến địa chỉ email mà bạn cung cấp khi đăng ký.') }}
-                    </div>
-                @endif
+    <!-- Xác minh + Footer -->
+    <div class="d-flex flex-column min-vh-100 w-100 py-4 mx-auto me-lg-5" style="max-width: 416px">
 
-                <!-- Resend Verification Email Form -->
-                <div class="mt-6 flex items-center justify-center gap-4">
-                    <form method="POST" action="{{ route('verification.send') }}">
-                        @csrf
-                        <button type="submit" class="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition">
-                            {{ __('Gửi lại Email xác minh') }}
-                        </button>
-                    </form>
+      <!-- Logo -->
+      <header class="navbar align-items-center px-0 pb-4 mt-n2 mt-sm-0 mb-2 mb-md-3 mb-lg-4">
+        <a href="/" class="navbar-brand pt-0">
+          <span class="d-flex flex-shrink-0 text-primary me-2">
+            <!-- SVG logo -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
+              <path d="M36 18.01c0 8.097-5.355 14.949-12.705 17.2a18.12 18.12 0 0 1-5.315.79C9.622 36 2.608 30.313.573 22.611.257 21.407.059 20.162 0 18.879v-1.758c.02-.395.059-.79.099-1.185.099-.908.277-1.817.514-2.686C2.687 5.628 9.682 0 18 0c5.572 0 10.551 2.528 13.871 6.517 1.502 1.797 2.648 3.91 3.359 6.201.494 1.659.771 3.436.771 5.292z" fill="currentColor"></path>
+              <g fill="#fff"><path d="..."></path></g>
+            </svg>
+          </span>
+          Cartzilla
+        </a>
+      </header>
 
-                    <!-- Logout Form -->
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900">
-                            {{ __('Đăng xuất') }}
-                        </button>
-                    </form>
-                </div>
+      <!-- Nội dung xác minh -->
+      <h1 class="h2 mt-auto">Xác minh email</h1>
+      <p class="pb-2 pb-md-3 text-muted">
+        Cảm ơn bạn đã đăng ký! Vui lòng xác minh địa chỉ email của bạn bằng cách nhấp vào liên kết đã được gửi đến hộp thư của bạn. Nếu bạn không nhận được email, bạn có thể yêu cầu gửi lại bên dưới.
+      </p>
 
-            </div>
+      @if (session('status') == 'verification-link-sent')
+        <div class="alert alert-success text-center">
+          Một liên kết xác minh mới đã được gửi đến địa chỉ email bạn đã đăng ký.
         </div>
+      @endif
+
+      <!-- Form -->
+      <div class="pb-4 mb-3 mb-lg-4">
+        <form method="POST" action="{{ route('verification.send') }}" class="d-grid gap-2 mb-3">
+          @csrf
+          <button type="submit" class="btn btn-primary btn-lg w-100">
+            Gửi lại email xác minh
+          </button>
+        </form>
+
+        <form method="POST" action="{{ route('logout') }}">
+          @csrf
+          <button type="submit" class="btn btn-link w-100 text-muted text-decoration-underline">
+            Đăng xuất
+          </button>
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <footer class="mt-auto">
+            <div class="nav mb-4">
+                <a class="nav-link text-decoration-underline p-0" href="help-topics-v1.html">Cần giúp đỡ?</a>
+            </div>
+            <p class="fs-xs mb-0">
+                © Mọi quyền được bảo lưu. Được thực hiện bởi <span class="animate-underline"><a class="animate-target text-dark-emphasis text-decoration-none" href="https://createx.studio/" target="_blank" rel="noreferrer">iMart Dev</a></span>
+            </p>
+        </footer>
     </div>
 
-    <!-- JS scripts -->
-    <script src="{{ asset('assets/admin/js/alpine.js') }}"></script>
-    <script src="{{ asset('assets/admin/admin/js/perfect-scrollbar.js') }}"></script>
-    <script src="{{ asset('assets/admin/js/choices.js') }}"></script>
-    <script src="{{ asset('assets/admin/js/chart.js') }}"></script>
-    <script src="{{ asset('assets/admin/js/apexchart.js') }}"></script>
-    <script src="{{ asset('assets/admin/js/quill.js') }}"></script>
-    <script src="{{ asset('assets/admin/js/rangeslider.min.js') }}"></script>
-    <script src="{{ asset('assets/admin/js/main.js') }}"></script>
-</body>
-</html>
+    <!-- Cover image -->
+    <div class="d-none d-lg-block w-100 py-4 ms-auto" style="max-width: 1034px">
+      <div class="d-flex flex-column justify-content-end h-100 rounded-5 overflow-hidden">
+        <span class="position-absolute top-0 start-0 w-100 h-100 d-none-dark" style="background: linear-gradient(-90deg, #accbee 0%, #e7f0fd 100%)"></span>
+        <span class="position-absolute top-0 start-0 w-100 h-100 d-none d-block-dark" style="background: linear-gradient(-90deg, #1b273a 0%, #1f2632 100%)"></span>
+        <div class="ratio position-relative z-2" style="--cz-aspect-ratio: calc(1030 / 1032 * 100%)">
+          <img src="{{ asset('assets/users/img/account/cover.png') }}" alt="Cover">
+        </div>
+      </div>
+    </div>
+
+  </div>
+@endsection

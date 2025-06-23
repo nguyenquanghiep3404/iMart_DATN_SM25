@@ -270,11 +270,16 @@
                             </a>
                         </li>
                         <li>
+<<<<<<< HEAD
+                            <a href="{{  route('admin.roles.index') }}" {{-- Giả sử route --}}
+                               class="block w-full py-1.5
+=======
                             <a href="{{ route('admin.users.create') }}"
                                 class="block w-full py-1.5
+>>>>>>> 2502f64cee9a9f82f1e68a73aa5fe5f15d215300
                                 px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.users.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Thêm mới người dùng
+                                {{ request()->routeIs('admin.roles.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Vai trò của người dùng
                             </a>
                         </li>
                     </ul>
@@ -327,16 +332,14 @@
                 {{-- 10. Quản lý banner --}}
                 <li>
                     @php $isBannersActive = request()->routeIs('admin.banners.*'); @endphp
-                    <a href=""
+                    <a href="{{ route('admin.banners.index') }}"
                         class="group flex items-center px-4 py-2.5
-                        text-base rounded-md transition-all duration-200 ease-in-out
-                        {{ $isBannersActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+        text-base rounded-md transition-all duration-200 ease-in-out
+        {{ $isBannersActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
                         <span
                             class="mr-3 text-lg {{ $isBannersActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
-                                height="18" fill="currentColor">
-                                <path
-                                    d="M21,2H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V3A1,1,0,0,0,21,2ZM4,4H20V16H4ZM4,20V18H20v2Z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M21,2H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V3A1,1,0,0,0,21,2ZM4,4H20V16H4ZM4,20V18H20v2Z" />
                                 <path d="M12.5,11.5a1,1,0,1,0-1-1A.999.999,0,0,0,12.5,11.5Z" />
                                 <path d="M6,6H8V8H6Z" />
                             </svg>
@@ -410,10 +413,10 @@
                 {{-- 13. Quản lý thư viện ảnh --}}
                 <li>
                     @php $isMediaActive = request()->routeIs('admin.media.*'); @endphp
-                    <a href="{{ route('admin.media.index') }}"
-                        class="group flex items-center px-4 py-2.5
-              text-base rounded-md transition-all duration-200 ease-in-out
-              {{ $isMediaActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                    <button @click="openNav !== 11 ? openNav = 11 : openNav = null"
+                        :class="openNav === 11 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
                         <span
                             class="mr-3 text-lg {{ $isMediaActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
@@ -423,7 +426,33 @@
                             </svg>
                         </span>
                         Thư viện ảnh
-                    </a>
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 11 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 11" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.media.index') }}"
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.media.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách thư viện ảnh
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.media.trash') }}"
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.media.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
 

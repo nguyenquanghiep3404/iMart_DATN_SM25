@@ -3,8 +3,8 @@
 @section('title', $product->name . ' - iMart')
 
 @section('meta')
-    <meta name="description" content="{{ $product->meta_description }}">
-    <meta name="keywords" content="{{ $product->meta_keywords }}">
+<meta name="description" content="{{ $product->meta_description }}">
+<meta name="keywords" content="{{ $product->meta_keywords }}">
 @endsection
 
 @section('content')
@@ -84,7 +84,7 @@
       <h1 class="h2 text-light pb-2">{{ $product->name }}</h1>
       <div class="h3 fw-normal text-light pb-2">
         @if($product->variants && $product->variants->isNotEmpty())
-          {{ number_format($product->variants->first()->price) }}đ
+        {{ number_format($product->variants->first()->price) }}đ
         @endif
       </div>
       <div class="d-flex flex-wrap align-items-center pb-2">
@@ -222,102 +222,122 @@
 
 <!-- Product Tabs -->
 <div class="row mt-5">
-    <div class="col-12">
-        <ul class="nav nav-tabs" id="productTabs" role="tablist">
-            <li class="nav-item">
-                <a class="nav-link active" id="description-tab" data-bs-toggle="tab" href="#description" role="tab">
-                    Mô tả
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="specs-tab" data-bs-toggle="tab" href="#specs" role="tab">
-                    Thông số kỹ thuật
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="reviews-tab" data-bs-toggle="tab" href="#reviews" role="tab">
-                    Đánh giá
-                </a>
-            </li>
-        </ul>
-        <div class="tab-content p-4 border border-top-0 rounded-bottom">
-            <!-- Description Tab -->
-            <div class="tab-pane fade show active" id="description" role="tabpanel">
-                {!! $product->description !!}
-            </div>
+  <div class="col-12">
+    <ul class="nav nav-tabs" id="productTabs" role="tablist">
+      <li class="nav-item">
+        <a class="nav-link active" id="description-tab" data-bs-toggle="tab" href="#description" role="tab">
+          Mô tả
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="specs-tab" data-bs-toggle="tab" href="#specs" role="tab">
+          Thông số kỹ thuật
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" id="reviews-tab" data-bs-toggle="tab" href="#reviews" role="tab">
+          Đánh giá
+        </a>
+      </li>
+    </ul>
+    <div class="tab-content p-4 border border-top-0 rounded-bottom">
+      <!-- Description Tab -->
+      <div class="tab-pane fade show active" id="description" role="tabpanel">
+        {!! $product->description !!}
+      </div>
 
-            <!-- Specifications Tab -->
-            <div class="tab-pane fade" id="specs" role="tabpanel">
-                @if($product->variants && $product->variants->isNotEmpty() && $product->variants->first()->attributes)
-                    <table class="table table-striped">
-                        <tbody>
-                            @foreach($product->variants->first()->attributes as $attribute)
-                            <tr>
-                                <th>{{ $attribute->name }}</th>
-                                <td>{{ $attribute->value }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @else
-                    <p class="text-muted">Chưa có thông số kỹ thuật cho sản phẩm này.</p>
-                @endif
-            </div>
+      <!-- Specifications Tab -->
+      <div class="tab-pane fade" id="specs" role="tabpanel">
+        @if($product->variants && $product->variants->isNotEmpty() && $product->variants->first()->attributes)
+        <table class="table table-striped">
+          <tbody>
+            @foreach($product->variants->first()->attributes as $attribute)
+            <tr>
+              <th>{{ $attribute->name }}</th>
+              <td>{{ $attribute->value }}</td>
+            </tr>
+            @endforeach
+          </tbody>
+        </table>
+        @else
+        <p class="text-muted">Chưa có thông số kỹ thuật cho sản phẩm này.</p>
+        @endif
+      </div>
 
-            <!-- Reviews Tab -->
-            <div class="tab-pane fade" id="reviews" role="tabpanel">
-                @if($product->reviews->isNotEmpty())
-                    @foreach($product->reviews as $review)
-                    <div class="review mb-4">
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="rating">
-                                @for($i = 1; $i <= 5; $i++)
-                                    <i class="ci-star{{ $i <= $review->rating ? '-filled' : '' }} text-warning"></i>
-                                @endfor
-                            </div>
-                            <span class="ms-2">{{ $review->user->name }}</span>
-                            <span class="text-muted ms-2">{{ $review->created_at->format('d/m/Y') }}</span>
-                        </div>
-                        <p class="mb-0">{{ $review->comment }}</p>
-                    </div>
-                    @endforeach
-                @else
-                    <p class="text-muted">Chưa có đánh giá nào cho sản phẩm này.</p>
-                @endif
+      <!-- Reviews Tab -->
+      <div class="tab-pane fade show active" id="reviews" role="tabpanel">
+        @if($product->reviews->isNotEmpty())
+        @foreach($product->reviews as $review)
+        <div class="review mb-4 border-bottom pb-3">
+          <div class="d-flex align-items-center mb-2">
+            {{-- Hiển thị số sao --}}
+            <div class="rating text-warning me-2">
+              @for($i = 1; $i <= 5; $i++)
+                <i class="ci-star{{ $i <= $review->rating ? '-filled' : '' }}"></i>
+                @endfor
             </div>
+            <strong class="me-2">{{ $review->user->name }}</strong>
+            <small class="text-muted">{{ $review->created_at->format('d/m/Y') }}</small>
+          </div>
+
+          {{-- Tiêu đề nếu có --}}
+          @if($review->title)
+          <h6 class="fw-semibold mb-1">{{ $review->title }}</h6>
+          @endif
+
+          {{-- Nội dung đánh giá --}}
+          <p class="mb-2">{{ $review->comment }}</p>
+
+          {{-- Hình ảnh đính kèm nếu có --}}
+          @if($review->images && count($review->images))
+          <div class="d-flex gap-2 flex-wrap mt-2">
+            @foreach($review->images as $image)
+            <a href="{{ asset('storage/' . $image->path) }}" target="_blank">
+              <img src="{{ asset('storage/' . $image->path) }}" width="80" class="rounded border">
+            </a>
+            @endforeach
+          </div>
+          @endif
         </div>
+        @endforeach
+        @else
+        <p class="text-muted">Chưa có đánh giá nào cho sản phẩm này.</p>
+        @endif
+      </div>
+
     </div>
+  </div>
 </div>
 
 <!-- Related Products -->
 @if(isset($relatedProducts) && $relatedProducts->isNotEmpty())
 <div class="row mt-5">
-    <div class="col-12">
-        <h3 class="h4 mb-4">Sản phẩm liên quan</h3>
-        <div class="row row-cols-2 row-cols-md-4 g-4">
-            @foreach($relatedProducts as $relatedProduct)
-            <div class="col">
-                <div class="product-card">
-                    <a href="{{ route('users.products.show', $relatedProduct->slug) }}" class="product-thumb">
-                        <img src="{{ $relatedProduct->coverImageUrl }}" alt="{{ $relatedProduct->name }}">
-                    </a>
-                    <div class="product-info">
-                        <h4 class="product-title">
-                            <a href="{{ route('users.products.show', $relatedProduct->slug) }}">
-                                {{ $relatedProduct->name }}
-                            </a>
-                        </h4>
-                        <div class="product-price">
-                            @if($relatedProduct->variants->isNotEmpty())
-                                {{ number_format($relatedProduct->variants->first()->price) }}đ
-                            @endif
-                        </div>
-                    </div>
-                </div>
+  <div class="col-12">
+    <h3 class="h4 mb-4">Sản phẩm liên quan</h3>
+    <div class="row row-cols-2 row-cols-md-4 g-4">
+      @foreach($relatedProducts as $relatedProduct)
+      <div class="col">
+        <div class="product-card">
+          <a href="{{ route('users.products.show', $relatedProduct->slug) }}" class="product-thumb">
+            <img src="{{ $relatedProduct->coverImageUrl }}" alt="{{ $relatedProduct->name }}">
+          </a>
+          <div class="product-info">
+            <h4 class="product-title">
+              <a href="{{ route('users.products.show', $relatedProduct->slug) }}">
+                {{ $relatedProduct->name }}
+              </a>
+            </h4>
+            <div class="product-price">
+              @if($relatedProduct->variants->isNotEmpty())
+              {{ number_format($relatedProduct->variants->first()->price) }}đ
+              @endif
             </div>
-            @endforeach
+          </div>
         </div>
+      </div>
+      @endforeach
     </div>
+  </div>
 </div>
 @endif
 @endsection
@@ -327,20 +347,25 @@
   .product-gallery {
     position: relative;
   }
+
   .product-gallery-preview {
     position: relative;
     margin-bottom: 1rem;
   }
+
   .product-gallery-preview-item {
     display: none;
   }
+
   .product-gallery-preview-item.active {
     display: block;
   }
+
   .product-gallery-thumblist {
     display: flex;
     gap: 0.5rem;
   }
+
   .product-gallery-thumblist-item {
     width: 80px;
     height: 80px;
@@ -348,9 +373,11 @@
     border-radius: 0.25rem;
     overflow: hidden;
   }
+
   .product-gallery-thumblist-item.active {
     border-color: #0d6efd;
   }
+
   .product-gallery-thumblist-item img {
     width: 100%;
     height: 100%;
@@ -370,15 +397,15 @@
       thumb.addEventListener('click', function(e) {
         e.preventDefault();
         const targetId = this.getAttribute('href').substring(1);
-        
+
         // Update active states
         thumbnails.forEach(t => t.classList.remove('active'));
         previews.forEach(p => p.classList.remove('active'));
-        
+
         this.classList.add('active');
         document.getElementById(targetId).classList.add('active');
       });
     });
   });
 </script>
-@endpush 
+@endpush

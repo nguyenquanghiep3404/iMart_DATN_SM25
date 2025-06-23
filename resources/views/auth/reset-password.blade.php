@@ -1,99 +1,86 @@
-<!DOCTYPE html>
-<html lang="en">
+@extends('auth.layouts.app')
+@section('main')
+<div class="d-lg-flex">
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password - iMart</title>
-    <link rel="shortcut icon" href="{{ asset('assets/admin/img/logo/favicon.png') }}" type="image/x-icon">
+    <!-- Form + Footer -->
+    <div class="d-flex flex-column min-vh-100 w-100 py-4 mx-auto me-lg-5" style="max-width: 416px">
 
-    <!-- css links -->
-    <link rel="stylesheet" href="{{asset('assets/admin/css/perfect-scrollbar.css')}}">
-    <link rel="stylesheet" href="{{asset('assets/admin/css/choices.css') }}">
-    <link rel="stylesheet" href="{{asset('assets/admin/css/apexcharts.css') }}">
-    <link rel="stylesheet" href="{{asset('assets/admin/css/quill.css') }}">
-    <link rel="stylesheet" href="{{asset('assets/admin/css/rangeslider.css') }}">
-    <link rel="stylesheet" href="{{asset('assets/admin/css/custom.css') }}">
-    <link rel="stylesheet" href="{{asset('assets/admin/css/main.css') }}">
-</head>
+        <!-- Logo -->
+        <header class="navbar align-items-center px-0 pb-4 mt-n2 mt-sm-0 mb-2 mb-md-3 mb-lg-4">
+            <a href="index.html" class="navbar-brand pt-0">
+                <!-- SVG logo here -->
+            </a>
+            <div class="nav">
+                <a class="nav-link fs-base animate-underline p-0" href="{{ route('login') }}">
+                    <i class="ci-chevron-left fs-lg ms-n1 me-1"></i>
+                    <span class="animate-target">Quay lại đăng nhập</span>
+                </a>
+            </div>
+        </header>
 
-<body>
+        <!-- Tiêu đề -->
+        <h1 class="h2 mt-auto">Đặt lại mật khẩu</h1>
+        <p class="pb-2 pb-md-3">Nhập email của bạn và mật khẩu mới để đặt lại mật khẩu.</p>
 
-    <div class="tp-main-wrapper h-screen">
-        <div class="container mx-auto my-auto h-full flex items-center justify-center">
-            <div class="pt-[120px] pb-[120px]">
-                <div class="grid grid-cols-12 shadow-lg bg-white overflow-hidden rounded-md">
-                    <!-- Ảnh nền, chỉ hiện trên LG trở lên -->
-                    <div class="col-span-4 lg:col-span-6 relative h-full hidden lg:block">
-                        <div class="absolute top-0 left-0 w-full h-full bg-cover bg-no-repeat"><img src="{{ asset('assets/admin/img/bg/login-bg.jpg') }}" alt="Background Image" />
-                        </div>
-                    </div>
-                    <!-- Form luôn hiển thị -->
-                    <div class="col-span-12 lg:col-span-6 md:w-[500px] mx-auto my-auto pt-[50px] py-[60px] px-5 md:px-[60px]">
-                        <div class="text-center mb-5">
-                            <h4 class="text-[24px] mb-1">Đặt lại mật khẩu của bạn</h4>
-                            <p>Bạn đã có tài khoản? <a href="{{ route('login') }}" class="text-theme">Đăng nhập</a></p>
-                        </div>
+        <!-- Form Laravel -->
+        <form method="POST" action="{{ route('password.store') }}" class="needs-validation pb-4 mb-3 mb-lg-4" novalidate>
+            @csrf
+            <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
-                        <!-- Laravel Password Reset Form -->
-                        <form method="POST" action="{{ route('password.store') }}">
-                            @csrf
+            <!-- Email -->
+            <div class="position-relative mb-4">
+                <i class="ci-mail position-absolute top-50 start-0 translate-middle-y fs-lg ms-3"></i>
+                <input name="email" type="email" value="{{ old('email', $request->email) }}"
+                    class="form-control form-control-lg form-icon-start @error('email') is-invalid @enderror"
+                    placeholder="Email của bạn" required>
+                @error('email')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
 
-                            <!-- Token -->
-                            <input type="hidden" name="token" value="{{ $request->route('token') }}">
+            <!-- Mật khẩu -->
+            <div class="mb-4">
+                <input name="password" type="password"
+                    class="form-control form-control-lg @error('password') is-invalid @enderror"
+                    placeholder="Mật khẩu mới" required>
+                @error('password')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
 
-                            <!-- Email -->
-                            <div class="mb-5">
-                                <p class="mb-0 text-base text-black">Email của bạn <span class="text-red">*</span></p>
-                                <input name="email" type="email" value="{{ old('email', $request->email) }}"
-                                    class="input w-full h-[46px] rounded-md border border-gray6 px-6 text-base @error('email') border-red-500 @enderror"
-                                    placeholder="Enter Your Email" required>
-                                @error('email')
-                                <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+            <!-- Xác nhận mật khẩu -->
+            <div class="mb-4">
+                <input name="password_confirmation" type="password"
+                    class="form-control form-control-lg"
+                    placeholder="Xác nhận mật khẩu mới" required>
+                @error('password_confirmation')
+                <div class="invalid-feedback d-block">{{ $message }}</div>
+                @enderror
+            </div>
 
-                            <!-- Password -->
-                            <div class="mb-5">
-                                <p class="mb-0 text-base text-black">Mật khẩu mới<span class="text-red">*</span></p>
-                                <input name="password" type="password"
-                                    class="input w-full h-[46px] rounded-md border border-gray6 px-6 text-base @error('password') border-red-500 @enderror"
-                                    placeholder="Nhập mật khẩu mới" required>
-                                @error('password')
-                                <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+            <button type="submit" class="btn btn-lg btn-primary w-100">Đặt lại mật khẩu</button>
+        </form>
 
-                            <!-- Confirm Password -->
-                            <div class="mb-5">
-                                <p class="mb-0 text-base text-black">Xác nhận mật khẩu <span class="text-red">*</span></p>
-                                <input name="password_confirmation" type="password"
-                                    class="input w-full h-[46px] rounded-md border border-gray6 px-6 text-base"
-                                    placeholder="Xác nhận mật khẩu mới" required>
-                                @error('password_confirmation')
-                                <p class="text-sm text-red-500 mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+        <!-- Footer -->
+        <footer class="mt-auto">
+            <div class="nav mb-4">
+                <a class="nav-link text-decoration-underline p-0" href="help-topics-v1.html">Cần giúp đỡ?</a>
+            </div>
+            <p class="fs-xs mb-0">
+                © Mọi quyền được bảo lưu. Được thực hiện bởi <span class="animate-underline"><a class="animate-target text-dark-emphasis text-decoration-none" href="https://createx.studio/" target="_blank" rel="noreferrer">iMart Dev</a></span>
+            </p>
+        </footer>
+    </div>
 
-                            <button type="submit" class="tp-btn h-[49px] w-full justify-center">Đặt lại mật khẩu</button>
-                        </form>
-                        <!-- End Form -->
-                    </div>
-                </div>
+    <!-- Cover image -->
+    <div class="d-none d-lg-block w-100 py-4 ms-auto" style="max-width: 1034px">
+        <div class="d-flex flex-column justify-content-end h-100 rounded-5 overflow-hidden">
+            <span class="position-absolute top-0 start-0 w-100 h-100 d-none-dark" style="background: linear-gradient(-90deg, #accbee 0%, #e7f0fd 100%)"></span>
+            <span class="position-absolute top-0 start-0 w-100 h-100 d-none d-block-dark" style="background: linear-gradient(-90deg, #1b273a 0%, #1f2632 100%)"></span>
+            <div class="ratio position-relative z-2" style="--cz-aspect-ratio: calc(1030 / 1032 * 100%)">
+                <img src="{{ asset('assets/admin/img/bg/login-bg.jpg') }}" alt="Ảnh minh họa">
             </div>
         </div>
-
-        <script src="{{ asset('assets/admin/js/vendors/jquery/dist/jquery.min.js') }}"></script>
-        <script src="{{ asset('assets/admin/js/vendors/bootstrap/dist/js/bootstrap.bundle.min.js') }}"></script>
-        @stack('scripts')
-        <script src="{{ asset('assets/admin/js/alpine.js') }}"></script>
-        <script src="{{ asset('assets/admin/js/perfect-scrollbar.js') }}"></script>
-        <script src="{{ asset('assets/admin/js/choices.js') }}"></script>
-        <script src="{{ asset('assets/admin/js/chart.js') }}"></script>
-        <script src="{{ asset('assets/admin/js/apexchart.js') }}"></script>
-        <script src="{{ asset('assets/admin/js/quill.js') }}"></script>
-        <script src="{{ asset('assets/admin/js/rangeslider.min.js') }}"></script>
-        <script src="{{ asset('assets/admin/js/main.js') }}"></script>
-</body>
-</html>
+    </div>
+</div>
+@endsection
