@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Users;
 
-use Carbon\Carbon;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -13,13 +12,14 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Banner;
 use App\Models\Comment;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 
 class HomeController extends Controller
 {
     public function index()
     {
-        $banners = Banner::with('desktopImage')->where('status', 'active')->orderBy('order')->get();
+         $banners = Banner::with(['desktopImage', 'mobileImage'])->activeAndValid()->orderBy('order')->get();
         $calculateAverageRating = function ($products) {
             foreach ($products as $product) {
                 $averageRating = $product->reviews->avg('rating') ?? 0;
@@ -141,9 +141,6 @@ class HomeController extends Controller
         return view('users.home', compact('featuredProducts', 'latestProducts', 'banners'));
     }
 
-
-
-
     public function show($slug)
     {
         // Lấy sản phẩm theo slug, kèm các quan hệ cần thiết
@@ -263,7 +260,7 @@ class HomeController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-            
+
         // Trả dữ liệu về view hiển thị chi tiết sản phẩm
         // var_dump($comments);
         return view('users.show', compact(
