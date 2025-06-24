@@ -1,136 +1,310 @@
 @extends('users.layouts.app')
 
-@section('title', 'Tất cả sản phẩm - iMart')
-
+@section('title', isset($currentCategory) ? $currentCategory->name . ' - iMart' : 'Tất cả sản phẩm - iMart')
 @section('content')
-    <section class="container px-4 pt-5 mt-2 mt-sm-3 mt-lg-4">
-        {{-- TIÊU ĐỀ & FORM LỌC --}}
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between border-bottom pb-3 pb-md-4">
-            <h2 class="h3 mb-3 mb-md-0">Tất cả sản phẩm</h2>
+    <style>
+        /* General Styles */
+        body {
+            background-color: #f8fafc;
+        }
+
+        /* Category Sidebar Styles */
+        .category-sidebar {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .category-sidebar .sidebar-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .category-sidebar .sidebar-title i {
+            font-size: 1.2rem;
+        }
+
+        .category-sidebar .category-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .category-sidebar .category-list a {
+            display: block;
+            padding: 8px 10px;
+            font-size: 0.9rem;
+            color: #374151;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .category-sidebar .category-list .parent-category a {
+            font-weight: 500;
+        }
+
+        .category-sidebar .category-list .parent-category a.active {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .category-sidebar .category-list .parent-category a.active::before {
+            content: '▸';
+            color: #ef4444;
+            margin-right: 6px;
+            font-size: 14px;
+        }
+
+        .category-sidebar .category-list .child-categories {
+            padding-left: 25px;
+        }
+
+        .category-sidebar .category-list .child-categories a:hover,
+        .category-sidebar .category-list .child-categories a.active {
+            color: #ef4444;
+        }
+
+        .filter-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .filter-section h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .price-filter .form-control {
+            text-align: center;
+        }
+
+        .price-filter .btn {
+            background-color: #ef4444;
+            border-color: #ef4444;
+            font-weight: 600;
+        }
+
+        .price-filter .btn:hover {
+            background-color: #d73737;
+            border-color: #d73737;
+        }
+
+        .form-control.is-invalid {
+            border-color: #ef4444;
+        }
+
+        .rating-filter ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .rating-filter li a {
+            display: block;
+            padding: 5px 0;
+            color: #374151;
+            text-decoration: none;
+        }
+
+        /* Sort Section Styles */
+        .sort-section {
+            display: flex;
+            align-items: center;
+            background-color: #f3f4f6;
+            padding: 8px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .sort-section .sort-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #4b5563;
+            margin-right: 15px;
+        }
+
+        .sort-section .sort-options .nav-link,
+        .sort-section .dropdown .nav-link {
+            font-size: 0.9rem;
+            color: #374151;
+            background-color: transparent;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            margin: 0 4px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .sort-section .sort-options .nav-link:hover,
+        .sort-section .dropdown .nav-link:hover {
+            background-color: #e5e7eb;
+        }
+
+        .sort-section .sort-options .nav-link.active,
+        .sort-section .dropdown .nav-link.active {
+            color: #ffffff;
+            background-color: #ef4444;
+        }
+
+        /* Product Card Styles */
+        .product-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .collapse:not(.show) {
+            display: none;
+        }
+    </style>
+
+    @php
+        use Illuminate\Support\Str;
+        $parentCategories = $categories->whereNull('parent_id');
+    @endphp
+
+    <section class="container mt-4">
+        {{-- Tiêu đề và Breadcrumb --}}
+        <div class="mb-4">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-2">
+                    <li class="breadcrumb-item"><a href="{{ route('users.home') }}">Trang chủ</a></li>
+                    @if (isset($currentCategory))
+                        <li class="breadcrumb-item active" aria-current="page">{{ $currentCategory->name }}</li>
+                    @else
+                        <li class="breadcrumb-item active" aria-current="page">Tất cả sản phẩm</li>
+                    @endif
+                </ol>
+            </nav>
+
         </div>
 
-        {{-- FORM LỌC --}}
-        <form method="GET" action="{{ route('users.products.all') }}" class="row g-3 mb-4 mt-1">
-            <div class="col-md-4">
-                <input type="text" name="search" class="form-control" placeholder="Tìm kiếm sản phẩm..."
-                    value="{{ request('search') }}">
+        <div class="row">
+            {{-- Sidebar bên trái --}}
+            <div class="col-lg-3">
+                @include('users.partials.category_product.product_sidebar')
             </div>
-            <div class="col-md-3">
-                <select name="category_id" class="form-select">
-                    <option value="">Tất cả danh mục</option>
-                    @foreach ($categories as $category)
-                        <option value="{{ $category->id }}" @selected(request('category_id') == $category->id)>
-                            {{ $category->name }}
-                        </option>
-                    @endforeach
-                </select>
+
+
+            {{-- Danh sách sản phẩm --}}
+            <div class="col-lg-9" id="ajax-products-list">
+                @include('users.partials.category_product.shop_products')
             </div>
-            <div class="col-md-2">
-                <input type="number" name="min_price" class="form-control" placeholder="Giá từ"
-                    value="{{ request('min_price') }}">
-            </div>
-            <div class="col-md-2">
-                <input type="number" name="max_price" class="form-control" placeholder="Đến"
-                    value="{{ request('max_price') }}">
-            </div>
-            <div class="col-md-1">
-                <button type="submit" class="btn btn-primary w-100">Lọc</button>
-            </div>
-        </form>
-
-        {{-- DANH SÁCH SẢN PHẨM --}}
-        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4 pt-2">
-            @forelse ($products as $product)
-                <div class="col">
-                    <div class="product-card animate-underline hover-effect-opacity bg-body rounded">
-                        <div class="position-relative">
-                            @php
-                                $variant = $product->variants->first();
-                                $now = now();
-                                $onSale =
-                                    $variant &&
-                                    $variant->sale_price &&
-                                    $variant->sale_price_starts_at &&
-                                    $variant->sale_price_ends_at &&
-                                    $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
-
-                                $price = $onSale ? $variant->sale_price : $variant->price;
-                                $originalPrice = $onSale ? $variant->price : null;
-                            @endphp
-
-                            @if ($onSale && $variant->discount_percent > 0)
-                                <div class="position-absolute top-0 start-0 bg-danger text-white px-2 py-1 rounded-bottom-end"
-                                    style="z-index: 10; font-weight: 600; font-size: 0.85rem;">
-                                    Giảm {{ $variant->discount_percent }}%
-                                </div>
-                            @endif
-
-                            <a class="d-block rounded-top overflow-hidden p-3 p-sm-4"
-                                href="{{ route('users.products.show', $product->slug) }}">
-                                <div class="ratio" style="--cz-aspect-ratio: calc(240 / 258 * 100%)">
-                                    <img src="{{ $product->coverImage ? asset('storage/' . $product->coverImage->path) : asset('assets/users/img/shop/electronics/thumbs/placeholder.png') }}"
-                                        alt="{{ $product->name }}" loading="lazy">
-                                </div>
-                            </a>
-                        </div>
-
-                        <div class="w-100 min-w-0 px-1 pb-2 px-sm-3 pb-sm-3">
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <div class="d-flex gap-1 fs-xs">
-                                    @php
-                                        $rating = $product->average_rating ?? 0;
-                                        for ($i = 1; $i <= 5; $i++) {
-                                            echo $rating >= $i
-                                                ? '<i class="ci-star-filled text-warning"></i>'
-                                                : ($rating > $i - 1
-                                                    ? '<i class="ci-star-half text-warning"></i>'
-                                                    : '<i class="ci-star text-body-tertiary opacity-75"></i>');
-                                        }
-                                    @endphp
-                                </div>
-                                <span class="text-body-tertiary fs-xs">({{ $product->approved_reviews_count ?? 0 }})</span>
-                            </div>
-
-                            <h3 class="pb-1 mb-2">
-                                <a class="d-block fs-sm fw-medium text-truncate"
-                                    href="{{ route('users.products.show', $product->slug) }}">
-                                    <span class="animate-target">{{ $product->name }}</span>
-                                </a>
-                            </h3>
-
-                            <div class="d-flex align-items-center justify-content-between">
-                                <div class="h5 lh-1 mb-0">
-                                    @if ($price)
-                                        @if ($onSale)
-                                            <span class="text-danger">{{ number_format($price) }}đ</span>
-                                            <del class="text-muted fs-sm ms-2">{{ number_format($originalPrice) }}đ</del>
-                                        @else
-                                            {{ number_format($price) }}đ
-                                        @endif
-                                    @else
-                                        <span class="text-muted">Giá không khả dụng</span>
-                                    @endif
-                                </div>
-
-                                <button type="button"
-                                    class="product-card-button btn btn-icon btn-secondary animate-slide-end ms-2"
-                                    aria-label="Add to Cart">
-                                    <i class="ci-shopping-cart fs-base animate-target"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="col-12 text-center py-5">
-                    <p class="text-muted">Không tìm thấy sản phẩm nào.</p>
-                </div>
-            @endforelse
-        </div>
-
-        {{-- PHÂN TRANG --}}
-        <div class="mt-4">
-            {{ $products->withQueryString()->links() }}
         </div>
     </section>
+
+    <section style="margin: 80px 0;"></section>
+
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const priceForm = document.getElementById('price-filter-form');
+        const minPriceInput = document.getElementById('min_price');
+        const maxPriceInput = document.getElementById('max_price');
+        const priceError = document.getElementById('price-error');
+        const productsContainer = document.getElementById('ajax-products-list');
+
+        if (!priceForm || !productsContainer) return;
+
+        function ajaxLoad(url, method = 'GET', data = null) {
+            productsContainer.classList.add('opacity-50');
+            fetch(url, {
+                method: method,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: method === 'POST' ? data : null
+            })
+            .then(response => response.text())
+            .then(html => {
+                productsContainer.innerHTML = html;
+                productsContainer.classList.remove('opacity-50');
+
+                // ✅ Cập nhật URL trên trình duyệt
+                window.history.pushState({}, '', url);
+
+                window.scrollTo({
+                    top: productsContainer.offsetTop - 80,
+                    behavior: 'smooth'
+                });
+            });
+        }
+
+        priceForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const minPrice = minPriceInput.value.trim();
+            const maxPrice = maxPriceInput.value.trim();
+
+            priceError.style.display = 'none';
+            minPriceInput.classList.remove('is-invalid');
+            maxPriceInput.classList.remove('is-invalid');
+
+            if (minPrice === '' && maxPrice === '') {
+                priceError.textContent = 'Vui lòng nhập khoảng giá phù hợp';
+                priceError.style.display = 'block';
+                minPriceInput.classList.add('is-invalid');
+                maxPriceInput.classList.add('is-invalid');
+                return;
+            }
+
+            const params = new URLSearchParams(new FormData(priceForm)).toString();
+            ajaxLoad(`${window.location.pathname}?${params}`);
+        });
+
+        document.querySelectorAll('.rating-filter a').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxLoad(this.href);
+            });
+        });
+
+        document.querySelectorAll('.sort-options .nav-link').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxLoad(this.href);
+            });
+        });
+
+        document.querySelectorAll('.dropdown-menu .dropdown-item').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxLoad(this.href);
+            });
+        });
+
+        document.addEventListener('click', function (e) {
+            const paginationLink = e.target.closest('.pagination a');
+            if (paginationLink) {
+                e.preventDefault();
+                ajaxLoad(paginationLink.href);
+            }
+        });
+
+        const clearBtn = document.querySelector('a.btn.btn-outline-secondary.w-100');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxLoad(this.href);
+            });
+        }
+    });
+</script>
+@endpush
+
+

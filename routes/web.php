@@ -11,9 +11,11 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
-use App\Http\Controllers\Shipper\ShipperController;
+use App\Http\Controllers\Admin\PostController;
+use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Users\WishlistController;
 use App\Http\Controllers\Admin\CommentController;
+use App\Http\Controllers\Shipper\ShipperController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Admin\AiController;
@@ -31,7 +33,9 @@ use App\Http\Controllers\Admin\BannerController;
 //==========================================================================
 Route::get('/', [HomeController::class, 'index'])->name('users.home');  // Trang chủ, không cần đăng nhập
 Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.products.show');
-Route::get('/products', [HomeController::class, 'allProducts'])->name('users.products.all');
+Route::get('/danh-muc-san-pham/{id}-{slug}', [HomeController::class, 'allProducts'])->name('products.byCategory');
+// Danh sách tất cả sản phẩm (không lọc)
+Route::get('/danh-muc-san-pham', [HomeController::class, 'allProducts'])->name('users.products.all');
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
@@ -59,6 +63,7 @@ Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSele
 //==========================================================================
 Route::prefix('admin')
     ->name('admin.')
+    ->middleware(['auth', 'role:admin,content_manager', 'check.content.access'])
     ->middleware(['auth', 'verified'])
     ->group(function () {
         // http://127.0.0.1:8000/admin/dashboard
@@ -201,6 +206,16 @@ Route::prefix('admin')
         // Route resource mặc định
         Route::resource('categories_post', PostCategoryController::class)
         ->names('categories_post');
+
+        // Post routes
+        Route::get('posts/trashed', [PostController::class, 'trashed'])->name('posts.trashed'); // Danh sách bài đã xóa
+        Route::get('posts/preview/{id}', [PostController::class, 'preview'])->name('posts.preview');
+        Route::put('posts/{id}/restore', [PostController::class, 'restore'])->name('posts.restore'); // Khôi phục
+        Route::delete('posts/{id}/force-delete', [PostController::class, 'forceDelete'])->name('posts.forceDelete'); // Xóa vĩnh viễn
+        Route::post('posts/upload-image', [PostController::class, 'uploadImage'])->name('posts.uploadImage');
+
+        Route::resource('posts', PostController::class);
+        Route::resource('post-tags', PostTagController::class);
 
         // });
 
