@@ -20,6 +20,18 @@ class OrderFactory extends Factory
         $grandTotal = $subTotal + $shippingFee - ($discountAmount ?? 0);
 
         $faker_vi = \Faker\Factory::create('vi_VN');
+        
+        // Chọn trạng thái ngẫu nhiên
+        $status = $this->faker->randomElement([
+            'pending_confirmation', 'processing', 'awaiting_shipment', 'shipped',
+            'out_for_delivery', 'delivered', 'cancelled', 'returned'
+        ]);
+        
+        // Chỉ gán shipper cho những trạng thái cần thiết
+        $shippedBy = null;
+        if (in_array($status, ['shipped', 'out_for_delivery', 'delivered'])) {
+            $shippedBy = User::query()->whereHas('roles', fn($q) => $q->where('name', 'shipper'))->inRandomOrder()->first()?->id;
+        }
 
         return [
             'user_id' => $customer->id,
@@ -41,16 +53,13 @@ class OrderFactory extends Factory
             'payment_method' => $this->faker->randomElement(['COD', 'Bank Transfer', 'VNPay', 'Momo']),
             'payment_status' => $this->faker->randomElement(['pending', 'paid', 'failed']),
             'shipping_method' => $this->faker->randomElement(['Giao Hàng Nhanh', 'Giao Hàng Tiết Kiệm', 'Viettel Post', 'GrabExpress']),
-            'status' => $this->faker->randomElement([
-                'pending_confirmation', 'processing', 'awaiting_shipment', 'shipped',
-                'out_for_delivery', 'delivered', 'cancelled', 'returned'
-            ]),
+            'status' => $status,
             'notes_from_customer' => $this->faker->optional(0.3)->sentence,
             'ip_address' => $this->faker->ipv4,
             'user_agent' => $this->faker->userAgent,
             'processed_by' => User::query()->whereHas('roles', fn($q) => $q->where('name', 'order_manager'))->inRandomOrder()->first()?->id,
-            'shipped_by' => User::query()->whereHas('roles', fn($q) => $q->where('name', 'shipper'))->inRandomOrder()->first()?->id,
-            'delivered_at' => $this->faker->optional(0.5)->dateTimeThisMonth(),
+            'shipped_by' => $shippedBy,
+            'delivered_at' => $status === 'delivered' ? $this->faker->optional(0.8)->dateTimeThisMonth() : null,
         ];
     }
 }
