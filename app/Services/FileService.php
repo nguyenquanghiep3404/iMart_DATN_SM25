@@ -22,15 +22,6 @@ class FileService
         $this->imageManager = new ImageManager(new Driver());
     }
 
-    /**
-     * Phương thức chính: Lưu file upload, tối ưu hóa ảnh và tạo record trong CSDL.
-     * Luôn hoạt động theo luồng "upload-then-attach".
-     *
-     * @param HttpUploadedFile $file File người dùng tải lên.
-     * @param string $contextFolder Ngữ cảnh lưu trữ (ví dụ: 'products', 'avatars', 'banners'). Đây là tham số bắt buộc.
-     * @param array $extraData Dữ liệu bổ sung để lưu vào model, ví dụ ['type' => 'cover_image'].
-     * @return UploadedFileModel Model file đã được tạo.
-     */
     public function store(HttpUploadedFile $file, string $contextFolder, array $extraData = []): UploadedFileModel
     {
         // Xử lý upload, tối ưu hóa và lấy đường dẫn.
@@ -73,6 +64,15 @@ class FileService
         // Khi gọi delete(), event 'deleting' trong model sẽ được kích hoạt
         // để xóa file vật lý trên disk trước khi xóa record trong CSDL.
         return $uploadedFile->delete();
+    }
+public function delete(?string $path): bool
+    {
+        if (!$path) {
+            return false;
+        }
+
+        // Sử dụng Storage facade để xóa file trên disk 'public'
+        return Storage::disk('public')->delete($path);
     }
 
     /**

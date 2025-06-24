@@ -33,8 +33,7 @@ $user = auth()->user() ?? (object)[
                     <path d="M1 13H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
                 </svg>
             </button>
-
-            {{-- Thanh tìm kiếm --}}
+{{-- Thanh tìm kiếm --}}
             <div class="hidden md:block">
                 <form action="#">
                     <div class="relative group">
@@ -69,7 +68,7 @@ $user = auth()->user() ?? (object)[
                          x-transition:leave-end="opacity-0 scale-y-90"
                          class="absolute w-52 top-full right-0 mt-2 shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 py-1.5"
                          style="display: none;">
-                        <a href="{{ route('admin.products.create') }}" class="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600">Thêm sản phẩm</a>
+<a href="{{ route('admin.products.create') }}" class="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600">Thêm sản phẩm</a>
             <a href="{{ route('admin.categories.create') }}" class="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600">Thêm danh mục</a>
             <a href="{{ route('admin.users.create') }}" class="flex items-center px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-600 hover:text-indigo-600">Thêm người dùng</a>
         </div>
@@ -93,7 +92,7 @@ $user = auth()->user() ?? (object)[
     <div class="relative" x-data="{ notificationOpen: false }">
         <button @click="notificationOpen = !notificationOpen" class="flex items-center justify-center w-10 h-10 rounded-full text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors duration-300">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+<path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
             @if($unreadNotificationsCount > 0)
             <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4">
@@ -137,7 +136,7 @@ $user = auth()->user() ?? (object)[
                 @endforelse
             </ul>
             <div class="px-4 py-2 border-t border-slate-200 dark:border-slate-600">
-                <a href="#" class="block w-full text-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+<a href="#" class="block w-full text-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
                     Xem tất cả
                 </a>
             </div>

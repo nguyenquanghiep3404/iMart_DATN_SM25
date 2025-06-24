@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tổng quan & Thống kê Giao hàng</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Be Vietnam Pro -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-screen-2xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Tổng quan Giao hàng</h1>
+            <p class="text-gray-500 mt-1">Thống kê và phân tích hiệu suất của đội ngũ giao hàng.</p>
+        </header>
+
+        <!-- Filter Section -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <div class="flex-grow">
+                    <label for="date-range-start" class="block text-sm font-medium text-gray-700 mb-1">Khoảng thời gian</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="date" id="date-range-start" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <span class="text-gray-500">đến</span>
+                        <input type="date" id="date-range-end" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="flex items-end pt-6">
+                     <button id="apply-filters-btn" class="w-full px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center justify-center space-x-2">
+                        <i class="fas fa-search"></i>
+                        <span>Xem thống kê</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                        <div class="bg-blue-100 text-blue-600 p-4 rounded-full"><i class="fas fa-box-open fa-2x"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Tổng đơn đã giao</p>
+                            <p id="stat-delivered" class="text-3xl font-bold text-gray-800">0</p>
+                        </div>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                        <div class="bg-yellow-100 text-yellow-600 p-4 rounded-full"><i class="fas fa-truck-fast fa-2x"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Đơn đang giao</p>
+                            <p id="stat-shipping" class="text-3xl font-bold text-gray-800">0</p>
+                        </div>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                        <div class="bg-red-100 text-red-600 p-4 rounded-full"><i class="fas fa-times-circle fa-2x"></i></div>
+                        <div>
+                            <p class="text-gray-500 text-sm">Đơn thất bại</p>
+                            <p id="stat-failed" class="text-3xl font-bold text-gray-800">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delivery Performance Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Hiệu suất giao hàng</h2>
+                    <canvas id="deliveryPerformanceChart"></canvas>
+                </div>
+
+                 <!-- Delivery Trend Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Xu hướng giao hàng</h2>
+                    <canvas id="deliveryTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="lg:col-span-1 space-y-8">
+                <!-- Order Status Distribution -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Phân bổ trạng thái</h2>
+                    <canvas id="orderStatusChart" class="mx-auto"></canvas>
+                </div>
+
+                <!-- Top Performing Shippers -->
+                <div class="bg-white p-6 rounded-xl shadow-sm">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4">Nhân viên xuất sắc</h2>
+                    <ul id="top-shippers-list" class="space-y-4">
+                       <!-- List items will be injected here -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- MOCK DATA ---
+            const mockShippers = [
+                { id: 1, name: 'Nguyễn Tuấn Dũng', avatar: 'https://placehold.co/40x40/3B82F6/FFFFFF?text=D' },
+                { id: 2, name: 'Trần Văn Mạnh', avatar: 'https://placehold.co/40x40/10B981/FFFFFF?text=M' },
+                { id: 3, name: 'Lê Thị Hoa', avatar: 'https://placehold.co/40x40/F59E0B/FFFFFF?text=H' },
+                { id: 5, name: 'Vũ Đức Thắng', avatar: 'https://placehold.co/40x40/6366F1/FFFFFF?text=T' },
+            ];
+            
+            // Generate more realistic order data for the last 30 days
+            let mockOrders = [];
+            const today = new Date();
+            for (let i = 0; i < 30; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                const dailyOrders = Math.floor(Math.random() * 20) + 5; // 5 to 25 orders per day
+                for (let j = 0; j < dailyOrders; j++) {
+                    const shipper = mockShippers[Math.floor(Math.random() * mockShippers.length)];
+                    const statusRoll = Math.random();
+                    let status;
+                    if (statusRoll < 0.8) status = 'delivered';
+                    else if (statusRoll < 0.95) status = 'shipping';
+                    else status = 'failed';
+                    
+                    mockOrders.push({
+                        id: mockOrders.length + 1,
+                        shipperId: shipper.id,
+                        status: status,
+                        deliveredAt: date.toISOString()
+                    });
+                }
+            }
+
+
+            // --- CHART INSTANCES ---
+            let deliveryPerformanceChart, orderStatusChart, deliveryTrendChart;
+
+            // --- DOM ELEMENTS ---
+            const startDateInput = document.getElementById('date-range-start');
+            const endDateInput = document.getElementById('date-range-end');
+            
+            // --- INITIALIZE DATE FILTERS ---
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+            endDateInput.value = today.toISOString().split('T')[0];
+
+            // --- MAIN UPDATE FUNCTION ---
+            function updateDashboard() {
+                const startDate = new Date(startDateInput.value);
+                const endDate = new Date(endDateInput.value);
+                endDate.setHours(23, 59, 59, 999); // Include the whole end day
+
+                const filteredOrders = mockOrders.filter(order => {
+                    const orderDate = new Date(order.deliveredAt);
+                    return orderDate >= startDate && orderDate <= endDate;
+                });
+
+                // 1. Update Stats Cards
+                const deliveredCount = filteredOrders.filter(o => o.status === 'delivered').length;
+                const shippingCount = filteredOrders.filter(o => o.status === 'shipping').length;
+                const failedCount = filteredOrders.filter(o => o.status === 'failed').length;
+                document.getElementById('stat-delivered').textContent = deliveredCount;
+                document.getElementById('stat-shipping').textContent = shippingCount;
+                document.getElementById('stat-failed').textContent = failedCount;
+
+                // 2. Update Performance Chart (Bar)
+                updatePerformanceChart(filteredOrders);
+
+                // 3. Update Status Chart (Pie/Doughnut)
+                updateStatusChart(deliveredCount, shippingCount, failedCount);
+                
+                // 4. Update Trend Chart (Line)
+                updateTrendChart(filteredOrders, startDate, endDate);
+
+                // 5. Update Top Shippers List
+                updateTopShippers(filteredOrders);
+            }
+            
+            function updatePerformanceChart(orders) {
+                const ctx = document.getElementById('deliveryPerformanceChart').getContext('2d');
+                const performanceData = mockShippers.map(shipper => {
+                    const deliveredOrders = orders.filter(o => o.shipperId === shipper.id && o.status === 'delivered').length;
+                    return { name: shipper.name, count: deliveredOrders };
+                }).sort((a,b) => b.count - a.count);
+
+                const labels = performanceData.map(d => d.name);
+                const data = performanceData.map(d => d.count);
+
+                if (deliveryPerformanceChart) deliveryPerformanceChart.destroy();
+                deliveryPerformanceChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Số đơn đã giao',
+                            data: data,
+                            backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                            borderColor: 'rgba(99, 102, 241, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            function updateStatusChart(delivered, shipping, failed) {
+                const ctx = document.getElementById('orderStatusChart').getContext('2d');
+                 if (orderStatusChart) orderStatusChart.destroy();
+                 orderStatusChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Đã giao', 'Đang giao', 'Thất bại'],
+                        datasets: [{
+                            data: [delivered, shipping, failed],
+                            backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                 });
+            }
+            
+            function updateTrendChart(orders, startDate, endDate) {
+                const ctx = document.getElementById('deliveryTrendChart').getContext('2d');
+                const trendData = {};
+                
+                // Initialize all days in the range to 0
+                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                    trendData[d.toISOString().split('T')[0]] = 0;
+                }
+
+                orders.filter(o => o.status === 'delivered').forEach(order => {
+                    const dateStr = new Date(order.deliveredAt).toISOString().split('T')[0];
+                    if (trendData.hasOwnProperty(dateStr)) {
+                        trendData[dateStr]++;
+                    }
+                });
+                
+                const labels = Object.keys(trendData).sort();
+                const data = labels.map(label => trendData[label]);
+
+                if (deliveryTrendChart) deliveryTrendChart.destroy();
+                deliveryTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Số đơn giao thành công',
+                            data: data,
+                            borderColor: 'rgba(22, 163, 74, 1)',
+                            backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                         scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day',
+                                    tooltipFormat: 'dd/MM/yyyy'
+                                }
+                            },
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            function updateTopShippers(orders) {
+                const listEl = document.getElementById('top-shippers-list');
+                const performanceData = mockShippers.map(shipper => {
+                    const deliveredOrders = orders.filter(o => o.shipperId === shipper.id && o.status === 'delivered').length;
+                    return { ...shipper, count: deliveredOrders };
+                }).sort((a,b) => b.count - a.count).slice(0, 5); // Top 5
+
+                listEl.innerHTML = '';
+                if(performanceData.length === 0 || performanceData[0].count === 0) {
+                     listEl.innerHTML = `<li class="text-center text-gray-500 py-4">Không có dữ liệu.</li>`;
+                     return;
+                }
+
+                performanceData.forEach(shipper => {
+                    const item = document.createElement('li');
+                    item.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                    item.innerHTML = `
+                        <div class="flex items-center">
+                            <img src="${shipper.avatar}" class="w-10 h-10 rounded-full mr-4 object-cover">
+                            <div>
+                                <p class="font-semibold text-gray-800">${shipper.name}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg text-green-600">${shipper.count}</p>
+                            <p class="text-xs text-gray-500">đơn</p>
+                        </div>
+                    `;
+                    listEl.appendChild(item);
+                });
+            }
+
+            // --- EVENT LISTENERS ---
+            document.getElementById('apply-filters-btn').addEventListener('click', updateDashboard);
+
+            // --- INITIAL RENDER ---
+            updateDashboard();
+        });
+    </script>
+</body>
+</html>

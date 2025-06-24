@@ -2,113 +2,175 @@
 
 @section('content')
 <div class="bg-white rounded-md shadow p-6">
+
     <!-- Search & Filters -->
-    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
-        <!-- Search -->
-        <div class="relative w-full md:w-1/3">
-            <input type="text" placeholder="Search by product name"
-                   class="input w-full h-[44px] pl-12 pr-4 border rounded-md focus:ring-blue-500 focus:border-blue-500">
-            <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none"
-                     xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 17C13.4 17 17 13.4 17 9C17 4.6 13.4 1 9 1C4.6 1 1 4.6 1 9C1 13.4 4.6 17 9 17Z"
-                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M19 19L14.7 14.7" stroke="currentColor" stroke-width="2"
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </span>
+    <form action="{{ route('admin.comment.index') }}" method="GET">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Quản lý Bình luận</h1>
+            <p class="text-gray-500 mt-1">
+                Xem, duyệt và quản lý tất cả các bình luận trên bài viết của bạn.
+            </p>
+        </header>
+    
+        <!-- Filter Section -->
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Search -->
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </span>
+                        <input
+                            type="text"
+                            id="search"
+                            name="search"
+                            value="{{ request('search') }}"
+                            placeholder="Nội dung, tên người gửi..."
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
+                </div>
+    
+                <!-- Status Filter -->
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái bình luận</label>
+                    <select
+                        id="status"
+                        name="status"
+                        class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
+                        <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Từ chối</option>
+                    </select>
+                </div>
+    
+                <!-- Date Filter -->
+                <div>
+                    <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Ngày gửi</label>
+                    <input
+                        type="date"
+                        id="date"
+                        name="date"
+                        value="{{ request('date') }}"
+                        class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                    />
+                </div>
+            </div>
+    
+            <div class="mt-4 flex justify-end space-x-3">
+                <a
+                    href="{{ route('admin.comment.index') }}"
+                    class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold"
+                >
+                    Xóa lọc
+                </a>
+                <button
+                    type="submit"
+                    class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2"
+                >
+                    <i class="fas fa-filter"></i>
+                    <span>Áp dụng</span>
+                </button>
+            </div>
         </div>
-
-        <!-- Filter -->
-        <form action="{{ route('admin.comment.index') }}" method="GET" class="flex items-center space-x-2">
-            <label for="status-filter" class="text-sm font-medium">Trạng thái:</label>
-            <select name="status" id="status-filter"
-                    class="border rounded px-4 py-2 text-sm focus:ring focus:border-blue-400"
-                    onchange="this.form.submit()">
-                <option value="all">Tất cả</option>
-                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Chờ duyệt</option>
-                <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Đã duyệt</option>
-                <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Bị từ chối</option>
-                <option value="spam" {{ request('status') == 'spam' ? 'selected' : '' }}>Spam</option>
-                {{-- <option value="deleted" {{ request('status') == 'deleted' ? 'selected' : '' }}>Đã xóa</option> --}}
-            </select>
-        </form>
-    </div>
-
-    <!-- Table -->
+    </form>
+    
+    <!-- Danh sách bình luận -->
     <div class="overflow-x-auto">
         <table class="min-w-[1000px] w-full text-sm text-left text-gray-600">
             <thead class="bg-gray-100">
                 <tr class="text-xs font-semibold text-gray-600 uppercase">
-                    <th class="px-4 py-3">
-                        <input type="checkbox" id="selectAllProduct">
-                    </th>
-                    <th class="px-4 py-3">Comment</th>
-                    <th class="px-4 py-3 text-right">Customer</th>
-                    <th class="px-4 py-3 text-right">Type</th>
-                    <th class="px-4 py-3 text-right">Target</th>
-                    <th class="px-4 py-3 text-right">Parent ID</th>
-                    <th class="px-4 py-3 text-right">Status</th>
-                    <th class="px-4 py-3 text-right">Created</th>
-                    <th class="px-4 py-3 text-right">Updated</th>
-                    <th class="px-4 py-3 text-right">Actions</th>
+                    <th class="px-4 py-3"></th>
+                    <th class="px-4 py-3">Người bình luận</th>
+                    <th class="px-4 py-3">Nội dung</th>
+                    <th class="px-4 py-3">Phản hồi cho</th>
+                    <th class="px-4 py-3">Ngày gửi</th>
+                    <th class="px-4 py-3">Trạng thái</th>
+                    <th class="px-4 py-3">Hành động</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($comments as $comment)
+                @forelse ($comments as $comment)
                 <tr class="bg-white border-b hover:bg-gray-50">
-                    <td class="px-4 py-3">
-                        <input type="checkbox" name="selected[]" value="{{ $comment->id }}">
+                    <!-- Avatar -->
+                    <td class="px-4 py-4">
+                        <div class="flex items-center space-x-3">
+                            @if ($comment->parent_id)
+                                <span class="text-gray-400 text-lg">↪</span>
+                            @endif
+                            <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white uppercase font-bold">
+                                {{ strtoupper(mb_substr($comment->user->name, 0, 1)) }}
+                            </div>
+                        </div>
                     </td>
-                    <td class="px-4 py-3 max-w-xs truncate">
+
+                    <!-- Người dùng -->
+                    <td class="px-4 py-4">
+                        <div class="font-semibold text-gray-800">{{ $comment->user->name }}</div>
+                    </td>
+
+                    <!-- Nội dung -->
+                    <td class="px-4 py-4 max-w-xs truncate text-gray-700">
                         {{ $comment->content }}
                     </td>
-                    <td class="px-4 py-3 text-right">
-                        {{ $comment->user->name }}
+
+                    <!-- Đối tượng bình luận -->
+                    <td class="px-4 py-4 italic text-gray-600">
+                        @php $type = class_basename($comment->commentable_type); @endphp
+                        @if ($type === 'Post')
+                            <span class="font-medium">Bài viết:</span> {{ $comment->commentable->title }}
+                        @elseif ($type === 'Product')
+                            <span class="font-medium">Sản phẩm:</span> {{ $comment->commentable->name }}
+                        @else
+                            {{ $comment->commentable_display ?? 'Không xác định' }}
+                        @endif
                     </td>
-                    <td class="px-4 py-3 text-right">
-                        {{ $comment->readable_type }}
-                    </td>
-                    <td class="px-4 py-3 text-right">
-                        {{ $comment->commentable_display }}
-                    </td>
-                    <td class="px-4 py-3 text-right">
-                        {{ $comment->parent_id }}
-                    </td>
-                    <td class="px-4 py-3 text-right capitalize">
-                        {{ $comment->status }}
-                    </td>
-                    <td class="px-4 py-3 text-right">
+
+                    <!-- Ngày gửi -->
+                    <td class="px-4 py-4 text-gray-600">
                         {{ $comment->created_at->format('d/m/Y') }}
                     </td>
-                    <td class="px-4 py-3 text-right">
-                        {{ $comment->updated_at->format('d/m/Y') }}
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="flex justify-end gap-2 whitespace-nowrap">
-                            <a href="{{ route('admin.comments.show', $comment->id) }}"
-                               class="inline-flex items-center px-3 py-2 bg-blue-500 text-white text-xs font-medium rounded hover:bg-blue-600 shadow"
-                               title="Xem">
-                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 576 512"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M572.52 241.4C518.48 135.1 407.28 64 288 64S57.52 135.1 3.48 241.4a48.54 48.54 0 0 0 0 29.2C57.52 376.9 168.72 448 288 448s230.48-71.1 284.52-177.4a48.54 48.54 0 0 0 0-29.2zM288 400c-88.22 0-160-71.78-160-160s71.78-160 160-160 160 71.78 160 160-71.78 160-160 160zm0-256a96 96 0 1 0 96 96 96.11 96.11 0 0 0-96-96z"/>
-                                </svg>
-                                Xem
-                            </a>
 
-                            <a href="{{ route('admin.comments.edit', $comment->id) }}"
-                               class="inline-flex items-center px-3 py-2 bg-yellow-500 text-white text-xs font-medium rounded hover:bg-yellow-600 shadow"
-                               title="Sửa">
-                                <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 512 512"
-                                     xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M362.7 19.31c25-25 65.5-25 90.5 0l39.5 39.5c25 25 25 65.5 0 90.5l-39.6 39.6L323.1 58.91l39.6-39.6zM299.8 82.22L59.6 322.4C52.8 329.2 48 337.7 45.3 346.9L1.5 483.6c-2.1 6.8-.1 14.1 5.4 19.6s12.8 7.5 19.6 5.4l136.7-43.8c9.2-2.6 17.7-7.5 24.4-14.2l240.2-240.2-128.1-128.1z"/>
+                    <!-- Trạng thái -->
+                    <td class="px-4 py-4">
+                        @php
+                            $statusColors = [
+                                'approved' => 'bg-green-100 text-green-600',
+                                'pending' => 'bg-yellow-100 text-yellow-600',
+                                'rejected' => 'bg-red-100 text-red-600',
+                                'spam' => 'bg-purple-100 text-purple-600',
+                            ];
+                        @endphp
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $statusColors[$comment->status] ?? 'bg-gray-100 text-gray-600' }}">
+                            {{ ucfirst(__($comment->status)) }}
+                        </span>
+                    </td>
+
+                    <!-- Hành động -->
+                    <td class="px-4 py-4">
+                        <div class="flex items-center space-x-2 justify-end">
+                            <a href="{{ route('admin.comments.show', $comment->id) }}" class="text-blue-600 hover:text-blue-800" title="Xem">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 576 512">
+                                    <path d="M572.52 241.4C518.6 135.5 407.4 64 288 64S57.4 135.5 3.48 241.4a48.07 48.07 0 0 0 0 29.2C57.4 376.5 168.6 448 288 448s230.6-71.5 284.52-177.4a48.07 48.07 0 0 0 0-29.2zM288 400c-70.7 0-128-57.3-128-128s57.3-128 128-128 128 57.3 128 128-57.3 128-128 128zm0-208a80 80 0 1 0 80 80 80 80 0 0 0-80-80z"/>
                                 </svg>
-                                Sửa
+                            </a>
+                            <a href="{{ route('admin.comments.edit', $comment->id) }}" class="text-indigo-600 hover:text-indigo-800" title="Sửa">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 512 512">
+                                    <path d="M493.2 56.1L455.9 18.8c-25-25-65.5-25-90.5 0L127.2 256.9c-2.7 2.7-4.7 6.1-5.6 9.8L96.1 361.1c-2.4 9.7 6.5 18.6 16.2 16.2l94.4-25.5c3.7-.9 7.1-2.9 9.8-5.6L493.2 146.6c25.1-25 25.1-65.5 0-90.5zM386.6 186.6L325.4 125.4 371.2 79.6l61.2 61.2-45.8 45.8zM154.7 307.3l66.7 66.7-59.1 15.9-23.5-23.5 15.9-59.1z"/>
+                                </svg>
                             </a>
                         </div>
                     </td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="7" class="text-center py-6 text-gray-500 italic">Không có bình luận nào phù hợp.</td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
@@ -116,10 +178,10 @@
     <!-- Pagination -->
     <div class="mt-6 flex items-center justify-between">
         <div class="text-sm text-gray-600">
-            Hiển thị {{ $comments->firstItem() }} đến {{ $comments->lastItem() }} trong tổng số {{ $comments->total() }} bình luận
+            Hiển thị {{ $parentComments->firstItem() }} đến {{ $parentComments->lastItem() }} trong tổng số {{ $parentComments->total() }} bình luận
         </div>
         <div>
-            {{ $comments->links('pagination::tailwind') }}
+            {{ $parentComments->appends(request()->query())->links('pagination::tailwind') }}
         </div>
     </div>
 </div>

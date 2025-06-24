@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình Tạo Mã QR Động cho Nhân Viên</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/kjua/0.9.0/kjua.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #qrcode {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background-color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        /* Đảm bảo ảnh QR code vừa với container */
+        #qrcode img {
+            width: 100%;
+            height: 100%;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-sm mx-auto bg-white rounded-xl shadow-lg p-6 md:p-8 text-center">
+        
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Mã QR Chấm Công</h1>
+        <p class="text-gray-500 mb-6">Vui lòng quét mã này để xác thực</p>
+
+        <div class="mb-6 text-left bg-gray-50 p-4 rounded-lg">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-gray-500">Nhân viên:</span>
+                <span id="employeeName" class="text-sm font-semibold text-gray-800"></span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-sm font-medium text-gray-500">ID:</span>
+                <span id="employeeId" class="text-sm font-semibold text-gray-800"></span>
+            </div>
+        </div>
+        
+        <div class="flex justify-center mb-4">
+             <div id="qrcode" class="w-64 h-64"></div>
+        </div>
+
+        <div class="text-center">
+             <p class="text-sm text-gray-600">Mã sẽ được làm mới sau:</p>
+             <p id="timer" class="text-lg font-bold text-indigo-600">10 giây</p>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Cấu hình ---
+        const UPDATE_INTERVAL_SECONDS = 10;
+
+        // --- Dữ liệu nhân viên mẫu ---
+        const employeeData = {
+            id: 'NV' + Math.floor(1000 + Math.random() * 9000),
+            name: 'Nguyễn Văn An'
+        };
+
+        // --- Lấy các phần tử DOM ---
+        const qrCodeContainer = document.getElementById('qrcode');
+        const timerElement = document.getElementById('timer');
+        const employeeNameElement = document.getElementById('employeeName');
+        const employeeIdElement = document.getElementById('employeeId');
+
+        let countdownInterval = null;
+        let mainInterval = null;
+
+        // --- Hàm tạo mã QR sử dụng thư viện kjua ---
+        function generateQRCode() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            // Xóa mã QR cũ trước khi tạo mã mới
+            qrCodeContainer.innerHTML = ''; 
+            
+            // Dữ liệu cần mã hóa. Thêm timestamp để đảm bảo mỗi mã QR là duy nhất.
+            const dataToEncode = JSON.stringify({
+                employeeId: employeeData.id,
+                name: employeeData.name,
+                timestamp: Date.now() 
+            });
+
+            // Sử dụng kjua để tạo phần tử QR code
+            const qrElement = kjua({
+                render: 'image', // Tạo ra thẻ <img>
+                crisp: true,
+                size: 256,
+                text: dataToEncode,
+                fill: '#000000', // Màu của mã QR
+                back: '#ffffff', // Màu nền
+                quiet: 1,        // Khoảng trắng xung quanh mã QR (padding)
+                rounded: 30,     // Độ bo tròn của các điểm QR (tính theo %)
+            });
+
+            // Thêm mã QR đã tạo vào container
+            qrCodeContainer.appendChild(qrElement);
+            
+            console.log("Đã tạo mã QR mới. Dữ liệu:", dataToEncode);
+            
+            startCountdown();
+        }
+        
+        function startCountdown() {
+            let timeLeft = UPDATE_INTERVAL_SECONDS;
+            timerElement.textContent = `${timeLeft} giây`;
+            
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft >= 0) {
+                    timerElement.textContent = `${timeLeft} giây`;
+                } else {
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+
+        // --- Hàm khởi tạo ứng dụng ---
+        function initializeApp() {
+            // Kiểm tra xem thư viện kjua có được tải thành công không
+            if (typeof kjua === 'undefined') {
+                console.error("Lỗi: Thư viện kjua.js chưa được tải.");
+                qrCodeContainer.innerHTML = '<p class="text-red-500 text-xs text-center">Lỗi: Không thể tải thư viện tạo mã QR. Vui lòng kiểm tra kết nối mạng và làm mới trang.</p>';
+                return; 
+            }
+
+            // Hiển thị thông tin nhân viên
+            employeeNameElement.textContent = employeeData.name;
+            employeeIdElement.textContent = employeeData.id;
+            
+            // Tạo mã QR lần đầu tiên
+            generateQRCode();
+            
+            // Xóa interval cũ nếu có để tránh chạy nhiều vòng lặp
+            if (mainInterval) {
+                clearInterval(mainInterval);
+            }
+            
+            // Thiết lập vòng lặp để tạo lại mã QR sau mỗi khoảng thời gian
+            mainInterval = setInterval(generateQRCode, UPDATE_INTERVAL_SECONDS * 1000);
+        }
+        
+        // Chạy hàm khởi tạo khi trang đã tải xong
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+    </script>
+</body>
+</html>
