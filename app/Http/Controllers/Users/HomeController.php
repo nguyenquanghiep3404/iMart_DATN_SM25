@@ -416,7 +416,7 @@ class HomeController extends Controller
                 })->orderByDesc('created_at');
                 break;
 
-            case 'pho_bien':
+            case 'noi_bat':
                 $query->where('is_featured', 1)->orderByDesc('created_at');
                 break;
 
@@ -448,7 +448,7 @@ class HomeController extends Controller
         $currentCategory = $categoryId ? $category : null;
 
         if ($request->ajax()) {
-            return view('users.partials.shop_products', compact('products'))->render();
+            return view('users.partials.category_product.shop_products', compact('products'))->render();
         }
 
         return view('users.shop', compact('products', 'categories', 'currentCategory'));

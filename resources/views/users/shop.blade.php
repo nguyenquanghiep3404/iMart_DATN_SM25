@@ -1,8 +1,6 @@
 @extends('users.layouts.app')
 
 @section('title', isset($currentCategory) ? $currentCategory->name . ' - iMart' : 'Tất cả sản phẩm - iMart')
-<p class="text-muted">Sản phẩm hiển thị: {{ $products->count() }} / Tổng: {{ $products->total() }}</p>
-
 @section('content')
     <style>
         /* General Styles */
@@ -195,13 +193,13 @@
         <div class="row">
             {{-- Sidebar bên trái --}}
             <div class="col-lg-3">
-                @include('users.partials.product_sidebar')
+                @include('users.partials.category_product.product_sidebar')
             </div>
 
 
             {{-- Danh sách sản phẩm --}}
             <div class="col-lg-9" id="ajax-products-list">
-                @include('users.partials.shop_products')
+                @include('users.partials.category_product.shop_products')
             </div>
         </div>
     </section>
@@ -211,119 +209,102 @@
 @endsection
 
 @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const priceForm = document.getElementById('price-filter-form');
-            if (!priceForm) return;
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const priceForm = document.getElementById('price-filter-form');
+        const minPriceInput = document.getElementById('min_price');
+        const maxPriceInput = document.getElementById('max_price');
+        const priceError = document.getElementById('price-error');
+        const productsContainer = document.getElementById('ajax-products-list');
 
-            const minPriceInput = document.getElementById('min_price');
-            const maxPriceInput = document.getElementById('max_price');
-            const priceError = document.getElementById('price-error');
+        if (!priceForm || !productsContainer) return;
 
-            priceForm.addEventListener('submit', function(event) {
-                const minPrice = minPriceInput.value.trim();
-                const maxPrice = maxPriceInput.value.trim();
+        function ajaxLoad(url, method = 'GET', data = null) {
+            productsContainer.classList.add('opacity-50');
+            fetch(url, {
+                method: method,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: method === 'POST' ? data : null
+            })
+            .then(response => response.text())
+            .then(html => {
+                productsContainer.innerHTML = html;
+                productsContainer.classList.remove('opacity-50');
 
-                priceError.style.display = 'none';
-                minPriceInput.classList.remove('is-invalid');
-                maxPriceInput.classList.remove('is-invalid');
+                // ✅ Cập nhật URL trên trình duyệt
+                window.history.pushState({}, '', url);
 
-                if (minPrice === '' && maxPrice === '') {
-                    event.preventDefault();
-                    priceError.textContent = 'Vui lòng nhập khoảng giá phù hợp';
-                    priceError.style.display = 'block';
-                    minPriceInput.classList.add('is-invalid');
-                    maxPriceInput.classList.add('is-invalid');
-                    return;
-                }
-
-                const currentUrl = new URL(window.location.href);
-                const params = currentUrl.searchParams;
-
-                params.forEach((value, key) => {
-                    if (key !== 'min_price' && key !== 'max_price') {
-                        if (!priceForm.querySelector(`input[name="${key}"]`)) {
-                            const hiddenInput = document.createElement('input');
-                            hiddenInput.type = 'hidden';
-                            hiddenInput.name = key;
-                            hiddenInput.value = value;
-                            priceForm.appendChild(hiddenInput);
-                        }
-                    }
+                window.scrollTo({
+                    top: productsContainer.offsetTop - 80,
+                    behavior: 'smooth'
                 });
             });
+        }
 
-            const productsContainer = document.getElementById('ajax-products-list');
-            if (!productsContainer) return;
+        priceForm.addEventListener('submit', function (event) {
+            event.preventDefault();
 
-            function ajaxLoad(url, method = 'GET', data = null) {
-                productsContainer.classList.add('opacity-50');
-                fetch(url, {
-                        method: method,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: method === 'POST' ? data : null
-                    })
-                    .then(response => response.text())
-                    .then(html => {
-                        productsContainer.innerHTML = html;
-                        productsContainer.classList.remove('opacity-50');
-                        window.scrollTo({
-                            top: productsContainer.offsetTop - 80,
-                            behavior: 'smooth'
-                        });
-                    });
+            const minPrice = minPriceInput.value.trim();
+            const maxPrice = maxPriceInput.value.trim();
+
+            priceError.style.display = 'none';
+            minPriceInput.classList.remove('is-invalid');
+            maxPriceInput.classList.remove('is-invalid');
+
+            if (minPrice === '' && maxPrice === '') {
+                priceError.textContent = 'Vui lòng nhập khoảng giá phù hợp';
+                priceError.style.display = 'block';
+                minPriceInput.classList.add('is-invalid');
+                maxPriceInput.classList.add('is-invalid');
+                return;
             }
 
-            if (priceForm) {
-                priceForm.addEventListener('submit', function(event) {
-                    const minPrice = document.getElementById('min_price').value.trim();
-                    const maxPrice = document.getElementById('max_price').value.trim();
-                    if (minPrice === '' && maxPrice === '') return;
-                    event.preventDefault();
-                    const params = new URLSearchParams(new FormData(priceForm)).toString();
-                    ajaxLoad(`${window.location.pathname}?${params}`);
-                });
-            }
+            const params = new URLSearchParams(new FormData(priceForm)).toString();
+            ajaxLoad(`${window.location.pathname}?${params}`);
+        });
 
-            document.querySelectorAll('.rating-filter a').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    ajaxLoad(this.href);
-                });
+        document.querySelectorAll('.rating-filter a').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxLoad(this.href);
             });
+        });
 
-            document.querySelectorAll('.sort-options .nav-link').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    ajaxLoad(this.href);
-                });
+        document.querySelectorAll('.sort-options .nav-link').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxLoad(this.href);
             });
+        });
 
-            document.querySelectorAll('.dropdown-menu .dropdown-item').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    ajaxLoad(this.href);
-                });
+        document.querySelectorAll('.dropdown-menu .dropdown-item').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxLoad(this.href);
             });
+        });
 
-            document.addEventListener('click', function(e) {
-                if (e.target.closest('.pagination a')) {
-                    e.preventDefault();
-                    ajaxLoad(e.target.closest('a').href);
-                }
-            });
-
-            const clearBtn = document.querySelector('a.btn.btn-outline-secondary.w-100');
-            if (clearBtn) {
-                clearBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    ajaxLoad(this.href);
-                });
+        document.addEventListener('click', function (e) {
+            const paginationLink = e.target.closest('.pagination a');
+            if (paginationLink) {
+                e.preventDefault();
+                ajaxLoad(paginationLink.href);
             }
         });
-    </script>
+
+        const clearBtn = document.querySelector('a.btn.btn-outline-secondary.w-100');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                ajaxLoad(this.href);
+            });
+        }
+    });
+</script>
 @endpush
+
+
