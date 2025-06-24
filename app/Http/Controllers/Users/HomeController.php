@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Users;
 
+use Carbon\Carbon;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -12,40 +13,16 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Banner;
 use App\Models\Comment;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 
 class HomeController extends Controller
 {
     public function index()
-    {
-         $banners = Banner::with(['desktopImage', 'mobileImage'])->activeAndValid()->orderBy('order')->get();
-        $calculateAverageRating = function ($products) {
-            foreach ($products as $product) {
-                $averageRating = $product->reviews->avg('rating') ?? 0;
-                $product->average_rating = round($averageRating, 1);
-
-                $now = now();
-                $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
-
-                if ($variant) {
-                    $isOnSale = false;
-
-                    if (
-                        $variant->sale_price
-                        && $variant->sale_price_starts_at
-                        && $variant->sale_price_ends_at
-                        && $variant->price > 0
-                    ) {
-                        try {
-                            $startDate = Carbon::parse($variant->sale_price_starts_at);
-                            $endDate = Carbon::parse($variant->sale_price_ends_at);
-                            $isOnSale = $now->between($startDate, $endDate);
-                        } catch (\Exception $e) {
-                            Log::error('Error parsing dates for product ' . $product->name . ': ' . $e->getMessage());
-                            $isOnSale = false;
-                        }
-                    }
+{
+    $banners = Banner::with('desktopImage')
+        ->where('status', 'active')
+        ->orderBy('order')
+        ->get();
 
     // Hàm xử lý đánh giá và phần trăm giảm giá
     $calculateAverageRating = function ($products) {
@@ -144,6 +121,9 @@ class HomeController extends Controller
 
     return view('users.home', compact('featuredProducts', 'latestProducts', 'banners'));
 }
+
+
+
 
 
     public function show($slug)
