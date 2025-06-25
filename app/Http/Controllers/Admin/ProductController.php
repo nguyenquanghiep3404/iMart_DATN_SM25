@@ -272,14 +272,24 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
      * Show the form for editing the specified resource.
      */
     public function edit(Product $product)
-    {
-        // This method also benefits from the new sync logic in update()
-        $product->load('variants.attributeValues', 'variants.images.file', 'coverImage.file', 'galleryImages.file');
-        $categories = Category::where('status', 'active')->orderBy('name')->get();
-        $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
+{
+    $this->authorize('update', $product);
 
-        return view('admin.products.edit', compact('product', 'categories', 'attributes'));
-    }
+    $product->load([
+        'category',
+        'variants' => fn($q) => $q->orderBy('is_default', 'desc'),
+        'variants.attributeValues.attribute',
+        'variants.images',      // Sửa ở đây: không có .file
+        'coverImage',           // Sửa ở đây: không có .file
+        'galleryImages'         // Sửa ở đây: không có .file
+    ]);
+    
+    $allCategories = Category::where('status', 'active')->get();
+    $categories = $this->formatCategoriesForSelect($allCategories);
+    $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
+
+    return view('admin.products.edit', compact('product', 'categories', 'attributes'));
+}
 
     /**
      * Update the specified resource in storage.
@@ -288,6 +298,9 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
     {
         DB::beginTransaction();
         try {
+            $originalType = $product->type;
+            $newType = $request->input('type');
+
             // 1. Update basic product info
             $productData = $request->except(['_token', '_method', 'cover_image_id', 'gallery_images', 'variants', 'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity', 'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height']);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
@@ -295,27 +308,53 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
             $productData['updated_by'] = Auth::id();
             $product->update($productData);
 
-            // 2. Handle updates based on product type
-            if ($product->type === 'simple') {
-                $defaultVariant = $product->variants()->first();
-                if ($defaultVariant) {
-                    $defaultVariant->update([
-                        'sku' => $request->input('simple_sku'),
-                        'price' => $request->input('simple_price'),
-                        'sale_price' => $request->input('simple_sale_price'),
-                        'sale_price_starts_at' => $request->input('simple_sale_price_starts_at'),
-                        'sale_price_ends_at' => $request->input('simple_sale_price_ends_at'),
-                        'stock_quantity' => $request->input('simple_stock_quantity'),
-                        'weight' => $request->input('simple_weight'),
-                        'dimensions_length' => $request->input('simple_dimensions_length'),
-                        'dimensions_width' => $request->input('simple_dimensions_width'),
-                        'dimensions_height' => $request->input('simple_dimensions_height'),
-                    ]);
+            // 2. Handle product type switching logic
+            $typeChanged = ($originalType !== $newType);
+
+            if ($typeChanged) {
+                // When switching, we clean up the old state completely.
+                // Detach all images from variants and the product itself to avoid conflicts
+                UploadedFile::where('attachable_id', $product->id)
+                            ->where('attachable_type', Product::class)
+                            ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
+                
+                $variantIds = $product->variants()->pluck('id');
+                if ($variantIds->isNotEmpty()) {
+                    UploadedFile::where('attachable_type', ProductVariant::class)
+                                ->whereIn('attachable_id', $variantIds)
+                                ->update(['attachable_id' => null, 'attachable_type' => null]);
                 }
                 
+                // Delete all old variants before creating new ones based on the new type
+                $product->variants()->delete();
+            }
+
+            // 3. Create/Update variants and images based on the NEW type
+            if ($newType === 'simple') {
+                // This logic runs for both "update existing simple" and "switch to simple"
+                $variantData = [
+                    'sku' => $request->input('simple_sku'),
+                    'price' => $request->input('simple_price'),
+                    'sale_price' => $request->input('simple_sale_price'),
+                    'sale_price_starts_at' => $request->input('simple_sale_price_starts_at'),
+                    'sale_price_ends_at' => $request->input('simple_sale_price_ends_at'),
+                    'stock_quantity' => $request->input('simple_stock_quantity'),
+                    'weight' => $request->input('simple_weight'),
+                    'dimensions_length' => $request->input('simple_dimensions_length'),
+                    'dimensions_width' => $request->input('simple_dimensions_width'),
+                    'dimensions_height' => $request->input('simple_dimensions_height'),
+                    'is_default' => true,
+                    'status' => 'active',
+                ];
+
+                // Use updateOrCreate to handle both existing and new simple variants after a switch
+                $product->variants()->updateOrCreate(['product_id' => $product->id], $variantData);
+
+                // Sync images for the simple product
                 $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images', []));
 
-            } elseif ($product->type === 'variable' && $request->has('variants')) {
+            } elseif ($newType === 'variable' && $request->has('variants')) {
+                // This logic runs for both "update existing variable" and "switch to variable"
                 $this->syncProductVariants($product, $request->input('variants'), $request);
             }
 
@@ -323,8 +362,8 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
             return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được cập nhật thành công!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Lỗi khi cập nhật sản phẩm: ' . $e->getMessage() . ' tại dòng ' . $e->getLine());
-            return back()->withInput()->with('error', 'Đã có lỗi xảy ra khi cập nhật sản phẩm.');
+            Log::error('Lỗi khi cập nhật sản phẩm: ' . $e->getMessage() . ' tại dòng ' . $e->getLine() . ' trong file ' . $e->getFile());
+            return back()->withInput()->with('error', 'Đã có lỗi xảy ra khi cập nhật sản phẩm. Chi tiết: ' . $e->getMessage());
         }
     }
 
