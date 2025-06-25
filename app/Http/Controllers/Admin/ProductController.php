@@ -15,18 +15,22 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ProductController extends Controller
 {
+    use AuthorizesRequests;
+    
+    public function __construct()
+    {
+        $this->authorizeResource(Product::class, 'product');
+    }
+
     /**
-     * Hiển thị danh sách sản phẩm.
-     * Logic lọc và sắp xếp được giữ nguyên.
-     * Query sẽ tự động loại trừ các sản phẩm đã bị xóa mềm (trashed) nhờ Trait SoftDeletes.
+     * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        // The base query using the Product model automatically excludes soft-deleted items
-        // because the SoftDeletes trait adds a global scope.
         $query = Product::with([
             'category',
             'variants' => function ($q) {
@@ -49,15 +53,24 @@ class ProductController extends Controller
             $query->where('category_id', $request->input('category_id'));
         }
         if ($request->filled('status')) {
-            // This filter will now correctly handle statuses like 'published', 'draft', etc.
-            // but will not show 'trashed' items, as they are handled by the trash() method.
             $query->where('status', $request->input('status'));
         }
 
         $sortBy = $request->input('sort_by', 'created_at');
         $sortDir = $request->input('sort_dir', 'desc');
-        if (in_array($sortBy, ['name', 'created_at'])) {
-            $query->orderBy($sortBy, $sortDir);
+        $allowedSortColumns = ['name', 'created_at', 'price'];
+
+        if (in_array($sortBy, $allowedSortColumns)) {
+            if ($sortBy === 'price') {
+                $query->leftJoin('product_variants as pv_sort_index', function($join) {
+                    $join->on('products.id', '=', 'pv_sort_index.product_id')
+                         ->whereRaw('pv_sort_index.id = (SELECT id FROM product_variants WHERE product_id = products.id ORDER BY is_default DESC, created_at ASC LIMIT 1)');
+                })
+                ->orderBy('pv_sort_index.price', $sortDir)
+                ->select('products.*');
+            } else {
+                $query->orderBy($sortBy, $sortDir);
+            }
         } else {
             $query->latest();
         }
@@ -67,54 +80,105 @@ class ProductController extends Controller
 
         return view('admin.products.index', compact('products', 'categories'));
     }
+private function formatCategoriesForSelect($categories, $parentId = null, $prefix = '')
+{
+    $formattedCategories = [];
+
+    // Lọc ra các danh mục con của $parentId
+    $children = $categories->where('parent_id', $parentId);
+
+    foreach ($children as $category) {
+        // Thêm tiền tố vào tên để tạo hiệu ứng phân cấp
+        $category->name = $prefix . $category->name;
+        
+        // Thêm danh mục đã định dạng vào mảng kết quả
+        $formattedCategories[] = $category;
+
+        // Gọi đệ quy để lấy các danh mục con của danh mục này
+        // và nối chúng vào mảng kết quả
+        $formattedCategories = array_merge(
+            $formattedCategories,
+            $this->formatCategoriesForSelect($categories, $category->id, $prefix . '-- ')
+        );
+    }
+
+    return $formattedCategories;
+}
+
 
     /**
-     * Hiển thị form tạo sản phẩm mới.
+     * Show the form for creating a new resource.
+     * MODIFIED: This method now fetches data for pre-selected images if validation fails.
      */
     public function create()
     {
-        try {
-        $tempFileIds = session('temp_uploaded_file_ids', []);
-        
-        Log::info('--- Bắt đầu phiên tạo sản phẩm mới ---');
-        Log::info('Các ID file tạm trong session:', $tempFileIds);
+         $this->authorize('create', Product::class); // Thêm authorize nếu cần
+        $allCategories = Category::where('status', 'active')->get();
+        $categories = $this->formatCategoriesForSelect($allCategories);
+        $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
+        // Chuẩn bị dữ liệu để khôi phục ảnh sau khi validation thất bại
+        $old_images_data = [];
+        $all_image_ids = [];
+        // Lấy ID ảnh từ sản phẩm đơn giản
+        $simple_gallery_ids = old('gallery_images', []);
+        $simple_cover_id = old('cover_image_id');
+        if ($simple_cover_id) {
+            $all_image_ids[] = $simple_cover_id;
+        }
+        if (!empty($simple_gallery_ids)) {
+            $all_image_ids = array_merge($all_image_ids, $simple_gallery_ids);
+        }
 
-        if (!empty($tempFileIds)) {
-            $filesToDelete = UploadedFile::whereIn('id', $tempFileIds)
-                                         ->whereNull('attachable_id')
-                                         ->get();
-
-            Log::info("Tìm thấy " . $filesToDelete->count() . " file cần xóa.");
-
-            foreach ($filesToDelete as $file) {
-                Log::info("Đang yêu cầu xóa file ID: {$file->id}, Path: {$file->path}");
-                app(FileService::class)->deleteFile($file);
+        // Lấy ID ảnh từ các biến thể
+        if (old('variants')) {
+            foreach (old('variants') as $oldVariant) {
+                $variant_image_ids = $oldVariant['image_ids'] ?? [];
+                $variant_primary_id = $oldVariant['primary_image_id'] ?? null;
+                if ($variant_primary_id) {
+                    $all_image_ids[] = $variant_primary_id;
+                }
+                if (!empty($variant_image_ids)) {
+                    $all_image_ids = array_merge($all_image_ids, $variant_image_ids);
+                }
             }
         }
-    } catch (\Exception $e) {
-        Log::error('Lỗi nghiêm trọng khi dọn dẹp file tạm: ' . $e->getMessage());
-    } finally {
-        // Luôn luôn xóa session key này khi vào trang tạo mới
-        session()->forget('temp_uploaded_file_ids');
-        Log::info('Đã dọn dẹp session temp_uploaded_file_ids.');
-        Log::info('--- Kết thúc phiên tạo sản phẩm mới ---');
-    }
-        $categories = Category::where('status', 'active')->orderBy('name')->get();
-        $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
-        return view('admin.products.create', compact('categories', 'attributes'));
+        
+        // Truy vấn DB một lần duy nhất để lấy thông tin tất cả các ảnh cần thiết
+        if (!empty($all_image_ids)) {
+            // Loại bỏ các ID trùng lặp và rỗng
+            $unique_ids = array_unique(array_filter($all_image_ids));
+            if (!empty($unique_ids)) {
+                $images = UploadedFile::whereIn('id', $unique_ids)->get();
+                // Chuyển đổi thành một map với key là ID để dễ dàng truy cập trong JS
+                $old_images_data = $images->keyBy('id')->map(function ($image) {
+                    // Đảm bảo có thuộc tính 'url'. Model của bạn nên có getUrlAttribute()
+                    return [
+                        'id' => $image->id,
+                        'url' => $image->url, 
+                        'alt_text' => $image->alt_text
+                    ];
+                })->all();
+            }
+        }
+        // --- KẾT THÚC PHẦN CODE MỚI ---
+
+        return view('admin.products.create', compact('categories', 'attributes', 'old_images_data'));
     }
 
     /**
-     * Lưu sản phẩm mới vào CSDL.
+     * Store a newly created resource in storage.
+     * MODIFIED: This method now works with pre-uploaded image IDs.
      */
     public function store(ProductRequest $request)
     {
         DB::beginTransaction();
         try {
-            // 1. Tạo sản phẩm với các thông tin cơ bản
+            // 1. Create product with basic info, excluding image and variant data handled separately
             $productData = $request->except([
                 'cover_image_id', 'gallery_images', 'variants',
-                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity'
+                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity',
+                'simple_sale_price_starts_at', 'simple_sale_price_ends_at',
+                'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height'
             ]);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
@@ -122,40 +186,33 @@ class ProductController extends Controller
 
             $product = Product::create($productData);
 
-            // 2. Xử lý logic cho sản phẩm đơn giản
+            // 2. Handle simple product logic
             if ($request->input('type') === 'simple') {
+                // **NEW**: Link pre-uploaded images
+                // The main gallery_images array holds all image IDs for the simple product.
+                // The cover_image_id specifies which one is the cover.
                 if ($request->has('gallery_images') && is_array($request->input('gallery_images'))) {
-                    foreach ($request->input('gallery_images') as $order => $imageId) {
-                        $galleryImage = UploadedFile::find($imageId);
-                        if ($galleryImage) {
-                            $galleryImage->update([
-                                'attachable_id' => $product->id,
-                                'attachable_type' => Product::class,
-                                'type' => 'gallery_image',
-                                'order' => $order + 1
-                            ]);
-                        }
-                    }
+                    $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images'));
                 }
-
-                if ($request->filled('cover_image_id')) {
-                    $coverImage = UploadedFile::find($request->input('cover_image_id'));
-                    if ($coverImage) {
-                        $coverImage->update(['type' => 'cover_image']);
-                    }
-                }
-
+                
+                // Create a single variant for the simple product
                 ProductVariant::create([
                     'product_id' => $product->id,
                     'sku' => $request->input('simple_sku'),
                     'price' => $request->input('simple_price'),
                     'sale_price' => $request->input('simple_sale_price'),
+                    'sale_price_starts_at' => $request->input('simple_sale_price_starts_at'),
+                    'sale_price_ends_at' => $request->input('simple_sale_price_ends_at'),
                     'stock_quantity' => $request->input('simple_stock_quantity'),
+                    'weight' => $request->input('simple_weight'),
+                    'dimensions_length' => $request->input('simple_dimensions_length'),
+                    'dimensions_width' => $request->input('simple_dimensions_width'),
+                    'dimensions_height' => $request->input('simple_dimensions_height'),
                     'is_default' => true,
                     'status' => 'active',
                 ]);
             }
-            // 3. Xử lý logic cho sản phẩm có biến thể
+            // 3. Handle variable product logic
             elseif ($request->input('type') === 'variable' && $request->has('variants')) {
                 $defaultVariantKey = $request->input('variant_is_default_radio_group');
 
@@ -165,36 +222,34 @@ class ProductController extends Controller
                         'sku' => $variantData['sku'],
                         'price' => $variantData['price'],
                         'sale_price' => $variantData['sale_price'] ?? null,
+                        'sale_price_starts_at' => $variantData['sale_price_starts_at'] ?? null,
+                        'sale_price_ends_at' => $variantData['sale_price_ends_at'] ?? null,
                         'stock_quantity' => $variantData['stock_quantity'],
+                        'weight' => $variantData['weight'] ?? null,
+                        'dimensions_length' => $variantData['dimensions_length'] ?? null,
+                        'dimensions_width' => $variantData['dimensions_width'] ?? null,
+                        'dimensions_height' => $variantData['dimensions_height'] ?? null,
+                        'primary_image_id' => $variantData['primary_image_id'] ?? null,
                         'is_default' => ($defaultVariantKey == $key),
                         'status' => 'active',
                     ]);
 
-                    $variant->attributeValues()->attach(array_values($variantData['attributes']));
-                    
+                    if (!empty($variantData['attributes'])) {
+                        $variant->attributeValues()->attach(array_values($variantData['attributes']));
+                    }
+
+                    // **NEW**: Link pre-uploaded images to the variant
                     if (isset($variantData['image_ids']) && is_array($variantData['image_ids'])) {
-                        $primaryImageId = $variantData['primary_image_id'] ?? null;
-                        $images = UploadedFile::whereIn('id', $variantData['image_ids'])->get();
-
-                        foreach ($images as $order => $image) {
-                            $isPrimary = ($image->id == $primaryImageId);
-                            $image->update([
-                                'attachable_id' => $variant->id,
-                                'attachable_type' => ProductVariant::class,
-                                'type' => 'variant_image',
-                                'order' => $order + 1,
-                            ]);
-
-                            if ($isPrimary && $variant->getConnection()->getSchemaBuilder()->hasColumn($variant->getTable(), 'primary_image_id')) {
-                                $variant->update(['primary_image_id' => $image->id]);
-                            }
-                        }
+                        UploadedFile::whereIn('id', $variantData['image_ids'])->update([
+                            'attachable_id' => $variant->id,
+                            'attachable_type' => ProductVariant::class,
+                            'type' => 'variant_image',
+                        ]);
                     }
                 }
             }
 
             DB::commit();
-            $request->session()->forget('temp_uploaded_file_ids');
             return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được tạo thành công!');
 
         } catch (\Exception $e) {
@@ -205,7 +260,7 @@ class ProductController extends Controller
     }
 
     /**
-     * Hiển thị chi tiết sản phẩm.
+     * Display the specified resource.
      */
     public function show(Product $product)
     {
@@ -214,156 +269,211 @@ class ProductController extends Controller
     }
 
     /**
-     * Hiển thị form chỉnh sửa sản phẩm.
+     * Show the form for editing the specified resource.
      */
     public function edit(Product $product)
-    {
-        $product->load('variants.attributeValues', 'coverImage', 'galleryImages');
-        $categories = Category::where('status', 'active')->orderBy('name')->get();
-        $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
+{
+    $this->authorize('update', $product);
 
-        return view('admin.products.edit', compact('product', 'categories', 'attributes'));
-    }
+    $product->load([
+        'category',
+        'variants' => fn($q) => $q->orderBy('is_default', 'desc'),
+        'variants.attributeValues.attribute',
+        'variants.images',      // Sửa ở đây: không có .file
+        'coverImage',           // Sửa ở đây: không có .file
+        'galleryImages'         // Sửa ở đây: không có .file
+    ]);
+    
+    $allCategories = Category::where('status', 'active')->get();
+    $categories = $this->formatCategoriesForSelect($allCategories);
+    $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
+
+    return view('admin.products.edit', compact('product', 'categories', 'attributes'));
+}
 
     /**
-     * Cập nhật sản phẩm.
+     * Update the specified resource in storage.
      */
     public function update(ProductRequest $request, Product $product)
     {
         DB::beginTransaction();
         try {
-            // 1. Cập nhật thông tin sản phẩm
-            $productData = $request->except(['_token', '_method', 'cover_image_id', 'gallery_images', 'variants', 'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity']);
+            $originalType = $product->type;
+            $newType = $request->input('type');
+
+            // 1. Update basic product info
+            $productData = $request->except(['_token', '_method', 'cover_image_id', 'gallery_images', 'variants', 'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity', 'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height']);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
             $productData['updated_by'] = Auth::id();
             $product->update($productData);
 
-            // 2. Đồng bộ Ảnh bìa
-            $newCoverImageId = $request->input('cover_image_id');
-            $currentCoverImage = $product->coverImage;
+            // 2. Handle product type switching logic
+            $typeChanged = ($originalType !== $newType);
 
-            if ($currentCoverImage && $currentCoverImage->id != $newCoverImageId) {
-                $currentCoverImage->update(['attachable_id' => null, 'attachable_type' => null]);
-            }
-            if ($newCoverImageId && (!$currentCoverImage || $currentCoverImage->id != $newCoverImageId)) {
-                $newCoverImage = UploadedFile::find($newCoverImageId);
-                if ($newCoverImage) {
-                    $newCoverImage->update([
-                        'attachable_id' => $product->id,
-                        'attachable_type' => Product::class,
-                        'type' => 'cover_image'
-                    ]);
+            if ($typeChanged) {
+                // When switching, we clean up the old state completely.
+                // Detach all images from variants and the product itself to avoid conflicts
+                UploadedFile::where('attachable_id', $product->id)
+                            ->where('attachable_type', Product::class)
+                            ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
+                
+                $variantIds = $product->variants()->pluck('id');
+                if ($variantIds->isNotEmpty()) {
+                    UploadedFile::where('attachable_type', ProductVariant::class)
+                                ->whereIn('attachable_id', $variantIds)
+                                ->update(['attachable_id' => null, 'attachable_type' => null]);
                 }
-            }
-
-            // 3. Đồng bộ Thư viện ảnh
-            $submittedGalleryIds = $request->input('gallery_images', []);
-            if (!is_array($submittedGalleryIds)) $submittedGalleryIds = [];
-
-            $currentGalleryIds = $product->galleryImages()->pluck('id')->toArray();
-            $idsToDetach = array_diff($currentGalleryIds, $submittedGalleryIds);
-            if (!empty($idsToDetach)) {
-                UploadedFile::whereIn('id', $idsToDetach)->update(['attachable_id' => null, 'attachable_type' => null]);
+                
+                // Delete all old variants before creating new ones based on the new type
+                $product->variants()->delete();
             }
 
-            foreach ($submittedGalleryIds as $order => $imageId) {
-                $galleryImage = UploadedFile::find($imageId);
-                if ($galleryImage) {
-                    $galleryImage->update([
-                        'attachable_id' => $product->id,
-                        'attachable_type' => Product::class,
-                        'type' => 'gallery_image',
-                        'order' => $order + 1
-                    ]);
-                }
+            // 3. Create/Update variants and images based on the NEW type
+            if ($newType === 'simple') {
+                // This logic runs for both "update existing simple" and "switch to simple"
+                $variantData = [
+                    'sku' => $request->input('simple_sku'),
+                    'price' => $request->input('simple_price'),
+                    'sale_price' => $request->input('simple_sale_price'),
+                    'sale_price_starts_at' => $request->input('simple_sale_price_starts_at'),
+                    'sale_price_ends_at' => $request->input('simple_sale_price_ends_at'),
+                    'stock_quantity' => $request->input('simple_stock_quantity'),
+                    'weight' => $request->input('simple_weight'),
+                    'dimensions_length' => $request->input('simple_dimensions_length'),
+                    'dimensions_width' => $request->input('simple_dimensions_width'),
+                    'dimensions_height' => $request->input('simple_dimensions_height'),
+                    'is_default' => true,
+                    'status' => 'active',
+                ];
+
+                // Use updateOrCreate to handle both existing and new simple variants after a switch
+                $product->variants()->updateOrCreate(['product_id' => $product->id], $variantData);
+
+                // Sync images for the simple product
+                $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images', []));
+
+            } elseif ($newType === 'variable' && $request->has('variants')) {
+                // This logic runs for both "update existing variable" and "switch to variable"
+                $this->syncProductVariants($product, $request->input('variants'), $request);
             }
-
-            // 4. Xử lý Biến thể
-            if ($product->type === 'simple') {
-                $defaultVariant = $product->variants()->first();
-                if ($defaultVariant) {
-                    $defaultVariant->update([
-                        'sku' => $request->input('simple_sku'),
-                        'price' => $request->input('simple_price'),
-                        'sale_price' => $request->input('simple_sale_price'),
-                        'stock_quantity' => $request->input('simple_stock_quantity'),
-                    ]);
-                }
-            } elseif ($product->type === 'variable' && $request->has('variants')) {
-                $existingVariantIds = $product->variants->pluck('id')->toArray();
-                $submittedVariantIds = [];
-                $defaultVariantCandidateId = null;
-
-                foreach ($request->input('variants') as $key => $variantData) {
-                    $variantAttributes = array_values($variantData['attributes']);
-                    $isDefaultRequest = ($request->input("variant_is_default_radio_group") == $key);
-
-                    $variantPayload = [
-                        'sku' => $variantData['sku'], 'price' => $variantData['price'],
-                        'sale_price' => $variantData['sale_price'] ?? null,
-                        'stock_quantity' => $variantData['stock_quantity'], 'status' => 'active',
-                    ];
-
-                    if (isset($variantData['id']) && !empty($variantData['id'])) {
-                        $variant = ProductVariant::find($variantData['id']);
-                        if ($variant && $variant->product_id === $product->id) {
-                            $variant->update($variantPayload);
-                            $variant->attributeValues()->sync($variantAttributes);
-                            $submittedVariantIds[] = $variant->id;
-                            if ($isDefaultRequest) $defaultVariantCandidateId = $variant->id;
-                        }
-                    } else {
-                        $newVariant = $product->variants()->create($variantPayload);
-                        $newVariant->attributeValues()->attach($variantAttributes);
-                        $submittedVariantIds[] = $newVariant->id;
-                        if ($isDefaultRequest) $defaultVariantCandidateId = $newVariant->id;
-                    }
-                }
-
-                $variantsToDelete = array_diff($existingVariantIds, $submittedVariantIds);
-                if (!empty($variantsToDelete)) {
-                    ProductVariant::whereIn('id', $variantsToDelete)->where('product_id', $product->id)->delete();
-                }
-
-                $currentVariants = $product->refresh()->variants;
-                if ($currentVariants->isNotEmpty()) {
-                    $currentVariants->each(fn($v) => $v->update(['is_default' => false]));
-                    $actualDefaultVariant = $defaultVariantCandidateId ? $currentVariants->find($defaultVariantCandidateId) : null;
-                    if ($actualDefaultVariant) {
-                        $actualDefaultVariant->update(['is_default' => true]);
-                    } else {
-                        $currentVariants->first()->update(['is_default' => true]);
-                    }
-                }
-            }
-
 
             DB::commit();
             return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được cập nhật thành công!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Lỗi khi cập nhật sản phẩm: ' . $e->getMessage() . ' tại dòng ' . $e->getLine());
-            return back()->withInput()->with('error', 'Đã có lỗi xảy ra khi cập nhật sản phẩm.');
+            Log::error('Lỗi khi cập nhật sản phẩm: ' . $e->getMessage() . ' tại dòng ' . $e->getLine() . ' trong file ' . $e->getFile());
+            return back()->withInput()->with('error', 'Đã có lỗi xảy ra khi cập nhật sản phẩm. Chi tiết: ' . $e->getMessage());
         }
     }
 
     /**
-     * Chuyển sản phẩm vào thùng rác (Xóa mềm).
-     * Yêu cầu: Product model phải sử dụng `use SoftDeletes;`
-     * và có các cột `deleted_at`, `deleted_by`, `status` trong database.
+     * Sync cover and gallery images for a product.
+     */
+    private function syncProductImages(Product $product, $coverImageId, array $galleryImageIds)
+    {
+        // Detach all old images first
+        UploadedFile::where('attachable_id', $product->id)
+            ->where('attachable_type', Product::class)
+            ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
+            
+        // Re-attach submitted images with correct types and order
+        foreach ($galleryImageIds as $order => $imageId) {
+            UploadedFile::where('id', $imageId)->update([
+                'attachable_id' => $product->id,
+                'attachable_type' => Product::class,
+                'type' => ($imageId == $coverImageId) ? 'cover_image' : 'gallery_image',
+                'order' => $order + 1
+            ]);
+        }
+    }
+
+    /**
+     * Sync variants and their images.
+     */
+    private function syncProductVariants(Product $product, array $variantsData, Request $request)
+    {
+        $existingVariantIds = $product->variants()->pluck('id')->toArray();
+        $submittedVariantIds = [];
+        $defaultVariantCandidateId = null;
+
+        foreach ($variantsData as $key => $variantData) {
+            $payload = [
+                'sku' => $variantData['sku'],
+                'price' => $variantData['price'],
+                'sale_price' => $variantData['sale_price'] ?? null,
+                'sale_price_starts_at' => $variantData['sale_price_starts_at'] ?? null,
+                'sale_price_ends_at' => $variantData['sale_price_ends_at'] ?? null,
+                'stock_quantity' => $variantData['stock_quantity'],
+                'weight' => $variantData['weight'] ?? null,
+                'dimensions_length' => $variantData['dimensions_length'] ?? null,
+                'dimensions_width' => $variantData['dimensions_width'] ?? null,
+                'dimensions_height' => $variantData['dimensions_height'] ?? null,
+                'primary_image_id' => $variantData['primary_image_id'] ?? null,
+                'status' => 'active',
+            ];
+            
+            // Update or Create the variant
+            $variant = $product->variants()->updateOrCreate(['id' => $variantData['id'] ?? null], $payload);
+            
+            $submittedVariantIds[] = $variant->id;
+
+            if (!empty($variantData['attributes'])) {
+                $variant->attributeValues()->sync(array_values($variantData['attributes']));
+            }
+
+            $this->syncVariantImages($variant, $variantData['image_ids'] ?? []);
+
+            if ($request->input("variant_is_default_radio_group") == $key) {
+                $defaultVariantCandidateId = $variant->id;
+            }
+        }
+
+        $variantsToDelete = array_diff($existingVariantIds, $submittedVariantIds);
+        if (!empty($variantsToDelete)) {
+            UploadedFile::where('attachable_type', ProductVariant::class)
+                         ->whereIn('attachable_id', $variantsToDelete)
+                         ->update(['attachable_id' => null, 'attachable_type' => null]);
+            ProductVariant::destroy($variantsToDelete);
+        }
+
+        $product->refresh();
+        if ($product->variants->isNotEmpty()) {
+            $product->variants->each(fn($v) => $v->update(['is_default' => false]));
+            $defaultVariant = $product->variants->find($defaultVariantCandidateId) ?? $product->variants->first();
+            $defaultVariant->update(['is_default' => true]);
+        }
+    }
+
+    /**
+     * Sync images for a specific variant.
+     */
+    private function syncVariantImages(ProductVariant $variant, array $imageIds)
+    {
+        // Detach old images
+        UploadedFile::where('attachable_id', $variant->id)
+            ->where('attachable_type', ProductVariant::class)
+            ->update(['attachable_id' => null, 'attachable_type' => null]);
+        
+        // Attach new images
+        if (!empty($imageIds)) {
+            UploadedFile::whereIn('id', $imageIds)->update([
+                'attachable_id' => $variant->id,
+                'attachable_type' => ProductVariant::class,
+                'type' => 'variant_image'
+            ]);
+        }
+    }
+
+    /**
+     * Move the product to trash (Soft Delete).
      */
     public function destroy(Product $product)
     {
         try {
-            // Cập nhật trạng thái và người xóa
             $product->status = 'trashed';
-            $product->deleted_by = Auth::id();
             $product->save();
-
-            // Thực hiện xóa mềm, Laravel sẽ tự động cập nhật `deleted_at`
             $product->delete();
-
             return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được chuyển vào thùng rác.');
         } catch (\Exception $e) {
             Log::error("Lỗi khi chuyển sản phẩm vào thùng rác ID {$product->id}: " . $e->getMessage());
@@ -372,47 +482,34 @@ class ProductController extends Controller
     }
 
     /**
-     * Hiển thị danh sách các sản phẩm trong thùng rác.
+     * Display a list of trashed products.
      */
     public function trash(Request $request)
     {
-        // Chỉ lấy các sản phẩm đã bị xóa mềm
         $query = Product::onlyTrashed();
 
-        // Giả sử có một phương thức isAdmin() trên model User để kiểm tra quyền admin
-        // Nếu không phải admin, chỉ cho xem sản phẩm do chính mình xóa
-        // if (Auth::check() && !Auth::user()->isAdmin()) {
-        //     $query->where('deleted_by', Auth::id());
-        // }
-
-        // Tải thông tin người xóa (nếu có)
-        // Yêu cầu: có relationship `deletedBy()` trong Product Model
+        // Assuming a `deletedBy()` relationship exists in the Product Model
         $trashedProducts = $query->with('deletedBy')
-                                 ->latest('deleted_at') // Sắp xếp theo ngày xóa mới nhất
+                                 ->latest('deleted_at')
                                  ->paginate(10);
 
         return view('admin.products.trash', compact('trashedProducts'));
     }
 
     /**
-     * Khôi phục một sản phẩm từ thùng rác.
-     * Yêu cầu: Product model phải sử dụng `use SoftDeletes;`
+     * Restore a product from the trash.
      */
     public function restore($id)
     {
-        // Tìm sản phẩm chỉ trong danh sách đã xóa
         $product = Product::onlyTrashed()->findOrFail($id);
-        
-        // (Tùy chọn) Kiểm tra quyền khôi phục
-        // $this->authorize('restore', $product);
 
         try {
-            // Khôi phục sản phẩm (xóa trường deleted_at)
+            // Restore the product (clears deleted_at)
             $product->restore();
 
-            // Chuyển trạng thái về 'draft' để kiểm tra lại trước khi xuất bản
+            // Revert status to 'draft' for review
             $product->status = 'draft';
-            $product->deleted_by = null; // Xóa thông tin người đã xóa
+            // $product->deleted_by = null; // Clear deleted_by info
             $product->save();
 
             return redirect()->route('admin.products.trash')->with('success', 'Sản phẩm "' . $product->name . '" đã được khôi phục.');
@@ -423,45 +520,32 @@ class ProductController extends Controller
     }
 
     /**
-     * Xóa vĩnh viễn một sản phẩm khỏi cơ sở dữ liệu.
-     * Đây là hành động không thể hoàn tác.
+     * Permanently delete a product from the database.
      */
     public function forceDelete($id)
     {
         $product = Product::onlyTrashed()->findOrFail($id);
         
-        // Nên có Policy để kiểm tra quyền xóa vĩnh viễn
-        // Ví dụ: $this->authorize('forceDelete', $product);
-        if (Auth::check() && !Auth::user()->isAdmin()) {
-            // Nếu không phải admin, không cho phép xóa vĩnh viễn
-            return redirect()->route('admin.products.trash')->with('error', 'Bạn không có quyền xóa vĩnh viễn sản phẩm.');
-        }
+        // Add policy check for permanent deletion if needed
+        // $this->authorize('forceDelete', $product);
 
         DB::beginTransaction();
         try {
-            // Xóa các file vật lý liên quan (nếu có)
-            // (Phần này cần logic từ FileService của bạn để xóa file khỏi storage)
             $fileService = app(FileService::class);
             $product->load('variants.images', 'coverImage', 'galleryImages');
 
-            // Xóa ảnh của các biến thể
+            // Delete variant images
             foreach ($product->variants as $variant) {
                 foreach ($variant->images as $image) {
-                    $fileService->deleteFile($image, true); // true để xóa file vật lý
+                    $fileService->deleteFile($image); 
                 }
             }
-            // Xóa ảnh bìa và thư viện ảnh của sản phẩm
-            foreach ($product->galleryImages as $image) {
-                $fileService->deleteFile($image, true);
+            // Delete product gallery and cover images
+            foreach ($product->images as $image) {
+                $fileService->deleteFile($image);
             }
-            if ($product->coverImage) {
-                $fileService->deleteFile($product->coverImage, true);
-            }
-            
-            // Xóa các biến thể và các mối quan hệ của nó
-            $product->variants()->delete(); 
 
-            // Xóa vĩnh viễn sản phẩm
+            // Permanently delete the product record and its relations
             $product->forceDelete();
 
             DB::commit();
@@ -470,24 +554,6 @@ class ProductController extends Controller
             DB::rollBack();
             Log::error("Lỗi xóa vĩnh viễn sản phẩm ID {$id}: " . $e->getMessage());
             return back()->with('error', 'Không thể xóa vĩnh viễn sản phẩm.');
-        }
-    }
-
-    /**
-     * Xóa một ảnh gallery cụ thể (hủy đính kèm nó khỏi sản phẩm)
-     */
-    public function deleteGalleryImage(UploadedFile $uploadedFile)
-    {
-        if ($uploadedFile->attachable_type !== Product::class) {
-            return back()->with('error', 'File không hợp lệ.');
-        }
-
-        try {
-            $uploadedFile->update(['attachable_id' => null, 'attachable_type' => null]);
-            return back()->with('success', 'Đã gỡ ảnh khỏi gallery.');
-        } catch (\Exception $e) {
-            Log::error("Lỗi khi gỡ ảnh gallery ID {$uploadedFile->id}: " . $e->getMessage());
-            return back()->with('error', 'Không thể gỡ ảnh. Vui lòng thử lại.');
         }
     }
 }

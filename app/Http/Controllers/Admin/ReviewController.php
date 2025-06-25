@@ -45,12 +45,20 @@ class ReviewController extends Controller
         return view('admin.reviews.show', compact('review'));
     }
 
-    public function update(Request $request, $id)
+    public function updateStatus(Request $request, $id)
     {
         $review = Review::findOrFail($id);
-        $review->status = $request->input('status', 'approved');
+
+        if (in_array($review->status, ['approved', 'rejected'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể thay đổi trạng thái đã duyệt hoặc đã từ chối.'
+            ]);
+        }
+
+        $review->status = $request->input('status');
         $review->save();
 
-        return redirect()->route('admin.reviews.index')->with('success', 'Đánh giá đã được cập nhật.');
+        return response()->json(['success' => true]);
     }
 }

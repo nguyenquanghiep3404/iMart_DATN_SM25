@@ -93,7 +93,7 @@ public function allUploadedFiles()
     public function deletedBy()
     {
     return $this->belongsTo(\App\Models\User::class, 'deleted_by');
-
+    }
     public function comments(): MorphMany
     {
         return $this->morphMany(\App\Models\Comment::class, 'commentable');

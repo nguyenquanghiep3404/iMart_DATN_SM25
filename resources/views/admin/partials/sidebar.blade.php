@@ -40,7 +40,9 @@
         <div class="flex h-[65px] items-center border-b border-slate-200 px-6">
             <a href="{{ route('admin.dashboard') }}">
                 {{-- Đặt chiều cao cho logo, chiều rộng sẽ tự động điều chỉnh --}}
-                <img class="h-8 w-auto" src="{{ asset('assets/admin/img/logo/logo.svg') }}" alt="Logo">
+                <img src="{{ asset('assets/users/logo/bfc4baa4-0e46-4289-8f62-2aea6a7d2a4b.png') }}" alt=""
+                    width="200px" style="margin-left: 30px;">
+
             </a>
         </div>
         <div class="px-3 py-5" x-data="{ openNav: {{ $activeParentNav ?? 'null' }} }">
@@ -199,7 +201,7 @@
 
                 {{-- 5. Đơn hàng --}}
                 <li>
-                    @php $isOrdersActive = request()->routeIs('admin.orders.*'); @endphp
+                    @php $isOrdersActive = request()->routeIs('admin.orders.index'); @endphp
                     <button @click="openNav !== 3 ? openNav = 3 : openNav = null"
                         :class="openNav === 3 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
                             'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
@@ -224,8 +226,8 @@
                     </button>
                     <ul x-show="openNav === 3" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
-                            <a href=""
-                                class="block w-full py-1.5
+                            <a href="{{ route('admin.orders.index') }}" 
+                               class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Danh sách đơn hàng
@@ -263,18 +265,17 @@
                     </button>
                     <ul x-show="openNav === 4" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
-
-                            <a href="{{ route('admin.users.index') }}"
+                            <a href="{{ route('admin.users.index') }}" {{-- Giả sử route --}}
                                 class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Danh sách người dùng
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('admin.users.create') }}"
-                                class="block w-full py-1.5
+                            <a href="{{  route('admin.roles.index') }}" {{-- Giả sử route --}}
+                               class="block w-full py-1.5
                                 px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.users.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Thêm mới người dùng
+                                {{ request()->routeIs('admin.roles.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Vai trò của người dùng
                             </a>
                         </li>
                     </ul>
@@ -297,16 +298,40 @@
                 {{-- 8. Quản lý mã giảm giá --}}
                 <li>
                     @php $isCouponsActive = request()->routeIs('admin.coupons.*'); @endphp
-                    <a href=""
-                        class="group flex items-center px-4 py-2.5
-                        text-base rounded-md transition-all duration-200 ease-in-out
-                        {{ $isCouponsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                    <button @click="openNav !== 6 ? openNav = 6 : openNav = null"
+                        :class="openNav === 6 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
                         <span
                             class="mr-3 text-lg {{ $isCouponsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.41,10H14a1,1,0,0,0,0,2h5.41a1,1,0,0,1,0,2H14a3,3,0,0,1,0-6h5.41a3,3,0,0,0,0,6H14a5,5,0,0,0,0,10h6V20H10a1,1,0,0,0,0,2h10a1,1,0,0,0,1-1V11A5,5,0,0,0,15,6H10V8h5.41A1,1,0,0,1,14,10H10V4h6a3,3,0,0,1,3,3V9A1,1,0,0,1,19.41,10ZM4,2A2,2,0,0,0,2,4V20a2,2,0,0,0,2,2H8V2Z"/></svg>
                         </span>
                         Quản lý mã giảm giá
-                    </a>
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 6 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 6" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.coupons.index') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md
+                                    {{ request()->routeIs('admin.coupons.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách mã giảm giá
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.coupons.create') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md
+                                    {{ request()->routeIs('admin.coupons.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thêm mã mới
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 {{-- 9. Quản lý phân quyền --}}
@@ -361,7 +386,7 @@
                                 <path d="M17,15H7a1,1,0,0,0,0,2H17a1,1,0,0,0,0-2Z" />
                             </svg>
                         </span>
-                        Quản lý danh mục bài viết
+                        Quản lý bài viết
                         <span class="ml-auto transition-transform duration-200 ease-in-out"
                             :class="openNav === 9 ? 'rotate-90' : ''">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
@@ -372,22 +397,24 @@
                         </span>
                     </button>
                     <ul x-show="openNav === 9" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        
                         <li>
-                            <a href=""
+                            <a href="{{ route('admin.post-tags.index') }}" {{-- Giả sử route --}}
                                 class="block w-full py-1.5
                                 px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.post-categories.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Danh sách danh mục
+                                {{ request()->routeIs('admin.post-tags.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách thẻ bài viết
                             </a>
                         </li>
                         <li>
-                            <a href=""
+                            <a href="{{ route('admin.posts.index') }}" {{-- Giả sử route --}}
                                 class="block w-full py-1.5
                                 px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.post-categories.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Thêm mới danh mục
+                                {{ request()->routeIs('admin.posts.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách bài viết
                             </a>
                         </li>
+                        
                     </ul>
                 </li>
 
@@ -408,10 +435,10 @@
                 {{-- 13. Quản lý thư viện ảnh --}}
                 <li>
                     @php $isMediaActive = request()->routeIs('admin.media.*'); @endphp
-                    <a href="{{ route('admin.media.index') }}"
-                        class="group flex items-center px-4 py-2.5
-              text-base rounded-md transition-all duration-200 ease-in-out
-              {{ $isMediaActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                    <button @click="openNav !== 11 ? openNav = 11 : openNav = null"
+                        :class="openNav === 11 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
                         <span
                             class="mr-3 text-lg {{ $isMediaActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
@@ -421,7 +448,33 @@
                             </svg>
                         </span>
                         Thư viện ảnh
-                    </a>
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 11 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 11" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.media.index') }}"
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.media.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách thư viện ảnh
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.media.trash') }}"
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.media.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
 

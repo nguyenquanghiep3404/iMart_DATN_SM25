@@ -137,7 +137,7 @@
                         <td class="px-6 py-4 text-sm text-gray-500">{{ $review->created_at->format('d/m/Y') }}</td>
                         <td class="px-6 py-4 text-right">
                             <button
-                                onclick="openStatusModal({{ $review->id }}, '{{ $review->user->name }}', '{{ $review->status }}')"
+                                onclick="openStatusModal( '{{ $review->id }}', '{{ $review->user->name }}', '{{ $review->status }}')"
                                 class="text-indigo-600 hover:text-indigo-900 text-lg"
                                 title="Thay đổi trạng thái">
                                 <i class="fas fa-edit"></i>
@@ -152,6 +152,36 @@
                 </tbody>
             </table>
         </div>
+        <!-- Modal thay đổi trạng thái -->
+        <div id="status-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+            <div class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-md">
+                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-800">Thay đổi trạng thái Đánh giá</h2>
+                    <button id="close-status-modal-btn" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <div id="modal-warning" class="hidden text-sm text-red-600 mb-3">
+                        Không thể thay đổi trạng thái đã duyệt hoặc đã từ chối.
+                    </div>
+                    <p class="mb-4 text-gray-700">Bạn đang thay đổi trạng thái cho đánh giá của <strong id="modal-user-name" class="text-gray-900"></strong>.</p>
+                    <div class="mb-2">
+                        <label for="modal-review-status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái mới</label>
+                        <select id="modal-review-status" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="pending">Chờ duyệt</option>
+                            <option value="approved">Đã duyệt</option>
+                            <option value="rejected">Từ chối</option>
+                        </select>
+                    </div>
+                    <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3 rounded-b-2xl">
+                        <button id="cancel-status-change-btn" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Hủy</button>
+                        <button id="save-status-change-btn" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">Lưu thay đổi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         <div class="p-4">
             {{ $reviews->links() }}
@@ -214,40 +244,36 @@
         const modal = document.getElementById('status-modal');
         const modalUserName = document.getElementById('modal-user-name');
         const statusSelect = document.getElementById('modal-review-status');
+        const warning = document.getElementById('modal-warning');
+        const saveBtn = document.getElementById('save-status-change-btn');
 
         modalUserName.textContent = userName;
         statusSelect.value = currentStatus;
         modal.dataset.reviewId = reviewId;
+        modal.dataset.currentStatus = currentStatus; // lưu lại trạng thái gốc
         modal.classList.remove('hidden');
-    }
-    document.addEventListener("DOMContentLoaded", () => {
-        lucide.createIcons();
 
+        if (currentStatus !== 'pending') {
+            warning.classList.remove('hidden');
+            statusSelect.disabled = true;
+            saveBtn.disabled = true;
+        } else {
+            warning.classList.add('hidden');
+            statusSelect.disabled = false;
+            saveBtn.disabled = false;
+        }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('status-modal');
-        const modalUserName = document.getElementById('modal-user-name');
         const statusSelect = document.getElementById('modal-review-status');
         const saveBtn = document.getElementById('save-status-change-btn');
+        const cancelBtn = document.getElementById('cancel-status-change-btn');
+        const closeBtn = document.getElementById('close-status-modal-btn');
 
-        document.querySelectorAll('[data-open-status-modal]').forEach(button => {
-            button.addEventListener('click', () => {
-                const userName = button.getAttribute('data-user');
-                const reviewId = button.getAttribute('data-id');
-                const currentStatus = button.getAttribute('data-status');
-
-                modalUserName.textContent = userName;
-                statusSelect.value = currentStatus;
-                modal.dataset.reviewId = reviewId;
-                modal.classList.remove('hidden');
-            });
-        });
-
-        document.getElementById('close-status-modal-btn').addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-
-        document.getElementById('cancel-status-change-btn').addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
+        cancelBtn?.addEventListener('click', () => modal.classList.add('hidden'));
+        closeBtn?.addEventListener('click', () => modal.classList.add('hidden'));
 
         saveBtn.addEventListener('click', () => {
             const newStatus = statusSelect.value;
@@ -263,11 +289,33 @@
                         status: newStatus
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        // Không hiển thị thông báo lỗi nữa, chỉ return
+                        return;
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    location.reload();
+                    if (data?.success) {
+                        location.reload();
+                    }
                 });
         });
     });
+    if (currentStatus !== 'pending') {
+        document.getElementById('modal-review-status').disabled = true;
+        saveBtn.disabled = true;
+    } else {
+        document.getElementById('modal-review-status').disabled = false;
+        saveBtn.disabled = false;
+    }
+    const warning = document.getElementById('modal-warning');
+    if (currentStatus !== 'pending') {
+        warning.classList.remove('hidden');
+    } else {
+        warning.classList.add('hidden');
+    }
 </script>
+
 @endsection
