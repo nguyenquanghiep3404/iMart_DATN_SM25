@@ -102,7 +102,7 @@
                         <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Shipping</a>
                       </li>
                       <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Terms &amp; conditions</a>
+                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="{{ route('users.terms') }}">Terms &amp; conditions</a>
                       </li>
                     </ul>
                   </div>
@@ -211,6 +211,10 @@
             <li class="px-1">/</li>
             <li class="animate-underline">
               <a class="nav-link fw-normal p-0 animate-target" href="#!">Accessories</a>
+            </li>
+            <li class="px-1">/</li>
+            <li class="animate-underline">
+              <a class="nav-link fw-normal p-0 animate-target" href="{{ route('users.terms') }}">Terms &amp; conditions</a>
             </li>
           </ul>
         </div>

@@ -453,4 +453,23 @@ class HomeController extends Controller
 
         return view('users.shop', compact('products', 'categories', 'currentCategory'));
     }
+
+    /**
+     * Hiển thị trang About , Help, Terms
+     */
+    public function about()
+    {
+        return view('users.about');
+    }
+
+    /**
+     */
+    public function help()
+    {
+        return view('users.help');
+    }
+    public function terms()
+    {
+        return view('users.terms');
+    }
 }

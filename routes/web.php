@@ -36,6 +36,10 @@ Route::get('/danh-muc-san-pham', [HomeController::class, 'allProducts'])->name('
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
+// Trang About và Help , terms
+Route::get('/about', [HomeController::class, 'about'])->name('users.about');
+Route::get('/help', [HomeController::class, 'help'])->name('users.help');
+Route::get('/terms', [HomeController::class, 'terms'])->name('users.terms'); 
 // các trang không cần đăng nhập ở dưới đây
 
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
