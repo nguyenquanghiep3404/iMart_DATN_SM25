@@ -82,6 +82,38 @@
                 <span>Thêm nhân viên mới</span>
             </button>
         </header>
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                <div class="bg-blue-100 text-blue-600 p-4 rounded-full"><i class="fas fa-users fa-2x"></i></div>
+                <div>
+                    <p class="text-gray-500 text-sm">Tổng số nhân viên</p>
+                    <p id="stat-total-staff" class="text-3xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+             <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                <div class="bg-green-100 text-green-600 p-4 rounded-full"><i class="fas fa-user-check fa-2x"></i></div>
+                <div>
+                    <p class="text-gray-500 text-sm">Đang hoạt động</p>
+                    <p id="stat-active-staff" class="text-3xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+             <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                <div class="bg-yellow-100 text-yellow-600 p-4 rounded-full"><i class="fas fa-file-alt fa-2x"></i></div>
+                <div>
+                    <p class="text-gray-500 text-sm">Tổng bài viết</p>
+                    <p id="stat-total-posts" class="text-3xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                <div class="bg-purple-100 text-purple-600 p-4 rounded-full"><i class="fas fa-eye fa-2x"></i></div>
+                <div>
+                    <p class="text-gray-500 text-sm">Tổng lượt xem</p>
+                    <p id="stat-total-views" class="text-3xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+        </div>
 
         <!-- Filter Section -->
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
@@ -240,6 +272,12 @@
             const prevMonthBtn = document.getElementById('prev-month-btn');
             const nextMonthBtn = document.getElementById('next-month-btn');
 
+            // Stats cards elements
+            const statTotalStaff = document.getElementById('stat-total-staff');
+            const statActiveStaff = document.getElementById('stat-active-staff');
+            const statTotalPosts = document.getElementById('stat-total-posts');
+            const statTotalViews = document.getElementById('stat-total-views');
+
             // --- UTILITY FUNCTIONS ---
             const formatDate = (dateString) => {
                 if (!dateString) return '';
@@ -247,7 +285,7 @@
                 return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
             };
 
-            const formatViews = (views) => new Intl.NumberFormat('en-US').format(views);
+            const formatNumber = (num) => new Intl.NumberFormat('en-US').format(num);
 
             const statusMap = {
                 active: { text: 'Hoạt động', class: 'status-active' },
@@ -256,6 +294,18 @@
             const shifts = { 'Nghi': 'Nghỉ', 'Sang': 'Sáng', 'Chieu': 'Chiều', 'Toi': 'Tối' };
 
             // --- RENDER FUNCTIONS ---
+            function updateStats() {
+                const totalStaff = mockStaff.length;
+                const activeStaff = mockStaff.filter(s => s.status === 'active').length;
+                const totalPosts = mockStaff.reduce((acc, staff) => acc + staff.stats.posts, 0);
+                const totalViews = mockStaff.reduce((acc, staff) => acc + staff.stats.views, 0);
+
+                statTotalStaff.textContent = formatNumber(totalStaff);
+                statActiveStaff.textContent = formatNumber(activeStaff);
+                statTotalPosts.textContent = formatNumber(totalPosts);
+                statTotalViews.textContent = formatNumber(totalViews);
+            }
+
             function renderStaffRow(staff) {
                 const staffStatus = statusMap[staff.status] || { text: 'N/A', class: '' };
                 
@@ -272,10 +322,10 @@
                         </td>
                         <td class="p-6">
                             <div class="flex items-center text-sm">
-                               <i class="fas fa-file-alt text-blue-500 mr-2"></i> Số bài viết: <strong>${staff.stats.posts}</strong>
+                               <i class="fas fa-file-alt text-blue-500 mr-2"></i> Số bài viết: <strong>${formatNumber(staff.stats.posts)}</strong>
                             </div>
                              <div class="flex items-center text-sm mt-1">
-                               <i class="fas fa-eye text-green-500 mr-2"></i> Lượt xem: <strong>${formatViews(staff.stats.views)}</strong>
+                               <i class="fas fa-eye text-green-500 mr-2"></i> Lượt xem: <strong>${formatNumber(staff.stats.views)}</strong>
                             </div>
                         </td>
                         <td class="p-6">${formatDate(staff.createdAt)}</td>
@@ -337,6 +387,7 @@
                     mockStaff.unshift({ id: newId, name, email, status, avatar: `https://placehold.co/40x40/8B5CF6/FFFFFF?text=${name.charAt(0)}`, createdAt: new Date().toISOString(), stats: { posts: 0, views: 0 }, schedule: [] });
                 }
                 applyFilters();
+                updateStats(); // Update stats after adding/editing staff
                 closeModal();
             });
 
@@ -458,6 +509,7 @@
 
             // --- INITIAL RENDER ---
             renderTable(mockStaff);
+            updateStats();
         });
     </script>
 </body>

@@ -3,7 +3,7 @@
 @section('title', 'Chỉnh Sửa Sản Phẩm')
 
 @push('styles')
-    {{-- CSS styles (giữ nguyên không đổi) --}}
+    {{-- CSS styles --}}
     <link href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
     <style>
@@ -42,6 +42,10 @@
         .hidden { display: none !important; }
         .modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
         .modal.show { display: flex; align-items: center; justify-content: center; }
+        .input-group label.flex {display: flex;margin-bottom: 0;}
+        .input-group .form-section-heading {
+        margin-bottom: 0;
+        }
     </style>
 @endpush
 
@@ -104,18 +108,18 @@
                             @error('slug')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div class="input-group">
-                             <div class="label-with-action">
-                                 <label for="short_description">Mô tả ngắn</label>
-                                 <button type="button" id="generateShortDescAI" class="btn btn-ai btn-sm"><span class="button-text">✨ Tạo bằng AI</span><span class="loading-spinner hidden"></span></button>
-                             </div>
+                                <div class="label-with-action">
+                                    <label for="short_description">Mô tả ngắn</label>
+                                    <button type="button" id="generateShortDescAI" class="btn btn-ai btn-sm"><span class="button-text">✨ Tạo bằng AI</span><span class="loading-spinner hidden"></span></button>
+                                </div>
                             <textarea id="short_description" name="short_description" class="textarea-field @error('short_description') border-red-500 @enderror" rows="3">{{ old('short_description', $product->short_description) }}</textarea>
                             @error('short_description')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div class="input-group">
                             <div class="label-with-action">
-                                 <label for="description">Mô tả chi tiết</label>
-                                 <button type="button" id="generateLongDescAI" class="btn btn-ai btn-sm"><span class="button-text">✨ Tạo bằng AI</span><span class="loading-spinner hidden"></span></button>
-                             </div>
+                                <label for="description">Mô tả chi tiết</label>
+                                <button type="button" id="generateLongDescAI" class="btn btn-ai btn-sm"><span class="button-text">✨ Tạo bằng AI</span><span class="loading-spinner hidden"></span></button>
+                            </div>
                             <textarea id="description" name="description" class="@error('description') border-red-500 @enderror">{{ old('description', $product->description) }}</textarea>
                             @error('description')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
@@ -123,62 +127,74 @@
 
                     {{-- Card Loại Sản Phẩm & Biến Thể --}}
                     <div class="card">
-                         <div class="card-header">
-                            <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="6" r="3"></circle><path d="M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"></path><path d="M12 12v3"></path></svg>
-                            Loại Sản Phẩm & Biến Thể
-                        </div>
+                            <div class="card-header">
+                                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="6" r="3"></circle><path d="M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"></path><path d="M12 12v3"></path></svg>
+                                Loại Sản Phẩm & Biến Thể
+                            </div>
                         <div class="input-group">
                             <label>Loại sản phẩm</label>
-                             <div class="flex items-center space-x-6">
-                                 <label class="flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-50">
-                                     <input type="radio" name="type" value="simple" class="form-check-input product-type-radio" {{ old('type', $product->type) == 'simple' ? 'checked' : '' }}>
-                                     <span class="ml-2 font-medium text-gray-700">Đơn giản</span>
-                                 </label>
-                                 <label class="flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-50">
-                                     <input type="radio" name="type" value="variable" class="form-check-input product-type-radio" {{ old('type', $product->type) == 'variable' ? 'checked' : '' }}>
-                                     <span class="ml-2 font-medium text-gray-700">Có biến thể</span>
-                                 </label>
-                             </div>
+                                <div class="flex items-center space-x-6">
+                                    <label class="flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-50">
+                                        <input type="radio" name="type" value="simple" class="form-check-input product-type-radio" {{ old('type', $product->type) == 'simple' ? 'checked' : '' }}>
+                                        <span class="ml-2 font-medium text-gray-700">Đơn giản</span>
+                                    </label>
+                                    <label class="flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-50">
+                                        <input type="radio" name="type" value="variable" class="form-check-input product-type-radio" {{ old('type', $product->type) == 'variable' ? 'checked' : '' }}>
+                                        <span class="ml-2 font-medium text-gray-700">Có biến thể</span>
+                                    </label>
+                                </div>
                         </div>
 
                         {{-- Trường cho sản phẩm đơn giản --}}
-                         <div id="simpleProductFields" class="space-y-4 mt-6 pt-4 border-t" style="{{ old('type', $product->type) === 'simple' ? '' : 'display:none;' }}">
-                            @php
-                                $simpleVariant = $product->type === 'simple' ? $product->variants->first() : null;
-                            @endphp
-                            <h3 class="text-lg font-semibold text-gray-700">Thông tin sản phẩm đơn giản</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                <div class="input-group"><label for="simple_sku">SKU <span class="required-star">*</span></label><input type="text" id="simple_sku" name="simple_sku" class="input-field" value="{{ old('simple_sku', $simpleVariant?->sku ?? '') }}"></div>
-                                <div class="input-group"><label for="simple_price">Giá bán <span class="required-star">*</span> (VNĐ)</label><input type="number" id="simple_price" name="simple_price" class="input-field" value="{{ old('simple_price', $simpleVariant?->price ?? '') }}"></div>
-                                <div class="input-group">
-                                     <div class="label-with-action"><label for="simple_sale_price">Giá khuyến mãi (VNĐ)</label><a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm">Lên lịch</a></div>
-                                     <input type="number" name="simple_sale_price" class="input-field" value="{{ old('simple_sale_price', $simpleVariant?->sale_price ?? '') }}">
-                                     <div class="schedule-container {{ old('simple_sale_price_starts_at', $simpleVariant?->sale_price_starts_at) || old('simple_sale_price_ends_at', $simpleVariant?->sale_price_ends_at) ? '' : 'hidden' }} mt-2 grid grid-cols-2 gap-x-4">
-                                         <div><label class="text-xs">Bắt đầu</label><input type="date" name="simple_sale_price_starts_at" class="input-field text-sm" value="{{ old('simple_sale_price_starts_at', $simpleVariant?->sale_price_starts_at ? \Carbon\Carbon::parse($simpleVariant->sale_price_starts_at)->format('Y-m-d') : '') }}"></div>
-                                         <div><label class="text-xs">Kết thúc</label><input type="date" name="simple_sale_price_ends_at" class="input-field text-sm" value="{{ old('simple_sale_price_ends_at', $simpleVariant?->sale_price_ends_at ? \Carbon\Carbon::parse($simpleVariant->sale_price_ends_at)->format('Y-m-d') : '') }}"></div>
-                                     </div>
-                                 </div>
-                                <div class="input-group"><label for="simple_stock_quantity">Số lượng tồn kho <span class="required-star">*</span></label><input type="number" id="simple_stock_quantity" name="simple_stock_quantity" class="input-field" value="{{ old('simple_stock_quantity', $simpleVariant?->stock_quantity ?? '') }}"></div>
-                                <div class="input-group"><label for="simple_weight">Cân nặng (kg)</label><input type="number" step="0.01" min="0" name="simple_weight" class="input-field" value="{{ old('simple_weight', $simpleVariant?->weight ?? '') }}"></div>
-                                <div class="input-group">
-                                    <label>Kích thước (D x R x C) (cm)</label>
-                                    <div class="grid grid-cols-3 gap-x-2">
-                                        <input type="number" step="0.1" min="0" name="simple_dimensions_length" placeholder="Dài" class="input-field" value="{{ old('simple_dimensions_length', $simpleVariant?->dimensions_length ?? '') }}">
-                                        <input type="number" step="0.1" min="0" name="simple_dimensions_width" placeholder="Rộng" class="input-field" value="{{ old('simple_dimensions_width', $simpleVariant?->dimensions_width ?? '') }}">
-                                        <input type="number" step="0.1" min="0" name="simple_dimensions_height" placeholder="Cao" class="input-field" value="{{ old('simple_dimensions_height', $simpleVariant?->dimensions_height ?? '') }}">
+                            <div id="simpleProductFields" class="space-y-4 mt-6 pt-4 border-t" style="{{ old('type', $product->type) === 'simple' ? '' : 'display:none;' }}">
+                                @php
+                                    $simpleVariant = $product->type === 'simple' ? $product->variants->first() : null;
+                                @endphp
+                                <h3 class="text-lg font-semibold text-gray-700">Thông tin sản phẩm đơn giản</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                    <div class="input-group"><label for="simple_sku">SKU <span class="required-star">*</span></label><input type="text" id="simple_sku" name="simple_sku" class="input-field" value="{{ old('simple_sku', $simpleVariant?->sku ?? '') }}"></div>
+                                    <div class="input-group"><label for="simple_price">Giá bán <span class="required-star">*</span> (VNĐ)</label><input type="number" id="simple_price" name="simple_price" class="input-field" value="{{ old('simple_price', $simpleVariant?->price ?? '') }}"></div>
+                                    <div class="input-group">
+                                        <div class="label-with-action"><label for="simple_sale_price">Giá khuyến mãi (VNĐ)</label><a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm">Lên lịch</a></div>
+                                        <input type="number" name="simple_sale_price" class="input-field" value="{{ old('simple_sale_price', $simpleVariant?->sale_price ?? '') }}">
+                                    </div>
+                                    <div class="input-group"><label for="simple_stock_quantity">Số lượng tồn kho <span class="required-star">*</span></label><input type="number" id="simple_stock_quantity" name="simple_stock_quantity" class="input-field" value="{{ old('simple_stock_quantity', $simpleVariant?->stock_quantity ?? '') }}"></div>
+                                </div>
+                                <div class="schedule-container {{ old('simple_sale_price_starts_at', $simpleVariant?->sale_price_starts_at) || old('simple_sale_price_ends_at', $simpleVariant?->sale_price_ends_at) ? '' : 'hidden' }} mt-2">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                        <div class="input-group">
+                                            <label class="text-xs font-medium">Thời gian bắt đầu</label>
+                                            <input type="datetime-local" name="simple_sale_price_starts_at" class="input-field" value="{{ old('simple_sale_price_starts_at', $simpleVariant?->sale_price_starts_at ? \Carbon\Carbon::parse($simpleVariant->sale_price_starts_at)->format('Y-m-d\TH:i') : '') }}">
+                                        </div>
+                                        <div class="input-group">
+                                            <label class="text-xs font-medium">Thời gian kết thúc</label>
+                                            <input type="datetime-local" name="simple_sale_price_ends_at" class="input-field" value="{{ old('simple_sale_price_ends_at', $simpleVariant?->sale_price_ends_at ? \Carbon\Carbon::parse($simpleVariant->sale_price_ends_at)->format('Y-m-d\TH:i') : '') }}">
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="pt-4 mt-4 border-t border-gray-200">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                        <div class="input-group"><label for="simple_weight">Cân nặng (kg)</label><input type="number" step="0.01" min="0" name="simple_weight" class="input-field" value="{{ old('simple_weight', $simpleVariant?->weight ?? '') }}"></div>
+                                        <div class="input-group">
+                                            <label>Kích thước (D x R x C) (cm)</label>
+                                            <div class="grid grid-cols-3 gap-x-2">
+                                                <input type="number" step="0.1" min="0" name="simple_dimensions_length" placeholder="Dài" class="input-field" value="{{ old('simple_dimensions_length', $simpleVariant?->dimensions_length ?? '') }}">
+                                                <input type="number" step="0.1" min="0" name="simple_dimensions_width" placeholder="Rộng" class="input-field" value="{{ old('simple_dimensions_width', $simpleVariant?->dimensions_width ?? '') }}">
+                                                <input type="number" step="0.1" min="0" name="simple_dimensions_height" placeholder="Cao" class="input-field" value="{{ old('simple_dimensions_height', $simpleVariant?->dimensions_height ?? '') }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="input-group md:col-span-2 pt-4 mt-4 border-t">
+                                    <label>Ảnh Sản Phẩm <span class="required-star">*</span></label>
+                                    <div class="flex space-x-2 mb-3">
+                                        <label for="simple_product_image_input" class="btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
+                                        <input type="file" id="simple_product_image_input" class="hidden" accept="image/*" multiple onchange="handleSimpleProductImages(event)">
+                                        <button type="button" id="open-library-btn-simple" class="btn btn-secondary btn-sm"><i class="fas fa-photo-video mr-2"></i> Thêm từ thư viện</button>
+                                    </div>
+                                    <div id="simple_product_image_preview_container" class="image-preview-container mt-2"></div>
+                                </div>
                             </div>
-                             <div class="input-group md:col-span-2 pt-4 mt-4 border-t">
-                                 <label>Ảnh Sản Phẩm <span class="required-star">*</span></label>
-                                 <div class="flex space-x-2 mb-3">
-                                     <label for="simple_product_image_input" class="btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
-                                     <input type="file" id="simple_product_image_input" class="hidden" accept="image/*" multiple onchange="handleSimpleProductImages(event)">
-                                     <button type="button" id="open-library-btn-simple" class="btn btn-secondary btn-sm"><i class="fas fa-photo-video mr-2"></i> Thêm từ thư viện</button>
-                                 </div>
-                                 <div id="simple_product_image_preview_container" class="image-preview-container mt-2"></div>
-                             </div>
-                        </div>
 
                         {{-- Trường cho sản phẩm có biến thể --}}
                         <div id="variableProductFields" class="space-y-4 mt-6 pt-4 border-t border-gray-200" style="{{ old('type', $product->type) === 'variable' ? '' : 'display:none;' }}">
@@ -208,10 +224,10 @@
                 {{-- Cột phải: Tổ chức, SEO, etc. --}}
                 <div class="lg:col-span-1 space-y-6">
                     <div class="card">
-                         <div class="card-header">
-                            <svg class="svg-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
-                            Xuất Bản
-                        </div>
+                            <div class="card-header">
+                                <svg class="svg-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+                                Xuất Bản
+                            </div>
                         <div class="input-group">
                             <label for="status">Trạng thái <span class="required-star">*</span></label>
                             <select id="status" name="status" class="select-field">
@@ -247,7 +263,7 @@
                                     </option>
                                 @endforeach
                             </select>
-                             @error('category_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                @error('category_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
                         <div class="input-group">
                             <div class="label-with-action">
@@ -258,25 +274,25 @@
                         </div>
                     </div>
 
-                     <div class="card">
-                        <div class="card-header">
-                           <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><path d="M11 8l2 2"></path></svg>
-                           Tối Ưu Hóa SEO
-                           <button type="button" id="generateAllSeoAI" class="btn btn-ai btn-sm ml-auto"><span class="button-text">✨ Tạo Tất Cả SEO</span><span class="loading-spinner hidden"></span></button>
+                        <div class="card">
+                            <div class="card-header">
+                                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><path d="M11 8l2 2"></path></svg>
+                                Tối Ưu Hóa SEO
+                                <button type="button" id="generateAllSeoAI" class="btn btn-ai btn-sm ml-auto"><span class="button-text">✨ Tạo Tất Cả SEO</span><span class="loading-spinner hidden"></span></button>
+                            </div>
+                            <div class="input-group">
+                                <label for="meta_title">Meta Title</label>
+                                <input type="text" id="meta_title" name="meta_title" class="input-field" value="{{ old('meta_title', $product->meta_title) }}">
+                            </div>
+                            <div class="input-group">
+                                <label for="meta_description">Meta Description</label>
+                                <textarea id="meta_description" name="meta_description" class="textarea-field" rows="3">{{ old('meta_description', $product->meta_description) }}</textarea>
+                            </div>
+                            <div class="input-group">
+                                <label for="meta_keywords">Meta Keywords</label>
+                                <input type="text" id="meta_keywords" name="meta_keywords" class="input-field" value="{{ old('meta_keywords', $product->meta_keywords) }}">
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <label for="meta_title">Meta Title</label>
-                            <input type="text" id="meta_title" name="meta_title" class="input-field" value="{{ old('meta_title', $product->meta_title) }}">
-                        </div>
-                        <div class="input-group">
-                            <label for="meta_description">Meta Description</label>
-                            <textarea id="meta_description" name="meta_description" class="textarea-field" rows="3">{{ old('meta_description', $product->meta_description) }}</textarea>
-                        </div>
-                        <div class="input-group">
-                            <label for="meta_keywords">Meta Keywords</label>
-                            <input type="text" id="meta_keywords" name="meta_keywords" class="input-field" value="{{ old('meta_keywords', $product->meta_keywords) }}">
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -297,6 +313,21 @@
                 <div class="mt-6 flex justify-end space-x-4">
                     <button id="cancelTypeSwitch" class="btn btn-secondary">Hủy bỏ</button>
                     <button id="confirmTypeSwitch" class="btn btn-danger">Xác nhận & Chuyển đổi</button>
+                </div>
+            </div>
+        </div>
+
+        {{-- MODAL XÁC NHẬN TẢI LẠI TRANG --}}
+        <div id="reloadConfirmationModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center hidden z-[1060]">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+                <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                    <svg class="svg-icon h-6 w-6 mr-2 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6"/><path d="M22 11.5A10 10 0 0 0 3.5 12.5"/><path d="M2 12.5a10 10 0 0 0 18.5-1"/></svg>
+                    Xác nhận tải lại trang
+                </h3>
+                <p class="mt-3 text-gray-600">Bạn có muốn tải lại trang để khôi phục dữ liệu biến thể gốc không? Mọi thay đổi chưa lưu sẽ bị mất.</p>
+                <div class="mt-6 flex justify-end space-x-4">
+                    <button id="cancelReload" class="btn btn-secondary">Hủy bỏ</button>
+                    <button id="confirmReload" class="btn btn-primary">Tải lại trang</button>
                 </div>
             </div>
         </div>
@@ -347,6 +378,7 @@ const allAttributesFromPHP = @json($jsAttributes, JSON_UNESCAPED_UNICODE);
 const productBeingEdited = @json($jsProduct, JSON_UNESCAPED_UNICODE);
 const oldData = @json($oldInput, JSON_UNESCAPED_UNICODE);
 let currentProductType = productBeingEdited.type;
+const originalProductTypeFromServer = productBeingEdited.type; // Lưu loại sản phẩm gốc
 
 // =================================================================
 // CÁC HÀM TIỆN ÍCH, AI, UPLOAD
@@ -397,11 +429,6 @@ function slugify(text) {
         .replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
 }
 
-function toggleSchedule(element) {
-    const container = element.closest('.input-group').querySelector('.schedule-container');
-    if (container) container.classList.toggle('hidden');
-}
-
 async function uploadFilesViaAjax(files, context = 'products') {
     const formData = new FormData();
     Array.from(files).forEach(file => formData.append('files[]', file));
@@ -449,7 +476,24 @@ async function callGeminiAPI(prompt, isStructured = false, schema = null) {
             throw new Error(errorData.error || `Request failed with status ${response.status}`);
         }
         const result = await response.json();
-        return result.text; // Giả sử backend luôn trả về 'text'
+        if (result.candidates && result.candidates[0]?.content?.parts?.[0]) {
+            const responseText = result.candidates[0].content.parts[0].text;
+            if (isStructured) {
+                try {
+                    const cleanedJsonString = responseText.replace(/```json|```/g, '').trim();
+                    return JSON.parse(cleanedJsonString);
+                } catch (e) {
+                    console.error("Failed to parse JSON from AI response:", e);
+                    throw new Error("AI returned invalid JSON format.");
+                }
+            }
+            return responseText;
+        } else {
+            if (result.promptFeedback && result.promptFeedback.blockReason) {
+                throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
+            }
+            throw new Error("Không nhận được nội dung hợp lệ từ AI.");
+        }
     } catch (error) {
         console.error("Error calling backend for Gemini API:", error);
         showMessageModal("Lỗi Hệ Thống", `Không thể kết nối đến máy chủ AI: ${error.message}`, "error");
@@ -575,8 +619,17 @@ function removeVariantImage(btn, index, id) {
 
 
 // =================================================================
-// LOGIC FORM VÀ BIẾN THỂ
+// LOGIC FORM VÀ BIẾN THỂ (Đã cập nhật)
 // =================================================================
+function toggleSchedule(element) {
+    const sectionContainer = element.closest('#simpleProductFields, .variant-card');
+    if (sectionContainer) {
+        const scheduleContainer = sectionContainer.querySelector('.schedule-container');
+        if (scheduleContainer) {
+            scheduleContainer.classList.toggle('hidden');
+        }
+    }
+}
 
 function updateSelectedAttributesForVariants() {
     selectedProductAttributes = Array.from(document.querySelectorAll('.product-attribute-checkbox:checked'))
@@ -622,6 +675,9 @@ function addVariantCard(variantData = {}) {
     });
     attributesHTML += '</div>';
 
+    const startsAtValue = variantData.sale_price_starts_at ? new Date(variantData.sale_price_starts_at).toISOString().slice(0, 16) : '';
+    const endsAtValue = variantData.sale_price_ends_at ? new Date(variantData.sale_price_ends_at).toISOString().slice(0, 16) : '';
+
     variantCard.innerHTML = `
         <div class="variant-header">
             <div class="flex items-center"><h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4>${variantData.id ? `<input type="hidden" name="variants[${currentVariantIndex}][id]" value="${variantData.id}">` : ''}</div>
@@ -635,9 +691,17 @@ function addVariantCard(variantData = {}) {
             <div class="input-group">
                 <div class="label-with-action"><label class="text-sm font-medium">Giá KM (VNĐ)</label><a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium">Lên lịch</a></div>
                 <div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0" value="${variantData.sale_price || ''}"></div>
-                <div class="schedule-container ${variantData.sale_price_starts_at || variantData.sale_price_ends_at ? '' : 'hidden'} mt-2 grid grid-cols-2 gap-x-4">
-                    <div><label class="text-xs">Bắt đầu</label><input type="date" name="variants[${currentVariantIndex}][sale_price_starts_at]" class="input-field text-sm" value="${variantData.sale_price_starts_at ? new Date(variantData.sale_price_starts_at).toISOString().split('T')[0] : ''}"></div>
-                    <div><label class="text-xs">Kết thúc</label><input type="date" name="variants[${currentVariantIndex}][sale_price_ends_at]" class="input-field text-sm" value="${variantData.sale_price_ends_at ? new Date(variantData.sale_price_ends_at).toISOString().split('T')[0] : ''}"></div>
+            </div>
+        </div>
+        <div class="schedule-container ${variantData.sale_price_starts_at || variantData.sale_price_ends_at ? '' : 'hidden'} mt-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div class="input-group">
+                    <label class="text-xs font-medium">Thời gian bắt đầu</label>
+                    <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_starts_at]" class="input-field" value="${startsAtValue}">
+                </div>
+                <div class="input-group">
+                    <label class="text-xs font-medium">Thời gian kết thúc</label>
+                    <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_ends_at]" class="input-field" value="${endsAtValue}">
                 </div>
             </div>
         </div>
@@ -665,9 +729,8 @@ function addVariantCard(variantData = {}) {
     updateDefaultVariantRadioAndHiddenFields();
 }
 
-
 // =================================================================
-// LOGIC CHUYỂN ĐỔI LOẠI SẢN PHẨM (ĐÃ SỬA LỖI)
+// LOGIC CHUYỂN ĐỔI LOẠI SẢN PHẨM
 // =================================================================
 function performTypeSwitch(newType) {
     const simpleFieldsDiv = document.getElementById('simpleProductFields');
@@ -788,7 +851,8 @@ function initializeFormWithProductData() {
 // KHỞI TẠO VÀ GẮN SỰ KIỆN KHI TRANG TẢI XONG
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
-
+    
+    // Initialize TinyMCE
     tinymce.init({
         selector: 'textarea#description',
         plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
@@ -799,22 +863,25 @@ document.addEventListener('DOMContentLoaded', () => {
         setup: editor => editor.on('change', () => editor.save())
     });
 
+    // Initialize Tagify
     const tagsInput = document.getElementById('tags');
     if (tagsInput) tagify = new Tagify(tagsInput);
     
+    // Initialize Slug generation
     document.getElementById('name').addEventListener('keyup', (e) => {
         const slugInput = document.getElementById('slug');
         if (slugInput.dataset.auto !== "false") {
-             slugInput.value = slugify(e.target.value);
+            slugInput.value = slugify(e.target.value);
         }
     });
     document.getElementById('slug').addEventListener('change', (e) => {
         e.target.dataset.auto = e.target.value.trim() === "" ? "true" : "false";
     });
 
+    // Populate attributes checkboxes
     const productAttributesContainer = document.getElementById('productAttributesContainer');
     if (productAttributesContainer && Array.isArray(allAttributesFromPHP)) {
-         allAttributesFromPHP.forEach(attr => {
+            allAttributesFromPHP.forEach(attr => {
             const labelEl = document.createElement('label');
             labelEl.className = 'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100';
             labelEl.innerHTML = `<input type="checkbox" value="${attr.id}" class="product-attribute-checkbox form-check-input mr-2"> ${attr.name}`;
@@ -823,97 +890,69 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Add variant button event
     document.getElementById('addVariantButton')?.addEventListener('click', () => addVariantCard());
 
-    // --- SỬA LỖI: GẮN SỰ KIỆN CHO CÁC NÚT AI ---
-    const generateShortDescBtn = document.getElementById('generateShortDescAI');
-    if (generateShortDescBtn) {
-        generateShortDescBtn.addEventListener('click', async () => {
-            const context = getProductContext();
-            if (!context) return;
-            toggleButtonLoading(generateShortDescBtn, true);
-            try {
-                const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một mô tả ngắn gọn (khoảng 2-3 câu) cho sản phẩm với giọng văn bán hàng chuyên nghiệp.`;
-                const result = await callGeminiAPI(prompt);
-                if (result) {
-                    document.getElementById('short_description').value = result.replace(/[\*#`]/g, '').trim();
-                }
-            } catch (error) {
-                showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`, 'error');
-            } finally {
-                toggleButtonLoading(generateShortDescBtn, false);
-            }
-        });
-    }
+    // AI Buttons
+    document.getElementById('generateShortDescAI')?.addEventListener('click', async () => {
+        const context = getProductContext();
+        if (!context) return;
+        const btn = document.getElementById('generateShortDescAI');
+        toggleButtonLoading(btn, true);
+        const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một mô tả ngắn gọn (khoảng 2-3 câu) cho sản phẩm với giọng văn bán hàng chuyên nghiệp.`;
+        const result = await callGeminiAPI(prompt);
+        if (result) document.getElementById('short_description').value = result.replace(/[\*#`]/g, '').trim();
+        toggleButtonLoading(btn, false);
+    });
 
-    const generateLongDescBtn = document.getElementById('generateLongDescAI');
-    if (generateLongDescBtn) {
-        generateLongDescBtn.addEventListener('click', async () => {
-            const context = getProductContext();
-            if (!context) return;
-            toggleButtonLoading(generateLongDescBtn, true);
-            try {
-                const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm, sử dụng các thẻ HTML để định dạng.`;
-                const result = await callGeminiAPI(prompt);
-                if (result && typeof tinymce !== 'undefined' && tinymce.get('description')) {
-                    tinymce.get('description').setContent(result);
-                }
-            } catch (error) {
-                showMessageModal('Lỗi AI', `Không thể tạo mô tả chi tiết: ${error.message}`, 'error');
-            } finally {
-                toggleButtonLoading(generateLongDescBtn, false);
-            }
-        });
-    }
+    document.getElementById('generateLongDescAI')?.addEventListener('click', async () => {
+        const context = getProductContext();
+        if (!context) return;
+        const btn = document.getElementById('generateLongDescAI');
+        toggleButtonLoading(btn, true);
+        const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm, sử dụng các thẻ HTML để định dạng.`;
+        const result = await callGeminiAPI(prompt);
+        if (result && tinymce.get('description')) tinymce.get('description').setContent(result);
+        toggleButtonLoading(btn, false);
+    });
 
-    const generateTagsBtn = document.getElementById('generateTagsAI');
-    if (generateTagsBtn) {
-        generateTagsBtn.addEventListener('click', async () => {
-            const context = getProductContext();
-            if (!context) return;
-            toggleButtonLoading(generateTagsBtn, true);
-            try {
-                const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất, trả về dưới dạng chuỗi cách nhau bởi dấu phẩy.`;
-                const result = await callGeminiAPI(prompt);
-                if (result && tagify) {
-                    const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g, '').trim();
-                    tagify.loadOriginalValues(cleanedResult);
-                }
-            } catch (error) {
-                showMessageModal('Lỗi AI', `Không thể tạo thẻ: ${error.message}`, 'error');
-            } finally {
-                toggleButtonLoading(generateTagsBtn, false);
-            }
-        });
-    }
+    document.getElementById('generateTagsAI')?.addEventListener('click', async () => {
+        const context = getProductContext();
+        if (!context) return;
+        const btn = document.getElementById('generateTagsAI');
+        toggleButtonLoading(btn, true);
+        const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất, trả về dưới dạng chuỗi cách nhau bởi dấu phẩy.`;
+        const result = await callGeminiAPI(prompt);
+        if (result && tagify) tagify.loadOriginalValues(result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g, '').trim());
+        toggleButtonLoading(btn, false);
+    });
     
-    const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
-    if (generateAllSeoBtn) {
-        generateAllSeoBtn.addEventListener('click', async () => {
-            const context = getProductContext();
-            if (!context) return;
-            toggleButtonLoading(generateAllSeoBtn, true);
-            try {
-                const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", tạo nội dung SEO (meta_title, meta_description, meta_keywords) và trả về dưới dạng một chuỗi JSON hợp lệ. Schema: {"meta_title": "string", "meta_description": "string", "meta_keywords": "string"}.`;
-                const resultText = await callGeminiAPI(prompt);
-                if (resultText) {
-                    const cleanedJsonString = resultText.replace(/```json|```/g, '').trim();
-                    const result = JSON.parse(cleanedJsonString);
-                    if (result) {
-                        document.getElementById('meta_title').value = result.meta_title || '';
-                        document.getElementById('meta_description').value = result.meta_description || '';
-                        document.getElementById('meta_keywords').value = result.meta_keywords || '';
-                    }
-                }
-            } catch (error) {
-                showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`, 'error');
-            } finally {
-                toggleButtonLoading(generateAllSeoBtn, false);
-            }
-        });
-    }
+    document.getElementById('generateAllSeoAI')?.addEventListener('click', async () => {
+        const context = getProductContext();
+        if (!context) return;
+        const btn = document.getElementById('generateAllSeoAI');
+        toggleButtonLoading(btn, true);
+        const schema = {
+            type: "OBJECT",
+            properties: {
+                meta_title: { type: "STRING" },
+                meta_description: { type: "STRING" },
+                meta_keywords: { type: "STRING" }
+            },
+            required: ["meta_title", "meta_description", "meta_keywords"]
+        };
+        const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", tạo nội dung SEO (meta_title, meta_description, meta_keywords) và trả về dưới dạng một đối tượng JSON hợp lệ.`;
+        const result = await callGeminiAPI(prompt, true, schema);
+        if (result) {
+            document.getElementById('meta_title').value = result.meta_title || '';
+            document.getElementById('meta_description').value = result.meta_description || '';
+            document.getElementById('meta_keywords').value = result.meta_keywords || '';
+        }
+        toggleButtonLoading(btn, false);
+    });
 
 
+    // Media Library Buttons
     document.getElementById('open-library-btn-simple')?.addEventListener('click', () => {
         window.mediaLibraryTarget = { type: 'simple', previewContainer: document.getElementById('simple_product_image_preview_container'), idsContainer: document.getElementById('image_ids_container') };
         if (window.openMediaLibrary) window.openMediaLibrary({ multiple: true });
@@ -927,18 +966,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // === BẮT ĐẦU KHỐI CODE MỚI ĐÃ SỬA LỖI ===
     const typeRadios = document.querySelectorAll('.product-type-radio');
-    const confirmationModal = document.getElementById('typeSwitchConfirmationModal');
+    const typeSwitchModal = document.getElementById('typeSwitchConfirmationModal');
     const cancelSwitchBtn = document.getElementById('cancelTypeSwitch');
     const confirmSwitchBtn = document.getElementById('confirmTypeSwitch');
+
+    const reloadModal = document.getElementById('reloadConfirmationModal');
+    const cancelReloadBtn = document.getElementById('cancelReload');
+    const confirmReloadBtn = document.getElementById('confirmReload');
 
     typeRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             const newType = e.target.value;
             if (newType === currentProductType) return;
-            
+
+            // --- LOGIC MỚI: Xử lý trường hợp "hoàn tác" ---
+            if (originalProductTypeFromServer === 'variable' && newType === 'variable') {
+                reloadModal.classList.remove('hidden');
+
+                confirmReloadBtn.onclick = () => {
+                    window.location.reload();
+                };
+
+                cancelReloadBtn.onclick = () => {
+                    e.target.checked = false;
+                    document.querySelector('.product-type-radio[value="simple"]').checked = true;
+                    reloadModal.classList.add('hidden');
+                };
+                return;
+            }
+            // --- KẾT THÚC LOGIC MỚI ---
+
             if (currentProductType === 'variable' && newType === 'simple') {
-                confirmationModal.classList.remove('hidden');
+                typeSwitchModal.classList.remove('hidden');
             } else {
                 performTypeSwitch(newType);
             }
@@ -947,16 +1008,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cancelSwitchBtn.addEventListener('click', () => {
         document.querySelector(`.product-type-radio[value="${currentProductType}"]`).checked = true;
-        confirmationModal.classList.add('hidden');
+        typeSwitchModal.classList.add('hidden');
     });
     
     confirmSwitchBtn.addEventListener('click', () => {
         performTypeSwitch('simple');
-        confirmationModal.classList.add('hidden');
+        typeSwitchModal.classList.add('hidden');
     });
+    // === KẾT THÚC KHỐI CODE MỚI ===
 
+    // Final Form Initialization
     if (oldData && Object.keys(oldData).length > 0) {
-        console.warn("Validation failed. Repopulating form state.");
+        console.warn("Validation failed. Repopulating form state from old input.");
         initializeFormWithProductData();
     } else if (productBeingEdited) {
         console.log("Initializing form with existing product data.");

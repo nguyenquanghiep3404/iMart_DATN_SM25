@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So sánh sản phẩm</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .spec-table .spec-row:not(.spec-header):hover {
+            background-color: #f8fafc; /* slate-50 */
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+
+    <div class="max-w-7xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="flex justify-between items-center p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-800">So sánh sản phẩm</h1>
+            <button class="text-gray-400 hover:text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[1024px] border-collapse spec-table">
+                <!-- Product Header Section -->
+                <thead class="sticky top-[73px] bg-white z-10">
+                    <tr class="border-b-8 border-gray-100">
+                        <th class="w-[25%] p-4"></th>
+                        <!-- Product 1 -->
+                        <th class="w-[25%] p-4">
+                            <div class="text-center">
+                                <div class="flex justify-end mb-2 h-5">
+                                    <button class="text-gray-400 hover:text-gray-600">&times;</button>
+                                </div>
+                                <img src="https://placehold.co/150x150/e0e0e0/333?text=iPhone+15" alt="iPhone 15 Pro Max" class="w-36 h-36 object-contain mx-auto mb-4">
+                                <h2 class="font-semibold text-blue-600 hover:underline cursor-pointer min-h-[40px]">iPhone 15 Pro Max 512GB</h2>
+                                <div class="my-2">
+                                    <p class="text-lg font-bold text-red-600">32.990.000 ₫</p>
+                                    <p class="text-sm text-gray-500 line-through">34.990.000 ₫</p>
+                                </div>
+                                <button class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-red-700 transition-colors">Mua ngay</button>
+                            </div>
+                        </th>
+                        <!-- Product 2 -->
+                        <th class="w-[25%] p-4">
+                            <div class="text-center">
+                                <div class="flex justify-end mb-2 h-5">
+                                    <button class="text-gray-400 hover:text-gray-600">&times;</button>
+                                </div>
+                                <img src="https://placehold.co/150x150/d0d0d0/333?text=Xiaomi+15" alt="Xiaomi 15 Ultra" class="w-36 h-36 object-contain mx-auto mb-4">
+                                <h2 class="font-semibold text-blue-600 hover:underline cursor-pointer min-h-[40px]">Xiaomi 15 Ultra 5G 16GB 512GB</h2>
+                                <div class="my-2">
+                                    <p class="text-lg font-bold text-red-600">32.490.000 ₫</p>
+                                    <p class="text-sm text-gray-500 line-through">40.990.000 ₫</p>
+                                </div>
+                                <button class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-red-700 transition-colors">Mua ngay</button>
+                            </div>
+                        </th>
+                        <!-- Product 3 -->
+                        <th class="w-[25%] p-4">
+                            <div class="text-center">
+                                <div class="flex justify-end mb-2 h-5">
+                                    <button class="text-gray-400 hover:text-gray-600">&times;</button>
+                                </div>
+                                <img src="https://placehold.co/150x150/c0c0c0/333?text=S25+Ultra" alt="Samsung Galaxy S25 Ultra" class="w-36 h-36 object-contain mx-auto mb-4">
+                                <h2 class="font-semibold text-blue-600 hover:underline cursor-pointer min-h-[40px]">Samsung Galaxy S25 Ultra 5G 12GB 256GB</h2>
+                                <div class="my-2">
+                                    <p class="text-lg font-bold text-red-600">28.490.000 ₫</p>
+                                    <p class="text-sm text-gray-500 line-through">33.990.000 ₫</p>
+                                </div>
+                                <button class="w-full bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-red-700 transition-colors">Mua ngay</button>
+                            </div>
+                        </th>
+                    </tr>
+                    <!-- Difference Toggle Row -->
+                    <tr class="border-y border-gray-200">
+                        <td class="py-4 px-6" colspan="4">
+                            <div class="flex items-center">
+                                <input id="diff-toggle" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                <label for="diff-toggle" class="ml-2 text-sm font-medium text-gray-700">Chỉ xem điểm khác biệt</label>
+                            </div>
+                        </td>
+                    </tr>
+                </thead>
+                
+                <!-- Specifications Body -->
+                <tbody class="divide-y divide-gray-200">
+                    <!-- Section: Thông số nổi bật -->
+                    <tr class="spec-header">
+                        <td class="p-3 font-bold text-white bg-red-600" colspan="4">
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 2.5a.5.5 0 01.5.5v2.5a.5.5 0 01-1 0V3a.5.5 0 01.5-.5zM3.5 5a.5.5 0 000 1h2.5a.5.5 0 000-1H3.5zM15 2.5a.5.5 0 01.5.5v2.5a.5.5 0 01-1 0V3a.5.5 0 01.5-.5zM13.5 5a.5.5 0 000 1h2.5a.5.5 0 000-1h-2.5zM8.5 2.5a.5.5 0 01.5.5v2.5a.5.5 0 01-1 0V3a.5.5 0 01.5-.5zM6.5 5a.5.5 0 000 1h6a.5.5 0 000-1H6.5zM2 9.5A1.5 1.5 0 013.5 8h13A1.5 1.5 0 0118 9.5v5A1.5 1.5 0 0116.5 16h-13A1.5 1.5 0 012 14.5v-5zM3.5 9a.5.5 0 00-.5.5v5a.5.5 0 00.5.5h13a.5.5 0 00.5-.5v-5a.5.5 0 00-.5-.5h-13z" clip-rule="evenodd" /></svg>
+                                <span>Thông số nổi bật</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">Chip</td>
+                        <td class="p-3 text-center">Apple A17 Pro</td>
+                        <td class="p-3 text-center">Snapdragon 8 Elite</td>
+                        <td class="p-3 text-center">Snapdragon 8 Elite</td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">Kích thước màn hình</td>
+                        <td class="p-3 text-center">6.7 inch</td>
+                        <td class="p-3 text-center">6.73 inch</td>
+                        <td class="p-3 text-center">6.9 inch</td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">RAM</td>
+                        <td class="p-3 text-center">8 GB</td>
+                        <td class="p-3 text-center">16 GB</td>
+                        <td class="p-3 text-center">12 GB</td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">Camera</td>
+                        <td class="p-3 text-center">48.0 MP</td>
+                        <td class="p-3 text-center">50.0 MP</td>
+                        <td class="p-3 text-center">200.0 MP</td>
+                    </tr>
+                    
+                    <!-- Section: Màn hình -->
+                    <tr class="spec-header">
+                        <td class="p-3 font-bold text-gray-700 bg-gray-100" colspan="4">Màn hình</td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">Công nghệ màn hình</td>
+                        <td class="p-3 text-center">OLED</td>
+                        <td class="p-3 text-center">LTPO AMOLED</td>
+                        <td class="p-3 text-center">Dynamic AMOLED 2X</td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">Độ phân giải</td>
+                        <td class="p-3 text-center">2796 x 1290 Pixels</td>
+                        <td class="p-3 text-center">1440 x 3200 Pixels</td>
+                        <td class="p-3 text-center">3120 x 1440 Pixels</td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">Tần số quét</td>
+                        <td class="p-3 text-center">120 Hz</td>
+                        <td class="p-3 text-center">120 Hz</td>
+                        <td class="p-3 text-center">120 Hz</td>
+                    </tr>
+                    
+                    <!-- Section: Camera Sau -->
+                    <tr class="spec-header">
+                        <td class="p-3 font-bold text-gray-700 bg-gray-100" colspan="4">Camera sau</td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">Độ phân giải</td>
+                        <td class="p-3 text-center">Chính 48 MP & Phụ 12 MP, 12 MP</td>
+                        <td class="p-3 text-center">4 camera 50 MP</td>
+                        <td class="p-3 text-center">Chính 200 MP & Phụ 50 MP, 10 MP, 12 MP</td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">Quay phim</td>
+                        <td class="p-3 text-center">4K@24/25/30/60fps</td>
+                        <td class="p-3 text-center">8K@24/30fps</td>
+                        <td class="p-3 text-center">8K@30fps</td>
+                    </tr>
+
+                    <!-- Section: Camera Trước -->
+                    <tr class="spec-header">
+                        <td class="p-3 font-bold text-gray-700 bg-gray-100" colspan="4">Camera trước</td>
+                    </tr>
+                    <tr class="spec-row">
+                        <td class="p-3 font-medium text-gray-600">Độ phân giải</td>
+                        <td class="p-3 text-center">12 MP</td>
+                        <td class="p-3 text-center">32 MP</td>
+                        <td class="p-3 text-center">12 MP</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</body>
+</html>
