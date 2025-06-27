@@ -486,12 +486,6 @@
                 <li class="nav-item me-lg-n2 me-xl-0">
                   <a class="nav-link" href="docs/typography.html">Components</a>
                 </li>
-                <li class="nav-item me-lg-n2 me-xl-0">
-                  <a class="nav-link" href="{{ route('users.about') }}">About</a>
-                </li>
-                <li class="nav-item me-lg-n2 me-xl-0">
-                  <a class="nav-link" href="{{ route('users.help') }}">Help</a>
-                </li>
               </ul>
             </div>
           </div>

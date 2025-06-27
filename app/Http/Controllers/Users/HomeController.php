@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Banner;
 use App\Models\Comment;
 use Illuminate\Support\Str;
+use App\Models\Post;
 
 
 class HomeController extends Controller
@@ -470,6 +471,17 @@ class HomeController extends Controller
     }
     public function terms()
     {
-        return view('users.terms');
+        // Lấy bài viết "Điều khoản và điều kiện" từ database
+        $termsPost = Post::with(['coverImage', 'user'])
+            ->where('id', 41) // ID của bài viết "Điều khoản và điều kiện"
+            ->where('status', 'published')
+            ->first();
+        
+        // Nếu không tìm thấy bài viết, fallback về view cũ
+        if (!$termsPost) {
+            return view('users.terms');
+        }
+        
+        return view('users.terms', compact('termsPost'));
     }
 }

@@ -1,104 +1,178 @@
 @extends('users.layouts.app')
 
-@section('title', 'About - iMart')
+@section('title', 'Điều khoản và điều kiện - iMart')
+
+@section('head')
+<style>
+  .post-content .content-wrapper {
+    line-height: 1.8;
+  }
+  
+  .post-content h1, 
+  .post-content h2, 
+  .post-content h3, 
+  .post-content h4, 
+  .post-content h5, 
+  .post-content h6 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: var(--bs-dark-emphasis);
+  }
+  
+  .post-content h1 { font-size: 2rem; }
+  .post-content h2 { font-size: 1.75rem; }
+  .post-content h3 { font-size: 1.5rem; }
+  .post-content h4 { font-size: 1.25rem; }
+  
+  .post-content p {
+    margin-bottom: 1.25rem;
+    text-align: justify;
+  }
+  
+  .post-content ul, 
+  .post-content ol {
+    margin-bottom: 1.25rem;
+    padding-left: 1.5rem;
+  }
+  
+  .post-content li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .post-content blockquote {
+    border-left: 4px solid var(--bs-primary);
+    padding-left: 1rem;
+    margin: 1.5rem 0;
+    font-style: italic;
+    background-color: var(--bs-light);
+    padding: 1rem;
+    border-radius: 0.375rem;
+  }
+  
+  .post-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 1.5rem 0;
+  }
+  
+  .post-content table {
+    width: 100%;
+    margin-bottom: 1.5rem;
+    border-collapse: collapse;
+  }
+  
+  .post-content table th,
+  .post-content table td {
+    padding: 0.75rem;
+    border: 1px solid var(--bs-border-color);
+  }
+  
+  .post-content table th {
+    background-color: var(--bs-light);
+    font-weight: 600;
+  }
+</style>
+@endsection
 
 @section('content')
     <!-- Page content -->
     <main class="content-wrapper">
+
+      <!-- Breadcrumb -->
+      <nav class="container pt-3 my-3 my-md-4" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{{ route('users.home') }}">Trang chủ</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Điều khoản và điều kiện</li>
+        </ol>
+      </nav>
+
+      @if(isset($termsPost))
+      <!-- Content from Post -->
+      <section class="container">
+        <div class="row justify-content-center">
+          <div class="col-lg-10 col-xl-9">
+            
+            <!-- Post Header -->
+            <div class="text-center mb-4">
+              <h1 class="h2 pb-2 pb-sm-3">{{ $termsPost->title }}</h1>
+              
+              @if($termsPost->excerpt)
+                <p class="fs-lg text-muted mb-4">{{ $termsPost->excerpt }}</p>
+              @endif
+              
+              @if($termsPost->coverImage)
+                <div class="ratio ratio-21x9 mb-4">
+                  <img src="{{ Storage::url($termsPost->coverImage->file_path) }}" 
+                       class="rounded-4 object-fit-cover" 
+                       alt="{{ $termsPost->title }}">
+                </div>
+              @endif
+            </div>
+            <!-- Post Content -->
+            <div class="post-content fs-base lh-lg">
+              <div class="content-wrapper">
+                {!! $termsPost->content !!}
+              </div>
+            </div>
+
+            <!-- Feedback Section -->
+            <hr class="my-4 my-lg-5">
+            
+            <div class="text-left py-4">
+              <h3 class="h5 mb-4">Thông tin này có hữu ích không?</h3>
+              <div class="d-flex gap-3 justify-content-left">
+                <button type="button" class="btn btn-outline-success px-4">
+                  <i class="ci-thumbs-up fs-base me-2"></i>
+                  Có
+                </button>
+                <button type="button" class="btn btn-outline-danger px-4">
+                  <i class="ci-thumbs-down fs-base me-2"></i>
+                  Không
+                </button>
+              </div>
+              <p class="text-muted mt-3 mb-0 fs-sm">
+                Cảm ơn bạn đã đóng góp ý kiến để chúng tôi cải thiện dịch vụ!
+              </p>
+            </div>
+            {{-- info user đăng tin --}}
+            {{-- <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+              @if($termsPost->user->avatar)
+                <img src="{{ Storage::url($termsPost->user->avatar) }}" 
+                     width="48" height="48" 
+                     class="rounded-circle me-3" 
+                     alt="{{ $termsPost->user->name }}">
+              @else
+                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" 
+                     style="width: 48px; height: 48px;">
+                  <span class="text-white fw-medium fs-lg">{{ substr($termsPost->user->name, 0, 1) }}</span>
+                </div>
+              @endif
+              <div>
+                <div class="fw-semibold text-dark-emphasis">{{ $termsPost->user->name }}</div>
+                <small class="text-muted">
+                  <i class="ci-calendar me-1"></i>
+                  Cập nhật: {{ $termsPost->updated_at->format('d/m/Y') }}
+                </small>
+              </div>
+            </div> --}}
+*
+          </div>
+        </div>
+      </section>
+      @else
+      <!-- Fallback content -->
       <div class="container py-5 mb-2 mt-n2 mt-sm-1 my-md-3 my-lg-4 mb-xl-5">
         <div class="row justify-content-center">
           <div class="col-lg-11 col-xl-10 col-xxl-9">
-            <h1 class="h2 pb-2 pb-sm-3 pb-lg-4">Terms and conditions</h1>
+            <h1 class="h2 pb-2 pb-sm-3 pb-lg-4">Điều khoản và điều kiện</h1>
             <hr class="mt-0">
-
-            <div class="h6 pt-2 pt-lg-3"><span class="text-body-secondary fw-medium">Last updated:</span> June 26, 2024</div>
-            <p>Welcome to Cartzilla! These Terms and Conditions ("Terms") govern your access to and use of the Cartzilla website and mobile application (collectively referred to as the "Platform"). Please read these Terms carefully before using the Platform. By accessing or using the Platform, you agree to be bound by these Terms.</p>
-
-            <h2 class="h4 pt-3 pt-lg-4">1. Overview</h2>
-            <p>Cartzilla provides an online platform that enables users to purchase groceries and other products from local stores and have them delivered to their designated location. By using the Platform, you acknowledge and agree that Cartzilla is not a store or retailer but merely acts as an intermediary to facilitate transactions between users and participating stores.</p>
-            <p>Welcome to the family of websites and applications provided by Cartzilla. These Terms of Use govern your access to and use of all Cartzilla Sites, among other things. By using the Cartzilla Sites, you affirm that you are of legal age to enter into these Terms of Use, or, if you are not, that you have obtained parental or guardian consent to enter into these Terms of Use and your parent or guardian consents to these Terms of Use on your behalf. If you violate or do not agree to these Terms of Use, then your access to and use of the Cartzilla Sites is unauthorized. Additional terms and conditions apply to some services offered on the Cartzilla Sites (e.g., Cartzilla Pharmacy, Cartzilla +, and Gift Cards) or through other channels. Those terms and conditions can be found where the relevant service is offered on the Cartzilla Sites or otherwise and are incorporated into these Terms of Use by reference.</p>
-
-            <h2 class="h4 pt-3 pt-lg-4">2. Your use of the Cartzilla Sites</h2>
-            <p>You certify that the Content you provide on or through the Cartzilla Sites is accurate and that the information you provide on or through the Cartzilla Sites is complete. You are solely responsible for maintaining the confidentiality and security of your account including username, password, and PIN. Cartzilla is not responsible for any losses arising out of the unauthorized use of your account. You agree that Cartzilla does not have any responsibility if you lose or share access to your device. Any agreement between you and the issuer of your credit card, debit card, or other form of payment will continue to govern your use of such payment method on the Cartzilla Sites. You agree that Cartzilla is not a party to any such agreement, nor is Cartzilla responsible for the content, accuracy, or unavailability of any method used for payment. Your account may be restricted or terminated for any reason, at our sole discretion. Except as otherwise provided by law, at any time without notice to you, we may (1) change, restrict access to, suspend, or discontinue the Cartzilla Sites or any portion of the Cartzilla Sites, and (2) charge, modify, or waive any fees required to use any services, functionality, or other content available through the Cartzilla Sites or any portion of the Cartzilla Sites.</p>
-            <h3 class="h6">In connection with the Cartzilla Sites, you will not:</h3>
-            <ul class="gap-3">
-              <li>Make available any Content through or in connection with the Cartzilla Sites that is or may be in violation of the content guidelines set forth in Section 3.C (Prohibited Content) below.</li>
-              <li>Make available through or in connection with the Cartzilla Sites any virus, worm, Trojan horse, Easter egg, time bomb, spyware, or other computer code, file, or program that is or is potentially harmful or invasive or intended to damage or hijack the operation of, or to monitor the use of, any hardware, software, or equipment.</li>
-              <li>Use the Cartzilla Sites for any commercial purpose, or for any purpose that is fraudulent or otherwise tortious or unlawful.</li>
-              <li>Harvest or collect information about users of the Cartzilla Sites.</li>
-              <li>Interfere with or disrupt the operation of the Cartzilla Sites or the systems, servers, or networks used to make the Cartzilla Sites available, including by hacking or defacing any portion of the Cartzilla Sites; or violate any requirement, procedure, or policy of such servers or networks.</li>
-              <li>Reproduce, modify, adapt, translate, create derivative works of, sell, rent, lease, loan, timeshare, distribute, or otherwise exploit any portion of (or any use of) the Cartzilla Sites except as expressly authorized in these Terms of Use, without Cartzilla's express prior written consent.</li>
-              <li>Reverse engineer, decompile, or disassemble any portion of the Cartzilla Sites, except where such restriction is expressly prohibited by applicable law.</li>
-              <li>Remove any copyright, trademark, or other proprietary rights notice from the Cartzilla Sites.</li>
-              <li>You will not attempt to do anything, or permit, encourage, assist, or allow any third party to do anything, prohibited in this Section, or attempt, permit, encourage, assist, or allow any other violation of these Terms of Use.</li>
-            </ul>
-
-            <h2 class="h4 pt-3 pt-lg-4">3. Ordering and delivery</h2>
-            <p>When placing an order through Cartzilla, you are responsible for ensuring the accuracy of the items, quantities, and delivery details. Cartzilla does not guarantee the availability of any specific product and reserves the right to substitute products based on availability. Delivery times provided are estimates and may vary due to various factors.</p>
-            <ul class="gap-3">
-              <li>Reverse engineer, decompile, or disassemble any portion of the Cartzilla Sites, except where such restriction is expressly prohibited by applicable law.</li>
-              <li>Reproduce, modify, adapt, translate, create derivative works of, sell, rent, lease, loan, timeshare, distribute, or otherwise exploit any portion of (or any use of) the Cartzilla Sites except as expressly authorized in these Terms of Use, without Cartzilla's express prior written consent.</li>
-              <li>You will not attempt to do anything, or permit, encourage, assist, or allow any third party to do anything, prohibited in this Section, or attempt, permit, encourage, assist, or allow any other violation of these Terms of Use.</li>
-              <li>Remove any copyright, trademark, or other proprietary rights notice from the Cartzilla Sites.</li>
-            </ul>
-
-            <h2 class="h4 pt-3 pt-lg-4">4. Payments</h2>
-            <p>Cartzilla facilitates payments for orders made through the Platform. By using Cartzilla's payment services, you agree to provide accurate payment information and authorize Cartzilla to charge the applicable amount for your order. Cartzilla may use third-party payment processors to process transactions and may store your payment information in accordance with its Privacy Policy.</p>
-
-            <h2 class="h4 pt-3 pt-lg-4">5. User conduct</h2>
-            <p>You agree to use the Platform in compliance with all applicable laws and regulations. You shall not engage in any unlawful, harmful, or abusive behavior while using the Platform. Cartzilla reserves the right to suspend or terminate your account if you violate these Terms or engage in any prohibited activities.</p>
-            <h3 class="h6 pt-2">Intellectual property</h3>
-            <p>All content on the Cartzilla Platform, including but not limited to text, graphics, logos, and software, is the property of Cartzilla or its licensors and is protected by intellectual property laws. You may not use, reproduce, modify, or distribute any content from the Platform without prior written consent from Cartzilla.</p>
-            <h3 class="h6 pt-2">Third-party links and content</h3>
-            <p>The Platform may contain links to third-party websites or resources. Cartzilla does not endorse, control, or assume responsibility for any third-party content or websites. You acknowledge and agree that Cartzilla is not liable for any loss or damage caused by your reliance on such content or websites.</p>
-            <h3 class="h6 pt-2">Disclaimer of warranties</h3>
-            <p>The Platform is provided on an "as is" and "as available" basis, without warranties of any kind, either express or implied. Cartzilla does not guarantee the accuracy, reliability, or availability of the Platform and disclaims all warranties to the fullest extent permitted by law.</p>
-            <h3 class="h6 pt-2">Limitation of liability</h3>
-            <p>To the maximum extent permitted by law, Cartzilla and its affiliates shall not be liable for any indirect, incidental, consequential, or punitive damages arising out of or in connection with the use of the Platform, even if advised of the possibility of such damages.</p>
-
-            <h2 class="h4 pt-3 pt-lg-4">6. Entire agreement and severability</h2>
-            <p>These Terms, subject to any amendments, modifications, or additional agreements you enter into with Cartzilla, shall constitute the entire agreement between you and Cartzilla with respect to the Services and any use of the Services. If any provision of these Terms is found to be invalid by a court of competent jurisdiction, that provision only will be limited to the minimum extent necessary, and the remaining provisions will remain in full force and effect.</p>
-            <p>Cartzilla reserves the right to modify or update these Terms at any time without prior notice. Your continued use of the Platform after any changes to the Terms constitutes acceptance of those changes.</p>
-
-            <h2 class="h4 pt-3 pt-lg-4">7. Contact information</h2>
-            <p>If you have any questions, or comments about these Terms please contact Cartzilla at:</p>
-            <ul class="list-unstyled pb-1">
-              <li class="nav pt-1">
-                <a class="nav-link align-items-start fs-base p-0" href="tel:+15053753082">
-                  <i class="ci-phone fs-xl mt-1 me-2"></i>
-                  +1&nbsp;50&nbsp;537&nbsp;53&nbsp;082
-                </a>
-              </li>
-              <li class="nav pt-1">
-                <a class="nav-link align-items-start fs-base p-0" href="mailto:contact@catzillastore.com">
-                  <i class="ci-mail fs-xl mt-1 me-2"></i>
-                  contact@catzillastore.com
-                </a>
-              </li>
-              <li class="nav pt-1">
-                <a class="nav-link align-items-start fs-base p-0" href="#!">
-                  <i class="ci-map-pin fs-xl mt-1 me-2"></i>
-                  12 Beale St. Suite 600 San Francisco, California 94105
-                </a>
-              </li>
-            </ul>
-            <p class="pb-3 mb-0">For customer service inquiries, please review Your Account Settings, visit Cartzilla's <a class="fw-medium" href="help-topics-v1.html">Help Center.</a></p>
-
-            <hr class="my-3 my-lg-4">
-
-            <h2 class="h5 pt-3 mb-lg-4">Was this information helpful?</h2>
-            <div class="d-flex gap-3">
-              <button type="button" class="btn btn-outline-secondary">
-                <i class="ci-thumbs-up fs-base me-2 ms-n1"></i>
-                Yes
-              </button>
-              <button type="button" class="btn btn-outline-secondary">
-                <i class="ci-thumbs-down fs-base me-2 ms-n1"></i>
-                No
-              </button>
-            </div>
+            <p class="text-muted">Nội dung đang được cập nhật...</p>
           </div>
         </div>
       </div>
+      @endif
+
     </main>
 @endsection
