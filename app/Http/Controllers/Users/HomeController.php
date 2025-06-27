@@ -3,17 +3,18 @@
 namespace App\Http\Controllers\Users;
 
 use Carbon\Carbon;
+use App\Models\Post;
+use App\Models\Banner;
+use App\Models\Comment;
 use App\Models\Product;
 use App\Models\Category;
+use Illuminate\Support\Str;
+use App\Models\PostCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use App\Models\Banner;
-use App\Models\Comment;
-use Illuminate\Support\Str;
-use App\Models\Post;
 
 
 class HomeController extends Controller
@@ -467,8 +468,45 @@ class HomeController extends Controller
      */
     public function help()
     {
-        return view('users.help');
+        // Lấy danh mục "Trung Tâm Trợ Giúp" (ID = 19)
+        $helpCategoryId = 19;
+        // Lấy tất cả danh mục con của "Trung Tâm Trợ Giúp"
+        $helpCategories = PostCategory::where('parent_id', $helpCategoryId)
+            ->orderBy('name')
+            ->get();
+        // Lấy bài viết cho từng danh mục con
+        $helpData = [];
+        foreach ($helpCategories as $category) {
+            $posts = Post::where('post_category_id', $category->id)
+                ->where('status', 'published')
+                ->orderBy('created_at', 'desc')
+                ->get();
+            if ($posts->count() > 0) {
+                $helpData[] = [
+                    'category' => $category,
+                    'posts' => $posts
+                ];
+            }
+        }
+        return view('users.help', compact('helpData'));
     }
+
+    public function helpAnswer($slug)
+    {
+        // Tìm bài viết theo slug
+        $post = Post::with(['postCategory', 'user', 'coverImage'])
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->firstOrFail();
+        // Lấy các bài viết liên quan cùng danh mục
+        $relatedPosts = Post::where('post_category_id', $post->post_category_id)
+            ->where('id', '!=', $post->id)
+            ->where('status', 'published')
+            ->limit(5)
+            ->get();
+        return view('users.help-answer', compact('post', 'relatedPosts'));
+    }
+
     public function terms()
     {
         // Lấy bài viết "Điều khoản và điều kiện" từ database
@@ -476,12 +514,10 @@ class HomeController extends Controller
             ->where('id', 41) // ID của bài viết "Điều khoản và điều kiện"
             ->where('status', 'published')
             ->first();
-        
         // Nếu không tìm thấy bài viết, fallback về view cũ
         if (!$termsPost) {
             return view('users.terms');
         }
-        
         return view('users.terms', compact('termsPost'));
     }
 }

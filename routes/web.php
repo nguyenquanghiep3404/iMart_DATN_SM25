@@ -39,6 +39,7 @@ Route::post('/gemini-chat', [AiController::class, 'generateContent']);
 // Trang About và Help , terms
 Route::get('/about', [HomeController::class, 'about'])->name('users.about');
 Route::get('/help', [HomeController::class, 'help'])->name('users.help');
+Route::get('/help/{slug}', [HomeController::class, 'helpAnswer'])->name('users.help.answer');
 Route::get('/terms', [HomeController::class, 'terms'])->name('users.terms'); 
 // các trang không cần đăng nhập ở dưới đây
 
