@@ -102,7 +102,7 @@
                     <table class="table w-full table-auto text-sm">
                         <thead>
                             <tr>
-                                <th class="px-4 py-3 text-left w-16">ID</th>
+                                <th class="px-4 py-3 text-left w-12">STT</th>
                                 <th class="px-4 py-3 text-left">Tên thuộc tính</th>
                                 <th class="px-4 py-3 text-left">Slug</th>
                                 <th class="px-4 py-3 text-left">Kiểu hiển thị</th>
@@ -114,7 +114,7 @@
                             {{-- Vòng lặp để hiển thị dữ liệu --}}
                             @forelse ($attributes as $attribute)
                                 <tr>
-                                    <td class="px-4 py-3">{{ $attribute->id }}</td>
+                                    <td class="px-4 py-3">{{ ($attributes->currentPage() - 1) * $attributes->perPage() + $loop->iteration }}</td>
                                     <td class="px-4 py-3">
                                         <a href="{{ route('admin.attributes.show', $attribute) }}" class="text-indigo-600 hover:text-indigo-800 font-semibold">{{ $attribute->name }}</a>
                                     </td>

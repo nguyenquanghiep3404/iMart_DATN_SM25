@@ -175,10 +175,10 @@
             <div class="bg-green-50 border-l-4 border-green-400 text-green-700 p-4 mb-6 rounded-md shadow-md"
                 role="alert">
                 <div class="flex items-center">
-                     <svg class="svg-icon text-green-500 mr-2" viewBox="0 0 24 24">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
+                        <svg class="svg-icon text-green-500 mr-2" viewBox="0 0 24 24">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
                     <div>
                         <p class="font-bold">Thành công!</p>
                         <p>{{ session('success') }}</p>
@@ -203,13 +203,13 @@
         @endif
         <form id="addProductForm" action="{{ route('admin.products.store') }}" method="POST">
             @csrf
-             <div id="image_ids_container" class="hidden"></div>
+                <div id="image_ids_container" class="hidden"></div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
                 {{-- Cột trái: Thông tin chính & Biến thể --}}
                 <div class="lg:col-span-2 space-y-6">
                     {{-- Card Thông Tin Chung --}}
                     <div class="card">
-                       <div class="card-header">
+                        <div class="card-header">
                             <svg class="svg-icon" viewBox="0 0 24 24">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -365,16 +365,6 @@
                                         </svg>
                                         <input type="number" id="simple_sale_price" name="simple_sale_price" class="input-field @error('simple_sale_price') border-red-500 @enderror" step="1000" min="0" value="{{ old('simple_sale_price') }}">
                                     </div>
-                                    <div class="schedule-container {{ old('simple_sale_price_starts_at') || old('simple_sale_price_ends_at') ? '' : 'hidden' }} mt-2 grid grid-cols-2 gap-x-4">
-                                        <div>
-                                            <label for="simple_sale_price_starts_at" class="text-xs">Ngày bắt đầu</label>
-                                            <input type="date" name="simple_sale_price_starts_at" id="simple_sale_price_starts_at" class="input-field text-sm" value="{{ old('simple_sale_price_starts_at') }}">
-                                        </div>
-                                        <div>
-                                            <label for="simple_sale_price_ends_at" class="text-xs">Ngày kết thúc</label>
-                                            <input type="date" name="simple_sale_price_ends_at" id="simple_sale_price_ends_at" class="input-field text-sm" value="{{ old('simple_sale_price_ends_at') }}">
-                                        </div>
-                                    </div>
                                     @error('simple_sale_price')
                                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
@@ -395,14 +385,28 @@
                                 </div>
                             </div>
 
+                            <!-- Schedule Container -->
+                            <div class="schedule-container {{ old('simple_sale_price_starts_at') || old('simple_sale_price_ends_at') ? '' : 'hidden' }} mt-2">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                    <div class="input-group">
+                                        <label for="simple_sale_price_starts_at" class="text-xs font-medium">Thời gian bắt đầu</label>
+                                        <input type="datetime-local" name="simple_sale_price_starts_at" id="simple_sale_price_starts_at" class="input-field" value="{{ old('simple_sale_price_starts_at') }}">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="simple_sale_price_ends_at" class="text-xs font-medium">Thời gian kết thúc</label>
+                                        <input type="datetime-local" name="simple_sale_price_ends_at" id="simple_sale_price_ends_at" class="input-field" value="{{ old('simple_sale_price_ends_at') }}">
+                                    </div>
+                                </div>
+                            </div>
+
                             {{-- Weight and Dimensions for Simple Product --}}
                             <div class="pt-4 mt-4 border-t border-gray-200">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                     <div class="input-group">
-                                        <label for="simple_weight">Cân nặng (kg)</label>
-                                        <input type="number" step="0.01" min="0" id="simple_weight" name="simple_weight" class="input-field" value="{{ old('simple_weight') }}">
-                                        @error('simple_weight')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                                    </div>
+                                        <div class="input-group">
+                                            <label for="simple_weight">Cân nặng (kg)</label>
+                                            <input type="number" step="0.01" min="0" id="simple_weight" name="simple_weight" class="input-field" value="{{ old('simple_weight') }}">
+                                            @error('simple_weight')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                        </div>
                                     <div class="input-group">
                                         <label>Kích thước (D x R x C) (cm)</label>
                                         <div class="grid grid-cols-3 gap-x-2">
@@ -500,7 +504,7 @@
 
 
                             <button type="button" id="addVariantButton" class="btn btn-secondary mt-2">
-                                 <svg class="svg-icon mr-2 h-5 w-5" viewBox="0 0 24 24">
+                                    <svg class="svg-icon mr-2 h-5 w-5" viewBox="0 0 24 24">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="12" y1="8" x2="12" y2="16"></line>
                                         <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -556,7 +560,7 @@
         
         {{-- Checkbox --}}
         <input type="checkbox" id="is_featured" name="is_featured" value="1" 
-               class="form-check-input">
+                class="form-check-input">
 
         {{-- Thêm một DIV bọc icon và chữ, cũng sử dụng flex và items-center --}}
         <div class="flex items-center ml-2">
@@ -629,11 +633,11 @@
                     {{-- Card SEO --}}
                     <div class="card">
                         <div class="card-header">
-                             <svg class="svg-icon" viewBox="0 0 24 24">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                <path d="M11 8l2 2"></path>
-                            </svg>Tối Ưu Hóa SEO
+                                <svg class="svg-icon" viewBox="0 0 24 24">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    <path d="M11 8l2 2"></path>
+                                </svg>Tối Ưu Hóa SEO
                             <button type="button" id="generateAllSeoAI" class="btn btn-ai btn-sm ml-auto">
                                 <span class="button-text">✨ Tạo Tất Cả SEO</span>
                                 <span class="loading-spinner hidden"></span>
@@ -670,11 +674,11 @@
                     {{-- Card Thông Tin Bổ Sung --}}
                     <div class="card">
                         <div class="card-header">
-                             <svg class="svg-icon" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>Thông Tin Bổ Sung
+                                <svg class="svg-icon" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>Thông Tin Bổ Sung
                         </div>
                         <div class="input-group">
                             <label for="warranty_information">Thông tin bảo hành</label>
@@ -728,7 +732,7 @@
             </div>
         </div>
     </div>
-     @include('admin.partials.media_selection_modal')
+    @include('admin.partials.media_selection_modal')
 @endsection
 
 @push('scripts')
@@ -740,7 +744,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
 
-  <script>
+<script>
     // =================================================================
     // KHỞI TẠO BIẾN TOÀN CỤC VÀ DỮ LIỆU TỪ PHP
     // =================================================================
@@ -815,8 +819,8 @@
 
     function addImagesToProductForm(images, previewContainer, idsContainer, type = 'simple', variantIndex = null) {
         if (!images || images.length === 0 || !previewContainer || !idsContainer) {
-             console.error("Thiếu thông tin để thêm ảnh vào form", {images, previewContainer, idsContainer});
-             return;
+                console.error("Thiếu thông tin để thêm ảnh vào form", {images, previewContainer, idsContainer});
+                return;
         }
 
         const hasPrimaryAlready = (type === 'simple') ?
@@ -862,12 +866,12 @@
 
         const allPreviews = previewContainer.querySelectorAll('.variant-image-preview-item');
         if (!hasPrimaryAlready && allPreviews.length > 0) {
-             const firstImageId = parseInt(allPreviews[0].dataset.id);
-             if (type === 'simple') {
-                 setSimpleProductPrimaryImage(firstImageId);
-             } else {
-                 setVariantPrimaryImage(variantIndex, firstImageId);
-             }
+                const firstImageId = parseInt(allPreviews[0].dataset.id);
+                if (type === 'simple') {
+                    setSimpleProductPrimaryImage(firstImageId);
+                } else {
+                    setVariantPrimaryImage(variantIndex, firstImageId);
+                }
         }
     }
 
@@ -993,7 +997,7 @@
 
 
     // =================================================================
-    // KHỐI LOGIC KHỞI TẠO VÀ XỬ LÝ FORM CHUNG (AI, Slug, Variants, etc.) (KHÔNG ĐỔI)
+    // KHỐI LOGIC KHỞI TẠO VÀ XỬ LÝ FORM CHUNG (AI, Slug, Variants, etc.)
     // =================================================================
     const productNameInput = document.getElementById('name');
     const slugInput = document.getElementById('slug');
@@ -1061,9 +1065,9 @@
                 const responseText = result.candidates[0].content.parts[0].text;
                 return isStructured ? JSON.parse(responseText) : responseText;
             } else {
-                 if (result.promptFeedback && result.promptFeedback.blockReason) {
-                     throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
-                 }
+                if (result.promptFeedback && result.promptFeedback.blockReason) {
+                        throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
+                }
                 throw new Error("Không nhận được nội dung hợp lệ từ AI.");
             }
         } catch (error) {
@@ -1090,9 +1094,12 @@
     }
 
     function toggleSchedule(element) {
-        const container = element.closest('.input-group').querySelector('.schedule-container');
-        if (container) {
-            container.classList.toggle('hidden');
+        const sectionContainer = element.closest('#simpleProductFields, .variant-card');
+        if (sectionContainer) {
+            const scheduleContainer = sectionContainer.querySelector('.schedule-container');
+            if (scheduleContainer) {
+                scheduleContainer.classList.toggle('hidden');
+            }
         }
     }
 
@@ -1209,8 +1216,12 @@
                     currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][dimensions_length]"]`).value = oldVariant.dimensions_length || '';
                     currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][dimensions_width]"]`).value = oldVariant.dimensions_width || '';
                     currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][dimensions_height]"]`).value = oldVariant.dimensions_height || '';
-                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sale_price_starts_at]"]`).value = oldVariant.sale_price_starts_at || '';
-                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sale_price_ends_at]"]`).value = oldVariant.sale_price_ends_at || '';
+                    
+                    const startsAt = oldVariant.sale_price_starts_at ? oldVariant.sale_price_starts_at.replace(' ', 'T').substring(0, 16) : '';
+                    const endsAt = oldVariant.sale_price_ends_at ? oldVariant.sale_price_ends_at.replace(' ', 'T').substring(0, 16) : '';
+
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sale_price_starts_at]"]`).value = startsAt;
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sale_price_ends_at]"]`).value = endsAt;
                     
                     if (oldVariant.sale_price_starts_at || oldVariant.sale_price_ends_at) {
                         const scheduleContainer = currentVariantCard.querySelector('.schedule-container');
@@ -1301,22 +1312,22 @@
         // --- GẮN SỰ KIỆN CHO CÁC NÚT AI ---
         const generateShortDescBtn = document.getElementById('generateShortDescAI');
         if (generateShortDescBtn) {
-             generateShortDescBtn.addEventListener('click', async () => {
-                 const context = getProductContext();
-                 if (!context) return;
-                 toggleButtonLoading(generateShortDescBtn, true);
-                 try {
-                     const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một mô tả ngắn gọn (khoảng 2-3 câu) cho sản phẩm với giọng văn bán hàng chuyên nghiệp. Yêu cầu: - Tập trung vào các điểm nổi bật chính, thu hút khách hàng. - KHÔNG sử dụng Markdown (như dấu ** hay #). - Chỉ trả về duy nhất phần nội dung mô tả, không có lời dẫn như "Đây là mô tả:" hay tương tự.`;
-                     const result = await callGeminiAPI(prompt);
-                     if (result) {
-                         shortDescriptionTextarea.value = result.replace(/[\*#`]/g, '').trim();
-                     }
-                 } catch (error) {
-                     showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`, 'error');
-                 } finally {
-                     toggleButtonLoading(generateShortDescBtn, false);
-                 }
-             });
+                generateShortDescBtn.addEventListener('click', async () => {
+                    const context = getProductContext();
+                    if (!context) return;
+                    toggleButtonLoading(generateShortDescBtn, true);
+                    try {
+                        const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một mô tả ngắn gọn (khoảng 2-3 câu) cho sản phẩm với giọng văn bán hàng chuyên nghiệp. Yêu cầu: - Tập trung vào các điểm nổi bật chính, thu hút khách hàng. - KHÔNG sử dụng Markdown (như dấu ** hay #). - Chỉ trả về duy nhất phần nội dung mô tả, không có lời dẫn như "Đây là mô tả:" hay tương tự.`;
+                        const result = await callGeminiAPI(prompt);
+                        if (result) {
+                            shortDescriptionTextarea.value = result.replace(/[\*#`]/g, '').trim();
+                        }
+                    } catch (error) {
+                        showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`, 'error');
+                    } finally {
+                        toggleButtonLoading(generateShortDescBtn, false);
+                    }
+                });
         }
 
         const generateLongDescBtn = document.getElementById('generateLongDescAI');
@@ -1346,15 +1357,15 @@
                 if (!context) return;
                 toggleButtonLoading(generateAllSeoBtn, true);
                 try {
-                     const schema = {
-                         type: "OBJECT",
-                         properties: {
-                             meta_title: { type: "STRING", description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính." },
-                             meta_description: { type: "STRING", description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động." },
-                             meta_keywords: { type: "STRING", description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy." }
-                         },
-                         required: ["meta_title", "meta_description", "meta_keywords"]
-                     };
+                        const schema = {
+                            type: "OBJECT",
+                            properties: {
+                                meta_title: { type: "STRING", description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính." },
+                                meta_description: { type: "STRING", description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động." },
+                                meta_keywords: { type: "STRING", description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy." }
+                            },
+                            required: ["meta_title", "meta_description", "meta_keywords"]
+                        };
                     const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO. Yêu cầu: - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu. - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay"). - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan. - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
 
                     const result = await callGeminiAPI(prompt, true, schema);
@@ -1364,7 +1375,7 @@
                         document.getElementById('meta_keywords').value = result.meta_keywords || '';
                     }
                 } catch (error) {
-                     showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`, 'error');
+                        showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`, 'error');
                 } finally {
                     toggleButtonLoading(generateAllSeoBtn, false);
                 }
@@ -1395,20 +1406,20 @@
         // --- LOGIC CHO BIẾN THỂ ---
         const productAttributesContainer = document.getElementById('productAttributesContainer');
         if (productAttributesContainer && Array.isArray(allAttributesFromPHP)) {
-             allAttributesFromPHP.forEach(attr => {
-                 if (!attr || typeof attr.id === 'undefined' || typeof attr.name === 'undefined') return;
-                 const labelEl = document.createElement('label');
-                 labelEl.className = 'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
-                 const checkbox = document.createElement('input');
-                 checkbox.type = 'checkbox';
-                 checkbox.id = `attr_${attr.id}`;
-                 checkbox.value = attr.id;
-                 checkbox.className = 'product-attribute-checkbox form-check-input mr-2';
-                 checkbox.onchange = updateSelectedAttributesForVariants;
-                 labelEl.append(checkbox, attr.name);
-                 productAttributesContainer.appendChild(labelEl);
-             });
-             updateSelectedAttributesForVariants();
+                allAttributesFromPHP.forEach(attr => {
+                    if (!attr || typeof attr.id === 'undefined' || typeof attr.name === 'undefined') return;
+                    const labelEl = document.createElement('label');
+                    labelEl.className = 'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `attr_${attr.id}`;
+                    checkbox.value = attr.id;
+                    checkbox.className = 'product-attribute-checkbox form-check-input mr-2';
+                    checkbox.onchange = updateSelectedAttributesForVariants;
+                    labelEl.append(checkbox, attr.name);
+                    productAttributesContainer.appendChild(labelEl);
+                });
+                updateSelectedAttributesForVariants();
         }
 
         if (addVariantButton) {
@@ -1439,14 +1450,22 @@
                                 <a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium hover:underline">Lên lịch</a>
                             </div>
                             <div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0"></div>
-                            <div class="schedule-container hidden mt-2 grid grid-cols-2 gap-x-4">
-                                <div><label for="variants_${currentVariantIndex}_sale_price_starts_at" class="text-xs">Bắt đầu</label><input type="date" name="variants[${currentVariantIndex}][sale_price_starts_at]" class="input-field text-sm"></div>
-                                <div><label for="variants_${currentVariantIndex}_sale_price_ends_at" class="text-xs">Kết thúc</label><input type="date" name="variants[${currentVariantIndex}][sale_price_ends_at]" class="input-field text-sm"></div>
+                        </div>
+                    </div>
+                    <div class="schedule-container hidden mt-2">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div class="input-group">
+                                <label for="variants_${currentVariantIndex}_sale_price_starts_at" class="text-xs font-medium">Thời gian bắt đầu</label>
+                                <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_starts_at]" class="input-field">
+                            </div>
+                            <div class="input-group">
+                                <label for="variants_${currentVariantIndex}_sale_price_ends_at" class="text-xs font-medium">Thời gian kết thúc</label>
+                                <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_ends_at]" class="input-field">
                             </div>
                         </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4 pt-4 border-t border-gray-200">
-                         <div class="input-group"><label for="variants_${currentVariantIndex}_weight" class="text-sm font-medium">Cân nặng (kg)</label><input type="number" step="0.01" min="0" name="variants[${currentVariantIndex}][weight]" class="input-field text-sm"></div>
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_weight" class="text-sm font-medium">Cân nặng (kg)</label><input type="number" step="0.01" min="0" name="variants[${currentVariantIndex}][weight]" class="input-field text-sm"></div>
                         <div class="input-group"><label class="text-sm font-medium">Kích thước (D x R x C) (cm)</label><div class="grid grid-cols-3 gap-x-2"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_length]" placeholder="Dài" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_width]" placeholder="Rộng" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_height]" placeholder="Cao" class="input-field text-sm"></div></div>
                     </div>
                     <div class="input-group md:col-span-2 mt-4 pt-4 border-t border-gray-200">

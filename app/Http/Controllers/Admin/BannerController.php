@@ -5,18 +5,34 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class BannerController extends Controller
 {
     public function index()
     {
-        // Admin thấy tất cả banner
         $banners = Banner::with(['desktopImage', 'mobileImage'])
             ->orderBy('order')
             ->paginate(10);
 
-        return view('admin.banners.index', compact('banners'));
+        // JSON-ready version of banners
+        $bannerJson = $banners->getCollection()->map(function ($b) {
+            return [
+                'id' => $b->id,
+                'title' => $b->title,
+                'link_url' => $b->link_url,
+                'position' => $b->position,
+                'status' => $b->status,
+                'start_date' => $b->start_date,
+                'end_date' => $b->end_date,
+                'desktop_image' => $b->desktopImage ? ['path' => $b->desktopImage->path] : null,
+                'mobile_image' => $b->mobileImage ? ['path' => $b->mobileImage->path] : null,
+            ];
+        })->values();
+
+        return view('admin.banners.index', compact('banners', 'bannerJson'));
     }
+
 
     public function show(Banner $banner)
     {
@@ -35,9 +51,12 @@ class BannerController extends Controller
             'title' => 'required',
             'link_url' => 'nullable|url',
             'status' => 'required|in:active,inactive',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'image_desktop' => 'nullable|image|max:2048',
             'image_mobile' => 'nullable|image|max:2048',
         ]);
+
 
         $data['created_by'] = auth()->id();
         $banner = Banner::create($data);
@@ -66,6 +85,8 @@ class BannerController extends Controller
             'title' => 'required',
             'link_url' => 'nullable|url',
             'status' => 'required|in:active,inactive',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after_or_equal:start_date',
             'image_desktop' => 'nullable|image|max:2048',
             'image_mobile' => 'nullable|image|max:2048',
         ]);
