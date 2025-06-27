@@ -199,8 +199,8 @@
             <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
               <ul class="navbar-nav position-relative">
                 <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle active" aria-current="page" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Home</a>
-                  <ul class="dropdown-menu">
+                  <a class="nav-link dropdown-toggle active" aria-current="page" href="/" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Trang chủ</a>
+                  {{-- <ul class="dropdown-menu">
                     <li class="hover-effect-opacity px-2 mx-n2">
                       <a class="dropdown-item d-block mb-0" href="home-electronics.html">
                         <span class="fw-medium">Electronics Store</span>
@@ -285,12 +285,12 @@
                         </div>
                       </a>
                     </li>
-                  </ul>
+                  </ul> --}}
                 </li>
 
                 <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop</a>
-                  <div class="dropdown-menu rounded-4 p-4">
+                  <a class="nav-link dropdown-toggle" href="/danh-muc-san-pham" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Danh mục</a>
+                  {{-- <div class="dropdown-menu rounded-4 p-4">
                     <div class="d-flex flex-column flex-lg-row gap-4">
                       <div style="min-width: 190px">
                         <div class="h6 mb-2">Electronics Store</div>
@@ -392,7 +392,7 @@
                         </ul>
                       </div>
                     </div>
-                  </div>
+                  </div> --}}
                 </li>
                 <li class="nav-item dropdown me-lg-n1 me-xl-0">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Account</a>

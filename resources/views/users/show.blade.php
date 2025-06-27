@@ -51,7 +51,7 @@
         <section class="container pb-5 mb-1 mb-sm-2 mb-md-3 mb-lg-4 mb-xl-5">
             <div class="row align-items-start">
                 @include('users.partials.show_product.product-gallery')
-                @include('users.partials.show_product.product-options')
+                @include('users.partials.show_product.product-options', ['initialVariantAttributes' => $initialVariantAttributes])
             </div>
         </section>
 
@@ -180,11 +180,6 @@
                     const firstValue = Array.from(valuesSet)[0];
                     currentSelections[attrName] = firstValue || null;
                 }
-
-                if (currentSelections[attrName]) {
-                    const radio = document.querySelector(`input[data-attr-name="${attrName}"][value="${currentSelections[attrName]}"]`);
-                    if (radio) radio.checked = true;
-                }
             });
 
             if (selectedColorName && currentSelections['Màu sắc']) {
@@ -260,7 +255,13 @@
 
                 updateAvailableOptions();
                 updateVariantInfo();
-                updateSelectedColorClass(); // ✅ Thêm dòng này để xử lý viền hover lại
+                updateSelectedColorClass();
+
+                // Gọi update gallery đúng key
+                if (typeof window.updateGalleryFromSelection === 'function') {
+                    const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
+                    window.updateGalleryFromSelection(key);
+                }
             });
         });
 

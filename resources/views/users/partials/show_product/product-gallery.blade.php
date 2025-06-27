@@ -1,3 +1,17 @@
+@php
+    // Lấy ảnh cho biến thể mặc định (nếu có), nếu không thì fallback về ảnh sản phẩm cha
+    $initialImages = [];
+    if ($defaultVariant && $defaultVariant->images->count()) {
+        $initialImages = $defaultVariant->images->map(fn($img) => Storage::url($img->path))->toArray();
+    } elseif ($product->coverImage) {
+        $initialImages[] = Storage::url($product->coverImage->path);
+    }
+    foreach ($product->galleryImages as $galleryImage) {
+        $initialImages[] = Storage::url($galleryImage->path);
+    }
+    $initialImages = array_unique($initialImages);
+@endphp
+
 <div class="col-md-6 mb-4 mb-md-0 position-relative">
     <!-- Preview (Large image) -->
     <div class="swiper"
@@ -11,46 +25,7 @@
                 "swiper": "#thumbs"
             }
         }'>
-        <div class="swiper-wrapper" id="main-image-slides">
-            @php
-                // Lấy ảnh mặc định từ defaultVariant (ưu tiên primary_image_id) hoặc product
-                $defaultImages = [];
-                if ($defaultVariant) {
-                    if ($defaultVariant->primary_image_id) {
-                        $primaryImage = $defaultVariant->primaryImage;
-                        if ($primaryImage) {
-                            $defaultImages[] = Storage::url($primaryImage->path);
-                        }
-                    }
-                    $defaultImages = array_merge($defaultImages, $defaultVariant->images->map(fn($image) => Storage::url($image->path))->toArray());
-                } elseif ($product->coverImage) {
-                    $defaultImages[] = Storage::url($product->coverImage->path);
-                }
-                foreach ($product->galleryImages as $galleryImage) {
-                    $defaultImages[] = Storage::url($galleryImage->path);
-                }
-                $defaultImages = array_unique($defaultImages);
-            @endphp
-
-            @foreach ($defaultImages as $image)
-                <div class="swiper-slide">
-                    <div class="ratio ratio-4x3">
-                        <img id="variant-image" src="{{ $image }}"
-                            alt="{{ $product->name }}"
-                            style="max-height: 400px; object-fit: contain; margin: 40px 0 20px 0;">
-                    </div>
-                </div>
-            @endforeach
-
-            @if (empty($defaultImages))
-                <div class="swiper-slide">
-                    <div class="ratio ratio-4x3">
-                        <img src="{{ asset('images/placeholder.jpg') }}" alt="No image available"
-                            style="max-height: 400px; object-fit: contain; margin: 40px 0 20px 0;">
-                    </div>
-                </div>
-            @endif
-        </div>
+        <div class="swiper-wrapper" id="main-image-slides"></div>
 
         <!-- Prev button -->
         <div class="position-absolute top-50 start-0 z-2 translate-middle-y ms-sm-2 ms-lg-3">
@@ -87,155 +62,133 @@
                 "1200": {"slidesPerView": 5}
             }
         }'>
-        <div class="swiper-wrapper" id="variant-gallery">
-            @foreach ($defaultImages as $image)
-                <div class="swiper-slide swiper-thumb">
-                    <div class="ratio ratio-4x3" style="max-width: 80px;">
-                        <img src="{{ $image }}" class="swiper-thumb-img"
-                            alt="{{ $product->name }}" style="object-fit: contain;">
-                    </div>
-                </div>
-            @endforeach
-
-            @if (empty($defaultImages))
-                <div class="swiper-slide swiper-thumb">
-                    <div class="ratio ratio-4x3" style="max-width: 80px;">
-                        <img src="{{ asset('images/placeholder.jpg') }}" class="swiper-thumb-img"
-                            alt="No image available" style="object-fit: contain;">
-                    </div>
-                </div>
-            @endif
-        </div>
+        <div class="swiper-wrapper" id="variant-gallery"></div>
     </div>
 </div>
 
 <script>
-    // Hàm cập nhật ảnh chính (ưu tiên primary_image_id)
-    function updateMainImage(src) {
-        const variantImage = document.getElementById('variant-image');
-        if (variantImage && src) {
-            variantImage.src = src;
-        }
+    const variantData = @json($variantData);
+    const attributeOrder = @json($attributeOrder);
 
-        const mainSwiperEl = document.querySelector('.swiper');
-        if (mainSwiperEl && mainSwiperEl.swiper) {
-            const mainSwiper = mainSwiperEl.swiper;
-            const slideIndex = Array.from(mainSwiper.slides).findIndex(slide => {
-                const img = slide.querySelector('img');
-                return img && img.src.includes(src);
-            });
-            if (slideIndex !== -1) {
-                mainSwiper.slideTo(slideIndex);
+    let mainSwiper = null;
+    let thumbSwiper = null;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        function updateGallery(images) {
+            const mainWrapper = document.querySelector('#main-image-slides');
+            const thumbWrapper = document.querySelector('#variant-gallery');
+
+            // Destroy Swiper instances if exist
+            if (mainSwiper && typeof mainSwiper.destroy === 'function') {
+                mainSwiper.destroy(true, true);
+                mainSwiper = null;
             }
-        }
-    }
+            if (thumbSwiper && typeof thumbSwiper.destroy === 'function') {
+                thumbSwiper.destroy(true, true);
+                thumbSwiper = null;
+            }
 
-    // Hàm cập nhật thumbnails
-    function updateThumbnails(images) {
-        const gallery = document.getElementById('variant-gallery');
-        if (gallery) {
-            gallery.innerHTML = '';
-            images.forEach(image => {
-                const slide = document.createElement('div');
-                slide.className = 'swiper-slide swiper-thumb';
-                slide.innerHTML = `
+            mainWrapper.innerHTML = '';
+            thumbWrapper.innerHTML = '';
+
+            images.forEach((img) => {
+                // Main slide
+                const mainSlide = document.createElement('div');
+                mainSlide.className = 'swiper-slide';
+                mainSlide.innerHTML = `
+                    <div class="ratio ratio-4x3">
+                        <img src="${img}" alt="Product Image"
+                             style="max-height: 400px; object-fit: contain; margin: 40px 0 20px 0;">
+                    </div>`;
+                mainWrapper.appendChild(mainSlide);
+
+                // Thumbnail slide
+                const thumbSlide = document.createElement('div');
+                thumbSlide.className = 'swiper-slide swiper-thumb';
+                thumbSlide.innerHTML = `
                     <div class="ratio ratio-4x3" style="max-width: 80px;">
-                        <img src="${image}" class="swiper-thumb-img" alt="{{ $product->name }}" style="object-fit: contain;">
-                    </div>
-                `;
-                gallery.appendChild(slide);
+                        <img src="${img}" alt="Thumb" style="object-fit: contain;">
+                    </div>`;
+                thumbWrapper.appendChild(thumbSlide);
             });
 
-            // Reinitialize Swiper for thumbnails
-            const thumbSwiper = new Swiper('#thumbs', {
-                loop: true,
+            // Re-init Swiper
+            thumbSwiper = new Swiper(document.getElementById('thumbs'), {
+                loop: false,
                 spaceBetween: 10,
                 slidesPerView: 4,
                 watchSlidesProgress: true,
                 breakpoints: {
-                    "340": { slidesPerView: 4 },
-                    "500": { slidesPerView: 5 },
-                    "600": { slidesPerView: 5 },
-                    "768": { slidesPerView: 4 },
-                    "992": { slidesPerView: 5 },
-                    "1200": { slidesPerView: 5 }
+                    340: { slidesPerView: 3 },
+                    500: { slidesPerView: 4 },
+                    768: { slidesPerView: 5 },
+                    992: { slidesPerView: 6 },
+                }
+            });
+
+            mainSwiper = new Swiper(document.querySelector('.swiper'), {
+                loop: false,
+                navigation: {
+                    nextEl: '.btn-next',
+                    prevEl: '.btn-prev',
+                },
+                thumbs: {
+                    swiper: thumbSwiper,
+                }
+            });
+
+            mainSwiper.slideTo(0);
+        }
+
+        function getSelectedVariantKey() {
+            return attributeOrder.map(attr => {
+                const input = document.querySelector(`input[data-attr-name="${attr}"]:checked`);
+                return input ? input.value : '';
+            }).join('_');
+        }
+
+        function ensureAllAttributesChecked() {
+            attributeOrder.forEach(attr => {
+                const checked = document.querySelector(`input[data-attr-name="${attr}"]:checked`);
+                if (!checked) {
+                    const first = document.querySelector(`input[data-attr-name="${attr}"]`);
+                    if (first) first.checked = true;
                 }
             });
         }
-    }
 
-    // Cập nhật gallery dựa trên variant được chọn
-    window.updateGalleryFromSelection = function(variantKey) {
-        const variantData = @json($variantData);
-        const variant = variantData[variantKey] || null;
+        window.updateGalleryFromSelection = function (variantKey) {
+            const variant = variantData[variantKey];
+            console.log('Selected variantKey:', variantKey, 'variant:', variant);
+            if (!variant) return;
 
-        if (variant) {
-            // Ưu tiên primary_image_id nếu có
-            let mainImage = null;
-            if (variant.primary_image_id) {
-                const primaryImage = @php
-                    $variants = $product->variants;
-                    $primaryImagePath = $variants->firstWhere('id', $variant->variant_id ?? null)?->primaryImage?->path ?? null;
-                    echo $primaryImagePath ? Storage::url($primaryImagePath) : null;
-                @endphp;
-                mainImage = primaryImage || variant.image;
-            } else {
-                mainImage = variant.image;
-            }
-
-            if (mainImage) {
-                updateMainImage(mainImage);
-            } else {
-                @php
-                    $fallbackImage = $product->coverImage ? Storage::url($product->coverImage->path) : asset('images/placeholder.jpg');
-                @endphp
-                updateMainImage('{{ $fallbackImage }}');
-            }
-
-            // Cập nhật thumbnails
-            const thumbnailImages = variant.images || [];
-            if (thumbnailImages.length > 0) {
-                updateThumbnails(thumbnailImages);
-            } else {
-                @php
-                    $fallbackImages = [];
-                    if ($product->coverImage) {
-                        $fallbackImages[] = Storage::url($product->coverImage->path);
+            let images = [];
+            if (variant.images && variant.images.length > 0) {
+                if (variant.primary_image_id && variant.image) {
+                    // Đưa ảnh chính lên đầu nếu chưa có
+                    if (variant.images[0] !== variant.image) {
+                        images = [variant.image, ...variant.images.filter(img => img !== variant.image)];
+                    } else {
+                        images = variant.images;
                     }
-                    foreach ($product->galleryImages as $galleryImage) {
-                        $fallbackImages[] = Storage::url($galleryImage->path);
-                    }
-                    $fallbackImages = array_unique($fallbackImages);
-                @endphp
-                updateThumbnails(@json($fallbackImages) || ['{{ asset('images/placeholder.jpg') }}']);
+                } else {
+                    images = variant.images;
+                }
+            } else {
+                images = ['{{ asset("images/placeholder.jpg") }}'];
             }
-        } else {
-            // Fallback nếu không có variant
-            @php
-                $fallbackImage = $product->coverImage ? Storage::url($product->coverImage->path) : asset('images/placeholder.jpg');
-                $fallbackImages = [];
-                if ($product->coverImage) {
-                    $fallbackImages[] = Storage::url($product->coverImage->path);
-                }
-                foreach ($product->galleryImages as $galleryImage) {
-                    $fallbackImages[] = Storage::url($galleryImage->path);
-                }
-                $fallbackImages = array_unique($fallbackImages);
-            @endphp
-            updateMainImage('{{ $fallbackImage }}');
-            updateThumbnails(@json($fallbackImages) || ['{{ asset('images/placeholder.jpg') }}']);
-        }
-    };
 
-    // Khởi tạo gallery với variant mặc định
-    document.addEventListener('DOMContentLoaded', function() {
-        const defaultVariantKey = @php
-            $defaultAttrs = $defaultVariant ? $defaultVariant->attributeValues->pluck('value', 'attribute.name')->all() : [];
-            $keys = array_keys($attributes);
-            echo json_encode(implode('_', array_map(fn($key) => $defaultAttrs[$key] ?? '', $keys)));
-        @endphp;
-        if (defaultVariantKey) {
-            window.updateGalleryFromSelection(defaultVariantKey);
-        }
+            updateGallery(images);
+        };
+
+        // Khởi tạo ban đầu sau khi toàn bộ trang đã load (đảm bảo radio đã checked)
+        window.addEventListener('load', function() {
+            ensureAllAttributesChecked();
+            const defaultKey = getSelectedVariantKey();
+            if (defaultKey) {
+                window.updateGalleryFromSelection(defaultKey);
+            }
+        });
     });
 </script>
+
