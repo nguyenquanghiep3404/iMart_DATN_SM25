@@ -133,6 +133,7 @@ Route::prefix('admin')
             Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
             Route::post('/categories/restore/{id}', [CategoryController::class, 'restore'])->name('categories.restore');
             Route::delete('/categories/force-delete/{id}', [CategoryController::class, 'forceDelete'])->name('categories.forceDelete');
+            // Route::post('/categories/{category}/toggle-homepage', [CategoryController::class, 'toggleHomepage'])->name('categories.toggleHomepage'); // ẩn hiện danh mục trên trang chủ
         // });
         // Attribute routes
         // Route::middleware('can:manage-attributes')->group(function () {

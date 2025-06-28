@@ -282,4 +282,22 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.trash')
             ->with('success', 'Danh mục đã được xóa vĩnh viễn.');
     }
+
+    /**
+     * Toggle hiển thị danh mục trên trang chủ
+     */
+    // public function toggleHomepage(Category $category)
+    // {
+    //     // Toggle trạng thái show_on_homepage
+    //     $category->show_on_homepage = !$category->show_on_homepage;
+    //     $category->save();
+
+    //     $status = $category->show_on_homepage ? 'hiển thị' : 'ẩn';
+        
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => "Danh mục '{$category->name}' đã được {$status} trên trang chủ.",
+    //         'show_on_homepage' => $category->show_on_homepage
+    //     ]);
+    // }
 }

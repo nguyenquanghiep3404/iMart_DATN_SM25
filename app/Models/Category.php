@@ -17,6 +17,7 @@ class Category extends Model
         'parent_id',
         'description',
         'status',
+        'show_on_homepage',
         'order',
         'meta_title',
         'meta_description',
@@ -26,6 +27,7 @@ class Category extends Model
 
     protected $casts = [
         'order' => 'integer',
+        'show_on_homepage' => 'boolean',
     ];
 
     public function parent()

@@ -214,17 +214,26 @@
                     <table class="table-custom table-striped">
                         <thead>
                             <tr>
-                                <th style="width: 60px;">ID</th>
+                                <th style="width: 60px;">STT</th>
                                 <th style="width: 35%;">Tên danh mục</th>
                                 <th style="width: 30%;" class="hidden md:table-cell">Mô tả</th>
                                 <th style="width: 100px;" class="text-center">Trạng thái</th>
+                                {{-- <th style="width: 120px;" class="text-center">Trang chủ</th> --}}
                                 <th style="width: 140px;" class="text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($categories as $category)
                             <tr class="category-row" data-level="{{ $category->tree_level ?? 0 }}">
-                                <td>{{ $category->id }}</td>
+                                <td>
+                                    @if(isset($isFiltered) && $isFiltered && method_exists($categories, 'currentPage'))
+                                        {{-- Paginated view: tính STT dựa trên pagination --}}
+                                        {{ (($categories->currentPage() - 1) * $categories->perPage()) + $loop->iteration }}
+                                    @else
+                                        {{-- Tree view: STT đơn giản --}}
+                                        {{ $loop->iteration }}
+                                    @endif
+                                </td>
                                 <td>
                                     <div class="flex items-center" style="padding-left: {{ ($category->tree_level ?? 0) * 24 }}px;">
                                         @if(isset($category->tree_level) && $category->tree_level > 0)
@@ -261,6 +270,15 @@
                                         {{ $category->status === 'active' ? 'Hoạt động' : 'Tắt' }}
                                     </span>
                                 </td>
+                                {{-- <td class="text-center">
+                                    <label class="switch">
+                                        <input type="checkbox" 
+                                               {{ $category->show_on_homepage ? 'checked' : '' }} 
+                                               onchange="toggleHomepage({{ $category->id }}, this)"
+                                               class="homepage-toggle">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </td> --}}
                                 <td class="text-center">
                                     <div class="flex justify-center items-center space-x-1" style="min-width: 120px;">
                                         <a href="{{ route('admin.categories.show', $category->id) }}" class="btn btn-outline-secondary btn-sm" title="Xem chi tiết">
@@ -360,6 +378,72 @@
 </form>
 @endsection
 
+@push('styles')
+<style>
+/* Toggle Switch Styles */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Loading state */
+.switch.loading .slider {
+    opacity: 0.6;
+    pointer-events: none;
+}
+</style>
+@endpush
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -422,5 +506,87 @@ document.addEventListener('keydown', function(e) {
         closeDeleteModal();
     }
 });
+
+// Toggle homepage visibility function - DISABLED TEMPORARILY
+/*
+function toggleHomepage(categoryId, toggle) {
+    const switchElement = toggle.closest('.switch');
+    switchElement.classList.add('loading');
+    
+    // Disable toggle during request
+    toggle.disabled = true;
+    
+    fetch(`/admin/categories/${categoryId}/toggle-homepage`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update toggle state
+            toggle.checked = data.show_on_homepage;
+            
+            // Show success message
+            showToast(data.message, 'success');
+        } else {
+            // Revert toggle state
+            toggle.checked = !toggle.checked;
+            showToast('Có lỗi xảy ra khi cập nhật trạng thái!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Revert toggle state
+        toggle.checked = !toggle.checked;
+        showToast('Có lỗi xảy ra khi cập nhật trạng thái!', 'error');
+    })
+    .finally(() => {
+        // Re-enable toggle and remove loading state
+        toggle.disabled = false;
+        switchElement.classList.remove('loading');
+    });
+}
+
+// Toast notification function
+function showToast(message, type = 'success') {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-4 py-2 rounded-lg shadow-lg`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    `;
+    toast.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(toast);
+    
+    // Show toast
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Hide and remove toast
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+*/
 </script>
 @endpush

@@ -444,8 +444,13 @@ class HomeController extends Controller
             }
         }
 
-        // 📚 Lấy tất cả danh mục (sử dụng ở sidebar hoặc filter)
-        $categories = Category::all();
+        // 📚 Lấy tất cả danh mục hoạt động (tạm thời disable chức năng show_on_homepage)
+        // $categories = Category::where('show_on_homepage', true)
+        //    ->where('status', 'active')
+        //    ->get();
+        $categories = Category::where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
         $currentCategory = $categoryId ? $category : null;
 
