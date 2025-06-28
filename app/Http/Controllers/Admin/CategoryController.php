@@ -29,22 +29,50 @@ class CategoryController extends Controller
             'parent'
         ]) ? $request->sort : 'id';
         $sortDirection = in_array($request->direction, ['asc', 'desc']) ? $request->direction : 'desc';
+        
         $query = Category::select('categories.*')
             ->with(['parent' => fn($q) => $q->select('id', 'name')]);
+
+        // Tìm kiếm theo tên
         if ($search = $request->get('search')) {
             $query->where('name', 'like', '%' . $search . '%');
         }
+
+        // Lọc theo trạng thái
+        if ($status = $request->get('status')) {
+            $query->where('status', $status);
+        }
+
+        // Lọc theo danh mục cha
+        if ($request->filled('parent_id')) {
+            $parentId = $request->get('parent_id');
+            if ($parentId === '0') {
+                // Lọc chỉ danh mục gốc (không có parent)
+                $query->whereNull('parent_id');
+            } else {
+                // Lọc theo parent_id cụ thể
+                $query->where('parent_id', $parentId);
+            }
+        }
+
+        // Sắp xếp
         if ($sortField === 'parent') {
             $query->leftJoin('categories as parent_categories', 'categories.parent_id', '=', 'parent_categories.id')
                 ->orderBy('parent_categories.name', $sortDirection);
         } else {
             $query->orderBy($sortField, $sortDirection);
         }
+        
         if ($sortField !== 'id') {
             $query->orderBy('id', 'desc');
         }
-        $categories = $query->paginate(10)->withQueryString();
-        return view('admin.category.index', compact('categories', 'sortField', 'sortDirection'));
+        
+        $categories = $query->paginate(15)->withQueryString();
+        
+        // Lấy danh sách parent categories cho dropdown filter
+        $parentCategories = Category::whereNull('parent_id')->orderBy('name')->get();
+        
+        return view('admin.category.index', compact('categories', 'sortField', 'sortDirection', 'parentCategories'));
     }
 
     public function create()
@@ -99,13 +127,90 @@ class CategoryController extends Controller
         if ($productCount > 0) {
             return back()->with('error', "Không thể xóa vì có {$productCount} sản phẩm liên kết.");
         }
+        
+        // Soft delete với thông tin người xóa
+        $category->update(['deleted_by' => auth()->id()]);
         $category->delete();
+        
         $total = Category::count();
         $maxPage = max(ceil($total / $perPage), 1);
         $page = min($page, $maxPage);
         return redirect()->route('admin.categories.index', [
             'page' => $page,
             'per_page' => $perPage
-        ])->with('success', 'Danh mục đã được xóa thành công.');
+        ])->with('success', 'Danh mục đã được chuyển vào thùng rác.');
+    }
+
+    /**
+     * Hiển thị thùng rác
+     */
+    public function trash(Request $request)
+    {
+        $query = Category::onlyTrashed()->with(['parent' => function($query) {
+            $query->withTrashed();
+        }, 'deletedBy']);
+
+        // Tìm kiếm theo tên
+        if ($search = $request->get('search')) {
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        // Sắp xếp
+        $sortField = in_array($request->sort, ['name', 'deleted_at']) ? $request->sort : 'deleted_at';
+        
+        if ($sortField === 'name') {
+            $query->orderBy('name', 'asc');
+        } else {
+            $query->orderBy('deleted_at', 'desc');
+        }
+
+        $trashedCategories = $query->paginate(15)->withQueryString();
+
+        return view('admin.category.trash', compact('trashedCategories'));
+    }
+
+    /**
+     * Khôi phục danh mục từ thùng rác
+     */
+    public function restore($id)
+    {
+        $category = Category::onlyTrashed()->findOrFail($id);
+        
+        // Kiểm tra quyền
+        $this->authorize('restore', $category);
+        
+        $category->restore();
+        $category->update(['deleted_by' => null]);
+
+        return redirect()->route('admin.categories.trash')
+            ->with('success', 'Danh mục đã được khôi phục thành công.');
+    }
+
+    /**
+     * Xóa vĩnh viễn danh mục
+     */
+    public function forceDelete($id)
+    {
+        $category = Category::onlyTrashed()->findOrFail($id);
+        
+        // Kiểm tra quyền
+        $this->authorize('forceDelete', $category);
+        
+        // Kiểm tra ràng buộc trước khi xóa vĩnh viễn
+        $children = $category->children()->withTrashed()->pluck('name');
+        if ($children->isNotEmpty()) {
+            return back()
+                ->with('error', 'Không thể xóa vĩnh viễn vì có danh mục con: ' . $children->implode(', '));
+        }
+        
+        $productCount = $category->products()->withTrashed()->count();
+        if ($productCount > 0) {
+            return back()->with('error', "Không thể xóa vĩnh viễn vì có {$productCount} sản phẩm liên kết.");
+        }
+
+        $category->forceDelete();
+
+        return redirect()->route('admin.categories.trash')
+            ->with('success', 'Danh mục đã được xóa vĩnh viễn.');
     }
 }

@@ -124,12 +124,15 @@ Route::prefix('admin')
         // Category routes
         // Route::resource('categories', CategoryController::class);
             Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+            Route::get('/categories/trash', [CategoryController::class, 'trash'])->name('categories.trash');
             Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
             Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
             Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
             Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
             Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
             Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+            Route::post('/categories/restore/{id}', [CategoryController::class, 'restore'])->name('categories.restore');
+            Route::delete('/categories/force-delete/{id}', [CategoryController::class, 'forceDelete'])->name('categories.forceDelete');
         // });
         // Attribute routes
         // Route::middleware('can:manage-attributes')->group(function () {

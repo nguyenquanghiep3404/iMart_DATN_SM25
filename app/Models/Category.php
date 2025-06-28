@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\User;
 
 class Category extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -19,6 +21,7 @@ class Category extends Model
         'meta_title',
         'meta_description',
         'meta_keywords',
+        'deleted_by',
     ];
 
     protected $casts = [
@@ -38,6 +41,12 @@ class Category extends Model
     public function products()
     {
         return $this->hasMany(Product::class);
+    }
+
+    // Quan hệ với người xóa
+    public function deletedBy()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
     }
 
     // Mối quan hệ đa hình cho ảnh danh mục
