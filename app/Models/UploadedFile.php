@@ -84,19 +84,19 @@ public function deletedBy()
             }
         });
 
-        static::deleting(function ($file) {
-            // Kiểm tra xem file có thực sự tồn tại trong storage không trước khi xóa
-            if ($file->path && Storage::disk($file->disk)->exists($file->path)) {
-                try {
-                    Storage::disk($file->disk)->delete($file->path);
-                    Log::info("File vật lý đã được xóa thành công: {$file->path}");
-                } catch (\Exception $e) {
-                    Log::error("Không thể xóa file vật lý {$file->path}: " . $e->getMessage());
-                }
-            } else {
-                 Log::warning("File vật lý không tồn tại để xóa: {$file->path}");
-            }
-        });
+        // static::deleting(function ($file) {
+        //     // Kiểm tra xem file có thực sự tồn tại trong storage không trước khi xóa
+        //     if ($file->path && Storage::disk($file->disk)->exists($file->path)) {
+        //         try {
+        //             Storage::disk($file->disk)->delete($file->path);
+        //             Log::info("File vật lý đã được xóa thành công: {$file->path}");
+        //         } catch (\Exception $e) {
+        //             Log::error("Không thể xóa file vật lý {$file->path}: " . $e->getMessage());
+        //         }
+        //     } else {
+        //          Log::warning("File vật lý không tồn tại để xóa: {$file->path}");
+        //     }
+        // });
     }
     public function getAttachableDisplayAttribute(): string
     {

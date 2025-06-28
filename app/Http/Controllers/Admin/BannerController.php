@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Banner;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Models\UploadedFile;
 
 class BannerController extends Controller
 {
@@ -95,26 +96,45 @@ class BannerController extends Controller
         $banner->update($data);
 
         if ($request->hasFile('image_desktop')) {
-            $banner->desktopImage()?->delete();
+            // ❗ Xoá vĩnh viễn ảnh cũ thay vì soft delete
+            $banner->desktopImage()?->forceDelete();
+
             $this->saveUploadedFile($banner, $request->file('image_desktop'), 'banner_desktop');
         }
 
         if ($request->hasFile('image_mobile')) {
-            $banner->mobileImage()?->delete();
+            $banner->mobileImage()?->forceDelete();
+
             $this->saveUploadedFile($banner, $request->file('image_mobile'), 'banner_mobile');
         }
+
 
         return redirect()->route('admin.banners.index')->with('success', 'Cập nhật banner thành công');
     }
 
     public function destroy(Banner $banner)
     {
-        foreach ($banner->images as $image) {
-            $image->delete();
+        if (auth()->check()) {
+            $banner->deleted_by = auth()->id();
+            $banner->save();
         }
+
+        foreach ($banner->images as $image) {
+            if (auth()->check()) {
+                $image->deleted_by = auth()->id();
+                $image->save();
+            }
+
+            $image->delete(); // Chỉ soft delete
+        }
+
         $banner->delete();
-        return redirect()->route('admin.banners.index')->with('success', 'Đã xóa banner');
+
+        return redirect()->route('admin.banners.index')->with('success', 'Đã xoá banner');
     }
+
+
+
 
     protected function saveUploadedFile($model, $file, $type)
     {
@@ -130,5 +150,45 @@ class BannerController extends Controller
             'type' => $type,
             'user_id' => auth()->id(),
         ]);
+    }
+    public function images()
+    {
+        return $this->morphMany(UploadedFile::class, 'fileable')->withTrashed();
+    }
+
+    public function trash()
+    {
+        $banners = Banner::onlyTrashed()->with('deletedBy')->paginate(10);
+        return view('admin.banners.trash', compact('banners'));
+    }
+
+
+    public function restore($id)
+    {
+        $banner = Banner::onlyTrashed()->findOrFail($id);
+        $banner->restore();
+
+        // Khôi phục các ảnh nếu có
+        foreach ($banner->images()->withTrashed()->get() as $image) {
+            if ($image->trashed()) {
+                $image->restore();
+            }
+        }
+
+        return redirect()->route('admin.banners.index')->with('success', 'Banner đã được khôi phục.');
+    }
+
+    public function forceDelete($id)
+    {
+        $banner = Banner::onlyTrashed()->findOrFail($id);
+
+        // Xoá vĩnh viễn các ảnh
+        foreach ($banner->images()->onlyTrashed()->get() as $image) {
+            $image->forceDelete(); // Xoá khỏi DB và xóa file vật lý
+        }
+
+        $banner->forceDelete();
+
+        return redirect()->route('admin.banners.trash')->with('success', 'Banner đã bị xoá vĩnh viễn.');
     }
 }

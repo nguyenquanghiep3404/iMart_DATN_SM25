@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Providers;
+
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 // Import các lớp cho xác thực người dùng
@@ -20,6 +21,7 @@ use App\Models\Product;
 use App\Policies\ProductPolicy;
 use App\Models\Category;
 use App\Policies\CategoryPolicy;
+use Illuminate\Support\Facades\View;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -31,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
     {
         //
     }
-        protected $policies = [
+    protected $policies = [
         User::class => UserPolicy::class,
         Role::class => RolePolicy::class,
         Attribute::class => AttributePolicy::class,
@@ -55,7 +57,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Phân quyền
         try {
-        // Chỉ giữ lại các Gate chung, không gắn với Model CRUD
+            // Chỉ giữ lại các Gate chung, không gắn với Model CRUD
             Gate::define('access_admin_dashboard', function (User $user) {
                 // Admin được vào, hoặc những ai có quyền cụ thể
                 return $user->hasRole('admin') || $user->hasPermissionTo('access_admin_dashboard');
@@ -67,6 +69,37 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Exception $e) {
             return;
         }
+
+
+        View::composer('*', function ($view) {
+            $user = auth()->user();
+            if ($user) {
+                $unreadNotificationsCount = $user->unreadNotifications()->count();
+
+                $recentNotifications = $user->notifications()
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get()
+                    ->map(function ($notification) {
+                        $message = $notification->data['message'] ?? 'Thông báo mới';
+                        $type = class_basename($notification->type);
+                        $icon = match (true) {
+                            str_contains($type, 'User') => '<svg class="h-6 w-6 text-green-500" ...>...</svg>',
+                            str_contains($type, 'Order') => '<svg class="h-6 w-6 text-blue-500" ...>...</svg>',
+                            str_contains($type, 'Review') => '<svg class="h-6 w-6 text-yellow-500" ...>...</svg>',
+                            default => '<svg class="h-6 w-6 text-gray-400" ...>...</svg>',
+                        };
+
+                        return [
+                            'title' => $message,
+                            'time' => $notification->created_at->diffForHumans(),
+                            'icon' => $icon,
+                        ];
+                    });
+
+                $view->with(compact('unreadNotificationsCount', 'recentNotifications'));
+            }
+        });
         // try {
         // // --- LOGIC PHÂN QUYỀN MỚI DỰA TRÊN PERMISSION ---
 
@@ -109,6 +142,6 @@ class AppServiceProvider extends ServiceProvider
         //     // Bỏ qua lỗi khi migrate
         //     return;
         // }
-
+        // App\Providers\AppServiceProvider.php
     }
 }

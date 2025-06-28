@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Users;
 
+use Carbon\Carbon;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -12,40 +13,16 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Banner;
 use App\Models\Comment;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 
 class HomeController extends Controller
 {
     public function index()
-    {
-         $banners = Banner::with(['desktopImage', 'mobileImage'])->activeAndValid()->orderBy('order')->get();
-        $calculateAverageRating = function ($products) {
-            foreach ($products as $product) {
-                $averageRating = $product->reviews->avg('rating') ?? 0;
-                $product->average_rating = round($averageRating, 1);
-
-                $now = now();
-                $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
-
-                if ($variant) {
-                    $isOnSale = false;
-
-                    if (
-                        $variant->sale_price
-                        && $variant->sale_price_starts_at
-                        && $variant->sale_price_ends_at
-                        && $variant->price > 0
-                    ) {
-                        try {
-                            $startDate = Carbon::parse($variant->sale_price_starts_at);
-                            $endDate = Carbon::parse($variant->sale_price_ends_at);
-                            $isOnSale = $now->between($startDate, $endDate);
-                        } catch (\Exception $e) {
-                            Log::error('Error parsing dates for product ' . $product->name . ': ' . $e->getMessage());
-                            $isOnSale = false;
-                        }
-                    }
+{
+    $banners = Banner::with('desktopImage')
+        ->where('status', 'active')
+        ->orderBy('order')
+        ->get();
 
     // Hàm xử lý đánh giá và phần trăm giảm giá
     $calculateAverageRating = function ($products) {
@@ -115,7 +92,7 @@ class HomeController extends Controller
     // === Danh sách sản phẩm mới nhất ===
     $latestProducts = Product::with([
         'category',
-        'coverImage',
+'coverImage',
         'galleryImages',
         'variants.primaryImage',
         'variants.images',
@@ -144,6 +121,9 @@ class HomeController extends Controller
 
     return view('users.home', compact('featuredProducts', 'latestProducts', 'banners'));
 }
+
+
+
 
 
     public function show($slug)
@@ -211,7 +191,7 @@ class HomeController extends Controller
             if (!isset($attributes[$attrName])) {
                 $attributes[$attrName] = collect();
             }
-            if (!$attributes[$attrName]->contains('value', $value)) {
+if (!$attributes[$attrName]->contains('value', $value)) {
                 $attributes[$attrName]->push($attrValue);
             }
         }
@@ -299,8 +279,7 @@ class HomeController extends Controller
         if ($id) {
             $category = Category::findOrFail($id);
             $categoryId = $category->id;
-
-            // Nếu slug sai thì redirect về đúng slug
+// Nếu slug sai thì redirect về đúng slug
             if ($slug !== Str::slug($category->name)) {
                 return redirect()->route('products.byCategory', [
                     'id' => $category->id,
@@ -373,7 +352,7 @@ class HomeController extends Controller
             });
         }
         if ($request->filled('max_price')) {
-            $query->whereHas('variants', function ($q) use ($request) {
+$query->whereHas('variants', function ($q) use ($request) {
                 $q->where('price', '<=', $request->max_price);
             });
         }
@@ -444,7 +423,7 @@ class HomeController extends Controller
             default:
                 $query->orderByDesc('created_at');
                 break;
-        }
+}
 
         // 📄 Phân trang
         $products = $query->paginate(12);
