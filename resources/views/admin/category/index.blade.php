@@ -25,9 +25,48 @@
     .table-custom th, .table-custom td { padding: 0.5rem 0.75rem; vertical-align: middle !important; border-bottom-width: 1px; border-color: #e5e7eb; }
     .table-custom th:last-child, .table-custom td:last-child { white-space: nowrap; }
     
+    /* Tree structure styles */
+    .category-row[data-level="0"] {
+        background-color: #fefefe;
+        font-weight: 500;
+        border-left: 3px solid #4f46e5;
+    }
+    .category-row[data-level="1"] {
+        background-color: #f8fafc;
+        border-left: 3px solid #f59e0b;
+    }
+    .category-row[data-level="2"] {
+        background-color: #f1f5f9;
+        border-left: 3px solid #10b981;
+    }
+    .category-row[data-level="3"] {
+        background-color: #e2e8f0;
+        border-left: 3px solid #f43f5e;
+    }
+    .category-row:hover {
+        background-color: #e0f2fe !important;
+        transform: translateX(2px);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Tree connection lines */
+    .tree-connector {
+        color: #cbd5e1;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1;
+        font-weight: normal;
+    }
+    
+
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
         .table-custom th, .table-custom td { padding: 0.5rem 0.5rem; font-size: 0.875rem; }
+        .category-row div[style*="padding-left"] {
+            padding-left: 8px !important;
+        }
     }
     
 
@@ -81,13 +120,32 @@
                     <li class="breadcrumb-item active text-gray-700 font-medium" aria-current="page">Danh mục</li>
                 </ol>
             </nav>
+            @if(!request()->filled('search') && !request()->filled('status') && !request()->filled('parent_id'))
+            @elseif(isset($autoPaginatedFlag) && $autoPaginatedFlag)
+            <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>
+                    <span class="text-sm text-amber-700">
+                        Tự động chuyển sang chế độ phân trang do có quá nhiều danh mục (>50)
+                    </span>
+                </div>
+            </div>
+            @endif
         </div>
 
         <div class="card-custom">
             <div class="card-custom-header">
                 {{-- Responsive header layout --}}
                 <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center w-full">
-                    <h3 class="card-custom-title">Danh sách danh mục ({{ $categories->total() }})</h3>
+                    <h3 class="card-custom-title">
+                        @if(isset($isFiltered) && $isFiltered && method_exists($categories, 'total'))
+                            Danh sách danh mục ({{ $categories->total() }} kết quả)
+                        @elseif(isset($isTreeView) && $isTreeView)
+                            Cấu trúc danh mục ({{ $categories->count() }} danh mục)
+                        @else
+                            Danh sách danh mục ({{ $categories->count() }} danh mục)
+                        @endif
+                    </h3>
                     <div class="flex items-center space-x-2">
                         <a href="{{ route('admin.categories.trash') }}" class="btn btn-outline-secondary btn-sm" title="Thùng rác"><i class="fas fa-trash mr-2"></i>Thùng rác</a>
                         <a href="{{ route('admin.categories.index') }}" id="refresh-categories-button" class="btn btn-outline-secondary btn-sm" title="Làm mới danh sách"><i class="fas fa-sync-alt"></i></a>
@@ -137,9 +195,8 @@
                         <div>
                             <label for="filter_sort" class="block text-sm font-medium text-gray-700 mb-1">Sắp xếp</label>
                             <select id="filter_sort" name="sort" class="form-select">
-                                <option value="id" {{ request('sort') == 'id' ? 'selected' : '' }}>ID</option>
                                 <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Tên</option>
-                                <option value="order" {{ request('sort') == 'order' ? 'selected' : '' }}>Thứ tự</option>
+                                <option value="id" {{ request('sort') == 'id' ? 'selected' : '' }}>ID</option>
                                 <option value="status" {{ request('sort') == 'status' ? 'selected' : '' }}>Trạng thái</option>
                             </select>
                         </div>
@@ -158,28 +215,47 @@
                         <thead>
                             <tr>
                                 <th style="width: 60px;">ID</th>
-                                <th style="width: 25%;">Tên danh mục</th>
-                                <th style="width: 15%;" class="hidden lg:table-cell">Danh mục cha</th>
-                                <th style="width: 25%;" class="hidden md:table-cell">Mô tả</th>
-                                <th style="width: 80px;" class="text-center">Thứ tự</th>
+                                <th style="width: 35%;">Tên danh mục</th>
+                                <th style="width: 30%;" class="hidden md:table-cell">Mô tả</th>
                                 <th style="width: 100px;" class="text-center">Trạng thái</th>
                                 <th style="width: 140px;" class="text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($categories as $category)
-                            <tr>
+                            <tr class="category-row" data-level="{{ $category->tree_level ?? 0 }}">
                                 <td>{{ $category->id }}</td>
                                 <td>
-                                    <div>
-                                        <a href="{{ route('admin.categories.show', $category->id) }}" class="font-semibold text-indigo-600 hover:text-indigo-800">{{ $category->name }}</a>
-                                        <div class="text-xs text-gray-500 lg:hidden">{{ $category->parent?->name ?? 'Danh mục gốc' }}</div>
-                                        <div class="text-xs text-gray-500 md:hidden mt-1">{{ Str::limit($category->description ?? '', 30, '...') }}</div>
+                                    <div class="flex items-center" style="padding-left: {{ ($category->tree_level ?? 0) * 24 }}px;">
+                                        @if(isset($category->tree_level) && $category->tree_level > 0)
+                                            {{-- Child indicator --}}
+                                            <div class="flex items-center mr-2 tree-connector">
+                                                @for($i = 0; $i < $category->tree_level; $i++)
+                                                    @if($i == $category->tree_level - 1)
+                                                        <span>├─</span>
+                                                    @else
+                                                        <span class="mr-2">│</span>
+                                                    @endif
+                                                @endfor
+                                            </div>
+                                        @endif
+                                        
+                                        <div>
+                                            <a href="{{ route('admin.categories.show', $category->id) }}" 
+                                               class="font-semibold text-indigo-600 hover:text-indigo-800 
+                                                      {{ isset($category->tree_level) && $category->tree_level > 0 ? 'text-sm' : '' }}">
+                                                {{ $category->name }}
+                                            </a>
+                                            @if(isset($category->tree_level) && $category->tree_level > 0)
+                                                <div class="text-xs text-gray-400 italic">Danh mục con</div>
+                                            @endif
+                                            <div class="text-xs text-gray-500 md:hidden mt-1">{{ Str::limit($category->description ?? '', 30, '...') }}</div>
+                                        </div>
                                     </div>
                                 </td>
-                                <td class="text-sm text-gray-600 hidden lg:table-cell">{{ $category->parent?->name ?? 'Không có' }}</td>
-                                <td class="text-sm text-gray-600 hidden md:table-cell" style="word-wrap: break-word; white-space: normal;">{{ Str::limit($category->description ?? '', 60, '...') }}</td>
-                                <td class="text-sm text-gray-600 text-center">{{ $category->order ?? 0 }}</td>
+                                <td class="text-sm text-gray-600 hidden md:table-cell" style="word-wrap: break-word; white-space: normal;">
+                                    {{ Str::limit($category->description ?? '', 80, '...') }}
+                                </td>
                                 <td class="text-center">
                                     <span class="badge-custom {{ $category->status === 'active' ? 'badge-success-custom' : 'badge-warning-custom' }}">
                                         {{ $category->status === 'active' ? 'Hoạt động' : 'Tắt' }}
@@ -201,7 +277,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-8">
+                                <td colspan="5" class="text-center py-8">
                                     <div class="flex flex-col items-center justify-center">
                                         <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
                                         <h5 class="text-lg font-medium text-gray-500 mb-2">Chưa có danh mục nào</h5>
@@ -215,8 +291,8 @@
                 </div>
             </div>
             
-            {{-- PAGINATION --}}
-            @if ($categories->hasPages())
+            {{-- PAGINATION - hiển thị cho filtered view --}}
+            @if(isset($isFiltered) && $isFiltered && method_exists($categories, 'hasPages') && $categories->hasPages())
             <div class="card-custom-footer">
                 <div class="flex justify-between items-center">
                     <div class="text-sm text-gray-500">
@@ -224,6 +300,28 @@
                     </div>
                     <div>
                         {{ $categories->appends(request()->query())->links() }}
+                    </div>
+                </div>
+            </div>
+            {{-- Footer cho tree view --}}
+            @elseif(isset($isTreeView) && $isTreeView)
+            <div class="card-custom-footer">
+                <div class="flex justify-center items-center">
+                    <div class="text-sm text-gray-500">
+                        <i class="fas fa-sitemap mr-2"></i>Hiển thị tất cả danh mục theo cấu trúc tree
+                    </div>
+                </div>
+            </div>
+            {{-- Footer cho auto pagination hoặc filtered view --}}
+            @else
+            <div class="card-custom-footer">
+                <div class="flex justify-center items-center">
+                    <div class="text-sm text-gray-500">
+                        @if(isset($autoPaginatedFlag) && $autoPaginatedFlag)
+                            <i class="fas fa-list mr-2"></i>Tự động phân trang do quá nhiều danh mục
+                        @else
+                            <i class="fas fa-filter mr-2"></i>Kết quả lọc với phân trang
+                        @endif
                     </div>
                 </div>
             </div>
@@ -256,7 +354,9 @@
 <form id="deleteForm" method="POST" style="display: none;">
     @csrf
     @method('DELETE')
-    <input type="hidden" name="page" value="{{ $categories->currentPage() }}">
+    @if(isset($isFiltered) && $isFiltered && method_exists($categories, 'currentPage'))
+        <input type="hidden" name="page" value="{{ $categories->currentPage() }}">
+    @endif
 </form>
 @endsection
 

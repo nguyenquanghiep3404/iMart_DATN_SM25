@@ -13,74 +13,142 @@ class CategoryController extends Controller
 {
     use AuthorizesRequests;
     // Phân quyền
-     public function __construct()
+    public function __construct()
     {
         // Tự động phân quyền cho tất cả các phương thức CRUD
         $this->authorizeResource(Category::class, 'category');
     }
     public function index(Request $request)
     {
-        $sortField = in_array($request->sort, [
-            'id',
-            'name',
-            'order',
-            'status',
-            'description',
-            'parent'
-        ]) ? $request->sort : 'id';
-        $sortDirection = in_array($request->direction, ['asc', 'desc']) ? $request->direction : 'desc';
-        
-        $query = Category::select('categories.*')
-            ->with(['parent' => fn($q) => $q->select('id', 'name')]);
+        $sortField = in_array($request->sort, ['name', 'status', 'parent']) ? $request->sort : 'id';
+        $sortDirection = $request->direction === 'asc' ? 'asc' : 'desc';
 
-        // Tìm kiếm theo tên
-        if ($search = $request->get('search')) {
-            $query->where('name', 'like', '%' . $search . '%');
+        $totalCategories = Category::count();
+        $hasFilters = $request->filled(['search', 'status', 'parent_id']);
+
+        // Logic phân luồng: Tree view cho ≤50 items + không filter, ngược lại dùng pagination
+        if ($totalCategories <= 50 && !$hasFilters) {
+            return $this->renderTreeView($request, $sortField, $sortDirection);
         }
 
-        // Lọc theo trạng thái
-        if ($status = $request->get('status')) {
-            $query->where('status', $status);
-        }
+        return $this->renderPaginatedView($request, $sortField, $sortDirection, $totalCategories > 50);
+    }
+    /**
+     * Render tree view cho categories ít và không có filter
+     */
+    private function renderTreeView(Request $request, $sortField, $sortDirection)
+    {
+        // Load tất cả categories và sort tùy theo field
+        $query = Category::with('parent');
 
-        // Lọc theo danh mục cha
-        if ($request->filled('parent_id')) {
-            $parentId = $request->get('parent_id');
-            if ($parentId === '0') {
-                // Lọc chỉ danh mục gốc (không có parent)
-                $query->whereNull('parent_id');
-            } else {
-                // Lọc theo parent_id cụ thể
-                $query->where('parent_id', $parentId);
-            }
-        }
-
-        // Sắp xếp
+        // Conditional sorting để tránh overhead
         if ($sortField === 'parent') {
             $query->leftJoin('categories as parent_categories', 'categories.parent_id', '=', 'parent_categories.id')
+                ->select('categories.*')
                 ->orderBy('parent_categories.name', $sortDirection);
         } else {
             $query->orderBy($sortField, $sortDirection);
         }
-        
+
         if ($sortField !== 'id') {
             $query->orderBy('id', 'desc');
         }
-        
-        $categories = $query->paginate(15)->withQueryString();
-        
-        // Lấy danh sách parent categories cho dropdown filter
-        $parentCategories = Category::whereNull('parent_id')->orderBy('name')->get();
-        
-        return view('admin.category.index', compact('categories', 'sortField', 'sortDirection', 'parentCategories'));
-    }
 
+        $allCategories = $query->get();
+
+        // Xây dựng tree và flatten trong một bước - tối ưu performance
+        $categories = $this->buildTreeAndFlatten($allCategories);
+
+        $isTreeView = true;
+        $parentCategories = Category::whereNull('parent_id')->orderBy('name')->get();
+
+        return view('admin.category.index', compact('categories', 'sortField', 'sortDirection', 'isTreeView', 'parentCategories'));
+    }
+    /**
+     * Render paginated view cho categories nhiều hoặc có filter
+     */
+    private function renderPaginatedView(Request $request, $sortField, $sortDirection, $autoPaginated = false)
+    {
+        $query = Category::with('parent');
+
+        // Apply filters inline
+        if ($search = $request->get('search')) {
+            $query->where('name', 'like', '%' . $search . '%');
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('parent_id')) {
+            if ($request->parent_id === 'null') {
+                $query->whereNull('parent_id');
+            } else {
+                $query->where('parent_id', $request->parent_id);
+            }
+        }
+
+        // Apply sorting inline
+        if ($sortField === 'parent') {
+            $query->leftJoin('categories as parent_categories', 'categories.parent_id', '=', 'parent_categories.id')
+                ->select('categories.*')
+                ->orderBy('parent_categories.name', $sortDirection);
+        } else {
+            $query->orderBy($sortField, $sortDirection);
+        }
+
+        if ($sortField !== 'id') {
+            $query->orderBy('id', 'desc');
+        }
+
+        $categories = $query->paginate(15)->withQueryString();
+
+        // Thay vì dynamic properties, dùng variables riêng
+        $isFiltered = true;
+        $autoPaginatedFlag = $autoPaginated;
+
+        $parentCategories = Category::whereNull('parent_id')->orderBy('name')->get();
+
+        return view('admin.category.index', compact('categories', 'sortField', 'sortDirection', 'parentCategories', 'isFiltered', 'autoPaginatedFlag'));
+    }
+    /**
+     * Xây dựng tree và flatten trong một bước - tối ưu performance
+     */
+    private function buildTreeAndFlatten($categories)
+    {
+        // GroupBy để tối ưu performance - chỉ duyệt collection 1 lần
+        $categoriesByParent = $categories->groupBy('parent_id');
+
+        // Hàm đệ quy xây dựng và flatten tree cùng lúc
+        $flattenTree = function ($parentId = null, $level = 0) use (&$flattenTree, $categoriesByParent) {
+            $result = collect();
+            $children = $categoriesByParent->get($parentId, collect());
+
+            foreach ($children as $category) {
+                // Gán thông tin tree cho category
+                $category->tree_level = $level;
+                $category->has_children = $categoriesByParent->has($category->id);
+
+                // Thêm category hiện tại
+                $result->push($category);
+
+                // Đệ quy thêm children ngay sau parent
+                if ($category->has_children) {
+                    $childrenResult = $flattenTree($category->id, $level + 1);
+                    $result = $result->concat($childrenResult);
+                }
+            }
+
+            return $result;
+        };
+
+        return $flattenTree();
+    }
     public function create()
     {
         $parents = Category::whereNull('parent_id')->orderBy('name')->get();
         return view('admin.category.create', compact('parents'));
     }
-
     public function store(CategoryRequest $request)
     {
         $data = $request->validated();
@@ -89,13 +157,11 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')
             ->with('success', 'Danh mục đã được tạo thành công.');
     }
-
     public function show(Category $category)
     {
         $category->load('parent', 'children')->loadCount('products');
         return view('admin.category.show', compact('category'));
     }
-
     public function edit(Category $category)
     {
         $parents = Category::whereNull('parent_id')
@@ -104,7 +170,6 @@ class CategoryController extends Controller
             ->pluck('name', 'id');
         return view('admin.category.edit', compact('category', 'parents'));
     }
-
     public function update(CategoryRequest $request, Category $category)
     {
         $data = $request->validated();
@@ -113,11 +178,8 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')
             ->with('success', 'Danh mục đã được cập nhật thành công.');
     }
-
     public function destroy(Category $category)
     {
-        $page = request('page', 1);
-        $perPage = request('per_page', 10);
         $children = $category->children()->pluck('name');
         if ($children->isNotEmpty()) {
             return back()
@@ -127,26 +189,35 @@ class CategoryController extends Controller
         if ($productCount > 0) {
             return back()->with('error', "Không thể xóa vì có {$productCount} sản phẩm liên kết.");
         }
-        
+
         // Soft delete với thông tin người xóa
         $category->update(['deleted_by' => auth()->id()]);
         $category->delete();
-        
-        $total = Category::count();
-        $maxPage = max(ceil($total / $perPage), 1);
-        $page = min($page, $maxPage);
-        return redirect()->route('admin.categories.index', [
-            'page' => $page,
-            'per_page' => $perPage
-        ])->with('success', 'Danh mục đã được chuyển vào thùng rác.');
-    }
 
+        // Kiểm tra nếu có pagination (filtered view) thì redirect với page params
+        if (request('page')) {
+            $page = request('page', 1);
+            $perPage = request('per_page', 15);
+            $total = Category::count();
+            $maxPage = max(ceil($total / $perPage), 1);
+            $page = min($page, $maxPage);
+
+            return redirect()->route('admin.categories.index', [
+                'page' => $page,
+                'per_page' => $perPage
+            ])->with('success', 'Danh mục đã được chuyển vào thùng rác.');
+        }
+
+        // Tree view - redirect về index không có pagination
+        return redirect()->route('admin.categories.index')
+            ->with('success', 'Danh mục đã được chuyển vào thùng rác.');
+    }
     /**
      * Hiển thị thùng rác
      */
     public function trash(Request $request)
     {
-        $query = Category::onlyTrashed()->with(['parent' => function($query) {
+        $query = Category::onlyTrashed()->with(['parent' => function ($query) {
             $query->withTrashed();
         }, 'deletedBy']);
 
@@ -157,7 +228,7 @@ class CategoryController extends Controller
 
         // Sắp xếp
         $sortField = in_array($request->sort, ['name', 'deleted_at']) ? $request->sort : 'deleted_at';
-        
+
         if ($sortField === 'name') {
             $query->orderBy('name', 'asc');
         } else {
@@ -168,41 +239,39 @@ class CategoryController extends Controller
 
         return view('admin.category.trash', compact('trashedCategories'));
     }
-
     /**
      * Khôi phục danh mục từ thùng rác
      */
     public function restore($id)
     {
         $category = Category::onlyTrashed()->findOrFail($id);
-        
+
         // Kiểm tra quyền
         $this->authorize('restore', $category);
-        
+
         $category->restore();
         $category->update(['deleted_by' => null]);
 
         return redirect()->route('admin.categories.trash')
             ->with('success', 'Danh mục đã được khôi phục thành công.');
     }
-
     /**
      * Xóa vĩnh viễn danh mục
      */
     public function forceDelete($id)
     {
         $category = Category::onlyTrashed()->findOrFail($id);
-        
+
         // Kiểm tra quyền
         $this->authorize('forceDelete', $category);
-        
+
         // Kiểm tra ràng buộc trước khi xóa vĩnh viễn
         $children = $category->children()->withTrashed()->pluck('name');
         if ($children->isNotEmpty()) {
             return back()
                 ->with('error', 'Không thể xóa vĩnh viễn vì có danh mục con: ' . $children->implode(', '));
         }
-        
+
         $productCount = $category->products()->withTrashed()->count();
         if ($productCount > 0) {
             return back()->with('error', "Không thể xóa vĩnh viễn vì có {$productCount} sản phẩm liên kết.");
