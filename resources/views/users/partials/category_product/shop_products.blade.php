@@ -10,26 +10,28 @@
         $isPriceSort = in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']);
     @endphp
 
-    <div class="sort-section">
-        <span class="sort-label">Sắp xếp theo</span>
+    <div class="sort-section mb-4 shadow-sm">
+        <span class="sort-label"><i class="ci-filter me-2 text-danger"></i>Sắp xếp theo</span>
         <nav class="sort-options nav">
             @foreach ($sortOptions as $key => $label)
-                <a class="nav-link {{ $currentSort === $key ? 'active' : '' }}"
-                   href="{{ request()->fullUrlWithQuery(['sort' => $key]) }}">
+                <a class="nav-link {{ $currentSort === $key ? 'active' : '' }} px-3 py-2 shadow-none"
+                    href="{{ request()->fullUrlWithQuery(['sort' => $key]) }}">
                     {{ $label }}
                 </a>
             @endforeach
         </nav>
-        <div class="dropdown">
-            <a class="nav-link dropdown-toggle {{ $isPriceSort ? 'active' : '' }}" href="#"
-               role="button" id="priceSortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                Giá
+        <div class="dropdown ms-2">
+            <a class="nav-link dropdown-toggle {{ $isPriceSort ? 'active' : '' }} px-3 py-2 shadow-none" href="#"
+                role="button" id="priceSortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="ci-dollar me-1"></i> Giá
             </a>
             <ul class="dropdown-menu" aria-labelledby="priceSortDropdown">
                 <li><a class="dropdown-item {{ $currentSort === 'gia_thap_den_cao' ? 'active' : '' }}"
-                       href="{{ request()->fullUrlWithQuery(['sort' => 'gia_thap_den_cao']) }}">Giá: Thấp đến Cao</a></li>
+                        href="{{ request()->fullUrlWithQuery(['sort' => 'gia_thap_den_cao']) }}">Giá: Thấp đến Cao</a>
+                </li>
                 <li><a class="dropdown-item {{ $currentSort === 'gia_cao_den_thap' ? 'active' : '' }}"
-                       href="{{ request()->fullUrlWithQuery(['sort' => 'gia_cao_den_thap']) }}">Giá: Cao đến Thấp</a></li>
+                        href="{{ request()->fullUrlWithQuery(['sort' => 'gia_cao_den_thap']) }}">Giá: Cao đến Thấp</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -41,86 +43,73 @@
                 $displayVariant = $product->variants->firstWhere('is_default', true) ?? $variant;
                 $imageToShow = $displayVariant?->primaryImage ?? $product->coverImage;
                 $mainImage = $imageToShow ? Storage::url($imageToShow->path) : asset('images/placeholder.jpg');
-                $now = now();
-                $onSale = false;
 
-                if (
-                    $displayVariant &&
-                    $displayVariant->sale_price &&
-                    $displayVariant->sale_price_starts_at &&
-                    $displayVariant->sale_price_ends_at
-                ) {
-                    try {
-                        $start = \Carbon\Carbon::parse($displayVariant->sale_price_starts_at);
-                        $end = \Carbon\Carbon::parse($displayVariant->sale_price_ends_at);
-                        $onSale = $now->between($start, $end);
-                    } catch (\Exception $e) {
-                        $onSale = false;
-                    }
+                $onSale = $displayVariant && $displayVariant->sale_price && $displayVariant->sale_price < $displayVariant->price;
+
+                if ($onSale) {
+                    $displayVariant->discount_percent = round(100 - ($displayVariant->sale_price / $displayVariant->price) * 100);
+                } else {
+                    $displayVariant->discount_percent = 0;
                 }
             @endphp
 
             <div class="col">
-                <div class="product-card animate-underline hover-effect-opacity bg-body rounded">
+                <div class="product-card animate-underline hover-effect-opacity bg-body rounded-4 shadow-lg border-0">
                     <div class="position-relative">
-                        @if ($onSale && $displayVariant->discount_percent > 0 && !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
-                            <div class="position-absolute top-0 start-0 bg-danger text-white px-3 py-1 rounded-bottom-end"
-                                 style="z-index: 10; font-weight: 600; font-size: 0.85rem; min-width: 105px; text-align: center;">
+                        @if (
+                            $onSale &&
+                            $displayVariant->discount_percent > 0 &&
+                            !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
+                            <div class="discount-badge">
                                 Giảm {{ $displayVariant->discount_percent }}%
                             </div>
                         @endif
-
-                        <a class="d-block rounded-top overflow-hidden p-3 p-sm-4"
-                           href="{{ route('users.products.show', $product->slug) }}">
-                            <div class="ratio" style="--cz-aspect-ratio: calc(200 / 220 * 100%)">
-                                <img src="{{ $mainImage }}" alt="{{ $product->name }}" loading="lazy">
+                        <a class="d-block rounded-top overflow-hidden bg-white bg-opacity-75 position-relative"
+                            style="backdrop-filter: blur(4px); padding-bottom: 0px;"
+                            href="{{ route('users.products.show', $product->slug) }}">
+                            <div class="ratio" style="--cz-aspect-ratio: calc(250 / 220 * 100%)">
+                                <img src="{{ $mainImage }}" alt="{{ $product->name }}" loading="lazy"
+                                    class="img-fluid rounded-3 shadow-sm"
+                                    style="object-fit:contain; width:100%; height:100%; background:#fff;">
                             </div>
                         </a>
                     </div>
 
-                    <div class="w-100 min-w-0 px-1 pb-2 px-sm-3 pb-sm-3">
-                        <div class="d-flex align-items-center gap-2 mb-2">
-                            <div class="d-flex gap-1 fs-xs">
+                    <div class="w-100 min-w-0 px-2 pb-3 pt-2 px-sm-3 pb-sm-3 d-flex flex-column justify-content-between"
+                        style="min-height: 100px;">
+                        <h3 class="pb-2 mb-3 text-center">
+                            <a class="d-block fs-base fw-semibold text-truncate mb-2 no-underline-link"
+                                href="{{ route('users.products.show', $product->slug) }}" 
+                                style="margin-top: 10px;">
                                 @php
-                                    $rating = $product->average_rating ?? 0;
-                                    for ($i = 1; $i <= 5; $i++) {
-                                        echo $rating >= $i
-                                            ? '<i class="ci-star-filled text-warning"></i>'
-                                            : ($rating > $i - 1
-                                                ? '<i class="ci-star-half text-warning"></i>'
-                                                : '<i class="ci-star text-body-tertiary opacity-75"></i>');
-                                    }
+                                    $storage = $displayVariant?->attributeValues->firstWhere(
+                                        'attribute.name',
+                                        'Dung lượng lưu trữ',
+                                    )?->value;
                                 @endphp
-                            </div>
-                            <span class="text-body-tertiary fs-xs">({{ $product->approved_reviews_count ?? 0 }})</span>
-                        </div>
 
-                        <h3 class="pb-1 mb-2">
-                            <a class="d-block fs-sm fw-medium text-truncate"
-                               href="{{ route('users.products.show', $product->slug) }}">
-                                <span class="animate-target">{{ $product->name }}</span>
+                                {{ $product->name }}{{ $storage ? ' ' . $storage : '' }}
                             </a>
                         </h3>
 
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="h5 lh-1 mb-0">
-                                @if ($displayVariant && $displayVariant->price)
-                                    @if ($onSale && $displayVariant->discount_percent > 0 && !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
-                                        <span class="text-danger">{{ number_format($displayVariant->sale_price) }}đ</span>
-                                        <del class="text-muted fs-sm ms-2">{{ number_format($displayVariant->price) }}đ</del>
-                                    @else
+                        <div class="lh-1 mb-0" style="line-height: 1.2; text-align: center;">
+                            @if ($displayVariant && $displayVariant->price)
+                                @if (
+                                    $onSale &&
+                                    $displayVariant->discount_percent > 0 &&
+                                    !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
+                                    <span class="text-primary fw-semibold fs-base" style="color: #0d6efd !important;">
+                                        {{ number_format($displayVariant->sale_price) }}đ
+                                    </span>
+                                    <del class="text-muted fs-sm ms-2">
                                         {{ number_format($displayVariant->price) }}đ
-                                    @endif
+                                    </del>
                                 @else
-                                    <span class="text-muted">Giá không khả dụng</span>
+                                    <span class="fw-semibold fs-base">{{ number_format($displayVariant->price) }}đ</span>
                                 @endif
-                            </div>
-
-                            <button type="button"
-                                    class="product-card-button btn btn-icon btn-secondary animate-slide-end ms-2"
-                                    aria-label="Add to Cart">
-                                <i class="ci-shopping-cart fs-base animate-target"></i>
-                            </button>
+                            @else
+                                <span class="text-muted">Giá không khả dụng</span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -136,3 +125,47 @@
         {{ $products->withQueryString()->links() }}
     </div>
 </div>
+
+
+<style>
+.discount-badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #e30613;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 28px 8px 16px;
+    border-radius: 0 32px 32px 0;
+    font-size: 0.8rem;
+    box-shadow: none;
+    z-index: 10;
+    min-width: 0;
+    text-align: left;
+    line-height: 1.1;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+}
+.product-card {
+    background: rgba(250, 251, 253, 0.95);
+    border-radius: 0 !important;
+    box-shadow: 0 8px 32px #bfc9d133;
+    transition: transform 0.25s, box-shadow 0.25s, border 0.25s;
+    position: relative;
+    border: 1.5px solid #e5e9f2;
+    overflow: hidden;
+}
+.product-card:hover {
+    transform: translateY(-7px) scale(1.04);
+    box-shadow: 0 16px 40px #bfc9d133, 0 0 16px #e5e9f299;
+    border: 1.5px solid #bfc9d1;
+    border-radius: 0 !important;
+}
+.product-card .badge-sale {
+    border-radius: 0 !important;
+}
+.product-card .ratio {
+    --cz-aspect-ratio: calc(200 / 260 * 100%);
+}
+</style>
