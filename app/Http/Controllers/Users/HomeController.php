@@ -3,11 +3,19 @@
 namespace App\Http\Controllers\Users;
 
 use Carbon\Carbon;
+
+use App\Models\Post;
+
+
 use App\Models\Banner;
 use App\Models\Comment;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Str;
+
+use App\Models\PostCategory;
+
+
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Log;
@@ -419,8 +427,19 @@ class HomeController extends Controller
             }
         }
 
+
+        // 📚 Lấy tất cả danh mục hoạt động (tạm thời disable chức năng show_on_homepage)
+        // $categories = Category::where('show_on_homepage', true)
+        //    ->where('status', 'active')
+        //    ->get();
+        $categories = Category::where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
+        $currentCategory = $categoryId ? $category : null;
         $categories = Category::all();
         $parentCategories = $categories->whereNull('parent_id');
+
 
         if ($request->ajax()) {
             return response()->json([
@@ -435,6 +454,71 @@ class HomeController extends Controller
         return view('users.shop', compact('products', 'categories', 'parentCategories', 'currentCategory'));
     }
 
+
+    /**
+     * Hiển thị trang About , Help, Terms
+     */
+    public function about()
+    {
+        return view('users.about');
+    }
+
+    /**
+     */
+    public function help()
+    {
+        // Lấy danh mục "Trung Tâm Trợ Giúp" (ID = 19)
+        $helpCategoryId = 19;
+        // Lấy tất cả danh mục con của "Trung Tâm Trợ Giúp"
+        $helpCategories = PostCategory::where('parent_id', $helpCategoryId)
+            ->orderBy('name')
+            ->get();
+        // Lấy bài viết cho từng danh mục con
+        $helpData = [];
+        foreach ($helpCategories as $category) {
+            $posts = Post::where('post_category_id', $category->id)
+                ->where('status', 'published')
+                ->orderBy('created_at', 'desc')
+                ->get();
+            if ($posts->count() > 0) {
+                $helpData[] = [
+                    'category' => $category,
+                    'posts' => $posts
+                ];
+            }
+        }
+        return view('users.help', compact('helpData'));
+    }
+
+    public function helpAnswer($slug)
+    {
+        // Tìm bài viết theo slug
+        $post = Post::with(['postCategory', 'user', 'coverImage'])
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->firstOrFail();
+        // Lấy các bài viết liên quan cùng danh mục
+        $relatedPosts = Post::where('post_category_id', $post->post_category_id)
+            ->where('id', '!=', $post->id)
+            ->where('status', 'published')
+            ->limit(5)
+            ->get();
+        return view('users.help-answer', compact('post', 'relatedPosts'));
+    }
+
+    public function terms()
+    {
+        // Lấy bài viết "Điều khoản và điều kiện" từ database
+        $termsPost = Post::with(['coverImage', 'user'])
+            ->where('id', 41) // ID của bài viết "Điều khoản và điều kiện"
+            ->where('status', 'published')
+            ->first();
+        // Nếu không tìm thấy bài viết, fallback về view cũ
+        if (!$termsPost) {
+            return view('users.terms');
+        }
+        return view('users.terms', compact('termsPost'));
+    }
     public function compareSuggestions(Request $request)
 {
     $variantId = $request->input('variant_id');
@@ -468,5 +552,4 @@ class HomeController extends Controller
         'suggested' => $suggestedProducts,
     ]);
 }
-
 }

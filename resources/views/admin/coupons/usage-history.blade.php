@@ -102,7 +102,7 @@
                     @forelse ($usages as $usage)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4">
-                                {{ $usage->created_at->format('d/m/Y H:i:s') }}
+                                                                    {{ $usage->created_at->format('d/m/Y H:i') }}
                             </td>
                             <td class="px-6 py-4 font-medium text-gray-900">
                                 <a href="{{ route('admin.orders.show', $usage->order_id) }}" class="text-indigo-600 hover:text-indigo-900">

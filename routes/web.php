@@ -37,6 +37,11 @@ Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestio
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
+// Trang About và Help , terms
+Route::get('/about', [HomeController::class, 'about'])->name('users.about');
+Route::get('/help', [HomeController::class, 'help'])->name('users.help');
+Route::get('/help/{slug}', [HomeController::class, 'helpAnswer'])->name('users.help.answer');
+Route::get('/terms', [HomeController::class, 'terms'])->name('users.terms'); 
 // các trang không cần đăng nhập ở dưới đây
 
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
@@ -127,12 +132,16 @@ Route::prefix('admin')
         // Category routes
         // Route::resource('categories', CategoryController::class);
             Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+            Route::get('/categories/trash', [CategoryController::class, 'trash'])->name('categories.trash');
             Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
             Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
             Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
             Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
             Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
             Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+            Route::post('/categories/restore/{id}', [CategoryController::class, 'restore'])->name('categories.restore');
+            Route::delete('/categories/force-delete/{id}', [CategoryController::class, 'forceDelete'])->name('categories.forceDelete');
+            // Route::post('/categories/{category}/toggle-homepage', [CategoryController::class, 'toggleHomepage'])->name('categories.toggleHomepage'); // ẩn hiện danh mục trên trang chủ
         // });
         // Attribute routes
         // Route::middleware('can:manage-attributes')->group(function () {
@@ -202,10 +211,13 @@ Route::prefix('admin')
         Route::resource('post-tags', PostTagController::class);
 
         // Routes Coupon
+        Route::get('/coupons/trash', [CouponController::class, 'trash'])->name('coupons.trash');
         Route::resource('coupons', CouponController::class);
         Route::get('coupons/{coupon}/usage-history', [CouponController::class, 'usageHistory'])->name('coupons.usageHistory');
         Route::get('coupons/{coupon}/status/{status}', [CouponController::class, 'changeStatus'])->name('coupons.changeStatus');
         Route::post('coupons/validate', [CouponController::class, 'validateCoupon'])->name('coupons.validate');
+        Route::post('/coupons/restore/{id}', [CouponController::class, 'restore'])->name('coupons.restore');
+        Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
 
     });
 
