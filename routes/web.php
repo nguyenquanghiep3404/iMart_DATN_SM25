@@ -23,6 +23,10 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Users\CartController;
+
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+
 
 
 
@@ -52,6 +56,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
 Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
 Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSelected'])->name('wishlist.removeSelected');
+
+ // router cart
+ Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+ Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+ // routes/web.php
+ Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
 
 //==========================================================================
 // ADMIN ROUTES
