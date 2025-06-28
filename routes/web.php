@@ -202,10 +202,13 @@ Route::prefix('admin')
         Route::resource('post-tags', PostTagController::class);
 
         // Routes Coupon
+        Route::get('/coupons/trash', [CouponController::class, 'trash'])->name('coupons.trash');
         Route::resource('coupons', CouponController::class);
         Route::get('coupons/{coupon}/usage-history', [CouponController::class, 'usageHistory'])->name('coupons.usageHistory');
         Route::get('coupons/{coupon}/status/{status}', [CouponController::class, 'changeStatus'])->name('coupons.changeStatus');
         Route::post('coupons/validate', [CouponController::class, 'validateCoupon'])->name('coupons.validate');
+        Route::post('/coupons/restore/{id}', [CouponController::class, 'restore'])->name('coupons.restore');
+        Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
 
     });
 

@@ -337,6 +337,13 @@
                                 Thêm mã mới
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ route('admin.coupons.trash') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md
+                                    {{ request()->routeIs('admin.coupons.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
