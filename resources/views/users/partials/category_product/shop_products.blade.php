@@ -43,22 +43,13 @@
                 $displayVariant = $product->variants->firstWhere('is_default', true) ?? $variant;
                 $imageToShow = $displayVariant?->primaryImage ?? $product->coverImage;
                 $mainImage = $imageToShow ? Storage::url($imageToShow->path) : asset('images/placeholder.jpg');
-                $now = now();
-                $onSale = false;
 
-                if (
-                    $displayVariant &&
-                    $displayVariant->sale_price &&
-                    $displayVariant->sale_price_starts_at &&
-                    $displayVariant->sale_price_ends_at
-                ) {
-                    try {
-                        $start = \Carbon\Carbon::parse($displayVariant->sale_price_starts_at);
-                        $end = \Carbon\Carbon::parse($displayVariant->sale_price_ends_at);
-                        $onSale = $now->between($start, $end);
-                    } catch (\Exception $e) {
-                        $onSale = false;
-                    }
+                $onSale = $displayVariant && $displayVariant->sale_price && $displayVariant->sale_price < $displayVariant->price;
+
+                if ($onSale) {
+                    $displayVariant->discount_percent = round(100 - ($displayVariant->sale_price / $displayVariant->price) * 100);
+                } else {
+                    $displayVariant->discount_percent = 0;
                 }
             @endphp
 
@@ -105,11 +96,14 @@
                             @if ($displayVariant && $displayVariant->price)
                                 @if (
                                     $onSale &&
-                                        $displayVariant->discount_percent > 0 &&
-                                        !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
-                                    <span
-                                        class="text-primary fw-semibold fs-base" style="color: #0d6efd !important;">{{ number_format($displayVariant->sale_price) }}đ</span>
-                                    <del class="text-muted fs-sm ms-2">{{ number_format($displayVariant->price) }}đ</del>
+                                    $displayVariant->discount_percent > 0 &&
+                                    !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
+                                    <span class="text-primary fw-semibold fs-base" style="color: #0d6efd !important;">
+                                        {{ number_format($displayVariant->sale_price) }}đ
+                                    </span>
+                                    <del class="text-muted fs-sm ms-2">
+                                        {{ number_format($displayVariant->price) }}đ
+                                    </del>
                                 @else
                                     <span class="fw-semibold fs-base">{{ number_format($displayVariant->price) }}đ</span>
                                 @endif
@@ -131,6 +125,7 @@
         {{ $products->withQueryString()->links() }}
     </div>
 </div>
+
 
 <style>
 .discount-badge {

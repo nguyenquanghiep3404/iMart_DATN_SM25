@@ -35,27 +35,17 @@ class HomeController extends Controller
                 $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
 
                 if ($variant) {
-                    $isOnSale = false;
+    $isOnSale = false;
 
-                    if (
-                        $variant->sale_price &&
-                        $variant->sale_price_starts_at &&
-                        $variant->sale_price_ends_at &&
-                        $variant->price > 0
-                    ) {
-                        try {
-                            $startDate = \Carbon\Carbon::parse($variant->sale_price_starts_at);
-                            $endDate = \Carbon\Carbon::parse($variant->sale_price_ends_at);
-                            $isOnSale = $now->between($startDate, $endDate);
-                        } catch (\Exception $e) {
-                            \Log::error('Lỗi phân tích ngày tháng: ' . $e->getMessage());
-                        }
-                    }
+    if ($variant->sale_price && $variant->price > 0) {
+        $isOnSale = true;
+    }
 
-                    $variant->discount_percent = $isOnSale
-                        ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                        : 0;
-                }
+    $variant->discount_percent = $isOnSale
+        ? round(100 - ($variant->sale_price / $variant->price) * 100)
+        : 0;
+}
+
             }
         };
 
@@ -202,10 +192,16 @@ class HomeController extends Controller
             $now = now();
             $salePrice = (int) $variant->sale_price;
             $originalPrice = (int) $variant->price;
-            $isOnSale = $variant->sale_price !== null &&
-                $variant->sale_price_starts_at <= $now &&
-                $variant->sale_price_ends_at >= $now;
-            $displayPrice = $isOnSale ? $salePrice : $originalPrice;
+
+            $hasFlashTime = !empty($variant->sale_price_starts_at) && !empty($variant->sale_price_ends_at);
+            $isFlashSale = false;
+            if ($salePrice && $hasFlashTime) {
+                $isFlashSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+            }
+            $isSale = !$isFlashSale && $salePrice && $salePrice < $originalPrice;
+
+            $displayPrice = $isFlashSale || $isSale ? $salePrice : $originalPrice;
+            $displayOriginalPrice = ($isFlashSale || $isSale) && $originalPrice > $salePrice ? $originalPrice : null;
 
             // ✅ Tạo variantKey theo đúng thứ tự trong $attributeOrder
             $variantKey = [];
@@ -222,8 +218,12 @@ class HomeController extends Controller
             $mainImage = $variant->primaryImage ? Storage::url($variant->primaryImage->path) : ($images[0] ?? null);
 
             $variantData[$variantKeyStr] = [
-                'price' => $displayPrice,
-                'original_price' => $isOnSale && $originalPrice > $salePrice ? $originalPrice : null,
+                'price' => $originalPrice,
+                'sale_price' => $salePrice,
+                'sale_price_starts_at' => $variant->sale_price_starts_at,
+                'sale_price_ends_at' => $variant->sale_price_ends_at,
+                'display_price' => $displayPrice,
+                'display_original_price' => $displayOriginalPrice,
                 'status' => $variant->status,
                 'image' => $mainImage,
                 'images' => $images,
@@ -435,35 +435,38 @@ class HomeController extends Controller
         return view('users.shop', compact('products', 'categories', 'parentCategories', 'currentCategory'));
     }
 
-    public function compare(Request $request)
-    {
-        $ids = json_decode($request->get('ids', '[]'), true);
+    public function compareSuggestions(Request $request)
+{
+    $variantId = $request->input('variant_id');
 
-        // Nếu là object -> lấy ra variant_id
-        if ($ids && is_array($ids) && isset($ids[0]['id'])) {
-            $ids = array_column($ids, 'id');
-        }
+    $variant = ProductVariant::with(['product.category.parent', 'attributeValues.attribute'])->findOrFail($variantId);
+    $product = $variant->product;
 
-        $ids = array_unique($ids);
-        $ids = array_slice($ids, 0, 3); // Chỉ cho phép 3 sản phẩm
+    // Lấy danh mục cha (ví dụ: "Điện thoại")
+    $parentCategoryId = $product->category->parent_id ?? $product->category->id;
 
-        // ✅ Đổi từ Variant:: thành ProductVariant::
-        $variants = ProductVariant::with([
-            'product.coverImage',
-            'product.category',
-            'attributeValues.attribute',
-            'primaryImage'
-        ])->whereIn('id', $ids)->get();
+    $currentPrice = $variant->sale_price ?: $variant->price;
 
-        // Gom tất cả attribute name để hiển thị
-        $allAttributes = collect();
-        foreach ($variants as $variant) {
-            foreach ($variant->attributeValues as $value) {
-                $allAttributes->push($value->attribute->name);
-            }
-        }
-        $allAttributes = $allAttributes->unique()->values();
+    $suggestedProducts = Product::with(['variants', 'coverImage'])
+        ->whereHas('category', function ($query) use ($parentCategoryId) {
+            $query->where('parent_id', $parentCategoryId)
+                  ->orWhere('id', $parentCategoryId);
+        })
+        ->where('id', '!=', $product->id)
+        ->where('status', 'published')
+        ->get()
+        ->filter(function ($p) use ($currentPrice) {
+            return $p->variants->contains(function ($v) use ($currentPrice) {
+                $price = $v->sale_price ?: $v->price;
+                return abs($price - $currentPrice) <= 3000000; // Chênh lệch tối đa 3 triệu
+            });
+        })
+        ->take(5)
+        ->values();
 
-        return view('users.compare', compact('variants', 'allAttributes'));
-    }
+    return response()->json([
+        'suggested' => $suggestedProducts,
+    ]);
+}
+
 }
