@@ -87,16 +87,23 @@ Route::prefix('admin')
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
         // --- Routes cho Thư viện Media ---
-        // 1. Route hiển thị trang chính của thư viện
-        Route::get('/media', [UploadedFileController::class, 'index'])->name('media.index');
-        // 2. Route xử lý việc tải file lên (sẽ được gọi bằng AJAX)
-        Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
-        // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
-        Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
-        // 4. Route xử lý việc xóa một file (AJAX)
-        Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
-        Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('admin.media.fetch');
-
+        Route::prefix('media')->name('media.')->group(function () {
+            Route::get('/', [UploadedFileController::class, 'index'])->name('index');
+            Route::post('/', [UploadedFileController::class, 'store'])->name('store');
+            Route::get('/fetch', [UploadedFileController::class, 'fetchForModal'])->name('fetchForModal');
+            Route::post('/bulk-delete', [UploadedFileController::class, 'bulkDelete'])->name('bulk-delete');
+            
+            // Thùng rác
+            Route::get('/trash', [UploadedFileController::class, 'trash'])->name('trash');
+            Route::post('/restore/{id}', [UploadedFileController::class, 'restore'])->name('restore');
+            Route::delete('/force-delete/{id}', [UploadedFileController::class, 'forceDelete'])->name('forceDelete');
+            
+            // Routes với tham số {uploadedFile}
+            Route::patch('/{uploadedFile}', [UploadedFileController::class, 'update'])->name('update');
+            Route::delete('/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('destroy');
+            
+            Route::post('/{uploadedFile}/recrop', [UploadedFileController::class, 'recrop'])->name('recrop');
+        });
         // Route quản lí vai trò
         Route::resource('roles', RoleController::class);
 
