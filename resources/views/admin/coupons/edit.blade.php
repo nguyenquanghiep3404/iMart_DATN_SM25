@@ -94,6 +94,31 @@
                                 </p>
                             @enderror
                         </div>
+
+                        <!-- Số tiền giảm tối đa (chỉ hiển thị khi type = percentage) -->
+                        <div class="mb-5 {{ $coupon->type == 'percentage' ? '' : 'hidden' }}" id="max-discount-amount-field">
+                            <label for="max_discount_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                                Số tiền giảm tối đa
+                                <span class="text-blue-600 text-xs">(tuỳ chọn)</span>
+                            </label>
+                            <div class="flex rounded-md">
+                                <input type="number" step="1000" min="1000" id="max_discount_amount" name="max_discount_amount" 
+                                    class="block w-full rounded-l-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('max_discount_amount') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
+                                    value="{{ old('max_discount_amount', $coupon->max_discount_amount) }}"
+                                    placeholder="Ví dụ: 100000">
+                                <span class="inline-flex items-center rounded-r-md border border-l-0 bg-gray-50 px-3 text-gray-500 @error('max_discount_amount') border-red-300 @else border-gray-300 @enderror">VND</span>
+                            </div>
+                            @error('max_discount_amount')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @else
+                                <p class="mt-1 text-sm text-gray-500">
+                                    <span class="text-blue-600">💡 Ví dụ:</span> Mã giảm 20% nhưng tối đa chỉ 100.000 VND.
+                                    @if($coupon->max_discount_amount)
+                                        <br><span class="text-green-600 font-medium">Hiện tại: {{ number_format($coupon->max_discount_amount, 0, ',', '.') }} VND</span>
+                                    @endif
+                                </p>
+                            @enderror
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-5">
@@ -258,6 +283,8 @@
         const valueAddon = document.getElementById('value-addon');
         const valueHelp = document.getElementById('value-help');
         const valueInput = document.getElementById('value');
+        const maxDiscountAmountField = document.getElementById('max-discount-amount-field');
+        const maxDiscountAmountInput = document.getElementById('max_discount_amount');
         const startDateInput = document.getElementById('start_date');
         const endDateInput = document.getElementById('end_date');
         const endDateMessage = document.getElementById('end-date-validation-message');
@@ -338,10 +365,21 @@
                 valueAddon.textContent = '%';
                 valueHelp.textContent = 'Phần trăm giảm giá (1-100).';
                 valueInput.setAttribute('max', '100');
+                // Hiển thị field số tiền giảm tối đa
+                if (maxDiscountAmountField) {
+                    maxDiscountAmountField.classList.remove('hidden');
+                }
             } else {
                 valueAddon.textContent = 'VND';
                 valueHelp.textContent = 'Số tiền giảm (VND).';
                 valueInput.removeAttribute('max');
+                // Ẩn field số tiền giảm tối đa và clear value
+                if (maxDiscountAmountField) {
+                    maxDiscountAmountField.classList.add('hidden');
+                }
+                if (maxDiscountAmountInput) {
+                    maxDiscountAmountInput.value = '';
+                }
             }
         }
         

@@ -30,6 +30,7 @@ class CouponRequest extends FormRequest
             'description' => 'nullable|string|max:255',
             'type' => 'required|in:percentage,fixed_amount',
             'value' => 'required|numeric|min:0',
+            'max_discount_amount' => 'nullable|numeric|min:1000',
             'max_uses' => 'nullable|integer|min:1',
             'max_uses_per_user' => 'nullable|integer|min:1',
             'min_order_amount' => 'nullable|numeric|min:0',
@@ -112,6 +113,8 @@ class CouponRequest extends FormRequest
             'value.required' => 'Giá trị phiếu giảm giá là bắt buộc.',
             'value.numeric' => 'Giá trị phiếu giảm giá phải là số.',
             'value.min' => 'Giá trị phiếu giảm giá phải lớn hơn hoặc bằng 0.',
+            'max_discount_amount.numeric' => 'Số tiền giảm tối đa phải là số.',
+            'max_discount_amount.min' => 'Số tiền giảm tối đa phải ít nhất 1.000 VND.',
             'max_uses.integer' => 'Số lượt sử dụng tối đa phải là số nguyên.',
             'max_uses.min' => 'Số lượt sử dụng tối đa phải lớn hơn 0.',
             'max_uses_per_user.integer' => 'Số lượt sử dụng tối đa mỗi người phải là số nguyên.',
@@ -155,6 +158,11 @@ class CouponRequest extends FormRequest
             // Kiểm tra xem giá trị phần trăm có lớn hơn 100 hay không
             if ($this->type == 'percentage' && $this->value > 100) {
                 $validator->errors()->add('value', 'Phần trăm chiết khấu không được vượt quá 100%');
+            }
+
+            // Kiểm tra max_discount_amount chỉ áp dụng cho mã giảm theo phần trăm
+            if ($this->max_discount_amount && $this->type !== 'percentage') {
+                $validator->errors()->add('max_discount_amount', 'Số tiền giảm tối đa chỉ áp dụng cho mã giảm theo phần trăm.');
             }
 
             // Validation bổ sung cho ngày

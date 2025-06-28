@@ -12,12 +12,13 @@ class Coupon extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'code', 'description', 'type', 'value', 'max_uses', 'max_uses_per_user',
+        'code', 'description', 'type', 'value', 'max_discount_amount', 'max_uses', 'max_uses_per_user',
         'min_order_amount', 'start_date', 'end_date', 'status', 'is_public', 'created_by', 'deleted_by',
     ];
 
     protected $casts = [
         'value' => 'decimal:2',
+        'max_discount_amount' => 'decimal:2',
         'max_uses' => 'integer',
         'max_uses_per_user' => 'integer',
         'min_order_amount' => 'decimal:2',
