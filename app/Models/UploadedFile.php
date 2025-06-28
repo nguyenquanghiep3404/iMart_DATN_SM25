@@ -94,11 +94,27 @@ class UploadedFile extends Model
      */
     public function getAttachableDisplayAttribute(): string
     {
-        if ($this->attachable) {
-            $modelName = class_basename($this->attachable_type);
-            return sprintf('%s (ID: %d)', $modelName, $this->attachable_id);
+        if (!$this->attachable) {
+            return 'Không đính kèm';
         }
-        return 'Không đính kèm';
+
+        // Tải trước relationship để tránh N+1 query
+        $this->loadMissing('attachable');
+
+        // Trường hợp đặc biệt: Nếu là ProductVariant, hiển thị tên sản phẩm cha
+        if ($this->attachable_type === 'App\\Models\\ProductVariant' && $this->attachable->product) {
+            // Giả định ProductVariant có relationship 'product' và Product có 'name'
+            return 'Sản phẩm: ' . $this->attachable->product->name;
+        }
+
+        // Các trường hợp khác, hiển thị tên của đối tượng nếu có
+        if (isset($this->attachable->name)) {
+            $modelName = class_basename($this->attachable_type);
+            return "{$modelName}: {$this->attachable->name}";
+        }
+
+        // Mặc định: Hiển thị tên class và ID
+        return class_basename($this->attachable_type) . ' (ID: ' . $this->attachable_id . ')';
     }
 
     /**
@@ -134,4 +150,6 @@ class UploadedFile extends Model
             }
         });
     }
+
+    
 }

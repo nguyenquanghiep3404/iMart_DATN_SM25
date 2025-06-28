@@ -396,13 +396,6 @@
         .hero-banner {
             margin-top: -16px;
         }
-
-        /* Nền toàn trang */
-        section.container {
-            background-color: #f8f9fb;
-            /* Màu xám nhạt hơn trắng (#ffffff) */
-            border-radius: 8px;
-        }
     </style>
 @endpush
 
