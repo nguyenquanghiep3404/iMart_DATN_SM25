@@ -69,6 +69,18 @@ class CouponController extends Controller
      */
     public function update(CouponRequest $request, Coupon $coupon)
     {
+        // Kiểm tra xem mã đã hết hạn và có cố gắng chỉnh sửa end_date không
+        if ($coupon->end_date && $coupon->end_date->isPast()) {
+            $requestedEndDate = $request->input('end_date');
+            $currentEndDate = $coupon->end_date->format('Y-m-d\TH:i');
+            
+            if ($requestedEndDate !== $currentEndDate) {
+                return redirect()->back()
+                    ->withErrors(['end_date' => 'Không thể chỉnh sửa ngày kết thúc của mã giảm giá đã hết hạn.'])
+                    ->withInput();
+            }
+        }
+
         $coupon->update($request->validated());
 
         return redirect()->route('admin.coupons.index')

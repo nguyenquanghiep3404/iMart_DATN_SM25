@@ -4,15 +4,25 @@
 
 @section('content')
 <div class="p-6">
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-semibold text-gray-800">Tạo mã giảm giá mới</h2>
-        <a href="{{ route('admin.coupons.index') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg flex items-center transition-all duration-200">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Quay lại danh sách
-        </a>
-    </div>
+        <div class="card-custom mb-6">
+            <div class="card-custom-header">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Thêm mã giảm giá</h1>
+                        <nav aria-label="breadcrumb" class="mt-2">
+                            <ol class="flex text-sm text-gray-500">
+                                <li><a href="{{ route('admin.coupons.index') }}" class="text-indigo-600 hover:text-indigo-800">Danh sách Mã giảm giá</a></li>
+                                <li class="text-gray-400 mx-2">/</li>
+                                <li class="text-gray-700 font-medium" aria-current="page">Thêm mã giảm giá</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <a href="{{ route('admin.coupons.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left mr-2"></i>Quay lại Danh sách
+                    </a>
+                </div>
+            </div>
+        </div>
 
 
 
@@ -24,14 +34,27 @@
                 <div>
                     <div class="mb-5">
                         <label for="code" class="block text-sm font-medium text-gray-700 mb-1">Mã giảm giá <span class="text-red-500">*</span></label>
-                        <input type="text" id="code" name="code" 
-                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('code') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
-                            value="{{ old('code') }}" 
-                            placeholder="Nhập mã giảm giá (VD: SUMMER30)">
+                        <div class="flex rounded-md shadow-sm">
+                            <input type="text" id="code" name="code" 
+                                class="block w-full rounded-l-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('code') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
+                                value="{{ old('code') }}" 
+                                placeholder="Nhập mã giảm giá (VD: SUMMER2024)"
+                                minlength="6"
+                                maxlength="20">
+                            <button type="button" id="random-code-btn" 
+                                class="inline-flex items-center rounded-r-md border border-l-0 bg-gray-50 px-3 py-2.5 text-sm text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 @error('code') border-red-300 @else border-gray-300 @enderror transition-colors duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Random
+                            </button>
+                        </div>
                         @error('code')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 text-sm text-gray-500">Mã duy nhất không trùng lặp. Chỉ nên dùng chữ và số.</p>
+                            <p class="mt-1 text-sm text-gray-500">
+                                Mã duy nhất không trùng lặp. <strong>Tối thiểu 6 ký tự, tối đa 20 ký tự.</strong>
+                            </p>
                         @enderror
                     </div>
                     
@@ -123,27 +146,44 @@
                     </div>
                     
                     <div class="mb-5">
-                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Ngày bắt đầu</label>
+                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">
+                            Ngày bắt đầu 
+                            <span class="text-red-500">*</span>
+                        </label>
                         <input type="datetime-local" id="start_date" name="start_date" 
                             class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('start_date') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
-                            value="{{ old('start_date') }}">
+                            value="{{ old('start_date') }}"
+                            min="{{ \Carbon\Carbon::now()->format('Y-m-d\TH:i') }}"
+                            step="60"
+                            >
                         @error('start_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 text-sm text-gray-500">Để trống nếu mã giảm giá có hiệu lực ngay lập tức.</p>
+                            <p class="mt-1 text-sm text-gray-500">
+                                <span class="text-blue-600">Lưu ý:</span> Ngày bắt đầu là bắt buộc và không được là quá khứ.
+                            </p>
                         @enderror
                     </div>
                     
                     <div class="mb-5">
-                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Ngày kết thúc</label>
+                        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">
+                            Ngày kết thúc 
+                            <span class="text-red-500">*</span>
+                        </label>
                         <input type="datetime-local" id="end_date" name="end_date" 
                             class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('end_date') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror" 
-                            value="{{ old('end_date') }}">
+                            value="{{ old('end_date') }}"
+                            min="{{ \Carbon\Carbon::now()->addMinute()->format('Y-m-d\TH:i') }}"
+                            step="60"
+                            >
                         @error('end_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 text-sm text-gray-500">Để trống nếu mã giảm giá không hết hạn.</p>
+                            <p class="mt-1 text-sm text-gray-500">
+                                <span class="text-blue-600">Lưu ý:</span> Ngày kết thúc là bắt buộc, phải sau thời điểm hiện tại.
+                            </p>
                         @enderror
+                        <div id="date-validation-message" class="mt-1 text-sm text-amber-600 hidden"></div>
                     </div>
                     
                     <div class="mb-5">
@@ -194,7 +234,82 @@
         const valueAddon = document.getElementById('value-addon');
         const valueHelp = document.getElementById('value-help');
         const valueInput = document.getElementById('value');
+        const startDateInput = document.getElementById('start_date');
+        const endDateInput = document.getElementById('end_date');
+        const dateValidationMessage = document.getElementById('date-validation-message');
+        const codeInput = document.getElementById('code');
+        const randomCodeBtn = document.getElementById('random-code-btn');
         
+        // Hàm tạo mã giảm giá ngẫu nhiên
+        function generateRandomCode() {
+            const prefixes = ['SALE', 'DEAL', 'SAVE', 'OFF', 'DISC', 'PROMO', 'MEGA', 'SUPER', 'VIP', 'HOT'];
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const numbers = '0123456789';
+            
+            // Chọn prefix ngẫu nhiên
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            
+            // Tạo số ngẫu nhiên (2-3 chữ số)
+            const numberLength = Math.random() > 0.5 ? 2 : 3;
+            let numberPart = '';
+            for (let i = 0; i < numberLength; i++) {
+                numberPart += numbers.charAt(Math.floor(Math.random() * numbers.length));
+            }
+            
+            // Tạo ký tự ngẫu nhiên nếu cần (để đảm bảo >= 6 ký tự)
+            let randomCode = prefix + numberPart;
+            while (randomCode.length < 6) {
+                const useNumber = Math.random() > 0.7;
+                if (useNumber) {
+                    randomCode += numbers.charAt(Math.floor(Math.random() * numbers.length));
+                } else {
+                    randomCode += letters.charAt(Math.floor(Math.random() * letters.length));
+                }
+            }
+            
+            // Đảm bảo không quá 20 ký tự
+            if (randomCode.length > 20) {
+                randomCode = randomCode.substring(0, 20);
+            }
+            
+            return randomCode;
+        }
+        
+        // Event listener cho button random
+        randomCodeBtn.addEventListener('click', function() {
+            const newCode = generateRandomCode();
+            codeInput.value = newCode;
+            
+            // Hiệu ứng visual
+            codeInput.classList.add('bg-green-50', 'border-green-300');
+            setTimeout(() => {
+                codeInput.classList.remove('bg-green-50', 'border-green-300');
+            }, 1000);
+            
+            // Trigger validation nếu có
+            codeInput.dispatchEvent(new Event('input'));
+        });
+        
+        // Validation real-time cho code
+        codeInput.addEventListener('input', function() {
+            const value = this.value;
+            const isValid = value.length >= 6 && value.length <= 20;
+            
+            // Reset classes
+            this.classList.remove('border-red-300', 'border-green-300', 'focus:border-red-500', 'focus:border-green-500', 'focus:ring-red-500', 'focus:ring-green-500');
+            
+            if (value.length > 0) {
+                if (isValid) {
+                    this.classList.add('border-green-300', 'focus:border-green-500', 'focus:ring-green-500');
+                } else {
+                    this.classList.add('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+                }
+            } else {
+                this.classList.add('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
+            }
+        });
+        
+        // Hàm cập nhật loại giảm giá
         function updateDiscountType() {
             if (typeSelect.value === 'percentage') {
                 valueAddon.textContent = '%';
@@ -207,11 +322,109 @@
             }
         }
         
-        // Cập nhật ban đầu
-        updateDiscountType();
+        // Hàm validation ngày
+        function validateDates() {
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+            const now = new Date();
+            
+            // Clear previous messages
+            dateValidationMessage.classList.add('hidden');
+            dateValidationMessage.textContent = '';
+            
+            // Reset border colors
+            startDateInput.classList.remove('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+            endDateInput.classList.remove('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+            startDateInput.classList.add('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
+            endDateInput.classList.add('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
+            
+            // Validation logic
+            if (!startDateInput.value) {
+                showDateError(startDateInput, 'Ngày bắt đầu là bắt buộc.');
+                return false;
+            }
+            
+            if (!endDateInput.value) {
+                showDateError(endDateInput, 'Ngày kết thúc là bắt buộc.');
+                return false;
+            }
+            
+            // Kiểm tra ngày bắt đầu không được là quá khứ
+            if (startDate < now) {
+                showDateError(startDateInput, 'Ngày bắt đầu không được là quá khứ.');
+                return false;
+            }
+            
+            // Kiểm tra ngày kết thúc phải sau thời điểm hiện tại
+            if (endDate <= now) {
+                showDateError(endDateInput, 'Ngày kết thúc phải sau thời điểm hiện tại.');
+                return false;
+            }
+            
+            // Kiểm tra ngày kết thúc phải sau ngày bắt đầu
+            if (endDate <= startDate) {
+                showDateError(endDateInput, 'Ngày kết thúc phải sau ngày bắt đầu.');
+                return false;
+            }
+            
+            return true;
+        }
         
-        // Cập nhật khi thay đổi
+        // Hàm hiển thị lỗi ngày
+        function showDateError(input, message) {
+            input.classList.remove('border-gray-300', 'focus:border-indigo-500', 'focus:ring-indigo-500');
+            input.classList.add('border-red-300', 'focus:border-red-500', 'focus:ring-red-500');
+            dateValidationMessage.textContent = message;
+            dateValidationMessage.classList.remove('hidden');
+        }
+        
+        // Hàm cập nhật min attribute cho end_date dựa trên start_date
+        function updateEndDateMin() {
+            if (startDateInput.value) {
+                const startDate = new Date(startDateInput.value);
+                startDate.setMinutes(startDate.getMinutes() + 1); // Thêm 1 phút để khác với start_date
+                const minEndDate = startDate.toISOString().slice(0, 16);
+                endDateInput.setAttribute('min', minEndDate);
+            } else {
+                // Nếu không có start_date, min là thời điểm hiện tại + 1 phút
+                const now = new Date();
+                now.setMinutes(now.getMinutes() + 1);
+                const minEndDate = now.toISOString().slice(0, 16);
+                endDateInput.setAttribute('min', minEndDate);
+            }
+        }
+        
+        // Event listeners
         typeSelect.addEventListener('change', updateDiscountType);
+        startDateInput.addEventListener('change', function() {
+            updateEndDateMin();
+            validateDates();
+        });
+        endDateInput.addEventListener('change', validateDates);
+        
+        // Validation khi submit form
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(e) {
+            if (!validateDates()) {
+                e.preventDefault();
+                // Scroll to error
+                dateValidationMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+        
+        // Khởi tạo
+        updateDiscountType();
+        updateEndDateMin();
+        
+        // Thêm tooltip cho các trường ngày
+        const startDateLabel = document.querySelector('label[for="start_date"]');
+        const endDateLabel = document.querySelector('label[for="end_date"]');
+        
+        startDateLabel.setAttribute('title', 'Ngày bắt đầu hiệu lực của mã giảm giá (BẮT BUỘC). Không được là quá khứ.');
+        endDateLabel.setAttribute('title', 'Ngày hết hạn của mã giảm giá (BẮT BUỘC). Phải sau thời điểm hiện tại và khác với ngày bắt đầu.');
+        
+        // Tooltip cho random button
+        randomCodeBtn.setAttribute('title', 'Tạo mã giảm giá ngẫu nhiên (6-20 ký tự)');
     });
 </script>
 @endpush

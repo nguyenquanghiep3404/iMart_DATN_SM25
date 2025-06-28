@@ -2,8 +2,9 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
+use Illuminate\Foundation\Http\FormRequest;
 
 class CouponRequest extends FormRequest
 {
@@ -32,14 +33,40 @@ class CouponRequest extends FormRequest
             'max_uses' => 'nullable|integer|min:1',
             'max_uses_per_user' => 'nullable|integer|min:1',
             'min_order_amount' => 'nullable|numeric|min:0',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'start_date' => $this->getStartDateRules($couponId),
+            'end_date' => $this->getEndDateRules($couponId),
             'status' => $this->getStatusRules(),
             'is_public' => 'boolean',
         ];
     }
 
+    /**
+     * Nhận các quy tắc xác thực cho ngày bắt đầu
+     */
+    protected function getStartDateRules($couponId = null): string|array
+    {
+        if ($couponId) {
+            // Đối với hoạt động cập nhật - cho phép ngày quá khứ nhưng vẫn bắt buộc
+            return 'required|date';
+        }
+        
+        // Đối với hoạt động tạo mới - ngày bắt đầu bắt buộc và không được là quá khứ
+        return 'required|date|after_or_equal:today';
+    }
 
+    /**
+     * Nhận các quy tắc xác thực cho ngày kết thúc
+     */
+    protected function getEndDateRules($couponId = null): string|array
+    {
+        if ($couponId) {
+            // Đối với hoạt động cập nhật - bắt buộc và phải sau ngày bắt đầu (không bằng)
+            return 'required|date|after:start_date';
+        }
+        
+        // Đối với hoạt động tạo mới - bắt buộc, phải sau thời điểm hiện tại và sau ngày bắt đầu
+        return 'required|date|after:now|after_or_equal:start_date';
+    }
 
     /**
      * Nhận các quy tắc xác thực mã dựa trên loại hoạt động
@@ -48,9 +75,9 @@ class CouponRequest extends FormRequest
     {
         if ($couponId) {
             // Đối với hoạt động cập nhật
-            return ['required', 'string', 'max:20', Rule::unique('coupons')->ignore($couponId)];
+            return ['required', 'string', 'min:6', 'max:20', Rule::unique('coupons')->ignore($couponId)];
         }
-        return 'required|string|unique:coupons,code|max:20';
+        return 'required|string|min:6|max:20|unique:coupons,code';
     }
 
     /**
@@ -73,9 +100,12 @@ class CouponRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
+        $couponId = $this->route('coupon')?->id;
+        
+        $messages = [
             'code.required' => 'Mã phiếu giảm giá là bắt buộc.',
             'code.unique' => 'Mã phiếu giảm giá này đã tồn tại.',
+            'code.min' => 'Mã phiếu giảm giá phải có ít nhất 6 ký tự.',
             'code.max' => 'Mã phiếu giảm giá không được vượt quá 20 ký tự.',
             'type.required' => 'Loại phiếu giảm giá là bắt buộc.',
             'type.in' => 'Loại phiếu giảm giá không hợp lệ.',
@@ -88,12 +118,32 @@ class CouponRequest extends FormRequest
             'max_uses_per_user.min' => 'Số lượt sử dụng tối đa mỗi người phải lớn hơn 0.',
             'min_order_amount.numeric' => 'Số tiền đơn hàng tối thiểu phải là số.',
             'min_order_amount.min' => 'Số tiền đơn hàng tối thiểu phải lớn hơn hoặc bằng 0.',
+            'start_date.required' => 'Ngày bắt đầu là bắt buộc.',
             'start_date.date' => 'Ngày bắt đầu không đúng định dạng.',
+            'start_date.after_or_equal' => 'Ngày bắt đầu không được là quá khứ.',
+            'end_date.required' => 'Ngày kết thúc là bắt buộc.',
             'end_date.date' => 'Ngày kết thúc không đúng định dạng.',
-            'end_date.after_or_equal' => 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.',
             'status.required' => 'Trạng thái là bắt buộc.',
             'status.in' => 'Trạng thái không hợp lệ.',
         ];
+
+        // Messages khác nhau cho create và edit
+        if ($couponId) {
+            // Edit mode
+            $messages['end_date.after'] = 'Ngày kết thúc phải sau ngày bắt đầu.';
+            
+            // Kiểm tra xem mã đã hết hạn chưa
+            $existingCoupon = \App\Models\Coupon::find($couponId);
+            if ($existingCoupon && $existingCoupon->end_date && $existingCoupon->end_date->isPast()) {
+                $messages['end_date.custom'] = 'Mã giảm giá này đã hết hạn vào ngày ' . $existingCoupon->end_date->format('d/m/Y H:i') . '. Không thể chỉnh sửa ngày kết thúc.';
+            }
+        } else {
+            // Create mode  
+            $messages['end_date.after'] = 'Ngày kết thúc phải sau thời điểm hiện tại.';
+            $messages['end_date.after_or_equal'] = 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.';
+        }
+
+        return $messages;
     }
 
     /**
@@ -105,6 +155,31 @@ class CouponRequest extends FormRequest
             // Kiểm tra xem giá trị phần trăm có lớn hơn 100 hay không
             if ($this->type == 'percentage' && $this->value > 100) {
                 $validator->errors()->add('value', 'Phần trăm chiết khấu không được vượt quá 100%');
+            }
+
+            // Validation bổ sung cho ngày
+            $couponId = $this->route('coupon')?->id;
+            
+            if ($couponId) {
+                // Đối với hoạt động cập nhật - kiểm tra mã đã hết hạn chưa
+                $existingCoupon = \App\Models\Coupon::find($couponId);
+                
+                if ($existingCoupon && $existingCoupon->end_date && $existingCoupon->end_date->isPast()) {
+                    // Mã đã hết hạn - không cho phép chỉnh sửa end_date
+                    if ($this->end_date !== $existingCoupon->end_date->format('Y-m-d\TH:i')) {
+                        $validator->errors()->add('end_date', 'Không thể chỉnh sửa ngày kết thúc của mã giảm giá đã hết hạn.');
+                    }
+                }
+            } else {
+                // Đối với hoạt động tạo mới - kiểm tra ngày kết thúc không được trùng với ngày bắt đầu
+                if ($this->start_date && $this->end_date) {
+                    $startDate = Carbon::parse($this->start_date);
+                    $endDate = Carbon::parse($this->end_date);
+                    
+                    if ($endDate->equalTo($startDate)) {
+                        $validator->errors()->add('end_date', 'Ngày kết thúc phải khác với ngày bắt đầu.');
+                    }
+                }
             }
         });
     }
