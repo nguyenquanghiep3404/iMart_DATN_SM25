@@ -283,6 +283,14 @@
             /* Light gray background */
         }
 
+#gallery-prev-btn, #gallery-next-btn {
+    opacity: 1 !important; /* Luôn hiển thị */
+    background-color: rgba(255, 255, 255, 0.8);
+    transition: background-color 0.3s;
+}
+#gallery-prev-btn:hover, #gallery-next-btn:hover {
+    background-color: rgba(255, 255, 255, 1);
+}
 
 
         /* Gallery Thumbnail Selected */
@@ -490,6 +498,8 @@
             const lightboxZoomInBtn = document.getElementById('lightbox-zoom-in');
             const lightboxZoomOutBtn = document.getElementById('lightbox-zoom-out');
             const lightboxFullscreenBtn = document.getElementById('lightbox-fullscreen');
+            const prevBtn = document.getElementById('gallery-prev-btn');
+            const nextBtn = document.getElementById('gallery-next-btn');
 
             // Kiểm tra các phần tử cần thiết
             if (!mainImage) {
@@ -501,6 +511,10 @@
             }
             if (!lightboxModal) {
                 console.warn('Element #image-lightbox-modal not found');
+            }
+            if (!prevBtn || !nextBtn) {
+                console.error('Không tìm thấy nút prev hoặc next trong gallery');
+                return;
             }
 
             const priceEls = document.querySelectorAll('#product-price');
@@ -581,8 +595,7 @@
                         let isMatch = true;
                         for (let i = 0; i < attrIndex; i++) {
                             const prevAttr = attributeOrder[i];
-                            if (currentSelections[prevAttr] && currentSelections[prevAttr] !==
-                                combination[prevAttr]) {
+                            if (currentSelections[prevAttr] && currentSelections[prevAttr] !== combination[prevAttr]) {
                                 isMatch = false;
                                 break;
                             }
@@ -592,32 +605,27 @@
                         }
                     });
 
-                    console.log(`Các lựa chọn khả dụng cho ${attrName}:`, Array.from(newlyAvailableOptions[
-                        attrName]));
+                    console.log(`Các lựa chọn khả dụng cho ${attrName}:`, Array.from(newlyAvailableOptions[attrName]));
 
-                    document.querySelectorAll(`.option-container[data-attr-name="${attrName}"]`).forEach(
-                        container => {
-                            const value = container.getAttribute('data-attr-value');
-                            const input = container.querySelector('input[type="radio"]');
-                            if (newlyAvailableOptions[attrName].has(value)) {
-                                container.style.display = 'inline-block';
-                            } else {
-                                container.style.display = 'none';
-                                if (input && input.checked) {
-                                    input.checked = false;
-                                    console.log(
-                                        `Bỏ chọn ${attrName}: ${value} vì không khả dụng`);
-                                }
+                    document.querySelectorAll(`.option-container[data-attr-name="${attrName}"]`).forEach(container => {
+                        const value = container.getAttribute('data-attr-value');
+                        const input = container.querySelector('input[type="radio"]');
+                        if (newlyAvailableOptions[attrName].has(value)) {
+                            container.style.display = 'inline-block';
+                        } else {
+                            container.style.display = 'none';
+                            if (input && input.checked) {
+                                input.checked = false;
+                                console.log(`Bỏ chọn ${attrName}: ${value} vì không khả dụng`);
                             }
-                        });
+                        }
+                    });
 
-                    if (!newlyAvailableOptions[attrName].has(currentSelections[attrName]) &&
-                        newlyAvailableOptions[attrName].size > 0) {
+                    if (!newlyAvailableOptions[attrName].has(currentSelections[attrName]) && newlyAvailableOptions[attrName].size > 0) {
                         const firstValue = Array.from(newlyAvailableOptions[attrName])[0];
                         console.log(`Đặt lại ${attrName} về giá trị khả dụng đầu tiên: ${firstValue}`);
                         currentSelections[attrName] = firstValue;
-                        const input = document.querySelector(
-                            `input[data-attr-name="${attrName}"][value="${firstValue}"]`);
+                        const input = document.querySelector(`input[data-attr-name="${attrName}"][value="${firstValue}"]`);
                         if (input) input.checked = true;
                     }
                 });
@@ -700,7 +708,7 @@
                     const mauSac = currentSelections['Màu sắc'] || '';
                     const selectedValues = [dungLuong, mauSac].filter(val => val).join(' ');
                     titleEl.textContent = `${@json($product->name)} ${selectedValues}`;
-                    console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent); // Debug
+                    console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent);
                 }
 
                 window.updateGalleryFromSelection(key);
@@ -857,12 +865,10 @@
 
                         if (input.checked) {
                             label.classList.add('variant-selected');
-                            label.classList.remove('border-gray-300', 'text-gray-700',
-                                'hover:border-blue-500');
+                            label.classList.remove('border-gray-300', 'text-gray-700', 'hover:border-blue-500');
                         } else {
                             label.classList.remove('variant-selected');
-                            label.classList.add('border-gray-300', 'text-gray-700',
-                                'hover:border-blue-500');
+                            label.classList.add('border-gray-300', 'text-gray-700', 'hover:border-blue-500');
                         }
 
                         if (attrName === 'Màu sắc') {
@@ -901,8 +907,30 @@
 
             // Gắn sự kiện cho gallery
             if (mainImageContainer) {
-                mainImageContainer.addEventListener('click', () => openLightbox(currentImageIndex));
+                mainImageContainer.addEventListener('click', (event) => {
+                    if (event.target === mainImage) {
+                        openLightbox(currentImageIndex);
+                    }
+                });
             }
+
+            // Gắn sự kiện cho nút prev và next với stopPropagation
+            if (prevBtn) {
+                prevBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    currentImageIndex = (currentImageIndex - 1 + galleryData.length) % galleryData.length;
+                    window.changeImage(currentImageIndex);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    currentImageIndex = (currentImageIndex + 1) % galleryData.length;
+                    window.changeImage(currentImageIndex);
+                });
+            }
+
             if (closeLightboxBtn) {
                 closeLightboxBtn.addEventListener('click', closeLightbox);
             }
@@ -921,8 +949,7 @@
             if (lightboxFullscreenBtn) {
                 lightboxFullscreenBtn.addEventListener('click', () => {
                     if (!document.fullscreenElement) {
-                        lightboxModal.requestFullscreen().catch(err => console.error(
-                            `Fullscreen error: ${err.message}`));
+                        lightboxModal.requestFullscreen().catch(err => console.error(`Fullscreen error: ${err.message}`));
                     } else {
                         document.exitFullscreen();
                     }
@@ -995,8 +1022,7 @@
             // Khởi tạo
             window.addEventListener('load', () => {
                 ensureAllAttributesChecked();
-                console.log('Sau khi chạy ensureAllAttributesChecked, currentSelections:',
-                    currentSelections);
+                console.log('Sau khi chạy ensureAllAttributesChecked, currentSelections:', currentSelections);
                 updateAvailableOptions();
                 const defaultKey = getVariantKey();
                 console.log('Variant key khởi tạo:', defaultKey);
@@ -1010,6 +1036,7 @@
                 // Đảm bảo sticky bar được cập nhật ngay từ đầu
                 updateStickyBar(defaultKey);
             });
+
             const stickyBar = document.getElementById('sticky-bar');
             const mainCtaButtons = document.getElementById('main-cta-buttons');
 
@@ -1134,14 +1161,7 @@
                 });
             }
 
-            // Sự kiện khi chọn thuộc tính - ĐÃ CÓ TRONG PHẦN GẮN SỰ KIỆN CHO INPUT RADIO Ở TRÊN
-            // Không cần thêm event listener trùng lặp ở đây
-
-            // Gọi khi tải trang - ĐÃ CÓ TRONG PHẦN KHỞI TẠO Ở TRÊN
-            // Không cần thêm event listener trùng lặp ở đây
-
             scrollObserver.observe(mainCtaButtons);
-
         });
     </script>
 @endpush
