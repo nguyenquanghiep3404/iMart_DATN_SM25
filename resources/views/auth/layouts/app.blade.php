@@ -44,7 +44,6 @@
         </a>
     </div>
 
-
     <!-- Bootstrap + Theme scripts -->
     <script src="assets/users/js/theme.min.js"></script>
 

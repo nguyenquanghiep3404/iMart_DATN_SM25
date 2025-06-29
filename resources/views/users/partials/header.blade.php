@@ -1,4 +1,4 @@
-<header class="navbar navbar-expand-lg navbar-dark bg-dark d-block z-fixed p-0" data-sticky-navbar="{&quot;offset&quot;: 500}">
+<header class="navbar navbar-expand-lg navbar-dark bg-dark d-block relative p-0" data-sticky-navbar="{&quot;offset&quot;: 500}">
   <div class="container d-block py-1 py-lg-3" data-bs-theme="dark">
     <div class="navbar-stuck-hide pt-1"></div>
     <div class="row flex-nowrap align-items-center g-0">
@@ -32,9 +32,11 @@
         <!-- Search visible on screens > 991px wide (lg breakpoint) -->
         <div class="position-relative flex-fill d-none d-lg-block pe-4 pe-xl-5">
           <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
-          <input type="search" class="form-control form-control-lg form-icon-start border-white rounded-pill" placeholder="Search the products">
-        </div>
+          <input type="search"
+            class="form-control form-control-lg form-icon-start border-white rounded-pill bg-transparent text-white"
+            placeholder="Tìm kiếm sản phẩm">
 
+        </div>
         <!-- Sale link visible on screens > 1200px wide (xl breakpoint) -->
         <a class="d-none d-xl-flex align-items-center text-decoration-none animate-shake navbar-stuck-hide me-3 me-xl-4 me-xxl-5" href="shop-catalog-electronics.html">
           <div class="btn btn-icon btn-lg fs-lg text-primary bg-body-secondary bg-opacity-75 pe-none rounded-circle">
@@ -105,6 +107,9 @@
           </button>
 
 
+          @php
+          $user = Auth::user();
+          @endphp
           <!-- Account button visible on screens > 768px wide (md breakpoint) -->
           <li class="nav-item dropdown d-none d-md-inline-flex">
             <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
@@ -128,6 +133,16 @@
               <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
               @else
               <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
+
+              {{-- Nếu là admin, hiển thị nút quay lại admin --}}
+              @if(
+              $user->roles->contains('id', 1) ||
+              $user->roles->contains('id', 4) ||
+              $user->roles->contains('id', 5)
+              )
+              <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Truy cập trang Quản Trị</a></li>
+              @endif
+
               <li>
                 <form action="{{ route('logout') }}" method="POST">
                   @csrf
@@ -137,6 +152,7 @@
               @endguest
             </ul>
           </li>
+
 
 
           <!-- Wishlist button visible on screens > 768px wide (md breakpoint) -->
@@ -183,8 +199,8 @@
             <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
               <ul class="navbar-nav position-relative">
                 <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle active" aria-current="page" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Home</a>
-                  <ul class="dropdown-menu">
+                  <a class="nav-link dropdown-toggle active" aria-current="page" href="/" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Trang chủ</a>
+                  {{-- <ul class="dropdown-menu">
                     <li class="hover-effect-opacity px-2 mx-n2">
                       <a class="dropdown-item d-block mb-0" href="home-electronics.html">
                         <span class="fw-medium">Electronics Store</span>
@@ -269,12 +285,12 @@
                         </div>
                       </a>
                     </li>
-                  </ul>
+                  </ul> --}}
                 </li>
 
                 <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop</a>
-                  <div class="dropdown-menu rounded-4 p-4">
+                  <a class="nav-link dropdown-toggle" href="/danh-muc-san-pham" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Danh mục</a>
+                  {{-- <div class="dropdown-menu rounded-4 p-4">
                     <div class="d-flex flex-column flex-lg-row gap-4">
                       <div style="min-width: 190px">
                         <div class="h6 mb-2">Electronics Store</div>
@@ -376,7 +392,7 @@
                         </ul>
                       </div>
                     </div>
-                  </div>
+                  </div> --}}
                 </li>
                 <li class="nav-item dropdown me-lg-n1 me-xl-0">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Account</a>

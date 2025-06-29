@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="{{ asset('assets/admin/css/rangeslider.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/main.css') }}">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -47,11 +46,13 @@
 
 
     {{-- Các script chung cho toàn bộ trang --}}
-    <script src="{{ asset('assets/admin/js/alpine.js') }}"></script>
+    <!-- <script src="{{ asset('assets/admin/js/alpine.js') }}"></script> -->
     <script src="{{ asset('assets/admin/js/perfect-scrollbar.js') }}"></script>
     <script src="{{ asset('assets/admin/js/choices.js') }}"></script>
     <script src="{{ asset('assets/admin/js/main.js') }}"></script>
     <script src="{{ asset('assets/admin/js/media-library.js') }}"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
     
     {{-- Nơi để các trang con chèn script riêng --}}
     @stack('scripts')

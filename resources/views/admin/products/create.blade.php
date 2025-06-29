@@ -38,7 +38,7 @@
         }
         
         .input-group { margin-bottom: 1.25rem; }
-        .input-group label { display: block; color: #4b5563; font-weight: 500; }
+        .input-group label { display: block; color: #4b5563; font-weight: 500; margin-bottom: 0.5rem; }
         .input-field, .select-field, .textarea-field {
             width: 100%; padding: 0.875rem 1.125rem; border: 1px solid #cbd5e1; border-radius: 0.625rem;
             box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.03); transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out; background-color: #f8fafc;
@@ -53,7 +53,7 @@
         .tox .tox-statusbar { border-bottom-right-radius: 0.625rem !important; border-bottom-left-radius: 0.625rem !important; }
 
         /* 2. CUSTOM CSS CHO TAGIFY */
-        .tagify { --tags-border-color: #cbd5e1; --tag-bg: #2563eb; --tag-hover: #1d4ed8; --tag-text-color: white; --tag-remove-btn-color: white; border-radius: 0.625rem; background-color: #f8fafc; }
+        .tagify { width: 100%; --tags-border-color: #cbd5e1; --tag-bg: #2563eb; --tag-hover: #1d4ed8; --tag-text-color: white; --tag-remove-btn-color: white; border-radius: 0.625rem; background-color: #f8fafc; }
         .tagify:hover { --tags-border-color: #94a3b8; }
         .tagify.tagify--focus { --tags-border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); background-color: white; }
         .tagify__input { padding: 0.875rem 1.125rem; }
@@ -124,6 +124,11 @@
         .tab-content.active { display: block; }
         #drop-zone { border: 2px dashed #d1d5db; border-radius: 0.75rem; padding: 2rem; text-align: center; transition: all 0.2s; background-color: #f8fafc; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #drop-zone.drag-over { border-color: #3b82f6; background-color: #eff6ff; }
+        .hidden { display: none !important; }
+        .input-group label.flex {display: flex;margin-bottom: 0;}
+        .input-group .form-section-heading {
+        margin-bottom: 0;
+        }
     </style>
 @endpush
 
@@ -150,14 +155,14 @@
         </div>
         </header>
         @if ($errors->any())
-            <div class="alert alert-danger mb-6">
+            <div class="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 mb-6 rounded-md shadow-md" role="alert">
                 <div class="flex items-center">
                     <svg class="svg-icon text-red-500 mr-2" viewBox="0 0 24 24">
                         <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    <h3 class="text-red-800 font-medium">Đã xảy ra lỗi:</h3>
+                    <h3 class="text-red-800 font-medium">Đã xảy ra lỗi. Vui lòng kiểm tra lại thông tin:</h3>
                 </div>
                 <ul class="mt-2 list-disc list-inside text-sm text-red-700">
                     @foreach ($errors->all() as $error)
@@ -170,10 +175,10 @@
             <div class="bg-green-50 border-l-4 border-green-400 text-green-700 p-4 mb-6 rounded-md shadow-md"
                 role="alert">
                 <div class="flex items-center">
-                     <svg class="svg-icon text-green-500 mr-2" viewBox="0 0 24 24">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                        </svg>
+                        <svg class="svg-icon text-green-500 mr-2" viewBox="0 0 24 24">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
                     <div>
                         <p class="font-bold">Thành công!</p>
                         <p>{{ session('success') }}</p>
@@ -198,13 +203,13 @@
         @endif
         <form id="addProductForm" action="{{ route('admin.products.store') }}" method="POST">
             @csrf
-             <div id="image_ids_container" class="hidden"></div>
+                <div id="image_ids_container" class="hidden"></div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
                 {{-- Cột trái: Thông tin chính & Biến thể --}}
                 <div class="lg:col-span-2 space-y-6">
                     {{-- Card Thông Tin Chung --}}
                     <div class="card">
-                       <div class="card-header">
+                        <div class="card-header">
                             <svg class="svg-icon" viewBox="0 0 24 24">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                 <polyline points="14 2 14 8 20 8"></polyline>
@@ -347,69 +352,95 @@
                                     @enderror
                                 </div>
                                 <div class="input-group">
-                                    <label for="simple_sale_price">Giá khuyến mãi (VNĐ)</label>
+                                    <div class="label-with-action">
+                                        <label for="simple_sale_price">Giá khuyến mãi (VNĐ)</label>
+                                        <a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium hover:underline">Lên lịch</a>
+                                    </div>
                                     <div class="input-with-icon">
                                         <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
-                                                <circle cx="12" cy="12" r="10"></circle>
-                                                <path d="M8 15l8-8"></path>
-                                                <path d="M9.5 9.5h.01"></path>
-                                                <path d="M14.5 14.5h.01"></path>
-                                            </svg>
-                                        <input type="number" id="simple_sale_price" name="simple_sale_price"
-                                            class="input-field @error('simple_sale_price') border-red-500 @enderror"
-                                            step="1000" min="0" value="{{ old('simple_sale_price') }}">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <path d="M8 15l8-8"></path>
+                                            <path d="M9.5 9.5h.01"></path>
+                                            <path d="M14.5 14.5h.01"></path>
+                                        </svg>
+                                        <input type="number" id="simple_sale_price" name="simple_sale_price" class="input-field @error('simple_sale_price') border-red-500 @enderror" step="1000" min="0" value="{{ old('simple_sale_price') }}">
                                     </div>
                                     @error('simple_sale_price')
                                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
                                 <div class="input-group">
-                                    <label for="simple_stock_quantity">Số lượng tồn kho <span
-                                            class="required-star">*</span></label>
+                                    <label for="simple_stock_quantity">Số lượng tồn kho <span class="required-star">*</span></label>
                                     <div class="input-with-icon">
                                         <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
-                                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                                                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                                            </svg>
-                                        <input type="number" id="simple_stock_quantity" name="simple_stock_quantity"
-                                            class="input-field @error('simple_stock_quantity') border-red-500 @enderror"
-                                            min="0" value="{{ old('simple_stock_quantity') }}">
+                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                        </svg>
+                                        <input type="number" id="simple_stock_quantity" name="simple_stock_quantity" class="input-field @error('simple_stock_quantity') border-red-500 @enderror" min="0" value="{{ old('simple_stock_quantity') }}">
                                     </div>
                                     @error('simple_stock_quantity')
                                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
-                                {{-- THAY THẾ KHỐI DIV NÀY --}}
-        <div class="input-group md:col-span-2">
-            <label>Ảnh Sản Phẩm <span class="required-star">*</span></label>
-            
-            {{-- Nhóm các nút hành động --}}
-            <div class="flex space-x-2 mb-3">
-                <label for="simple_product_image_input" class="btn btn-secondary btn-sm cursor-pointer">
-                    <i class="fas fa-upload mr-2"></i> Tải ảnh lên
-                </label>
-                <input type="file" id="simple_product_image_input" class="hidden" accept="image/*" multiple onchange="handleSimpleProductImages(event)">
+                            </div>
 
-                {{-- NÚT MỞ MODAL THƯ VIỆN ĐƯỢC THÊM VÀO ĐÂY --}}
-                <button type="button" id="open-library-btn-simple" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-photo-film mr-2"></i> Thêm từ thư viện
-                </button>
-            </div>
-            
-            {{-- Vùng xem trước chung --}}
-            <div id="simple_product_image_preview_container" class="image-preview-container mt-2">
-                {{-- Ảnh xem trước từ cả upload và thư viện sẽ hiện ở đây --}}
-            </div>
-            
-            {{-- Container ẩn cho các ID ảnh (để submit form) --}}
-            <div id="simple_product_image_ids_container" class="hidden"></div>
-            
-            @error('cover_image_id')
-                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-            @enderror
-        </div>
-        {{-- KẾT THÚC KHỐI CẦN THAY THẾ --}}
+                            <!-- Schedule Container -->
+                            <div class="schedule-container {{ old('simple_sale_price_starts_at') || old('simple_sale_price_ends_at') ? '' : 'hidden' }} mt-2">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                    <div class="input-group">
+                                        <label for="simple_sale_price_starts_at" class="text-xs font-medium">Thời gian bắt đầu</label>
+                                        <input type="datetime-local" name="simple_sale_price_starts_at" id="simple_sale_price_starts_at" class="input-field" value="{{ old('simple_sale_price_starts_at') }}">
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="simple_sale_price_ends_at" class="text-xs font-medium">Thời gian kết thúc</label>
+                                        <input type="datetime-local" name="simple_sale_price_ends_at" id="simple_sale_price_ends_at" class="input-field" value="{{ old('simple_sale_price_ends_at') }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Weight and Dimensions for Simple Product --}}
+                            <div class="pt-4 mt-4 border-t border-gray-200">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                        <div class="input-group">
+                                            <label for="simple_weight">Cân nặng (kg)</label>
+                                            <input type="number" step="0.01" min="0" id="simple_weight" name="simple_weight" class="input-field" value="{{ old('simple_weight') }}">
+                                            @error('simple_weight')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                                        </div>
+                                    <div class="input-group">
+                                        <label>Kích thước (D x R x C) (cm)</label>
+                                        <div class="grid grid-cols-3 gap-x-2">
+                                            <input type="number" step="0.1" min="0" name="simple_dimensions_length" placeholder="Dài" class="input-field" value="{{ old('simple_dimensions_length') }}">
+                                            <input type="number" step="0.1" min="0" name="simple_dimensions_width" placeholder="Rộng" class="input-field" value="{{ old('simple_dimensions_width') }}">
+                                            <input type="number" step="0.1" min="0" name="simple_dimensions_height" placeholder="Cao" class="input-field" value="{{ old('simple_dimensions_height') }}">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="input-group md:col-span-2 pt-4 mt-4 border-t border-gray-200">
+                                <label >Ảnh Sản Phẩm <span class="required-star">*</span></label>
+                                <div class="flex space-x-2 mb-3">
+                                    <label  for="simple_product_image_input" class="form-section-heading btn btn-secondary btn-sm cursor-pointer">
+                                        <i class="fas fa-upload mr-2"></i> Tải ảnh lên
+                                    </label>
+                                    <input type="file" id="simple_product_image_input" class="hidden" accept="image/*" multiple onchange="handleSimpleProductImages(event)">
+
+                                    <button type="button" id="open-library-btn-simple" class="btn btn-secondary btn-sm">
+                                    <svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
+                                    Thêm từ thư viện
+                                    </button>
+                                </div>
+                                
+                                <div id="simple_product_image_preview_container" class="image-preview-container mt-2">
+                                </div>
+                                
+                                <div id="simple_product_image_ids_container" class="hidden"></div>
+                                
+                                @error('cover_image_id')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
 
@@ -420,10 +451,10 @@
                             <div class="input-group">
                                 <label for="sku_prefix">Tiền tố SKU (cho biến thể)</label>
                                 <div class="input-with-icon">
-<svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
-                                            <path d="M17 7l-10 10"></path>
-                                            <path d="M8 7h9v9"></path>
-                                        </svg>
+                                    <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                        <path d="M17 7l-10 10"></path>
+                                        <path d="M8 7h9v9"></path>
+                                    </svg>
                                     <input type="text" id="sku_prefix" name="sku_prefix"
                                         class="input-field @error('sku_prefix') border-red-500 @enderror"
                                         value="{{ old('sku_prefix') }}" placeholder="Ví dụ: APPL-IP15P-">
@@ -436,16 +467,16 @@
                             <div class="input-group">
                                 <label class="flex items-center mb-2">
                                     <svg class="svg-icon mr-2 h-5 w-5 text-gray-500" viewBox="0 0 24 24">
-                                            <line x1="4" y1="21" x2="4" y2="14"></line>
-                                            <line x1="4" y1="10" x2="4" y2="3"></line>
-                                            <line x1="12" y1="21" x2="12" y2="12"></line>
-                                            <line x1="12" y1="8" x2="12" y2="3"></line>
-                                            <line x1="20" y1="21" x2="20" y2="16"></line>
-                                            <line x1="20" y1="12" x2="20" y2="3"></line>
-                                            <line x1="1" y1="14" x2="7" y2="14"></line>
-                                            <line x1="9" y1="8" x2="15" y2="8"></line>
-                                            <line x1="17" y1="16" x2="23" y2="16"></line>
-                                        </svg>
+                                        <line x1="4" y1="21" x2="4" y2="14"></line>
+                                        <line x1="4" y1="10" x2="4" y2="3"></line>
+                                        <line x1="12" y1="21" x2="12" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12" y2="3"></line>
+                                        <line x1="20" y1="21" x2="20" y2="16"></line>
+                                        <line x1="20" y1="12" x2="20" y2="3"></line>
+                                        <line x1="1" y1="14" x2="7" y2="14"></line>
+                                        <line x1="9" y1="8" x2="15" y2="8"></line>
+                                        <line x1="17" y1="16" x2="23" y2="16"></line>
+                                    </svg>
                                     Thuộc tính sử dụng cho biến thể
                                 </label>
                                 <div id="productAttributesContainer"
@@ -473,7 +504,7 @@
 
 
                             <button type="button" id="addVariantButton" class="btn btn-secondary mt-2">
-                                 <svg class="svg-icon mr-2 h-5 w-5" viewBox="0 0 24 24">
+                                    <svg class="svg-icon mr-2 h-5 w-5" viewBox="0 0 24 24">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="12" y1="8" x2="12" y2="16"></line>
                                         <line x1="8" y1="12" x2="16" y2="12"></line>
@@ -525,18 +556,28 @@
                             @enderror
                         </div>
                         <div class="input-group mt-5">
-                            <label
-                                class="flex items-center cursor-pointer p-2 rounded-md hover:bg-blue-50 transition-colors">
-                                <input type="checkbox" id="is_featured" name="is_featured" value="1"
-                                    class="form-check-input mr-3" {{ old('is_featured') ? 'checked' : '' }}>
-                                <svg class="svg-icon mr-2 h-5 w-5 text-yellow-500" viewBox="0 0 24 24">
-                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                                </svg></i> Sản phẩm nổi bật
-                            </label>
-                            @error('is_featured')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+    <label class="flex items-center cursor-pointer p-2 rounded-md hover:bg-blue-50 transition-colors">
+        
+        {{-- Checkbox --}}
+        <input type="checkbox" id="is_featured" name="is_featured" value="1" 
+                class="form-check-input">
+
+        {{-- Thêm một DIV bọc icon và chữ, cũng sử dụng flex và items-center --}}
+        <div class="flex items-center ml-2">
+            {{-- Icon SVG --}}
+            <svg class="svg-icon h-5 w-5 text-yellow-500" viewBox="0 0 24 24">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            
+            {{-- Chữ --}}
+            <span class="ml-2 text-gray-700 font-medium">
+                Sản phẩm nổi bật
+            </span>
+        </div>
+
+    </label>
+</div>
+
                     </div>
 
                     {{-- Card Tổ Chức --}}
@@ -556,7 +597,7 @@
                                 <select id="category_id" name="category_id"
                                     class="select-field @error('category_id') border-red-500 @enderror">
                                     <option value="">Chọn danh mục</option>
-                                    @if (isset($categories) && $categories->count() > 0)
+                                    @if (isset($categories) && count($categories) > 0) 
                                         @foreach ($categories as $category)
                                             <option value="{{ $category->id }}"
                                                 {{ old('category_id') == $category->id ? 'selected' : '' }}>
@@ -592,11 +633,11 @@
                     {{-- Card SEO --}}
                     <div class="card">
                         <div class="card-header">
-                             <svg class="svg-icon" viewBox="0 0 24 24">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                                <path d="M11 8l2 2"></path>
-                            </svg>Tối Ưu Hóa SEO
+                                <svg class="svg-icon" viewBox="0 0 24 24">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                    <path d="M11 8l2 2"></path>
+                                </svg>Tối Ưu Hóa SEO
                             <button type="button" id="generateAllSeoAI" class="btn btn-ai btn-sm ml-auto">
                                 <span class="button-text">✨ Tạo Tất Cả SEO</span>
                                 <span class="loading-spinner hidden"></span>
@@ -633,11 +674,11 @@
                     {{-- Card Thông Tin Bổ Sung --}}
                     <div class="card">
                         <div class="card-header">
-                             <svg class="svg-icon" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="16" x2="12" y2="12"></line>
-                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>Thông Tin Bổ Sung
+                                <svg class="svg-icon" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>Thông Tin Bổ Sung
                         </div>
                         <div class="input-group">
                             <label for="warranty_information">Thông tin bảo hành</label>
@@ -691,7 +732,7 @@
             </div>
         </div>
     </div>
-     @include('admin.partials.media_selection_modal')
+    @include('admin.partials.media_selection_modal')
 @endsection
 
 @push('scripts')
@@ -703,7 +744,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
 
-   <script>
+<script>
     // =================================================================
     // KHỞI TẠO BIẾN TOÀN CỤC VÀ DỮ LIỆU TỪ PHP
     // =================================================================
@@ -739,14 +780,15 @@
     const allAttributesFromPHP = @json($jsAttributesData, JSON_UNESCAPED_UNICODE);
     const oldVariantsData = @json(old('variants', []), JSON_UNESCAPED_UNICODE);
 
+    // *** DỮ LIỆU MỚI: Nhận dữ liệu ảnh đã được server chuẩn bị sẵn để khôi phục ***
+    const oldImagesData = @json($old_images_data ?? [], JSON_UNESCAPED_UNICODE);
+    const oldCoverImageId = @json(old('cover_image_id'), JSON_UNESCAPED_UNICODE) || null;
+
 
     // =================================================================
-    // KHỐI LOGIC UPLOAD ẢNH VÀ QUẢN LÝ ẢNH
+    // KHỐI LOGIC UPLOAD ẢNH VÀ QUẢN LÝ ẢNH (KHÔNG ĐỔI)
     // =================================================================
 
-    /**
-     * Hàm trung tâm để upload file bằng AJAX đến server.
-     */
     async function uploadFilesViaAjax(files, context = 'products') {
         const formData = new FormData();
         Array.from(files).forEach(file => formData.append('files[]', file));
@@ -775,14 +817,10 @@
         }
     }
 
-    /**
-     * Hàm trung tâm để render ảnh vào các container từ upload hoặc từ thư viện
-     * Đã được sửa đổi để sử dụng `idsContainer` một cách nhất quán.
-     */
     function addImagesToProductForm(images, previewContainer, idsContainer, type = 'simple', variantIndex = null) {
         if (!images || images.length === 0 || !previewContainer || !idsContainer) {
-             console.error("Thiếu thông tin để thêm ảnh vào form", {images, previewContainer, idsContainer});
-             return;
+                console.error("Thiếu thông tin để thêm ảnh vào form", {images, previewContainer, idsContainer});
+                return;
         }
 
         const hasPrimaryAlready = (type === 'simple') ?
@@ -798,9 +836,7 @@
             galleryInput.type = 'hidden';
             galleryInput.dataset.id = fileData.id;
             galleryInput.value = fileData.id;
-
-            // SỬA ĐỔI: Sử dụng idsContainer được truyền vào cho cả hai loại sản phẩm
-            // để đảm bảo tính nhất quán.
+            
             if (type === 'simple') {
                 galleryInput.name = 'gallery_images[]';
                 galleryInput.className = 'simple-image-id';
@@ -830,19 +866,15 @@
 
         const allPreviews = previewContainer.querySelectorAll('.variant-image-preview-item');
         if (!hasPrimaryAlready && allPreviews.length > 0) {
-             const firstImageId = parseInt(allPreviews[0].dataset.id);
-             if (type === 'simple') {
-                 setSimpleProductPrimaryImage(firstImageId);
-             } else {
-                 setVariantPrimaryImage(variantIndex, firstImageId);
-             }
+                const firstImageId = parseInt(allPreviews[0].dataset.id);
+                if (type === 'simple') {
+                    setSimpleProductPrimaryImage(firstImageId);
+                } else {
+                    setVariantPrimaryImage(variantIndex, firstImageId);
+                }
         }
     }
 
-    /**
-     * --- Xử lý cho sản phẩm ĐƠN GIẢN ---
-     * Sửa đổi để dùng đúng idsContainer.
-     */
     async function handleSimpleProductImages(event) {
         const files = event.target.files;
         if (!files.length) return;
@@ -850,7 +882,6 @@
             const result = await uploadFilesViaAjax(files);
             if (result.files && result.files.length > 0) {
                 const previewContainer = document.getElementById('simple_product_image_preview_container');
-                // SỬA ĐỔI: Luôn sử dụng container chính `image_ids_container` để nhất quán với flow từ thư viện.
                 const idsContainer = document.getElementById('image_ids_container');
                 addImagesToProductForm(result.files, previewContainer, idsContainer, 'simple');
                 showMessageModal('Thành công', `${result.files.length} ảnh đã được tải lên!`, 'success');
@@ -864,7 +895,6 @@
 
     function setSimpleProductPrimaryImage(primaryImageId) {
         const previewContainer = document.getElementById('simple_product_image_preview_container');
-        // Hàm này luôn tác động đến container chính, điều này là đúng.
         const imageIdsContainer = document.getElementById('image_ids_container');
         if (!previewContainer || !imageIdsContainer) return;
 
@@ -886,7 +916,6 @@
         const previewContainer = document.getElementById('simple_product_image_preview_container');
         const imageIdsContainer = document.getElementById('image_ids_container');
         const previewToRemove = previewContainer.querySelector(`.variant-image-preview-item[data-id="${imageIdToRemove}"]`);
-        // Sửa đổi để đảm bảo xóa đúng input gallery
         const galleryInputToRemove = imageIdsContainer.querySelector(`input.simple-image-id[value="${imageIdToRemove}"]`);
         const coverInput = imageIdsContainer.querySelector('input[name="cover_image_id"]');
 
@@ -906,7 +935,6 @@
         }
     }
 
-    // --- Xử lý cho sản phẩm BIẾN THỂ ---
     async function handleVariantImages(event, variantIndex) {
         const files = event.target.files;
         if (!files.length) return;
@@ -1037,9 +1065,9 @@
                 const responseText = result.candidates[0].content.parts[0].text;
                 return isStructured ? JSON.parse(responseText) : responseText;
             } else {
-                 if (result.promptFeedback && result.promptFeedback.blockReason) {
-                     throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
-                 }
+                if (result.promptFeedback && result.promptFeedback.blockReason) {
+                        throw new Error(`AI block prompt. Lý do: ${result.promptFeedback.blockReason}`);
+                }
                 throw new Error("Không nhận được nội dung hợp lệ từ AI.");
             }
         } catch (error) {
@@ -1063,6 +1091,16 @@
         if (!text) return '';
         return text.toString().toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd')
             .replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-').replace(/^-+/, '').replace(/-+$/, '');
+    }
+
+    function toggleSchedule(element) {
+        const sectionContainer = element.closest('#simpleProductFields, .variant-card');
+        if (sectionContainer) {
+            const scheduleContainer = sectionContainer.querySelector('.schedule-container');
+            if (scheduleContainer) {
+                scheduleContainer.classList.toggle('hidden');
+            }
+        }
     }
 
     function toggleProductTypeFields() {
@@ -1124,6 +1162,114 @@
 
 
     // =================================================================
+    // *** HÀM MỚI: KHÔI PHỤC DỮ LIỆU "OLD" TỪ BIẾN CÓ SẴN ***
+    // =================================================================
+    function repopulateFormFromOldData() {
+        // --- Xử lý sản phẩm đơn giản ---
+        const simpleGalleryIds = @json(old('gallery_images', []), JSON_UNESCAPED_UNICODE);
+        if (simpleGalleryIds.length > 0 || oldCoverImageId) {
+            const imagesForSimpleProduct = [];
+            let allSimpleIds = [...simpleGalleryIds];
+            if(oldCoverImageId) allSimpleIds.push(oldCoverImageId);
+            
+            // Lấy thông tin ảnh từ biến `oldImagesData` đã có sẵn
+            [...new Set(allSimpleIds)].forEach(id => {
+                if (oldImagesData[id]) {
+                    imagesForSimpleProduct.push(oldImagesData[id]);
+                }
+            });
+
+            if (imagesForSimpleProduct.length > 0) {
+                const previewContainer = document.getElementById('simple_product_image_preview_container');
+                const idsContainer = document.getElementById('image_ids_container');
+                addImagesToProductForm(imagesForSimpleProduct, previewContainer, idsContainer, 'simple');
+                if (oldCoverImageId) {
+                    setSimpleProductPrimaryImage(parseInt(oldCoverImageId));
+                }
+            }
+        }
+
+        // --- Xử lý sản phẩm có biến thể ---
+        const productTypeRadio = document.querySelector('input[name="type"]:checked');
+        if (productTypeRadio && productTypeRadio.value === 'variable' && Array.isArray(oldVariantsData) && oldVariantsData.length > 0) {
+            
+            if (variantsContainer) variantsContainer.innerHTML = '';
+            variantIndexGlobal = 0;
+
+            let usedAttributeIdsInOld = new Set();
+            oldVariantsData.forEach(oldVar => { if (oldVar.attributes && typeof oldVar.attributes === 'object') { Object.keys(oldVar.attributes).forEach(attrId => usedAttributeIdsInOld.add(parseInt(attrId))); } });
+            document.querySelectorAll('.product-attribute-checkbox').forEach(cb => { if (usedAttributeIdsInOld.has(parseInt(cb.value))) cb.checked = true; });
+            updateSelectedAttributesForVariants();
+
+            oldVariantsData.forEach(oldVariant => {
+                if (addVariantButton) addVariantButton.click();
+                const currentVariantIndex = variantIndexGlobal - 1;
+                const currentVariantCard = variantsContainer ? variantsContainer.querySelector(`.variant-card[data-variant-index="${currentVariantIndex}"]`) : null;
+
+                if (currentVariantCard) {
+                    // Populate các trường input
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sku]"]`).value = oldVariant.sku || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][price]"]`).value = oldVariant.price || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sale_price]"]`).value = oldVariant.sale_price || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][stock_quantity]"]`).value = oldVariant.stock_quantity || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][weight]"]`).value = oldVariant.weight || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][dimensions_length]"]`).value = oldVariant.dimensions_length || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][dimensions_width]"]`).value = oldVariant.dimensions_width || '';
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][dimensions_height]"]`).value = oldVariant.dimensions_height || '';
+                    
+                    const startsAt = oldVariant.sale_price_starts_at ? oldVariant.sale_price_starts_at.replace(' ', 'T').substring(0, 16) : '';
+                    const endsAt = oldVariant.sale_price_ends_at ? oldVariant.sale_price_ends_at.replace(' ', 'T').substring(0, 16) : '';
+
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sale_price_starts_at]"]`).value = startsAt;
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sale_price_ends_at]"]`).value = endsAt;
+                    
+                    if (oldVariant.sale_price_starts_at || oldVariant.sale_price_ends_at) {
+                        const scheduleContainer = currentVariantCard.querySelector('.schedule-container');
+                        if (scheduleContainer) scheduleContainer.classList.remove('hidden');
+                    }
+                    
+                    if (oldVariant.attributes && typeof oldVariant.attributes === 'object') {
+                        Object.entries(oldVariant.attributes).forEach(([attrId, attrValueId]) => {
+                            const attrSelect = currentVariantCard.querySelector(`select[name="variants[${currentVariantIndex}][attributes][${attrId}]"]`);
+                            if (attrSelect) attrSelect.value = attrValueId;
+                        });
+                    }
+                    
+                    const isDefault = oldVariant.is_default === "true" || oldVariant.is_default === true;
+                    currentVariantCard.querySelector(`input[name="variant_is_default_radio_group"][value="${currentVariantIndex}"]`).checked = isDefault;
+                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][is_default]"]`).value = isDefault ? "true" : "false";
+
+                    // *** PHẦN KHÔI PHỤC ẢNH CHO BIẾN THỂ ***
+                    const variantImageIds = oldVariant.image_ids || [];
+                    const variantPrimaryId = oldVariant.primary_image_id || null;
+                    const imagesForThisVariant = [];
+                    
+                    let allVariantImageIds = [...variantImageIds];
+                    if(variantPrimaryId) allVariantImageIds.push(variantPrimaryId);
+
+                    [...new Set(allVariantImageIds)].forEach(id => {
+                        if (oldImagesData[id]) {
+                            imagesForThisVariant.push(oldImagesData[id]);
+                        }
+                    });
+
+                    if (imagesForThisVariant.length > 0) {
+                        const previewContainer = document.getElementById(`variant_${currentVariantIndex}_image_preview_container`);
+                        const idsContainer = document.getElementById(`variant_${currentVariantIndex}_image_ids_container`);
+                        addImagesToProductForm(imagesForThisVariant, previewContainer, idsContainer, 'variant', currentVariantIndex);
+                        
+                        if (variantPrimaryId) {
+                            setVariantPrimaryImage(currentVariantIndex, parseInt(variantPrimaryId));
+                        }
+                    }
+                }
+            });
+            updateDefaultVariantRadioAndHiddenFields();
+        }
+    }
+
+
+    // =================================================================
     // PHẦN DOMContentLoaded: KHỞI TẠO CÁC THÀNH PHẦN
     // =================================================================
     document.addEventListener('DOMContentLoaded', () => {
@@ -1164,30 +1310,24 @@
         }
 
         // --- GẮN SỰ KIỆN CHO CÁC NÚT AI ---
-        // **BẮT ĐẦU PHẦN SỬA ĐỔI QUAN TRỌNG**
         const generateShortDescBtn = document.getElementById('generateShortDescAI');
         if (generateShortDescBtn) {
-             generateShortDescBtn.addEventListener('click', async () => {
-                const context = getProductContext();
-                if (!context) return;
-
-                toggleButtonLoading(generateShortDescBtn, true);
-                try {
-                    const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một mô tả ngắn gọn (khoảng 2-3 câu) cho sản phẩm với giọng văn bán hàng chuyên nghiệp.
-                    Yêu cầu:
-                    - Tập trung vào các điểm nổi bật chính, thu hút khách hàng.
-                    - KHÔNG sử dụng Markdown (như dấu ** hay #).
-                    - Chỉ trả về duy nhất phần nội dung mô tả, không có lời dẫn như "Đây là mô tả:" hay tương tự.`;
-                    const result = await callGeminiAPI(prompt);
-                    if (result) {
-                        shortDescriptionTextarea.value = result.replace(/[\*#`]/g, '').trim();
+                generateShortDescBtn.addEventListener('click', async () => {
+                    const context = getProductContext();
+                    if (!context) return;
+                    toggleButtonLoading(generateShortDescBtn, true);
+                    try {
+                        const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một mô tả ngắn gọn (khoảng 2-3 câu) cho sản phẩm với giọng văn bán hàng chuyên nghiệp. Yêu cầu: - Tập trung vào các điểm nổi bật chính, thu hút khách hàng. - KHÔNG sử dụng Markdown (như dấu ** hay #). - Chỉ trả về duy nhất phần nội dung mô tả, không có lời dẫn như "Đây là mô tả:" hay tương tự.`;
+                        const result = await callGeminiAPI(prompt);
+                        if (result) {
+                            shortDescriptionTextarea.value = result.replace(/[\*#`]/g, '').trim();
+                        }
+                    } catch (error) {
+                        showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`, 'error');
+                    } finally {
+                        toggleButtonLoading(generateShortDescBtn, false);
                     }
-                } catch (error) {
-                    showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`, 'error');
-                } finally {
-                    toggleButtonLoading(generateShortDescBtn, false);
-                }
-            });
+                });
         }
 
         const generateLongDescBtn = document.getElementById('generateLongDescAI');
@@ -1197,12 +1337,7 @@
                 if (!context) return;
                 toggleButtonLoading(generateLongDescBtn, true);
                 try {
-                    const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm.
-                    Yêu cầu:
-                    - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng.
-                    - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp).
-                    - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo.
-                    - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
+                    const prompt = `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm. Yêu cầu: - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng. - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp). - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo. - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
                     const result = await callGeminiAPI(prompt);
                     if (result && typeof tinymce !== 'undefined' && tinymce.get('description')) {
                         tinymce.get('description').setContent(result);
@@ -1222,21 +1357,16 @@
                 if (!context) return;
                 toggleButtonLoading(generateAllSeoBtn, true);
                 try {
-                     const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            meta_title: { type: "STRING", description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính." },
-                            meta_description: { type: "STRING", description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động." },
-                            meta_keywords: { type: "STRING", description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy." }
-                        },
-                        required: ["meta_title", "meta_description", "meta_keywords"]
-                    };
-                    const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO.
-                    Yêu cầu:
-                    - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu.
-                    - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay").
-                    - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan.
-                    - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
+                        const schema = {
+                            type: "OBJECT",
+                            properties: {
+                                meta_title: { type: "STRING", description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính." },
+                                meta_description: { type: "STRING", description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động." },
+                                meta_keywords: { type: "STRING", description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy." }
+                            },
+                            required: ["meta_title", "meta_description", "meta_keywords"]
+                        };
+                    const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO. Yêu cầu: - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu. - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay"). - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan. - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
 
                     const result = await callGeminiAPI(prompt, true, schema);
                     if (result) {
@@ -1245,7 +1375,7 @@
                         document.getElementById('meta_keywords').value = result.meta_keywords || '';
                     }
                 } catch (error) {
-                     showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`, 'error');
+                        showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`, 'error');
                 } finally {
                     toggleButtonLoading(generateAllSeoBtn, false);
                 }
@@ -1259,15 +1389,9 @@
                 if (!context) return;
                 toggleButtonLoading(generateTagsBtn, true);
                 try {
-                    const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm.
-                    Yêu cầu:
-                    - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật.
-                    - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy.
-                    - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro
-                    - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
+                    const prompt = `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm. Yêu cầu: - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật. - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy. - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
                     const result = await callGeminiAPI(prompt);
                     if (result && tagify) {
-                        // Làm sạch kết quả để đảm bảo chỉ có chuỗi thẻ
                         const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g, '').trim();
                         tagify.loadOriginalValues(cleanedResult);
                     }
@@ -1278,26 +1402,24 @@
                 }
             });
         }
-        // **KẾT THÚC PHẦN SỬA ĐỔI QUAN TRỌNG**
-
 
         // --- LOGIC CHO BIẾN THỂ ---
         const productAttributesContainer = document.getElementById('productAttributesContainer');
         if (productAttributesContainer && Array.isArray(allAttributesFromPHP)) {
-             allAttributesFromPHP.forEach(attr => {
-                 if (!attr || typeof attr.id === 'undefined' || typeof attr.name === 'undefined') return;
-                 const labelEl = document.createElement('label');
-                 labelEl.className = 'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
-                 const checkbox = document.createElement('input');
-                 checkbox.type = 'checkbox';
-                 checkbox.id = `attr_${attr.id}`;
-                 checkbox.value = attr.id;
-                 checkbox.className = 'product-attribute-checkbox form-check-input mr-2';
-                 checkbox.onchange = updateSelectedAttributesForVariants;
-                 labelEl.append(checkbox, attr.name);
-                 productAttributesContainer.appendChild(labelEl);
-             });
-             updateSelectedAttributesForVariants();
+                allAttributesFromPHP.forEach(attr => {
+                    if (!attr || typeof attr.id === 'undefined' || typeof attr.name === 'undefined') return;
+                    const labelEl = document.createElement('label');
+                    labelEl.className = 'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = `attr_${attr.id}`;
+                    checkbox.value = attr.id;
+                    checkbox.className = 'product-attribute-checkbox form-check-input mr-2';
+                    checkbox.onchange = updateSelectedAttributesForVariants;
+                    labelEl.append(checkbox, attr.name);
+                    productAttributesContainer.appendChild(labelEl);
+                });
+                updateSelectedAttributesForVariants();
         }
 
         if (addVariantButton) {
@@ -1318,25 +1440,48 @@
                 });
                 attributesHTML += '</div>';
                 let variantFieldsHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
+                        <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" class="input-field text-sm" min="0" ></div></div>
+                        <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" ></div></div>
+                        <div class="input-group">
+                            <div class="label-with-action">
+                                <label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM (VNĐ)</label>
+                                <a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium hover:underline">Lên lịch</a>
+                            </div>
+                            <div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0"></div>
+                        </div>
+                    </div>
+                    <div class="schedule-container hidden mt-2">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
-                            <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" ></div></div>
-                            <div class="input-group"><label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM Biến Thể (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0"></div></div>
-                            <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" class="input-field text-sm" min="0" ></div></div>
-                            <div class="input-group md:col-span-2">
-                                <label class="text-sm font-medium">Ảnh Biến Thể</label>
-                                <div class="flex space-x-2 mb-3">
-                                    <label for="variant_${currentVariantIndex}_image_input" class="btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
-                                    <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
-                                    <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><i class="fas fa-photo-film mr-2"></i> Thêm từ thư viện</button>
-                                </div>
-                                <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
-                                <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
+                            <div class="input-group">
+                                <label for="variants_${currentVariantIndex}_sale_price_starts_at" class="text-xs font-medium">Thời gian bắt đầu</label>
+                                <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_starts_at]" class="input-field">
+                            </div>
+                            <div class="input-group">
+                                <label for="variants_${currentVariantIndex}_sale_price_ends_at" class="text-xs font-medium">Thời gian kết thúc</label>
+                                <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_ends_at]" class="input-field">
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio"><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input"> Đặt làm biến thể mặc định</label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4 pt-4 border-t border-gray-200">
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_weight" class="text-sm font-medium">Cân nặng (kg)</label><input type="number" step="0.01" min="0" name="variants[${currentVariantIndex}][weight]" class="input-field text-sm"></div>
+                        <div class="input-group"><label class="text-sm font-medium">Kích thước (D x R x C) (cm)</label><div class="grid grid-cols-3 gap-x-2"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_length]" placeholder="Dài" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_width]" placeholder="Rộng" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_height]" placeholder="Cao" class="input-field text-sm"></div></div>
+                    </div>
+                    <div class="input-group md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+                        <label class="text-sm font-medium">Ảnh Biến Thể</label>
+                        <div class="flex space-x-2 mb-3">
+                            <label for="variant_${currentVariantIndex}_image_input" class="form-section-heading btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
+                            <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
+                            <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg> Thêm từ thư viện</button>
                         </div>
+                        <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
+                        <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
+                    </div>
+                    <div class="mt-4">
+                        <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio"><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input"> Đặt làm biến thể mặc định</label>
+                    </div>
                 `;
                 variantCard.innerHTML = variantHeaderHTML + attributesHTML + variantFieldsHTML;
                 if (variantsContainer) variantsContainer.appendChild(variantCard);
@@ -1347,16 +1492,14 @@
             });
         }
 
-
         // --- GẮN SỰ KIỆN CHO CÁC NÚT "THÊM TỪ THƯ VIỆN" ---
         const openLibraryBtnSimple = document.getElementById('open-library-btn-simple');
         if (openLibraryBtnSimple) {
             openLibraryBtnSimple.addEventListener('click', () => {
-                // SỬA ĐỔI: Luôn nhắm đến `image_ids_container` là container chứa ID
                 window.mediaLibraryTarget = {
                     type: 'simple',
                     previewContainer: document.getElementById('simple_product_image_preview_container'),
-                    idsContainer: document.getElementById('image_ids_container') // Sửa ở đây để nhất quán
+                    idsContainer: document.getElementById('image_ids_container')
                 };
                 if (window.openMediaLibrary) { window.openMediaLibrary(); }
                 else { alert('Lỗi: Không tìm thấy hàm thư viện media (window.openMediaLibrary).'); }
@@ -1383,33 +1526,9 @@
             productNameInput.addEventListener('keyup', () => { if (slugInput.dataset.auto === "true") { slugInput.value = slugify(productNameInput.value); } });
             slugInput.addEventListener('input', () => { slugInput.dataset.auto = slugInput.value.trim() === "" ? "true" : "false"; });
         }
-        updateDefaultVariantRadioAndHiddenFields();
-
-        // Xử lý old('variants')
-        const productTypeRadio = document.querySelector('input[name="type"]:checked');
-        if (productTypeRadio && productTypeRadio.value === 'variable' && Array.isArray(oldVariantsData) && oldVariantsData.length > 0) {
-            let usedAttributeIdsInOld = new Set();
-            oldVariantsData.forEach(oldVar => { if (oldVar.attributes && typeof oldVar.attributes === 'object') { Object.keys(oldVar.attributes).forEach(attrId => usedAttributeIdsInOld.add(parseInt(attrId))); } });
-            document.querySelectorAll('.product-attribute-checkbox').forEach(cb => { if (usedAttributeIdsInOld.has(parseInt(cb.value))) cb.checked = true; });
-            updateSelectedAttributesForVariants();
-
-            oldVariantsData.forEach((oldVariant, loopIndex) => {
-                if (addVariantButton) addVariantButton.click();
-                const currentVariantIndex = variantIndexGlobal - 1;
-                const currentVariantCard = variantsContainer ? variantsContainer.querySelector(`.variant-card[data-variant-index="${currentVariantIndex}"]`) : null;
-                if (currentVariantCard) {
-                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sku]"]`).value = oldVariant.sku || '';
-                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][price]"]`).value = oldVariant.price || '';
-                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sale_price]"]`).value = oldVariant.sale_price || '';
-                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][stock_quantity]"]`).value = oldVariant.stock_quantity || '';
-                    if (oldVariant.attributes && typeof oldVariant.attributes === 'object') { Object.entries(oldVariant.attributes).forEach(([attrId, attrValueId]) => { const attrSelect = currentVariantCard.querySelector(`select[name="variants[${currentVariantIndex}][attributes][${attrId}]"]`); if (attrSelect) attrSelect.value = attrValueId; }); }
-                    const isDefault = oldVariant.is_default === "true" || oldVariant.is_default === true;
-                    currentVariantCard.querySelector(`input[name="variant_is_default_radio_group"][value="${currentVariantIndex}"]`).checked = isDefault;
-                    currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][is_default]"]`).value = isDefault ? "true" : "false";
-                }
-            });
-            updateDefaultVariantRadioAndHiddenFields();
-        }
+        
+        // *** GỌI HÀM KHÔI PHỤC DỮ LIỆU "OLD" ***
+        repopulateFormFromOldData();
 
         // Xử lý submit form
         const form = document.getElementById('addProductForm');

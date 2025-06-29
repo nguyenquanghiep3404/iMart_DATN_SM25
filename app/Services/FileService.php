@@ -22,15 +22,6 @@ class FileService
         $this->imageManager = new ImageManager(new Driver());
     }
 
-    /**
-     * Phương thức chính: Lưu file upload, tối ưu hóa ảnh và tạo record trong CSDL.
-     * Luôn hoạt động theo luồng "upload-then-attach".
-     *
-     * @param HttpUploadedFile $file File người dùng tải lên.
-     * @param string $contextFolder Ngữ cảnh lưu trữ (ví dụ: 'products', 'avatars', 'banners'). Đây là tham số bắt buộc.
-     * @param array $extraData Dữ liệu bổ sung để lưu vào model, ví dụ ['type' => 'cover_image'].
-     * @return UploadedFileModel Model file đã được tạo.
-     */
     public function store(HttpUploadedFile $file, string $contextFolder, array $extraData = []): UploadedFileModel
     {
         // Xử lý upload, tối ưu hóa và lấy đường dẫn.
@@ -74,6 +65,15 @@ class FileService
         // để xóa file vật lý trên disk trước khi xóa record trong CSDL.
         return $uploadedFile->delete();
     }
+public function delete(?string $path): bool
+    {
+        if (!$path) {
+            return false;
+        }
+
+        // Sử dụng Storage facade để xóa file trên disk 'public'
+        return Storage::disk('public')->delete($path);
+    }
 
     /**
      * Hàm private xử lý upload, tạo thư mục, đổi tên file và tối ưu hóa ảnh.
@@ -116,7 +116,28 @@ class FileService
 
         return $path;
     }
+    public function replace(UploadedFileModel $existingFile, HttpUploadedFile $newFile): UploadedFileModel
+    {
+        $path = $existingFile->path;
 
+        // Xóa file vật lý cũ trên disk
+        // Chúng ta không cần xóa ngay vì put sẽ ghi đè lên nó.
+        // Storage::disk('public')->delete($path);
+
+        // Lưu file mới (đã được cắt ở client) vào đúng đường dẫn cũ.
+        // Thao tác 'put' sẽ tự động ghi đè nếu file đã tồn tại.
+        Storage::disk('public')->put($path, $newFile->getContent());
+
+        // Cập nhật lại thông tin của file trong CSDL
+        $existingFile->update([
+            'mime_type' => $newFile->getMimeType(),
+            'size' => Storage::disk('public')->size($path),
+            // original_name, filename, path, disk, user_id... được giữ nguyên
+        ]);
+
+        // Trả về model đã được làm mới
+        return $existingFile->fresh();
+    }
     /**
      * Quy tắc xử lý cho ảnh sản phẩm.
      * @param ImageInterface $image

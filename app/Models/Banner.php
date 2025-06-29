@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Carbon\Carbon;
 
 class Banner extends Model
 {
@@ -52,5 +54,15 @@ class Banner extends Model
     public function images()
     {
         return $this->morphMany(UploadedFile::class, 'attachable');
+    }
+    public function scopeActiveAndValid(Builder $query)
+    {
+        return $query->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('start_date')->orWhere('start_date', '<=', Carbon::now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('end_date')->orWhere('end_date', '>=', Carbon::now());
+            });
     }
 }

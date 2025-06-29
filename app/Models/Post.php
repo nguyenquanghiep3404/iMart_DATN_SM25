@@ -31,6 +31,11 @@ class Post extends Model
         return $this->belongsTo(PostCategory::class, 'post_category_id');
     }
 
+    public function postCategory() // Alias cho category
+    {
+        return $this->belongsTo(PostCategory::class, 'post_category_id');
+    }
+
     public function tags()
     {
         return $this->belongsToMany(PostTag::class, 'post_post_tag');

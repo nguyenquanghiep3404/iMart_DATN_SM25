@@ -27,6 +27,8 @@ class OrderItem extends Model
         'total_price' => 'decimal:2',
     ];
 
+    protected $with = ['productVariant.product', 'productVariant.primaryImage'];
+
     public function order()
     {
         return $this->belongsTo(Order::class);
@@ -44,5 +46,14 @@ class OrderItem extends Model
     public function variant()
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    // Accessor để đảm bảo variant_attributes được serialize đúng
+    public function getVariantAttributesAttribute($value)
+    {
+        if (is_string($value)) {
+            return json_decode($value, true);
+        }
+        return $value;
     }
 }

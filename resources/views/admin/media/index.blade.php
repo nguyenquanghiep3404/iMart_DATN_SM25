@@ -3,21 +3,22 @@
 @section('title', 'Thư viện Media')
 
 @push('styles')
+    {{-- Thêm CSS của Cropper.js --}}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" xintegrity="sha512-hvNR0F/e2Jb1hbIDDihMOTrdpp4vocD/vE9k/0EfAAgHDov7RUwoXg7EFeBCvoFSvdFuY4OI5mvEuTQubEj73Q==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
-        /* --- LẤY TỪ FILE attributes/index.blade.php ĐỂ ĐỒNG BỘ GIAO DIỆN --- */
         .card { border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
         .btn { border-radius: 0.5rem; transition: all 0.2s ease-in-out; font-weight: 500; }
         .btn-primary { background-color: #4f46e5; color: white; }
         .btn-primary:hover { background-color: #4338ca; }
-        .btn-secondary { background-color: #e5e7eb; color: #374151; border: 1px solid #d1d5db; }
-        .btn-secondary:hover { background-color: #d1d5db; }
+        .btn-secondary { background-color: #e2e8f0; color: #334155; border: 1px solid #cbd5e1; }
+        .btn-secondary:hover { background-color: #cbd5e1; }
         .btn-danger { background-color: #ef4444; color: white; }
         .btn-danger:hover { background-color: #dc2626; }
         .btn-success { background-color: #10b981; color: white; }
         .btn-success:hover { background-color: #059669; }
         .modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
         .modal.show { display: flex; align-items: center; justify-content: center; }
-        .modal-content { background-color: #fff; margin: auto; border: none; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .modal-content { background-color: #fff; margin: auto; border: none; width: 90%; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
         .modal-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; }
         .modal-title { margin-bottom: 0; line-height: 1.5; font-size: 1.25rem; font-weight: 600; color: #1f2937; }
         .close { font-size: 1.75rem; font-weight: 500; color: #6b7280; opacity: .75; background-color: transparent; border: 0; cursor: pointer; }
@@ -60,6 +61,34 @@
             font-size: 0.75rem;
             line-height: 1.25rem;
         }
+        .btn-filter.active, .btn-aspect-ratio.active {
+            background-color: #3b82f6; /* Blue-500 */
+            color: white;
+            border-color: #3b82f6;
+        }
+        .stat-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+        }
+        .stat-card .icon {
+            width: 3.5rem;
+            height: 3.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.5rem;
+        }
+        /* CSS cho Cropper */
+        #image-to-crop {
+            display: block;
+            max-width: 100%;
+        }
     </style>
 @endpush
 
@@ -72,33 +101,84 @@
     <div class="container mx-auto max-w-full">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-800">Thư viện Media</h1>
-            <nav aria-label="breadcrumb" class="mt-2">
-                <ol class="flex text-sm text-gray-500">
-                    {{-- <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a></li> --}}
-                    <li class="breadcrumb-item text-gray-400 mx-2">/</li>
-                    <li class="breadcrumb-item active text-gray-700 font-medium" aria-current="page">Media</li>
-                </ol>
-            </nav>
         </div>
+
+        {{-- KHU VỰC THỐNG KÊ --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div class="stat-card">
+                <div class="icon bg-blue-100 text-blue-600"><i class="fas fa-file-alt"></i></div>
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Tổng số Files</p>
+                    <p class="text-3xl font-bold text-gray-800">{{ $stats['total'] ?? 0 }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon bg-green-100 text-green-600"><i class="fas fa-link"></i></div>
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Đã gán</p>
+                    <p class="text-3xl font-bold text-gray-800">{{ $stats['attached'] ?? 0 }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="icon bg-yellow-100 text-yellow-600"><i class="fas fa-unlink"></i></div>
+                <div>
+                    <p class="text-gray-500 text-sm font-medium">Chưa gán (mồ côi)</p>
+                    <p class="text-3xl font-bold text-gray-800">{{ $stats['unattached'] ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+
 
         <div class="card bg-white">
             <div class="bg-gray-50 p-5 border-b border-gray-200">
-                <div class="flex flex-col sm:flex-row justify-between items-center">
-                     <div class="w-full md:w-2/5 mb-4 sm:mb-0">
+                <form id="filter-form" action="{{ route('admin.media.index') }}" method="GET">
+                    <div class="flex flex-col md:flex-row md:items-end gap-4">
                         {{-- Form tìm kiếm --}}
-                        <form id="search-form" class="flex">
-                            <div class="relative flex-grow">
-                                <input type="text" id="search-input" class="form-input w-full pl-4 pr-12 py-2.5 text-sm" placeholder="Tìm kiếm theo tên file, alt text..." value="{{ request('search') }}">
+                        <div class="flex-grow">
+                            <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                            <div class="relative">
+                                <input type="text" name="search" id="search-input" class="form-input w-full pl-4 pr-12 py-2.5 text-sm" placeholder="Tên file, alt text..." value="{{ request('search') }}">
                                 <div class="absolute inset-y-0 right-0 flex items-center">
-                                    <button class="btn bg-indigo-50 hover:bg-indigo-100 text-indigo-600 py-2.5 px-4 border-0" type="submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
+                                    <button class="btn bg-indigo-50 hover:bg-indigo-100 text-indigo-600 py-2.5 px-4 border-0 h-full" type="submit" style="border-top-left-radius: 0; border-bottom-left-radius: 0;">
                                         <i class="fas fa-search"></i>
                                     </button>
                                 </div>
                             </div>
-                        </form>
+                        </div>
+                        {{-- BỘ LỌC NGÀY --}}
+                        <div>
+                             <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                            <input type="date" name="start_date" id="start_date" class="form-input py-2.5 text-sm" value="{{ request('start_date') }}">
+                        </div>
+                        <div>
+                             <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                            <input type="date" name="end_date" id="end_date" class="form-input py-2.5 text-sm" value="{{ request('end_date') }}">
+                        </div>
+                        {{-- Nút lọc và xóa lọc --}}
+                        <div class="flex items-center gap-2">
+                             <button type="submit" class="btn btn-primary py-2.5 px-5 text-sm">Lọc</button>
+                             <a href="{{ route('admin.media.index') }}" class="btn btn-secondary py-2.5 px-5 text-sm">Xóa lọc</a>
+                        </div>
                     </div>
+                    @if(request('filter'))
+                        <input type="hidden" name="filter" value="{{ request('filter') }}">
+                    @endif
+                </form>
 
-                    <div class="w-full sm:w-auto flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4 pt-4 border-t">
+                    <div class="flex space-x-2">
+                        <a href="{{ route('admin.media.index', request()->except('filter')) }}" class="btn btn-filter btn-secondary py-2.5 px-5 text-sm {{ !request('filter') ? 'active' : '' }}">Tất cả</a>
+                        <a href="{{ route('admin.media.index', array_merge(request()->except('filter'), ['filter' => 'unattached'])) }}" class="btn btn-filter btn-secondary py-2.5 px-5 text-sm {{ request('filter') === 'unattached' ? 'active' : '' }}">Ảnh chưa gán</a>
+                    </div>
+                    
+                    <div class="w-full sm:w-auto flex flex-col sm:flex-row flex-wrap justify-end items-center sm:space-x-2 space-y-2 sm:space-y-0">
+                        @if(request('filter') === 'unattached')
+                        <button id="select-all-btn" class="btn btn-success py-2.5 px-5 inline-flex items-center text-sm justify-center">
+                            <i class="fas fa-check-double mr-2"></i>
+                            <span>Chọn tất cả</span>
+                        </button>
+                        @endif
+
                         <button id="delete-selected-btn" class="btn btn-danger py-2.5 px-5 inline-flex items-center text-sm justify-center hidden">
                             <i class="fas fa-trash-alt mr-2"></i>
                             <span>Xóa mục đã chọn</span>
@@ -107,7 +187,8 @@
                             <i class="fas fa-upload mr-2"></i>
                             Tải lên file mới
                         </label>
-                        <input type="file" id="upload-input" class="hidden" multiple accept="image/*,application/pdf">
+                        {{-- Input này sẽ kích hoạt modal cắt ảnh hoặc tải file thường --}}
+                        <input type="file" id="upload-input" class="hidden" multiple accept="image/png, image/jpeg, image/gif, image/webp, application/pdf">
                     </div>
                 </div>
                 <div id="upload-progress-bar" class="progress-bar">
@@ -116,26 +197,24 @@
             </div>
             <div class="p-5">
                 <main id="image-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4 min-h-[400px]">
-                    {{-- Dữ liệu ảnh sẽ được render bởi JavaScript vào đây --}}
+                    {{-- Dữ liệu ảnh được render bởi JavaScript --}}
                 </main>
             </div>
              @if ($files->hasPages())
             <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
-                {!! $files->links() !!}
+                {!! $files->appends(request()->query())->links() !!}
             </div>
             @endif
         </div>
     </div>
 </div>
 
-<!-- MODAL HIỂN THỊ CHI TIẾT ẢNH -->
+<!-- MODAL CHI TIẾT ẢNH -->
 <div id="detail-modal" class="modal" tabindex="-1">
     <div class="modal-content !max-w-4xl flex flex-col md:flex-row max-h-[90vh]">
-        <!-- Phần hiển thị ảnh -->
         <div class="w-full md:w-2/3 p-4 flex items-center justify-center bg-gray-100 rounded-t-lg md:rounded-l-lg md:rounded-t-none">
             <img id="modal-image" src="" alt="Image preview" class="max-w-full max-h-[40vh] md:max-h-[80vh] object-contain">
         </div>
-        <!-- Phần thông tin và form chỉnh sửa -->
         <div class="w-full md:w-1/3 flex flex-col">
             <div class="modal-header">
                 <h5 class="modal-title">Chi tiết File</h5>
@@ -172,28 +251,62 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary py-2 px-4 text-sm flex-1 sm:flex-none" onclick="closeModal('detail-modal')">Đóng</button>
-                <button type="button" id="delete-btn" class="btn btn-danger py-2 px-4 text-sm flex-1 sm:flex-none">Xóa vĩnh viễn</button>
-                <button type="button" id="update-btn" class="btn btn-primary py-2 px-4 text-sm flex-1 sm:flex-none">Lưu thay đổi</button>
+                <div class="flex w-full gap-x-3">
+                    <button type="button" id="delete-btn" class="btn btn-danger w-full py-2 px-4 text-sm flex-1">Chuyển vào thùng rác</button>
+                    <button type="button" id="update-btn" class="btn btn-primary w-full py-2 px-4 text-sm flex-1">Lưu thay đổi</button>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- MODAL CẮT ẢNH -->
+@include('admin.media.partials._cropper_modal')
+
 @endsection
 
 @push('scripts')
+{{-- Thêm JS của Cropper.js --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js" xintegrity="sha512-9KkIqUpN9UaPoANgrbxDLODuluxnMLvVPZlCELfgeBNiLNR570O5Kucea/wyYNEALuV5QmKkRAOI2K43x7lLVQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // === BẮT BUỘC: CẤU HÌNH CSRF TOKEN CHO TẤT CẢ REQUESTS CỦA AXIOS ===
+    // === CẤU HÌNH CSRF TOKEN ===
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
     if (csrfToken) {
         axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken.getAttribute('content');
     } else {
-        console.error('CSRF token not found: https://laravel.com/docs/csrf#csrf-x-csrf-token');
-        alert('Lỗi bảo mật: CSRF token không được tìm thấy. Vui lòng kiểm tra layout chính.');
+        console.error('CSRF token not found!');
     }
 
-    // === SCRIPT ĐẦY ĐỦ CHO MODAL ===
+    // === KHAI BÁO BIẾN ===
+    const imageGrid = document.getElementById('image-grid');
+    const uploadInput = document.getElementById('upload-input');
+    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+    const selectAllBtn = document.getElementById('select-all-btn');
+    const progressBar = document.getElementById('upload-progress-bar');
+    const progressBarFill = progressBar.querySelector('.progress-bar-fill');
+    
+    // Modal chi tiết
+    const detailModal = document.getElementById('detail-modal');
+    const updateBtn = document.getElementById('update-btn');
+    const deleteBtn = document.getElementById('delete-btn');
+    const copyUrlBtn = document.getElementById('copy-url-btn');
+
+    // Modal cropper
+    const cropperModal = document.getElementById('cropper-modal');
+    const imageToCrop = document.getElementById('image-to-crop');
+    const cropAndUploadBtn = document.getElementById('crop-and-upload-btn');
+    const cancelCropBtn = document.getElementById('cancel-crop-btn');
+    
+    // Biến trạng thái
+    let allFiles = @json($files->items());
+    let selectedFiles = new Set();
+    let currentFileId = null;
+    let cropper = null;
+    let originalFile = null;
+
+    // === CÁC HÀM TIỆN ÍCH ===
     window.openModal = function(modalId) {
         const modal = document.getElementById(modalId);
         if (modal) {
@@ -221,102 +334,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // === SCRIPT RIÊNG CHO THƯ VIỆN MEDIA ===
-    
-    // NẠP DỮ LIỆU BAN ĐẦU TỪ CONTROLLER
-    let allFiles = @json($files->items());
-    
-    const imageGrid = document.getElementById('image-grid');
-    const searchForm = document.getElementById('search-form');
-    const searchInput = document.getElementById('search-input');
-    const uploadInput = document.getElementById('upload-input');
-    const deleteSelectedBtn = document.getElementById('delete-selected-btn');
-    const progressBar = document.getElementById('upload-progress-bar');
-    const progressBarFill = progressBar.querySelector('.progress-bar-fill');
-    
-    // Modal elements
-    const detailModal = document.getElementById('detail-modal');
-    const updateBtn = document.getElementById('update-btn');
-    const deleteBtn = document.getElementById('delete-btn');
-    const copyUrlBtn = document.getElementById('copy-url-btn');
-
-    let selectedFiles = new Set();
-    let currentFileId = null;
-
-    // --- CÁC HÀM TIỆN ÍCH ---
-    function formatBytes(bytes, decimals = 2) {
-        if (!bytes || bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const dm = decimals < 0 ? 0 : decimals;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-    }
-    
-    /**
-     * SỬA LỖI: Tạo một hàm riêng để lấy URL một cách an toàn.
-     */
-    function getFileUrl(file) {
-        // Ưu tiên thuộc tính 'url' nếu có (từ API response)
-        if (file && file.url) {
-            return file.url;
-        }
-        // Nếu không, tạo thủ công từ 'path' (cho dữ liệu ban đầu từ server)
-        if (file && file.path) {
-            // SỬA LỖI: Tạo đường dẫn tương đối (relative path) thay vì tuyệt đối.
-            // Cách này sẽ hoạt động chính xác với cả 127.0.0.1 và tên miền ảo như .test
-            // Nó giả định rằng bạn đã chạy `php artisan storage:link`.
-            return `/storage/${file.path}`;
-        }
-        // Fallback nếu không có cả hai
-        return 'https://placehold.co/400x400/cccccc/ffffff?text=Invalid+Path';
-    }
-
-
     function createToast(message, type = 'success') {
         const container = document.getElementById('toast-container');
-        if (!container) {
-            console.error('Toast container not found!');
-            return;
-        }
-
-        const colors = {
-            success: 'bg-green-500',
-            error: 'bg-red-500',
-            info: 'bg-blue-500',
-        };
-
+        if (!container) return;
+        const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
         const toast = document.createElement('div');
         toast.className = `toast p-4 rounded-lg shadow-lg text-white ${colors[type] || 'bg-gray-800'}`;
         toast.textContent = message;
         container.appendChild(toast);
-
         setTimeout(() => {
             toast.classList.add('hide');
             setTimeout(() => toast.remove(), 350);
         }, 3000);
     }
 
-    // --- CÁC HÀM RENDER VÀ CẬP NHẬT GIAO DIỆN ---
+    function getFileUrl(file) {
+        return file?.url || (file?.path ? `/storage/${file.path}` : 'https://placehold.co/400x400/cccccc/ffffff?text=Invalid+Path');
+    }
+
+    // === RENDER VÀ CẬP NHẬT GIAO DIỆN ===
     function renderImages() {
-        imageGrid.innerHTML = ''; // Xóa lưới cũ
+        imageGrid.innerHTML = '';
         if (allFiles.length === 0) {
             imageGrid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-10">Không tìm thấy file nào.</p>`;
             return;
         }
-
         allFiles.forEach(file => {
             const card = document.createElement('div');
             card.className = 'image-card relative group aspect-square bg-white rounded-lg shadow-sm overflow-hidden cursor-pointer border-2 border-transparent';
             card.dataset.id = file.id;
-            if (selectedFiles.has(file.id)) {
-                card.classList.add('selected');
-            }
+            if (selectedFiles.has(file.id)) card.classList.add('selected');
 
             const img = document.createElement('img');
-            img.src = getFileUrl(file); // SỬA LỖI: Sử dụng hàm getFileUrl
-            img.alt = file.alt_text;
+            img.src = getFileUrl(file);
+            img.alt = file.alt_text || '';
             img.className = 'w-full h-full object-cover transition-transform duration-300 group-hover:scale-110';
+            img.loading = 'lazy';
             img.onerror = () => { img.src = 'https://placehold.co/400x400/cccccc/ffffff?text=Error'; };
 
             const filename = document.createElement('p');
@@ -335,17 +388,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             card.append(img, filename, checkbox);
             imageGrid.appendChild(card);
-            
             card.addEventListener('click', () => openDetailModal(file.id));
         });
     }
 
     function toggleSelection(fileId) {
-        if (selectedFiles.has(fileId)) {
-            selectedFiles.delete(fileId);
-        } else {
-            selectedFiles.add(fileId);
-        }
+        selectedFiles.has(fileId) ? selectedFiles.delete(fileId) : selectedFiles.add(fileId);
         updateSelectionUI();
     }
     
@@ -354,15 +402,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = parseInt(card.dataset.id);
             const isSelected = selectedFiles.has(id);
             card.classList.toggle('selected', isSelected);
-            card.querySelector('input[type="checkbox"]').checked = isSelected;
+            const checkbox = card.querySelector('input[type="checkbox"]');
+            if (checkbox) checkbox.checked = isSelected;
         });
-
         const deleteBtnText = deleteSelectedBtn.querySelector('span');
         if (selectedFiles.size > 0) {
             deleteSelectedBtn.classList.remove('hidden');
-            if (deleteBtnText) {
-               deleteBtnText.textContent = `Xóa (${selectedFiles.size}) mục`;
-            }
+            if (deleteBtnText) deleteBtnText.textContent = `Xóa (${selectedFiles.size}) mục`;
         } else {
             deleteSelectedBtn.classList.add('hidden');
         }
@@ -371,32 +417,47 @@ document.addEventListener('DOMContentLoaded', function() {
     function openDetailModal(fileId) {
         currentFileId = fileId;
         const file = allFiles.find(f => f.id === fileId);
-
-        if (!file) {
-            console.error("Không tìm thấy file với ID:", fileId);
-            return;
-        }
+        if (!file) return;
         
-        const fileUrl = getFileUrl(file); // SỬA LỖI: Sử dụng hàm getFileUrl
+        const fileUrl = getFileUrl(file);
         document.getElementById('modal-image').src = fileUrl;
         document.getElementById('modal-alt').value = file.alt_text || '';
         document.getElementById('modal-filename').value = file.original_name;
         document.getElementById('modal-url').value = fileUrl;
         document.getElementById('modal-date').textContent = new Date(file.created_at).toLocaleDateString('vi-VN');
         document.getElementById('modal-type').textContent = file.mime_type;
-        document.getElementById('modal-size').textContent = formatBytes(file.size);
+        document.getElementById('modal-size').textContent = file.formatted_size || 'N/A';
         document.getElementById('modal-attachable').textContent = file.attachable_display || 'Không đính kèm';
         
         openModal('detail-modal');
     }
-    
-    // --- CÁC HÀM XỬ LÝ SỰ KIỆN VÀ GỌI API ---
-    async function handleUpload(files) {
-        if (files.length === 0) return;
 
+    // === LOGIC CHO CROPPER ===
+    function initCropper(file) {
+        originalFile = file;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            imageToCrop.src = event.target.result;
+            openModal('cropper-modal');
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(imageToCrop, {
+                aspectRatio: 1, viewMode: 1, preview: '#cropper-preview',
+                responsive: true, autoCropArea: 0.9, background: false,
+            });
+        };
+        reader.readAsDataURL(originalFile);
+    }
+
+    // === HÀM UPLOAD CHÍNH ===
+    async function handleUpload(files, singleFilename = null) {
+        if (files.length === 0) return;
         const formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files[]', files[i]);
+        if(singleFilename) {
+            formData.append('files[]', files[0], singleFilename);
+        } else {
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files[]', files[i]);
+            }
         }
         formData.append('context', 'general');
         progressBar.style.display = 'block';
@@ -410,130 +471,132 @@ document.addEventListener('DOMContentLoaded', function() {
                     progressBarFill.textContent = percentCompleted + '%';
                 }
             });
-
-            const newFiles = response.data.files;
-            allFiles = [...newFiles, ...allFiles];
-            renderImages();
-            createToast(`Đã tải lên thành công ${newFiles.length} file!`, 'success');
+            createToast(`Đã tải lên thành công! Đang làm mới...`, 'success');
+            setTimeout(() => window.location.reload(), 1500);
         } catch (error) {
-            console.error('Upload error details:', error.response?.data || error);
-
-            let errorMessage = 'Đã có lỗi xảy ra khi tải lên.';
-            if (error.response && error.response.data) {
-                if (error.response.data.errors && error.response.data.errors.files) {
-                    errorMessage = error.response.data.errors.files[0];
-                } else if (error.response.data.message) {
-                    errorMessage = error.response.data.message;
-                }
-            }
-            createToast(errorMessage, 'error');
+            createToast(error.response?.data?.message || 'Lỗi khi tải lên.', 'error');
         } finally {
-             setTimeout(() => {
+            setTimeout(() => {
                 progressBar.style.display = 'none';
                 progressBarFill.style.width = '0%';
                 progressBarFill.textContent = '0%';
-             }, 1000);
-             uploadInput.value = ''; // Reset input
+            }, 1000);
+            uploadInput.value = '';
+            cropAndUploadBtn.disabled = false;
+            cropAndUploadBtn.innerHTML = '<i class="fas fa-crop-alt mr-2"></i> Cắt & Tải lên';
         }
     }
 
+    // === CÁC HÀM XỬ LÝ API KHÁC ===
     async function handleUpdate() {
         if (!currentFileId) return;
         const newAltText = document.getElementById('modal-alt').value;
-        
         try {
-            const response = await axios.patch(`/admin/media/${currentFileId}`, {
-                alt_text: newAltText
-            });
-
+            const response = await axios.patch(`/admin/media/${currentFileId}`, { alt_text: newAltText });
             const fileIndex = allFiles.findIndex(f => f.id === currentFileId);
             if (fileIndex > -1) {
                 allFiles[fileIndex].alt_text = newAltText;
+                const card = imageGrid.querySelector(`.image-card[data-id="${currentFileId}"]`);
+                if(card) card.querySelector('img').alt = newAltText;
             }
             closeModal('detail-modal');
             createToast(response.data.message, 'success');
         } catch(error) {
-            const errorMessage = error.response?.data?.message || 'Cập nhật thất bại.';
-            createToast(errorMessage, 'error');
+            createToast(error.response?.data?.message || 'Cập nhật thất bại.', 'error');
         }
     }
 
     async function handleDelete(fileId) {
-        if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn file này?')) return;
-
+        if (!confirm('Bạn có chắc chắn muốn chuyển file này vào thùng rác?')) return;
         try {
             const response = await axios.delete(`/admin/media/${fileId}`);
             allFiles = allFiles.filter(f => f.id !== fileId);
             renderImages();
-            if (detailModal.classList.contains('show')) {
-                closeModal('detail-modal');
-            }
-            createToast(response.data.message, 'success');
+            if (detailModal.classList.contains('show')) closeModal('detail-modal');
+            createToast(response.data.message || 'Đã chuyển file vào thùng rác.', 'success');
         } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Xóa file thất bại.';
-            createToast(errorMessage, 'error');
+            createToast(error.response?.data?.message || 'Xóa file thất bại.', 'error');
         }
     }
 
     async function handleDeleteSelected() {
-        if (selectedFiles.size === 0) return;
-        if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn ${selectedFiles.size} file đã chọn?`)) return;
-
+        if (selectedFiles.size === 0 || !confirm(`Bạn có chắc chắn muốn chuyển ${selectedFiles.size} file đã chọn vào thùng rác?`)) return;
         const idsToDelete = Array.from(selectedFiles);
-        let successCount = 0;
-        for (const id of idsToDelete) {
-             try {
-                await axios.delete(`/admin/media/${id}`);
-                successCount++;
-             } catch (error) {
-                console.error(`Failed to delete file with ID ${id}`, error);
-             }
-        }
-        allFiles = allFiles.filter(f => !idsToDelete.includes(f.id));
-        selectedFiles.clear();
-        renderImages();
-        updateSelectionUI();
-        createToast(`Đã xóa thành công ${successCount} file.`, 'success');
-        if (successCount < idsToDelete.length) {
-            createToast(`Xóa thất bại ${idsToDelete.length - successCount} file.`, 'error');
+        try {
+            const response = await axios.post('{{ route("admin.media.bulk-delete") }}', { ids: idsToDelete });
+            allFiles = allFiles.filter(f => !idsToDelete.includes(f.id));
+            selectedFiles.clear();
+            renderImages();
+            updateSelectionUI();
+            createToast(response.data.message, 'success');
+        } catch (error) {
+            createToast(error.response?.data?.message || 'Xóa hàng loạt thất bại.', 'error');
         }
     }
-    
-    // --- GẮN CÁC EVENT LISTENER ---
-    uploadInput.addEventListener('change', () => handleUpload(uploadInput.files));
-    updateBtn.addEventListener('click', handleUpdate);
-    deleteBtn.addEventListener('click', () => handleDelete(currentFileId));
-    deleteSelectedBtn.addEventListener('click', handleDeleteSelected);
-    searchForm.addEventListener('submit', (e) => e.preventDefault());
-    
-    searchInput.addEventListener('input', () => {
-        // Implement real-time search via AJAX for better performance
-        const searchTerm = searchInput.value.toLowerCase();
-        const initialData = @json($files->items());
-        const filtered = initialData.filter(file => 
-            file.original_name.toLowerCase().includes(searchTerm) || 
-            (file.alt_text && file.alt_text.toLowerCase().includes(searchTerm))
-        );
-        allFiles = filtered;
-        renderImages();
+
+    // === GẮN EVENT LISTENERS ===
+    uploadInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+        if (files.length === 1 && files[0].type.startsWith('image/')) {
+            initCropper(files[0]);
+        } else {
+            handleUpload(files);
+        }
     });
 
-    copyUrlBtn.addEventListener('click', (e) => {
-        const urlInput = document.getElementById('modal-url');
-        navigator.clipboard.writeText(urlInput.value).then(() => {
-            const button = e.currentTarget;
-            const originalIcon = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-check text-green-500"></i>';
-            setTimeout(() => {
-                button.innerHTML = originalIcon;
-            }, 2000);
-        }).catch(err => {
-            createToast('Không thể sao chép!', 'error');
+    // Cropper modal events
+    cancelCropBtn.addEventListener('click', () => closeModal('cropper-modal'));
+    cropAndUploadBtn.addEventListener('click', () => {
+        if (!cropper) return;
+        cropAndUploadBtn.disabled = true;
+        cropAndUploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Đang xử lý...';
+        cropper.getCroppedCanvas({ imageSmoothingQuality: 'high' }).toBlob((blob) => {
+            handleUpload([blob], originalFile.name);
+            closeModal('cropper-modal');
+        }, originalFile.type || 'image/jpeg');
+    });
+    document.querySelectorAll('.btn-aspect-ratio').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (cropper) {
+                cropper.setAspectRatio(parseFloat(this.dataset.aspectRatio));
+                document.querySelectorAll('.btn-aspect-ratio').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+            }
         });
     });
 
-    // --- KHỞI TẠO BAN ĐẦU ---
+    // Detail modal events
+    updateBtn.addEventListener('click', handleUpdate);
+    deleteBtn.addEventListener('click', () => handleDelete(currentFileId));
+    copyUrlBtn.addEventListener('click', (e) => {
+        navigator.clipboard.writeText(document.getElementById('modal-url').value).then(() => {
+            const button = e.currentTarget;
+            const originalIcon = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check text-green-500"></i>';
+            setTimeout(() => { button.innerHTML = originalIcon; }, 2000);
+        });
+    });
+
+    // Main page events
+    deleteSelectedBtn.addEventListener('click', handleDeleteSelected);
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', () => {
+             const allCurrentFileIds = allFiles.map(file => file.id);
+             const allAreSelected = allCurrentFileIds.length > 0 && allCurrentFileIds.every(id => selectedFiles.has(id));
+             if (allAreSelected) {
+                 allCurrentFileIds.forEach(id => selectedFiles.delete(id));
+             } else {
+                 allCurrentFileIds.forEach(id => selectedFiles.add(id));
+             }
+             updateSelectionUI();
+        });
+    }
+    
+    // === KHỞI TẠO BAN ĐẦU ===
     renderImages();
+    updateSelectionUI();
 });
 </script>
 @endpush
