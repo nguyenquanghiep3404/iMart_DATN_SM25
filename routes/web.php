@@ -74,6 +74,15 @@ Route::prefix('admin')
         // Route riêng cho việc xóa ảnh gallery
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
             ->name('products.gallery.delete');
+
+            // Route xóa mềm người dùng
+        // Route::middleware('can:is-admin')->group(function () {
+            Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/trash', [UserController::class, 'trash'])->name('trash');
+            Route::patch('/{user}/restore', [UserController::class, 'restore'])->name('restore');
+            Route::delete('/{user}/force-delete', [UserController::class, 'forceDelete'])->name('forceDelete');
+            });
+        // });
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
         // Route::resource('users', UserController::class);
@@ -84,7 +93,6 @@ Route::prefix('admin')
             Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-
 
         // Route quản lí vai trò
             Route::resource('roles', RoleController::class);
@@ -173,17 +181,28 @@ Route::prefix('admin')
     });
 
             // Group các route dành cho shipper và bảo vệ chúng
-        Route::middleware(['auth', 'verified'])->prefix('shipper')->name('shipper.')->group(function () {
+        Route::prefix('shipper')
+        ->name('shipper.')
+        ->middleware(['auth', 'verified']) // <-- Bảo vệ toàn bộ nhóm
+        ->group(function () {
 
-            // Màn hình Dashboard chính
-            Route::get('/dashboard', [ShipperController::class, 'dashboard'])->name('dashboard');
+        // http://127.0.0.1:8000/shipper/dashboard
+        Route::get('/dashboard', [ShipperController::class, 'dashboard'])->name('dashboard')->middleware('can:access_shipper_dashboard');
 
-            // Route để lấy thông tin chi tiết của một đơn hàng (dùng cho AJAX)
-            Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
-            // Route để cập nhật trạng thái đơn hàng (dùng cho AJAX)
-            Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus');
+        // Các route khác của shipper
+        Route::get('/stats', [ShipperController::class, 'stats'])->name('stats');
+        Route::get('/history', [ShipperController::class, 'history'])->name('history');
+        Route::get('/profile', [ShipperController::class, 'profile'])->name('profile');
 
+        // Routes cho đơn hàng
+        Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
+        Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus');
+
+    });
+        Route::get('/test-403', function () {
+            abort(403);
         });
+
 
 
 

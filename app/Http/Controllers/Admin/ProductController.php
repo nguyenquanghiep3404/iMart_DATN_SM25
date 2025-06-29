@@ -130,6 +130,7 @@ class ProductController extends Controller
      */
     public function store(ProductRequest $request)
     {
+        dd($request->all());
         DB::beginTransaction();
         try {
             // 1. Tạo sản phẩm với các thông tin cơ bản

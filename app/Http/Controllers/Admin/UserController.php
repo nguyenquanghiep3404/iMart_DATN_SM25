@@ -156,6 +156,56 @@ class UserController extends Controller
         $user->delete();
         return redirect()->route('admin.users.index')->with('success', 'Người dùng đã bị xóa!');
     }
+    /**
+     * Hiển thị danh sách các người dùng đã bị xóa mềm.
+     */
+    public function trash()
+    {
+        // Phân quyền: chỉ người có quyền xem danh sách user mới được vào thùng rác
+        $this->authorize('viewAny', User::class);
+
+        // Chỉ lấy những user đã bị xóa mềm (onlyTrashed)
+        $users = User::onlyTrashed()->with('roles')->orderBy('deleted_at', 'desc')->paginate(10);
+        return view('admin.users.trash', compact('users'));
+    }
+
+    /**
+     * Khôi phục một người dùng đã bị xóa mềm.
+     */
+    public function restore($id)
+    {
+        // Tìm user trong thùng rác, nếu không thấy sẽ báo lỗi 404
+        $user = User::onlyTrashed()->findOrFail($id);
+
+        // Phân quyền: chỉ người có quyền khôi phục mới được thực hiện
+        $this->authorize('restore', $user);
+
+        // Thực hiện khôi phục
+        $user->restore();
+
+        return redirect()->route('admin.users.trash')->with('success', "Đã khôi phục người dùng '{$user->name}' thành công!");
+    }
+
+    /**
+     * Xóa vĩnh viễn một người dùng khỏi CSDL.
+     */
+    public function forceDelete($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+
+        // Phân quyền: chỉ người có quyền xóa vĩnh viễn mới được thực hiện
+        $this->authorize('forceDelete', $user);
+
+        // Quan trọng: Xóa file avatar liên quan trước khi xóa vĩnh viễn user
+        if ($user->avatar) {
+            $user->avatar->delete(); // Lệnh này sẽ kích hoạt event 'deleting' trong UploadedFile model để xóa file vật lý
+        }
+
+        // Thực hiện xóa vĩnh viễn
+        $user->forceDelete();
+
+        return redirect()->route('admin.users.trash')->with('success', "Đã xóa vĩnh viễn người dùng '{$user->name}'.");
+    }
 
 
 }

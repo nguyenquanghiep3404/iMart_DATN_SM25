@@ -62,6 +62,11 @@ class AppServiceProvider extends ServiceProvider
                 // Admin được vào, hoặc những ai có quyền cụ thể
                 return $user->hasRole('admin') || $user->hasPermissionTo('access_admin_dashboard');
             });
+            // Gate của luồng shipper
+            Gate::define('access_shipper_dashboard', function (User $user) {
+                // Chỉ những người dùng có vai trò 'shipper' mới được phép
+                return $user->hasRole('shipper');
+            });
 
             // Không còn các Gate như 'manage-users', 'manage-roles' ở đây nữa
             // vì chúng đã được chuyển vào các file Policy tương ứng.
