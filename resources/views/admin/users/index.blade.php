@@ -211,6 +211,7 @@
                         <a href="{{ route('admin.users.create') }}" class="btn btn-primary inline-flex items-center">
                             <i class="fas fa-plus-circle mr-2"></i> Thêm mới
                         </a>
+
                     </div>
                 </div>
             </div>
@@ -279,34 +280,40 @@
                                 </td>
                             </tr>
 
-                            {{-- DELETE CONFIRMATION MODAL (giữ nguyên cấu trúc modal) --}}
-                            <div id="deleteUserModal{{ $user->id }}" class="modal" tabindex="-1">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">Xác nhận xóa Người dùng</h5>
-                                        <button type="button" class="close-button" onclick="closeModal('deleteUserModal{{ $user->id }}')"><span aria-hidden="true">&times;</span></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="flex items-start">
-                                            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-                                            </div>
-                                            <div class="ml-4 text-left">
-                                                <p class="text-base text-gray-700">Bạn có chắc chắn muốn xóa người dùng "<strong>{{ $user->name }}</strong>" ({{ $user->email }})?</p>
-                                                <p class="mt-1 text-sm text-gray-500"><strong class="font-semibold text-red-600">Cảnh báo:</strong> Hành động này không thể hoàn tác.</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" onclick="closeModal('deleteUserModal{{ $user->id }}')">Hủy</button>
-                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display: inline-block;">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger">Xóa Người dùng</button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
+                            {{-- DELETE CONFIRMATION MODAL (Đã cập nhật cho Xóa mềm) --}}
+<div id="deleteUserModal{{ $user->id }}" class="modal" tabindex="-1">
+    <div class="modal-content">
+        <div class="modal-header">
+            {{-- Sửa tiêu đề --}}
+            <h5 class="modal-title">Xác nhận Đưa vào thùng rác</h5>
+            <button type="button" class="close-button" onclick="closeModal('deleteUserModal{{ $user->id }}')"><span aria-hidden="true">&times;</span></button>
+        </div>
+        <div class="modal-body">
+            <div class="flex items-start">
+                <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10">
+                    {{-- Đổi icon sang cảnh báo nhẹ nhàng hơn --}}
+                    <i class="fas fa-trash-alt text-yellow-600 text-xl"></i>
+                </div>
+                <div class="ml-4 text-left">
+                    {{-- Sửa nội dung câu hỏi --}}
+                    <p class="text-base text-gray-700">Bạn có chắc chắn muốn đưa người dùng "<strong>{{ $user->name }}</strong>" vào thùng rác?</p>
+
+                    {{-- SỬA NỘI DUNG CẢNH BÁO - QUAN TRỌNG NHẤT --}}
+                    <p class="mt-1 text-sm text-gray-500">Người dùng sẽ bị vô hiệu hóa và chuyển vào thùng rác. Bạn có thể khôi phục họ sau này.</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('deleteUserModal{{ $user->id }}')">Hủy</button>
+
+            {{-- Form vẫn giữ nguyên, chỉ sửa chữ trên nút bấm --}}
+            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display: inline-block;">
+                @csrf
+                @method('DELETE')
+                {{-- Sửa chữ trên nút bấm --}}
+                <button type="submit" class="btn btn-danger">Đưa vào thùng rác</button>
+            </form>
+        </div>
                         @empty
                             <tr>
                                 <td colspan="5" class="text-center py-10 text-gray-500">

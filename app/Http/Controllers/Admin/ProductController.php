@@ -171,6 +171,7 @@ class ProductController extends Controller
      */
     public function store(ProductRequest $request)
     {
+        // dd($request->all());
         DB::beginTransaction();
         try {
             // 1. Create product with basic info, excluding image and variant data handled separately
