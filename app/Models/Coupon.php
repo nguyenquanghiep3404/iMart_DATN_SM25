@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
+use Illuminate\Support\Carbon;
 
 class Coupon extends Model
 {
@@ -33,5 +33,31 @@ class Coupon extends Model
     public function usages()
     {
         return $this->hasMany(CouponUsage::class);
+    }
+
+    // ✅ Kiểm tra mã đã hết hạn chưa
+    public function expired(): bool
+    {
+        return $this->end_date && $this->end_date->lt(Carbon::now());
+    }
+
+    // ✅ Kiểm tra user đã dùng chưa
+    public function usedBy($userId): bool
+    {
+        return $this->usages()->where('user_id', $userId)->exists();
+    }
+
+    // ✅ Tính giảm giá dựa trên loại mã (fixed hoặc percentage)
+    public function calculateDiscount($subtotal): float
+    {
+        if ($this->type === 'percentage') {
+            return round($subtotal * $this->value / 100, 2);
+        }
+
+        if ($this->type === 'fixed') {
+            return min($this->value, $subtotal);
+        }
+
+        return 0;
     }
 }

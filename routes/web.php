@@ -26,6 +26,9 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Users\CartController;
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
+Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
+
 
 
 
