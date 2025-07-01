@@ -1,10 +1,8 @@
 <div id="ajax-products-list">
     @php
         $sortOptions = [
-            'tat_ca' => 'Tất Cả',
             'noi_bat' => 'Nổi Bật',
             'moi_nhat' => 'Mới Nhất',
-            'dang_giam_gia' => 'Đang Giảm Giá',
         ];
         $currentSort = request('sort', 'tat_ca');
         $isPriceSort = in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']);
