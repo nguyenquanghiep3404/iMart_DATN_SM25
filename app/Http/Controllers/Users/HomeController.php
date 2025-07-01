@@ -43,17 +43,16 @@ class HomeController extends Controller
                 $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
 
                 if ($variant) {
-    $isOnSale = false;
+                    $isOnSale = false;
 
-    if ($variant->sale_price && $variant->price > 0) {
-        $isOnSale = true;
-    }
+                    if ($variant->sale_price && $variant->price > 0) {
+                        $isOnSale = true;
+                    }
 
-    $variant->discount_percent = $isOnSale
-        ? round(100 - ($variant->sale_price / $variant->price) * 100)
-        : 0;
-}
-
+                    $variant->discount_percent = $isOnSale
+                        ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                        : 0;
+                }
             }
         };
 
@@ -118,7 +117,15 @@ class HomeController extends Controller
         // Tính rating & discount
         $calculateAverageRating($latestProducts);
 
-        return view('users.home', compact('featuredProducts', 'latestProducts', 'banners'));
+        $featuredPosts = Post::with('coverImage')
+    ->where('status', 'published')
+    ->where('is_featured', true)
+    ->latest('published_at')
+    ->take(3)
+    ->get();
+
+
+        return view('users.home', compact('featuredProducts', 'latestProducts', 'banners', 'featuredPosts'));
     }
 
 
@@ -396,14 +403,6 @@ class HomeController extends Controller
                         })->limit(1));
                 break;
 
-            case 'dang_giam_gia':
-                $query->whereHas('variants', fn($q) => $q->whereNotNull('sale_price')
-                    ->where('sale_price', '>', 0)
-                    ->where('sale_price_starts_at', '<=', $now)
-                    ->where('sale_price_ends_at', '>=', $now))
-                    ->orderByDesc('created_at');
-                break;
-
             case 'noi_bat':
                 $query->where('is_featured', 1)->orderByDesc('created_at');
                 break;
@@ -427,19 +426,8 @@ class HomeController extends Controller
             }
         }
 
-
-        // 📚 Lấy tất cả danh mục hoạt động (tạm thời disable chức năng show_on_homepage)
-        // $categories = Category::where('show_on_homepage', true)
-        //    ->where('status', 'active')
-        //    ->get();
-        $categories = Category::where('status', 'active')
-            ->orderBy('name')
-            ->get();
-
-        $currentCategory = $categoryId ? $category : null;
         $categories = Category::all();
         $parentCategories = $categories->whereNull('parent_id');
-
 
         if ($request->ajax()) {
             return response()->json([
@@ -520,36 +508,36 @@ class HomeController extends Controller
         return view('users.terms', compact('termsPost'));
     }
     public function compareSuggestions(Request $request)
-{
-    $variantId = $request->input('variant_id');
+    {
+        $variantId = $request->input('variant_id');
 
-    $variant = ProductVariant::with(['product.category.parent', 'attributeValues.attribute'])->findOrFail($variantId);
-    $product = $variant->product;
+        $variant = ProductVariant::with(['product.category.parent', 'attributeValues.attribute'])->findOrFail($variantId);
+        $product = $variant->product;
 
-    // Lấy danh mục cha (ví dụ: "Điện thoại")
-    $parentCategoryId = $product->category->parent_id ?? $product->category->id;
+        // Lấy danh mục cha (ví dụ: "Điện thoại")
+        $parentCategoryId = $product->category->parent_id ?? $product->category->id;
 
-    $currentPrice = $variant->sale_price ?: $variant->price;
+        $currentPrice = $variant->sale_price ?: $variant->price;
 
-    $suggestedProducts = Product::with(['variants', 'coverImage'])
-        ->whereHas('category', function ($query) use ($parentCategoryId) {
-            $query->where('parent_id', $parentCategoryId)
-                  ->orWhere('id', $parentCategoryId);
-        })
-        ->where('id', '!=', $product->id)
-        ->where('status', 'published')
-        ->get()
-        ->filter(function ($p) use ($currentPrice) {
-            return $p->variants->contains(function ($v) use ($currentPrice) {
-                $price = $v->sale_price ?: $v->price;
-                return abs($price - $currentPrice) <= 3000000; // Chênh lệch tối đa 3 triệu
-            });
-        })
-        ->take(5)
-        ->values();
+        $suggestedProducts = Product::with(['variants', 'coverImage'])
+            ->whereHas('category', function ($query) use ($parentCategoryId) {
+                $query->where('parent_id', $parentCategoryId)
+                    ->orWhere('id', $parentCategoryId);
+            })
+            ->where('id', '!=', $product->id)
+            ->where('status', 'published')
+            ->get()
+            ->filter(function ($p) use ($currentPrice) {
+                return $p->variants->contains(function ($v) use ($currentPrice) {
+                    $price = $v->sale_price ?: $v->price;
+                    return abs($price - $currentPrice) <= 3000000; // Chênh lệch tối đa 3 triệu
+                });
+            })
+            ->take(5)
+            ->values();
 
-    return response()->json([
-        'suggested' => $suggestedProducts,
-    ]);
-}
+        return response()->json([
+            'suggested' => $suggestedProducts,
+        ]);
+    }
 }

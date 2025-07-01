@@ -96,106 +96,112 @@
         .card-hover:hover img {
             transform: scale(1.05);
         }
-        
     </style>
 
     <section class="container px-4 pt-5 mt-1 mt-sm-2 mt-md-3 mt-lg-4">
-    <h2 class="h3 pb-2 pb-sm-3 border-bottom border-primary d-inline-block">
-        <i class="ci-star text-warning me-2"></i> Sản phẩm nổi bật
-    </h2>
+        <h2 class="h3 pb-2 pb-sm-3 border-bottom border-primary d-inline-block">
+            <i class="ci-star text-warning me-2"></i> Sản phẩm nổi bật
+        </h2>
 
-    <div class="row g-4 pt-3">
-        <!-- Banner -->
-        <div class="col-lg-4" data-bs-theme="dark">
-            <div class="d-flex flex-column align-items-center justify-content-end h-100 text-center overflow-hidden rounded-5 px-4 px-lg-3 pt-4 pb-5 shadow"
-                style="background: #1d2c41 url({{ asset('assets/users/img/home/electronics/banner/background.jpg') }}) center/cover no-repeat">
-                <div class="ratio animate-up-down position-relative z-2 me-lg-4"
-                    style="max-width: 320px; margin-bottom: -19%; --cz-aspect-ratio: calc(690 / 640 * 100%)">
-                    <img src="{{ asset('assets/users/img/home/electronics/banner/laptop.png') }}" alt="Laptop"
-                        loading="lazy">
+        <div class="row g-4 pt-3">
+            <!-- Banner -->
+            <div class="col-lg-4" data-bs-theme="dark">
+                <div class="d-flex flex-column align-items-center justify-content-end h-100 text-center overflow-hidden rounded-5 px-4 px-lg-3 pt-4 pb-5 shadow"
+                    style="background: #1d2c41 url({{ asset('assets/users/img/home/electronics/banner/background.jpg') }}) center/cover no-repeat">
+                    <div class="ratio animate-up-down position-relative z-2 me-lg-4"
+                        style="max-width: 320px; margin-bottom: -19%; --cz-aspect-ratio: calc(690 / 640 * 100%)">
+                        <img src="{{ asset('assets/users/img/home/electronics/banner/laptop.png') }}" alt="Laptop"
+                            loading="lazy">
+                    </div>
+                    <h3 class="display-2 mb-2">MacBook</h3>
+                    <p class="text-body fw-medium mb-4">Be Pro Anywhere</p>
+                    <a class="btn btn-sm btn-primary" href="#!">
+                        From $1,199
+                        <i class="ci-arrow-up-right fs-base ms-1 me-n1"></i>
+                    </a>
                 </div>
-                <h3 class="display-2 mb-2">MacBook</h3>
-                <p class="text-body fw-medium mb-4">Be Pro Anywhere</p>
-                <a class="btn btn-sm btn-primary" href="#!">
-                    From $1,199
-                    <i class="ci-arrow-up-right fs-base ms-1 me-n1"></i>
-                </a>
             </div>
-        </div>
 
-        <!-- Product list -->
-        @foreach ([0, 4] as $offset)
-            <div class="col-sm-6 col-lg-4 d-flex flex-column gap-3">
-                @foreach ($featuredProducts->skip($offset)->take(4) as $product)
-                    @php
-                        $displayVariant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
-                        $imageToShow = $displayVariant?->primaryImage ?? $product->coverImage;
-                        $mainImage = $imageToShow ? Storage::url($imageToShow->path) : asset('images/placeholder.jpg');
-                        $isOnSale = $displayVariant && $displayVariant->sale_price && $displayVariant->price > 0;
-                    @endphp
+            <!-- Product list -->
+            @foreach ([0, 4] as $offset)
+                <div class="col-sm-6 col-lg-4 d-flex flex-column gap-3">
+                    @foreach ($featuredProducts->skip($offset)->take(4) as $product)
+                        @php
+                            $displayVariant =
+                                $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+                            $imageToShow = $displayVariant?->primaryImage ?? $product->coverImage;
+                            $mainImage = $imageToShow
+                                ? Storage::url($imageToShow->path)
+                                : asset('images/placeholder.jpg');
+                            $isOnSale = $displayVariant && $displayVariant->sale_price && $displayVariant->price > 0;
+                        @endphp
 
-                    <div class="card border-0 shadow-sm h-100 card-hover position-relative">
-                       @if ($isOnSale && $displayVariant->discount_percent > 0)
-    <div class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 rounded-top-start"
-         style="z-index: 10; font-weight: 600; font-size: 0.85rem; padding: 8px 16px 8px 28px; border-radius: 32px 0 0 32px;">
-        Giảm {{ $displayVariant->discount_percent }}%
-    </div>
-@endif
-
-                        <div class="card-body d-flex align-items-center p-3">
-                            <div class="ratio ratio-1x1 flex-shrink-0" style="width: 110px">
-                                <img src="{{ $mainImage }}" alt="{{ $product->name }}" class="rounded">
-                            </div>
-                            <div class="w-100 min-w-0 ps-3">
-                                <!-- 1. Tên sản phẩm -->
-                                @php
-                                    $storage = $displayVariant?->attributeValues->firstWhere('attribute.name', 'Dung lượng lưu trữ')?->value;
-                                @endphp
-                                <h4 class="fs-5 fw-semibold mb-2 text-truncate text-dark">
-                                    <a class="stretched-link text-decoration-none text-dark"
-                                        href="{{ route('users.products.show', $product->slug) }}">
-                                        {{ $product->name }}{{ $storage ? ' ' . $storage : '' }}
-                                    </a>
-                                </h4>
-
-                                <!-- 2. Giá -->
-                                <div class="h6 mb-2">
-                                    @if ($isOnSale && $displayVariant->discount_percent > 0)
-                                        <span class="text-primary fw-bold fs-lg" style="color: #0d6efd !important;">
-                                            {{ number_format($displayVariant->sale_price) }}đ
-                                        </span>
-                                        <del class="text-muted fs-sm ms-2">{{ number_format($displayVariant->price) }}đ</del>
-                                    @elseif ($displayVariant)
-                                        <span class="fw-bold fs-lg">{{ number_format($displayVariant->price) }}đ</span>
-                                    @else
-                                        <span class="text-muted">Giá không khả dụng</span>
-                                    @endif
+                        <div class="card border-0 shadow-sm h-100 card-hover position-relative">
+                            @if ($isOnSale && $displayVariant->discount_percent > 0)
+                                <div class="position-absolute top-0 end-0 bg-danger text-white px-2 py-1 rounded-top-start"
+                                    style="z-index: 10; font-weight: 600; font-size: 0.85rem; padding: 8px 16px 8px 28px; border-radius: 32px 0 0 32px;">
+                                    Giảm {{ $displayVariant->discount_percent }}%
                                 </div>
+                            @endif
 
-                                <!-- 3. Đánh giá -->
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="d-flex gap-1 fs-xs">
-                                        @php
-                                            $rating = $product->average_rating ?? 0;
-                                            for ($i = 1; $i <= 5; $i++) {
-                                                echo $rating >= $i
-                                                    ? '<i class="ci-star-filled text-warning"></i>'
-                                                    : ($rating > $i - 1
-                                                        ? '<i class="ci-star-half text-warning"></i>'
-                                                        : '<i class="ci-star text-body-tertiary opacity-75"></i>');
-                                            }
-                                        @endphp
+                            <div class="card-body d-flex align-items-center p-3">
+                                <div class="ratio ratio-1x1 flex-shrink-0" style="width: 110px">
+                                    <img src="{{ $mainImage }}" alt="{{ $product->name }}" class="rounded">
+                                </div>
+                                <div class="w-100 min-w-0 ps-3">
+                                    <!-- 1. Tên sản phẩm -->
+                                    @php
+                                        $storage = $displayVariant?->attributeValues->firstWhere(
+                                            'attribute.name',
+                                            'Dung lượng lưu trữ',
+                                        )?->value;
+                                    @endphp
+                                    <h4 class="fs-5 fw-semibold mb-2 text-truncate text-dark">
+                                        <a class="stretched-link text-decoration-none text-dark"
+                                            href="{{ route('users.products.show', $product->slug) }}">
+                                            {{ $product->name }}{{ $storage ? ' ' . $storage : '' }}
+                                        </a>
+                                    </h4>
+
+                                    <!-- 2. Giá -->
+                                    <div class="h6 mb-2">
+                                        @if ($isOnSale && $displayVariant->discount_percent > 0)
+                                            <span class="text-primary fw-bold fs-lg" style="color: #0d6efd !important;">
+                                                {{ number_format($displayVariant->sale_price) }}đ
+                                            </span>
+                                            <del
+                                                class="text-muted fs-sm ms-2">{{ number_format($displayVariant->price) }}đ</del>
+                                        @elseif ($displayVariant)
+                                            <span class="fw-bold fs-lg">{{ number_format($displayVariant->price) }}đ</span>
+                                        @else
+                                            <span class="text-muted">Giá không khả dụng</span>
+                                        @endif
                                     </div>
-                                    <span class="text-muted fs-xs">{{ $product->approved_reviews_count ?? 0 }}</span>
+
+                                    <!-- 3. Đánh giá -->
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex gap-1 fs-xs">
+                                            @php
+                                                $rating = $product->average_rating ?? 0;
+                                                for ($i = 1; $i <= 5; $i++) {
+                                                    echo $rating >= $i
+                                                        ? '<i class="ci-star-filled text-warning"></i>'
+                                                        : ($rating > $i - 1
+                                                            ? '<i class="ci-star-half text-warning"></i>'
+                                                            : '<i class="ci-star text-body-tertiary opacity-75"></i>');
+                                                }
+                                            @endphp
+                                        </div>
+                                        <span class="text-muted fs-xs">{{ $product->approved_reviews_count ?? 0 }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                @endforeach
-            </div>
-        @endforeach
-    </div>
-</section>
+                    @endforeach
+                </div>
+            @endforeach
+        </div>
+    </section>
 
 
 
@@ -334,75 +340,72 @@
     <!-- Special offers (Carousel) -->
     <!-- (Giữ nguyên vì chưa có logic ảnh cần sửa) -->
 
-    <!-- Subscription form + Vlog -->
-    <section class="bg-body-tertiary py-5">
-        <div class="container px-4 pt-sm-2 pt-md-3 pt-lg-4 pt-xl-5">
-            <div class="row">
-                <div class="col-md-6 col-lg-5 mb-5 mb-md-0">
-                    <h2 class="h4 mb-2">Sign up to our newsletter</h2>
-                    <p class="text-body pb-2 pb-ms-3">Receive our latest updates about our products & promotions</p>
-                    <form class="d-flex needs-validation pb-1 pb-sm-2 pb-md-3 pb-lg-0 mb-4 mb-lg-5" novalidate="">
-                        <div class="position-relative w-100 me-2">
-                            <input type="email" class="form-control form-control-lg" placeholder="Your email"
-                                required="">
-                        </div>
-                        <button type="submit" class="btn btn-lg btn-primary">Subscribe</button>
-                    </form>
-                    <div class="d-flex gap-3">
-                        <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Instagram">
-                            <i class="ci-instagram fs-base"></i>
-                        </a>
-                        <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Facebook">
-                            <i class="ci-facebook fs-base"></i>
-                        </a>
-                        <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="YouTube">
-                            <i class="ci-youtube fs-base"></i>
-                        </a>
-                        <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Telegram">
-                            <i class="ci-telegram fs-base"></i>
-                        </a>
+    <!-- Subscription form + Featured Blog Posts -->
+<section class="bg-body-tertiary py-5">
+    <div class="container px-4 pt-sm-2 pt-md-3 pt-lg-4 pt-xl-5">
+        <div class="row">
+            <!-- Đăng ký nhận bản tin -->
+            <div class="col-md-6 col-lg-5 mb-5 mb-md-0">
+                <h2 class="h4 mb-2">Đăng ký nhận bản tin của chúng tôi</h2>
+                <p class="text-body pb-2 pb-ms-3">
+                    Nhận thông tin cập nhật mới nhất về sản phẩm và chương trình khuyến mãi của chúng tôi
+                </p>
+                <form class="d-flex needs-validation pb-1 pb-sm-2 pb-md-3 pb-lg-0 mb-4 mb-lg-5" novalidate>
+                    <div class="position-relative w-100 me-2">
+                        <input type="email" class="form-control form-control-lg"
+                            placeholder="Nhập địa chỉ email của bạn" required>
                     </div>
+                    <button type="submit" class="btn btn-lg btn-primary">Đăng ký</button>
+                </form>
+                <div class="d-flex gap-3">
+                    <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Instagram">
+                        <i class="ci-instagram fs-base"></i>
+                    </a>
+                    <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Facebook">
+                        <i class="ci-facebook fs-base"></i>
+                    </a>
+                    <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="YouTube">
+                        <i class="ci-youtube fs-base"></i>
+                    </a>
+                    <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Telegram">
+                        <i class="ci-telegram fs-base"></i>
+                    </a>
                 </div>
-                <div class="col-md-6 col-lg-5 col-xl-4 offset-lg-1 offset-xl-2">
-                    <ul class="list-unstyled d-flex flex-column gap-4 ps-md-4 ps-lg-0 mb-3">
+            </div>
+
+            <!-- Bài viết nổi bật -->
+            <div class="col-md-6 col-lg-5 col-xl-4 offset-lg-1 offset-xl-2">
+                <h2 class="h5 mb-4">📰 Bài viết nổi bật</h2>
+                <ul class="list-unstyled d-flex flex-column gap-4 ps-md-4 ps-lg-0 mb-3">
+                    @foreach ($featuredPosts as $post)
                         <li class="nav flex-nowrap align-items-center position-relative">
-                            <img src="{{ asset('assets/users/img/home/electronics/vlog/01.jpg') }}" class="rounded"
-                                width="140" alt="Video cover">
+                            <img src="{{ $post->coverImage ? asset('storage/' . $post->coverImage->path) : asset('assets/users/img/default-thumbnail.jpg') }}"
+                                class="rounded" width="140" height="90" style="object-fit: cover;" alt="{{ $post->title }}">
                             <div class="ps-3">
-                                <div class="fs-xs text-body-secondary lh-sm mb-2">6:16</div>
-                                <a class="nav-link fs-sm hover-effect-underline stretched-link p-0" href="#!">5 New
-                                    Cool Gadgets You Must See on Cartzilla - Cheap Budget</a>
+                                <div class="fs-xs text-body-secondary lh-sm mb-2">
+                                    {{ $post->published_at ? $post->published_at->format('H:i d/m/Y') : 'Chưa đăng' }}
+                                </div>
+                                <a class="nav-link fs-sm hover-effect-underline stretched-link p-0"
+                                   href="{{ route('users.blogs.show', $post->slug) }}">
+                                    {{ Str::limit($post->title, 60) }}
+                                </a>
                             </div>
                         </li>
-                        <li class="nav flex-nowrap align-items-center position-relative">
-                            <img src="{{ asset('assets/users/img/home/electronics/vlog/02.jpg') }}" class="rounded"
-                                width="140" alt="Video cover">
-                            <div class="ps-3">
-                                <div class="fs-xs text-body-secondary lh-sm mb-2">10:20</div>
-                                <a class="nav-link fs-sm hover-effect-underline stretched-link p-0" href="#!">5 Super
-                                    Useful Gadgets on Cartzilla You Must Have in 2023</a>
-                            </div>
-                        </li>
-                        <li class="nav flex-nowrap align-items-center position-relative">
-                            <img src="{{ asset('assets/users/img/home/electronics/vlog/03.jpg') }}" class="rounded"
-                                width="140" alt="Video cover">
-                            <div class="ps-3">
-                                <div class="fs-xs text-body-secondary lh-sm mb-2">8:40</div>
-                                <a class="nav-link fs-sm hover-effect-underline stretched-link p-0" href="#!">Top 5
-                                    New Amazing Gadgets on Cartzilla You Must See</a>
-                            </div>
-                        </li>
-                    </ul>
-                    <div class="nav ps-md-4 ps-lg-0">
-                        <a class="btn nav-link animate-underline text-decoration-none px-0" href="#!">
-                            <span class="animate-target">Xem tất cả</span>
-                            <i class="ci-chevron-right fs-base ms-1"></i>
-                        </a>
-                    </div>
+                    @endforeach
+                </ul>
+
+                <div class="nav ps-md-4 ps-lg-0">
+                    <a class="btn nav-link animate-underline text-decoration-none px-0"
+                       href="">
+                        <span class="animate-target">Xem tất cả</span>
+                        <i class="ci-chevron-right fs-base ms-1"></i>
+                    </a>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
+
 @endsection
 
 @push('styles')
