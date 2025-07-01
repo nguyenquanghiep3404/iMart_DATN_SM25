@@ -1,137 +1,169 @@
 @extends('layouts.shipper')
 
-@section('title', 'Chi tiết đơn hàng ' . $order->order_code)
+@section('title', 'Chi tiết ĐH ' . $order->order_code)
 
 @push('styles')
 <style>
-    /* CSS cho trang chi tiết */
-    .detail-container { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .detail-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; padding-bottom: 1rem; margin-bottom: 1.5rem; }
-    .detail-header h2 { margin: 0; }
-    .back-link { text-decoration: none; background: #6c757d; color: white; padding: 8px 16px; border-radius: 5px; transition: background-color 0.2s; }
-    .back-link:hover { background-color: #5a6268; }
-    .detail-section { margin-bottom: 2rem; }
-    .detail-section h3 { margin-top: 0; margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; }
-    .info-grid { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: center; }
-    .info-grid > div:nth-child(odd) { font-weight: 600; color: #495057; }
-    .cod-amount { font-weight: 700; color: #dc3545; font-size: 1.2rem; }
-    .maps-link { color: #007bff; font-weight: 600; }
-    .shipper-note-box { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 1rem; border-radius: 4px; }
-    .action-buttons { display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap; }
-    .action-buttons .btn, .action-buttons form button {
-        flex-grow: 1; padding: 15px; font-size: 1.1rem; font-weight: 600;
-        color: white; border: none; border-radius: 8px; cursor: pointer; text-align: center;
-    }
-    .btn-pickup { background-color: #0d6efd; }
-    .btn-success { background-color: #198754; }
-    .btn-fail { background-color: #dc3545; }
-
-    /* CSS cho Bảng sản phẩm */
-    .product-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    .product-table th, .product-table td { border: 1px solid #dee2e6; padding: 12px; text-align: left; }
-    .product-table th { background-color: #f8f9fa; font-weight: 600; }
-    .product-table td.text-right { text-align: right; }
-    .product-table tbody tr:nth-child(odd) { background-color: #fdfdfd; }
-
-    /* CSS cho Hộp thoại lý do */
-    .status-alert { padding: 1rem; margin-bottom: 1.5rem; border-left: 5px solid; border-radius: 8px; }
-    .status-alert strong { font-size: 1.1rem; display: block; margin-bottom: 0.5rem; }
-    .status-alert p { margin: 0; font-size: 1rem; }
-    .alert-danger { border-color: #dc3545; color: #721c24; background-color: #f8d7da; }
-    .alert-secondary { border-color: #6c757d; color: #383d41; background-color: #e2e3e5; }
-
-    /* CSS cho Modal */
+    /* CSS cho modal (đã kiểm tra lại) */
     .modal-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0, 0, 0, 0.6); display: flex;
-        justify-content: center; align-items: center; z-index: 1050; padding: 1rem;
+        background-color: rgba(0, 0, 0, 0.6); display: none;
+        justify-content: center; align-items: flex-end; /* Hiện modal từ dưới lên */
+        z-index: 50;
+    }
+    .modal-overlay.is-visible {
+        display: flex;
     }
     .modal-content {
-        background: white; border-radius: 8px; width: 100%; max-width: 500px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3); display: flex;
-        flex-direction: column; max-height: 90vh;
+        background: white; border-radius: 1.5rem 1.5rem 0 0;
+        width: 100%; max-width: 448px;
+        box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+        transform: translateY(100%);
+        transition: transform 0.3s ease-out;
+        max-height: 80vh; /* Giới hạn chiều cao */
+        display: flex;
+        flex-direction: column;
     }
-    .modal-header, .modal-footer {
-        flex-shrink: 0; padding: 1rem 1.5rem;
+    .modal-overlay.is-visible .modal-content {
+        transform: translateY(0);
     }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; }
-    .modal-body { overflow-y: auto; padding: 1.5rem; }
-    .modal-footer { display: flex; justify-content: flex-end; gap: 0.5rem; border-top: 1px solid #dee2e6; background-color: #f8f9fa; }
-    .modal-header h4 { margin: 0; font-size: 1.25rem; }
-    .close-modal-btn { background: none; border: none; font-size: 1.75rem; cursor: pointer; color: #6c757d; }
-    .reason-option { display: flex; align-items: center; margin-bottom: 1rem; }
-    .reason-option input[type="radio"] { margin-right: 10px; width: 18px; height: 18px; }
-    #other-reason-text { width: calc(100% - 20px); margin-top: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
-    .modal-footer .btn-cancel, .modal-footer .btn-confirm {
-        padding: 8px 16px; font-size: 0.9rem; font-weight: 500;
-        border-radius: 5px; border: none; cursor: pointer; color: white;
-    }
-    .modal-footer .btn-cancel { background-color: #6c757d; }
-    .modal-footer .btn-confirm { background-color: #dc3545; }
-
-    /* CSS Responsive */
-    @media screen and (max-width: 768px) {
-        .product-table thead { display: none; }
-        .product-table tr { display: block; border: 1px solid #dee2e6; border-radius: 8px; margin-bottom: 1rem; }
-        .product-table td { display: block; text-align: right; border: none; border-bottom: 1px dotted #ccc; padding-left: 50%; position: relative; }
-        .product-table td:last-child { border-bottom: 0; }
-        .product-table td::before { content: attr(data-label); position: absolute; left: 12px; width: 45%; padding-right: 10px; white-space: nowrap; text-align: left; font-weight: 600; }
-        .info-grid { display: block; }
-        .info-grid > div:nth-child(even) { margin-bottom: 12px; }
+    .modal-body {
+        overflow-y: auto;
     }
 </style>
 @endpush
 
 @section('content')
-    {{-- Gọi nội dung chính của trang từ file partial --}}
-    @include('shipper.partials.order_details_content')
+    {{-- Header của trang --}}
+    <header class="sticky top-0 bg-white shadow-sm z-10 p-4 flex items-center space-x-4 border-b">
+        <a href="{{ route('shipper.dashboard') }}" class="text-gray-600 h-10 w-10 flex items-center justify-center rounded-full hover:bg-gray-100">
+            <i class="fas fa-arrow-left fa-lg"></i>
+        </a>
+        <h1 class="text-lg font-bold text-gray-800">Chi tiết đơn hàng</h1>
+    </header>
 
-    {{-- Gọi modal từ file partial --}}
-    @include('shipper.partials.failure_reason_modal')
+    {{-- Nội dung chi tiết đơn hàng --}}
+    <div class="p-5 space-y-4">
+        <div class="bg-white p-4 rounded-xl shadow-sm space-y-3">
+            <h3 class="text-base font-bold text-gray-800">Thông tin người nhận</h3>
+            <p class="font-semibold">{{ $order->customer_name }}</p>
+            <div class="flex items-center justify-between">
+                <p class="text-gray-700">{{ $order->customer_phone }}</p>
+                <a href="tel:{{ $order->customer_phone }}" class="h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full"><i class="fas fa-phone-alt"></i></a>
+            </div>
+            <div class="flex items-center justify-between">
+                <p class="text-gray-700">{{ $order->shipping_address_line1 }}, {{ $order->shipping_ward }}, {{ $order->shipping_district }}</p>
+                <a href="https://maps.google.com/?q={{ urlencode($order->shipping_address_line1 . ', ' . $order->shipping_ward . ', ' . $order->shipping_district) }}" target="_blank" class="h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full"><i class="fas fa-map-marker-alt"></i></a>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm space-y-2">
+            <h3 class="text-base font-bold text-gray-800">Chi tiết sản phẩm</h3>
+            <ul class="divide-y divide-gray-200">
+                @foreach($order->items as $item)
+                    <li class="py-3">
+                        <p class="font-semibold text-gray-800">{{ $item->product_name }}</p>
+                        <div class="flex justify-between text-sm text-gray-600">
+                            <span>Số lượng: <span class="font-bold">{{ $item->quantity }}</span></span>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+            <p class="text-gray-500">Tổng tiền thu hộ (COD)</p>
+            <p class="text-3xl font-bold text-green-600">{{ number_format($order->grand_total, 0, ',', '.') }}đ</p>
+        </div>
+    </div>
+
+    {{-- Footer chứa các nút hành động (nếu có) --}}
+    @if(in_array($order->status, ['awaiting_shipment', 'shipped', 'out_for_delivery']))
+        <footer class="sticky bottom-0 p-4 bg-white border-t">
+            @if($order->status === 'awaiting_shipment')
+                <form action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST">
+                    @csrf @method('PATCH')
+                    <input type="hidden" name="status" value="shipped">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">ĐÃ LẤY HÀNG</button>
+                </form>
+            @elseif(in_array($order->status, ['shipped', 'out_for_delivery']))
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" id="btn-fail-action" class="w-full bg-orange-500 text-white font-bold py-3 rounded-lg">GIAO THẤT BẠI</button>
+                    <form action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="status" value="delivered">
+                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg">GIAO THÀNH CÔNG</button>
+                    </form>
+                </div>
+            @endif
+        </footer>
+    @endif
 @endsection
 
-@push('page-scripts')
-{{-- JavaScript chỉ dành cho trang này --}}
+@push('modals')
+    <div id="failure-reason-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold text-gray-800 p-6 border-b">Lý do giao không thành công</h2>
+
+            <form id="fail-delivery-form" action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST" style="display: none;">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="status" value="failed_delivery">
+                <input type="hidden" id="fail-reason-input" name="reason">
+                <input type="hidden" id="fail-notes-input" name="notes">
+            </form>
+
+            <div class="modal-body p-6 space-y-4">
+                <div>
+                    <label for="failure-reason" class="block text-sm font-medium text-gray-700 mb-1">Lý do chính</label>
+                    <select id="failure-reason" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="Không liên lạc được khách hàng">Không liên lạc được khách</option>
+                        <option value="Khách hẹn giao lại">Khách hẹn giao lại</option>
+                        <option value="Sai địa chỉ">Sai địa chỉ</option>
+                        <option value="other">Lý do khác</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="failure-notes" class="block text-sm font-medium text-gray-700 mb-1">Ghi chú thêm</label>
+                    <textarea id="failure-notes" rows="3" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="VD: Khách hẹn giao sau 17h"></textarea>
+                </div>
+            </div>
+            <div class="p-6 grid grid-cols-2 gap-3 border-t">
+                 <button type="button" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg close-modal-btn">Hủy</button>
+                 <button type="button" id="confirm-failure-btn" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+@endpush
+
+@push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Lấy các phần tử DOM cần thiết
         const failActionButton = document.getElementById('btn-fail-action');
         const modal = document.getElementById('failure-reason-modal');
-        const closeButtons = document.querySelectorAll('.close-modal-btn');
-        const confirmButton = document.getElementById('confirm-failure-btn');
-        const otherReasonText = document.getElementById('other-reason-text');
-        const reasonOptions = document.querySelectorAll('input[name="failure_reason_option"]');
-        const failForm = document.getElementById('fail-delivery-form');
-        const reasonInput = document.getElementById('fail-reason-input');
 
-        if (failActionButton) {
-            failActionButton.addEventListener('click', () => modal.style.display = 'flex');
-        }
-        closeButtons.forEach(button => {
-            button.addEventListener('click', () => modal.style.display = 'none');
-        });
-        reasonOptions.forEach(radio => {
-            radio.addEventListener('change', () => {
-                otherReasonText.style.display = (radio.value === 'other') ? 'block' : 'none';
-                if(radio.value === 'other') {
-                    otherReasonText.focus();
-                }
+        if (failActionButton && modal) {
+            const closeButtons = modal.querySelectorAll('.close-modal-btn');
+            const confirmButton = modal.querySelector('#confirm-failure-btn');
+            const failForm = document.getElementById('fail-delivery-form');
+            const reasonSelect = modal.querySelector('#failure-reason');
+            const notesTextarea = modal.querySelector('#failure-notes');
+
+            failActionButton.addEventListener('click', () => {
+                modal.classList.add('is-visible');
             });
-        });
-        if (confirmButton) {
+            closeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    modal.classList.remove('is-visible');
+                });
+            });
             confirmButton.addEventListener('click', function() {
-                const selectedOption = document.querySelector('input[name="failure_reason_option"]:checked');
-                if (!selectedOption) {
-                    alert('Vui lòng chọn một lý do.'); return;
+                let reason = reasonSelect.value;
+                if (reason === 'other') {
+                    reason = notesTextarea.value.trim();
                 }
-                let finalReason = selectedOption.value;
-                if (finalReason === 'other') {
-                    finalReason = otherReasonText.value.trim();
-                    if (finalReason === '') {
-                        alert('Vui lòng nhập lý do cụ thể.'); return;
-                    }
-                }
-                reasonInput.value = finalReason;
+                document.getElementById('fail-reason-input').value = reason;
+                document.getElementById('fail-notes-input').value = notesTextarea.value;
                 failForm.submit();
             });
         }

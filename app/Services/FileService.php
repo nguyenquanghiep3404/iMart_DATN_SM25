@@ -116,7 +116,28 @@ public function delete(?string $path): bool
 
         return $path;
     }
+    public function replace(UploadedFileModel $existingFile, HttpUploadedFile $newFile): UploadedFileModel
+    {
+        $path = $existingFile->path;
 
+        // Xóa file vật lý cũ trên disk
+        // Chúng ta không cần xóa ngay vì put sẽ ghi đè lên nó.
+        // Storage::disk('public')->delete($path);
+
+        // Lưu file mới (đã được cắt ở client) vào đúng đường dẫn cũ.
+        // Thao tác 'put' sẽ tự động ghi đè nếu file đã tồn tại.
+        Storage::disk('public')->put($path, $newFile->getContent());
+
+        // Cập nhật lại thông tin của file trong CSDL
+        $existingFile->update([
+            'mime_type' => $newFile->getMimeType(),
+            'size' => Storage::disk('public')->size($path),
+            // original_name, filename, path, disk, user_id... được giữ nguyên
+        ]);
+
+        // Trả về model đã được làm mới
+        return $existingFile->fresh();
+    }
     /**
      * Quy tắc xử lý cho ảnh sản phẩm.
      * @param ImageInterface $image

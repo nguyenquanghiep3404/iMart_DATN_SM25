@@ -16,6 +16,9 @@
     <!-- Heroicons for Icons -->
     <script src="https://unpkg.com/heroicons@2.1.3/24/outline/index.js"></script>
 
+    <!-- Swiper.js CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+
     <style>
         /* Custom styles */
         body {
@@ -23,11 +26,6 @@
             background-color: #f9fafb; /* Light gray background */
         }
         
-        .thumbnail-selected {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
-        }
-
         .variant-selected {
             border-color: #3b82f6;
             background-color: #eff6ff;
@@ -46,7 +44,6 @@
             transition: transform 0.3s ease;
         }
 
-        /* Tab Styles */
         .tab-button {
             border-bottom: 2px solid transparent;
             transition: all 0.2s ease-in-out;
@@ -57,7 +54,6 @@
             background-color: #eff6ff; /* blue-50 */
         }
         
-        /* Read More styles */
         .description-content.collapsed {
             max-height: 300px;
             overflow: hidden;
@@ -73,12 +69,10 @@
             background: linear-gradient(to top, white, rgba(255,255,255,0));
         }
         
-        /* Favorite button style */
         #favorite-btn.favorited {
             color: #ef4444; /* red-500 */
         }
         
-        /* Flash sale timer style */
         .timer-box {
             background: #333;
             color: white;
@@ -87,7 +81,6 @@
             font-weight: 600;
         }
         
-        /* Review Stars */
         .review-star {
             color: #d1d5db; /* gray-300 */
             cursor: pointer;
@@ -97,20 +90,87 @@
             color: #f59e0b; /* amber-500 */
         }
         
-        /* Sticky Add to Cart Bar */
         #sticky-bar {
             transition: transform 0.3s ease-in-out;
         }
         
-        /* Lightbox zoom */
         #lightbox-main-image {
             transition: transform 0.3s ease;
             cursor: zoom-in;
         }
-        #lightbox-main-image.zoomed {
-            transform: scale(2.5);
-            cursor: zoom-out;
+        
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
         }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* === CSS MỚI CHO SWIPER.JS GALLERY === */
+        .gallery-top {
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .gallery-thumbs {
+            padding-top: 0.5rem; /* Giảm padding */
+        }
+
+        .gallery-thumbs .swiper-slide {
+            width: 20%; /* Hiển thị 5 ảnh cùng lúc */
+            height: auto;
+            opacity: 0.6; /* Giao diện giống FPT Shop */
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+            border: 2px solid transparent;
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        
+        .gallery-thumbs .swiper-slide:hover {
+            opacity: 1;
+        }
+
+        .gallery-thumbs .swiper-slide-thumb-active {
+            opacity: 1;
+            border-color: #3b82f6; /* Vẫn giữ border để người dùng biết ảnh nào đang active */
+        }
+        
+        .gallery-thumbs .swiper-slide img {
+             width: 100%;
+             height: 100%;
+             object-fit: cover;
+             aspect-ratio: 1 / 1;
+             border-radius: 0.25rem; /* rounded-sm */
+        }
+        
+        /* Style cho các nút điều hướng */
+        .thumb-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 0.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            z-index: 10;
+            transition: opacity 0.2s;
+        }
+        .thumb-nav-btn:hover {
+            background-color: white;
+        }
+        .thumb-nav-btn.swiper-button-disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+        .thumb-prev-btn { left: -12px; }
+        .thumb-next-btn { right: -12px; }
 
     </style>
 </head>
@@ -127,24 +187,32 @@
                 <span class="font-medium text-gray-700">iPhone 15 Pro Max 256GB</span>
             </nav>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
-                <!-- PHẦN 1: CỘT TRÁI - THƯ VIỆN HÌNH ẢNH -->
-                <div class="image-gallery">
-                    <div id="main-image-container" class="group rounded-lg border border-gray-200 relative cursor-pointer">
-                        <img id="mainImage" src="https://placehold.co/600x600/f0f0f0/333?text=iPhone+15+Pro" alt="iPhone 15 Pro Max - Ảnh chính" class="w-full h-auto object-cover rounded-lg">
-                        
-                        <!-- Prev Button -->
-                        <button id="gallery-prev-btn" class="absolute left-3 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                        </button>
-
-                        <!-- Next Button -->
-                        <button id="gallery-next-btn" class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/70 p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                            <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                        </button>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:items-start">
+                <!-- PHẦN 1: CỘT TRÁI - THƯ VIỆN HÌNH ẢNH (ĐÃ CẬP NHẬT VỚI SWIPER.JS) -->
+                <div class="image-gallery lg:sticky top-8">
+                    <!-- Slider ảnh chính -->
+                    <div id="main-image-container" class="swiper gallery-top group relative cursor-pointer">
+                        <div class="swiper-wrapper">
+                            <!-- Swiper.js sẽ tự động tạo các slide ở đây -->
+                        </div>
                     </div>
-                    <div id="main-thumbnails" class="grid grid-cols-5 gap-2 mt-4">
-                        <!-- Thumbnails will be generated by JS -->
+                    
+                    <!-- Slider ảnh thu nhỏ và các nút bấm -->
+                    <div class="relative mt-2">
+                         <!-- Container cho các thumbnail -->
+                        <div class="swiper gallery-thumbs">
+                             <div class="swiper-wrapper" id="main-thumbnails-wrapper">
+                                 <!-- Swiper.js sẽ tự động tạo các slide thumbnail ở đây -->
+                             </div>
+                        </div>
+
+                        <!-- Các nút điều hướng -->
+                        <div id="thumb-prev-btn" class="thumb-nav-btn thumb-prev-btn">
+                             <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </div>
+                        <div id="thumb-next-btn" class="thumb-nav-btn thumb-next-btn">
+                             <svg class="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </div>
                     </div>
                 </div>
 
@@ -228,7 +296,14 @@
                             </div>
                         </div>
                     </div>
-
+                    <!-- Permanent Price Block -->
+                    <div class="price-block bg-gray-100 p-4 rounded-lg mt-4">
+                        <div class="flex items-baseline gap-3">
+                            <span class="text-3xl font-bold text-red-600">32.790.000₫</span>
+                            <span class="text-lg text-gray-500 line-through">34.990.000₫</span>
+                            <span class="bg-red-200 text-red-800 text-sm font-semibold px-2 py-0.5 rounded-md">-6%</span>
+                        </div>
+                    </div>
                     <div class="promotions mt-6">
                         <h3 class="font-semibold text-gray-800 mb-2">Khuyến mãi & Ưu đãi</h3>
                         <ul class="space-y-2 text-sm">
@@ -243,7 +318,7 @@
                         <button class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" /></svg>THÊM VÀO GIỎ HÀNG</button>
                         <button class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">MUA NGAY</button>
                     </div>
-                     <div class="text-sm text-gray-500 mt-4 text-center sm:text-left"><span class="font-semibold">Giao hàng dự kiến:</span> Thứ Ba, 28/06 - Thứ Tư, 29/06.</div>
+                     <div class="text-sm text-gray-500 mt-4 text-center sm:text-left"><span class="font-semibold">Giao hàng dự kiến:</span> Thứ Ba, 30/06 - Thứ Tư, 01/07.</div>
                 </div>
             </div>
         </main>
@@ -255,37 +330,41 @@
             <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Mua Kèm Deal Sốc</h2>
                 <div class="flex flex-col lg:flex-row items-center justify-center gap-4" id="bundle-deal-container">
-                    <!-- Main Product -->
-                    <div class="flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg">
-                        <img src="https://placehold.co/150x150/f0f0f0/333?text=iPhone+15" class="w-32 h-32 object-contain mb-2">
-                        <p class="font-semibold text-sm">iPhone 15 Pro Max</p>
-                        <p class="font-bold text-red-600">30.490.000₫</p>
-                    </div>
+                    
+                    <!-- Wrapper for scrollable items -->
+                    <div class="w-full flex items-center gap-4 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 lg:w-auto carousel">
+                        <!-- Main Product -->
+                        <div class="flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg flex-shrink-0 w-44 sm:w-48">
+                            <img src="https://placehold.co/150x150/f0f0f0/333?text=iPhone+15" class="w-32 h-32 object-contain mb-2">
+                            <p class="font-semibold text-sm">iPhone 15 Pro Max</p>
+                            <p class="font-bold text-red-600">30.490.000₫</p>
+                        </div>
 
-                    <div class="text-3xl font-light text-gray-400">+</div>
+                        <div class="text-3xl font-light text-gray-400">+</div>
 
-                    <!-- Bundle Item 1 -->
-                    <div class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative">
-                        <input type="checkbox" data-price="4490000" class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500" checked>
-                        <img src="https://placehold.co/150x150/e0e0e0/333?text=AirPods" class="w-32 h-32 object-contain mb-2">
-                        <p class="font-semibold text-sm">AirPods Pro 2</p>
-                        <p class="font-bold text-red-600">4.490.000₫ <span class="text-gray-500 line-through text-xs">5.990.000₫</span></p>
-                    </div>
+                        <!-- Bundle Item 1 -->
+                        <div class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
+                            <input type="checkbox" data-price="4490000" class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500" checked>
+                            <img src="https://placehold.co/150x150/e0e0e0/333?text=AirPods" class="w-32 h-32 object-contain mb-2">
+                            <p class="font-semibold text-sm">AirPods Pro 2</p>
+                            <p class="font-bold text-red-600">4.490.000₫ <span class="text-gray-500 line-through text-xs">5.990.000₫</span></p>
+                        </div>
 
-                    <div class="text-3xl font-light text-gray-400">+</div>
+                        <div class="text-3xl font-light text-gray-400">+</div>
 
-                    <!-- Bundle Item 2 -->
-                    <div class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative">
-                        <input type="checkbox" data-price="890000" class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500">
-                        <img src="https://placehold.co/150x150/d0d0d0/333?text=Sạc" class="w-32 h-32 object-contain mb-2">
-                        <p class="font-semibold text-sm">Sạc nhanh 20W</p>
-                        <p class="font-bold text-red-600">890.000₫ <span class="text-gray-500 line-through text-xs">1.200.000₫</span></p>
+                        <!-- Bundle Item 2 -->
+                        <div class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
+                            <input type="checkbox" data-price="890000" class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500">
+                            <img src="https://placehold.co/150x150/d0d0d0/333?text=Sạc" class="w-32 h-32 object-contain mb-2">
+                            <p class="font-semibold text-sm">Sạc nhanh 20W</p>
+                            <p class="font-bold text-red-600">890.000₫ <span class="text-gray-500 line-through text-xs">1.200.000₫</span></p>
+                        </div>
                     </div>
 
                     <div class="text-3xl font-light text-gray-400 hidden lg:block">=</div>
 
                     <!-- Total Price -->
-                    <div class="mt-4 lg:mt-0 lg:ml-4 p-4 border-2 border-red-500 rounded-lg text-center">
+                    <div class="w-full max-w-xs sm:w-auto lg:w-auto lg:max-w-none mt-4 lg:mt-0 lg:ml-4 p-4 border-2 border-red-500 rounded-lg text-center">
                         <p class="font-semibold">Tổng giá trị:</p>
                         <p id="bundle-total-price" class="text-2xl font-bold text-red-600 my-2">35.870.000₫</p>
                         <button class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">Thêm tất cả vào giỏ</button>
@@ -379,10 +458,19 @@
             
             <!-- PHẦN 4: ĐÁNH GIÁ & NHẬN XÉT -->
             <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
-                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Đánh giá & Nhận xét từ khách hàng</h2>
-                    <button id="write-review-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Viết đánh giá</button>
-                 </div>
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-y-4">
+                    <h2 class="text-2xl font-bold text-gray-900">Đánh giá & Nhận xét</h2>
+                    <div class="flex gap-2">
+                        <button id="summarize-reviews-btn" class="bg-violet-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-violet-700 transition-colors flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M15.5 2.75a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0v-3.5zM12.5 6a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5h-2.5a.75.75 0 01-.75-.75zM8.5 6a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5h-2.5A.75.75 0 018.5 6zM5.5 6a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5h-2.5A.75.75 0 015.5 6zM3 9.25a.75.75 0 000 1.5h14a.75.75 0 000-1.5H3zM3 13.25a.75.75 0 000 1.5h14a.75.75 0 000-1.5H3z"/></svg>
+                            ✨ Tóm tắt nhanh
+                        </button>
+                        <button id="write-review-btn" class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Viết đánh giá</button>
+                    </div>
+                </div>
+                <div id="review-summary-container" class="hidden mb-6 p-4 bg-violet-50 border border-violet-200 rounded-lg">
+                    <!-- AI Summary will be injected here -->
+                </div>
                  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div class="flex flex-col items-center justify-center md:border-r md:border-gray-200 md:pr-8">
                         <p class="text-4xl font-bold text-gray-800">4.9 / 5</p>
@@ -405,40 +493,37 @@
                         <div class="flex gap-2 flex-wrap">
                             <button class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full border-2 border-transparent hover:border-gray-400">Tất cả</button>
                             <button class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:border-gray-400">5 <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg></button>
-                            <button class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:border-gray-400">4 <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg></button>
-                            <button class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:border-gray-400">3 <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg></button>
-                            <button class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:border-gray-400">2 <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg></button>
-                            <button class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:border-gray-400">1 <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg></button>
-                            <button class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full border-2 border-transparent hover:border-gray-400">Có hình ảnh/video</button>
+                            <!-- Other filter buttons -->
                         </div>
                     </div>
-                    <!-- New Comment Form -->
                     <div class="my-6">
                         <div class="flex items-center gap-2 relative">
-                            <textarea id="comment-textarea" maxlength="3000" placeholder="Nhập nội dung bình luận..." class="w-full px-4 py-3 pr-24 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"></textarea>
-                            <span id="char-counter" class="absolute right-32 bottom-3 text-sm text-gray-400">0/3000</span>
+                            <textarea id="comment-textarea" maxlength="3000" placeholder="Nhập nội dung bình luận..." class="w-full px-4 py-3 pr-56 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"></textarea>
+                            <span id="char-counter" class="absolute right-40 bottom-3 text-sm text-gray-400">0/3000</span>
                             <button id="comment-submit-btn" class="absolute right-2 bottom-1.5 bg-gray-800 text-white font-semibold py-2 px-5 rounded-lg hover:bg-gray-900 transition-colors">Gửi bình luận</button>
                         </div>
                     </div>
-
-                     <div class="border-b border-gray-200 py-4">
-                        <div class="flex items-start gap-3">
-                            <img src="https://placehold.co/40x40/7e22ce/ffffff?text=N" alt="Avatar" class="w-10 h-10 rounded-full">
-                            <div>
-                                <p class="font-semibold text-gray-800">Nguyễn V. An</p>
-                                <div class="flex text-yellow-400 text-sm my-1">★★★★★</div>
-                                <p class="text-sm text-gray-600">Sản phẩm tuyệt vời, đúng hàng chính hãng. Giao hàng nhanh, đóng gói cẩn thận. Máy mượt, pin trâu, chụp ảnh siêu nét. Rất đáng tiền!</p>
-                                <div class="flex gap-2 mt-2"><img src="https://placehold.co/80x80/d0d0d0/333?text=Ảnh+thật" alt="Review Image" class="w-20 h-20 rounded-md object-cover"><img src="https://placehold.co/80x80/c0c0c0/333?text=Ảnh+thật" alt="Review Image" class="w-20 h-20 rounded-md object-cover"></div>
-                                <div class="text-xs text-gray-500 mt-2 flex items-center gap-4"><span>2 ngày trước</span><button class="flex items-center gap-1 text-blue-600 hover:underline"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"></path></svg>Hữu ích</button></div>
-                            </div>
-                        </div>
-                     </div>
+                    <div id="review-list">
+                        <!-- Reviews will be rendered here by JS -->
+                    </div>
+                    <nav id="review-pagination" class="flex items-center justify-center mt-6"></nav>
                  </div>
             </section>
             
-            <!-- PHẦN 5: CÂU HỎI THƯỜNG GẶP -->
+            <!-- PHẦN 5: HỎI & ĐÁP VỚI TRỢ LÝ AI -->
             <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Câu hỏi thường gặp</h2>
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Hỏi & Đáp với Trợ lý AI</h2>
+                <div class="mb-6">
+                    <textarea id="qna-textarea" placeholder="Nhập câu hỏi của bạn về iPhone 15 Pro Max..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="3"></textarea>
+                    <button id="ask-ai-btn" class="mt-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3zM10 15a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 15zM4.134 5.866a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.06 1.06a.75.75 0 11-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM15 10a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0115 10zM10 4a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 4zM5.866 14.134a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm9.193-9.193a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zM10 16a6 6 0 100-12 6 6 0 000 12z" clip-rule="evenodd" /></svg>
+                        ✨ Hỏi AI ngay
+                    </button>
+                </div>
+                <div id="ai-answer-container" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <!-- AI Answer will be injected here -->
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-4 border-t pt-6">Hoặc xem các câu hỏi thường gặp</h3>
                 <div id="qna-list" class="space-y-4">
                     <!-- Q&A items will be dynamically inserted here -->
                 </div>
@@ -563,494 +648,732 @@
         </div>
     </div>
 
+    <!-- Swiper.js Script -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 
+    <!-- Main Application Script -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
 
-            // --- GALLERY DATA ---
-            const galleryData = [
-                {
-                    thumb: 'https://placehold.co/120x120/f0f0f0/333?text=Góc+trước',
-                    main: 'https://placehold.co/600x600/f0f0f0/333?text=Góc+trước',
-                    lightbox: 'https://placehold.co/1200x1200/f0f0f0/333?text=Góc+trước',
-                    description: 'Vẻ ngoài cứng cáp, độ bền ấn tượng',
-                    type: 'image'
-                },
-                {
-                    thumb: 'https://placehold.co/120x120/e0e0e0/333?text=Góc+nghiêng',
-                    main: 'https://placehold.co/600x600/e0e0e0/333?text=Góc+nghiêng',
-                    lightbox: 'https://placehold.co/1200x1200/e0e0e0/333?text=Góc+nghiêng',
-                    description: 'Khung viền Titan chuẩn hàng không vũ trụ',
-                    type: 'image'
-                },
-                {
-                    thumb: 'https://placehold.co/120x120/d0d0d0/333?text=Cụm+Camera',
-                    main: 'https://placehold.co/600x600/d0d0d0/333?text=Cụm+Camera',
-                    lightbox: 'https://placehold.co/1200x1200/d0d0d0/333?text=Cụm+Camera',
-                    description: 'Hệ thống camera Pro đột phá',
-                    type: 'image'
-                },
-                {
-                    thumb: 'https://placehold.co/120x120/c0c0c0/333?text=Video+Review',
-                    main: 'https://placehold.co/600x600/c0c0c0/333?text=Video+Review',
-                    lightbox: 'https://placehold.co/1200x1200/c0c0c0/333?text=Video+Review',
-                    description: 'Video đánh giá chi tiết sản phẩm',
-                    type: 'video'
-                },
-                {
-                    thumb: 'https://placehold.co/120x120/b0b0b0/333?text=Ảnh+360°',
-                    main: 'https://placehold.co/600x600/b0b0b0/333?text=Ảnh+360°',
-                    lightbox: 'https://placehold.co/1200x1200/b0b0b0/333?text=Ảnh+360°',
-                    description: 'Trải nghiệm xoay 360 độ',
-                    type: '360'
-                }
-            ];
-            let currentImageIndex = 0;
+        // --- GALLERY DATA ---
+        const galleryData = [
+            { thumb: 'https://placehold.co/120x120/f0f0f0/333?text=Góc+trước', main: 'https://placehold.co/600x600/f0f0f0/333?text=Góc+trước', lightbox: 'https://placehold.co/1200x1200/f0f0f0/333?text=Góc+trước', description: 'Vẻ ngoài cứng cáp, độ bền ấn tượng', type: 'image' },
+            { thumb: 'https://placehold.co/120x120/e0e0e0/333?text=Góc+nghiêng', main: 'https://placehold.co/600x600/e0e0e0/333?text=Góc+nghiêng', lightbox: 'https://placehold.co/1200x1200/e0e0e0/333?text=Góc+nghiêng', description: 'Khung viền Titan chuẩn hàng không vũ trụ', type: 'image' },
+            { thumb: 'https://placehold.co/120x120/d0d0d0/333?text=Cụm+Camera', main: 'https://placehold.co/600x600/d0d0d0/333?text=Cụm+Camera', lightbox: 'https://placehold.co/1200x1200/d0d0d0/333?text=Cụm+Camera', description: 'Hệ thống camera Pro đột phá', type: 'image' },
+            { thumb: 'https://placehold.co/120x120/c0c0c0/333?text=Video+Review', main: 'https://placehold.co/600x600/c0c0c0/333?text=Video+Review', lightbox: 'https://placehold.co/1200x1200/c0c0c0/333?text=Video+Review', description: 'Video đánh giá chi tiết sản phẩm', type: 'video' },
+            { thumb: 'https://placehold.co/120x120/b0b0b0/333?text=Ảnh+360°', main: 'https://placehold.co/600x600/b0b0b0/333?text=Ảnh+360°', lightbox: 'https://placehold.co/1200x1200/b0b0b0/333?text=Ảnh+360°', description: 'Trải nghiệm xoay 360 độ', type: '360' },
+            { thumb: 'https://placehold.co/120x120/a0a0a0/333?text=Cạnh+trái', main: 'https://placehold.co/600x600/a0a0a0/333?text=Cạnh+trái', lightbox: 'https://placehold.co/1200x1200/a0a0a0/333?text=Cạnh+trái', description: 'Nút tác vụ Action Button mới', type: 'image' },
+            { thumb: 'https://placehold.co/120x120/909090/333?text=Cạnh+phải', main: 'https://placehold.co/600x600/909090/333?text=Cạnh+phải', lightbox: 'https://placehold.co/1200x1200/909090/333?text=Cạnh+phải', description: 'Nút nguồn và cạnh máy', type: 'image' },
+            { thumb: 'https://placehold.co/120x120/808080/333?text=Cổng+sạc', main: 'https://placehold.co/600x600/808080/333?text=Cổng+sạc', lightbox: 'https://placehold.co/1200x1200/808080/333?text=Cổng+sạc', description: 'Cổng sạc USB-C mới', type: 'image' }
+        ];
+        let currentImageIndex = 0; // Dùng cho lightbox
 
-            // --- ELEMENTS ---
-            const mainImage = document.getElementById('mainImage');
-            const mainThumbnailsContainer = document.getElementById('main-thumbnails');
-            const mainImageContainer = document.getElementById('main-image-container');
-            const galleryPrevBtn = document.getElementById('gallery-prev-btn');
-            const galleryNextBtn = document.getElementById('gallery-next-btn');
-            
-            // Lightbox elements
-            const lightboxModal = document.getElementById('image-lightbox-modal');
-            const closeLightboxBtn = document.getElementById('close-lightbox-btn');
-            const lightboxMainImage = document.getElementById('lightbox-main-image');
-            const lightboxPrevBtn = document.getElementById('lightbox-prev-btn');
-            const lightboxNextBtn = document.getElementById('lightbox-next-btn');
-            const lightboxDescription = document.getElementById('lightbox-description');
-            const lightboxCounter = document.getElementById('lightbox-counter');
-            const lightboxThumbnailsContainer = document.getElementById('lightbox-thumbnails');
-            const lightboxZoomInBtn = document.getElementById('lightbox-zoom-in');
-            const lightboxZoomOutBtn = document.getElementById('lightbox-zoom-out');
-            const lightboxFullscreenBtn = document.getElementById('lightbox-fullscreen');
+        // --- ELEMENTS ---
+        const mainImageContainer = document.getElementById('main-image-container');
+        const mainThumbnailsWrapper = document.getElementById('main-thumbnails-wrapper');
+        const mainImageWrapper = mainImageContainer.querySelector('.swiper-wrapper');
+        
+        // Lightbox elements
+        const lightboxModal = document.getElementById('image-lightbox-modal');
+        const closeLightboxBtn = document.getElementById('close-lightbox-btn');
+        const lightboxMainImage = document.getElementById('lightbox-main-image');
+        const lightboxPrevBtn = document.getElementById('lightbox-prev-btn');
+        const lightboxNextBtn = document.getElementById('lightbox-next-btn');
+        const lightboxDescription = document.getElementById('lightbox-description');
+        const lightboxCounter = document.getElementById('lightbox-counter');
+        const lightboxThumbnailsContainer = document.getElementById('lightbox-thumbnails');
+        const lightboxZoomInBtn = document.getElementById('lightbox-zoom-in');
+        const lightboxZoomOutBtn = document.getElementById('lightbox-zoom-out');
+        const lightboxFullscreenBtn = document.getElementById('lightbox-fullscreen');
 
-            // --- INITIALIZE MAIN GALLERY ---
-            function initializeGallery() {
-                mainThumbnailsContainer.innerHTML = '';
-                galleryData.forEach((item, index) => {
-                    const thumbDiv = document.createElement('div');
-                    thumbDiv.className = `thumbnail-item relative cursor-pointer rounded-md border-2 ${index === 0 ? 'border-blue-500 thumbnail-selected' : 'border-transparent'}`;
-                    thumbDiv.onclick = () => changeImage(index);
+        // --- INITIALIZE SWIPER GALLERY ---
+        function initializeGallery() {
+            // Clear existing content
+            mainImageWrapper.innerHTML = '';
+            mainThumbnailsWrapper.innerHTML = '';
 
-                    const img = document.createElement('img');
-                    img.src = item.thumb;
-                    img.alt = `Thumbnail ${index + 1}`;
-                    img.className = 'w-full h-full object-cover rounded';
-                    thumbDiv.appendChild(img);
+            // Create slides for both sliders
+            galleryData.forEach(item => {
+                // Main image slide
+                const mainSlide = document.createElement('div');
+                mainSlide.className = 'swiper-slide';
+                mainSlide.innerHTML = `<img src="${item.main}" alt="${item.description}" class="w-full h-auto object-cover rounded-lg" onerror="this.onerror=null;this.src='https://placehold.co/600x600/f8f8f8/ccc?text=Image+Error';">`;
+                mainImageWrapper.appendChild(mainSlide);
 
-                    if (item.type !== 'image') {
-                        const overlay = document.createElement('div');
-                        overlay.className = 'absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center rounded';
-                        let iconSvg = '';
-                        if (item.type === 'video') {
-                            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>`;
-                        } else if (item.type === '360') {
-                            iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-11.664 0l4.992-4.993m-14.976 0h4.992m-4.993 0l3.181-3.183a8.25 8.25 0 0111.664 0l3.181 3.183" /></svg>`;
-                        }
-                        overlay.innerHTML = iconSvg;
-                        thumbDiv.appendChild(overlay);
+                // Thumbnail slide
+                const thumbSlide = document.createElement('div');
+                thumbSlide.className = 'swiper-slide relative'; // Added relative for overlay
+                let thumbContent = `<img src="${item.thumb}" alt="Thumbnail for ${item.description}" onerror="this.onerror=null;this.src='https://placehold.co/120x120/f8f8f8/ccc?text=Error';">`;
+                
+                // Add overlay for video or 360 icons
+                if (item.type !== 'image') {
+                    let iconSvg = '';
+                    if (item.type === 'video') {
+                        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" /></svg>`;
+                    } else if (item.type === '360') {
+                        iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-11.664 0l4.992-4.993m-14.976 0h4.992m-4.993 0l3.181-3.183a8.25 8.25 0 0111.664 0l3.181 3.183" /></svg>`;
                     }
-                    mainThumbnailsContainer.appendChild(thumbDiv);
-                });
-                changeImage(0);
-            }
-
-            // --- CHANGE IMAGE ON MAIN PAGE ---
-            window.changeImage = function(index) {
-                currentImageIndex = index;
-                mainImage.src = galleryData[index].main;
-
-                const thumbnails = mainThumbnailsContainer.querySelectorAll('.thumbnail-item');
-                thumbnails.forEach((thumb, i) => {
-                    thumb.classList.toggle('thumbnail-selected', i === index);
-                    thumb.classList.toggle('border-blue-500', i === index);
-                    thumb.classList.toggle('border-transparent', i !== index);
-                });
-            }
-
-            // --- LIGHTBOX LOGIC ---
-            function updateLightboxView() {
-                const item = galleryData[currentImageIndex];
-                lightboxMainImage.src = item.lightbox;
-                lightboxDescription.textContent = item.description;
-                lightboxCounter.textContent = `${currentImageIndex + 1} / ${galleryData.length}`;
-                lightboxMainImage.classList.remove('zoomed'); // Reset zoom on image change
-
-                const lightboxThumbs = lightboxThumbnailsContainer.querySelectorAll('img');
-                lightboxThumbs.forEach((thumb, i) => {
-                    thumb.classList.toggle('ring-2', i === currentImageIndex);
-                    thumb.classList.toggle('ring-white', i === currentImageIndex);
-                    thumb.classList.toggle('opacity-60', i !== currentImageIndex);
-                });
-            }
-            
-            function openLightbox(index) {
-                currentImageIndex = index;
-                populateLightboxThumbnails();
-                updateLightboxView();
-                lightboxModal.classList.remove('hidden');
-                lightboxModal.classList.add('flex');
-            }
-
-            function closeLightbox() {
-                lightboxModal.classList.add('hidden');
-                lightboxModal.classList.remove('flex');
-                 if (document.fullscreenElement) {
-                     document.exitFullscreen();
-                 }
-            }
-
-            function showNextImage() {
-                currentImageIndex = (currentImageIndex + 1) % galleryData.length;
-                updateLightboxView();
-            }
-
-            function showPrevImage() {
-                currentImageIndex = (currentImageIndex - 1 + galleryData.length) % galleryData.length;
-                updateLightboxView();
-            }
-            
-            function toggleZoom() {
-                lightboxMainImage.classList.toggle('zoomed');
-            }
-
-            function populateLightboxThumbnails() {
-                if (lightboxThumbnailsContainer.children.length > 0) return; // Populate only once
-                galleryData.forEach((item, index) => {
-                    const img = document.createElement('img');
-                    img.src = item.thumb;
-                    img.className = 'w-16 h-16 object-cover rounded-md cursor-pointer hover:opacity-100 transition-opacity';
-                    img.onclick = () => {
-                        currentImageIndex = index;
-                        updateLightboxView();
-                    };
-                    lightboxThumbnailsContainer.appendChild(img);
-                });
-            }
-
-            // --- EVENT LISTENERS ---
-            mainImageContainer.addEventListener('click', () => openLightbox(currentImageIndex));
-            closeLightboxBtn.addEventListener('click', closeLightbox);
-            lightboxNextBtn.addEventListener('click', showNextImage);
-            lightboxPrevBtn.addEventListener('click', showPrevImage);
-            
-            lightboxMainImage.addEventListener('click', (e) => {
-                if (e.target.classList.contains('zoomed')) {
-                     e.target.classList.remove('zoomed');
-                } else {
-                     e.target.classList.add('zoomed');
+                    thumbContent += `<div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center rounded-sm">${iconSvg}</div>`;
                 }
+                thumbSlide.innerHTML = thumbContent;
+                mainThumbnailsWrapper.appendChild(thumbSlide);
             });
 
-            lightboxZoomInBtn.addEventListener('click', () => lightboxMainImage.classList.add('zoomed'));
-            lightboxZoomOutBtn.addEventListener('click', () => lightboxMainImage.classList.remove('zoomed'));
-            lightboxFullscreenBtn.addEventListener('click', () => {
-                if (!document.fullscreenElement) {
-                    lightboxModal.requestFullscreen().catch(err => {
-                        alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-                    });
-                } else {
-                    document.exitFullscreen();
-                }
+            // Initialize Swiper for thumbnails
+            var galleryThumbs = new Swiper('.gallery-thumbs', {
+                spaceBetween: 10,
+                slidesPerView: 5,
+                freeMode: true,
+                watchSlidesProgress: true,
+                navigation: {
+                    nextEl: '#thumb-next-btn',
+                    prevEl: '#thumb-prev-btn',
+                },
             });
 
-            document.addEventListener('keydown', (e) => {
-                if (lightboxModal.classList.contains('hidden')) return;
-                if (e.key === 'ArrowRight') showNextImage();
-                if (e.key === 'ArrowLeft') showPrevImage();
-                if (e.key === 'Escape') closeLightbox();
+            // Initialize Swiper for the main image and link it with thumbnails
+            var galleryTop = new Swiper('.gallery-top', {
+                spaceBetween: 10,
+                thumbs: {
+                    swiper: galleryThumbs,
+                },
             });
 
-            galleryPrevBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent lightbox from opening
-                const newIndex = (currentImageIndex - 1 + galleryData.length) % galleryData.length;
-                changeImage(newIndex);
+            // Add a click listener to the main slider to open the lightbox
+            galleryTop.on('click', function () {
+                openLightbox(galleryTop.activeIndex);
             });
+        }
 
-            galleryNextBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent lightbox from opening
-                const newIndex = (currentImageIndex + 1) % galleryData.length;
-                changeImage(newIndex);
-            });
+        // --- LIGHTBOX LOGIC ---
+        let isZoomed = false;
+        let isPanning = false;
+        let startX, startY;
+        let currentTranslateX = 0;
+        let currentTranslateY = 0;
+
+        function resetZoomState() {
+            isZoomed = false;
+            isPanning = false;
+            currentTranslateX = 0;
+            currentTranslateY = 0;
+            lightboxMainImage.style.transition = 'transform 0.3s ease';
+            lightboxMainImage.style.transform = 'scale(1) translate(0, 0)';
+            lightboxMainImage.style.cursor = 'zoom-in';
+        }
+        
+        function zoomIn() {
+            isZoomed = true;
+            lightboxMainImage.style.transition = 'transform 0.3s ease';
+            lightboxMainImage.style.transform = 'scale(2.5)';
+            lightboxMainImage.style.cursor = 'grab';
+        }
+
+        function zoomOut() {
+            resetZoomState();
+        }
+
+        function updateLightboxView() {
+            const item = galleryData[currentImageIndex];
+            lightboxMainImage.src = item.lightbox;
+            lightboxDescription.textContent = item.description;
+            lightboxCounter.textContent = `${currentImageIndex + 1} / ${galleryData.length}`;
             
-            // --- VARIANT SELECTION ---
-            window.selectColor = function(element, colorName) { const colorButtons = document.querySelectorAll('.variants div button[style]'); colorButtons.forEach(btn => btn.classList.remove('ring-blue-500')); element.classList.add('ring-blue-500'); document.getElementById('colorName').textContent = colorName; }
-            window.selectVariant = function(element) { const variantButtons = document.querySelectorAll('.variants div button:not([style])'); variantButtons.forEach(btn => { btn.classList.remove('variant-selected'); btn.classList.add('border-gray-300', 'text-gray-700', 'hover:border-blue-500'); }); element.classList.add('variant-selected'); element.classList.remove('border-gray-300', 'text-gray-700', 'hover:border-blue-500'); }
-            
-            // --- QUANTITY SELECTOR ---
-            const minusBtn = document.getElementById('minusBtn'); const plusBtn = document.getElementById('plusBtn'); const quantityInput = document.getElementById('quantityInput');
-            minusBtn.addEventListener('click', () => { let currentValue = parseInt(quantityInput.value); if (currentValue > 1) { quantityInput.value = currentValue - 1; } });
-            plusBtn.addEventListener('click', () => { let currentValue = parseInt(quantityInput.value); quantityInput.value = currentValue + 1; });
-            
-            // --- SPECS ACCORDION ---
-            const accordionButtons = document.querySelectorAll('.accordion-button');
-            accordionButtons.forEach(button => { button.addEventListener('click', () => { const content = button.nextElementSibling; const icon = button.querySelector('.accordion-icon'); if (content.style.maxHeight) { content.style.maxHeight = null; icon.classList.remove('rotate-180'); } else { content.style.maxHeight = content.scrollHeight + 'px'; icon.classList.add('rotate-180'); } }); });
-            
-            // --- TABS & READ MORE ---
-            const tabDescBtn = document.getElementById('tab-desc-btn');
-            const tabSpecsBtn = document.getElementById('tab-specs-btn');
-            const tabDescContent = document.getElementById('tab-desc-content');
-            const tabSpecsContent = document.getElementById('tab-specs-content');
-            const descriptionWrapper = document.getElementById('description-wrapper');
-            const readMoreBtn = document.getElementById('read-more-btn');
+            resetZoomState();
 
+            const lightboxThumbs = lightboxThumbnailsContainer.querySelectorAll('img');
+            lightboxThumbs.forEach((thumb, i) => {
+                thumb.classList.toggle('ring-2', i === currentImageIndex);
+                thumb.classList.toggle('ring-white', i === currentImageIndex);
+                thumb.classList.toggle('opacity-60', i !== currentImageIndex);
+            });
+        }
+        
+        function openLightbox(index) {
+            currentImageIndex = index;
+            populateLightboxThumbnails();
+            updateLightboxView();
+            lightboxModal.classList.remove('hidden');
+            lightboxModal.classList.add('flex');
+        }
+
+        function closeLightbox() {
+            lightboxModal.classList.add('hidden');
+            lightboxModal.classList.remove('flex');
+             if (document.fullscreenElement) {
+                 document.exitFullscreen();
+             }
+             resetZoomState();
+        }
+
+        function showNextImage() {
+            currentImageIndex = (currentImageIndex + 1) % galleryData.length;
+            updateLightboxView();
+        }
+
+        function showPrevImage() {
+            currentImageIndex = (currentImageIndex - 1 + galleryData.length) % galleryData.length;
+            updateLightboxView();
+        }
+
+        function populateLightboxThumbnails() {
+            if (lightboxThumbnailsContainer.children.length > 0) return;
+            galleryData.forEach((item, index) => {
+                const img = document.createElement('img');
+                img.src = item.thumb;
+                img.className = 'w-16 h-16 object-cover rounded-md cursor-pointer hover:opacity-100 transition-opacity';
+                img.onclick = () => {
+                    currentImageIndex = index;
+                    updateLightboxView();
+                };
+                lightboxThumbnailsContainer.appendChild(img);
+            });
+        }
+
+        // --- LIGHTBOX EVENT LISTENERS ---
+        closeLightboxBtn.addEventListener('click', closeLightbox);
+        lightboxNextBtn.addEventListener('click', showNextImage);
+        lightboxPrevBtn.addEventListener('click', showPrevImage);
+        
+        lightboxZoomInBtn.addEventListener('click', zoomIn);
+        lightboxZoomOutBtn.addEventListener('click', zoomOut);
+        
+        lightboxMainImage.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            if (isZoomed) {
+                zoomOut();
+            } else {
+                zoomIn();
+            }
+        });
+
+        lightboxMainImage.addEventListener('mousedown', (e) => {
+            if (!isZoomed || isPanning) return;
+            e.preventDefault();
+            isPanning = true;
+            startX = e.clientX - currentTranslateX;
+            startY = e.clientY - currentTranslateY;
+            lightboxMainImage.style.cursor = 'grabbing';
+            lightboxMainImage.style.transition = 'none';
+        });
+
+        lightboxMainImage.addEventListener('mousemove', (e) => {
+            if (!isPanning) return;
+            e.preventDefault();
+            currentTranslateX = e.clientX - startX;
+            currentTranslateY = e.clientY - startY;
+            lightboxMainImage.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(2.5)`;
+        });
+        
+        const endPan = (e) => {
+            if (!isPanning) return;
+            isPanning = false;
+            lightboxMainImage.style.cursor = 'grab';
+        };
+
+        lightboxMainImage.addEventListener('mouseup', endPan);
+        lightboxMainImage.addEventListener('mouseleave', endPan);
+
+        lightboxFullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                lightboxModal.requestFullscreen().catch(err => {
+                    // Use a custom modal/toast instead of alert in a real app
+                    console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (lightboxModal.classList.contains('hidden')) return;
+            if (e.key === 'ArrowRight') showNextImage();
+            if (e.key === 'ArrowLeft') showPrevImage();
+            if (e.key === 'Escape') closeLightbox();
+        });
+
+        // --- VARIANT SELECTION ---
+        window.selectColor = function(element, colorName) { const colorButtons = document.querySelectorAll('.variants div button[style]'); colorButtons.forEach(btn => btn.classList.remove('ring-blue-500')); element.classList.add('ring-blue-500'); document.getElementById('colorName').textContent = colorName; }
+        window.selectVariant = function(element) { const variantButtons = document.querySelectorAll('.variants div button:not([style])'); variantButtons.forEach(btn => { btn.classList.remove('variant-selected'); btn.classList.add('border-gray-300', 'text-gray-700', 'hover:border-blue-500'); }); element.classList.add('variant-selected'); element.classList.remove('border-gray-300', 'text-gray-700', 'hover:border-blue-500'); }
+        
+        // --- QUANTITY SELECTOR ---
+        const minusBtn = document.getElementById('minusBtn'); const plusBtn = document.getElementById('plusBtn'); const quantityInput = document.getElementById('quantityInput');
+        minusBtn.addEventListener('click', () => { let currentValue = parseInt(quantityInput.value); if (currentValue > 1) { quantityInput.value = currentValue - 1; } });
+        plusBtn.addEventListener('click', () => { let currentValue = parseInt(quantityInput.value); quantityInput.value = currentValue + 1; });
+        
+        // --- SPECS ACCORDION ---
+        const accordionButtons = document.querySelectorAll('.accordion-button');
+        accordionButtons.forEach(button => { button.addEventListener('click', () => { const content = button.nextElementSibling; const icon = button.querySelector('.accordion-icon'); if (content.style.maxHeight) { content.style.maxHeight = null; icon.classList.remove('rotate-180'); } else { content.style.maxHeight = content.scrollHeight + 'px'; icon.classList.add('rotate-180'); } }); });
+        
+        // --- TABS & READ MORE ---
+        const tabDescBtn = document.getElementById('tab-desc-btn');
+        const tabSpecsBtn = document.getElementById('tab-specs-btn');
+        const tabDescContent = document.getElementById('tab-desc-content');
+        const tabSpecsContent = document.getElementById('tab-specs-content');
+        const descriptionWrapper = document.getElementById('description-wrapper');
+        const readMoreBtn = document.getElementById('read-more-btn');
+
+        tabSpecsContent.style.display = 'block';
+        tabDescContent.style.display = 'none';
+        tabSpecsBtn.classList.add('tab-active');
+        tabDescBtn.classList.remove('tab-active');
+
+        tabDescBtn.addEventListener('click', () => {
+            tabDescContent.style.display = 'block';
+            tabSpecsContent.style.display = 'none';
+            tabDescBtn.classList.add('tab-active');
+            tabSpecsBtn.classList.remove('tab-active');
+        });
+
+        tabSpecsBtn.addEventListener('click', () => {
             tabSpecsContent.style.display = 'block';
             tabDescContent.style.display = 'none';
             tabSpecsBtn.classList.add('tab-active');
             tabDescBtn.classList.remove('tab-active');
-
-            tabDescBtn.addEventListener('click', () => {
-                tabDescContent.style.display = 'block';
-                tabSpecsContent.style.display = 'none';
-                tabDescBtn.classList.add('tab-active');
-                tabSpecsBtn.classList.remove('tab-active');
-            });
-
-            tabSpecsBtn.addEventListener('click', () => {
-                tabSpecsContent.style.display = 'block';
-                tabDescContent.style.display = 'none';
-                tabSpecsBtn.classList.add('tab-active');
-                tabDescBtn.classList.remove('tab-active');
-            });
-
-            readMoreBtn.addEventListener('click', () => {
-                if (descriptionWrapper.classList.contains('collapsed')) {
-                    descriptionWrapper.classList.remove('collapsed');
-                    readMoreBtn.textContent = 'Thu gọn';
-                } else {
-                    descriptionWrapper.classList.add('collapsed');
-                    readMoreBtn.textContent = 'Xem thêm';
-                }
-            });
-
-            // --- MODAL HELPER ---
-            function showModal(modalId) {
-                const modal = document.getElementById(modalId);
-                if (!modal) return;
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                setTimeout(() => {
-                    modal.classList.remove('opacity-0');
-                    modal.querySelector('div').classList.remove('scale-95');
-                }, 10);
-            }
-
-            function hideModal(modalId) {
-                const modal = document.getElementById(modalId);
-                if (!modal) return;
-                modal.classList.add('opacity-0');
-                modal.querySelector('div').classList.add('scale-95');
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                }, 300);
-            }
-
-            // --- COMPARE BUTTON ---
-            // Note: The modal itself is removed. This button is a placeholder for future functionality.
-            const compareBtn = document.getElementById('compare-btn');
-            compareBtn.addEventListener('click', () => {
-                alert('Chức năng so sánh sẽ được tích hợp sau!');
-            });
-            
-            // --- FAVORITE BUTTON ---
-            const favoriteBtn = document.getElementById('favorite-btn');
-            const favoriteIconContainer = document.getElementById('favorite-icon-container');
-            const outlineIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" /></svg>`;
-            const solidIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg>`;
-            favoriteBtn.addEventListener('click', () => {
-                const isFavorited = favoriteBtn.classList.toggle('favorited');
-                favoriteIconContainer.innerHTML = isFavorited ? solidIcon : outlineIcon;
-            });
-
-            // --- SHARE POPOVER ---
-            const shareBtn = document.getElementById('share-btn');
-            const sharePopover = document.getElementById('share-popover');
-            const copyLinkBtn = document.getElementById('copy-link-btn');
-            shareBtn.addEventListener('click', (event) => {
-                event.stopPropagation();
-                sharePopover.classList.toggle('hidden');
-            });
-            copyLinkBtn.addEventListener('click', () => {
-                const url = window.location.href;
-                const textarea = document.createElement('textarea');
-                textarea.value = url;
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
-                copyLinkBtn.textContent = 'Đã sao chép!';
-                setTimeout(() => { copyLinkBtn.textContent = 'Sao chép link'; }, 2000);
-            });
-            document.addEventListener('click', (event) => {
-                if (!shareBtn.contains(event.target) && !sharePopover.contains(event.target)) {
-                    sharePopover.classList.add('hidden');
-                }
-            });
-
-            // --- COUNTDOWN TIMER ---
-            const countdownDate = new Date().getTime() + (2 * 60 * 60 * 1000); // Set timer for 2 hours from now
-            const timerInterval = setInterval(() => {
-                const now = new Date().getTime();
-                const distance = countdownDate - now;
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                document.getElementById('hours').innerText = hours.toString().padStart(2, '0');
-                document.getElementById('minutes').innerText = minutes.toString().padStart(2, '0');
-                document.getElementById('seconds').innerText = seconds.toString().padStart(2, '0');
-                if (distance < 0) { clearInterval(timerInterval); document.getElementById('countdown-timer').innerHTML = "<span class='text-sm'>Đã kết thúc</span>"; }
-            }, 1000);
-
-            // --- BUNDLE DEAL ---
-            const bundleCheckboxes = document.querySelectorAll('.bundle-checkbox');
-            const bundleTotalPriceEl = document.getElementById('bundle-total-price');
-            const basePrice = 30490000;
-            function calculateBundleTotal() {
-                let total = basePrice;
-                bundleCheckboxes.forEach(checkbox => { if (checkbox.checked) { total += parseInt(checkbox.dataset.price); } });
-                bundleTotalPriceEl.textContent = total.toLocaleString('vi-VN') + '₫';
-            }
-            bundleCheckboxes.forEach(checkbox => checkbox.addEventListener('change', calculateBundleTotal));
-            
-            // --- COMMENT TEXTAREA & CHAR COUNTER ---
-            const commentTextarea = document.getElementById('comment-textarea');
-            const charCounter = document.getElementById('char-counter');
-            const maxLength = commentTextarea.getAttribute('maxlength');
-            commentTextarea.addEventListener('input', () => {
-                const currentLength = commentTextarea.value.length;
-                charCounter.textContent = `${currentLength}/${maxLength}`;
-            });
-
-            // --- REVIEW MODAL ---
-            const writeReviewBtn = document.getElementById('write-review-btn');
-            const reviewModal = document.getElementById('review-modal');
-            const closeReviewModalBtn = document.getElementById('close-review-modal-btn');
-            const reviewStarsContainer = document.getElementById('review-stars-container');
-            let selectedRating = 0;
-
-            for (let i = 1; i <= 5; i++) {
-                const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                star.setAttribute('class', 'review-star w-8 h-8');
-                star.setAttribute('fill', 'currentColor');
-                star.setAttribute('viewBox', '0 0 20 20');
-                star.innerHTML = `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
-                star.dataset.rating = i;
-                reviewStarsContainer.appendChild(star);
-            }
-            const reviewStars = reviewStarsContainer.querySelectorAll('.review-star');
-            reviewStars.forEach(star => {
-                star.addEventListener('mouseover', () => reviewStars.forEach(s => s.classList.toggle('hover', s.dataset.rating <= star.dataset.rating)));
-                star.addEventListener('mouseout', () => reviewStars.forEach(s => s.classList.remove('hover')));
-                star.addEventListener('click', () => { selectedRating = star.dataset.rating; reviewStars.forEach(s => s.classList.toggle('selected', s.dataset.rating <= selectedRating)); });
-            });
-            writeReviewBtn.addEventListener('click', () => showModal('review-modal'));
-            closeReviewModalBtn.addEventListener('click', () => hideModal('review-modal'));
-            reviewModal.addEventListener('click', (event) => { if (event.target === reviewModal) hideModal('review-modal'); });
-
-            // --- USER INFO MODAL (FOR COMMENTS) ---
-            const commentSubmitBtn = document.getElementById('comment-submit-btn');
-            const userInfoModal = document.getElementById('user-info-modal');
-            const closeUserInfoModalBtn = document.getElementById('close-user-info-modal-btn');
-            
-            commentSubmitBtn.addEventListener('click', () => {
-                const commentText = document.getElementById('comment-textarea').value;
-                if (commentText.trim() === '') {
-                    alert('Vui lòng nhập bình luận của bạn.');
-                    return;
-                }
-                showModal('user-info-modal');
-            });
-
-            closeUserInfoModalBtn.addEventListener('click', () => hideModal('user-info-modal'));
-            userInfoModal.addEventListener('click', (event) => { if (event.target === userInfoModal) hideModal('user-info-modal'); });
-
-            const termsCheckbox = document.getElementById('terms-checkbox');
-            const qnaCompleteBtn = document.getElementById('qna-complete-btn');
-            termsCheckbox.addEventListener('change', () => {
-                if (termsCheckbox.checked) {
-                    qnaCompleteBtn.disabled = false;
-                    qnaCompleteBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-                    qnaCompleteBtn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                } else {
-                    qnaCompleteBtn.disabled = true;
-                    qnaCompleteBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-                    qnaCompleteBtn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
-                }
-            });
-
-            // Dummy Q&A Data
-            const qnaData = [
-                { q: 'Sản phẩm này có hỗ trợ eSIM không?', a: 'Chào bạn, iPhone 15 Pro Max bản VN/A chính hãng hỗ trợ 1 SIM vật lý và nhiều eSIM nhé.' },
-                { q: 'Chế độ bảo hành như thế nào?', a: 'Sản phẩm được bảo hành chính hãng 12 tháng tại các trung tâm bảo hành uỷ quyền của Apple trên toàn quốc ạ.' },
-                { q: 'Shop có hỗ trợ giao hàng hoả tốc không?', a: 'Dạ có ạ, shop có hỗ trợ giao hàng hoả tốc trong nội thành TP.HCM và Hà Nội, bạn vui lòng liên hệ hotline để được hỗ trợ nhé.' },
-                { q: 'Phụ kiện đi kèm có những gì?', a: 'Dạ trong hộp sản phẩm có máy, cáp sạc USB-C và sách hướng dẫn sử dụng ạ.' },
-                { q: 'Máy có chống nước không?', a: 'Chào bạn, iPhone 15 Pro Max có chuẩn kháng nước và bụi IP68 ạ.' },
-                { q: 'Làm sao để áp dụng trả góp 0%?', a: 'Dạ bạn chỉ cần có thẻ tín dụng của các ngân hàng được hỗ trợ là có thể áp dụng trả góp 0% khi thanh toán ạ.' }
-            ];
-
-            const qnaListEl = document.getElementById('qna-list');
-            const qnaPaginationEl = document.getElementById('qna-pagination');
-            let qnaCurrentPage = 1;
-            const qnaItemsPerPage = 3;
-
-            function renderQna() {
-                qnaListEl.innerHTML = '';
-                const start = (qnaCurrentPage - 1) * qnaItemsPerPage;
-                const end = start + qnaItemsPerPage;
-                const paginatedItems = qnaData.slice(start, end);
-
-                for (const item of paginatedItems) {
-                    const qnaItem = document.createElement('div');
-                    qnaItem.className = 'faq-item border-t border-gray-200 pt-4';
-                    qnaItem.innerHTML = `
-                        <p class="font-semibold text-gray-800">Q: ${item.q}</p>
-                        <p class="text-sm text-gray-600 mt-1 pl-4 border-l-2 border-blue-200">A: ${item.a}</p>
-                    `;
-                    qnaListEl.appendChild(qnaItem);
-                }
-            }
-
-            function setupQnaPagination() {
-                qnaPaginationEl.innerHTML = '';
-                const pageCount = Math.ceil(qnaData.length / qnaItemsPerPage);
-                for (let i = 1; i <= pageCount; i++) {
-                    const btn = document.createElement('button');
-                    btn.innerText = i;
-                    btn.className = `px-3 py-1 mx-1 rounded-md text-sm font-medium ${i === qnaCurrentPage ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
-                    btn.addEventListener('click', () => {
-                        qnaCurrentPage = i;
-                        renderQna();
-                        setupQnaPagination();
-                    });
-                    qnaPaginationEl.appendChild(btn);
-                }
-            }
-            
-            // --- STICKY BAR ---
-            const stickyBar = document.getElementById('sticky-bar');
-            const mainCtaButtons = document.getElementById('main-cta-buttons');
-            
-            const scrollObserver = new IntersectionObserver((entries) => {
-                if (!entries[0].isIntersecting) {
-                    stickyBar.classList.remove('translate-y-full');
-                } else {
-                    stickyBar.classList.add('translate-y-full');
-                }
-            }, { threshold: 0 });
-            
-            scrollObserver.observe(mainCtaButtons);
-
-
-            // --- INITIALIZE ---
-            initializeGallery();
-            calculateBundleTotal();
-            renderQna();
-            setupQnaPagination();
         });
+
+        readMoreBtn.addEventListener('click', () => {
+            if (descriptionWrapper.classList.contains('collapsed')) {
+                descriptionWrapper.classList.remove('collapsed');
+                readMoreBtn.textContent = 'Thu gọn';
+            } else {
+                descriptionWrapper.classList.add('collapsed');
+                readMoreBtn.textContent = 'Xem thêm';
+            }
+        });
+
+        // --- MODAL HELPER ---
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.bg-white').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            modal.classList.add('opacity-0');
+            modal.querySelector('.bg-white').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        // --- COMPARE BUTTON ---
+        const compareBtn = document.getElementById('compare-btn');
+        compareBtn.addEventListener('click', () => {
+             // Replace alert with a custom modal in a real application
+            alert('Chức năng so sánh sẽ được tích hợp sau!');
+        });
+        
+        // --- FAVORITE BUTTON ---
+        const favoriteBtn = document.getElementById('favorite-btn');
+        const favoriteIconContainer = document.getElementById('favorite-icon-container');
+        const outlineIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" /></svg>`;
+        const solidIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" /></svg>`;
+        favoriteBtn.addEventListener('click', () => {
+            const isFavorited = favoriteBtn.classList.toggle('favorited');
+            favoriteIconContainer.innerHTML = isFavorited ? solidIcon : outlineIcon;
+        });
+
+        // --- SHARE POPOVER ---
+        const shareBtn = document.getElementById('share-btn');
+        const sharePopover = document.getElementById('share-popover');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        shareBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            sharePopover.classList.toggle('hidden');
+        });
+        copyLinkBtn.addEventListener('click', () => {
+            const url = window.location.href;
+            const textarea = document.createElement('textarea');
+            textarea.value = url;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            copyLinkBtn.textContent = 'Đã sao chép!';
+            setTimeout(() => { copyLinkBtn.textContent = 'Sao chép link'; }, 2000);
+        });
+        document.addEventListener('click', (event) => {
+            if (!shareBtn.contains(event.target) && !sharePopover.contains(event.target)) {
+                sharePopover.classList.add('hidden');
+            }
+        });
+
+        // --- COUNTDOWN TIMER ---
+        const countdownDate = new Date().getTime() + (2 * 60 * 60 * 1000); // Set timer for 2 hours from now
+        const timerInterval = setInterval(() => {
+            const now = new Date().getTime();
+            const distance = countdownDate - now;
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+            document.getElementById('hours').innerText = hours.toString().padStart(2, '0');
+            document.getElementById('minutes').innerText = minutes.toString().padStart(2, '0');
+            document.getElementById('seconds').innerText = seconds.toString().padStart(2, '0');
+            if (distance < 0) { clearInterval(timerInterval); document.getElementById('countdown-timer').innerHTML = "<span class='text-sm'>Đã kết thúc</span>"; }
+        }, 1000);
+
+        // --- BUNDLE DEAL ---
+        const bundleCheckboxes = document.querySelectorAll('.bundle-checkbox');
+        const bundleTotalPriceEl = document.getElementById('bundle-total-price');
+        const basePrice = 30490000;
+        function calculateBundleTotal() {
+            let total = basePrice;
+            bundleCheckboxes.forEach(checkbox => { if (checkbox.checked) { total += parseInt(checkbox.dataset.price); } });
+            bundleTotalPriceEl.textContent = total.toLocaleString('vi-VN') + '₫';
+        }
+        bundleCheckboxes.forEach(checkbox => checkbox.addEventListener('change', calculateBundleTotal));
+        
+        // --- COMMENT TEXTAREA & CHAR COUNTER ---
+        const commentTextarea = document.getElementById('comment-textarea');
+        const charCounter = document.getElementById('char-counter');
+        const maxLength = commentTextarea.getAttribute('maxlength');
+        commentTextarea.addEventListener('input', () => {
+            const currentLength = commentTextarea.value.length;
+            charCounter.textContent = `${currentLength}/${maxLength}`;
+        });
+
+        // --- REVIEW MODAL ---
+        const writeReviewBtn = document.getElementById('write-review-btn');
+        const reviewModal = document.getElementById('review-modal');
+        const closeReviewModalBtn = document.getElementById('close-review-modal-btn');
+        const reviewStarsContainer = document.getElementById('review-stars-container');
+        let selectedRating = 0;
+
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            star.setAttribute('class', 'review-star w-8 h-8');
+            star.setAttribute('fill', 'currentColor');
+            star.setAttribute('viewBox', '0 0 20 20');
+            star.innerHTML = `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
+            star.dataset.rating = i;
+            reviewStarsContainer.appendChild(star);
+        }
+        const reviewStars = reviewStarsContainer.querySelectorAll('.review-star');
+        reviewStars.forEach(star => {
+            star.addEventListener('mouseover', () => reviewStars.forEach(s => s.classList.toggle('hover', s.dataset.rating <= star.dataset.rating)));
+            star.addEventListener('mouseout', () => reviewStars.forEach(s => s.classList.remove('hover')));
+            star.addEventListener('click', () => { selectedRating = star.dataset.rating; reviewStars.forEach(s => s.classList.toggle('selected', s.dataset.rating <= selectedRating)); });
+        });
+        writeReviewBtn.addEventListener('click', () => showModal('review-modal'));
+        closeReviewModalBtn.addEventListener('click', () => hideModal('review-modal'));
+        reviewModal.addEventListener('click', (event) => { if (event.target === reviewModal) hideModal('review-modal'); });
+
+        // --- USER INFO MODAL ---
+        const userInfoModal = document.getElementById('user-info-modal');
+        const closeUserInfoModalBtn = document.getElementById('close-user-info-modal-btn');
+        closeUserInfoModalBtn.addEventListener('click', () => hideModal('user-info-modal'));
+        userInfoModal.addEventListener('click', (event) => { if (event.target === userInfoModal) hideModal('user-info-modal'); });
+
+        const termsCheckbox = document.getElementById('terms-checkbox');
+        const qnaCompleteBtn = document.getElementById('qna-complete-btn');
+        termsCheckbox.addEventListener('change', () => {
+            if (termsCheckbox.checked) {
+                qnaCompleteBtn.disabled = false;
+                qnaCompleteBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                qnaCompleteBtn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+            } else {
+                qnaCompleteBtn.disabled = true;
+                qnaCompleteBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                qnaCompleteBtn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+            }
+        });
+
+        // --- DUMMY DATA ---
+        const qnaData = [
+            { q: 'Sản phẩm này có hỗ trợ eSIM không?', a: 'Chào bạn, iPhone 15 Pro Max bản VN/A chính hãng hỗ trợ 1 SIM vật lý và nhiều eSIM nhé.' },
+            { q: 'Chế độ bảo hành như thế nào?', a: 'Sản phẩm được bảo hành chính hãng 12 tháng tại các trung tâm bảo hành uỷ quyền của Apple trên toàn quốc ạ.' },
+            { q: 'Phụ kiện đi kèm có những gì?', a: 'Dạ trong hộp sản phẩm có máy, cáp sạc USB-C và sách hướng dẫn sử dụng ạ.' },
+            { q: 'Máy có chống nước không?', a: 'Chào bạn, iPhone 15 Pro Max có chuẩn kháng nước, bụi IP68, có thể chịu được ở độ sâu tối đa 6 mét trong tối đa 30 phút ạ.' },
+            { q: 'Cổng sạc Type-C có nhanh hơn Lightning không?', a: 'Dạ, cổng USB-C trên iPhone 15 Pro và Pro Max hỗ trợ tốc độ USB 3, nhanh hơn đến 20 lần so với cổng Lightning (USB 2.0) khi truyền dữ liệu bằng cáp tương thích ạ.' },
+        ];
+
+        const reviewData = [
+            { 
+                name: 'Nguyễn V. An', 
+                avatar: 'https://placehold.co/40x40/7e22ce/ffffff?text=N',
+                rating: 5,
+                text: 'Sản phẩm tuyệt vời, đúng hàng chính hãng. Giao hàng nhanh, đóng gói cẩn thận. Máy mượt, pin trâu, chụp ảnh siêu nét. Rất đáng tiền!',
+                images: ['https://placehold.co/80x80/d0d0d0/333?text=Ảnh+thật', 'https://placehold.co/80x80/c0c0c0/333?text=Ảnh+thật'],
+                date: '2 ngày trước'
+            },
+            { 
+                name: 'Trần B. Tuấn', 
+                avatar: 'https://placehold.co/40x40/34d399/ffffff?text=T',
+                rating: 4,
+                text: 'Máy dùng tốt, tuy nhiên thời lượng pin không như kỳ vọng của mình lắm. Camera chụp đêm khá ổn. Màn hình ProMotion rất mượt.',
+                images: [],
+                date: '1 tuần trước'
+            },
+            { 
+                name: 'Lê Thị Cẩm', 
+                avatar: 'https://placehold.co/40x40/f87171/ffffff?text=C',
+                rating: 5,
+                text: 'Màu Titan tự nhiên ở ngoài đẹp hơn trong ảnh nhiều. Shop tư vấn nhiệt tình. Sẽ ủng hộ lần sau.',
+                images: [],
+                date: '3 tuần trước'
+            }
+        ];
+
+        // --- GEMINI API INTEGRATION ---
+        const summarizeBtn = document.getElementById('summarize-reviews-btn');
+        const reviewSummaryContainer = document.getElementById('review-summary-container');
+        const askAiBtn = document.getElementById('ask-ai-btn');
+        const aiAnswerContainer = document.getElementById('ai-answer-container');
+        const qnaTextarea = document.getElementById('qna-textarea');
+        const commentSubmitBtn = document.getElementById('comment-submit-btn');
+
+        // Generic function to call Gemini API
+        async function callGemini(prompt) {
+            const apiKey = ""; // Leave empty
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [{ text: prompt }]
+                }]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API call failed with status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("Unexpected API response structure:", result);
+                    return "Rất tiếc, tôi không thể tạo phản hồi vào lúc này.";
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                return "Đã xảy ra lỗi khi kết nối với AI. Vui lòng thử lại sau.";
+            }
+        }
+        
+        // Function to format AI summary into beautiful HTML
+        function formatAiSummary(text) {
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            let html = '';
+            let currentListType = null; // 'pros' or 'cons'
+
+            lines.forEach(line => {
+                line = line.replace(/\*\*/g, ''); // Remove bold markers
+                if (line.toLowerCase().includes('ưu điểm')) {
+                    if (currentListType) html += `</ul>`; // Close previous list if any
+                    html += `<h4 class="text-lg font-semibold text-green-600 mb-2">Ưu điểm</h4><ul class="space-y-1 list-inside mb-4">`;
+                    currentListType = 'pros';
+                } else if (line.toLowerCase().includes('nhược điểm')) {
+                    if (currentListType) html += `</ul>`; // Close previous list
+                    html += `<h4 class="text-lg font-semibold text-red-600 mb-2">Nhược điểm</h4><ul class="space-y-1 list-inside">`;
+                    currentListType = 'cons';
+                } else if (line.trim().startsWith('*') || line.trim().startsWith('-')) {
+                    const itemText = line.trim().substring(1).trim();
+                    const icon = currentListType === 'pros' 
+                        ? `<svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>`
+                        : `<svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>`;
+                    html += `<li class="flex items-start gap-2 text-gray-700">${icon}<span>${itemText}</span></li>`;
+                }
+            });
+
+            if (currentListType) html += `</ul>`; // Close the last list
+            return html;
+        }
+
+        // Function to format AI Q&A answer
+        function formatAiQnaAnswer(text) {
+            const parts = text.split('\n').filter(p => p.trim() !== '');
+            let html = `<p class="mb-3">${parts[0]}</p>`;
+            html += '<ul class="space-y-2">';
+            parts.slice(1).forEach(part => {
+                const itemText = part.replace(/^\s*[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '<span class="font-semibold text-gray-800">$1</span>');
+                html += `<li class="flex items-start gap-2 text-gray-700">
+                                <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
+                                <span>${itemText}</span>
+                             </li>`;
+            });
+            html += '</ul>';
+            return html;
+        }
+
+        // 1. Review Summarizer
+        summarizeBtn.addEventListener('click', async () => {
+            reviewSummaryContainer.innerHTML = '<div class="flex items-center justify-center gap-2 text-gray-600"><div class="loader"></div><span>AI đang tóm tắt, vui lòng chờ...</span></div>';
+            reviewSummaryContainer.classList.remove('hidden');
+
+            const reviewsText = reviewData.map(review => review.text).join('\n- ');
+            const prompt = `Dựa trên các đánh giá sau đây về sản phẩm iPhone 15 Pro Max, hãy tóm tắt các ưu điểm và nhược điểm chính được đề cập. Trình bày dưới dạng "**Ưu điểm:**" và "**Nhược điểm:**", với mỗi ý là một gạch đầu dòng bắt đầu bằng dấu *. \n\nĐánh giá:\n- ${reviewsText}`;
+            
+            const summaryText = await callGemini(prompt);
+            reviewSummaryContainer.innerHTML = formatAiSummary(summaryText);
+        });
+
+        // 2. Q&A Assistant
+        askAiBtn.addEventListener('click', async () => {
+            const question = qnaTextarea.value.trim();
+            if (!question) {
+                alert('Vui lòng nhập câu hỏi của bạn.');
+                return;
+            }
+
+            aiAnswerContainer.innerHTML = '<div class="flex items-center gap-2 text-gray-600"><div class="loader"></div><span>AI đang suy nghĩ, vui lòng chờ...</span></div>';
+            aiAnswerContainer.classList.remove('hidden');
+
+            const productTitle = document.querySelector('h1').innerText;
+            const productDescription = document.querySelector('#description-wrapper')?.innerText || '';
+            const promotions = Array.from(document.querySelectorAll('.promotions li')).map(li => li.innerText).join(', ');
+            const specs = Array.from(document.querySelectorAll('#specs-accordion dl')).map(dl => dl.innerText).join('\n');
+
+            const context = `Thông tin sản phẩm: ${productTitle}.\nMô tả: ${productDescription}\nThông số kỹ thuật: ${specs}\nKhuyến mãi: ${promotions}\nCác câu hỏi đã có: ${JSON.stringify(qnaData)}`;
+            const prompt = `Bạn là một trợ lý bán hàng am hiểu về sản phẩm. Dựa vào thông tin sau:\n\n${context}\n\nHãy trả lời câu hỏi của khách hàng một cách ngắn gọn, thân thiện và chính xác. Chỉ sử dụng thông tin được cung cấp. Nếu không có thông tin, hãy nói rằng bạn không có thông tin đó. Định dạng câu trả lời với một câu chào và sau đó là các gạch đầu dòng.\n\nCâu hỏi của khách hàng: "${question}"`;
+            
+            const answer = await callGemini(prompt);
+            aiAnswerContainer.innerHTML = formatAiQnaAnswer(answer);
+        });
+
+        // --- COMMENT SUBMIT ---
+        commentSubmitBtn.addEventListener('click', () => {
+            const commentText = document.getElementById('comment-textarea').value;
+            if (commentText.trim() === '') {
+                alert('Vui lòng nhập bình luận của bạn.');
+                return;
+            }
+            showModal('user-info-modal');
+        });
+        
+        // --- REVIEW PAGINATION ---
+        const reviewListEl = document.getElementById('review-list');
+        const reviewPaginationEl = document.getElementById('review-pagination');
+        let reviewCurrentPage = 1;
+        const reviewItemsPerPage = 2;
+
+        function renderReviews() {
+            reviewListEl.innerHTML = '';
+            const start = (reviewCurrentPage - 1) * reviewItemsPerPage;
+            const end = start + reviewItemsPerPage;
+            const paginatedItems = reviewData.slice(start, end);
+
+            for (const item of paginatedItems) {
+                const reviewItem = document.createElement('div');
+                reviewItem.className = 'border-b border-gray-200 py-4 review-item';
+                let imagesHTML = '';
+                if(item.images.length > 0) {
+                    imagesHTML = `<div class="flex gap-2 mt-2">${item.images.map(src => `<img src="${src}" alt="Review Image" class="w-20 h-20 rounded-md object-cover">`).join('')}</div>`;
+                }
+                reviewItem.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <img src="${item.avatar}" alt="Avatar" class="w-10 h-10 rounded-full">
+                        <div>
+                            <p class="font-semibold text-gray-800">${item.name}</p>
+                            <div class="flex text-yellow-400 text-sm my-1">${'★'.repeat(item.rating)}${'☆'.repeat(5 - item.rating)}</div>
+                            <p class="text-sm text-gray-600 review-text">${item.text}</p>
+                            ${imagesHTML}
+                            <div class="text-xs text-gray-500 mt-2 flex items-center gap-4"><span>${item.date}</span><button class="flex items-center gap-1 text-blue-600 hover:underline"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z"></path></svg>Hữu ích</button></div>
+                        </div>
+                    </div>
+                `;
+                reviewListEl.appendChild(reviewItem);
+            }
+        }
+
+        function setupReviewPagination() {
+            reviewPaginationEl.innerHTML = '';
+            const pageCount = Math.ceil(reviewData.length / reviewItemsPerPage);
+            for (let i = 1; i <= pageCount; i++) {
+                const btn = document.createElement('button');
+                btn.innerText = i;
+                btn.className = `px-3 py-1 mx-1 rounded-md text-sm font-medium ${i === reviewCurrentPage ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
+                btn.addEventListener('click', () => {
+                    reviewCurrentPage = i;
+                    renderReviews();
+                    setupReviewPagination();
+                });
+                reviewPaginationEl.appendChild(btn);
+            }
+        }
+
+
+        // --- RENDER DUMMY Q&A DATA ---
+        const qnaListEl = document.getElementById('qna-list');
+        const qnaPaginationEl = document.getElementById('qna-pagination');
+        let qnaCurrentPage = 1;
+        const qnaItemsPerPage = 3;
+
+        function renderQna() {
+            qnaListEl.innerHTML = '';
+            const start = (qnaCurrentPage - 1) * qnaItemsPerPage;
+            const end = start + qnaItemsPerPage;
+            const paginatedItems = qnaData.slice(start, end);
+
+            for (const item of paginatedItems) {
+                const qnaItem = document.createElement('div');
+                qnaItem.className = 'faq-item border-t border-gray-200 pt-4';
+                qnaItem.innerHTML = `
+                    <p class="font-semibold text-gray-800">Q: ${item.q}</p>
+                    <p class="text-sm text-gray-600 mt-1 pl-4 border-l-2 border-blue-200">A: ${item.a}</p>
+                `;
+                qnaListEl.appendChild(qnaItem);
+            }
+        }
+
+        function setupQnaPagination() {
+            qnaPaginationEl.innerHTML = '';
+            const pageCount = Math.ceil(qnaData.length / qnaItemsPerPage);
+            for (let i = 1; i <= pageCount; i++) {
+                const btn = document.createElement('button');
+                btn.innerText = i;
+                btn.className = `px-3 py-1 mx-1 rounded-md text-sm font-medium ${i === qnaCurrentPage ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
+                btn.addEventListener('click', () => {
+                    qnaCurrentPage = i;
+                    renderQna();
+                    setupQnaPagination();
+                });
+                qnaPaginationEl.appendChild(btn);
+            }
+        }
+        
+        // --- STICKY BAR ---
+        const stickyBar = document.getElementById('sticky-bar');
+        const mainCtaButtons = document.getElementById('main-cta-buttons');
+        
+        const scrollObserver = new IntersectionObserver((entries) => {
+            if (!entries[0].isIntersecting) {
+                stickyBar.classList.remove('translate-y-full');
+            } else {
+                stickyBar.classList.add('translate-y-full');
+            }
+        }, { threshold: 0 });
+        
+        scrollObserver.observe(mainCtaButtons);
+
+
+        // --- INITIALIZE ALL ---
+        initializeGallery();
+        calculateBundleTotal();
+        renderQna();
+        setupQnaPagination();
+        renderReviews();
+        setupReviewPagination();
+    });
     </script>
 
 </body>

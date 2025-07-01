@@ -395,7 +395,7 @@
                     </ul>
                     <div class="nav ps-md-4 ps-lg-0">
                         <a class="btn nav-link animate-underline text-decoration-none px-0" href="#!">
-                            <span class="animate-target">View all</span>
+                            <span class="animate-target">Xem tất cả</span>
                             <i class="ci-chevron-right fs-base ms-1"></i>
                         </a>
                     </div>
@@ -409,13 +409,6 @@
     <style>
         .hero-banner {
             margin-top: -16px;
-        }
-
-        /* Nền toàn trang */
-        section.container {
-            background-color: #f8f9fb;
-            /* Màu xám nhạt hơn trắng (#ffffff) */
-            border-radius: 8px;
         }
     </style>
 @endpush
