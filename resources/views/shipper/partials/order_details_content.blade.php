@@ -1,113 +1,71 @@
-<div class="detail-container">
-    <div class="detail-header">
-        <h2>Chi tiết đơn hàng</h2>
-        <a href="{{ route('shipper.dashboard') }}" class="back-link">← Quay lại danh sách</a>
-    </div>
+{{-- Header của trang --}}
+<header class="page-header sticky top-0 bg-white shadow-sm z-10 p-4 flex items-center space-x-4">
+    <a href="{{ route('shipper.dashboard') }}" class="text-gray-600 h-10 w-10 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <i class="fas fa-arrow-left fa-lg"></i>
+    </a>
+    <h1 class="text-lg font-bold text-gray-800">Chi tiết đơn hàng</h1>
+</header>
 
-    @if ($order->status === 'failed_delivery' && !empty($order->failed_delivery_reason))
-        <div class="status-alert alert-danger">
-            <strong>Lý do giao hàng thất bại:</strong>
-            <p>{{ $order->failed_delivery_reason }}</p>
+{{-- Phần nội dung chính có thể cuộn --}}
+<main class="page-content p-5 space-y-4">
+    @if(session('success'))
+        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-lg" role="alert">
+            <p>{{ session('success') }}</p>
         </div>
     @endif
 
-    @if ($order->status === 'cancelled' && !empty($order->cancellation_reason))
-        <div class="status-alert alert-secondary">
-            <strong>Lý do hủy đơn:</strong>
-            <p>{{ $order->cancellation_reason }}</p>
+    <div class="bg-white p-4 rounded-xl shadow-sm space-y-3">
+        <h3 class="text-base font-bold text-gray-800">Thông tin người nhận</h3>
+        <p class="font-semibold">{{ $order->customer_name }}</p>
+        <div class="flex items-center justify-between">
+            <p class="text-gray-700">{{ $order->customer_phone }}</p>
+            <a href="tel:{{ $order->customer_phone }}" class="h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full"><i class="fas fa-phone-alt"></i></a>
         </div>
-    @endif
-
-    @if (session('success'))
-        <div class="alert alert-success" style="background-color: #d4edda; border-color: #c3e6cb; color: #155724; padding: 1rem; margin-bottom: 1rem; border-radius: 5px;">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    <div class="detail-section">
-        <h3>Thông tin người nhận</h3>
-        <div class="info-grid">
-            <div>Tên người nhận:</div>   <div>{{ $order->customer_name }}</div>
-            <div>Số điện thoại:</div>   <div>{{ $order->customer_phone }}</div>
-            <div>Địa chỉ giao:</div>
-            <div>
-                {{ $order->shipping_address_line1 }}, {{ $order->shipping_ward }}, {{ $order->shipping_district }}, {{ $order->shipping_city }}
-                <a href="https://www.google.com/maps/search/?api=1&query=${urlencode($order->shipping_address_line1 . ', ' . $order->shipping_ward . ', ' . $order->shipping_district . ', ' . $order->shipping_city)}}" target="_blank" class="maps-link">(Xem trên bản đồ)</a>
-            </div>
+        <div class="flex items-center justify-between">
+            <p class="text-gray-700">{{ $order->shipping_address_line1 }}, {{ $order->shipping_ward }}, {{ $order->shipping_district }}</p>
+            <a href="https://maps.google.com/?q={{ urlencode($order->shipping_address_line1 . ', ' . $order->shipping_ward . ', ' . $order->shipping_district) }}" target="_blank" class="h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full"><i class="fas fa-map-marker-alt"></i></a>
         </div>
     </div>
 
-    <div class="detail-section">
-        <h3>Thông tin đơn hàng</h3>
-        <div class="info-grid">
-            <div>Mã đơn hàng:</div>    <div>{{ $order->order_code }}</div>
-            <div>Trạng thái:</div>     <div>{{ $order->status }}</div>
-            @if($order->payment_method === 'COD')
-                <div>Tiền cần thu (COD):</div> <div class="cod-amount">{{ number_format($order->grand_total, 0, ',', '.') }} đ</div>
-            @endif
-        </div>
+    <div class="bg-white p-4 rounded-xl shadow-sm space-y-2">
+        <h3 class="text-base font-bold text-gray-800">Chi tiết sản phẩm</h3>
+        <ul class="divide-y divide-gray-200">
+            @foreach($order->items as $item)
+                <li class="py-3">
+                    <p class="font-semibold text-gray-800">{{ $item->product_name }}</p>
+                    <div class="flex justify-between text-sm text-gray-600">
+                        <span>Số lượng: <span class="font-bold">{{ $item->quantity }}</span></span>
+                        <span>{{ number_format($item->price, 0, ',', '.') }}đ</span>
+                    </div>
+                </li>
+            @endforeach
+        </ul>
     </div>
 
-    <div class="detail-section">
-        <h3>Chi tiết sản phẩm</h3>
-        @if($order->items && $order->items->count() > 0)
-            <table class="product-table">
-                <thead>
-                    <tr>
-                        <th>STT</th>
-                        <th>Tên sản phẩm</th>
-                        <th class="text-right">Số lượng</th>
-                        <th class="text-right">Đơn giá</th>
-                        <th class="text-right">Thành tiền</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($order->items as $item)
-                    <tr>
-                        <td data-label="STT">{{ $loop->iteration }}</td>
-                        <td data-label="Tên sản phẩm">{{ $item->product_name }}</td>
-                        <td data-label="Số lượng" class="text-right">{{ $item->quantity }}</td>
-                        <td data-label="Đơn giá" class="text-right">{{ number_format($item->price, 0, ',', '.') }} đ</td>
-                        <td data-label="Thành tiền" class="text-right">{{ number_format($item->total_price, 0, ',', '.') }} đ</td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @else
-            <p>Không có thông tin chi tiết sản phẩm cho đơn hàng này.</p>
-        @endif
+    <div class="bg-white p-4 rounded-xl shadow-sm text-center">
+        <p class="text-gray-500">Tổng tiền thu hộ (COD)</p>
+        <p class="text-3xl font-bold text-green-600">{{ number_format($order->grand_total, 0, ',', '.') }}đ</p>
     </div>
+</main>
 
-    @if ($order->notes_for_shipper)
-        <div class="detail-section">
-            <h3>Ghi chú cho shipper</h3>
-            <div class="shipper-note-box">{{ $order->notes_for_shipper }}</div>
-        </div>
-    @endif
-
-    <div class="action-buttons">
-        @if ($order->status == 'awaiting_shipment')
-            <form action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST" style="flex-grow: 1;">
+{{-- Footer chứa các nút hành động (nếu có) --}}
+@if(in_array($order->status, ['awaiting_shipment', 'shipped', 'out_for_delivery']))
+    <footer class="page-header p-4 bg-white border-t">
+        @if($order->status === 'awaiting_shipment')
+            <form action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST">
                 @csrf @method('PATCH')
                 <input type="hidden" name="status" value="shipped">
-                <button type="submit" class="btn btn-pickup">ĐÃ LẤY HÀNG</button>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg">ĐÃ LẤY HÀNG</button>
             </form>
+        @elseif(in_array($order->status, ['shipped', 'out_for_delivery']))
+            <div class="grid grid-cols-2 gap-3">
+                <button type="button" id="btn-fail-action" class="w-full bg-orange-500 text-white font-bold py-3 rounded-lg">GIAO THẤT BẠI</button>
+                <form action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST">
+                    @csrf @method('PATCH')
+                    <input type="hidden" name="status" value="delivered">
+                    <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg">GIAO THÀNH CÔNG</button>
+                </form>
+            </div>
         @endif
-
-        @if (in_array($order->status, ['shipped', 'out_for_delivery']))
-            <form action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST" style="flex-grow: 1;">
-                @csrf @method('PATCH')
-                <input type="hidden" name="status" value="delivered">
-                <button type="submit" class="btn btn-success">GIAO THÀNH CÔNG</button>
-            </form>
-
-            <button type="button" id="btn-fail-action" class="btn btn-fail">GIAO THẤT BẠI</button>
-
-            <form id="fail-delivery-form" action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST" style="display: none;">
-                @csrf @method('PATCH')
-                <input type="hidden" name="status" value="failed_delivery">
-                <input type="hidden" name="reason" id="fail-reason-input">
-            </form>
-        @endif
-    </div>
-</div>
+    </footer>
+@endif

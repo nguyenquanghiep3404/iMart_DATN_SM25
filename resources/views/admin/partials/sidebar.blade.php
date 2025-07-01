@@ -196,6 +196,12 @@
                                 Thêm mới danh mục
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ route('admin.categories.trash') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
@@ -226,7 +232,7 @@
                     </button>
                     <ul x-show="openNav === 3" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
-                            <a href="{{ route('admin.orders.index') }}" 
+                            <a href="{{ route('admin.orders.index') }}"
                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
@@ -271,11 +277,29 @@
                             </a>
                         </li>
                         <li>
+
+
+                            <!-- <a href=""
+                                class="block w-full py-1.5
                             <a href="{{  route('admin.roles.index') }}" {{-- Giả sử route --}}
                                class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('admin.roles.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Vai trò của người dùng
+                            </a> -->
+                        </li>
+                        <li>
+
+                            <a href="{{ route('admin.users.create') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thêm mới người dùng
+                            </a>
+                        </li>
+                        <li>
+
+                            <a href="{{ route('admin.users.trash') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
                             </a>
                         </li>
                     </ul>
@@ -331,13 +355,20 @@
                                 Thêm mã mới
                             </a>
                         </li>
+                        <li>
+                            <a href="{{ route('admin.coupons.trash') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md
+                                    {{ request()->routeIs('admin.coupons.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
                 {{-- 9. Quản lý phân quyền --}}
                 <li>
                     @php $isRolesActive = request()->routeIs('admin.roles.*'); @endphp
-                    <a href=""
+                    <a href="{{ route('admin.roles.index') }}"
                         class="group flex items-center px-4 py-2.5
                         text-base rounded-md transition-all duration-200 ease-in-out
                         {{ $isRolesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
@@ -397,7 +428,7 @@
                         </span>
                     </button>
                     <ul x-show="openNav === 9" class="pl-8 pr-2 py-1 space-y-1 mt-1">
-                        
+
                         <li>
                             <a href="{{ route('admin.post-tags.index') }}" {{-- Giả sử route --}}
                                 class="block w-full py-1.5
@@ -414,7 +445,7 @@
                                 Danh sách bài viết
                             </a>
                         </li>
-                        
+
                     </ul>
                 </li>
 

@@ -73,8 +73,8 @@ class PostController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => 'required|string|max:255|regex:/^[a-z0-9\-]+$/|unique:posts,slug',
-            'content' => 'required|string|max:10000',
-            'excerpt' => 'required|string|max:500',
+            'content' => 'required|string|max:100000',
+            'excerpt' => 'nullable|string|max:500',
             'post_category_id' => 'required|exists:post_categories,id',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:post_tags,id',
@@ -145,7 +145,7 @@ class PostController extends Controller
         $data = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => 'required|string|max:255|regex:/^[a-z0-9\-]+$/|unique:posts,slug,' . $post->id,
-            'content' => 'required|string|max:10000',
+            'content' => 'required|string|max:100000',
             'excerpt' => 'nullable|string|max:500',
             'post_category_id' => 'nullable|exists:post_categories,id',
             'tags' => 'nullable|array',

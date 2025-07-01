@@ -86,11 +86,11 @@
                     </div>
                     <div class="py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-500">Ngày tạo</dt>
-                        <dd class="text-sm text-gray-900 col-span-2">{{ $coupon->created_at->format('d/m/Y H:i:s') }}</dd>
+                        <dd class="text-sm text-gray-900 col-span-2">{{ $coupon->created_at->format('d/m/Y H:i') }}</dd>
                     </div>
                     <div class="py-3 grid grid-cols-3 gap-4">
                         <dt class="text-sm font-medium text-gray-500">Cập nhật gần nhất</dt>
-                        <dd class="text-sm text-gray-900 col-span-2">{{ $coupon->updated_at->format('d/m/Y H:i:s') }}</dd>
+                        <dd class="text-sm text-gray-900 col-span-2">{{ $coupon->updated_at->format('d/m/Y H:i') }}</dd>
                     </div>
                 </dl>
             </div>
@@ -206,7 +206,7 @@
                     @foreach($coupon->usages->take(10) as $usage)
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4">
-                            {{ $usage->created_at->format('d/m/Y H:i:s') }}
+                                                                            {{ $usage->created_at->format('d/m/Y H:i') }}
                         </td>
                         <td class="px-6 py-4 font-medium text-gray-900">
                             <a href="{{ route('admin.orders.show', $usage->order_id) }}" class="text-indigo-600 hover:text-indigo-900">#{{ $usage->order_id }}</a>

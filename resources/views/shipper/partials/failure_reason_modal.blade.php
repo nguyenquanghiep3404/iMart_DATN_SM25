@@ -1,35 +1,33 @@
-<div id="failure-reason-modal" class="modal-overlay" style="display: none;">
+<div id="failure-reason-modal" class="modal-overlay">
     <div class="modal-content">
-        <div class="modal-header">
-            <h4>Chọn lý do giao hàng thất bại</h4>
-            <button type="button" class="close-modal-btn">&times;</button>
+        <h2 class="text-xl font-bold text-gray-800 p-6 border-b">Lý do giao không thành công</h2>
+
+        <form id="failure-report-form" action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST" style="display: none;">
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="status" value="failed_delivery">
+            <input type="hidden" id="fail-reason-input" name="reason">
+            <input type="hidden" id="fail-notes-input" name="notes">
+        </form>
+
+        <div class="modal-body p-6 space-y-4">
+            <div>
+                <label for="failure-reason" class="block text-sm font-medium text-gray-700 mb-1">Lý do chính</label>
+                <select id="failure-reason" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="Không liên lạc được khách hàng">Không liên lạc được khách</option>
+                    <option value="Khách hẹn giao lại">Khách hẹn giao lại</option>
+                    <option value="Sai địa chỉ">Sai địa chỉ</option>
+                    <option value="other">Lý do khác</option>
+                </select>
+            </div>
+            <div>
+                <label for="failure-notes" class="block text-sm font-medium text-gray-700 mb-1">Ghi chú thêm</label>
+                <textarea id="failure-notes" rows="3" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="VD: Khách hẹn giao sau 17h"></textarea>
+            </div>
         </div>
-        <div class="modal-body">
-            <div class="reason-option">
-                <input type="radio" id="reason1" name="failure_reason_option" value="Không liên lạc được khách hàng">
-                <label for="reason1">Không liên lạc được khách hàng</label>
-            </div>
-            <div class="reason-option">
-                <input type="radio" id="reason2" name="failure_reason_option" value="Khách hẹn lại ngày giao">
-                <label for="reason2">Khách hẹn lại ngày giao</label>
-            </div>
-            <div class="reason-option">
-                <input type="radio" id="reason3" name="failure_reason_option" value="Khách từ chối nhận hàng (thay đổi ý định)">
-                <label for="reason3">Khách từ chối nhận hàng (thay đổi ý định)</label>
-            </div>
-             <div class="reason-option">
-                <input type="radio" id="reason4" name="failure_reason_option" value="Sai thông tin giao hàng (SĐT, địa chỉ)">
-                <label for="reason4">Sai thông tin giao hàng (SĐT, địa chỉ)</label>
-            </div>
-            <div class="reason-option">
-                <input type="radio" id="reason_other" name="failure_reason_option" value="other">
-                <label for="reason_other">Khác (Vui lòng ghi rõ)</label>
-            </div>
-            <textarea id="other-reason-text" rows="3" placeholder="Nhập lý do khác vào đây..." style="display: none;"></textarea>
-        </div>
-        <div class="modal-footer">
-            <button type="button" class="btn-cancel close-modal-btn">Hủy bỏ</button>
-            <button type="button" id="confirm-failure-btn" class="btn-confirm">Xác nhận</button>
+        <div class="modal-footer p-6 grid grid-cols-2 gap-3">
+             <button type="button" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg close-modal-btn">Hủy</button>
+             <button type="button" id="confirm-failure-btn" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg">Xác nhận</button>
         </div>
     </div>
 </div>

@@ -40,9 +40,6 @@
 
     @stack('styles')
 
-
-
-
     <!-- Customizer -->
     <script src="{{ asset ('assets/users/js/customizer.min.js') }}"></script>
     <!-- Scripts -->
