@@ -43,7 +43,7 @@
     <!-- Customizer -->
     <script src="{{ asset ('assets/users/js/customizer.min.js') }}"></script>
     <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- @vite(['resources/css/app.css', 'resources/js/app.js']) --}}
     
 </head>
 
@@ -58,7 +58,7 @@
     @include('users.partials.header')
 
     <!-- Page content -->
-    <main class="content-wrapper">
+    <main class="content-wrapper bg-body">
         @yield('content')
     </main>
 

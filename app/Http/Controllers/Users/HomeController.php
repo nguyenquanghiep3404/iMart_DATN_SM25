@@ -231,7 +231,7 @@ class HomeController extends Controller
                 $images = [asset('images/placeholder.jpg')];
             }
             $mainImage = $variant->primaryImage ? Storage::url($variant->primaryImage->path) : ($images[0] ?? null);
-
+            
             $variantData[$variantKeyStr] = [
                 'price' => $originalPrice,
                 'sale_price' => $salePrice,
@@ -267,7 +267,9 @@ class HomeController extends Controller
                 $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
             }
         }
+        $attributesGrouped = collect($attributes)->map(fn($values) => $values->sortBy('value')->values());
 
+        $variantCombinations = $availableCombinations;
         return view('users.show', compact(
             'product',
             'relatedProducts',
@@ -280,7 +282,9 @@ class HomeController extends Controller
             'defaultVariant',
             'comments',
             'attributeOrder',
-            'initialVariantAttributes'
+            'initialVariantAttributes',
+            'variantCombinations',
+            'attributesGrouped'
         ));
     }
 
