@@ -28,6 +28,8 @@ use App\Http\Controllers\Users\CartController;
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+
 
 
 
@@ -71,6 +73,16 @@ Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSele
  Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
  // routes/web.php
  Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
+ Route::get('/session/flush-message', function () {
+    session()->forget(['success', 'error']);
+    return response()->noContent(); // Trả về 204
+})->name('session.flush.message');
+// Áp dụng mã giảm giá
+Route::post('/cart/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
+
+// Xóa mã giảm giá
+Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
+
 
 //==========================================================================
 // ADMIN ROUTES

@@ -56,16 +56,29 @@ class Coupon extends Model
     }
 
     // ✅ Tính giảm giá dựa trên loại mã (fixed hoặc percentage)
-    public function calculateDiscount($subtotal): float
-    {
-        if ($this->type === 'percentage') {
-            return round($subtotal * $this->value / 100, 2);
-        }
-
-        if ($this->type === 'fixed') {
-            return min($this->value, $subtotal);
-        }
-
+   public function calculateDiscount($subtotal): float
+{
+    // Kiểm tra tổng tiền có đủ điều kiện không
+    if ($this->min_order_amount && $subtotal < $this->min_order_amount) {
         return 0;
     }
+
+    if ($this->type === 'percentage') {
+        $discount = round($subtotal * $this->value / 100, 2);
+
+        // Giới hạn số tiền giảm nếu có
+        if ($this->max_discount_amount) {
+            return min($discount, $this->max_discount_amount);
+        }
+
+        return $discount;
+    }
+
+    if ($this->type === 'fixed_amount' || $this->type === 'fixed') {
+        return min($this->value, $subtotal); // không vượt quá tổng tiền
+    }
+
+    return 0;
+}
+
 }
