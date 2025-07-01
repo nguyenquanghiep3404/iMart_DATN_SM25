@@ -1,34 +1,36 @@
 <?php
 
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\DashboardAdminController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\AttributeController;
-use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\Admin\PostController;
-use App\Http\Controllers\Admin\PostTagController;
-use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Users\BlogController;
+use App\Http\Controllers\Users\HomeController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CommentController;
+use App\Http\Controllers\Admin\PostTagController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Shipper\ShipperController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
-use App\Http\Controllers\Admin\AiController;
-use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Users\CartController;
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+
 
 
 
@@ -46,6 +48,11 @@ Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestio
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
+// BLOG ROUTES (PUBLIC)
+Route::prefix('blog')->group(function () {
+    Route::get('/', [BlogController::class, 'index'])->name('users.blogs.index');
+    Route::get('/{slug}', [BlogController::class, 'show'])->name('users.blogs.show');
+});
 // Trang About và Help , terms
 Route::get('/about', [HomeController::class, 'about'])->name('users.about');
 Route::get('/help', [HomeController::class, 'help'])->name('users.help');
