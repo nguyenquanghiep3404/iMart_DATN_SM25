@@ -1,13 +1,20 @@
 <div class="product-info flex flex-col">
     @php
-    $productName = $product->name; // Ví dụ: "iPhone 16"
-    $dungLuong = $initialVariantAttributes['Dung lượng lưu trữ'] ?? '';
-    $mauSac = $initialVariantAttributes['Màu sắc'] ?? '';
-@endphp
+        $productName = $product->name; // Ví dụ: "iPhone 16"
+        $dungLuong = $initialVariantAttributes['Dung lượng lưu trữ'] ?? '';
+        $mauSac = $initialVariantAttributes['Màu sắc'] ?? '';
+    @endphp
+    <!-- CDN Toastr -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
-<h1 id="product-title" class="text-2xl md:text-3xl font-bold text-gray-900">
-    {{ $productName }} {{ $dungLuong }} {{ $mauSac }}
-</h1>
+
+
+    @include('users.cart.layout.partials.css')
+    <h1 id="product-title" class="text-2xl md:text-3xl font-bold text-gray-900">
+        {{ $productName }} {{ $dungLuong }} {{ $mauSac }}
+    </h1>
 
     <div class="flex items-center flex-wrap gap-4 mt-2">
         <span
@@ -20,7 +27,8 @@
             Chính hãng
         </span>
         <button id="compare-btn"
-            class="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800" data-default-variant-id="{{ $defaultVariant->id }}">
+            class="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800"
+            data-default-variant-id="{{ $defaultVariant->id }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path
                     d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
@@ -353,30 +361,216 @@
                     điện thoại chỉ mua 3 sản phẩm trong 1 tháng</span></li>
         </ul>
     </div>
+    <form action="{{ route('cart.add') }}" method="POST" id="add-to-cart-form">
+        @csrf
+        <input type="hidden" name="product_variant_id" id="product_variant_id_input">
+        <input type="hidden" name="image" id="variant-image">
+        <input type="hidden" name="product_id" value="{{ $product->id }}">
+        <input type="hidden" name="variant_key" id="variant_key_input">
 
-    <div class="mt-6">
-        <h4 class="font-medium text-gray-800 mb-2">Số lượng</h4>
-        <div class="flex items-center border border-gray-300 rounded-lg w-fit"><button id="minusBtn"
-                class="px-3 py-1 text-lg text-gray-600 hover:bg-gray-100 rounded-l-md">-</button><input
-                id="quantityInput" type="text" value="1"
-                class="w-12 text-center border-l border-r font-semibold text-gray-800 focus:outline-none"><button
-                id="plusBtn" class="px-3 py-1 text-lg text-gray-600 hover:bg-gray-100 rounded-r-md">+</button></div>
-    </div>
-    <div id="main-cta-buttons" class="mt-auto pt-6 flex flex-col sm:flex-row gap-3">
-        <button
-            class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors"><svg
-                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                stroke="currentColor" class="w-6 h-6">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
-            </svg>THÊM VÀO GIỎ HÀNG</button>
-        <button
-            class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">MUA
-            NGAY</button>
+
+        <div class="mt-6">
+            <h4 class="font-medium text-gray-800 mb-2">Số lượng</h4>
+            <div class="flex flex-wrap flex-sm-nowrap flex-md-wrap flex-lg-nowrap gap-3 gap-lg-2 gap-xl-3 mb-4">
+                <div class="count-input flex-shrink-0 order-sm-1">
+                    <button type="button" class="btn btn-icon btn-lg" data-decrement aria-label="Giảm số lượng">
+                        <i class="ci-minus"></i>
+                    </button>
+                    <input type="number" class="form-control form-control-lg" name="quantity" id="quantity_input"
+                        value="1" min="1" max="5" readonly>
+                    <button type="button" class="btn btn-icon btn-lg" data-increment aria-label="Tăng số lượng">
+                        <i class="ci-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="main-cta-buttons" class="mt-auto pt-6 flex flex-col sm:flex-row gap-3">
+                <button type="submit"
+                    class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
+                    </svg>
+                    THÊM VÀO GIỎ HÀNG
+                </button>
+                <button
+                    class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+                    MUA NGAY
+                </button>
+            </div>
+        </div>
+    </form>
+    <div id="slide-alert"
+        class="fixed top-5 right-5 hidden translate-x-full transition-all duration-300 ease-in-out bg-red-500 text-white px-4 py-2 rounded shadow z-50">
+        <span id="slide-alert-message">Thông báo</span>
+        <button id="slide-alert-close" class="ml-2 font-bold focus:outline-none">&times;</button>
     </div>
     <div class="text-sm text-gray-500 mt-4 text-center sm:text-left"><span class="font-semibold">Giao hàng dự
             kiến:</span> Thứ Ba, 28/06 - Thứ Tư, 29/06.</div>
 </div>
+@if (session('success'))
+    <script>
+        if (!sessionStorage.getItem('toast_success_shown')) {
+            toastr.success("{{ session('success') }}");
+            sessionStorage.setItem('toast_success_shown', 'true');
+
+            // Gọi route để xóa session success từ server
+            fetch("{{ route('session.flush.message') }}");
+        }
+    </script>
+@endif
+
+@if (session('error'))
+    <script>
+        if (!sessionStorage.getItem('toast_error_shown')) {
+            toastr.error("{{ session('error') }}");
+            sessionStorage.setItem('toast_error_shown', 'true');
+
+            // Gọi route để xóa session error từ server
+            fetch("{{ route('session.flush.message') }}");
+        }
+    </script>
+@endif
+
+
+
+@include('users.cart.layout.partials.script')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const variantData = @json($variantData);
+        const attributeOrder = @json($attributeOrder);
+        const initialVariantAttributes = @json($initialVariantAttributes);
+
+        const variantKeyInput = document.getElementById('variant_key_input');
+        const variantImageInput = document.getElementById('variant-image');
+        const quantityInput = document.getElementById('quantity_input');
+
+        let currentSelections = {
+            ...initialVariantAttributes
+        };
+
+        function updateVariantKeyAndImage() {
+            const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
+            variantKeyInput.value = key;
+
+            if (variantData[key]) {
+                variantImageInput.value = variantData[key].image || '';
+            } else {
+                variantImageInput.value = '';
+            }
+        }
+
+        // Gắn event khi chọn thuộc tính bằng radio
+        document.querySelectorAll('input[type="radio"][data-attr-name]').forEach(input => {
+            input.addEventListener('change', function() {
+                const attrName = this.dataset.attrName;
+                const attrValue = this.value;
+                currentSelections[attrName] = attrValue;
+                updateVariantKeyAndImage();
+            });
+        });
+
+        // Gắn event khi click button chọn (nếu có dùng nút thay radio)
+        document.querySelectorAll('[data-attribute-name][data-attribute-value]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const attr = this.dataset.attributeName;
+                const value = this.dataset.attributeValue;
+                currentSelections[attr] = value;
+                updateVariantKeyAndImage();
+            });
+        });
+
+        // Tăng/giảm số lượng
+        document.querySelector('[data-increment]').addEventListener('click', () => {
+            let val = parseInt(quantityInput.value);
+            if (val < 5) {
+                quantityInput.value = val + 1;
+            }
+        });
+        document.querySelector('[data-decrement]').addEventListener('click', () => {
+            let val = parseInt(quantityInput.value);
+            if (val > 1) {
+                quantityInput.value = val - 1;
+            }
+        });
+
+        // Khởi tạo ban đầu
+        updateVariantKeyAndImage();
+    });
+    window.addEventListener('beforeunload', function() {
+        sessionStorage.removeItem('toast_success_shown');
+        sessionStorage.removeItem('toast_error_shown');
+    });
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+            // Xóa sessionStorage để ngăn toastr hiện lại
+            sessionStorage.removeItem('toast_success_shown');
+            sessionStorage.removeItem('toast_error_shown');
+
+            // Reload trang nhẹ để tránh cache
+            location.reload();
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('add-to-cart-form');
+        if (!form) return;
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Đang thêm...';
+
+            fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(async res => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'THÊM VÀO GIỎ HÀNG';
+
+                    if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.message || 'Lỗi khi thêm sản phẩm vào giỏ hàng.');
+                    }
+
+                    return res.text(); // Nếu controller redirect, dùng .text()
+                })
+                .then(() => {
+                    showSlideAlert('success', 'Đã thêm sản phẩm vào giỏ hàng!');
+                    // TODO: cập nhật giỏ hàng ở header nếu có
+                })
+                .catch(error => {
+                    showSlideAlert('error', error.message || 'Đã xảy ra lỗi.');
+                });
+        });
+
+        // Hàm thông báo toastr
+        window.showSlideAlert = window.showSlideAlert || function(type = 'info', message = '', duration =
+        4000) {
+            if (typeof toastr !== 'undefined') {
+                toastr.options = {
+                    closeButton: true,
+                    progressBar: true,
+                    timeOut: duration,
+                    positionClass: 'toast-top-right'
+                };
+                toastr[type](message);
+            } else {
+                alert(`[${type.toUpperCase()}] ${message}`);
+            }
+        };
+    });
+</script>
+
+
+
 {{-- <script>
     document.addEventListener('DOMContentLoaded', function() {
         // XỬ LÝ ĐẾM NGƯỢC FLASH SALE

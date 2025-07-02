@@ -75,4 +75,13 @@ class ProductVariant extends Model
     // và nó liên kết với bảng `uploaded_files`.
     return $this->belongsTo(UploadedFile::class, 'primary_image_id');
 }
+public function getImageUrlAttribute()
+{
+    if ($this->primaryImage && $this->primaryImage->path) {
+        return '/storage/' . ltrim($this->primaryImage->path, '/');
+    }
+
+    // fallback nếu không có ảnh
+    return '/images/no-image.png';
+}
 }
