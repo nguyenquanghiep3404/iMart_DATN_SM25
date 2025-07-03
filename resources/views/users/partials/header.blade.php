@@ -1,16 +1,26 @@
-<header class="navbar navbar-expand-lg navbar-dark bg-dark d-block relative p-0" data-sticky-navbar="{&quot;offset&quot;: 500}">
-  <div class="container d-block py-1 py-lg-3" data-bs-theme="dark">
-    <div class="navbar-stuck-hide pt-1"></div>
-    <div class="row flex-nowrap align-items-center g-0">
-      <div class="col col-lg-3 d-flex align-items-center">
+<header id="mainHeader" class="navbar navbar-expand-lg navbar-dark bg-dark d-block relative p-0"
+    data-sticky-navbar="{&quot;offset&quot;: 300}">
+    <div class="container d-block py-1 py-lg-3" data-bs-theme="dark">
+        <div class="navbar-stuck-hide pt-1"></div>
+        <div class="row flex-nowrap align-items-center g-0">
+            <div class="col col-lg-3 d-flex align-items-center">
 
-        <!-- Mobile offcanvas menu toggler (Hamburger) -->
-        <button type="button" class="navbar-toggler me-4 me-lg-0" data-bs-toggle="offcanvas" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
+                <!-- Mobile offcanvas menu toggler (Hamburger) -->
+                <button type="button" class="navbar-toggler me-4 me-lg-0" data-bs-toggle="offcanvas"
+                    data-bs-target="#navbarNav" aria-controls="navbarNav" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-        <!-- Navbar brand (Logo) -->
-        <a href="index.html" class="navbar-brand me-0">
+                <a href="/" class="navbar-brand me-0 d-none d-sm-block">
+                    <img src="{{ asset('assets/users/logo/Bản sao của iMart (2).svg') }}" class="custom-logo"
+                        alt="iMart Logo">
+
+                </a>
+
+
+
+                <!-- Navbar brand (Logo) -->
+                {{-- <a href="index.html" class="navbar-brand me-0">
           <span class="d-none d-sm-flex flex-shrink-0 text-primary me-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
               <path d="M36 18.01c0 8.097-5.355 14.949-12.705 17.2a18.12 18.12 0 0 1-5.315.79C9.622 36 2.608 30.313.573 22.611.257 21.407.059 20.162 0 18.879v-1.758c.02-.395.059-.79.099-1.185.099-.908.277-1.817.514-2.686C2.687 5.628 9.682 0 18 0c5.572 0 10.551 2.528 13.871 6.517 1.502 1.797 2.648 3.91 3.359 6.201.494 1.659.771 3.436.771 5.292z" fill="currentColor"></path>
@@ -25,182 +35,191 @@
             </svg>
           </span>
           Cartzilla
-        </a>
-      </div>
-      <div class="col col-lg-9 d-flex align-items-center justify-content-end">
+        </a> --}}
+            </div>
+            <div class="col col-lg-9 d-flex align-items-center justify-content-end">
 
-        <!-- Search visible on screens > 991px wide (lg breakpoint) -->
-        <div class="position-relative flex-fill d-none d-lg-block pe-4 pe-xl-5">
-          <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
-          <input type="search"
-            class="form-control form-control-lg form-icon-start border-white rounded-pill bg-transparent text-white"
-            placeholder="Tìm kiếm sản phẩm">
+                <!-- Search visible on screens > 991px wide (lg breakpoint) -->
+                <div class="position-relative flex-fill d-none d-lg-block pe-4 pe-xl-5">
+                    <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
+                    <input type="search"
+                        class="form-control form-control-lg form-icon-start border-white rounded-pill bg-transparent text-white"
+                        placeholder="Tìm kiếm sản phẩm">
 
+                </div>
+                <!-- Sale link visible on screens > 1200px wide (xl breakpoint) -->
+                <a class="d-none d-xl-flex align-items-center text-decoration-none animate-shake navbar-stuck-hide me-3 me-xl-4 me-xxl-5"
+                    href="shop-catalog-electronics.html">
+                    <div
+                        class="btn btn-icon btn-lg fs-lg text-primary bg-body-secondary bg-opacity-75 pe-none rounded-circle">
+                        <i class="ci-percent animate-target"></i>
+                    </div>
+                    <div class="ps-2 text-nowrap">
+                        <div class="fs-xs text-body">Only this month</div>
+                        <div class="fw-medium text-white">Super Sale 20%</div>
+                    </div>
+                </a>
+
+                <!-- Button group -->
+                <div class="d-flex align-items-center">
+
+                    <!-- Navbar stuck nav toggler -->
+                    <button type="button" class="navbar-toggler d-none navbar-stuck-show me-3"
+                        data-bs-toggle="collapse" data-bs-target="#stuckNav" aria-controls="stuckNav"
+                        aria-expanded="false" aria-label="Toggle navigation in navbar stuck state">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <!-- Theme switcher (light/dark/auto) -->
+                    <div class="dropdown">
+                        <button type="button"
+                            class="theme-switcher btn btn-icon btn-lg btn-outline-secondary fs-lg border-0 rounded-circle animate-scale"
+                            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Toggle theme (light)">
+                            <span class="theme-icon-active d-flex animate-target">
+                                <i class="ci-sun"></i>
+                            </span>
+                        </button>
+                        <ul class="dropdown-menu" style="--cz-dropdown-min-width: 9rem">
+                            <li>
+                                <button type="button" class="dropdown-item active" data-bs-theme-value="light"
+                                    aria-pressed="true">
+                                    <span class="theme-icon d-flex fs-base me-2">
+                                        <i class="ci-sun"></i>
+                                    </span>
+                                    <span class="theme-label">Light</span>
+                                    <i class="item-active-indicator ci-check ms-auto"></i>
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item" data-bs-theme-value="dark"
+                                    aria-pressed="false">
+                                    <span class="theme-icon d-flex fs-base me-2">
+                                        <i class="ci-moon"></i>
+                                    </span>
+                                    <span class="theme-label">Dark</span>
+                                    <i class="item-active-indicator ci-check ms-auto"></i>
+                                </button>
+                            </li>
+                            <li>
+                                <button type="button" class="dropdown-item" data-bs-theme-value="auto"
+                                    aria-pressed="false">
+                                    <span class="theme-icon d-flex fs-base me-2">
+                                        <i class="ci-auto"></i>
+                                    </span>
+                                    <span class="theme-label">Auto</span>
+                                    <i class="item-active-indicator ci-check ms-auto"></i>
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Nút bật/tắt thanh tìm kiếm (chỉ hiện trên màn hình nhỏ hơn 992px) -->
+                    <button type="button"
+                        class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none"
+                        data-bs-toggle="collapse" data-bs-target="#searchBar" aria-expanded="false"
+                        aria-controls="searchBar" aria-label="Toggle search bar" title="Tìm kiếm">
+                        <i class="ci-search animate-target"></i>
+                    </button>
+
+
+                    @php
+                        $user = Auth::user();
+                    @endphp
+                    <!-- Account button visible on screens > 768px wide (md breakpoint) -->
+                    <li class="nav-item dropdown d-none d-md-inline-flex">
+                        <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
+                            href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            @auth
+                                {{-- Hiển thị chữ cái đầu tên người dùng --}}
+                                <span class="fw-bold text-uppercase">{{ strtoupper(Auth::user()->name[0]) }}</span>
+                            @else
+                                {{-- Biểu tượng người dùng mặc định --}}
+                                <i class="ci-user animate-target"></i>
+                            @endauth
+                            <span class="visually-hidden">Account</span>
+                        </a>
+
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            @guest
+                                <li><a class="dropdown-item" href="{{ route('login') }}">Đăng nhập</a></li>
+                                <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
+                            @else
+                                <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
+
+                                {{-- Nếu là admin, hiển thị nút quay lại admin --}}
+                                @if ($user->roles->contains('id', 1) || $user->roles->contains('id', 4) || $user->roles->contains('id', 5))
+                                    <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Truy cập trang Quản
+                                            Trị</a></li>
+                                @endif
+
+                                <li>
+                                    <form action="{{ route('logout') }}" method="POST">
+                                        @csrf
+                                        <button class="dropdown-item" type="submit">Đăng xuất</button>
+                                    </form>
+                                </li>
+                            @endguest
+                        </ul>
+                    </li>
+
+
+
+                    <!-- Wishlist button visible on screens > 768px wide (md breakpoint) -->
+                    <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-pulse d-none d-md-inline-flex"
+                        href="account-wishlist.html">
+                        <i class="ci-heart animate-target"></i>
+                        <span class="visually-hidden">Wishlist</span>
+                    </a>
+
+                    <!-- Cart button -->
+                    <button type="button"
+                        class="btn btn-icon btn-lg btn-secondary position-relative rounded-circle ms-2"
+                        data-bs-toggle="offcanvas" data-bs-target="#shoppingCart" aria-controls="shoppingCart"
+                        aria-label="Shopping cart">
+                        <span
+                            class="position-absolute top-0 start-100 mt-n1 ms-n3 badge text-bg-success border border-3 border-dark rounded-pill"
+                            style="--cz-badge-padding-y: .25em; --cz-badge-padding-x: .42em">3</span>
+                        <span
+                            class="position-absolute top-0 start-0 d-flex align-items-center justify-content-center w-100 h-100 rounded-circle animate-slide-end fs-lg">
+                            <i class="ci-shopping-cart animate-target ms-n1"></i>
+                        </span>
+                    </button>
+                </div>
+            </div>
         </div>
-        <!-- Sale link visible on screens > 1200px wide (xl breakpoint) -->
-        <a class="d-none d-xl-flex align-items-center text-decoration-none animate-shake navbar-stuck-hide me-3 me-xl-4 me-xxl-5" href="shop-catalog-electronics.html">
-          <div class="btn btn-icon btn-lg fs-lg text-primary bg-body-secondary bg-opacity-75 pe-none rounded-circle">
-            <i class="ci-percent animate-target"></i>
-          </div>
-          <div class="ps-2 text-nowrap">
-            <div class="fs-xs text-body">Only this month</div>
-            <div class="fw-medium text-white">Super Sale 20%</div>
-          </div>
-        </a>
+        <div class="navbar-stuck-hide pb-1"></div>
+    </div>
 
-        <!-- Button group -->
-        <div class="d-flex align-items-center">
-
-          <!-- Navbar stuck nav toggler -->
-          <button type="button" class="navbar-toggler d-none navbar-stuck-show me-3" data-bs-toggle="collapse" data-bs-target="#stuckNav" aria-controls="stuckNav" aria-expanded="false" aria-label="Toggle navigation in navbar stuck state">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-
-          <!-- Theme switcher (light/dark/auto) -->
-          <div class="dropdown">
-            <button type="button" class="theme-switcher btn btn-icon btn-lg btn-outline-secondary fs-lg border-0 rounded-circle animate-scale" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Toggle theme (light)">
-              <span class="theme-icon-active d-flex animate-target">
-                <i class="ci-sun"></i>
-              </span>
-            </button>
-            <ul class="dropdown-menu" style="--cz-dropdown-min-width: 9rem">
-              <li>
-                <button type="button" class="dropdown-item active" data-bs-theme-value="light" aria-pressed="true">
-                  <span class="theme-icon d-flex fs-base me-2">
-                    <i class="ci-sun"></i>
-                  </span>
-                  <span class="theme-label">Light</span>
-                  <i class="item-active-indicator ci-check ms-auto"></i>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dropdown-item" data-bs-theme-value="dark" aria-pressed="false">
-                  <span class="theme-icon d-flex fs-base me-2">
-                    <i class="ci-moon"></i>
-                  </span>
-                  <span class="theme-label">Dark</span>
-                  <i class="item-active-indicator ci-check ms-auto"></i>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dropdown-item" data-bs-theme-value="auto" aria-pressed="false">
-                  <span class="theme-icon d-flex fs-base me-2">
-                    <i class="ci-auto"></i>
-                  </span>
-                  <span class="theme-label">Auto</span>
-                  <i class="item-active-indicator ci-check ms-auto"></i>
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Nút bật/tắt thanh tìm kiếm (chỉ hiện trên màn hình nhỏ hơn 992px) -->
-          <button type="button"
-            class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none"
-            data-bs-toggle="collapse"
-            data-bs-target="#searchBar"
-            aria-expanded="false"
-            aria-controls="searchBar"
-            aria-label="Toggle search bar"
-            title="Tìm kiếm">
-            <i class="ci-search animate-target"></i>
-          </button>
-
-
-          @php
-          $user = Auth::user();
-          @endphp
-          <!-- Account button visible on screens > 768px wide (md breakpoint) -->
-          <li class="nav-item dropdown d-none d-md-inline-flex">
-            <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
-              href="#"
-              role="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false">
-              @auth
-              {{-- Hiển thị chữ cái đầu tên người dùng --}}
-              <span class="fw-bold text-uppercase">{{ strtoupper(Auth::user()->name[0]) }}</span>
-              @else
-              {{-- Biểu tượng người dùng mặc định --}}
-              <i class="ci-user animate-target"></i>
-              @endauth
-              <span class="visually-hidden">Account</span>
-            </a>
-
-            <ul class="dropdown-menu dropdown-menu-end">
-              @guest
-              <li><a class="dropdown-item" href="{{ route('login') }}">Đăng nhập</a></li>
-              <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
-              @else
-              <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
-
-              {{-- Nếu là admin, hiển thị nút quay lại admin --}}
-              @if(
-              $user->roles->contains('id', 1) ||
-              $user->roles->contains('id', 4) ||
-              $user->roles->contains('id', 5)
-              )
-              <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Truy cập trang Quản Trị</a></li>
-              @endif
-
-              <li>
-                <form action="{{ route('logout') }}" method="POST">
-                  @csrf
-                  <button class="dropdown-item" type="submit">Đăng xuất</button>
-                </form>
-              </li>
-              @endguest
-            </ul>
-          </li>
-
-
-
-          <!-- Wishlist button visible on screens > 768px wide (md breakpoint) -->
-          <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-pulse d-none d-md-inline-flex" href="account-wishlist.html">
-            <i class="ci-heart animate-target"></i>
-            <span class="visually-hidden">Wishlist</span>
-          </a>
-
-          <!-- Cart button -->
-          <button type="button" class="btn btn-icon btn-lg btn-secondary position-relative rounded-circle ms-2" data-bs-toggle="offcanvas" data-bs-target="#shoppingCart" aria-controls="shoppingCart" aria-label="Shopping cart">
-            <span class="position-absolute top-0 start-100 mt-n1 ms-n3 badge text-bg-success border border-3 border-dark rounded-pill" style="--cz-badge-padding-y: .25em; --cz-badge-padding-x: .42em">3</span>
-            <span class="position-absolute top-0 start-0 d-flex align-items-center justify-content-center w-100 h-100 rounded-circle animate-slide-end fs-lg">
-              <i class="ci-shopping-cart animate-target ms-n1"></i>
-            </span>
-          </button>
+    <!-- Search visible on screens < 992px wide (lg breakpoint). It is hidden inside collapse by default -->
+    <div class="collapse position-absolute top-100 z-2 w-100 bg-dark d-lg-none" id="searchBar">
+        <div class="container position-relative my-3" data-bs-theme="dark">
+            <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
+            <input type="search" class="form-control form-icon-start border-white rounded-pill"
+                placeholder="Search the products" data-autofocus="collapse">
         </div>
-      </div>
     </div>
-    <div class="navbar-stuck-hide pb-1"></div>
-  </div>
 
-  <!-- Search visible on screens < 992px wide (lg breakpoint). It is hidden inside collapse by default -->
-  <div class="collapse position-absolute top-100 z-2 w-100 bg-dark d-lg-none" id="searchBar">
-    <div class="container position-relative my-3" data-bs-theme="dark">
-      <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
-      <input type="search" class="form-control form-icon-start border-white rounded-pill" placeholder="Search the products" data-autofocus="collapse">
-    </div>
-  </div>
-
-  <!-- Main navigation that turns into offcanvas on screens < 992px wide (lg breakpoint) -->
-  <div class="collapse navbar-stuck-hide" id="stuckNav">
-    <nav class="offcanvas offcanvas-start" id="navbarNav" tabindex="-1" aria-labelledby="navbarNavLabel">
-      <div class="offcanvas-header py-3">
-        <h5 class="offcanvas-title" id="navbarNavLabel">Browse Cartzilla</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-      </div>
-      <div class="offcanvas-body py-3 py-lg-0">
-        <div class="container px-0 px-lg-3">
-          <div class="row">
+    <!-- Main navigation that turns into offcanvas on screens < 992px wide (lg breakpoint) -->
+    <div class="collapse navbar-stuck-hide" id="stuckNav">
+        <nav class="offcanvas offcanvas-start" id="navbarNav" tabindex="-1" aria-labelledby="navbarNavLabel">
+            <div class="offcanvas-header py-3">
+                <h5 class="offcanvas-title" id="navbarNavLabel">Browse Cartzilla</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body py-3 py-lg-0">
+                <div class="container px-0 px-lg-3">
+                    <div class="row">
 
 
 
-            <!-- Navbar nav -->
-            <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
-              <ul class="navbar-nav position-relative">
-                <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle active" aria-current="page" href="/" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Trang chủ</a>
-                  {{-- <ul class="dropdown-menu">
+                        <!-- Navbar nav -->
+                        <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
+                            <ul class="navbar-nav position-relative">
+                                <li class="nav-item dropdown me-lg-n1 me-xl-0">
+                                    <a class="nav-link dropdown-toggle active" aria-current="page" href="/"
+                                        role="button" data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                        aria-expanded="false">Trang chủ</a>
+                                    {{-- <ul class="dropdown-menu">
                     <li class="hover-effect-opacity px-2 mx-n2">
                       <a class="dropdown-item d-block mb-0" href="home-electronics.html">
                         <span class="fw-medium">Electronics Store</span>
@@ -286,11 +305,13 @@
                       </a>
                     </li>
                   </ul> --}}
-                </li>
+                                </li>
 
-                <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="/danh-muc-san-pham" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Danh mục</a>
-                  {{-- <div class="dropdown-menu rounded-4 p-4">
+                                <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
+                                    <a class="nav-link dropdown-toggle" href="/danh-muc-san-pham" role="button"
+                                        data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Danh
+                                        mục</a>
+                                    {{-- <div class="dropdown-menu rounded-4 p-4">
                     <div class="d-flex flex-column flex-lg-row gap-4">
                       <div style="min-width: 190px">
                         <div class="h6 mb-2">Electronics Store</div>
@@ -393,116 +414,199 @@
                       </div>
                     </div>
                   </div> --}}
-                </li>
-                <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Account</a>
-                  <ul class="dropdown-menu">
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Auth Pages</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="account-signin.html">Sign In</a></li>
-                        <li><a class="dropdown-item" href="account-signup.html">Sign Up</a></li>
-                        <li><a class="dropdown-item" href="account-password-recovery.html">Password Recovery</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop User</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="account-orders.html">Orders History</a></li>
-                        <li><a class="dropdown-item" href="account-wishlist.html">Wishlist</a></li>
-                        <li><a class="dropdown-item" href="account-payment.html">Payment Methods</a></li>
-                        <li><a class="dropdown-item" href="account-reviews.html">My Reviews</a></li>
-                        <li><a class="dropdown-item" href="account-info.html">Personal Info</a></li>
-                        <li><a class="dropdown-item" href="account-addresses.html">Addresses</a></li>
-                        <li><a class="dropdown-item" href="account-notifications.html">Notifications</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Marketplace User</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="account-marketplace-dashboard.html">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-products.html">Products</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-sales.html">Sales</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-payouts.html">Payouts</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-purchases.html">Purchases</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-favorites.html">Favorites</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-settings.html">Settings</a></li>
-                      </ul>
-                    </li>
-                  </ul>
-                </li>
-                <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Pages</a>
-                  <ul class="dropdown-menu">
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">About</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="about-v1.html">About v.1</a></li>
-                        <li><a class="dropdown-item" href="about-v2.html">About v.2</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Blog</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="blog-grid-v1.html">Grid View v.1</a></li>
-                        <li><a class="dropdown-item" href="blog-grid-v2.html">Grid View v.2</a></li>
-                        <li><a class="dropdown-item" href="blog-list.html">List View</a></li>
-                        <li><a class="dropdown-item" href="blog-single-v1.html">Single Post v.1</a></li>
-                        <li><a class="dropdown-item" href="blog-single-v2.html">Single Post v.2</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Contact</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="contact-v1.html">Contact v.1</a></li>
-                        <li><a class="dropdown-item" href="contact-v2.html">Contact v.2</a></li>
-                        <li><a class="dropdown-item" href="contact-v3.html">Contact v.3</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Help Center</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="help-topics-v1.html">Help Topics v.1</a></li>
-                        <li><a class="dropdown-item" href="help-topics-v2.html">Help Topics v.2</a></li>
-                        <li><a class="dropdown-item" href="help-single-article-v1.html">Help Single Article v.1</a></li>
-                        <li><a class="dropdown-item" href="help-single-article-v2.html">Help Single Article v.2</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">404 Error</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="404-electronics.html">404 Electronics</a></li>
-                        <li><a class="dropdown-item" href="404-fashion.html">404 Fashion</a></li>
-                        <li><a class="dropdown-item" href="404-furniture.html">404 Furniture</a></li>
-                        <li><a class="dropdown-item" href="404-grocery.html">404 Grocery</a></li>
-                      </ul>
-                    </li>
-                    <li><a class="dropdown-item" href="terms-and-conditions.html">Terms &amp; Conditions</a></li>
-                  </ul>
-                </li>
-                <li class="nav-item me-lg-n2 me-xl-0">
-                  <a class="nav-link" href="docs/installation.html">Docs</a>
-                </li>
-                <li class="nav-item me-lg-n2 me-xl-0">
-                  <a class="nav-link" href="docs/typography.html">Components</a>
-                </li>
-              </ul>
+                                </li>
+                                <li class="nav-item dropdown me-lg-n1 me-xl-0">
+                                    <a class="nav-link dropdown-toggle" href="/blog" role="button"
+                                        data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                        data-bs-auto-close="outside" aria-expanded="false">Tin Tức</a>
+                                    {{-- <ul class="dropdown-menu">
+                                        <li class="dropend">
+                                            <a class="dropdown-item dropdown-toggle" href="#!" role="button"
+                                                data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                                aria-expanded="false">Auth Pages</a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="account-signin.html">Sign In</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="account-signup.html">Sign Up</a>
+                                                </li>
+                                                <li><a class="dropdown-item"
+                                                        href="account-password-recovery.html">Password Recovery</a>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li class="dropend">
+                                            <a class="dropdown-item dropdown-toggle" href="#!" role="button"
+                                                data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                                aria-expanded="false">Shop User</a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="account-orders.html">Orders
+                                                        History</a></li>
+                                                <li><a class="dropdown-item" href="account-wishlist.html">Wishlist</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="account-payment.html">Payment
+                                                        Methods</a></li>
+                                                <li><a class="dropdown-item" href="account-reviews.html">My
+                                                        Reviews</a></li>
+                                                <li><a class="dropdown-item" href="account-info.html">Personal
+                                                        Info</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="account-addresses.html">Addresses</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="account-notifications.html">Notifications</a></li>
+                                            </ul>
+                                        </li>
+                                        <li class="dropend">
+                                            <a class="dropdown-item dropdown-toggle" href="#!" role="button"
+                                                data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                                aria-expanded="false">Marketplace User</a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item"
+                                                        href="account-marketplace-dashboard.html">Dashboard</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="account-marketplace-products.html">Products</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="account-marketplace-sales.html">Sales</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="account-marketplace-payouts.html">Payouts</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="account-marketplace-purchases.html">Purchases</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="account-marketplace-favorites.html">Favorites</a></li>
+                                                <li><a class="dropdown-item"
+                                                        href="account-marketplace-settings.html">Settings</a></li>
+                                            </ul>
+                                        </li>
+                                    </ul> --}}
+                                </li>
+                                <li class="nav-item dropdown me-lg-n1 me-xl-0">
+                                    <a class="nav-link dropdown-toggle" href="#" role="button"
+                                        data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                        data-bs-auto-close="outside" aria-expanded="false">Pages</a>
+                                    <ul class="dropdown-menu">
+                                        <li class="dropend">
+                                            <a class="dropdown-item dropdown-toggle" href="#!" role="button"
+                                                data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                                aria-expanded="false">About</a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="about-v1.html">About v.1</a></li>
+                                                <li><a class="dropdown-item" href="about-v2.html">About v.2</a></li>
+                                            </ul>
+                                        </li>
+                                        <li class="dropend">
+                                            <a class="dropdown-item dropdown-toggle" href="#!" role="button"
+                                                data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                                aria-expanded="false">Blog</a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="blog-grid-v1.html">Grid View
+                                                        v.1</a></li>
+                                                <li><a class="dropdown-item" href="blog-grid-v2.html">Grid View
+                                                        v.2</a></li>
+                                                <li><a class="dropdown-item" href="blog-list.html">List View</a></li>
+                                                <li><a class="dropdown-item" href="blog-single-v1.html">Single Post
+                                                        v.1</a></li>
+                                                <li><a class="dropdown-item" href="blog-single-v2.html">Single Post
+                                                        v.2</a></li>
+                                            </ul>
+                                        </li>
+                                        <li class="dropend">
+                                            <a class="dropdown-item dropdown-toggle" href="#!" role="button"
+                                                data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                                aria-expanded="false">Contact</a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="contact-v1.html">Contact v.1</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="contact-v2.html">Contact v.2</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="contact-v3.html">Contact v.3</a>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li class="dropend">
+                                            <a class="dropdown-item dropdown-toggle" href="#!" role="button"
+                                                data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                                aria-expanded="false">Help Center</a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="help-topics-v1.html">Help Topics
+                                                        v.1</a></li>
+                                                <li><a class="dropdown-item" href="help-topics-v2.html">Help Topics
+                                                        v.2</a></li>
+                                                <li><a class="dropdown-item" href="help-single-article-v1.html">Help
+                                                        Single Article v.1</a></li>
+                                                <li><a class="dropdown-item" href="help-single-article-v2.html">Help
+                                                        Single Article v.2</a></li>
+                                            </ul>
+                                        </li>
+                                        <li class="dropend">
+                                            <a class="dropdown-item dropdown-toggle" href="#!" role="button"
+                                                data-bs-toggle="dropdown" data-bs-trigger="hover"
+                                                aria-expanded="false">404 Error</a>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="404-electronics.html">404
+                                                        Electronics</a></li>
+                                                <li><a class="dropdown-item" href="404-fashion.html">404 Fashion</a>
+                                                </li>
+                                                <li><a class="dropdown-item" href="404-furniture.html">404
+                                                        Furniture</a></li>
+                                                <li><a class="dropdown-item" href="404-grocery.html">404 Grocery</a>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                        <li><a class="dropdown-item" href="terms-and-conditions.html">Terms &amp;
+                                                Conditions</a></li>
+                                    </ul>
+                                </li>
+                                <li class="nav-item me-lg-n2 me-xl-0">
+                                    <a class="nav-link" href="docs/installation.html">Docs</a>
+                                </li>
+                                <li class="nav-item me-lg-n2 me-xl-0">
+                                    <a class="nav-link" href="docs/typography.html">Components</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
-      <div class="offcanvas-header border-top px-0 py-3 mt-3 d-md-none">
-        <div class="nav nav-justified w-100">
-          <a class="nav-link border-end" href="account-signin.html">
-            <i class="ci-user fs-lg opacity-60 me-2"></i>
-            Account
-          </a>
-          <a class="nav-link" href="account-wishlist.html">
-            <i class="ci-heart fs-lg opacity-60 me-2"></i>
-            Wishlist
-          </a>
-        </div>
-      </div>
-    </nav>
-  </div>
+            <div class="offcanvas-header border-top px-0 py-3 mt-3 d-md-none">
+                <div class="nav nav-justified w-100">
+                    <a class="nav-link border-end" href="account-signin.html">
+                        <i class="ci-user fs-lg opacity-60 me-2"></i>
+                        Account
+                    </a>
+                    <a class="nav-link" href="account-wishlist.html">
+                        <i class="ci-heart fs-lg opacity-60 me-2"></i>
+                        Wishlist
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </div>
 </header>
+<style>
+    .custom-logo {
+        /* Kích thước tối đa mặc định cho logo, phù hợp cho tablet */
+        max-width: 110px;
+        height: auto;
+        /* Luôn giữ đúng tỷ lệ của ảnh */
+
+        /* Hiệu ứng chuyển động mượt mà khi kích thước thay đổi */
+        transition: max-width 0.3s ease-in-out;
+    }
+
+    /* Khi màn hình lớn hơn hoặc bằng 992px (màn hình desktop),
+  tăng kích thước logo lên một chút cho cân đối.
+*/
+    @media (min-width: 992px) {
+        .custom-logo {
+            max-width: 120px;
+        }
+    }
+
+    /* Khi màn hình lớn hơn hoặc bằng 1200px (màn hình desktop lớn),
+  có thể tăng thêm một chút nữa.
+*/
+    @media (min-width: 1200px) {
+        .custom-logo {
+            max-width: 140px;
+        }
+    }
+</style>

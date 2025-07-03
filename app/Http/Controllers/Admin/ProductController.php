@@ -219,6 +219,7 @@ class ProductController extends Controller
                     'dimensions_length' => $request->input('simple_dimensions_length'),
                     'dimensions_width' => $request->input('simple_dimensions_width'),
                     'dimensions_height' => $request->input('simple_dimensions_height'),
+                    'primary_image_id' => $request->input('cover_image_id'),
                     'is_default' => true,
                     'status' => 'active',
                 ]);

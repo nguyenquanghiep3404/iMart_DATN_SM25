@@ -214,7 +214,7 @@
                                     </div>
                                 @endif
                                 <input type="file" name="post_cover_image" class="form-input w-full"
-                                    accept="image/jpeg,image/png,image/jpg,image/gif">
+                                    accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
                                 @error('post_cover_image')
                                     <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
                                 @enderror
