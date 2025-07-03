@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class ProductVariant extends Model
 {
     use HasFactory, SoftDeletes;
@@ -75,4 +75,25 @@ class ProductVariant extends Model
     // và nó liên kết với bảng `uploaded_files`.
     return $this->belongsTo(UploadedFile::class, 'primary_image_id');
 }
+public function getImageUrlAttribute()
+{
+    if ($this->primaryImage && $this->primaryImage->path) {
+        return '/storage/' . ltrim($this->primaryImage->path, '/');
+    }
+
+    // fallback nếu không có ảnh
+    return '/images/no-image.png';
+}
+// public function specificationValues()
+// {
+//     return $this->hasMany(ProductSpecificationValue::class);
+// }
+public function specifications(): BelongsToMany
+{
+    return $this->belongsToMany(Specification::class, 'product_specification_values')
+                ->withPivot('value') // Quan trọng: Lấy cột 'value' từ bảng trung gian
+                ->withTimestamps();
+}
+
+
 }

@@ -8,6 +8,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\SpecificationGroup;
 
 class CategoryController extends Controller
 {
@@ -164,14 +165,24 @@ class CategoryController extends Controller
     }
     public function edit(Category $category)
     {
+    $specificationGroups = SpecificationGroup::orderBy('name')->get();
+    $categorySpecificationGroupIds = $category->specificationGroups()->pluck('specification_groups.id')->toArray();
+
+
         $parents = Category::whereNull('parent_id')
             ->whereNot('id', $category->id)
             ->orderBy('name', "asc")
             ->pluck('name', 'id');
-        return view('admin.category.edit', compact('category', 'parents'));
+        return view('admin.category.edit', compact('category', 'parents','specificationGroups','categorySpecificationGroupIds'));
     }
     public function update(CategoryRequest $request, Category $category)
     {
+    if ($request->has('specification_groups')) {
+        $category->specificationGroups()->sync($request->input('specification_groups'));
+    } else {
+        
+        $category->specificationGroups()->sync([]);
+    }
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
         $category->update($data);

@@ -1,30 +1,39 @@
 <?php
 
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\DashboardAdminController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\AttributeController;
-use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\Admin\PostController;
-use App\Http\Controllers\Admin\PostTagController;
-use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Users\BlogController;
+use App\Http\Controllers\Users\HomeController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\ShipperManagementController;
+use App\Http\Controllers\Admin\PostTagController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Shipper\ShipperController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
-use App\Http\Controllers\Admin\AiController;
-use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Users\CartController;
+use App\Http\Controllers\Admin\SpecificationController;
+use App\Http\Controllers\Admin\SpecificationGroupController;
 
+
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
+Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 
 
 //==========================================================================
@@ -38,6 +47,11 @@ Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestio
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
+// BLOG ROUTES (PUBLIC)
+Route::prefix('blog')->group(function () {
+    Route::get('/', [BlogController::class, 'index'])->name('users.blogs.index');
+    Route::get('/{slug}', [BlogController::class, 'show'])->name('users.blogs.show');
+});
 // Trang About và Help , terms
 Route::get('/about', [HomeController::class, 'about'])->name('users.about');
 Route::get('/help', [HomeController::class, 'help'])->name('users.help');
@@ -59,6 +73,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
 Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
 Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSelected'])->name('wishlist.removeSelected');
+
+ // router cart
+ Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+ Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+ // routes/web.php
+ Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
+ Route::get('/session/flush-message', function () {
+    session()->forget(['success', 'error']);
+    return response()->noContent(); // Trả về 204
+})->name('session.flush.message');
+// Áp dụng mã giảm giá
+Route::post('/cart/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
+
+// Xóa mã giảm giá
+Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
+
 
 //==========================================================================
 // ADMIN ROUTES
@@ -88,7 +118,8 @@ Route::prefix('admin')
             Route::patch('/{user}/restore', [UserController::class, 'restore'])->name('restore');
             Route::delete('/{user}/force-delete', [UserController::class, 'forceDelete'])->name('forceDelete');
             });
-        // });
+
+        Route::get('/api/specifications-by-category/{category}', [ProductController::class, 'getSpecificationsForCategory'])->name('api.specifications.by_category');
         Route::resource('products', ProductController::class);
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
@@ -124,24 +155,10 @@ Route::prefix('admin')
             // Routes với tham số {uploadedFile}
             Route::patch('/{uploadedFile}', [UploadedFileController::class, 'update'])->name('update');
             Route::delete('/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('destroy');
-
             Route::post('/{uploadedFile}/recrop', [UploadedFileController::class, 'recrop'])->name('recrop');
         });
         // Route quản lí vai trò
         Route::resource('roles', RoleController::class);
-
-        // 1. Route hiển thị trang chính của thư viện
-        Route::get('/media', [UploadedFileController::class, 'index'])->name('media.index');
-        // 2. Route xử lý việc tải file lên (sẽ được gọi bằng AJAX)
-        Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
-        // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
-        Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
-        Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
-        Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('media.fetchForModal');
-        Route::get('/media/trash', [UploadedFileController::class, 'trash'])->name('media.trash');
-        Route::post('/media/restore/{id}', [UploadedFileController::class, 'restore'])->name('media.restore');
-        Route::delete('/media/force-delete/{id}', [UploadedFileController::class, 'forceDelete'])->name('media.forceDelete');
-        Route::post('media/bulk-delete', [UploadedFileController::class, 'bulkDelete'])->name('media.bulk-delete');
 
         // Route::middleware('can:manage-content')->group(function () {
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
@@ -169,6 +186,18 @@ Route::prefix('admin')
         Route::post('attributes/{attribute}/values', [AttributeController::class, 'storeValue'])->name('attributes.values.store');
         Route::put('attributes/{attribute}/values/{value}', [AttributeController::class, 'updateValue'])->name('attributes.values.update');
         Route::delete('attributes/{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
+
+        // --- Specification Groups ---
+        Route::get('specification-groups/trashed', [SpecificationGroupController::class, 'trashed'])->name('specification-groups.trashed');
+        Route::post('specification-groups/{id}/restore', [SpecificationGroupController::class, 'restore'])->name('specification-groups.restore');
+        Route::delete('specification-groups/{id}/force-delete', [SpecificationGroupController::class, 'forceDelete'])->name('specification-groups.forceDelete');;
+        Route::resource('specification-groups', SpecificationGroupController::class);
+
+        // --- Specifications ---
+        Route::get('specifications/trashed', [SpecificationController::class, 'trashed'])->name('specifications.trashed');
+        Route::post('specifications/{id}/restore', [SpecificationController::class, 'restore'])->name('specifications.restore');
+        Route::delete('specifications/{id}/force-delete', [SpecificationController::class, 'forceDelete'])->name('specifications.force-delete');
+        Route::resource('specifications', SpecificationController::class);
         // Review routes
         // Admin - Quản lý đánh giá
         Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');

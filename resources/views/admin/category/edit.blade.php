@@ -2,6 +2,44 @@
 
 @section('title', 'Chỉnh sửa danh mục')
 
+@push('styles')
+<style>
+    /* Thêm style cho phần chọn nhóm thông số */
+    .spec-group-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    .spec-group-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease-in-out;
+    }
+    .spec-group-item:hover {
+        border-color: #4f46e5;
+        background-color: #f9fafb;
+    }
+    .spec-group-item input[type="checkbox"] {
+        height: 1.25rem;
+        width: 1.25rem;
+        border-radius: 0.25rem;
+        border-color: #d1d5db;
+        color: #4f46e5;
+        margin-right: 0.75rem;
+        transition: all 0.2s ease-in-out;
+    }
+     .spec-group-item input[type="checkbox"]:focus {
+        ring: 2px;
+        ring-color: #4f46e5;
+        ring-offset: 2px;
+     }
+
+</style>
+@endpush
+
 @section('content')
 <div class="py-8 bg-gray-50 min-h-screen">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -96,14 +134,13 @@
                         <!-- Mô tả -->
                         <div class="group transform transition-all duration-300 ease-in-out hover:translate-x-2">
                             <label for="description" class="block text-base font-semibold text-gray-700 mb-2 flex items-center group-hover:text-indigo-600 transition-colors duration-200">
-                                <svg class="w-4 h-4 mr-text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"/>
                                 </svg>
-                                Mô tả <span class="text-red-500 ml-1">*</span>
+                                Mô tả
                             </label>
                             <textarea name="description" id="description" rows="4" 
-                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 transition duration-200 ease-in-out focus:ring-2 focus:ring-indigo-500 focus:border-transparent hover:bg-white"
-                                required>{{ old('description', $category->description) }}</textarea>
+                                class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 transition duration-200 ease-in-out focus:ring-2 focus:ring-indigo-500 focus:border-transparent hover:bg-white">{{ old('description', $category->description) }}</textarea>
                             @error('description')
                                 <p class="mt-2 text-base text-red-600">{{ $message }}</p>
                             @enderror
@@ -143,6 +180,34 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- START: Specification Groups Section -->
+                <div class="mt-8 pt-8 border-t border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        Nhóm thông số kỹ thuật
+                    </h3>
+                    <p class="text-sm text-gray-500 mb-4">Chọn các nhóm thông số sẽ được áp dụng cho tất cả sản phẩm thuộc danh mục này.</p>
+                    <div class="spec-group-grid">
+                        @forelse ($specificationGroups as $group)
+                            <label for="spec_group_{{ $group->id }}" class="spec-group-item cursor-pointer">
+                                <input type="checkbox" 
+                                       name="specification_groups[]" 
+                                       value="{{ $group->id }}" 
+                                       id="spec_group_{{ $group->id }}"
+                                       @if(in_array($group->id, $categorySpecificationGroupIds)) checked @endif>
+                                <span class="font-medium text-gray-700">{{ $group->name }}</span>
+                            </label>
+                        @empty
+                            <p class="text-gray-500 col-span-full">Chưa có nhóm thông số nào. Vui lòng <a href="{{ route('admin.specification-groups.create') }}" class="text-indigo-600 hover:underline">tạo nhóm mới</a> trước.</p>
+                        @endforelse
+                    </div>
+                    @error('specification_groups')
+                        <p class="mt-2 text-base text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+                <!-- END: Specification Groups Section -->
+
 
                 <!-- SEO Section -->
                 <div class="mt-8 pt-8 border-t border-gray-200">
@@ -201,13 +266,6 @@
 
                 <!-- Form Actions -->
                 <div class="mt-8 pt-8 border-t border-gray-200 flex items-center justify-end space-x-5">
-                    <button class="tjp-btn bg-red-600 text-white px-4 py-2 rounded">
-                        Cập nhật
-                    </button>
-                    <button type="reset" 
-                        class="inline-block px-7 py-2 border border-yellow-500 text-yellow-600 rounded hover:bg-yellow-50 font-semibold shadow">
-                        Reset
-                    </button>
                     <a href="{{ route('admin.categories.index') }}" 
                         class="inline-flex items-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -215,6 +273,12 @@
                         </svg>
                         Hủy
                     </a>
+                    <button type="submit" class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200">
+                        <svg class="w-5 h-5 mr-2 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+                        </svg>
+                        Cập nhật danh mục
+                    </button>
                 </div>
             </form>
         </div>
@@ -225,17 +289,24 @@
 <script>
     // Tự động tạo slug từ tên
     document.getElementById('name').addEventListener('input', function() {
-        if (!document.getElementById('slug').value) {
-            let slug = this.value
+        let nameInput = this.value;
+        let slugInput = document.getElementById('slug');
+        
+        // Chỉ tự động tạo nếu người dùng chưa nhập gì vào slug
+        if (slugInput.getAttribute('data-user-edited') !== 'true') {
+            let slug = nameInput
                 .toLowerCase()
                 .replace(/đ/g, 'd')
-                .replace(/[^a-z0-9-]/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/^-|-$/g, '');
-            document.getElementById('slug').value = slug;
+                .replace(/ /g, '-') // thay thế khoảng trắng bằng gạch ngang
+                .replace(/[^\w-]+/g, ''); // loại bỏ các ký tự đặc biệt
+            slugInput.value = slug;
         }
+    });
+
+    // Đánh dấu là người dùng đã tự sửa slug
+    document.getElementById('slug').addEventListener('input', function() {
+        this.setAttribute('data-user-edited', 'true');
     });
 </script>
 @endpush
 @endsection
-2 
