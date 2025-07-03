@@ -29,6 +29,8 @@
         $activeParentNav = 11; // Index của "Quản lý media"
     } elseif (str_starts_with($currentRouteName, 'admin.attributes.')) {
         $activeParentNav = 12; // Index của "Thuộc tính"
+    } elseif (str_starts_with($currentRouteName, 'admin.specifications.')) {
+        $activeParentNav = 13; // Index của "Thuộc tính"
     }
     // Thêm các điều kiện khác nếu cần
 @endphp
@@ -503,6 +505,36 @@
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('admin.media.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
                                 Thùng rác
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {{-- 14. thông số sản phẩm --}}
+                <li>
+                    @php $isSpecificationsSectionActive = request()->routeIs('admin.specifications.*') || request()->routeIs('admin.specification-groups.*'); @endphp
+                    <button @click="openNav !== 13 ? openNav = 13 : openNav = null"
+                        :class="openNav === 13 ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                        <span class="mr-3 text-lg {{ $isSpecificationsSectionActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            {{-- Icon mới cho thông số --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M21.92,7.62A1,1,0,0,0,21,7H3a1,1,0,0,0,0,2H21a1,1,0,0,0,.92-1.38ZM21.92,15.62A1,1,0,0,0,21,15H3a1,1,0,0,0,0,2H21a1,1,0,0,0,.92-1.38Z"/><path d="M7,11H3a1,1,0,0,0,0,2H7a1,1,0,0,0,0-2Z"/><path d="M7,19H3a1,1,0,0,0,0,2H7a1,1,0,0,0,0-2Z"/><path d="M21,3H3A1,1,0,0,0,3,5H21a1,1,0,0,0,0-2Z"/></svg>
+                        </span>
+                        Thông số sản phẩm
+                        <span class="ml-auto transition-transform duration-200 ease-in-out" :class="openNav === 13 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" /></svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 13" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.specification-groups.index') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.specification-groups.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Nhóm thông số
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.specifications.index') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.specifications.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thông số kỹ thuật
                             </a>
                         </li>
                     </ul>

@@ -25,16 +25,14 @@ use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Users\CartController;
+use App\Http\Controllers\Admin\SpecificationController;
+use App\Http\Controllers\Admin\SpecificationGroupController;
+
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-
-
-
-
-
 
 
 //==========================================================================
@@ -119,7 +117,7 @@ Route::prefix('admin')
             Route::patch('/{user}/restore', [UserController::class, 'restore'])->name('restore');
             Route::delete('/{user}/force-delete', [UserController::class, 'forceDelete'])->name('forceDelete');
             });
-        // });
+        Route::get('/admin/api/specifications-by-category/{category}', [ProductController::class, 'getSpecificationsForCategory'])->name('api.specifications.by_category');
         Route::resource('products', ProductController::class);
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
@@ -178,6 +176,18 @@ Route::prefix('admin')
         Route::post('attributes/{attribute}/values', [AttributeController::class, 'storeValue'])->name('attributes.values.store');
         Route::put('attributes/{attribute}/values/{value}', [AttributeController::class, 'updateValue'])->name('attributes.values.update');
         Route::delete('attributes/{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
+
+        // --- Specification Groups ---
+        Route::get('specification-groups/trashed', [SpecificationGroupController::class, 'trashed'])->name('specification-groups.trashed');
+        Route::post('specification-groups/{id}/restore', [SpecificationGroupController::class, 'restore'])->name('specification-groups.restore');
+        Route::delete('specification-groups/{id}/force-delete', [SpecificationGroupController::class, 'forceDelete'])->name('specification-groups.forceDelete');;
+        Route::resource('specification-groups', SpecificationGroupController::class);
+
+        // --- Specifications ---
+        Route::get('specifications/trashed', [SpecificationController::class, 'trashed'])->name('specifications.trashed');
+        Route::post('specifications/{id}/restore', [SpecificationController::class, 'restore'])->name('specifications.restore');
+        Route::delete('specifications/{id}/force-delete', [SpecificationController::class, 'forceDelete'])->name('specifications.force-delete');
+        Route::resource('specifications', SpecificationController::class);
         // Review routes
         // Admin - Quản lý đánh giá
         Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');

@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Attribute;
 use App\Models\ProductVariant;
 use App\Models\UploadedFile;
+use App\Models\SpecificationGroup;
 use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -160,9 +161,10 @@ class ProductController extends Controller
                 })->all();
             }
         }
+        $specGroups = SpecificationGroup::with('specifications')->orderBy('order')->get();
         // --- KẾT THÚC PHẦN CODE MỚI ---
 
-        return view('admin.products.create', compact('categories', 'attributes', 'old_images_data'));
+        return view('admin.products.create', compact('categories', 'attributes', 'old_images_data','specGroups'));
     }
 
     /**
