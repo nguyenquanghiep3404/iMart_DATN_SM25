@@ -69,4 +69,9 @@ class Category extends Model
         }
         return 'https://via.placeholder.com/150?text=No+Image'; // Placeholder
     }
+    public function specificationGroups()
+    {
+        return $this->belongsToMany(SpecificationGroup::class, 'category_specification_group');
+    }
+
 }

@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             AddressSeeder::class,
             SystemSettingSeeder::class,
             ContactFormSeeder::class,
+            SpecificationSeeder::class,
             // ActivityLogSeeder::class, // Nếu có
         ]);
         $this->command->info('All seeders ran successfully!');
