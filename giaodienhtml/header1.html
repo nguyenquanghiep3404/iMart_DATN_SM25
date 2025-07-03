@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Header Website Bán Điện Thoại</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải Font Inter từ Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Sử dụng font Inter làm font chữ mặc định */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* --- CSS cho hiệu ứng chuyển động --- */
+
+        /* Style cho dropdown menu với hiệu ứng fade-in và trượt lên */
+        .dropdown-menu {
+            display: block;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .group:hover .dropdown-menu, .dropdown.open .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        /* Hiệu ứng cho mobile menu */
+        #mobile-menu {
+            transition: max-height 0.3s ease-in-out;
+            max-height: 0;
+            overflow: hidden;
+        }
+        #mobile-menu.open {
+            max-height: 100vh;
+        }
+        
+        .logo-dark-mode {
+             filter: brightness(0) invert(1);
+        }
+
+        /* --- Styles for Animated Search Bar --- */
+        .search-wrapper {
+            transition: background .5s ease-in-out;
+        }
+        /* Lớp is-focused sẽ được thêm bằng JavaScript */
+        .search-wrapper.is-focused {
+            background-image: linear-gradient(to right, #9aadf9, #b0d4d2, #f2adda, #b0d4d2, #9aadf9);
+            background-size: 300% auto;
+            animation: animated-gradient 8s linear infinite;
+        }
+
+        .search-wrapper .relative {
+            transition: background-color .4s ease-in-out;
+        }
+        /* Khi focus, nền bên trong chuyển thành trắng */
+        .search-wrapper .relative.is-focused-inner {
+            background-color: white;
+        }
+
+        .search-wrapper .relative .search-input {
+             transition: color .4s ease-in-out;
+        }
+        /* Khi focus, chữ nhập vào chuyển thành đen */
+        .search-wrapper .relative.is-focused-inner .search-input {
+            color: #1f2937; /* gray-800 */
+        }
+        /* Khi focus, chữ placeholder chuyển màu */
+        .search-wrapper .relative.is-focused-inner .search-input::placeholder {
+            color: #6b7280; /* gray-500 */
+        }
+
+        /* Keyframes cho hiệu ứng chuyển động gradient */
+        @keyframes animated-gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Style cho nút tìm kiếm khi focus */
+        .search-submit-btn.is-focused {
+            background-image: linear-gradient(to right, #9aadf9, #b0d4d2, #f2adda, #b0d4d2, #9aadf9);
+            background-size: 300% auto;
+            animation: animated-gradient 8s linear infinite;
+        }
+
+        /* --- Style cho header khi cuộn --- */
+        #page-header.scrolled {
+            background-color: rgba(17, 24, 39, 0.8); /* bg-gray-900/80 */
+            -webkit-backdrop-filter: blur(16px); /* backdrop-blur-lg for Safari */
+            backdrop-filter: blur(16px); /* backdrop-blur-lg */
+            border-bottom-color: rgba(55, 65, 81, 0.6); /* border-gray-700/60 */
+        }
+
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-800">
+
+    <!-- Header Section -->
+    <header id="page-header" class="bg-gray-900 text-white sticky top-0 z-50 border-b border-transparent transition-all duration-300">
+        <div class="container mx-auto px-4">
+            <!-- Main Header for Desktop -->
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo và Danh mục -->
+                <div class="flex items-center space-x-4 md:space-x-8">
+                    <!-- Logo -->
+                    <a href="#" class="flex-shrink-0">
+                        <img class="h-12 sm:h-14 w-auto" src="\public\assets\users\logo\logo-full.svg" alt="Logo">
+                    </a>
+
+                    <!-- Danh mục sản phẩm (Dropdown) -->
+                    <div class="hidden md:block group relative dropdown">
+                        <button id="categories-btn" class="flex items-center space-x-2 px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20 transition-all duration-200 transform hover:scale-105">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                            <span class="font-semibold">Danh mục</span>
+                        </button>
+                        <div class="dropdown-menu absolute mt-2 w-64 bg-gray-900 rounded-lg shadow-xl py-2 border border-gray-700">
+                            <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200">
+                                <img src="https://placehold.co/24x24/E91E63/FFFFFF?text=IP" class="w-6 h-6 mr-3 rounded-full" alt="iPhone Icon">
+                                <span>iPhone</span>
+                            </a>
+                            <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200">
+                                <img src="https://placehold.co/24x24/4CAF50/FFFFFF?text=SS" class="w-6 h-6 mr-3 rounded-full" alt="Samsung Icon">
+                                <span>Samsung</span>
+                            </a>
+                            <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200">
+                                <img src="https://placehold.co/24x24/FF9800/FFFFFF?text=XI" class="w-6 h-6 mr-3 rounded-full" alt="Xiaomi Icon">
+                                <span>Xiaomi</span>
+                            </a>
+                            <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200">
+                                <img src="https://placehold.co/24x24/2196F3/FFFFFF?text=OP" class="w-6 h-6 mr-3 rounded-full" alt="Oppo Icon">
+                                <span>Oppo</span>
+                            </a>
+                             <a href="#" class="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200">
+                                <img src="https://placehold.co/24x24/9C27B0/FFFFFF?text=VG" class="w-6 h-6 mr-3 rounded-full" alt="VIVO Icon">
+                                <span>Vivo</span>
+                            </a>
+                            <div class="border-t border-gray-700 my-1"></div>
+                            <a href="#" class="block px-4 py-3 text-violet-400 font-semibold hover:bg-gray-700 transition-colors duration-200">Xem tất cả</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thanh tìm kiếm -->
+                <div class="hidden lg:flex flex-1 max-w-xl mx-8">
+                    <!-- Wrapper for gradient border. JS sẽ thêm class 'is-focused' vào đây -->
+                    <div class="search-wrapper w-full rounded-full p-1 bg-white/10">
+                        <div class="relative bg-transparent rounded-full">
+                            <input type="search" placeholder="Bạn tìm sản phẩm nào?" class="search-input w-full bg-transparent text-gray-300 rounded-full py-2.5 pl-5 pr-12 text-sm placeholder-gray-400 focus:outline-none">
+                            <button type="submit" class="search-submit-btn absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-110 focus:outline-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Các icon chức năng -->
+                <div class="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
+                    <!-- Nút tìm kiếm cho mobile -->
+                    <button class="lg:hidden p-2 rounded-full text-gray-300 hover:bg-white/10 transition-colors duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </button>
+                    
+                    <!-- Nút menu cho mobile -->
+                     <button id="mobile-menu-btn" class="md:hidden p-2 rounded-full text-gray-300 hover:bg-white/10 transition-colors duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                    </button>
+
+                    <a href="#" class="hidden md:flex items-center space-x-2 p-2 rounded-lg text-gray-200 hover:bg-white/10 transition-all duration-200 transform hover:scale-105">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <span class="text-sm font-medium hidden xl:block">Tài khoản</span>
+                    </a>
+                    <a href="#" class="hidden md:block p-2 rounded-full text-gray-300 hover:bg-white/10 transition-all duration-200 transform hover:scale-110 relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <span class="absolute top-1 right-1 block h-2 w-2 rounded-full bg-red-500"></span>
+                    </a>
+                    <a href="#" class="hidden md:block p-2 rounded-full text-gray-300 hover:bg-white/10 transition-all duration-200 transform hover:scale-110">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                    </a>
+                    <div class="border-l border-gray-600/70 h-8 mx-2 hidden md:block"></div>
+                    <a href="#" class="flex items-center space-x-2 px-4 py-2 bg-white/10 text-white rounded-lg transform hover:scale-105 hover:bg-white/20 transition-all duration-200 relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                        <span class="text-sm font-semibold hidden sm:block">Giỏ hàng</span>
+                        <span class="absolute top-0 right-0 -mt-1 -mr-1 flex justify-center items-center h-5 w-5 bg-red-500 text-white text-xs rounded-full">3</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Thanh tìm kiếm cho mobile (hiển thị dưới header) -->
+            <div class="lg:hidden pb-4 px-2">
+                <!-- Wrapper for gradient border on focus -->
+                <div class="search-wrapper w-full rounded-full p-1 bg-white/10">
+                    <div class="relative bg-transparent rounded-full">
+                        <input type="search" placeholder="Tìm kiếm sản phẩm..." class="search-input w-full bg-transparent text-gray-300 rounded-full py-2.5 pl-5 pr-12 text-sm placeholder-gray-400 focus:outline-none">
+                        <button type="submit" class="search-submit-btn absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-110 focus:outline-none">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu (sử dụng JS để toggle class 'open') -->
+        <div id="mobile-menu" class="md:hidden bg-gray-900/80 backdrop-blur-lg border-t border-gray-700/60">
+            <div class="px-4 py-3 space-y-2">
+                <a href="#" class="flex items-center px-3 py-2 text-gray-300 hover:bg-white/10 rounded-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span>Tài khoản</span>
+                </a>
+                <a href="#" class="flex items-center px-3 py-2 text-gray-300 hover:bg-white/10 rounded-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span>Thông báo</span>
+                </a>
+                <a href="#" class="flex items-center px-3 py-2 text-gray-300 hover:bg-white/10 rounded-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                    <span>Yêu thích</span>
+                </a>
+                 <div class="border-t border-gray-700/60 pt-3 mt-2">
+                    <h3 class="px-3 text-xs font-semibold uppercase text-gray-400 tracking-wider">Danh mục</h3>
+                    <div class="mt-2 space-y-1">
+                         <a href="#" class="block px-3 py-2 text-gray-300 hover:bg-white/10 rounded-md">iPhone</a>
+                         <a href="#" class="block px-3 py-2 text-gray-300 hover:bg-white/10 rounded-md">Samsung</a>
+                         <a href="#" class="block px-3 py-2 text-gray-300 hover:bg-white/10 rounded-md">Xiaomi</a>
+                         <a href="#" class="block px-3 py-2 text-gray-300 hover:bg-white/10 rounded-md">Oppo</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 mt-8">
+        <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-200">Nội dung trang web</h1>
+        <p class="mt-4 text-gray-600 dark:text-gray-400">Để thấy hiệu ứng kính mờ, hãy cuộn trang lên xuống.</p>
+        <div class="mt-10 h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+            <p class="text-white text-2xl font-bold">Nội dung trang web để cuộn</p>
+        </div>
+         <div class="mt-10 h-screen bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
+            <p class="text-white text-2xl font-bold">Nội dung trang web để cuộn</p>
+        </div>
+    </main>
+
+    <script>
+        // --- JavaScript cho các chức năng tương tác ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Lấy các phần tử DOM
+            const categoriesBtn = document.getElementById('categories-btn');
+            const categoriesDropdown = categoriesBtn.parentElement;
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const pageHeader = document.getElementById('page-header');
+
+            // Chức năng đóng/mở dropdown danh mục bằng cách click
+            categoriesBtn.addEventListener('click', (event) => {
+                event.stopPropagation(); // Ngăn sự kiện click lan ra ngoài
+                categoriesDropdown.classList.toggle('open');
+            });
+
+            // Chức năng đóng/mở menu trên mobile
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('open');
+            });
+
+            // Đóng dropdown danh mục khi click ra ngoài
+            document.addEventListener('click', () => {
+                if (categoriesDropdown.classList.contains('open')) {
+                    categoriesDropdown.classList.remove('open');
+                }
+            });
+
+            // --- JavaScript cho hiệu ứng header khi cuộn ---
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 10) {
+                    pageHeader.classList.add('scrolled');
+                } else {
+                    pageHeader.classList.remove('scrolled');
+                }
+            });
+
+            // --- JavaScript cho thanh tìm kiếm động ---
+            document.querySelectorAll('.search-input').forEach(input => {
+                const wrapper = input.closest('.search-wrapper');
+                if (!wrapper) return;
+                
+                const innerBg = wrapper.querySelector('.relative');
+                const button = wrapper.querySelector('.search-submit-btn');
+                if (!innerBg || !button) return;
+
+                // Lưu trữ các biến cho animation
+                let initialTimeout;
+                let placeholderInterval;
+                let typingTimeout;
+                const originalPlaceholder = input.placeholder;
+
+                // Hàm tạo hiệu ứng gõ chữ
+                const typeWriter = (text, i = 0) => {
+                    // Dừng animation gõ chữ cũ nếu có
+                    clearTimeout(typingTimeout);
+                    if (input !== document.activeElement) return; // Dừng nếu không còn focus
+
+                    if (i === 0) {
+                        input.placeholder = ''; // Xóa placeholder cũ khi bắt đầu
+                    }
+
+                    if (i < text.length) {
+                        input.placeholder += text.charAt(i);
+                        typingTimeout = setTimeout(() => typeWriter(text, i + 1), 60); // Tốc độ gõ
+                    }
+                };
+                
+                // Hàm bắt đầu chu kỳ đổi placeholder
+                const startPlaceholderCycle = () => {
+                    const placeholders = ["không chỉ là thanh tìm kiếm thông thường","ra lệnh mua ngay sản phẩm với AI","mua iphone 16 plus 265GB xanh mòn két", "Bạn tìm sản phẩm nào?"];
+                    let currentIndex = 0;
+                    
+                    // Bắt đầu gõ chữ câu đầu tiên
+                    typeWriter(placeholders[currentIndex]);
+
+                    // Thiết lập vòng lặp chuyển đổi sau mỗi 5 giây
+                    placeholderInterval = setInterval(() => {
+                        currentIndex = (currentIndex + 1) % placeholders.length;
+                        typeWriter(placeholders[currentIndex]);
+                    }, 5000); // Thời gian chuyển đổi
+                };
+
+                // Dừng tất cả các animation
+                const stopAllAnimations = () => {
+                    clearTimeout(initialTimeout);
+                    clearInterval(placeholderInterval);
+                    clearTimeout(typingTimeout);
+                };
+
+                // Sự kiện khi focus vào ô tìm kiếm
+                input.addEventListener('focus', () => {
+                    wrapper.classList.add('is-focused');
+                    innerBg.classList.add('is-focused-inner');
+                    button.classList.add('is-focused');
+                    
+                    stopAllAnimations(); // Dọn dẹp animation cũ trước khi bắt đầu
+                    
+                    input.placeholder = "Bạn tìm sản phẩm nào?"; // Hiển thị câu đầu tiên ngay lập tức
+                    
+                    // Sau 3 giây, bắt đầu chu kỳ animation
+                    initialTimeout = setTimeout(startPlaceholderCycle, 3000);
+                });
+
+                // Sự kiện khi rời khỏi ô tìm kiếm (blur)
+                input.addEventListener('blur', () => {
+                    wrapper.classList.remove('is-focused');
+                    innerBg.classList.remove('is-focused-inner');
+                    button.classList.remove('is-focused');
+                    
+                    stopAllAnimations(); // Dừng tất cả animation
+                    input.placeholder = originalPlaceholder; // Trả về placeholder gốc
+                });
+
+                // Sự kiện khi người dùng bắt đầu gõ
+                input.addEventListener('input', () => {
+                    stopAllAnimations(); // Dừng animation ngay khi người dùng gõ
+                });
+            });
+        });
+    </script>
+</body>
+</html>
