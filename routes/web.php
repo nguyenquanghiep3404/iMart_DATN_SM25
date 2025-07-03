@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Users\WishlistController;
 use App\Http\Controllers\Admin\CommentController;
+use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Shipper\ShipperController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
@@ -99,6 +100,14 @@ Route::prefix('admin')
             Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
             Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
             Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // --- Routes quản lí shipper ---
+        Route::prefix('shippers')->name('shippers.')->group(function() {
+            Route::get('/trash', [ShipperManagementController::class, 'trash'])->name('trash');
+            Route::patch('/{shipper}/restore', [ShipperManagementController::class, 'restore'])->name('restore');
+            Route::delete('/{shipper}/force-delete', [ShipperManagementController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('shippers', ShipperManagementController::class);
 
         // --- Routes cho Thư viện Media ---
         Route::prefix('media')->name('media.')->group(function () {
