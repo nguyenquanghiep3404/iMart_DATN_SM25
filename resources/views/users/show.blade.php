@@ -539,7 +539,7 @@
 
         /* Thiết lập kích thước và căn chỉnh cho thumbnail */
         #lightbox-thumbnails img {
-            width: 60px;
+            width: 100px;
             /* Kích thước cố định cho thumbnail */
             height: 100px;
             /* Tỷ lệ phù hợp với hình ảnh điện thoại */
@@ -569,6 +569,8 @@
 
 @push('scripts')
     <script>
+        window.productType = @json($product->type); // 👈 thêm dòng này
+        console.log('Loại sản phẩm:', window.productType); // ✅ log kiểm tra
         window.variantData = @json($variantData);
         window.attributeOrder = @json($attributeOrder);
         window.availableCombinations = @json($availableCombinations);
@@ -662,12 +664,25 @@
             console.log('Giá trị currentSelections ban đầu:', currentSelections);
             console.log('Các tổ hợp biến thể khả dụng:', availableCombinations);
 
+            /**
+             * Lấy key của biến thể hiện tại dựa trên các thuộc tính đã chọn.
+             * Trả về chuỗi key dạng 'Dung lượng_Màu sắc'...
+             */
             function getVariantKey() {
+                if (window.productType !== 'variable') {
+                    console.log('Sản phẩm không có biến thể, getVariantKey trả về chuỗi rỗng');
+                    return '';
+                }
+
                 const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
                 console.log('Sinh ra variant key:', key);
                 return key;
             }
 
+            /**
+             * Cập nhật đồng hồ đếm ngược cho Flash Sale.
+             * Nhận vào thời gian kết thúc, cập nhật số giờ, phút, giây còn lại.
+             */
             function updateCountdown(endTimeStr) {
                 const timer = document.getElementById('countdown-timer');
                 if (!timer || !endTimeStr) {
@@ -703,7 +718,16 @@
                 timer._interval = setInterval(update, 1000);
             }
 
+            /**
+             * Cập nhật các lựa chọn thuộc tính khả dụng dựa trên lựa chọn hiện tại.
+             * Ẩn/hiện các option không hợp lệ, tự động chọn lại nếu giá trị hiện tại không còn hợp lệ.
+             */
             function updateAvailableOptions() {
+                if (window.productType !== 'variable') {
+                    console.log('Sản phẩm không có biến thể, không cần updateAvailableOptions');
+                    return;
+                }
+
                 if (!availableCombinations || !attributeOrder) {
                     console.error('availableCombinations or attributeOrder is missing');
                     return;
@@ -718,8 +742,10 @@
                         let isMatch = true;
                         for (let i = 0; i < attrIndex; i++) {
                             const prevAttr = attributeOrder[i];
-                            if (currentSelections[prevAttr] && currentSelections[prevAttr] !==
-                                combination[prevAttr]) {
+                            if (
+                                currentSelections[prevAttr] &&
+                                currentSelections[prevAttr] !== combination[prevAttr]
+                            ) {
                                 isMatch = false;
                                 break;
                             }
@@ -747,13 +773,16 @@
                             }
                         });
 
-                    if (!newlyAvailableOptions[attrName].has(currentSelections[attrName]) &&
-                        newlyAvailableOptions[attrName].size > 0) {
+                    if (
+                        !newlyAvailableOptions[attrName].has(currentSelections[attrName]) &&
+                        newlyAvailableOptions[attrName].size > 0
+                    ) {
                         const firstValue = Array.from(newlyAvailableOptions[attrName])[0];
                         console.log(`Đặt lại ${attrName} về giá trị khả dụng đầu tiên: ${firstValue}`);
                         currentSelections[attrName] = firstValue;
                         const input = document.querySelector(
-                            `input[data-attr-name="${attrName}"][value="${firstValue}"]`);
+                            `input[data-attr-name="${attrName}"][value="${firstValue}"]`
+                        );
                         if (input) input.checked = true;
                     }
                 });
@@ -772,7 +801,15 @@
                 updateVariantInfo();
             }
 
+            /**
+             * Cập nhật thông tin biến thể (giá, trạng thái, ảnh, sticky bar) khi thay đổi lựa chọn.
+             */
             function updateVariantInfo() {
+                if (window.productType !== 'variable') {
+                    console.log('Sản phẩm không có biến thể, không cần updateVariantInfo');
+                    return;
+                }
+
                 const key = getVariantKey();
                 const variant = variantData[key];
                 console.log('Biến thể cho key:', key, variant);
@@ -795,7 +832,9 @@
                 }
 
                 isSale = !isFlashSale && salePrice && salePrice < originalPrice;
-                discountPercent = (isFlashSale || isSale) ? Math.round(100 - (salePrice / originalPrice) * 100) : 0;
+                discountPercent = (isFlashSale || isSale) ?
+                    Math.round(100 - (salePrice / originalPrice) * 100) :
+                    0;
 
                 const displayPrice = (isFlashSale || isSale) ? salePrice : originalPrice;
 
@@ -845,20 +884,34 @@
                 updateStickyBar(key);
             }
 
+            /**
+             * Khởi tạo lại gallery ảnh sản phẩm dựa trên biến thể hoặc sản phẩm đơn giản.
+             */
             function initializeGallery() {
                 if (!mainThumbnailsContainer) return;
+                // ✅ Loại ảnh placeholder (ảnh trắng rỗng)
+                galleryData = galleryData.filter(item => {
+                    return item.main && !item.main.includes('placeholder.jpg');
+                });
                 mainThumbnailsContainer.innerHTML = '';
+
                 galleryData.forEach((item, index) => {
                     const thumbDiv = document.createElement('div');
                     thumbDiv.className =
-                        `thumbnail-item relative cursor-pointer rounded-md border-2 flex-shrink-0 w-[96px] h-[96px] ${index === 0 ? 'border-blue-500 thumbnail-selected' : 'border-transparent'}`;
+                        `thumbnail-item relative cursor-pointer rounded-md border-2 flex-shrink-0 w-[121px] h-[135px] ${index === 0 ? 'border-blue-500 thumbnail-selected' : 'border-transparent'}`;
 
                     thumbDiv.onclick = () => window.changeImage(index);
 
                     const img = document.createElement('img');
-                    img.src = item.thumb;
+
+                    // ✅ Ưu tiên ảnh rõ nét hơn
+                    img.src = item.main || item.thumb;
                     img.alt = `Thumbnail ${index + 1}`;
-                    img.className = 'w-[96px] h-[96px] object-cover rounded';
+                    img.className = 'w-[120px] h-[120px] object-cover rounded mb-2';
+
+
+                    // ✅ Giảm mờ khi trình duyệt scale ảnh
+                    img.style.imageRendering = 'crisp-edges';
 
                     thumbDiv.appendChild(img);
 
@@ -871,12 +924,18 @@
                             `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992M2.985 19.644v-4.992h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-11.664 0l4.992-4.993H2.985m0-4.993h4.992m-4.993 0l3.181-3.183a8.25 8.25 0 0111.664 0l3.181 3.183" /></svg>`;
                         thumbDiv.appendChild(overlay);
                     }
+
                     mainThumbnailsContainer.appendChild(thumbDiv);
                 });
+
                 window.changeImage(0);
                 updateThumbNavigation();
             }
 
+            /**
+             * Đổi ảnh chính khi click vào thumbnail.
+             * index: chỉ số ảnh được chọn.
+             */
             window.changeImage = function(index) {
                 currentImageIndex = index;
                 mainImage.src = galleryData[index].main;
@@ -898,6 +957,9 @@
                 }
             };
 
+            /**
+             * Cập nhật giao diện lightbox khi xem ảnh lớn.
+             */
             function updateLightboxView() {
                 if (!lightboxMainImage || !lightboxDescription || !lightboxCounter) return;
                 const item = galleryData[currentImageIndex];
@@ -915,6 +977,9 @@
                 });
             }
 
+            /**
+             * Mở lightbox xem ảnh lớn ở vị trí index.
+             */
             function openLightbox(index) {
                 if (!lightboxModal) return;
                 currentImageIndex = index;
@@ -924,6 +989,9 @@
                 lightboxModal.classList.add('flex');
             }
 
+            /**
+             * Đóng lightbox xem ảnh lớn.
+             */
             function closeLightbox() {
                 if (!lightboxModal) return;
                 lightboxModal.classList.add('hidden');
@@ -932,11 +1000,17 @@
                 resetZoomState();
             }
 
+            /**
+             * Chuyển sang ảnh tiếp theo trong lightbox.
+             */
             function showNextImage() {
                 currentImageIndex = (currentImageIndex + 1) % galleryData.length;
                 updateLightboxView();
             }
 
+            /**
+             * Quay lại ảnh trước trong lightbox.
+             */
             function showPrevImage() {
                 currentImageIndex = (currentImageIndex - 1 + galleryData.length) % galleryData.length;
                 updateLightboxView();
@@ -959,6 +1033,9 @@
                 lightboxMainImage.style.cursor = 'zoom-in';
             }
 
+            /**
+             * Phóng to ảnh trong lightbox.
+             */
             function zoomIn() {
                 isZoomed = true;
                 lightboxMainImage.style.transition = 'transform 0.3s ease';
@@ -966,10 +1043,16 @@
                 lightboxMainImage.style.cursor = 'grab';
             }
 
+            /**
+             * Thu nhỏ ảnh trong lightbox về trạng thái ban đầu.
+             */
             function zoomOut() {
                 resetZoomState();
             }
 
+            /**
+             * Bật/tắt chế độ zoom cho ảnh trong lightbox.
+             */
             function toggleZoom() {
                 if (!lightboxMainImage) return;
                 if (isZoomed) {
@@ -1022,32 +1105,29 @@
                 });
             }
 
+            /**
+             * Cập nhật gallery ảnh khi chọn biến thể mới.
+             * variantKey: key của biến thể.
+             */
             window.updateGalleryFromSelection = function(variantKey) {
                 const variant = variantData[variantKey];
                 console.log('Updating gallery for variant key:', variantKey, variant);
-                if (!variant) {
-                    console.error('No variant found for key:', variantKey);
-                    galleryData = window.initialImages.map((img, index) => ({
-                        thumb: img,
-                        main: img,
-                        lightbox: img,
-                        description: `Hình ảnh ${index + 1}`,
-                        type: 'image'
-                    }));
-                    initializeGallery();
-                    return;
+
+                let images = [...window.initialImages]; // Luôn bao gồm ảnh của sản phẩm đơn giản
+
+                if (variant && variant.images && variant.images.length > 0) {
+                    // Thêm ảnh của biến thể, ưu tiên ảnh chính (nếu có)
+                    if (variant.primary_image_id && variant.image) {
+                        images = [variant.image, ...variant.images.filter(img => img !== variant.image), ...
+                            images
+                        ];
+                    } else {
+                        images = [...variant.images, ...images];
+                    }
                 }
 
-                let images = [];
-                if (variant.images && variant.images.length > 0) {
-                    if (variant.primary_image_id && variant.image) {
-                        images = [variant.image, ...variant.images.filter(img => img !== variant.image)];
-                    } else {
-                        images = variant.images;
-                    }
-                } else {
-                    images = window.initialImages;
-                }
+                // Lọc ảnh rỗng/null và loại trùng
+                images = Array.from(new Set(images.filter(Boolean)));
 
                 galleryData = images.map((img, index) => ({
                     thumb: img,
@@ -1056,9 +1136,13 @@
                     description: `Hình ảnh ${index + 1}`,
                     type: 'image'
                 }));
+
                 initializeGallery();
             };
 
+            /**
+             * Cập nhật style cho các lựa chọn thuộc tính (option) khi được chọn/bỏ chọn.
+             */
             function updateSelectedStyles() {
                 attributeOrder.forEach(attrName => {
                     document.querySelectorAll(`input[data-attr-name="${attrName}"]`).forEach(input => {
@@ -1083,6 +1167,9 @@
                 });
             }
 
+            /**
+             * Đảm bảo tất cả thuộc tính đều có lựa chọn (nếu chưa thì chọn mặc định).
+             */
             function ensureAllAttributesChecked() {
                 attributeOrder.forEach(attr => {
                     const checked = document.querySelector(`input[data-attr-name="${attr}"]:checked`);
@@ -1241,24 +1328,33 @@
                 });
             }
 
-            // Khởi tạo
             window.addEventListener('load', () => {
-                ensureAllAttributesChecked();
-                console.log('Sau khi chạy ensureAllAttributesChecked, currentSelections:',
-                    currentSelections);
-                updateAvailableOptions();
-                const defaultKey = getVariantKey();
-                console.log('Variant key khởi tạo:', defaultKey);
-                if (defaultKey) {
-                    window.updateGalleryFromSelection(defaultKey);
-                } else {
-                    initializeGallery();
-                }
-                updateVariantInfo();
+                if (window.productType === 'variable') {
+                    ensureAllAttributesChecked();
+                    console.log('Sau khi chạy ensureAllAttributesChecked, currentSelections:',
+                        currentSelections);
 
-                // Đảm bảo sticky bar được cập nhật ngay từ đầu
-                updateStickyBar(defaultKey);
+                    updateAvailableOptions();
+
+                    const defaultKey = getVariantKey();
+                    console.log('Variant key khởi tạo:', defaultKey);
+
+                    if (defaultKey) {
+                        window.updateGalleryFromSelection(defaultKey);
+                    } else {
+                        initializeGallery(); // fallback nếu không có biến thể
+                    }
+
+                    updateVariantInfo();
+                    updateStickyBar(defaultKey);
+                } else {
+                    // Nếu là sản phẩm đơn giản
+                    console.log('Khởi tạo sản phẩm đơn giản');
+                    initializeGallery(); // dùng ảnh mặc định của sản phẩm
+                    updateStickyBar(); // hiển thị tên, giá sản phẩm đơn giản
+                }
             });
+
 
             const stickyBar = document.getElementById('sticky-bar');
             const mainCtaButtons = document.getElementById('main-cta-buttons');
@@ -1273,6 +1369,10 @@
                 threshold: 0
             });
 
+            /**
+             * Cập nhật sticky bar (thanh mua nhanh dưới cùng) theo biến thể hiện tại.
+             * variantKey: key của biến thể.
+             */
             function updateStickyBar(variantKey) {
                 console.log('▶️ Gọi updateStickyBar với key:', variantKey);
 
@@ -1408,6 +1508,9 @@
             scrollObserver.observe(mainCtaButtons);
 
             // Cập nhật navigation thumbnail
+            /**
+             * Cập nhật navigation thumbnail (ẩn/hiện nút prev/next nếu số lượng thumbnail nhiều).
+             */
             function updateThumbNavigation() {
                 const thumbs = mainThumbnailsContainer.querySelectorAll('.thumbnail-item');
                 thumbsPrevBtn.classList.toggle('visible', thumbs.length > 5);
