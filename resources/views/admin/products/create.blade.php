@@ -544,6 +544,57 @@
         .input-group .form-section-heading {
             margin-bottom: 0;
         }
+
+        /* NEW: Styles for action dropdown */
+        .action-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .action-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #ffffff;
+            min-width: 220px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+            z-index: 100;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .action-dropdown-content .dropdown-header {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .action-dropdown-content a {
+            color: #334155;
+            padding: 0.65rem 1rem;
+            text-decoration: none;
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .action-dropdown-content a:hover {
+            background-color: #f1f5f9;
+        }
+        
+        .action-dropdown-content a.disabled {
+            color: #94a3b8;
+            cursor: not-allowed;
+            background-color: transparent;
+        }
+
+        .action-dropdown:hover .action-dropdown-content {
+            display: block;
+        }
     </style>
 @endpush
 
@@ -695,26 +746,6 @@
                             @enderror
                         </div>
 
-                    </div>
-                    {{-- === CARD THÔNG SỐ KỸ THUẬT === --}}
-                    <div class="card">
-                        <div class="card-header">
-                            <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="17" y1="5" x2="7" y2="5"></line>
-                                <line x1="17" y1="9" x2="7" y2="9"></line>
-                                <line x1="17" y1="13" x2="7" y2="13"></line>
-                                <line x1="17" y1="17" x2="13" y2="17"></line>
-                            </svg>
-                            Thông số kỹ thuật
-                        </div>
-
-                        {{-- Container này sẽ được JS đổ dữ liệu vào --}}
-                        <div id="specificationsContainer" class="space-y-6 mt-4">
-                            {{-- Các nhóm và trường input sẽ được render ở đây --}}
-                            <p class="text-gray-500">Đang tải danh sách thông số...</p>
-                        </div>
                     </div>
                     {{-- Card Loại Sản Phẩm & Biến Thể --}}
                     <div class="card">
@@ -913,6 +944,17 @@
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
+                            
+                            {{-- NEW: Specifications container for simple product --}}
+                            <div class="pt-4 mt-4 border-t border-gray-200">
+                                <h4 class="text-md font-semibold text-gray-700 mb-2">Thông số kỹ thuật</h4>
+                                <div id="simpleSpecificationsContainer" class="space-y-4">
+                                    <p class="text-gray-500 text-sm">Vui lòng chọn danh mục để tải thông số.</p>
+                                </div>
+                                @error('specifications.*')
+                                     <p class="text-red-500 text-xs mt-1">Có lỗi với dữ liệu thông số kỹ thuật.</p>
+                                @enderror
+                            </div>
                         </div>
 
                         {{-- Trường cho sản phẩm có biến thể --}}
@@ -961,7 +1003,6 @@
 
                             <div id="variantsContainer" class="space-y-5">
                                 {{-- Variant cards will be added here by JS --}}
-                                {{-- Handle old('variants') using JavaScript in DOMContentLoaded --}}
                             </div>
                             @if ($errors->has('variants') && is_string($errors->first('variants')))
                                 <p class="text-red-500 text-xs mt-1">{{ $errors->first('variants') }}</p>
@@ -1029,29 +1070,20 @@
                         <div class="input-group mt-5">
                             <label
                                 class="flex items-center cursor-pointer p-2 rounded-md hover:bg-blue-50 transition-colors">
-
-                                {{-- Checkbox --}}
                                 <input type="checkbox" id="is_featured" name="is_featured" value="1"
                                     class="form-check-input">
-
-                                {{-- Thêm một DIV bọc icon và chữ, cũng sử dụng flex và items-center --}}
                                 <div class="flex items-center ml-2">
-                                    {{-- Icon SVG --}}
                                     <svg class="svg-icon h-5 w-5 text-yellow-500" viewBox="0 0 24 24">
                                         <polygon
                                             points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
                                         </polygon>
                                     </svg>
-
-                                    {{-- Chữ --}}
                                     <span class="ml-2 text-gray-700 font-medium">
                                         Sản phẩm nổi bật
                                     </span>
                                 </div>
-
                             </label>
                         </div>
-
                     </div>
 
                     {{-- Card Tổ Chức --}}
@@ -1224,7 +1256,8 @@
         // =================================================================
         let variantIndexGlobal = 0;
         let tagify;
-        // Biến để theo dõi "ngữ cảnh" khi mở thư viện media
+        let fetchedSpecifications = [];
+        let selectedProductAttributes = [];
         window.mediaLibraryTarget = null;
 
         // --- Data from PHP (Laravel Backend) ---
@@ -1260,17 +1293,14 @@
         const categoriesFromPHP = @json($jsCategoriesData, JSON_UNESCAPED_UNICODE);
         const allAttributesFromPHP = @json($jsAttributesData, JSON_UNESCAPED_UNICODE);
         const oldVariantsData = @json(old('variants', []), JSON_UNESCAPED_UNICODE);
-
-        // *** DỮ LIỆU MỚI: Nhận dữ liệu ảnh đã được server chuẩn bị sẵn để khôi phục ***
         const oldImagesData = @json($old_images_data ?? [], JSON_UNESCAPED_UNICODE);
         const oldCoverImageId = @json(old('cover_image_id'), JSON_UNESCAPED_UNICODE) || null;
-        const specGroupsFromPHP = @json($specGroups ?? [], JSON_UNESCAPED_UNICODE);
+        const oldSimpleSpecifications = @json(old('specifications', []), JSON_UNESCAPED_UNICODE);
 
 
         // =================================================================
-        // KHỐI LOGIC UPLOAD ẢNH VÀ QUẢN LÝ ẢNH (KHÔNG ĐỔI)
+        // KHỐI LOGIC UPLOAD ẢNH VÀ QUẢN LÝ ẢNH
         // =================================================================
-
         async function uploadFilesViaAjax(files, context = 'products') {
             const formData = new FormData();
             Array.from(files).forEach(file => formData.append('files[]', file));
@@ -1301,11 +1331,7 @@
 
         function addImagesToProductForm(images, previewContainer, idsContainer, type = 'simple', variantIndex = null) {
             if (!images || images.length === 0 || !previewContainer || !idsContainer) {
-                console.error("Thiếu thông tin để thêm ảnh vào form", {
-                    images,
-                    previewContainer,
-                    idsContainer
-                });
+                console.error("Thiếu thông tin để thêm ảnh vào form", { images, previewContainer, idsContainer });
                 return;
             }
 
@@ -1485,6 +1511,132 @@
             }
         }
 
+        // =================================================================
+        // LOGIC FOR DYNAMIC SPECIFICATIONS & COPY FEATURE
+        // =================================================================
+
+        /**
+         * Renders specification input fields into a designated container.
+         * @param {HTMLElement} container - The container element to render into.
+         * @param {string} namePrefix - The prefix for the input name (e.g., 'specifications' or 'variants[0][specifications]').
+         * @param {object} oldSpecData - Optional: An object of old specification data to repopulate fields.
+         */
+        function renderSpecifications(container, namePrefix, oldSpecData = {}) {
+            if (!container) return;
+
+            container.innerHTML = ''; // Clear previous content
+
+            if (!fetchedSpecifications || fetchedSpecifications.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">Danh mục này không có thông số kỹ thuật được định nghĩa.</p>';
+                return;
+            }
+
+            fetchedSpecifications.forEach(group => {
+                const groupEl = document.createElement('div');
+                groupEl.className = 'spec-group-container mb-4';
+
+                let groupHTML = `<h5 class="text-sm font-semibold text-gray-600 mb-3 mt-3">${group.name}</h5>`;
+                groupHTML += '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">';
+
+                if (group.specifications && group.specifications.length) {
+                    group.specifications.forEach(spec => {
+                        const inputName = `${namePrefix}[${spec.id}]`;
+                        const oldValue = oldSpecData[spec.id] || '';
+                        groupHTML += `
+                            <div class="input-group !mb-0">
+                                <label for="${namePrefix}_spec_${spec.id}" class="!text-xs !font-normal !text-gray-500">${spec.name}</label>
+                                <input type="text" id="${namePrefix}_spec_${spec.id}" name="${inputName}" class="input-field !py-2 !text-sm" value="${oldValue}">
+                            </div>
+                        `;
+                    });
+                }
+
+                groupHTML += '</div>';
+                groupEl.innerHTML = groupHTML;
+                container.appendChild(groupEl);
+            });
+        }
+
+        /**
+         * Fetches specifications when the category changes and updates all relevant sections.
+         */
+        async function handleCategoryChange() {
+            const categoryId = document.getElementById('category_id').value;
+            const simpleSpecContainer = document.getElementById('simpleSpecificationsContainer');
+
+            // Clear everything if no category is selected
+            if (!categoryId) {
+                fetchedSpecifications = [];
+                if (simpleSpecContainer) renderSpecifications(simpleSpecContainer, 'specifications');
+                document.querySelectorAll('.variant-specifications-container').forEach(container => {
+                    const variantIndex = container.closest('.variant-card').dataset.variantIndex;
+                    renderSpecifications(container, `variants[${variantIndex}][specifications]`);
+                });
+                return;
+            }
+
+            try {
+                const response = await fetch(`{{ url('admin/api/specifications-by-category') }}/${categoryId}`);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                fetchedSpecifications = await response.json();
+
+                // Repopulate simple product specs (handles both fresh load and validation fail)
+                if (simpleSpecContainer) {
+                    renderSpecifications(simpleSpecContainer, 'specifications', oldSimpleSpecifications);
+                }
+
+                // Repopulate specs for all existing variant cards
+                document.querySelectorAll('.variant-specifications-container').forEach(container => {
+                    const variantIndex = container.closest('.variant-card').dataset.variantIndex;
+                    const oldVariantSpecData = (oldVariantsData[variantIndex] && oldVariantsData[variantIndex].specifications) ? oldVariantsData[variantIndex].specifications : {};
+                    renderSpecifications(container, `variants[${variantIndex}][specifications]`, oldVariantSpecData);
+                });
+
+            } catch (error) {
+                console.error('Error fetching specifications:', error);
+                fetchedSpecifications = [];
+                // Clear spec fields on error
+                if (simpleSpecContainer) renderSpecifications(simpleSpecContainer, 'specifications');
+                 document.querySelectorAll('.variant-specifications-container').forEach(container => {
+                    const variantIndex = container.closest('.variant-card').dataset.variantIndex;
+                    renderSpecifications(container, `variants[${variantIndex}][specifications]`);
+                });
+            }
+        }
+        
+        // **NEW**: Updates all "Copy Spec" dropdowns
+        function updateAllCopySpecButtons() {
+            const allVariantCards = document.querySelectorAll('#variantsContainer .variant-card');
+            allVariantCards.forEach(targetCard => {
+                const targetIndex = targetCard.dataset.variantIndex;
+                const dropdownContent = targetCard.querySelector('.action-dropdown-content');
+                if (!dropdownContent) return;
+
+                dropdownContent.innerHTML = '<div class="dropdown-header">Sao chép thông số từ:</div>'; // Reset
+
+                let hasOtherVariants = false;
+                allVariantCards.forEach(sourceCard => {
+                    const sourceIndex = sourceCard.dataset.variantIndex;
+                    if (sourceIndex !== targetIndex) {
+                        hasOtherVariants = true;
+                        const sourceTitle = sourceCard.querySelector('.variant-title').textContent;
+                        const copyLink = document.createElement('a');
+                        copyLink.href = '#';
+                        copyLink.textContent = sourceTitle;
+                        copyLink.dataset.sourceIndex = sourceIndex;
+                        copyLink.dataset.targetIndex = targetIndex;
+                        copyLink.className = 'copy-spec-link';
+                        dropdownContent.appendChild(copyLink);
+                    }
+                });
+
+                if (!hasOtherVariants) {
+                    dropdownContent.innerHTML += '<a class="disabled">Không có biến thể khác</a>';
+                }
+            });
+        }
 
         // =================================================================
         // KHỐI LOGIC KHỞI TẠO VÀ XỬ LÝ FORM CHUNG (AI, Slug, Variants, etc.)
@@ -1537,7 +1689,7 @@
             }
             button.disabled = isLoading;
         }
-
+        
         async function callGeminiAPI(prompt, isStructured = false, schema = null) {
             const backendApiUrl = "{{ route('admin.products.ai.generate') }}";
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -1636,7 +1788,7 @@
                 }
             });
         }
-
+        
         function handleDefaultVariantChange(event) {
             document.querySelectorAll('.variant-default-radio').forEach(radio => {
                 const card = radio.closest('.variant-card');
@@ -1666,9 +1818,8 @@
             });
         }
 
-
         // =================================================================
-        // *** HÀM MỚI: KHÔI PHỤC DỮ LIỆU "OLD" TỪ BIẾN CÓ SẴN ***
+        // HÀM KHÔI PHỤC DỮ LIỆU "OLD" TỪ BIẾN CÓ SẴN
         // =================================================================
         function repopulateFormFromOldData() {
             // --- Xử lý sản phẩm đơn giản ---
@@ -1678,7 +1829,6 @@
                 let allSimpleIds = [...simpleGalleryIds];
                 if (oldCoverImageId) allSimpleIds.push(oldCoverImageId);
 
-                // Lấy thông tin ảnh từ biến `oldImagesData` đã có sẵn
                 [...new Set(allSimpleIds)].forEach(id => {
                     if (oldImagesData[id]) {
                         imagesForSimpleProduct.push(oldImagesData[id]);
@@ -1716,13 +1866,13 @@
                 updateSelectedAttributesForVariants();
 
                 oldVariantsData.forEach(oldVariant => {
-                    if (addVariantButton) addVariantButton.click();
+                    if (addVariantButton) addVariantButton.click(); // This now also renders spec container
                     const currentVariantIndex = variantIndexGlobal - 1;
                     const currentVariantCard = variantsContainer ? variantsContainer.querySelector(
                         `.variant-card[data-variant-index="${currentVariantIndex}"]`) : null;
 
                     if (currentVariantCard) {
-                        // Populate các trường input
+                        // Populate standard fields
                         currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sku]"]`)
                             .value = oldVariant.sku || '';
                         currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][price]"]`)
@@ -1745,22 +1895,7 @@
                                 `input[name="variants[${currentVariantIndex}][dimensions_height]"]`).value =
                             oldVariant.dimensions_height || '';
 
-                        const startsAt = oldVariant.sale_price_starts_at ? oldVariant.sale_price_starts_at.replace(
-                            ' ', 'T').substring(0, 16) : '';
-                        const endsAt = oldVariant.sale_price_ends_at ? oldVariant.sale_price_ends_at.replace(' ',
-                            'T').substring(0, 16) : '';
-
-                        currentVariantCard.querySelector(
-                                `input[name="variants[${currentVariantIndex}][sale_price_starts_at]"]`).value =
-                            startsAt;
-                        currentVariantCard.querySelector(
-                            `input[name="variants[${currentVariantIndex}][sale_price_ends_at]"]`).value = endsAt;
-
-                        if (oldVariant.sale_price_starts_at || oldVariant.sale_price_ends_at) {
-                            const scheduleContainer = currentVariantCard.querySelector('.schedule-container');
-                            if (scheduleContainer) scheduleContainer.classList.remove('hidden');
-                        }
-
+                        // Populate attributes
                         if (oldVariant.attributes && typeof oldVariant.attributes === 'object') {
                             Object.entries(oldVariant.attributes).forEach(([attrId, attrValueId]) => {
                                 const attrSelect = currentVariantCard.querySelector(
@@ -1770,19 +1905,10 @@
                             });
                         }
 
-                        const isDefault = oldVariant.is_default === "true" || oldVariant.is_default === true;
-                        currentVariantCard.querySelector(
-                                `input[name="variant_is_default_radio_group"][value="${currentVariantIndex}"]`)
-                            .checked = isDefault;
-                        currentVariantCard.querySelector(
-                                `input[name="variants[${currentVariantIndex}][is_default]"]`).value = isDefault ?
-                            "true" : "false";
-
-                        // *** PHẦN KHÔI PHỤC ẢNH CHO BIẾN THỂ ***
+                        // Repopulate images
                         const variantImageIds = oldVariant.image_ids || [];
                         const variantPrimaryId = oldVariant.primary_image_id || null;
                         const imagesForThisVariant = [];
-
                         let allVariantImageIds = [...variantImageIds];
                         if (variantPrimaryId) allVariantImageIds.push(variantPrimaryId);
 
@@ -1825,45 +1951,7 @@
                     if (event.target === messageModal) messageModal.classList.add('hidden');
                 });
             }
-            const specificationsContainer = document.getElementById('specificationsContainer');
 
-    function renderSpecifications() {
-        if (!specificationsContainer || !specGroupsFromPHP.length) {
-            if(specificationsContainer) specificationsContainer.innerHTML = '<p class="text-gray-500">Chưa có thông số kỹ thuật nào được định nghĩa.</p>';
-            return;
-        }
-
-        specificationsContainer.innerHTML = ''; // Xóa nội dung placeholder
-
-        specGroupsFromPHP.forEach(group => {
-            const groupEl = document.createElement('div');
-            groupEl.className = 'spec-group-container border-t border-gray-200 pt-4';
-            
-            let groupHTML = `<h4 class="text-md font-semibold text-gray-800 mb-4">${group.name}</h4>`;
-            groupHTML += '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">';
-
-            if(group.specifications && group.specifications.length) {
-                group.specifications.forEach(spec => {
-                    // QUAN TRỌNG: Tên input được đặt trong mảng `specifications[id]`
-                    // Laravel sẽ tự động nhận diện đây là một mảng [spec_id => value]
-                    const inputName = `specifications[${spec.id}]`;
-                    
-                    groupHTML += `
-                        <div class="input-group !mb-0">
-                            <label for="spec_${spec.id}" class="!text-sm !font-normal !text-gray-600">${spec.name}</label>
-                            <input type="text" id="spec_${spec.id}" name="${inputName}" class="input-field !py-2 !text-sm" value="{{ old('specifications.${spec.id}') }}">
-                        </div>
-                    `;
-                });
-            }
-            
-            groupHTML += '</div>';
-            groupEl.innerHTML = groupHTML;
-            specificationsContainer.appendChild(groupEl);
-        });
-    }
-
-    renderSpecifications();
             tinymce.init({
                 selector: 'textarea#description',
                 plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
@@ -1873,13 +1961,6 @@
                 skin: 'oxide',
                 content_css: 'default',
                 content_style: "body { font-family: 'Inter', sans-serif; font-size: 16px; }",
-                autosave_ask_before_unload: true,
-                autosave_interval: '30s',
-                autosave_prefix: '{path}{query}-{id}-',
-                autosave_restore_when_empty: false,
-                autosave_retention: '2m',
-                image_advtab: true,
-                importcss_append: true,
                 setup: function(editor) {
                     editor.on('change', function() {
                         editor.save();
@@ -1889,15 +1970,7 @@
 
             const tagsInput = document.getElementById('tags');
             if (tagsInput) {
-                tagify = new Tagify(tagsInput, {
-                    duplicates: false,
-                    dropdown: {
-                        maxItems: 20,
-                        classname: "tags-look",
-                        enabled: 0,
-                        closeOnSelect: false
-                    }
-                });
+                tagify = new Tagify(tagsInput, { /* ... options ... */ });
             }
 
             // --- GẮN SỰ KIỆN CHO CÁC NÚT AI ---
@@ -1913,95 +1986,96 @@
                         const result = await callGeminiAPI(prompt);
                         if (result) {
                             shortDescriptionTextarea.value = result.replace(/[\*#`]/g, '').trim();
+                        }
+                    } catch (error) {
+                        showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`,
+                            'error');
+                    } finally {
+                        toggleButtonLoading(generateShortDescBtn, false);
                     }
-                } catch (error) {
-                    showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`,
-                        'error');
-                } finally {
-                    toggleButtonLoading(generateShortDescBtn, false);
-                }
-            });
-        }
+                });
+            }
 
-        const generateLongDescBtn = document.getElementById('generateLongDescAI');
-        if (generateLongDescBtn) {
-            generateLongDescBtn.addEventListener('click', async () => {
-                const context = getProductContext();
-                if (!context) return;
-                toggleButtonLoading(generateLongDescBtn, true);
-                try {
-                    const prompt =
-                        `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm. Yêu cầu: - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng. - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp). - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo. - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
-                    const result = await callGeminiAPI(prompt);
-                    if (result && typeof tinymce !== 'undefined' && tinymce.get('description')) {
-                        tinymce.get('description').setContent(result);
+            const generateLongDescBtn = document.getElementById('generateLongDescAI');
+            if (generateLongDescBtn) {
+                generateLongDescBtn.addEventListener('click', async () => {
+                    const context = getProductContext();
+                    if (!context) return;
+                    toggleButtonLoading(generateLongDescBtn, true);
+                    try {
+                        const prompt =
+                            `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm. Yêu cầu: - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng. - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp). - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo. - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
+                        const result = await callGeminiAPI(prompt);
+                        if (result && typeof tinymce !== 'undefined' && tinymce.get('description')) {
+                            tinymce.get('description').setContent(result);
+                        }
+                    } catch (error) {
+                        showMessageModal('Lỗi AI', `Không thể tạo mô tả chi tiết: ${error.message}`,
+                            'error');
+                    } finally {
+                        toggleButtonLoading(generateLongDescBtn, false);
                     }
-                } catch (error) {
-                    showMessageModal('Lỗi AI', `Không thể tạo mô tả chi tiết: ${error.message}`,
-                        'error');
-                } finally {
-                    toggleButtonLoading(generateLongDescBtn, false);
-                }
-            });
-        }
+                });
+            }
 
-        const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
-        if (generateAllSeoBtn) {
-            generateAllSeoBtn.addEventListener('click', async () => {
-                const context = getProductContext();
-                if (!context) return;
-                toggleButtonLoading(generateAllSeoBtn, true);
-                try {
-                    const schema = {
-                        type: "OBJECT",
-                        properties: {
-                            meta_title: {
-                                type: "STRING",
-                                description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính."
+            const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
+            if (generateAllSeoBtn) {
+                generateAllSeoBtn.addEventListener('click', async () => {
+                    const context = getProductContext();
+                    if (!context) return;
+                    toggleButtonLoading(generateAllSeoBtn, true);
+                    try {
+                        const schema = {
+                            type: "OBJECT",
+                            properties: {
+                                meta_title: {
+                                    type: "STRING",
+                                    description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính."
+                                },
+                                meta_description: {
+                                    type: "STRING",
+                                    description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động."
+                                },
+                                meta_keywords: {
+                                    type: "STRING",
+                                    description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy."
+                                }
                             },
-                            meta_description: {
-                                type: "STRING",
-                                description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động."
-                            },
-                            meta_keywords: {
-                                type: "STRING",
-                                description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy."
-                            }
-                        },
-                        required: ["meta_title", "meta_description", "meta_keywords"]
-                    };
-                    const prompt =
-                        `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO. Yêu cầu: - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu. - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay"). - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan. - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
+                            required: ["meta_title", "meta_description", "meta_keywords"]
+                        };
+                        const prompt =
+                            `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO. Yêu cầu: - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu. - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay"). - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan. - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
 
-                    const result = await callGeminiAPI(prompt, true, schema);
-                    if (result) {
-                        document.getElementById('meta_title').value = result.meta_title || '';
-                        document.getElementById('meta_description').value = result
-                            .meta_description || '';
-                        document.getElementById('meta_keywords').value = result.meta_keywords || '';
+                        const result = await callGeminiAPI(prompt, true, schema);
+                        if (result) {
+                            document.getElementById('meta_title').value = result.meta_title || '';
+                            document.getElementById('meta_description').value = result
+                                .meta_description || '';
+                            document.getElementById('meta_keywords').value = result.meta_keywords || '';
+                        }
+                    } catch (error) {
+                        showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`,
+                            'error');
+                    } finally {
+                        toggleButtonLoading(generateAllSeoBtn, false);
                     }
-                } catch (error) {
-                    showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`,
-                        'error');
-                } finally {
-                    toggleButtonLoading(generateAllSeoBtn, false);
-                }
-            });
-        }
+                });
+            }
 
-        const generateTagsBtn = document.getElementById('generateTagsAI');
-        if (generateTagsBtn) {
-            generateTagsBtn.addEventListener('click', async () => {
-                const context = getProductContext();
-                if (!context) return;
-                toggleButtonLoading(generateTagsBtn, true);
-                try {
-                    const prompt =
-                        `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm. Yêu cầu: - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật. - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy. - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
-                    const result = await callGeminiAPI(prompt);
-                    if (result && tagify) {
-                        const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g,
-                                '').trim();
+            const generateTagsBtn = document.getElementById('generateTagsAI');
+            if (generateTagsBtn) {
+                generateTagsBtn.addEventListener('click', async () => {
+                    const context = getProductContext();
+                    if (!context) return;
+                    toggleButtonLoading(generateTagsBtn, true);
+                    try {
+                        const prompt =
+                            `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm. Yêu cầu: - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật. - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy. - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
+                        const result = await callGeminiAPI(prompt);
+                        if (result && tagify) {
+                            const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g,
+                                    '')
+                                .trim();
                             tagify.loadOriginalValues(cleanedResult);
                         }
                     } catch (error) {
@@ -2044,8 +2118,22 @@
                     const variantCard = document.createElement('div');
                     variantCard.className = 'variant-card';
                     variantCard.dataset.variantIndex = currentVariantIndex;
-                    let variantHeaderHTML =
-                        `<div class="variant-header"><div class="flex items-center"><h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4></div><button type="button" class="remove-variant-btn btn btn-danger btn-sm">Xóa</button></div>`;
+                    
+                    // **MODIFIED**: Added action dropdown to the header
+                    let variantHeaderHTML = `
+                        <div class="variant-header">
+                            <h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4>
+                            <div class="flex items-center space-x-2">
+                                <div class="action-dropdown">
+                                    <button type="button" class="btn btn-secondary btn-sm !uppercase">Tùy chọn</button>
+                                    <div class="action-dropdown-content">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                                <button type="button" class="remove-variant-btn btn btn-danger btn-sm">Xóa</button>
+                            </div>
+                        </div>`;
+                        
                     let attributesHTML =
                         '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4">';
                     selectedProductAttributes.forEach(attr => {
@@ -2054,60 +2142,77 @@
                             `<div class="input-group"><label for="variants_${currentVariantIndex}_attr_${attr.id}" class="text-sm font-medium">${attr.name} <span class="required-star">*</span></label><div><select name="variants[${currentVariantIndex}][attributes][${attr.id}]" id="variants_${currentVariantIndex}_attr_${attr.id}" class="select-field text-sm" ><option value="">Chọn ${attr.name}</option>${attr.attributeValues.map(val => `<option value="${val.id}">${val.value}</option>`).join('')}</select></div></div>`;
                     });
                     attributesHTML += '</div>';
+                    
+                    let variantSpecificationsHTML = `
+                        <div class="pt-4 mt-4 border-t border-gray-200">
+                           <h4 class="text-md font-semibold text-gray-700 mb-2">Thông số kỹ thuật biến thể</h4>
+                           <div class="variant-specifications-container space-y-4" id="variant_${currentVariantIndex}_specifications_container">
+                                <p class="text-gray-500 text-sm">Vui lòng chọn danh mục để tải thông số.</p>
+                           </div>
+                        </div>
+                    `;
+
                     let variantFieldsHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                        <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
-                        <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" class="input-field text-sm" min="0" ></div></div>
-                        <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" ></div></div>
-                        <div class="input-group">
-                            <div class="label-with-action">
-                                <label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM (VNĐ)</label>
-                                <a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium hover:underline">Lên lịch</a>
-                            </div>
-                            <div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0"></div>
-                        </div>
-                    </div>
-                    <div class="schedule-container hidden mt-2">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" class="input-field text-sm" min="0" ></div></div>
+                            <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" ></div></div>
                             <div class="input-group">
-                                <label for="variants_${currentVariantIndex}_sale_price_starts_at" class="text-xs font-medium">Thời gian bắt đầu</label>
-                                <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_starts_at]" class="input-field">
-                            </div>
-                            <div class="input-group">
-                                <label for="variants_${currentVariantIndex}_sale_price_ends_at" class="text-xs font-medium">Thời gian kết thúc</label>
-                                <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_ends_at]" class="input-field">
+                                <div class="label-with-action">
+                                    <label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM (VNĐ)</label>
+                                    <a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium hover:underline">Lên lịch</a>
+                                </div>
+                                <div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0"></div>
                             </div>
                         </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4 pt-4 border-t border-gray-200">
-                            <div class="input-group"><label for="variants_${currentVariantIndex}_weight" class="text-sm font-medium">Cân nặng (kg)</label><input type="number" step="0.01" min="0" name="variants[${currentVariantIndex}][weight]" class="input-field text-sm"></div>
-                        <div class="input-group"><label class="text-sm font-medium">Kích thước (D x R x C) (cm)</label><div class="grid grid-cols-3 gap-x-2"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_length]" placeholder="Dài" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_width]" placeholder="Rộng" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_height]" placeholder="Cao" class="input-field text-sm"></div></div>
-                    </div>
-                    <div class="input-group md:col-span-2 mt-4 pt-4 border-t border-gray-200">
-                        <label class="text-sm font-medium">Ảnh Biến Thể</label>
-                        <div class="flex space-x-2 mb-3">
-                            <label for="variant_${currentVariantIndex}_image_input" class="form-section-heading btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
-                            <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
-                            <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg> Thêm từ thư viện</button>
+                        <div class="schedule-container hidden mt-2">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                <div class="input-group">
+                                    <label for="variants_${currentVariantIndex}_sale_price_starts_at" class="text-xs font-medium">Thời gian bắt đầu</label>
+                                    <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_starts_at]" class="input-field">
+                                </div>
+                                <div class="input-group">
+                                    <label for="variants_${currentVariantIndex}_sale_price_ends_at" class="text-xs font-medium">Thời gian kết thúc</label>
+                                    <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_ends_at]" class="input-field">
+                                </div>
+                            </div>
                         </div>
-                        <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
-                        <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
-                    </div>
-                    <div class="mt-4">
-                        <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio"><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input"> Đặt làm biến thể mặc định</label>
-                    </div>
-                `;
-                    variantCard.innerHTML = variantHeaderHTML + attributesHTML + variantFieldsHTML;
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4 pt-4 border-t border-gray-200">
+                                <div class="input-group"><label for="variants_${currentVariantIndex}_weight" class="text-sm font-medium">Cân nặng (kg)</label><input type="number" step="0.01" min="0" name="variants[${currentVariantIndex}][weight]" class="input-field text-sm"></div>
+                            <div class="input-group"><label class="text-sm font-medium">Kích thước (D x R x C) (cm)</label><div class="grid grid-cols-3 gap-x-2"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_length]" placeholder="Dài" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_width]" placeholder="Rộng" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_height]" placeholder="Cao" class="input-field text-sm"></div></div>
+                        </div>
+                        <div class="input-group md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+                            <label class="text-sm font-medium">Ảnh Biến Thể</label>
+                            <div class="flex space-x-2 mb-3">
+                                <label for="variant_${currentVariantIndex}_image_input" class="form-section-heading btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
+                                <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
+                                <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg> Thêm từ thư viện</button>
+                            </div>
+                            <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
+                            <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
+                        </div>
+                        <div class="mt-4">
+                            <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio"><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input"> Đặt làm biến thể mặc định</label>
+                        </div>
+                    `;
+                    variantCard.innerHTML = variantHeaderHTML + attributesHTML + variantFieldsHTML + variantSpecificationsHTML;
                     if (variantsContainer) variantsContainer.appendChild(variantCard);
+                    
+                    // Render specs for the newly added variant
+                    const newSpecContainer = document.getElementById(`variant_${currentVariantIndex}_specifications_container`);
+                    renderSpecifications(newSpecContainer, `variants[${currentVariantIndex}][specifications]`);
+
                     variantCard.querySelector('.remove-variant-btn').addEventListener('click', function() {
                         this.closest('.variant-card').remove();
                         updateDefaultVariantRadioAndHiddenFields();
+                        updateAllCopySpecButtons(); // **NEW**: Update dropdowns on remove
                     });
                     variantCard.querySelector('.variant-default-radio').addEventListener('change',
                         handleDefaultVariantChange);
                     variantIndexGlobal++;
                     updateDefaultVariantRadioAndHiddenFields();
+                    updateAllCopySpecButtons(); // **NEW**: Update dropdowns on add
                 });
             }
 
@@ -2146,6 +2251,40 @@
                     }
                 }
             });
+            
+            // **NEW**: Event listener for copying specs using event delegation
+            if(variantsContainer) {
+                variantsContainer.addEventListener('click', function(e) {
+                    if (e.target && e.target.classList.contains('copy-spec-link')) {
+                        e.preventDefault();
+                        const sourceIndex = e.target.dataset.sourceIndex;
+                        const targetIndex = e.target.dataset.targetIndex;
+
+                        const sourceSpecContainer = document.getElementById(`variant_${sourceIndex}_specifications_container`);
+                        const targetSpecContainer = document.getElementById(`variant_${targetIndex}_specifications_container`);
+
+                        if (!sourceSpecContainer || !targetSpecContainer) {
+                            showMessageModal('Lỗi', 'Không tìm thấy vùng chứa thông số.', 'error');
+                            return;
+                        }
+
+                        const sourceInputs = sourceSpecContainer.querySelectorAll('input[type="text"], select, textarea');
+                        sourceInputs.forEach(sourceInput => {
+                            // Extract spec ID from the name: variants[0][specifications][12] -> 12
+                            const match = sourceInput.name.match(/\[specifications\]\[(\d+)\]/);
+                            if (match && match[1]) {
+                                const specId = match[1];
+                                const targetInput = targetSpecContainer.querySelector(`input[name="variants[${targetIndex}][specifications][${specId}]"], select[name="variants[${targetIndex}][specifications][${specId}]"], textarea[name="variants[${targetIndex}][specifications][${specId}]"]`);
+                                if (targetInput) {
+                                    targetInput.value = sourceInput.value;
+                                }
+                            }
+                        });
+                        
+                        showMessageModal('Thành công', `Đã sao chép thông số từ Biến thể #${parseInt(sourceIndex) + 1}.`, 'success');
+                    }
+                });
+            }
 
             // --- KHỞI TẠO FORM VÀ VALIDATION ---
             toggleProductTypeFields();
@@ -2163,6 +2302,15 @@
 
             // *** GỌI HÀM KHÔI PHỤC DỮ LIỆU "OLD" ***
             repopulateFormFromOldData();
+
+            // Add event listener for category change
+            if (categorySelectElement) {
+                categorySelectElement.addEventListener('change', handleCategoryChange);
+                // Trigger it on load if a category was already selected (e.g., from validation fail)
+                if (categorySelectElement.value) {
+                    handleCategoryChange();
+                }
+            }
 
             // Xử lý submit form
             const form = document.getElementById('addProductForm');

@@ -117,7 +117,8 @@ Route::prefix('admin')
             Route::patch('/{user}/restore', [UserController::class, 'restore'])->name('restore');
             Route::delete('/{user}/force-delete', [UserController::class, 'forceDelete'])->name('forceDelete');
             });
-        Route::get('/admin/api/specifications-by-category/{category}', [ProductController::class, 'getSpecificationsForCategory'])->name('api.specifications.by_category');
+
+        Route::get('/api/specifications-by-category/{category}', [ProductController::class, 'getSpecificationsForCategory'])->name('api.specifications.by_category');
         Route::resource('products', ProductController::class);
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
