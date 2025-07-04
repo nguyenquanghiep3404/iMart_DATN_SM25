@@ -48,7 +48,7 @@ class CategoryPolicy
      */
     public function restore(User $user, Category $category): bool
     {
-        return false;
+        return $user->hasPermissionTo('delete_categories');
     }
 
     /**
@@ -56,6 +56,6 @@ class CategoryPolicy
      */
     public function forceDelete(User $user, Category $category): bool
     {
-        return false;
+        return $user->hasPermissionTo('delete_categories');
     }
 }

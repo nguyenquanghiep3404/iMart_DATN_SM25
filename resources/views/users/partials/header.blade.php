@@ -1,4 +1,4 @@
-<header class="navbar navbar-expand-lg navbar-dark bg-dark d-block z-fixed p-0" data-sticky-navbar="{&quot;offset&quot;: 500}">
+<header class="navbar navbar-expand-lg navbar-dark bg-dark d-block relative p-0" data-sticky-navbar="{&quot;offset&quot;: 500}">
   <div class="container d-block py-1 py-lg-3" data-bs-theme="dark">
     <div class="navbar-stuck-hide pt-1"></div>
     <div class="row flex-nowrap align-items-center g-0">
@@ -110,6 +110,7 @@
           @php
           $user = Auth::user();
           @endphp
+
           <!-- Account button visible on screens > 768px wide (md breakpoint) -->
           <li class="nav-item dropdown d-none d-md-inline-flex">
             <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
@@ -153,7 +154,78 @@
             </ul>
           </li>
 
+          <!-- Notification dropdown -->
+          <div class="dropdown" x-data="{
+    notificationOpen: false,
+    unreadCount: {{ $unreadNotificationsCount }},
+    markAsRead() {
+        if (this.unreadCount > 0) {
+            fetch('{{ route('notifications.markAsRead') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            }).then(() => {
+                this.unreadCount = 0;
+            });
+        }
+    }
+}">
+            <!-- Nút chuông -->
+            <button type="button"
+              class="btn btn-icon btn-lg btn-outline-secondary fs-lg border-0 rounded-circle animate-scale position-relative"
+              data-bs-toggle="dropdown"
+              @click="markAsRead"
+              aria-expanded="false"
+              aria-label="Thông báo">
+              <span class="d-flex animate-target">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 
+            14.158V11a6.002 6.002 0 00-4-5.659V5a2 
+            2 0 10-4 0v.341C7.67 6.165 6 8.388 
+            6 11v3.159c0 .538-.214 1.055-.595 
+            1.436L4 17h5m6 0v1a3 3 0 
+            11-6 0v-1m6 0H9" />
+                </svg>
+              </span>
 
+              <!-- Badge số lượng chưa đọc -->
+              <template x-if="unreadCount > 0">
+                <span class="position-absolute top-0 end-0 translate-middle p-1 bg-danger border border-light rounded-circle">
+                  <span class="visually-hidden">Thông báo chưa đọc</span>
+                </span>
+              </template>
+            </button>
+
+            <!-- Dropdown thông báo -->
+            <div class="dropdown-menu dropdown-menu-end mt-3 shadow rounded border"
+              style="min-width: 20rem; max-height: 350px; overflow-y: auto;">
+              <div class="bg-dark px-3 py-2 border-bottom fw-semibold text-white">Thông báo</div>
+              <ul class="list-unstyled mb-0">
+                @forelse($recentNotifications as $notification)
+                <li>
+                  <a class="dropdown-item d-flex align-items-start py-2" href="#">
+                    <div class="me-2">
+                      {!! $notification['icon'] !!}
+                    </div>
+                    <div style="word-break: break-word;">
+                      <div class="fw-medium text-wrap text-break">{{ $notification['title'] }}</div>
+                      <div class="small text-muted">{{ $notification['time'] }}</div>
+                    </div>
+                  </a>
+                </li>
+                @empty
+                <li class="dropdown-item text-center text-muted py-3">
+                  Không có thông báo mới.
+                </li>
+                @endforelse
+              </ul>
+              </div>
+            </div>
+          </div>
 
           <!-- Wishlist button visible on screens > 768px wide (md breakpoint) -->
           <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-pulse d-none d-md-inline-flex" href="account-wishlist.html">
@@ -199,8 +271,8 @@
             <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
               <ul class="navbar-nav position-relative">
                 <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle active" aria-current="page" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Home</a>
-                  <ul class="dropdown-menu">
+                  <a class="nav-link dropdown-toggle active" aria-current="page" href="/" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Trang chủ</a>
+                  {{-- <ul class="dropdown-menu">
                     <li class="hover-effect-opacity px-2 mx-n2">
                       <a class="dropdown-item d-block mb-0" href="home-electronics.html">
                         <span class="fw-medium">Electronics Store</span>
@@ -285,12 +357,12 @@
                         </div>
                       </a>
                     </li>
-                  </ul>
+                  </ul> --}}
                 </li>
 
                 <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop</a>
-                  <div class="dropdown-menu rounded-4 p-4">
+                  <a class="nav-link dropdown-toggle" href="/danh-muc-san-pham" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Danh mục</a>
+                  {{-- <div class="dropdown-menu rounded-4 p-4">
                     <div class="d-flex flex-column flex-lg-row gap-4">
                       <div style="min-width: 190px">
                         <div class="h6 mb-2">Electronics Store</div>
@@ -392,7 +464,7 @@
                         </ul>
                       </div>
                     </div>
-                  </div>
+                  </div> --}}
                 </li>
                 <li class="nav-item dropdown me-lg-n1 me-xl-0">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Account</a>

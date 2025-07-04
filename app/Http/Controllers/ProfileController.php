@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use App\Notifications\EmailChanged;
 
 class ProfileController extends Controller
 {
@@ -24,18 +25,29 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
+
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $data = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $emailChanged = $data['email'] !== $user->email;
+
+        $user->fill($data);
+
+        if ($emailChanged) {
+            $user->email_verified_at = null;
+            $user->save();
+
+            // Gửi email thông báo + chứa link xác thực trong cùng 1 email
+            $user->notify(new EmailChanged($user));
+        } else {
+            $user->save();
         }
-
-        $request->user()->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
+
 
     /**
      * Delete the user's account.

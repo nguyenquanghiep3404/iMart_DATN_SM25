@@ -72,7 +72,6 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
         $admin = User::find(1); // hoặc lấy theo vai trò
-
         $admin->notify(new NewUserRegistered($user));
         $user->roles()->attach(2);
         event(new Registered($user));

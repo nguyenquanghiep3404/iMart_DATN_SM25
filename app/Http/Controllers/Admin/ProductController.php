@@ -20,7 +20,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class ProductController extends Controller
 {
     use AuthorizesRequests;
-    
+
     public function __construct()
     {
         $this->authorizeResource(Product::class, 'product');
@@ -44,9 +44,9 @@ class ProductController extends Controller
             $searchTerm = $request->input('search');
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
-                  ->orWhereHas('variants', function ($variantQuery) use ($searchTerm) {
-                      $variantQuery->where('sku', 'like', "%{$searchTerm}%");
-                  });
+                    ->orWhereHas('variants', function ($variantQuery) use ($searchTerm) {
+                        $variantQuery->where('sku', 'like', "%{$searchTerm}%");
+                    });
             });
         }
         if ($request->filled('category_id')) {
@@ -62,12 +62,12 @@ class ProductController extends Controller
 
         if (in_array($sortBy, $allowedSortColumns)) {
             if ($sortBy === 'price') {
-                $query->leftJoin('product_variants as pv_sort_index', function($join) {
+                $query->leftJoin('product_variants as pv_sort_index', function ($join) {
                     $join->on('products.id', '=', 'pv_sort_index.product_id')
-                         ->whereRaw('pv_sort_index.id = (SELECT id FROM product_variants WHERE product_id = products.id ORDER BY is_default DESC, created_at ASC LIMIT 1)');
+                        ->whereRaw('pv_sort_index.id = (SELECT id FROM product_variants WHERE product_id = products.id ORDER BY is_default DESC, created_at ASC LIMIT 1)');
                 })
-                ->orderBy('pv_sort_index.price', $sortDir)
-                ->select('products.*');
+                    ->orderBy('pv_sort_index.price', $sortDir)
+                    ->select('products.*');
             } else {
                 $query->orderBy($sortBy, $sortDir);
             }
@@ -80,30 +80,30 @@ class ProductController extends Controller
 
         return view('admin.products.index', compact('products', 'categories'));
     }
-private function formatCategoriesForSelect($categories, $parentId = null, $prefix = '')
-{
-    $formattedCategories = [];
+    private function formatCategoriesForSelect($categories, $parentId = null, $prefix = '')
+    {
+        $formattedCategories = [];
 
-    // Lọc ra các danh mục con của $parentId
-    $children = $categories->where('parent_id', $parentId);
+        // Lọc ra các danh mục con của $parentId
+        $children = $categories->where('parent_id', $parentId);
 
-    foreach ($children as $category) {
-        // Thêm tiền tố vào tên để tạo hiệu ứng phân cấp
-        $category->name = $prefix . $category->name;
-        
-        // Thêm danh mục đã định dạng vào mảng kết quả
-        $formattedCategories[] = $category;
+        foreach ($children as $category) {
+            // Thêm tiền tố vào tên để tạo hiệu ứng phân cấp
+            $category->name = $prefix . $category->name;
 
-        // Gọi đệ quy để lấy các danh mục con của danh mục này
-        // và nối chúng vào mảng kết quả
-        $formattedCategories = array_merge(
-            $formattedCategories,
-            $this->formatCategoriesForSelect($categories, $category->id, $prefix . '-- ')
-        );
+            // Thêm danh mục đã định dạng vào mảng kết quả
+            $formattedCategories[] = $category;
+
+            // Gọi đệ quy để lấy các danh mục con của danh mục này
+            // và nối chúng vào mảng kết quả
+            $formattedCategories = array_merge(
+                $formattedCategories,
+                $this->formatCategoriesForSelect($categories, $category->id, $prefix . '-- ')
+            );
+        }
+
+        return $formattedCategories;
     }
-
-    return $formattedCategories;
-}
 
 
     /**
@@ -112,7 +112,7 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
      */
     public function create()
     {
-         $this->authorize('create', Product::class); // Thêm authorize nếu cần
+        $this->authorize('create', Product::class); // Thêm authorize nếu cần
         $allCategories = Category::where('status', 'active')->get();
         $categories = $this->formatCategoriesForSelect($allCategories);
         $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
@@ -142,7 +142,7 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
                 }
             }
         }
-        
+
         // Truy vấn DB một lần duy nhất để lấy thông tin tất cả các ảnh cần thiết
         if (!empty($all_image_ids)) {
             // Loại bỏ các ID trùng lặp và rỗng
@@ -154,7 +154,7 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
                     // Đảm bảo có thuộc tính 'url'. Model của bạn nên có getUrlAttribute()
                     return [
                         'id' => $image->id,
-                        'url' => $image->url, 
+                        'url' => $image->url,
                         'alt_text' => $image->alt_text
                     ];
                 })->all();
@@ -175,10 +175,19 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
         try {
             // 1. Create product with basic info, excluding image and variant data handled separately
             $productData = $request->except([
-                'cover_image_id', 'gallery_images', 'variants',
-                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity',
-                'simple_sale_price_starts_at', 'simple_sale_price_ends_at',
-                'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height'
+                'cover_image_id',
+                'gallery_images',
+                'variants',
+                'simple_sku',
+                'simple_price',
+                'simple_sale_price',
+                'simple_stock_quantity',
+                'simple_sale_price_starts_at',
+                'simple_sale_price_ends_at',
+                'simple_weight',
+                'simple_dimensions_length',
+                'simple_dimensions_width',
+                'simple_dimensions_height'
             ]);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
@@ -194,7 +203,7 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
                 if ($request->has('gallery_images') && is_array($request->input('gallery_images'))) {
                     $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images'));
                 }
-                
+
                 // Create a single variant for the simple product
                 ProductVariant::create([
                     'product_id' => $product->id,
@@ -273,9 +282,19 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
      */
     public function edit(Product $product)
     {
-        // This method also benefits from the new sync logic in update()
-        $product->load('variants.attributeValues', 'variants.images.file', 'coverImage.file', 'galleryImages.file');
-        $categories = Category::where('status', 'active')->orderBy('name')->get();
+        $this->authorize('update', $product);
+
+        $product->load([
+            'category',
+            'variants' => fn($q) => $q->orderBy('is_default', 'desc'),
+            'variants.attributeValues.attribute',
+            'variants.images',      // Sửa ở đây: không có .file
+            'coverImage',           // Sửa ở đây: không có .file
+            'galleryImages'         // Sửa ở đây: không có .file
+        ]);
+
+        $allCategories = Category::where('status', 'active')->get();
+        $categories = $this->formatCategoriesForSelect($allCategories);
         $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
 
         return view('admin.products.edit', compact('product', 'categories', 'attributes'));
@@ -288,6 +307,9 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
     {
         DB::beginTransaction();
         try {
+            $originalType = $product->type;
+            $newType = $request->input('type');
+
             // 1. Update basic product info
             $productData = $request->except(['_token', '_method', 'cover_image_id', 'gallery_images', 'variants', 'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity', 'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height']);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
@@ -295,27 +317,53 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
             $productData['updated_by'] = Auth::id();
             $product->update($productData);
 
-            // 2. Handle updates based on product type
-            if ($product->type === 'simple') {
-                $defaultVariant = $product->variants()->first();
-                if ($defaultVariant) {
-                    $defaultVariant->update([
-                        'sku' => $request->input('simple_sku'),
-                        'price' => $request->input('simple_price'),
-                        'sale_price' => $request->input('simple_sale_price'),
-                        'sale_price_starts_at' => $request->input('simple_sale_price_starts_at'),
-                        'sale_price_ends_at' => $request->input('simple_sale_price_ends_at'),
-                        'stock_quantity' => $request->input('simple_stock_quantity'),
-                        'weight' => $request->input('simple_weight'),
-                        'dimensions_length' => $request->input('simple_dimensions_length'),
-                        'dimensions_width' => $request->input('simple_dimensions_width'),
-                        'dimensions_height' => $request->input('simple_dimensions_height'),
-                    ]);
+            // 2. Handle product type switching logic
+            $typeChanged = ($originalType !== $newType);
+
+            if ($typeChanged) {
+                // When switching, we clean up the old state completely.
+                // Detach all images from variants and the product itself to avoid conflicts
+                UploadedFile::where('attachable_id', $product->id)
+                    ->where('attachable_type', Product::class)
+                    ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
+
+                $variantIds = $product->variants()->pluck('id');
+                if ($variantIds->isNotEmpty()) {
+                    UploadedFile::where('attachable_type', ProductVariant::class)
+                        ->whereIn('attachable_id', $variantIds)
+                        ->update(['attachable_id' => null, 'attachable_type' => null]);
                 }
-                
+
+                // Delete all old variants before creating new ones based on the new type
+                $product->variants()->delete();
+            }
+
+            // 3. Create/Update variants and images based on the NEW type
+            if ($newType === 'simple') {
+                // This logic runs for both "update existing simple" and "switch to simple"
+                $variantData = [
+                    'sku' => $request->input('simple_sku'),
+                    'price' => $request->input('simple_price'),
+                    'sale_price' => $request->input('simple_sale_price'),
+                    'sale_price_starts_at' => $request->input('simple_sale_price_starts_at'),
+                    'sale_price_ends_at' => $request->input('simple_sale_price_ends_at'),
+                    'stock_quantity' => $request->input('simple_stock_quantity'),
+                    'weight' => $request->input('simple_weight'),
+                    'dimensions_length' => $request->input('simple_dimensions_length'),
+                    'dimensions_width' => $request->input('simple_dimensions_width'),
+                    'dimensions_height' => $request->input('simple_dimensions_height'),
+                    'is_default' => true,
+                    'status' => 'active',
+                ];
+
+                // Use updateOrCreate to handle both existing and new simple variants after a switch
+                $product->variants()->updateOrCreate(['product_id' => $product->id], $variantData);
+
+                // Sync images for the simple product
                 $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images', []));
 
-            } elseif ($product->type === 'variable' && $request->has('variants')) {
+            } elseif ($newType === 'variable' && $request->has('variants')) {
+                // This logic runs for both "update existing variable" and "switch to variable"
                 $this->syncProductVariants($product, $request->input('variants'), $request);
             }
 
@@ -323,8 +371,8 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
             return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được cập nhật thành công!');
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Lỗi khi cập nhật sản phẩm: ' . $e->getMessage() . ' tại dòng ' . $e->getLine());
-            return back()->withInput()->with('error', 'Đã có lỗi xảy ra khi cập nhật sản phẩm.');
+            Log::error('Lỗi khi cập nhật sản phẩm: ' . $e->getMessage() . ' tại dòng ' . $e->getLine() . ' trong file ' . $e->getFile());
+            return back()->withInput()->with('error', 'Đã có lỗi xảy ra khi cập nhật sản phẩm. Chi tiết: ' . $e->getMessage());
         }
     }
 
@@ -337,7 +385,7 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
         UploadedFile::where('attachable_id', $product->id)
             ->where('attachable_type', Product::class)
             ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
-            
+
         // Re-attach submitted images with correct types and order
         foreach ($galleryImageIds as $order => $imageId) {
             UploadedFile::where('id', $imageId)->update([
@@ -373,10 +421,10 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
                 'primary_image_id' => $variantData['primary_image_id'] ?? null,
                 'status' => 'active',
             ];
-            
+
             // Update or Create the variant
             $variant = $product->variants()->updateOrCreate(['id' => $variantData['id'] ?? null], $payload);
-            
+
             $submittedVariantIds[] = $variant->id;
 
             if (!empty($variantData['attributes'])) {
@@ -393,8 +441,8 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
         $variantsToDelete = array_diff($existingVariantIds, $submittedVariantIds);
         if (!empty($variantsToDelete)) {
             UploadedFile::where('attachable_type', ProductVariant::class)
-                         ->whereIn('attachable_id', $variantsToDelete)
-                         ->update(['attachable_id' => null, 'attachable_type' => null]);
+                ->whereIn('attachable_id', $variantsToDelete)
+                ->update(['attachable_id' => null, 'attachable_type' => null]);
             ProductVariant::destroy($variantsToDelete);
         }
 
@@ -415,7 +463,7 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
         UploadedFile::where('attachable_id', $variant->id)
             ->where('attachable_type', ProductVariant::class)
             ->update(['attachable_id' => null, 'attachable_type' => null]);
-        
+
         // Attach new images
         if (!empty($imageIds)) {
             UploadedFile::whereIn('id', $imageIds)->update([
@@ -447,14 +495,52 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
      */
     public function trash(Request $request)
     {
-        $query = Product::onlyTrashed();
+        // $this->authorize('viewTrash', Product::class);
 
-        // Assuming a `deletedBy()` relationship exists in the Product Model
-        $trashedProducts = $query->with('deletedBy')
-                                 ->latest('deleted_at')
-                                 ->paginate(10);
+        $query = Product::onlyTrashed()->with([
+            'category',
+            'variants' => fn($q) => $q->orderBy('is_default', 'desc'),
+            'variants.primaryImage',
+            'coverImage',
+            'deletedBy'
+        ]);
 
-        return view('admin.products.trash', compact('trashedProducts'));
+        // Handle Search
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                    ->orWhereHas('variants', function ($variantQuery) use ($searchTerm) {
+                        $variantQuery->where('sku', 'like', "%{$searchTerm}%");
+                    });
+            });
+        }
+
+        // Handle Filters
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->input('category_id'));
+        }
+        if ($request->filled('type')) {
+            $query->where('type', $request->input('type'));
+        }
+
+        // Handle Sorting
+        $sortBy = $request->input('sort_by', 'deleted_at');
+        $sortDir = $request->input('sort_dir', 'desc');
+        $allowedSortColumns = ['name', 'deleted_at'];
+
+        if (in_array($sortBy, $allowedSortColumns)) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->orderBy('deleted_at', 'desc');
+        }
+
+        $trashedProducts = $query->paginate(15)->withQueryString();
+
+        // Fetch categories for the filter dropdown
+        $categories = Category::where('status', 'active')->orderBy('name')->get();
+
+        return view('admin.products.trash', compact('trashedProducts', 'categories'));
     }
 
     /**
@@ -486,35 +572,11 @@ private function formatCategoriesForSelect($categories, $parentId = null, $prefi
     public function forceDelete($id)
     {
         $product = Product::onlyTrashed()->findOrFail($id);
-        
-        // Add policy check for permanent deletion if needed
         // $this->authorize('forceDelete', $product);
 
-        DB::beginTransaction();
-        try {
-            $fileService = app(FileService::class);
-            $product->load('variants.images', 'coverImage', 'galleryImages');
+        $product->forceDelete();
 
-            // Delete variant images
-            foreach ($product->variants as $variant) {
-                foreach ($variant->images as $image) {
-                    $fileService->deleteFile($image); 
-                }
-            }
-            // Delete product gallery and cover images
-            foreach ($product->images as $image) {
-                $fileService->deleteFile($image);
-            }
-
-            // Permanently delete the product record and its relations
-            $product->forceDelete();
-
-            DB::commit();
-            return redirect()->route('admin.products.trash')->with('success', 'Sản phẩm đã được xóa vĩnh viễn.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Lỗi xóa vĩnh viễn sản phẩm ID {$id}: " . $e->getMessage());
-            return back()->with('error', 'Không thể xóa vĩnh viễn sản phẩm.');
-        }
+        return redirect()->route('admin.products.trash')->with('success', 'Sản phẩm đã được xóa vĩnh viễn.');
     }
+
 }

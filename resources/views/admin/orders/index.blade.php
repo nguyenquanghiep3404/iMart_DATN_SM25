@@ -151,6 +151,49 @@
             color: #6b7280;
             background: #f3f4f6;
         }
+
+        /* Product item styles */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.4;
+        }
+        
+        .product-image-placeholder {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+        
+        /* Enhanced modal table styling */
+        #modal-order-items tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        #modal-order-items img {
+            transition: transform 0.2s ease;
+        }
+        
+        #modal-order-items img:hover {
+            transform: scale(1.05);
+        }
+        
+        /* Responsive table for modal */
+        @media (max-width: 768px) {
+            .modal-content table {
+                font-size: 14px;
+            }
+            
+            .modal-content .w-16.h-16 {
+                width: 48px;
+                height: 48px;
+            }
+        }
 </style>
     <div class="max-w-screen-2xl mx-auto">
         <header class="mb-8">
@@ -709,14 +752,124 @@
         // Render items
         const itemsTbody = document.getElementById('modal-order-items');
         if (order.items && Array.isArray(order.items)) {
-        itemsTbody.innerHTML = order.items.map(item => `
-            <tr class="border-b last:border-none">
-                    <td class="p-3 font-medium">${item.product_name || 'N/A'}</td>
-                    <td class="p-3 text-center">${item.quantity || 0}</td>
-                    <td class="p-3 text-right">${formatCurrency(item.price || 0)}</td>
-                    <td class="p-3 text-right font-semibold">${formatCurrency(item.total_price || 0)}</td>
-            </tr>
-        `).join('');
+
+        itemsTbody.innerHTML = order.items.map(item => {
+            // Prepare product image - check multiple sources
+            let productImage = null;
+            if (item.product_variant?.primary_image?.path) {
+                productImage = `/storage/${item.product_variant.primary_image.path}`;
+            } else if (item.product_variant?.product?.cover_image?.path) {
+                productImage = `/storage/${item.product_variant.product.cover_image.path}`;
+            } else if (item.image_url) {
+                productImage = item.image_url;
+            } else if (item.product_image) {
+                productImage = item.product_image;
+            }
+            
+            // Prepare product link for admin - link to admin product edit page
+            let productLink = '#';
+            if (item.product_variant?.product?.id) {
+                productLink = '/admin/products/' + item.product_variant.product.id + '/edit';
+            } else if (item.product_id) {
+                productLink = '/admin/products/' + item.product_id + '/edit';
+            }
+
+            // Prepare variant information from variant_attributes
+            let variantInfo = '';
+            if (item.variant_attributes && item.variant_attributes !== null) {
+                let variantAttrs = null;
+                
+                                 // Parse JSON string if needed
+                 if (typeof item.variant_attributes === 'string') {
+                     try {
+                         // Try parsing as JSON first
+                         variantAttrs = JSON.parse(item.variant_attributes);
+                     } catch (e) {
+                         // If JSON parse fails, try decoding HTML entities first
+                         try {
+                             const decodedString = item.variant_attributes.replace(/\\u([0-9a-fA-F]{4})/g, (match, grp) => 
+                                 String.fromCharCode(parseInt(grp, 16))
+                             );
+                             variantAttrs = JSON.parse(decodedString);
+                         } catch (e2) {
+                             console.log('Failed to parse variant_attributes:', item.variant_attributes);
+                             variantAttrs = null;
+                         }
+                     }
+                 } else if (typeof item.variant_attributes === 'object') {
+                     variantAttrs = item.variant_attributes;
+                 }
+                
+                if (variantAttrs && Object.keys(variantAttrs).length > 0) {
+                    const variants = Object.entries(variantAttrs)
+                        .filter(([key, value]) => value !== null && value !== '' && value !== undefined)
+                        .map(([key, value]) => {
+                            // Vietnamese translation for common variant types
+                            const translations = {
+                                'color': 'Màu sắc',
+                                'size': 'Kích cỡ', 
+                                'material': 'Chất liệu',
+                                'style': 'Kiểu dáng',
+                                'weight': 'Trọng lượng',
+                                'capacity': 'Dung tích',
+                                'ram': 'RAM',
+                                'storage': 'Bộ nhớ',
+                                'screen_size': 'Màn hình',
+                                'processor': 'Bộ xử lý',
+                                'brand': 'Thương hiệu',
+                                'dung lượng lưu trữ': 'Dung lượng',
+                                'kích thước màn hình': 'Màn hình'
+                            };
+                            const translatedKey = translations[key.toLowerCase()] || key;
+                            return `${translatedKey}: <span class="font-medium">${value}</span>`;
+                        })
+                        .join(' • ');
+                    if (variants) {
+                        variantInfo = `<div class="text-xs text-gray-500 mt-1">${variants}</div>`;
+                    }
+                }
+            }
+            
+            // Get SKU from variant if available
+            const productSku = item.product_variant?.sku || item.sku || item.product_sku || null;
+            
+            return `
+                <tr class="border-b last:border-none hover:bg-gray-50">
+                    <td class="p-3">
+                                                 <div class="flex items-center space-x-3">
+                             <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                 ${productImage ? 
+                                     `<img src="${productImage}" 
+                                           alt="${item.product_name || 'Sản phẩm'}" 
+                                           class="w-full h-full object-cover"
+                                           onerror="this.parentElement.innerHTML='<div class=\\'product-image-placeholder\\' style=\\'width:100%;height:100%\\'><i class=\\'fas fa-image text-2xl\\'></i></div>'">` :
+                                     `<div class="product-image-placeholder" style="width:100%;height:100%">
+                                         <i class="fas fa-box text-2xl"></i>
+                                      </div>`
+                                 }
+                             </div>
+                                                         <div class="flex-1 min-w-0">
+                                 ${productLink !== '#' ? 
+                                     `<a href="${productLink}" 
+                                        target="_blank" 
+                                        class="font-medium text-indigo-600 hover:text-indigo-900 hover:underline line-clamp-2"
+                                        title="Chỉnh sửa sản phẩm (mở tab mới)"
+                                        onclick="event.stopPropagation();">
+                                         ${item.product_name || 'N/A'}
+                                      </a>` :
+                                     `<span class="font-medium text-gray-800 line-clamp-2">${item.product_name || 'N/A'}</span>`
+                                 }
+                                 ${variantInfo}
+                                 ${productSku ? `<div class="text-xs text-gray-400 mt-1">SKU: ${productSku}</div>` : ''}
+                             </div>
+                        </div>
+                    </td>
+                    <td class="p-3 text-center font-medium">${item.quantity || 0}</td>
+                    <td class="p-3 text-right font-medium">${formatCurrency(item.price || 0)}</td>
+                    <td class="p-3 text-right font-semibold text-indigo-600">${formatCurrency(item.total_price || 0)}</td>
+                </tr>
+            `;
+        }).join('');
         } else {
             itemsTbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-500">Không có sản phẩm</td></tr>';
         }

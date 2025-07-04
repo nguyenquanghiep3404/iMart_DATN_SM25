@@ -99,4 +99,21 @@ public function allUploadedFiles()
         return $this->morphMany(\App\Models\Comment::class, 'commentable');
 
     }
+    protected static function booted()
+    {
+    static::forceDeleting(function ($product) {
+        // This event fires when forceDelete() is called.
+        
+        // 1. Delete all related variants
+        // This also helps if you don't have ON DELETE CASCADE in your database
+        $product->variants()->delete();
+
+        // 2. Delete all attached files from Polymorphic relationship
+        $product->allUploadedFiles()->each(function ($file) {
+            // Assuming you have a FileService to handle physical file deletion
+            $fileService = app(\App\Services\FileService::class);
+            $fileService->deleteFile($file); // This should delete file from storage and the DB record
+        });
+    });
+    }
 }

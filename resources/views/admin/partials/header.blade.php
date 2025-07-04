@@ -85,7 +85,7 @@ $user = auth()->user() ?? (object)[
         unreadCount: {{ $unreadNotificationsCount }},
         markAsRead() {
             if (this.unreadCount > 0) {
-                fetch('{{ route('admin.notifications.markAsRead') }}', {
+                fetch('{{ route('notifications.markAsRead') }}', {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -96,19 +96,24 @@ $user = auth()->user() ?? (object)[
                 });
             }
         }
-     }">
+    }">
+        <!-- Nút chuông -->
         <button
-            @click="
-            notificationOpen = !notificationOpen;
-            if (notificationOpen) markAsRead()
-        "
-            class="flex items-center justify-center w-10 h-10 rounded-full text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors duration-300">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            @click.stop="notificationOpen = !notificationOpen; if (notificationOpen) markAsRead()"
+            class="flex items-center justify-center w-10 h-10 rounded-full text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-700 transition-colors duration-300 relative"
+            aria-label="Thông báo">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                 <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 
+                14.158V11a6.002 6.002 0 00-4-5.659V5a2 
+                2 0 10-4 0v.341C7.67 6.165 6 8.388 
+                6 11v3.159c0 .538-.214 1.055-.595 
+                1.436L4 17h5m6 0v1a3 3 0 
+                11-6 0v-1m6 0H9" />
             </svg>
 
-            <!-- Hiển thị số lượng nếu có -->
+            <!-- Badge thông báo chưa đọc -->
             <template x-if="unreadCount > 0">
                 <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -118,15 +123,16 @@ $user = auth()->user() ?? (object)[
             </template>
         </button>
 
-
-        <div x-show="notificationOpen" @click.outside="notificationOpen = false"
+        <!-- Dropdown nội dung -->
+        <div x-show="notificationOpen"
+            @click.outside="notificationOpen = false"
             x-transition:enter="transition ease-out duration-200 origin-top"
             x-transition:enter-start="opacity-0 scale-y-90"
             x-transition:enter-end="opacity-100 scale-y-100"
             x-transition:leave="transition ease-in duration-150 origin-top"
             x-transition:leave-start="opacity-100 scale-y-100"
             x-transition:leave-end="opacity-0 scale-y-90"
-            class="absolute w-80 sm:w-96 max-h-[80vh] overflow-y-auto top-full right-0 sm:-right-10 mt-2 shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600"
+            class="absolute right-0 sm:-right-10 mt-2 w-80 sm:w-96 max-h-[80vh] overflow-y-auto shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 z-50"
             style="display: none;">
             <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-600">
                 <h4 class="font-semibold text-slate-800 dark:text-slate-100">Thông báo</h4>
@@ -140,7 +146,7 @@ $user = auth()->user() ?? (object)[
                                 {!! $notification['icon'] !!}
                             </div>
                             <div class="flex-1">
-                                <p class="text-sm text-slate-700 dark:text-slate-200 leading-tight">{{ $notification['title'] }}</p>
+                                <p class="text-sm text-slate-700 dark:text-slate-200 leading-tight break-words">{{ $notification['title'] }}</p>
                                 <span class="text-xs text-slate-500 dark:text-slate-400">{{ $notification['time'] }}</span>
                             </div>
                         </div>
@@ -152,15 +158,13 @@ $user = auth()->user() ?? (object)[
                 </li>
                 @endforelse
             </ul>
-            <div class="px-4 py-2 border-t border-slate-200 dark:border-slate-600">
-                <a href="#" class="block w-full text-center text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
+            <div class="px-4 py-2 border-t border-slate-200 dark:border-slate-600 text-center">
+                <a href="#" class="block w-full text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">
                     Xem tất cả
                 </a>
             </div>
         </div>
     </div>
-
-    <div class="h-6 w-px bg-slate-200 dark:bg-slate-600 hidden sm:block"></div>
 
     {{-- Profile User --}}
     <div class="relative w-[70%] flex justify-end items-center" x-data="{ userOption: false }">

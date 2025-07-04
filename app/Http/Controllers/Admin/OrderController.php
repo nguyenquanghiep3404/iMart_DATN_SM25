@@ -15,8 +15,9 @@ class OrderController extends Controller
     {
         $query = Order::with([
             'user:id,name,email,phone_number',
-            'items.productVariant.product:id,name',
+            'items.productVariant.product:id,name,slug',
             'items.productVariant.product.coverImage',
+            'items.productVariant.primaryImage',
             'processor:id,name',
             'shipper:id,name'
         ]);
@@ -66,8 +67,9 @@ class OrderController extends Controller
     {
         $order->load([
             'user:id,name,email,phone_number',
-            'items.productVariant.product:id,name',
+            'items.productVariant.product:id,name,slug',
             'items.productVariant.product.coverImage',
+            'items.productVariant.primaryImage',
             'processor:id,name',
             'shipper:id,name'
         ]);

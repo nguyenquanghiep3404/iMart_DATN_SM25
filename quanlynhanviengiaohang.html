@@ -49,16 +49,70 @@
 
     <div class="max-w-screen-2xl mx-auto">
         <!-- Header -->
-        <header class="mb-8 flex justify-between items-center">
+        <header class="mb-8 flex flex-col md:flex-row justify-between md:items-center">
             <div>
                  <h1 class="text-3xl font-bold text-gray-800">Quản lý Nhân viên Giao hàng</h1>
                  <p class="text-gray-500 mt-1">Thêm mới, tìm kiếm và quản lý thông tin các tài xế.</p>
             </div>
-            <button onclick="openModal()" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2">
+            <button onclick="openModal()" class="mt-4 md:mt-0 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center justify-center space-x-2">
                 <i class="fas fa-plus"></i>
                 <span>Thêm nhân viên mới</span>
             </button>
         </header>
+
+        <!-- Stats Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <!-- Stat Card 1: Total Shippers -->
+            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                <div class="bg-blue-100 text-blue-600 p-4 rounded-full">
+                    <i class="fas fa-users fa-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Tổng tài xế</p>
+                    <p id="stat-total" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+            <!-- Stat Card 2: Active Shippers -->
+            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                <div class="bg-green-100 text-green-600 p-4 rounded-full">
+                    <i class="fas fa-user-check fa-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Đang hoạt động</p>
+                    <p id="stat-active" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+            <!-- Stat Card 3: Inactive Shippers -->
+            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                <div class="bg-gray-100 text-gray-600 p-4 rounded-full">
+                    <i class="fas fa-user-clock fa-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Tạm nghỉ</p>
+                    <p id="stat-inactive" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+            <!-- Stat Card 4: Assigned Orders -->
+            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                <div class="bg-yellow-100 text-yellow-600 p-4 rounded-full">
+                    <i class="fas fa-box fa-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Tổng đơn đã nhận</p>
+                    <p id="stat-assigned" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+            <!-- Stat Card 5: Delivered Orders -->
+            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                <div class="bg-indigo-100 text-indigo-600 p-4 rounded-full">
+                    <i class="fas fa-truck-ramp-box fa-xl"></i>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500">Tổng đơn đã giao</p>
+                    <p id="stat-delivered" class="text-2xl font-bold text-gray-800">0</p>
+                </div>
+            </div>
+        </div>
 
         <!-- Filter Section -->
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
@@ -96,6 +150,7 @@
              <table class="w-full text-sm text-left text-gray-600">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr>
+                        <th scope="col" class="p-6">STT</th>
                         <th scope="col" class="p-6">Nhân viên</th>
                         <th scope="col" class="p-6">Số điện thoại</th>
                         <th scope="col" class="p-6">Thống kê</th>
@@ -188,6 +243,13 @@
             const shipperForm = document.getElementById('shipper-form');
             const modalTitle = document.getElementById('modal-title');
 
+            // Stats elements
+            const statTotal = document.getElementById('stat-total');
+            const statActive = document.getElementById('stat-active');
+            const statInactive = document.getElementById('stat-inactive');
+            const statAssigned = document.getElementById('stat-assigned');
+            const statDelivered = document.getElementById('stat-delivered');
+
             // --- UTILITY FUNCTIONS ---
             const formatDate = (dateString) => {
                 if (!dateString) return '';
@@ -202,14 +264,29 @@
             };
 
             // --- RENDER FUNCTIONS ---
-            function renderShipperRow(shipper) {
+            function renderStats() {
+                const totalShippers = mockShippers.length;
+                const activeShippers = mockShippers.filter(s => s.status === 'active').length;
+                const inactiveShippers = mockShippers.filter(s => s.status === 'inactive').length;
+                const totalAssigned = mockShippers.reduce((sum, s) => sum + s.stats.assigned, 0);
+                const totalDelivered = mockShippers.reduce((sum, s) => sum + s.stats.delivered, 0);
+
+                statTotal.textContent = totalShippers;
+                statActive.textContent = activeShippers;
+                statInactive.textContent = inactiveShippers;
+                statAssigned.textContent = totalAssigned;
+                statDelivered.textContent = totalDelivered;
+            }
+
+            function renderShipperRow(shipper, index) {
                 const shipperStatus = statusMap[shipper.status] || { text: 'N/A', class: '' };
                 
                 return `
                     <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="p-6 font-medium text-gray-700">${index + 1}</td>
                         <td class="p-6">
                             <div class="flex items-center">
-                                <img src="${shipper.avatar}" class="w-10 h-10 rounded-full mr-4 object-cover">
+                                <img src="${shipper.avatar}" class="w-10 h-10 rounded-full mr-4 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/40x40/cccccc/ffffff?text=?';">
                                 <div>
                                     <div class="font-semibold text-gray-800">${shipper.name}</div>
                                     <div class="text-gray-500">${shipper.email}</div>
@@ -238,7 +315,7 @@
                     return;
                 }
                 noResultsDiv.classList.add('hidden');
-                tbody.innerHTML = shippersToRender.map(renderShipperRow).join('');
+                tbody.innerHTML = shippersToRender.map((shipper, index) => renderShipperRow(shipper, index)).join('');
             }
             
              // --- MODAL LOGIC ---
@@ -254,12 +331,11 @@
                         document.getElementById('phone').value = shipper.phone;
                         document.getElementById('email').value = shipper.email;
                         document.getElementById('status').value = shipper.status;
-                        // Password field is left blank for security
+                        document.getElementById('password').required = false;
                     }
                 } else {
                     modalTitle.textContent = "Thêm nhân viên mới";
-                    // Password is required for new users
-                     document.getElementById('password').required = true;
+                    document.getElementById('password').required = true;
                 }
                 
                 shipperModal.classList.remove('hidden');
@@ -268,7 +344,7 @@
             window.closeModal = () => {
                 shipperModal.classList.add('hidden');
                 currentEditingId = null;
-                 document.getElementById('password').required = false; // reset requirement
+                document.getElementById('password').required = false; // reset requirement
             }
             
             shipperForm.addEventListener('submit', (e) => {
@@ -288,7 +364,7 @@
                     }
                 } else {
                     // Adding new shipper
-                    const newId = Math.max(...mockShippers.map(s => s.id)) + 1;
+                    const newId = mockShippers.length > 0 ? Math.max(...mockShippers.map(s => s.id)) + 1 : 1;
                     mockShippers.unshift({
                         id: newId,
                         name, phone, email, status,
@@ -298,6 +374,7 @@
                     });
                 }
                 
+                renderStats(); // Update stats after add/edit
                 applyFilters();
                 closeModal();
             });
@@ -331,6 +408,7 @@
             document.getElementById('clear-filters-btn').addEventListener('click', clearFilters);
 
             // --- INITIAL RENDER ---
+            renderStats();
             renderTable(mockShippers);
         });
     </script>

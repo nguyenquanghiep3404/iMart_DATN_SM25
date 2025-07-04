@@ -22,6 +22,9 @@ use App\Policies\ProductPolicy;
 use App\Models\Category;
 use App\Policies\CategoryPolicy;
 use Illuminate\Support\Facades\View;
+use App\Models\ProductVariant;
+use App\Observers\ProductVariantObserver;
+
 
 
 class AppServiceProvider extends ServiceProvider
@@ -47,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ProductVariant::observe(ProductVariantObserver::class);
         Paginator::useTailwind();
 
         // Đăng ký listener cho sự kiện Verified
