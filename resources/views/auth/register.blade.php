@@ -2,44 +2,31 @@
 @section('main')
 <div class="d-lg-flex">
 
-    <!-- Login form + Footer -->
-    <div class="d-flex flex-column min-vh-100 w-100 py-4 mx-auto me-lg-5" style="max-width: 416px">
+    <!-- Register form -->
+    <!-- Cập nhật: Áp dụng layout tương tự trang đăng nhập -->
+    <div class="d-flex flex-column justify-content-center min-vh-100 w-100 py-4 mx-auto me-lg-5" style="max-width: 416px">
 
         <!-- Logo -->
-        <header class="navbar px-0 pb-4 mt-n2 mt-sm-0 mb-2 mb-md-3 mb-lg-4">
-            <a href="index.html" class="navbar-brand pt-0">
-                <span class="d-flex flex-shrink-0 text-primary me-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
-                        <path d="M36 18.01c0 8.097-5.355 14.949-12.705 17.2a18.12 18.12 0 0 1-5.315.79C9.622 36 2.608 30.313.573 22.611.257 21.407.059 20.162 0 18.879v-1.758c.02-.395.059-.79.099-1.185.099-.908.277-1.817.514-2.686C2.687 5.628 9.682 0 18 0c5.572 0 10.551 2.528 13.871 6.517 1.502 1.797 2.648 3.91 3.359 6.201.494 1.659.771 3.436.771 5.292z" fill="currentColor"></path>
-                        <g fill="#fff">
-                            <path d="M17.466 21.624c-.514 0-.988-.316-1.146-.829-.198-.632.138-1.303.771-1.501l7.666-2.469-1.205-8.254-13.317 4.621a1.19 1.19 0 0 1-1.521-.75 1.19 1.19 0 0 1 .751-1.521l13.89-4.818c.553-.197 1.166-.138 1.64.158a1.82 1.82 0 0 1 .85 1.284l1.344 9.183c.138.987-.494 1.994-1.482 2.33l-7.864 2.528-.375.04zm7.31.138c-.178-.632-.85-1.007-1.482-.81l-5.177 1.58c-2.331.79-3.28.02-3.418-.099l-6.56-8.412a4.25 4.25 0 0 0-4.406-1.758l-3.122.987c-.237.889-.415 1.777-.514 2.686l4.228-1.363a1.84 1.84 0 0 1 1.857.81l6.659 8.551c.751.948 2.015 1.323 3.359 1.323.909 0 1.857-.178 2.687-.474l5.078-1.54c.632-.178 1.008-.829.81-1.481z"></path>
-                            <use href="#czlogo"></use>
-                            <use href="#czlogo" x="8.516" y="-2.172"></use>
-                        </g>
-                        <defs>
-                            <path id="czlogo" d="M18.689 28.654a1.94 1.94 0 0 1-1.936 1.935 1.94 1.94 0 0 1-1.936-1.935 1.94 1.94 0 0 1 1.936-1.935 1.94 1.94 0 0 1 1.936 1.935z"></path>
-                        </defs>
-                    </svg>
-                </span>
-                Cartzilla
-            </a>
+        <!-- Cập nhật: Sử dụng logo giống trang đăng nhập -->
+        <header class="navbar px-0 pb-4 mt-n2 mt-sm-0 mb-2 mb-md-3 mb-lg-4 justify-content-center">
+            <a href="/">
+                <img src="{{asset('assets\users\logo\logo-full.svg')}}" alt="Logo" style="height: 4rem;"></a> 
         </header>
 
-        <h1 class="h2 mt-auto">Đăng ký tài khoản</h1>
-        <div class="nav fs-sm mb-4">
-            Bạn đã có tài khoản?
-            <a class="nav-link text-decoration-underline p-0 ms-2" href="{{ route('login') }}">Đăng nhập</a>
-        </div>
-
-        <!-- Form -->
+        <!-- Tiêu đề -->
+        <!-- Cập nhật: Áp dụng style tiêu đề từ trang đăng nhập -->
+        <h1 class="h2 mb-2 text-center lg:text-start">Đăng ký tài khoản</h1>
+        <p class="fs-sm text-body-secondary mb-3 mb-lg-4 text-center lg:text-start">Tạo tài khoản để tận hưởng các lợi ích của chúng tôi.</p>
+        
         <form method="POST" action="{{ route('register') }}" class="needs-validation" novalidate>
             @csrf
 
             <!-- Name -->
             <div class="position-relative mb-4">
+                <label for="register-name" class="form-label">Họ và tên</label>
                 <input type="text"
                     class="form-control form-control-lg @error('name') is-invalid @enderror"
-                    placeholder="Tên của bạn"
+                    id="register-name"
                     name="name"
                     value="{{ old('name') }}"
                     required
@@ -47,63 +34,68 @@
                     autocomplete="name">
                 <div class="invalid-tooltip bg-transparent py-0">
                     @error('name')
-                    {{ $message }}
+                        {{ $message }}
                     @else
-                    Vui lòng nhập tên của bạn.
+                        Vui lòng nhập họ và tên của bạn.
                     @enderror
                 </div>
             </div>
 
             <!-- Email -->
             <div class="position-relative mb-4">
+                <label for="register-email" class="form-label">Email</label>
                 <input type="email"
                     class="form-control form-control-lg @error('email') is-invalid @enderror"
-                    placeholder="Email"
+                    id="register-email"
                     name="email"
                     value="{{ old('email') }}"
                     required
                     autocomplete="username">
                 <div class="invalid-tooltip bg-transparent py-0">
                     @error('email')
-                    {{ $message }}
+                        {{ $message }}
                     @else
-                    Vui lòng nhập địa chỉ email hợp lệ.
+                        Vui lòng nhập địa chỉ email hợp lệ.
                     @enderror
                 </div>
             </div>
-
+            
+            <!-- Phone Number -->
             <div class="position-relative mb-4">
-                <input
-                    type="text"
+                <label for="register-phone" class="form-label">Số điện thoại</label>
+                <input type="text"
                     class="form-control form-control-lg @error('phone_number') is-invalid @enderror"
-                    placeholder="Số điện thoại"
+                    id="register-phone"
                     name="phone_number"
                     value="{{ old('phone_number') }}"
                     required
                     autocomplete="tel">
                 <div class="invalid-tooltip bg-transparent py-0">
                     @error('phone_number')
-                    {{ $message }}
+                        {{ $message }}
                     @else
-                    Vui lòng nhập số điện thoại hợp lệ.
+                        Vui lòng nhập số điện thoại hợp lệ.
                     @enderror
                 </div>
             </div>
 
             <!-- Password -->
             <div class="mb-4">
+                <label for="register-password" class="form-label">Mật khẩu</label>
                 <div class="password-toggle">
                     <input type="password"
                         class="form-control form-control-lg @error('password') is-invalid @enderror"
-                        placeholder="Mật khẩu(8 ký tự trở lên)"
+                        id="register-password"
                         name="password"
+                        minlength="8"
+                        placeholder="Tối thiểu 8 ký tự"
                         required
                         autocomplete="new-password">
                     <div class="invalid-tooltip bg-transparent py-0">
                         @error('password')
-                        {{ $message }}
+                            {{ $message }}
                         @else
-                        Vui lòng nhập mật khẩu của bạn! (ít nhất 8 ký tự)
+                            Mật khẩu phải có ít nhất 8 ký tự.
                         @enderror
                     </div>
                     <label class="password-toggle-button fs-lg" aria-label="Show/hide password">
@@ -114,18 +106,19 @@
 
             <!-- Confirm Password -->
             <div class="mb-4">
+                <label for="confirm-password" class="form-label">Xác nhận mật khẩu</label>
                 <div class="password-toggle">
                     <input type="password"
                         class="form-control form-control-lg @error('password_confirmation') is-invalid @enderror"
-                        placeholder="Xác nhận mật khẩu"
+                        id="confirm-password"
                         name="password_confirmation"
                         required
                         autocomplete="new-password">
                     <div class="invalid-tooltip bg-transparent py-0">
                         @error('password_confirmation')
-                        {{ $message }}
+                            {{ $message }}
                         @else
-                        Vui lòng xác nhận mật khẩu của bạn!
+                            Mật khẩu xác nhận không khớp.
                         @enderror
                     </div>
                     <label class="password-toggle-button fs-lg" aria-label="Show/hide password">
@@ -134,13 +127,7 @@
                 </div>
             </div>
 
-            <!-- Login Redirect -->
-            <div class="d-flex align-items-center justify-content-between mb-2">
-                <div class="form-check me-2">
-                    <input type="checkbox" class="form-check-input" id="remember-register">
-                    <label for="remember-register" class="form-check-label">Nhớ mật khẩu</label>
-                </div>
-            </div>
+            <!-- Privacy Policy -->
             <div class="form-check mb-4">
                 <input type="checkbox" class="form-check-input" id="privacy" required>
                 <label for="privacy" class="form-check-label">
@@ -148,37 +135,38 @@
                 </label>
             </div>
 
-            <button type="submit" class="btn btn-lg btn-primary w-100">Đăng ký</button>
+            <!-- Nút Đăng ký -->
+            <!-- Cập nhật: Sử dụng style nút giống trang đăng nhập -->
+            <button type="submit" class="btn btn-lg btn-dark w-100">
+                Đăng ký
+            </button>
         </form>
 
-
         <!-- Divider -->
+        <!-- Cập nhật: Sử dụng divider giống trang đăng nhập -->
         <div class="d-flex align-items-center my-4">
             <hr class="w-100 m-0">
-            <span class="text-body-emphasis fw-medium text-nowrap mx-4">hoặc tiếp tục với</span>
+            <span class="text-body-emphasis fw-medium text-nowrap mx-4">Hoặc</span>
             <hr class="w-100 m-0">
         </div>
 
         <!-- Social login -->
-        <div class="d-flex flex-column flex-sm-row gap-3 pb-4 mb-3 mb-lg-4">
-            <a href="{{ route('auth.google') }}" class="btn btn-lg btn-outline-secondary w-100 px-2">
-                <i class="ci-google ms-1 me-1"></i>
-                Google
+        <!-- Cập nhật: Sử dụng nút Google login giống trang đăng nhập -->
+        <div class="d-flex flex-column flex-sm-row gap-3">
+            <a href="{{ route('auth.google') }}" class="btn btn-lg btn-outline-secondary w-100 d-flex justify-content-center align-items-center">
+                <svg class="w-5 h-5 me-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" style="width: 20px; height: 20px;"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C39.901,36.62,44,30.631,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+                <span>Đăng ký với Google</span>
             </a>
         </div>
 
-        <!-- Footer -->
-        <footer class="mt-auto">
-            <div class="nav mb-4">
-                <a class="nav-link text-decoration-underline p-0" href="help-topics-v1.html">Cần giúp đỡ?</a>
-            </div>
-            <p class="fs-xs mb-0">
-                © Mọi quyền được bảo lưu. Được thực hiện bởi <span class="animate-underline"><a class="animate-target text-dark-emphasis text-decoration-none" href="https://createx.studio/" target="_blank" rel="noreferrer">iMart Dev</a></span>
-            </p>
-        </footer>
+        <!-- Link đăng nhập -->
+        <!-- Cập nhật: Chuyển link xuống dưới cùng -->
+        <div class="text-center mt-4">
+            Bạn đã có tài khoản?
+            <a class="nav-link text-decoration-underline p-0 d-inline-block ms-1" href="{{ route('login') }}">Đăng nhập</a>
+        </div>
     </div>
 
-    <!-- Benefits section that turns into offcanvas on screens < 992px wide (lg breakpoint) -->
     <div class="offcanvas-lg offcanvas-end w-100 py-lg-4 ms-auto" id="benefits" style="max-width: 1034px">
         <div class="offcanvas-header justify-content-end position-relative z-2 p-3">
             <button type="button" class="btn btn-icon btn-outline-dark text-dark border-dark bg-transparent rounded-circle d-none-dark" data-bs-dismiss="offcanvas" data-bs-target="#benefits" aria-label="Close">
@@ -281,7 +269,7 @@
                                         <span class="position-absolute top-0 start-0 w-100 h-100 bg-body-secondary rounded-pill d-none d-block-dark"></span>
                                         <i class="ci-pie-chart position-relative z-2 fs-4 m-1"></i>
                                     </div>
-                                    <h3 class="h6 pt-2 my-2">Thanh toán mua hàng theo từng đợt</h3>
+                                    <h3 class="h6 pt-2 my-2">Mua với giá ưu đãi</h3>
                                 </div>
                             </div>
                         </div>
