@@ -23,19 +23,20 @@ return new class extends Migration
 
             $table->string('shipping_address_line1');
             $table->string('shipping_address_line2')->nullable();
-            $table->string('shipping_city');
-            $table->string('shipping_district');
-            $table->string('shipping_ward');
             $table->string('shipping_zip_code')->nullable();
             $table->string('shipping_country')->default('Vietnam');
 
+            $table->string('shipping_province_code', 20);
+            $table->string('shipping_ward_code', 20);
+
             $table->string('billing_address_line1')->nullable();
             $table->string('billing_address_line2')->nullable();
-            $table->string('billing_city')->nullable();
-            $table->string('billing_district')->nullable();
-            $table->string('billing_ward')->nullable();
             $table->string('billing_zip_code')->nullable();
             $table->string('billing_country')->nullable();
+
+
+            $table->string('billing_province_code', 20)->nullable();
+            $table->string('billing_ward_code', 20)->nullable();
 
             $table->decimal('sub_total', 15, 2);
             $table->decimal('shipping_fee', 15, 2)->default(0);
@@ -47,13 +48,23 @@ return new class extends Migration
             $table->enum('payment_status', ['pending', 'paid', 'failed', 'refunded', 'partially_refunded'])->default('pending');
             $table->string('shipping_method')->nullable();
             $table->enum('status', [
-                'pending_confirmation', 'processing', 'awaiting_shipment', 'shipped',
-                'out_for_delivery', 'delivered', 'cancelled', 'returned', 'failed_delivery'
+                'pending_confirmation',
+                'processing',
+                'awaiting_shipment',
+                'shipped',
+                'out_for_delivery',
+                'delivered',
+                'cancelled',
+                'returned',
+                'failed_delivery'
             ])->default('pending_confirmation');
 
             $table->text('notes_from_customer')->nullable();
             $table->text('notes_for_shipper')->nullable();
             $table->text('admin_note')->nullable();
+
+            $table->date('desired_delivery_date')->nullable();
+            $table->string('desired_delivery_time_slot')->nullable();
 
             $table->foreignId('processed_by')->nullable()->constrained('users')->onDelete('set null'); // Admin/Order Processor
             $table->foreignId('shipped_by')->nullable()->constrained('users')->onDelete('set null'); // Shipper User ID
@@ -65,8 +76,14 @@ return new class extends Migration
 
             $table->ipAddress('ip_address')->nullable();
             $table->string('user_agent', 1000)->nullable(); // Increased length for user agent
+
             $table->softDeletes();
             $table->timestamps();
+
+            $table->foreign('shipping_province_code')->references('code')->on('provinces')->onDelete('cascade');
+            $table->foreign('shipping_ward_code')->references('code')->on('wards')->onDelete('cascade');
+            $table->foreign('billing_province_code')->references('code')->on('provinces')->onDelete('set null');
+            $table->foreign('billing_ward_code')->references('code')->on('wards')->onDelete('set null');
         });
     }
 
