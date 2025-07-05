@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Attribute;
 use App\Models\ProductVariant;
 use App\Models\UploadedFile;
+use App\Models\SpecificationGroup;
 use App\Services\FileService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -112,14 +113,15 @@ class ProductController extends Controller
      */
     public function create()
     {
-        $this->authorize('create', Product::class); // Thêm authorize nếu cần
         $allCategories = Category::where('status', 'active')->get();
         $categories = $this->formatCategoriesForSelect($allCategories);
         $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
-        // Chuẩn bị dữ liệu để khôi phục ảnh sau khi validation thất bại
+
+        // Prepare data to restore images if validation fails
         $old_images_data = [];
         $all_image_ids = [];
-        // Lấy ID ảnh từ sản phẩm đơn giản
+
+        // Get image IDs from simple product fields
         $simple_gallery_ids = old('gallery_images', []);
         $simple_cover_id = old('cover_image_id');
         if ($simple_cover_id) {
@@ -129,7 +131,7 @@ class ProductController extends Controller
             $all_image_ids = array_merge($all_image_ids, $simple_gallery_ids);
         }
 
-        // Lấy ID ảnh từ các biến thể
+        // Get image IDs from variant fields
         if (old('variants')) {
             foreach (old('variants') as $oldVariant) {
                 $variant_image_ids = $oldVariant['image_ids'] ?? [];
@@ -143,24 +145,21 @@ class ProductController extends Controller
             }
         }
 
-        // Truy vấn DB một lần duy nhất để lấy thông tin tất cả các ảnh cần thiết
+        // Query the DB once to get info for all required images
         if (!empty($all_image_ids)) {
-            // Loại bỏ các ID trùng lặp và rỗng
             $unique_ids = array_unique(array_filter($all_image_ids));
             if (!empty($unique_ids)) {
                 $images = UploadedFile::whereIn('id', $unique_ids)->get();
-                // Chuyển đổi thành một map với key là ID để dễ dàng truy cập trong JS
+                // Map to an ID-keyed array for easy JS access
                 $old_images_data = $images->keyBy('id')->map(function ($image) {
-                    // Đảm bảo có thuộc tính 'url'. Model của bạn nên có getUrlAttribute()
                     return [
                         'id' => $image->id,
-                        'url' => $image->url,
+                        'url' => $image->url, // Assumes getUrlAttribute exists on the model
                         'alt_text' => $image->alt_text
                     ];
                 })->all();
             }
         }
-        // --- KẾT THÚC PHẦN CODE MỚI ---
 
         return view('admin.products.create', compact('categories', 'attributes', 'old_images_data'));
     }
@@ -171,24 +170,14 @@ class ProductController extends Controller
      */
     public function store(ProductRequest $request)
     {
-        // dd($request->all());
         DB::beginTransaction();
         try {
-            // 1. Create product with basic info, excluding image and variant data handled separately
             $productData = $request->except([
-                'cover_image_id',
-                'gallery_images',
-                'variants',
-                'simple_sku',
-                'simple_price',
-                'simple_sale_price',
-                'simple_stock_quantity',
-                'simple_sale_price_starts_at',
-                'simple_sale_price_ends_at',
-                'simple_weight',
-                'simple_dimensions_length',
-                'simple_dimensions_width',
-                'simple_dimensions_height'
+                'cover_image_id', 'gallery_images', 'variants',
+                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity',
+                'simple_sale_price_starts_at', 'simple_sale_price_ends_at',
+                'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height',
+                'specifications' // Exclude main specifications array
             ]);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
@@ -196,17 +185,29 @@ class ProductController extends Controller
 
             $product = Product::create($productData);
 
-            // 2. Handle simple product logic
+            // Helper function to save specifications for a variant
+            $saveSpecifications = function (ProductVariant $variant, ?array $specData) {
+                if (empty($specData)) {
+                    $variant->specifications()->detach(); // Clear old relations if no new data
+                    return;
+                }
+                $syncData = [];
+                foreach ($specData as $specId => $specValue) {
+                    // Only save if the value is not empty
+                    if (trim($specValue) !== '') {
+                        $syncData[$specId] = ['value' => trim($specValue)];
+                    }
+                }
+                $variant->specifications()->sync($syncData);
+            };
+
+            // Handle simple product logic
             if ($request->input('type') === 'simple') {
-                // **NEW**: Link pre-uploaded images
-                // The main gallery_images array holds all image IDs for the simple product.
-                // The cover_image_id specifies which one is the cover.
                 if ($request->has('gallery_images') && is_array($request->input('gallery_images'))) {
                     $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images'));
                 }
 
-                // Create a single variant for the simple product
-                ProductVariant::create([
+                $variant = ProductVariant::create([
                     'product_id' => $product->id,
                     'sku' => $request->input('simple_sku'),
                     'price' => $request->input('simple_price'),
@@ -218,11 +219,14 @@ class ProductController extends Controller
                     'dimensions_length' => $request->input('simple_dimensions_length'),
                     'dimensions_width' => $request->input('simple_dimensions_width'),
                     'dimensions_height' => $request->input('simple_dimensions_height'),
+                    'primary_image_id' => $request->input('cover_image_id'),
                     'is_default' => true,
                     'status' => 'active',
                 ]);
+                // Save specifications for the simple product's single variant
+                $saveSpecifications($variant, $request->input('specifications', []));
             }
-            // 3. Handle variable product logic
+            // Handle variable product logic
             elseif ($request->input('type') === 'variable' && $request->has('variants')) {
                 $defaultVariantKey = $request->input('variant_is_default_radio_group');
 
@@ -248,7 +252,6 @@ class ProductController extends Controller
                         $variant->attributeValues()->attach(array_values($variantData['attributes']));
                     }
 
-                    // **NEW**: Link pre-uploaded images to the variant
                     if (isset($variantData['image_ids']) && is_array($variantData['image_ids'])) {
                         UploadedFile::whereIn('id', $variantData['image_ids'])->update([
                             'attachable_id' => $variant->id,
@@ -256,6 +259,8 @@ class ProductController extends Controller
                             'type' => 'variant_image',
                         ]);
                     }
+                    // Save specifications for each variant
+                    $saveSpecifications($variant, $variantData['specifications'] ?? []);
                 }
             }
 
@@ -579,5 +584,18 @@ class ProductController extends Controller
 
         return redirect()->route('admin.products.trash')->with('success', 'Sản phẩm đã được xóa vĩnh viễn.');
     }
+   public function getSpecificationsForCategory(Category $category)
+    {
+        try {
+            // Eager load the necessary relationships
+            $category->load('specificationGroups.specifications');
+            
+            // Return the data as JSON
+            return response()->json($category->specificationGroups);
 
+        } catch (\Exception $e) {
+            Log::error("Error fetching specs for category ID {$category->id}: " . $e->getMessage());
+            return response()->json(['error' => 'Could not load specifications.'], 500);
+        }
+    }
 }
