@@ -106,20 +106,4 @@
         font-size: 16px;
         background-color: transparent;
     }
-
-    @keyframes slideInRightCustom {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-
-    .toast {
-        animation: slideInRightCustom 0.5s ease forwards !important;
-    }
 </style>
