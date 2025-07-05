@@ -35,23 +35,17 @@
             </svg>
             So sánh
         </button>
-        <form id="favorite-form" method="POST" action="{{ route('wishlist.add') }}">
-            @csrf
-            <input type="hidden" name="product_variant_id" value="{{ $product->id }}">
-
-            <button type="submit" id="favorite-btn"
-                class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors">
-                <span id="favorite-icon-container">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" />
-                    </svg>
-                </span>
-                <span>Yêu thích</span>
-            </button>
-        </form>
-
+        <button id="favorite-btn"
+            class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors">
+            <span id="favorite-icon-container">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" />
+                </svg>
+            </span>
+            <span>Yêu thích</span>
+        </button>
         <div class="relative">
             <button id="share-btn"
                 class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-blue-600">
@@ -559,7 +553,7 @@
 
         // Hàm thông báo toastr
         window.showSlideAlert = window.showSlideAlert || function(type = 'info', message = '', duration =
-            4000) {
+        4000) {
             if (typeof toastr !== 'undefined') {
                 toastr.options = {
                     closeButton: true,
@@ -573,45 +567,6 @@
             }
         };
     });
-    document.getElementById('favorite-form').addEventListener('submit', function(e) {
-        e.preventDefault(); // Ngăn form submit mặc định
-
-        const form = this;
-        const formData = new FormData(form);
-
-        fetch(form.action, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    toastr.success('Đã thêm vào yêu thích!');
-                    // Đổi màu icon, v.v...
-                } else {
-                    toastr.warning(data.message || 'Thêm thất bại!');
-                }
-            })
-            .catch(err => {
-                console.error('Lỗi:', err);
-                toastr.error('Đã xảy ra lỗi khi gửi yêu cầu!');
-            });
-    });
-
-    // Toastr cấu hình
-    toastr.options = {
-        "closeButton": true,
-        "progressBar": true,
-        "positionClass": "toast-top-right", // Hiển thị góc trên bên phải
-        "timeOut": "3000",
-        "showDuration": "300",
-        "hideDuration": "1000",
-        "showMethod": "slideDown",
-        "hideMethod": "slideUp"
-    };
 </script>
 
 
