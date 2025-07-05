@@ -28,7 +28,7 @@ use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Users\CartController;
 use App\Http\Controllers\Admin\SpecificationController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
-
+use App\Http\Controllers\Users\PaymentController;
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
@@ -90,7 +90,11 @@ Route::post('/cart/apply-voucher', [CartController::class, 'applyVoucher'])->nam
 // Xóa mã giảm giá
 Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
 
-
+// Routes cho thanh toán ( Sang PaymentController )
+Route::get('/payments', [PaymentController::class, 'index'])->name('payments.information');
+Route::get('/payments/success', function () {
+    return view('users.payments.success');
+})->name('users.payments.success');
 //==========================================================================
 // ADMIN ROUTES
 //==========================================================================
