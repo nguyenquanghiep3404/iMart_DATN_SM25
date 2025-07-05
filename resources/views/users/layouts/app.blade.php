@@ -8,17 +8,17 @@
     <!-- SEO Meta Tags -->
     <title>{{ config('app.name', 'iMart') }}</title>
     {{-- <title>Cartzilla | Electronics Store</title> --}}
-    <meta name="description" content="Cartzilla - Multipurpose E-Commerce Bootstrap HTML Template">
-    <meta name="keywords" content="online shop, e-commerce, online store, market, multipurpose, product landing, cart, checkout, ui kit, light and dark mode, bootstrap, html5, css3, javascript, gallery, slider, mobile, pwa">
-    <meta name="author" content="Createx Studio">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="author" content="">
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
     <!-- Webmanifest + Favicon / App icons -->
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <link rel="manifest" href="{{asset('frontend/manifest.json')}}">
-    <link rel="icon" type="image/png" href="{{ asset ('assets/users/app-icons/icon-32x32.png') }}" sizes="32x32">
-    <link rel="apple-touch-icon" href="{{ asset ('assets/users/app-icons/icon-180x180.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset ('assets/users/app-icons/Bản sao của iMart.svg') }}" sizes="32x32">
+    <link rel="apple-touch-icon" href="{{ asset ('assets/users/app-icons/Bản sao của iMart (2).svg') }}">
 
     <!-- Theme switcher (color modes) -->
     <script src="{{ asset ('assets/users/js/theme-switcher.js')}}"></script>
