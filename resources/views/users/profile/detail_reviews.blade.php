@@ -1,4 +1,4 @@
-@extends('profile.layouts.profile') {{-- Hoặc layout tùy theo hệ thống của bạn --}}
+@extends('users.layouts.profile') {{-- Hoặc layout tùy theo hệ thống của bạn --}}
 
 @section('content')
 <div class="container py-5">

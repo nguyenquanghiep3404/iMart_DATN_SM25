@@ -42,6 +42,7 @@ class AuthenticatedSessionController extends Controller
 
         if ($user->roles->contains('id', 1) ||
             $user->roles->contains('id', 4) ||
+            $user->roles->contains('id', 6) ||
             $user->roles->contains('id', 5)
         ) {
             return redirect()->intended(route('admin.dashboard'));
