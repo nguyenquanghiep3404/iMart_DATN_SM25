@@ -17,6 +17,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\OrderItem;
 
 class ProductController extends Controller
 {
@@ -219,6 +220,7 @@ class ProductController extends Controller
                     'dimensions_length' => $request->input('simple_dimensions_length'),
                     'dimensions_width' => $request->input('simple_dimensions_width'),
                     'dimensions_height' => $request->input('simple_dimensions_height'),
+                    'primary_image_id' => $request->input('cover_image_id'),
                     'is_default' => true,
                     'status' => 'active',
                 ]);
@@ -288,46 +290,63 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $this->authorize('update', $product);
-
+        $hasBeenSold = $product->variants()->whereHas('orderItems')->exists();
+        
         $product->load([
             'category',
-            'variants' => fn($q) => $q->orderBy('is_default', 'desc'),
+            'variants' => fn ($q) => $q->orderBy('is_default', 'desc'),
             'variants.attributeValues.attribute',
-            'variants.images',      // Sửa ở đây: không có .file
-            'coverImage',           // Sửa ở đây: không có .file
-            'galleryImages'         // Sửa ở đây: không có .file
+            'variants.images',
+            'variants.specifications', 
+            'coverImage',
+            'galleryImages'
         ]);
 
         $allCategories = Category::where('status', 'active')->get();
         $categories = $this->formatCategoriesForSelect($allCategories);
         $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
 
-        return view('admin.products.edit', compact('product', 'categories', 'attributes'));
+        return view('admin.products.edit', compact('product', 'categories', 'attributes', 'hasBeenSold'));
     }
+
 
     /**
      * Update the specified resource in storage.
+     * MODIFIED: Handle saving of specifications.
      */
     public function update(ProductRequest $request, Product $product)
     {
         DB::beginTransaction();
         try {
+            // Helper function to save specifications for a variant
+            $saveSpecifications = function (ProductVariant $variant, ?array $specData) {
+                if (is_null($specData)) {
+                    return; // Do nothing if spec data is not provided
+                }
+                $syncData = [];
+                foreach ($specData as $specId => $specValue) {
+                    // Only save if the value is not empty or null
+                    if (trim((string) $specValue) !== '') {
+                        $syncData[$specId] = ['value' => trim($specValue)];
+                    }
+                }
+                $variant->specifications()->sync($syncData);
+            };
+
             $originalType = $product->type;
             $newType = $request->input('type');
 
             // 1. Update basic product info
-            $productData = $request->except(['_token', '_method', 'cover_image_id', 'gallery_images', 'variants', 'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity', 'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height']);
+            $productData = $request->except(['_token', '_method', 'cover_image_id', 'gallery_images', 'variants', 'simple_sku', 'simple_price', 'simple_sale_price', 'simple_stock_quantity', 'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height', 'specifications']);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
             $productData['updated_by'] = Auth::id();
             $product->update($productData);
 
-            // 2. Handle product type switching logic
             $typeChanged = ($originalType !== $newType);
 
             if ($typeChanged) {
-                // When switching, we clean up the old state completely.
-                // Detach all images from variants and the product itself to avoid conflicts
+                // Clean up old state completely when switching types
                 UploadedFile::where('attachable_id', $product->id)
                     ->where('attachable_type', Product::class)
                     ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
@@ -338,14 +357,15 @@ class ProductController extends Controller
                         ->whereIn('attachable_id', $variantIds)
                         ->update(['attachable_id' => null, 'attachable_type' => null]);
                 }
-
-                // Delete all old variants before creating new ones based on the new type
+                // Detach specifications before deleting variants
+                foreach($product->variants as $variant) {
+                    $variant->specifications()->detach();
+                }
                 $product->variants()->delete();
             }
 
-            // 3. Create/Update variants and images based on the NEW type
+            // 3. Create/Update variants based on the NEW type
             if ($newType === 'simple') {
-                // This logic runs for both "update existing simple" and "switch to simple"
                 $variantData = [
                     'sku' => $request->input('simple_sku'),
                     'price' => $request->input('simple_price'),
@@ -360,16 +380,18 @@ class ProductController extends Controller
                     'is_default' => true,
                     'status' => 'active',
                 ];
-
-                // Use updateOrCreate to handle both existing and new simple variants after a switch
-                $product->variants()->updateOrCreate(['product_id' => $product->id], $variantData);
-
-                // Sync images for the simple product
+                $variant = $product->variants()->updateOrCreate(['product_id' => $product->id], $variantData);
                 $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images', []));
+                
+                // Save specifications for the simple product's variant
+                $saveSpecifications($variant, $request->input('specifications', []));
 
-            } elseif ($newType === 'variable' && $request->has('variants')) {
-                // This logic runs for both "update existing variable" and "switch to variable"
-                $this->syncProductVariants($product, $request->input('variants'), $request);
+            } elseif ($newType === 'variable') {
+                if (!$request->has('variants') || empty($request->input('variants'))) {
+                    return back()->withInput()->with('error', 'Sản phẩm có biến thể phải có ít nhất một biến thể.');
+                }
+                // Pass the helper function to syncProductVariants
+                $this->syncProductVariants($product, $request->input('variants'), $request, $saveSpecifications);
             }
 
             DB::commit();

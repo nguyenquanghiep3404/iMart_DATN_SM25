@@ -157,6 +157,7 @@ class HomeController extends Controller
             ->firstOrFail();
 
         $product->increment('view_count');
+        
 
         $averageRating = $product->reviews->avg('rating') ?? 0;
         $product->average_rating = round($averageRating, 1);

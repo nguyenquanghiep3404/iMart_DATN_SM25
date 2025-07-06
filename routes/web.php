@@ -13,6 +13,7 @@ use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\PostTagController;
@@ -49,7 +50,8 @@ Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallb
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
 // BLOG ROUTES (PUBLIC)
 Route::prefix('blog')->group(function () {
-    Route::get('/', [BlogController::class, 'index'])->name('users.blogs.index');
+    Route::get('/', [BlogController::class, 'home'])->name('users.blogs.home');
+    Route::get('/tat-ca', [BlogController::class, 'index'])->name('users.blogs.index');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('users.blogs.show');
 });
 // Trang About và Help , terms
