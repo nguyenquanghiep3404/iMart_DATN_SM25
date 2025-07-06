@@ -45,6 +45,7 @@ class OrderSeeder extends Seeder
                     'order_id' => $order->id,
                     'product_variant_id' => $variantToOrder->id,
                     'quantity' => $quantityOrdered,
+                    'sku' => $variantToOrder->sku,
                     // Giá và tổng tiền sẽ được tính trong OrderItemFactory
                 ]);
                 $actualSubTotal += $orderItem->total_price;
