@@ -34,16 +34,14 @@ class ProductRequest extends FormRequest
 
             // --- Image Rules ---
             'cover_image_id' => 'required_if:type,simple|nullable|integer|exists:uploaded_files,id',
-            
+
             // --- Variable Product Rules ---
             'variants' => 'required_if:type,variable|array|min:1',
             'variants.*.id' => 'nullable|integer|exists:product_variants,id',
             'variants.*.price' => 'required_if:type,variable|nullable|numeric|min:0',
-            'variants.*.sale_price' => 'nullable|numeric|min:0|lte:variants.*.price', // Giá KM phải nhỏ hơn hoặc bằng giá gốc
-            
-            // MODIFIED: Date fields are now optional.
-            'variants.*.sale_price_starts_at' => ['nullable', 'date'], 
-            'variants.*.sale_price_ends_at' => ['nullable', 'date', 'after:variants.*.sale_price_starts_at'], 
+            'variants.*.sale_price' => 'nullable|numeric|min:0|lte:variants.*.price',
+            'variants.*.sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
+            'variants.*.sale_price_ends_at' => ['nullable', 'date', 'after:variants.*.sale_price_starts_at'],
 
             'variants.*.stock_quantity' => 'required_if:type,variable|nullable|integer|min:0',
             'variants.*.attributes' => 'required_if:type,variable|array|min:1',
@@ -54,11 +52,9 @@ class ProductRequest extends FormRequest
         // --- Simple Product Rules ---
         if ($this->input('type') === 'simple') {
             $rules['simple_price'] = 'required|numeric|min:0';
-            $rules['simple_sale_price'] = 'nullable|numeric|min:0|lte:simple_price'; // Giá KM phải nhỏ hơn hoặc bằng giá gốc
-            
-            // MODIFIED: Date fields are now optional.
-            $rules['simple_sale_price_starts_at'] = ['nullable', 'date']; 
-            $rules['simple_sale_price_ends_at'] = ['nullable', 'date', 'after:simple_sale_price_starts_at']; 
+            $rules['simple_sale_price'] = 'nullable|numeric|min:0|lte:simple_price';
+            $rules['simple_sale_price_starts_at'] = ['nullable', 'date', 'after_or_equal:now'];
+            $rules['simple_sale_price_ends_at'] = ['nullable', 'date', 'after:simple_sale_price_starts_at'];
 
             $rules['simple_stock_quantity'] = 'required|integer|min:0';
             $rules['simple_sku'] = ['required', 'string', 'max:255'];
@@ -78,6 +74,7 @@ class ProductRequest extends FormRequest
             if ($this->input('type') === 'variable') {
                 $variants = $this->input('variants', []);
                 $variantAttributeCombinations = [];
+                $variantSkus = [];
 
                 foreach ($variants as $index => $variant) {
                     // 1. Kiểm tra SKU có tồn tại trong database không, bỏ qua chính nó khi cập nhật
@@ -85,6 +82,13 @@ class ProductRequest extends FormRequest
                     $id = $variant['id'] ?? null;
 
                     if ($sku) {
+                        // Check for uniqueness within the submitted form data
+                        if (in_array(strtoupper($sku), array_map('strtoupper', $variantSkus))) {
+                             $validator->errors()->add("variants.{$index}.sku", "SKU '{$sku}' bị trùng lặp trong form.");
+                        }
+                        $variantSkus[] = $sku;
+
+                        // Check for uniqueness in the database
                         $query = DB::table('product_variants')->where('sku', $sku);
                         if ($id) {
                             $query->where('id', '!=', $id);
@@ -110,6 +114,7 @@ class ProductRequest extends FormRequest
         });
     }
 
+
     /**
      * Get custom messages for validator errors.
      */
@@ -120,10 +125,11 @@ class ProductRequest extends FormRequest
             'name.unique' => 'Tên sản phẩm này đã tồn tại.',
             'category_id.required' => 'Vui lòng chọn danh mục cho sản phẩm.',
             'cover_image_id.required_if' => 'Sản phẩm đơn giản phải có ảnh bìa.',
-            
+
             // Simple Product Messages
             'simple_price.required' => 'Giá sản phẩm đơn giản không được để trống.',
             'simple_sale_price.lte' => 'Giá khuyến mãi phải nhỏ hơn hoặc bằng giá gốc.',
+            'simple_sale_price_starts_at.after_or_equal' => 'Thời gian bắt đầu khuyến mãi không được là ngày trong quá khứ.',
             'simple_sale_price_ends_at.after' => 'Thời gian kết thúc khuyến mãi phải sau thời gian bắt đầu.',
 
             // Variants Messages
@@ -136,6 +142,7 @@ class ProductRequest extends FormRequest
             'variants.*.stock_quantity.required_if' => 'Tồn kho của biến thể không được để trống.',
             'variants.*.attributes.required_if' => 'Mỗi biến thể phải có ít nhất một thuộc tính.',
             'variants.*.attributes.min' => 'Mỗi biến thể phải có ít nhất một thuộc tính.',
+            'variants.*.sale_price_starts_at.after_or_equal' => 'Thời gian bắt đầu khuyến mãi của biến thể không được là ngày trong quá khứ.',
             'variants.*.sale_price_ends_at.after' => 'Thời gian kết thúc khuyến mãi của biến thể phải sau thời gian bắt đầu.',
         ];
     }
