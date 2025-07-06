@@ -82,7 +82,7 @@ class ProductController extends Controller
 
         return view('admin.products.index', compact('products', 'categories'));
     }
-    private function formatCategoriesForSelect($categories, $parentId = null, $prefix = '')
+private function formatCategoriesForSelect($categories, $parentId = null, $prefix = '')
     {
         $formattedCategories = [];
 
@@ -155,7 +155,7 @@ class ProductController extends Controller
                 $old_images_data = $images->keyBy('id')->map(function ($image) {
                     return [
                         'id' => $image->id,
-                        'url' => $image->url, // Assumes getUrlAttribute exists on the model
+'url' => $image->url, // Assumes getUrlAttribute exists on the model
                         'alt_text' => $image->alt_text
                     ];
                 })->all();
@@ -215,12 +215,11 @@ class ProductController extends Controller
                     'sale_price' => $request->input('simple_sale_price'),
                     'sale_price_starts_at' => $request->input('simple_sale_price_starts_at'),
                     'sale_price_ends_at' => $request->input('simple_sale_price_ends_at'),
-                    'stock_quantity' => $request->input('simple_stock_quantity'),
+'stock_quantity' => $request->input('simple_stock_quantity'),
                     'weight' => $request->input('simple_weight'),
                     'dimensions_length' => $request->input('simple_dimensions_length'),
                     'dimensions_width' => $request->input('simple_dimensions_width'),
                     'dimensions_height' => $request->input('simple_dimensions_height'),
-                    'primary_image_id' => $request->input('cover_image_id'),
                     'is_default' => true,
                     'status' => 'active',
                 ]);
@@ -266,7 +265,7 @@ class ProductController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được tạo thành công!');
+return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được tạo thành công!');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -348,7 +347,7 @@ class ProductController extends Controller
             if ($typeChanged) {
                 // Clean up old state completely when switching types
                 UploadedFile::where('attachable_id', $product->id)
-                    ->where('attachable_type', Product::class)
+->where('attachable_type', Product::class)
                     ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
 
                 $variantIds = $product->variants()->pluck('id');
@@ -401,7 +400,7 @@ class ProductController extends Controller
             Log::error('Lỗi khi cập nhật sản phẩm: ' . $e->getMessage() . ' tại dòng ' . $e->getLine() . ' trong file ' . $e->getFile());
             return back()->withInput()->with('error', 'Đã có lỗi xảy ra khi cập nhật sản phẩm. Chi tiết: ' . $e->getMessage());
         }
-    }
+}
 
     /**
      * Sync cover and gallery images for a product.
@@ -468,7 +467,7 @@ class ProductController extends Controller
         $variantsToDelete = array_diff($existingVariantIds, $submittedVariantIds);
         if (!empty($variantsToDelete)) {
             UploadedFile::where('attachable_type', ProductVariant::class)
-                ->whereIn('attachable_id', $variantsToDelete)
+->whereIn('attachable_id', $variantsToDelete)
                 ->update(['attachable_id' => null, 'attachable_type' => null]);
             ProductVariant::destroy($variantsToDelete);
         }
@@ -549,7 +548,7 @@ class ProductController extends Controller
         }
         if ($request->filled('type')) {
             $query->where('type', $request->input('type'));
-        }
+}
 
         // Handle Sorting
         $sortBy = $request->input('sort_by', 'deleted_at');

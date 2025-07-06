@@ -1,3 +1,11 @@
+{{--
+    Tệp header này đã được hợp nhất.
+    Nó bao gồm các chức năng từ header cũ của bạn (menu di động, tìm kiếm, hiệu ứng cuộn)
+    và đã được tích hợp thêm hệ thống thông báo từ header mới.
+    JavaScript cũng đã được kết hợp để xử lý tất cả các tương tác,
+    bao gồm cả việc chuyển đổi giữa menu chính và chế độ xem thông báo trong dropdown của người dùng.
+--}}
+
 <style>
     /* --- CSS cho hiệu ứng chuyển động --- */
     #mobile-menu {
@@ -86,7 +94,6 @@
         border-bottom-color: rgba(55, 65, 81, 0.6);
     }
 </style>
-
 <header id="page-header" class="bg-gray-900 text-white z-50 border-b border-transparent transition-all duration-300 @unless (Route::is('users.products.show')) sticky top-0 @endunless">
     <div class="container mx-auto px-4 h-20">
         <div id="header-main" class="flex items-center justify-between h-full">
@@ -132,7 +139,7 @@
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                             stroke-linejoin="round" class="w-5 h-5">
                             <path
-                                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
+d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z">
                             </path>
                         </svg>
                     </a>
@@ -173,7 +180,7 @@
                                                 <polyline points="10 17 15 12 10 7"></polyline>
                                                 <line x1="15" y1="12" x2="3" y2="12"></line>
                                             </svg>
-                                            <span>Đăng nhập</span>
+<span>Đăng nhập</span>
                                         </a>
                                         <a href="{{ route('register') }}"
                                             class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
@@ -206,7 +213,7 @@
                                             <span>Thông báo</span>
                                             {{-- Giả sử bạn truyền biến $unreadNotificationsCount từ controller --}}
                                             @if(isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
-                                            <span class="ml-auto text-xs bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">{{ $unreadNotificationsCount }}</span>
+<span class="ml-auto text-xs bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">{{ $unreadNotificationsCount }}</span>
                                             @endif
                                         </a>
 
@@ -244,7 +251,7 @@
                                         <form action="{{ route('logout') }}" method="POST" class="w-full">
                                             @csrf
                                             <button type="submit"
-                                                class="w-full flex items-center px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors">
+class="w-full flex items-center px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -278,7 +285,7 @@
                                     {{-- Giả sử bạn truyền biến $recentNotifications từ controller --}}
                                     @forelse($recentNotifications ?? [] as $notification)
                                     <a href="#" class="flex items-start p-3 hover:bg-gray-700/50 transition-colors">
-                                        <div class="flex-shrink-0 w-10 h-10 bg-{{ $notification['color'] ?? 'gray' }}-500/20 text-{{ $notification['color'] ?? 'gray' }}-400 rounded-full flex items-center justify-center">
+<div class="flex-shrink-0 w-10 h-10 bg-{{ $notification['color'] ?? 'gray' }}-500/20 text-{{ $notification['color'] ?? 'gray' }}-400 rounded-full flex items-center justify-center">
                                             @if (isset($notification['icon']) && $notification['icon'] === "check")
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                                             @elseif (isset($notification['icon']) && $notification['icon'] === "warning")
@@ -301,7 +308,7 @@
                                         <p class="mt-1 text-xs text-gray-500">Chúng tôi sẽ cho bạn biết khi có tin tức.</p>
                                     </div>
                                     @endforelse
-                                </div>
+</div>
                             </div>
                         </div>
                     </div>
@@ -344,7 +351,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                                <circle cx="11" cy="11" r="8"></circle>
+<circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                             </svg>
                         </button>
@@ -395,7 +402,7 @@
                         class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">Trang chủ</a>
                     <a href="/danh-muc-san-pham"
                         class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">Danh mục</a>
-                    <a href="/blog"
+<a href="/blog"
                         class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">Tin Tức</a>
                 </div>
             </div>
@@ -456,8 +463,7 @@
                     userDropdownMenu.classList.add('w-80', 'sm:w-96');
                     mainMenuView.classList.add('hidden');
                     notificationDetailView.classList.remove('hidden');
-
-                    // Optional: Call Laravel to mark as read + hide the red dot
+// Optional: Call Laravel to mark as read + hide the red dot
                     // Make sure you have a meta tag for CSRF token: <meta name="csrf-token" content="{{ csrf_token() }}">
                     const csrfToken = document.querySelector('meta[name="csrf-token"]');
                     if(csrfToken) {
@@ -518,7 +524,7 @@
             // --- Header Search State Logic ---
             const openSearch = () => {
                 if (mobileMenu && mobileMenu.classList.contains('open')) {
-                    mobileMenu.classList.remove('open');
+mobileMenu.classList.remove('open');
                 }
                 if (headerMain) {
                     headerMain.classList.remove('flex');

@@ -1,4 +1,4 @@
-@extends('profile.layouts.profile')
+@extends('users.layouts.profile')
 
 @section('content')
 <div class="offcanvas-body d-flex flex-column gap-4 pt-2">

@@ -6,6 +6,7 @@ use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Auth\Events\Verified;
+use App\Notifications\NewUserRegistered;
 
 class GoogleController extends Controller
 {
@@ -30,6 +31,9 @@ class GoogleController extends Controller
             $user->markEmailAsVerified();
             event(new Verified($user));
         }
+                $admin = User::find(1); // hoặc lấy theo vai trò
+
+        $admin->notify(new NewUserRegistered($user));
 
         Auth::login($user);
 

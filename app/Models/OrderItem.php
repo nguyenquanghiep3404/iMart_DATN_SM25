@@ -16,6 +16,7 @@ class OrderItem extends Model
         'product_name',
         'variant_attributes',
         'quantity',
+        'sku',
         'price',
         'total_price',
     ];

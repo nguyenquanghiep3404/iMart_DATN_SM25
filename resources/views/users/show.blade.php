@@ -349,7 +349,6 @@
             background-color: rgba(255, 255, 255, 1);
         }
 
-
         /* Gallery Thumbnail Selected */
         .thumbnail-selected {
             border-color: #3b82f6;
@@ -479,9 +478,6 @@
         /* Accordion */
         .accordion-button {
             transition: background-color 0.2s ease;
-        }
-
-        .accordion-button {
             background-color: #f3f4f6 !important;
             /* tương đương bg-gray-100 */
         }
@@ -500,22 +496,61 @@
             transition: transform 0.3s ease;
         }
 
-        /* Ẩn thanh cuộn cho main-thumbnails */
+        /* Main Thumbnails Container */
         #main-thumbnails {
-            overflow: hidden;
-            /* Ẩn thanh cuộn */
+            display: flex;
+            /* Hiển thị dạng flex để các thumbnail xếp ngang */
+            overflow-x: auto;
+            /* Cho phép cuộn ngang */
+            scroll-behavior: smooth;
+            /* Cuộn mượt mà */
+            user-select: none;
+            /* Ngăn chọn văn bản khi kéo */
+            -webkit-overflow-scrolling: touch;
+            /* Hỗ trợ cuộn mượt trên iOS */
             scrollbar-width: none;
-            /* Firefox */
-            -ms-overflow-style: none;
-            /* IE và Edge */
+            /* Ẩn thanh cuộn trên Firefox */
+            gap: 8px;
+            /* Khoảng cách giữa các thumbnail */
+            padding: 4px 0;
+            /* Padding để tránh dính mép */
         }
 
         #main-thumbnails::-webkit-scrollbar {
             display: none;
-            /* Chrome, Safari, và các trình duyệt WebKit */
+            /* Ẩn thanh cuộn trên Chrome/Safari */
         }
 
+        /* Thumbnail Item */
+        .thumbnail-item {
+            flex-shrink: 0;
+            /* Ngăn thumbnail co lại */
+            width: 121px;
+            /* Kích thước cố định */
+            height: 135px;
+            /* Kích thước cố định */
+            border-radius: 4px;
+            /* Bo góc nhẹ */
+            cursor: pointer;
+            /* Con trỏ tay khi hover */
+            transition: border-color 0.2s, box-shadow 0.2s;
+            /* Hiệu ứng chuyển đổi */
+        }
+
+        .thumbnail-item img {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            /* Giữ tỷ lệ ảnh */
+            border-radius: 4px;
+            /* Bo góc nhẹ */
+            image-rendering: crisp-edges;
+            /* Giảm mờ khi scale ảnh */
+        }
+
+        /* Lightbox Thumbnails */
         #lightbox-thumbnails {
+            display: flex;
             flex-wrap: nowrap;
             /* Ngăn wrap xuống dòng */
             justify-content: center;
@@ -537,12 +572,11 @@
             /* Ẩn thanh cuộn trên Chrome/Safari */
         }
 
-        /* Thiết lập kích thước và căn chỉnh cho thumbnail */
         #lightbox-thumbnails img {
             width: 100px;
             /* Kích thước cố định cho thumbnail */
             height: 100px;
-            /* Tỷ lệ phù hợp với hình ảnh điện thoại */
+            /* Tỷ lệ phù hợp với hình ảnh */
             object-fit: cover;
             /* Giữ tỷ lệ ảnh */
             border-radius: 4px;
@@ -898,7 +932,7 @@
                 galleryData.forEach((item, index) => {
                     const thumbDiv = document.createElement('div');
                     thumbDiv.className =
-                        `thumbnail-item relative cursor-pointer rounded-md border-2 flex-shrink-0 w-[121px] h-[135px] ${index === 0 ? 'border-blue-500 thumbnail-selected' : 'border-transparent'}`;
+                        `thumbnail-item relative cursor-pointer rounded-md border-2 flex-shrink-0 w-[120px] h-[120px] ${index === 0 ? 'border-blue-500 thumbnail-selected' : 'border-transparent'}`;
 
                     thumbDiv.onclick = () => window.changeImage(index);
 
@@ -1113,20 +1147,20 @@
                 const variant = variantData[variantKey];
                 console.log('Updating gallery for variant key:', variantKey, variant);
 
-                let images = [...window.initialImages]; // Luôn bao gồm ảnh của sản phẩm đơn giản
+                let images = [];
 
+                // Nếu biến thể có ảnh riêng, dùng ảnh của biến thể
                 if (variant && variant.images && variant.images.length > 0) {
-                    // Thêm ảnh của biến thể, ưu tiên ảnh chính (nếu có)
                     if (variant.primary_image_id && variant.image) {
-                        images = [variant.image, ...variant.images.filter(img => img !== variant.image), ...
-                            images
-                        ];
+                        images = [variant.image, ...variant.images.filter(img => img !== variant.image)];
                     } else {
-                        images = [...variant.images, ...images];
+                        images = [...variant.images];
                     }
+                } else {
+                    // Ngược lại fallback dùng ảnh sản phẩm chính
+                    images = [...window.initialImages];
                 }
 
-                // Lọc ảnh rỗng/null và loại trùng
                 images = Array.from(new Set(images.filter(Boolean)));
 
                 galleryData = images.map((img, index) => ({
@@ -1139,6 +1173,7 @@
 
                 initializeGallery();
             };
+
 
             /**
              * Cập nhật style cho các lựa chọn thuộc tính (option) khi được chọn/bỏ chọn.
@@ -1327,6 +1362,62 @@
                     });
                 });
             }
+            // Đóng gói mã kéo ngang trong một hàm
+            function initDragScroll() {
+                const mainThumbnailsContainer = document.getElementById('main-thumbnails');
+                if (!mainThumbnailsContainer) {
+                    console.warn('Element #main-thumbnails not found, drag functionality skipped.');
+                    return;
+                }
+                let isDragging = false;
+                let startX, scrollLeft;
+
+                mainThumbnailsContainer.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    startX = e.pageX - mainThumbnailsContainer.offsetLeft;
+                    scrollLeft = mainThumbnailsContainer.scrollLeft;
+                    mainThumbnailsContainer.style.cursor = 'grabbing';
+                    e.preventDefault();
+                });
+
+                mainThumbnailsContainer.addEventListener('mouseleave', () => {
+                    isDragging = false;
+                    mainThumbnailsContainer.style.cursor = 'grab';
+                });
+
+                mainThumbnailsContainer.addEventListener('mouseup', () => {
+                    isDragging = false;
+                    mainThumbnailsContainer.style.cursor = 'grab';
+                });
+
+                mainThumbnailsContainer.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    const x = e.pageX - mainThumbnailsContainer.offsetLeft;
+                    const walk = (x - startX) * 2;
+                    mainThumbnailsContainer.scrollLeft = scrollLeft - walk;
+                });
+
+                // Hỗ trợ chạm trên thiết bị di động
+                mainThumbnailsContainer.addEventListener('touchstart', (e) => {
+                    isDragging = true;
+                    startX = e.touches[0].pageX - mainThumbnailsContainer.offsetLeft;
+                    scrollLeft = mainThumbnailsContainer.scrollLeft;
+                    e.preventDefault();
+                });
+
+                mainThumbnailsContainer.addEventListener('touchend', () => {
+                    isDragging = false;
+                });
+
+                mainThumbnailsContainer.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    const x = e.touches[0].pageX - mainThumbnailsContainer.offsetLeft;
+                    const walk = (x - startX) * 2;
+                    mainThumbnailsContainer.scrollLeft = scrollLeft - walk;
+                    e.preventDefault();
+                });
+            }
 
             window.addEventListener('load', () => {
                 if (window.productType === 'variable') {
@@ -1353,6 +1444,7 @@
                     initializeGallery(); // dùng ảnh mặc định của sản phẩm
                     updateStickyBar(); // hiển thị tên, giá sản phẩm đơn giản
                 }
+                initDragScroll(); // Khởi tạo kéo ngang cho thumbnail
             });
 
 
