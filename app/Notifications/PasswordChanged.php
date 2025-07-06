@@ -30,9 +30,14 @@ class PasswordChanged extends Notification implements ShouldQueue
     public function toArray($notifiable)
     {
         return [
+            'title' => 'Mật khẩu đã được thay đổi',
             'message' => 'Mật khẩu của bạn đã được thay đổi thành công.',
+            'icon' => 'check',
+            'color' => 'green',
         ];
     }
+
+
 
     public function toBroadcast($notifiable)
     {

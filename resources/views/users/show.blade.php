@@ -153,14 +153,15 @@
         </div>
     </div>
 
-     <!-- Compare Modal -->
+    <!-- Compare Modal -->
     <div id="compare-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
         <div class="w-full max-w-3xl bg-white rounded-xl shadow-2xl flex flex-col max-h-[95vh]">
             <!-- Modal Header -->
             <div class="flex justify-between items-center p-4 border-b border-gray-200 flex-shrink-0">
                 <h3 class="text-xl font-bold text-gray-900">Chọn sản phẩm so sánh</h3>
                 <button id="close-modal-btn" class="text-gray-400 hover:text-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
@@ -170,10 +171,13 @@
             <div class="p-4 sm:p-6 overflow-y-auto product-list flex-grow">
                 <!-- Search Bar -->
                 <div class="relative mb-6">
-                    <input type="text" id="compare-search" placeholder="Nhập sản phẩm bạn muốn so sánh" class="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400">
+                    <input type="text" id="compare-search" placeholder="Nhập sản phẩm bạn muốn so sánh"
+                        class="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400">
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
                 </div>
@@ -184,57 +188,98 @@
                 <!-- Suggested Product List -->
                 <div id="suggested-products" class="space-y-3">
                     <!-- Product Item 1 -->
-                    <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
-                        <img src="https://placehold.co/100x100/e0e0e0/333?text=S25+Ultra" alt="Samsung Galaxy S25 Ultra" class="w-24 h-24 object-cover rounded-md flex-shrink-0">
+                    <div
+                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
+                        <img src="https://placehold.co/100x100/e0e0e0/333?text=S25+Ultra" alt="Samsung Galaxy S25 Ultra"
+                            class="w-24 h-24 object-cover rounded-md flex-shrink-0">
                         <div class="flex-grow">
-                            <p class="font-bold text-lg text-red-600">28.490.000₫ <span class="text-sm text-gray-500 line-through ml-2">33.990.000₫</span> <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-16%</span></p>
+                            <p class="font-bold text-lg text-red-600">28.490.000₫ <span
+                                    class="text-sm text-gray-500 line-through ml-2">33.990.000₫</span> <span
+                                    class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-16%</span>
+                            </p>
                             <p class="font-semibold text-gray-800 mt-1">Samsung Galaxy S25 Ultra 5G 12GB 256GB</p>
                             <div class="flex gap-2 mt-2">
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">256 GB</span>
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">512 GB</span>
+                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">256
+                                    GB</span>
+                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">512
+                                    GB</span>
                                 <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">1 TB</span>
                             </div>
                         </div>
-                        <button class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0" data-product-id="2" data-product-name="Samsung Galaxy S25 Ultra 5G 12GB 256GB" data-product-image="https://placehold.co/100x100/e0e0e0/333?text=S25+Ultra" data-product-variant="256GB">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <button
+                            class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0"
+                            data-product-id="2" data-product-name="Samsung Galaxy S25 Ultra 5G 12GB 256GB"
+                            data-product-image="https://placehold.co/100x100/e0e0e0/333?text=S25+Ultra"
+                            data-product-variant="256GB">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Thêm vào so sánh
                         </button>
                     </div>
                     <!-- Product Item 2 -->
-                    <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
-                        <img src="https://placehold.co/100x100/d0d0f0/333?text=iPhone+16" alt="iPhone 16 Plus" class="w-24 h-24 object-cover rounded-md flex-shrink-0">
+                    <div
+                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
+                        <img src="https://placehold.co/100x100/d0d0f0/333?text=iPhone+16" alt="iPhone 16 Plus"
+                            class="w-24 h-24 object-cover rounded-md flex-shrink-0">
                         <div class="flex-grow">
-                            <p class="font-bold text-lg text-red-600">21.990.000₫ <span class="text-sm text-gray-500 line-through ml-2">25.990.000₫</span> <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-15%</span></p>
+                            <p class="font-bold text-lg text-red-600">21.990.000₫ <span
+                                    class="text-sm text-gray-500 line-through ml-2">25.990.000₫</span> <span
+                                    class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-15%</span>
+                            </p>
                             <p class="font-semibold text-gray-800 mt-1">iPhone 16 Plus 128GB</p>
                             <div class="flex gap-2 mt-2">
-                                <span class="px-3 py-1 text-xs font-semibold border-red-500 bg-red-50 text-red-700 rounded-md">128 GB</span>
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">256 GB</span>
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">512 GB</span>
+                                <span
+                                    class="px-3 py-1 text-xs font-semibold border-red-500 bg-red-50 text-red-700 rounded-md">128
+                                    GB</span>
+                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">256
+                                    GB</span>
+                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">512
+                                    GB</span>
                             </div>
                         </div>
-                        <button class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0" data-product-id="3" data-product-name="iPhone 16 Plus 128GB" data-product-image="https://placehold.co/100x100/d0d0f0/333?text=iPhone+16" data-product-variant="128GB">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <button
+                            class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0"
+                            data-product-id="3" data-product-name="iPhone 16 Plus 128GB"
+                            data-product-image="https://placehold.co/100x100/d0d0f0/333?text=iPhone+16"
+                            data-product-variant="128GB">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Thêm vào so sánh
                         </button>
                     </div>
                     <!-- Product Item 3 -->
-                    <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
-                        <img src="https://placehold.co/100x100/c0c0e0/333?text=Xiaomi+15" alt="Xiaomi 15 Pro" class="w-24 h-24 object-cover rounded-md flex-shrink-0">
+                    <div
+                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
+                        <img src="https://placehold.co/100x100/c0c0e0/333?text=Xiaomi+15" alt="Xiaomi 15 Pro"
+                            class="w-24 h-24 object-cover rounded-md flex-shrink-0">
                         <div class="flex-grow">
-                            <p class="font-bold text-lg text-red-600">24.990.000₫ <span class="text-sm text-gray-500 line-through ml-2">28.990.000₫</span> <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-14%</span></p>
+                            <p class="font-bold text-lg text-red-600">24.990.000₫ <span
+                                    class="text-sm text-gray-500 line-through ml-2">28.990.000₫</span> <span
+                                    class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-14%</span>
+                            </p>
                             <p class="font-semibold text-gray-800 mt-1">Xiaomi 15 Pro 12GB 256GB</p>
                             <div class="flex gap-2 mt-2">
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">256 GB</span>
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">512 GB</span>
+                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">256
+                                    GB</span>
+                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">512
+                                    GB</span>
                             </div>
                         </div>
-                        <button class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0" data-product-id="4" data-product-name="Xiaomi 15 Pro 12GB 256GB" data-product-image="https://placehold.co/100x100/c0c0e0/333?text=Xiaomi+15" data-product-variant="256GB">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <button
+                            class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0"
+                            data-product-id="4" data-product-name="Xiaomi 15 Pro 12GB 256GB"
+                            data-product-image="https://placehold.co/100x100/c0c0e0/333?text=Xiaomi+15"
+                            data-product-variant="256GB">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             Thêm vào so sánh
                         </button>
@@ -247,24 +292,32 @@
                 <div class="flex justify-between items-center">
                     <div class="flex items-center gap-3" id="selected-products">
                         <!-- Sản phẩm hiện tại sẽ được thêm động qua JavaScript -->
-                        <div class="hidden md:flex items-center justify-center gap-2 bg-gray-700 p-2 rounded-lg w-48 h-[56px]" data-product-slot="2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <div class="hidden md:flex items-center justify-center gap-2 bg-gray-700 p-2 rounded-lg w-48 h-[56px]"
+                            data-product-slot="2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                             <span class="text-sm text-gray-400">Sản phẩm 2</span>
                         </div>
-                        <div class="hidden md:flex items-center justify-center gap-2 bg-gray-700 p-2 rounded-lg w-48 h-[56px]" data-product-slot="3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <div class="hidden md:flex items-center justify-center gap-2 bg-gray-700 p-2 rounded-lg w-48 h-[56px]"
+                            data-product-slot="3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                             <span class="text-sm text-gray-400">Sản phẩm 3</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button id="clear-compare-btn" class="text-sm font-semibold hover:bg-gray-700 px-4 py-2 rounded-lg">Xóa tất cả</button>
-                        <button id="compare-now-btn" class="text-sm font-bold bg-white text-gray-900 px-6 py-2 rounded-lg hover:bg-gray-200">So sánh ngay</button>
+                        <button id="clear-compare-btn"
+                            class="text-sm font-semibold hover:bg-gray-700 px-4 py-2 rounded-lg">Xóa tất cả</button>
+                        <button id="compare-now-btn"
+                            class="text-sm font-bold bg-white text-gray-900 px-6 py-2 rounded-lg hover:bg-gray-200">So sánh
+                            ngay</button>
                         <button id="toggle-compare-bar" class="p-2 hover:bg-gray-700 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
@@ -283,6 +336,18 @@
             /* Light gray background */
         }
 
+        #gallery-prev-btn,
+        #gallery-next-btn {
+            opacity: 1 !important;
+            /* Luôn hiển thị */
+            background-color: rgba(255, 255, 255, 0.8);
+            transition: background-color 0.3s;
+        }
+
+        #gallery-prev-btn:hover,
+        #gallery-next-btn:hover {
+            background-color: rgba(255, 255, 255, 1);
+        }
 
 
         /* Gallery Thumbnail Selected */
@@ -434,12 +499,78 @@
         .accordion-icon {
             transition: transform 0.3s ease;
         }
+
+        /* Ẩn thanh cuộn cho main-thumbnails */
+        #main-thumbnails {
+            overflow: hidden;
+            /* Ẩn thanh cuộn */
+            scrollbar-width: none;
+            /* Firefox */
+            -ms-overflow-style: none;
+            /* IE và Edge */
+        }
+
+        #main-thumbnails::-webkit-scrollbar {
+            display: none;
+            /* Chrome, Safari, và các trình duyệt WebKit */
+        }
+
+        #lightbox-thumbnails {
+            flex-wrap: nowrap;
+            /* Ngăn wrap xuống dòng */
+            justify-content: center;
+            /* Căn giữa các thumbnail */
+            gap: 8px;
+            /* Khoảng cách giữa các thumbnail */
+            overflow-x: auto;
+            /* Cho phép cuộn ngang nếu cần */
+            padding: 4px 0;
+            /* Padding để tránh dính mép */
+            scrollbar-width: none;
+            /* Ẩn thanh cuộn trên Firefox */
+            -ms-overflow-style: none;
+            /* Ẩn thanh cuộn trên IE/Edge */
+        }
+
+        #lightbox-thumbnails::-webkit-scrollbar {
+            display: none;
+            /* Ẩn thanh cuộn trên Chrome/Safari */
+        }
+
+        /* Thiết lập kích thước và căn chỉnh cho thumbnail */
+        #lightbox-thumbnails img {
+            width: 100px;
+            /* Kích thước cố định cho thumbnail */
+            height: 100px;
+            /* Tỷ lệ phù hợp với hình ảnh điện thoại */
+            object-fit: cover;
+            /* Giữ tỷ lệ ảnh */
+            border-radius: 4px;
+            /* Bo góc nhẹ */
+            cursor: pointer;
+            /* Con trỏ tay khi hover */
+            transition: opacity 0.2s;
+            /* Hiệu ứng hover */
+        }
+
+        #lightbox-thumbnails img:hover {
+            opacity: 0.8;
+            /* Hiệu ứng mờ khi hover */
+        }
+
+        /* Đảm bảo container không bị lệch khi cuộn */
+        .max-w-4xl {
+            width: 100%;
+            box-sizing: border-box;
+        }
     </style>
 @endpush
 
 
 @push('scripts')
     <script>
+        window.productType = @json($product->type); // 👈 thêm dòng này
+        console.log('Loại sản phẩm:', window.productType); // ✅ log kiểm tra
         window.variantData = @json($variantData);
         window.attributeOrder = @json($attributeOrder);
         window.availableCombinations = @json($availableCombinations);
@@ -490,6 +621,10 @@
             const lightboxZoomInBtn = document.getElementById('lightbox-zoom-in');
             const lightboxZoomOutBtn = document.getElementById('lightbox-zoom-out');
             const lightboxFullscreenBtn = document.getElementById('lightbox-fullscreen');
+            const prevBtn = document.getElementById('gallery-prev-btn');
+            const nextBtn = document.getElementById('gallery-next-btn');
+            const thumbsPrevBtn = document.getElementById('thumbs-prev-btn');
+            const thumbsNextBtn = document.getElementById('thumbs-next-btn');
 
             // Kiểm tra các phần tử cần thiết
             if (!mainImage) {
@@ -501,6 +636,10 @@
             }
             if (!lightboxModal) {
                 console.warn('Element #image-lightbox-modal not found');
+            }
+            if (!prevBtn || !nextBtn) {
+                console.error('Không tìm thấy nút prev hoặc next trong gallery');
+                return;
             }
 
             const priceEls = document.querySelectorAll('#product-price');
@@ -525,12 +664,25 @@
             console.log('Giá trị currentSelections ban đầu:', currentSelections);
             console.log('Các tổ hợp biến thể khả dụng:', availableCombinations);
 
+            /**
+             * Lấy key của biến thể hiện tại dựa trên các thuộc tính đã chọn.
+             * Trả về chuỗi key dạng 'Dung lượng_Màu sắc'...
+             */
             function getVariantKey() {
+                if (window.productType !== 'variable') {
+                    console.log('Sản phẩm không có biến thể, getVariantKey trả về chuỗi rỗng');
+                    return '';
+                }
+
                 const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
                 console.log('Sinh ra variant key:', key);
                 return key;
             }
 
+            /**
+             * Cập nhật đồng hồ đếm ngược cho Flash Sale.
+             * Nhận vào thời gian kết thúc, cập nhật số giờ, phút, giây còn lại.
+             */
             function updateCountdown(endTimeStr) {
                 const timer = document.getElementById('countdown-timer');
                 if (!timer || !endTimeStr) {
@@ -566,7 +718,16 @@
                 timer._interval = setInterval(update, 1000);
             }
 
+            /**
+             * Cập nhật các lựa chọn thuộc tính khả dụng dựa trên lựa chọn hiện tại.
+             * Ẩn/hiện các option không hợp lệ, tự động chọn lại nếu giá trị hiện tại không còn hợp lệ.
+             */
             function updateAvailableOptions() {
+                if (window.productType !== 'variable') {
+                    console.log('Sản phẩm không có biến thể, không cần updateAvailableOptions');
+                    return;
+                }
+
                 if (!availableCombinations || !attributeOrder) {
                     console.error('availableCombinations or attributeOrder is missing');
                     return;
@@ -581,8 +742,10 @@
                         let isMatch = true;
                         for (let i = 0; i < attrIndex; i++) {
                             const prevAttr = attributeOrder[i];
-                            if (currentSelections[prevAttr] && currentSelections[prevAttr] !==
-                                combination[prevAttr]) {
+                            if (
+                                currentSelections[prevAttr] &&
+                                currentSelections[prevAttr] !== combination[prevAttr]
+                            ) {
                                 isMatch = false;
                                 break;
                             }
@@ -605,19 +768,21 @@
                                 container.style.display = 'none';
                                 if (input && input.checked) {
                                     input.checked = false;
-                                    console.log(
-                                        `Bỏ chọn ${attrName}: ${value} vì không khả dụng`);
+                                    console.log(`Bỏ chọn ${attrName}: ${value} vì không khả dụng`);
                                 }
                             }
                         });
 
-                    if (!newlyAvailableOptions[attrName].has(currentSelections[attrName]) &&
-                        newlyAvailableOptions[attrName].size > 0) {
+                    if (
+                        !newlyAvailableOptions[attrName].has(currentSelections[attrName]) &&
+                        newlyAvailableOptions[attrName].size > 0
+                    ) {
                         const firstValue = Array.from(newlyAvailableOptions[attrName])[0];
                         console.log(`Đặt lại ${attrName} về giá trị khả dụng đầu tiên: ${firstValue}`);
                         currentSelections[attrName] = firstValue;
                         const input = document.querySelector(
-                            `input[data-attr-name="${attrName}"][value="${firstValue}"]`);
+                            `input[data-attr-name="${attrName}"][value="${firstValue}"]`
+                        );
                         if (input) input.checked = true;
                     }
                 });
@@ -636,7 +801,15 @@
                 updateVariantInfo();
             }
 
+            /**
+             * Cập nhật thông tin biến thể (giá, trạng thái, ảnh, sticky bar) khi thay đổi lựa chọn.
+             */
             function updateVariantInfo() {
+                if (window.productType !== 'variable') {
+                    console.log('Sản phẩm không có biến thể, không cần updateVariantInfo');
+                    return;
+                }
+
                 const key = getVariantKey();
                 const variant = variantData[key];
                 console.log('Biến thể cho key:', key, variant);
@@ -659,7 +832,9 @@
                 }
 
                 isSale = !isFlashSale && salePrice && salePrice < originalPrice;
-                discountPercent = (isFlashSale || isSale) ? Math.round(100 - (salePrice / originalPrice) * 100) : 0;
+                discountPercent = (isFlashSale || isSale) ?
+                    Math.round(100 - (salePrice / originalPrice) * 100) :
+                    0;
 
                 const displayPrice = (isFlashSale || isSale) ? salePrice : originalPrice;
 
@@ -700,7 +875,7 @@
                     const mauSac = currentSelections['Màu sắc'] || '';
                     const selectedValues = [dungLuong, mauSac].filter(val => val).join(' ');
                     titleEl.textContent = `${@json($product->name)} ${selectedValues}`;
-                    console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent); // Debug
+                    console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent);
                 }
 
                 window.updateGalleryFromSelection(key);
@@ -709,19 +884,35 @@
                 updateStickyBar(key);
             }
 
+            /**
+             * Khởi tạo lại gallery ảnh sản phẩm dựa trên biến thể hoặc sản phẩm đơn giản.
+             */
             function initializeGallery() {
                 if (!mainThumbnailsContainer) return;
+                // ✅ Loại ảnh placeholder (ảnh trắng rỗng)
+                galleryData = galleryData.filter(item => {
+                    return item.main && !item.main.includes('placeholder.jpg');
+                });
                 mainThumbnailsContainer.innerHTML = '';
+
                 galleryData.forEach((item, index) => {
                     const thumbDiv = document.createElement('div');
                     thumbDiv.className =
-                        `thumbnail-item relative cursor-pointer rounded-md border-2 ${index === 0 ? 'border-blue-500 thumbnail-selected' : 'border-transparent'}`;
+                        `thumbnail-item relative cursor-pointer rounded-md border-2 flex-shrink-0 w-[121px] h-[135px] ${index === 0 ? 'border-blue-500 thumbnail-selected' : 'border-transparent'}`;
+
                     thumbDiv.onclick = () => window.changeImage(index);
 
                     const img = document.createElement('img');
-                    img.src = item.thumb;
+
+                    // ✅ Ưu tiên ảnh rõ nét hơn
+                    img.src = item.main || item.thumb;
                     img.alt = `Thumbnail ${index + 1}`;
-                    img.className = 'w-full h-full object-cover rounded';
+                    img.className = 'w-[120px] h-[120px] object-cover rounded mb-2';
+
+
+                    // ✅ Giảm mờ khi trình duyệt scale ảnh
+                    img.style.imageRendering = 'crisp-edges';
+
                     thumbDiv.appendChild(img);
 
                     if (item.type !== 'image') {
@@ -733,11 +924,18 @@
                             `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992M2.985 19.644v-4.992h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-11.664 0l4.992-4.993H2.985m0-4.993h4.992m-4.993 0l3.181-3.183a8.25 8.25 0 0111.664 0l3.181 3.183" /></svg>`;
                         thumbDiv.appendChild(overlay);
                     }
+
                     mainThumbnailsContainer.appendChild(thumbDiv);
                 });
+
                 window.changeImage(0);
+                updateThumbNavigation();
             }
 
+            /**
+             * Đổi ảnh chính khi click vào thumbnail.
+             * index: chỉ số ảnh được chọn.
+             */
             window.changeImage = function(index) {
                 currentImageIndex = index;
                 mainImage.src = galleryData[index].main;
@@ -748,8 +946,20 @@
                     thumb.classList.toggle('border-blue-500', i === index);
                     thumb.classList.toggle('border-transparent', i !== index);
                 });
+
+                // Cuộn thumbnail vào giữa khi chọn
+                if (thumbnails[index]) {
+                    thumbnails[index].scrollIntoView({
+                        behavior: 'smooth',
+                        inline: 'center',
+                        block: 'nearest'
+                    });
+                }
             };
 
+            /**
+             * Cập nhật giao diện lightbox khi xem ảnh lớn.
+             */
             function updateLightboxView() {
                 if (!lightboxMainImage || !lightboxDescription || !lightboxCounter) return;
                 const item = galleryData[currentImageIndex];
@@ -757,6 +967,7 @@
                 lightboxDescription.textContent = item.description;
                 lightboxCounter.textContent = `${currentImageIndex + 1} / ${galleryData.length}`;
                 lightboxMainImage.classList.remove('zoomed');
+                resetZoomState();
 
                 const thumbs = lightboxThumbnailsContainer?.querySelectorAll('img') || [];
                 thumbs.forEach((thumb, i) => {
@@ -766,6 +977,9 @@
                 });
             }
 
+            /**
+             * Mở lightbox xem ảnh lớn ở vị trí index.
+             */
             function openLightbox(index) {
                 if (!lightboxModal) return;
                 currentImageIndex = index;
@@ -775,27 +989,106 @@
                 lightboxModal.classList.add('flex');
             }
 
+            /**
+             * Đóng lightbox xem ảnh lớn.
+             */
             function closeLightbox() {
                 if (!lightboxModal) return;
                 lightboxModal.classList.add('hidden');
                 lightboxModal.classList.remove('flex');
                 if (document.fullscreenElement) document.exitFullscreen();
+                resetZoomState();
             }
 
+            /**
+             * Chuyển sang ảnh tiếp theo trong lightbox.
+             */
             function showNextImage() {
                 currentImageIndex = (currentImageIndex + 1) % galleryData.length;
                 updateLightboxView();
             }
 
+            /**
+             * Quay lại ảnh trước trong lightbox.
+             */
             function showPrevImage() {
                 currentImageIndex = (currentImageIndex - 1 + galleryData.length) % galleryData.length;
                 updateLightboxView();
             }
 
+            // Zoom and Pan Logic from Swiper
+            let isZoomed = false;
+            let isPanning = false;
+            let startX, startY;
+            let currentTranslateX = 0;
+            let currentTranslateY = 0;
+
+            function resetZoomState() {
+                isZoomed = false;
+                isPanning = false;
+                currentTranslateX = 0;
+                currentTranslateY = 0;
+                lightboxMainImage.style.transition = 'transform 0.3s ease';
+                lightboxMainImage.style.transform = 'scale(1) translate(0, 0)';
+                lightboxMainImage.style.cursor = 'zoom-in';
+            }
+
+            /**
+             * Phóng to ảnh trong lightbox.
+             */
+            function zoomIn() {
+                isZoomed = true;
+                lightboxMainImage.style.transition = 'transform 0.3s ease';
+                lightboxMainImage.style.transform = 'scale(2.5)';
+                lightboxMainImage.style.cursor = 'grab';
+            }
+
+            /**
+             * Thu nhỏ ảnh trong lightbox về trạng thái ban đầu.
+             */
+            function zoomOut() {
+                resetZoomState();
+            }
+
+            /**
+             * Bật/tắt chế độ zoom cho ảnh trong lightbox.
+             */
             function toggleZoom() {
                 if (!lightboxMainImage) return;
-                lightboxMainImage.classList.toggle('zoomed');
+                if (isZoomed) {
+                    zoomOut();
+                } else {
+                    zoomIn();
+                }
             }
+
+            lightboxMainImage.addEventListener('mousedown', (e) => {
+                if (!isZoomed || isPanning) return;
+                e.preventDefault();
+                isPanning = true;
+                startX = e.clientX - currentTranslateX;
+                startY = e.clientY - currentTranslateY;
+                lightboxMainImage.style.cursor = 'grabbing';
+                lightboxMainImage.style.transition = 'none';
+            });
+
+            lightboxMainImage.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+                e.preventDefault();
+                currentTranslateX = e.clientX - startX;
+                currentTranslateY = e.clientY - startY;
+                lightboxMainImage.style.transform =
+                    `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(2.5)`;
+            });
+
+            const endPan = (e) => {
+                if (!isPanning) return;
+                isPanning = false;
+                lightboxMainImage.style.cursor = 'grab';
+            };
+
+            lightboxMainImage.addEventListener('mouseup', endPan);
+            lightboxMainImage.addEventListener('mouseleave', endPan);
 
             function populateLightboxThumbnails() {
                 if (!lightboxThumbnailsContainer || lightboxThumbnailsContainer.children.length > 0) return;
@@ -812,32 +1105,29 @@
                 });
             }
 
+            /**
+             * Cập nhật gallery ảnh khi chọn biến thể mới.
+             * variantKey: key của biến thể.
+             */
             window.updateGalleryFromSelection = function(variantKey) {
                 const variant = variantData[variantKey];
                 console.log('Updating gallery for variant key:', variantKey, variant);
-                if (!variant) {
-                    console.error('No variant found for key:', variantKey);
-                    galleryData = window.initialImages.map((img, index) => ({
-                        thumb: img,
-                        main: img,
-                        lightbox: img,
-                        description: `Hình ảnh ${index + 1}`,
-                        type: 'image'
-                    }));
-                    initializeGallery();
-                    return;
+
+                let images = [...window.initialImages]; // Luôn bao gồm ảnh của sản phẩm đơn giản
+
+                if (variant && variant.images && variant.images.length > 0) {
+                    // Thêm ảnh của biến thể, ưu tiên ảnh chính (nếu có)
+                    if (variant.primary_image_id && variant.image) {
+                        images = [variant.image, ...variant.images.filter(img => img !== variant.image), ...
+                            images
+                        ];
+                    } else {
+                        images = [...variant.images, ...images];
+                    }
                 }
 
-                let images = [];
-                if (variant.images && variant.images.length > 0) {
-                    if (variant.primary_image_id && variant.image) {
-                        images = [variant.image, ...variant.images.filter(img => img !== variant.image)];
-                    } else {
-                        images = variant.images;
-                    }
-                } else {
-                    images = window.initialImages;
-                }
+                // Lọc ảnh rỗng/null và loại trùng
+                images = Array.from(new Set(images.filter(Boolean)));
 
                 galleryData = images.map((img, index) => ({
                     thumb: img,
@@ -846,9 +1136,13 @@
                     description: `Hình ảnh ${index + 1}`,
                     type: 'image'
                 }));
+
                 initializeGallery();
             };
 
+            /**
+             * Cập nhật style cho các lựa chọn thuộc tính (option) khi được chọn/bỏ chọn.
+             */
             function updateSelectedStyles() {
                 attributeOrder.forEach(attrName => {
                     document.querySelectorAll(`input[data-attr-name="${attrName}"]`).forEach(input => {
@@ -873,6 +1167,9 @@
                 });
             }
 
+            /**
+             * Đảm bảo tất cả thuộc tính đều có lựa chọn (nếu chưa thì chọn mặc định).
+             */
             function ensureAllAttributesChecked() {
                 attributeOrder.forEach(attr => {
                     const checked = document.querySelector(`input[data-attr-name="${attr}"]:checked`);
@@ -901,8 +1198,47 @@
 
             // Gắn sự kiện cho gallery
             if (mainImageContainer) {
-                mainImageContainer.addEventListener('click', () => openLightbox(currentImageIndex));
+                mainImageContainer.addEventListener('click', (event) => {
+                    if (event.target === mainImage) {
+                        openLightbox(currentImageIndex);
+                    }
+                });
             }
+
+            // Gắn sự kiện cho nút prev và next với stopPropagation
+            if (prevBtn) {
+                prevBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    currentImageIndex = (currentImageIndex - 1 + galleryData.length) % galleryData.length;
+                    window.changeImage(currentImageIndex);
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    currentImageIndex = (currentImageIndex + 1) % galleryData.length;
+                    window.changeImage(currentImageIndex);
+                });
+            }
+
+            // Gắn sự kiện cho thumbnail navigation
+            if (thumbsPrevBtn && thumbsNextBtn) {
+                thumbsPrevBtn.addEventListener('click', () => {
+                    mainThumbnailsContainer.scrollBy({
+                        left: -88,
+                        behavior: 'smooth'
+                    }); // 80px + 8px gap
+                });
+
+                thumbsNextBtn.addEventListener('click', () => {
+                    mainThumbnailsContainer.scrollBy({
+                        left: 88,
+                        behavior: 'smooth'
+                    }); // 80px + 8px gap
+                });
+            }
+
             if (closeLightboxBtn) {
                 closeLightboxBtn.addEventListener('click', closeLightbox);
             }
@@ -913,10 +1249,10 @@
                 lightboxPrevBtn.addEventListener('click', showPrevImage);
             }
             if (lightboxZoomInBtn) {
-                lightboxZoomInBtn.addEventListener('click', () => lightboxMainImage.classList.add('zoomed'));
+                lightboxZoomInBtn.addEventListener('click', zoomIn);
             }
             if (lightboxZoomOutBtn) {
-                lightboxZoomOutBtn.addEventListener('click', () => lightboxMainImage.classList.remove('zoomed'));
+                lightboxZoomOutBtn.addEventListener('click', zoomOut);
             }
             if (lightboxFullscreenBtn) {
                 lightboxFullscreenBtn.addEventListener('click', () => {
@@ -992,24 +1328,34 @@
                 });
             }
 
-            // Khởi tạo
             window.addEventListener('load', () => {
-                ensureAllAttributesChecked();
-                console.log('Sau khi chạy ensureAllAttributesChecked, currentSelections:',
-                    currentSelections);
-                updateAvailableOptions();
-                const defaultKey = getVariantKey();
-                console.log('Variant key khởi tạo:', defaultKey);
-                if (defaultKey) {
-                    window.updateGalleryFromSelection(defaultKey);
-                } else {
-                    initializeGallery();
-                }
-                updateVariantInfo();
+                if (window.productType === 'variable') {
+                    ensureAllAttributesChecked();
+                    console.log('Sau khi chạy ensureAllAttributesChecked, currentSelections:',
+                        currentSelections);
 
-                // Đảm bảo sticky bar được cập nhật ngay từ đầu
-                updateStickyBar(defaultKey);
+                    updateAvailableOptions();
+
+                    const defaultKey = getVariantKey();
+                    console.log('Variant key khởi tạo:', defaultKey);
+
+                    if (defaultKey) {
+                        window.updateGalleryFromSelection(defaultKey);
+                    } else {
+                        initializeGallery(); // fallback nếu không có biến thể
+                    }
+
+                    updateVariantInfo();
+                    updateStickyBar(defaultKey);
+                } else {
+                    // Nếu là sản phẩm đơn giản
+                    console.log('Khởi tạo sản phẩm đơn giản');
+                    initializeGallery(); // dùng ảnh mặc định của sản phẩm
+                    updateStickyBar(); // hiển thị tên, giá sản phẩm đơn giản
+                }
             });
+
+
             const stickyBar = document.getElementById('sticky-bar');
             const mainCtaButtons = document.getElementById('main-cta-buttons');
 
@@ -1023,87 +1369,112 @@
                 threshold: 0
             });
 
+            /**
+             * Cập nhật sticky bar (thanh mua nhanh dưới cùng) theo biến thể hiện tại.
+             * variantKey: key của biến thể.
+             */
             function updateStickyBar(variantKey) {
-                console.log('Gọi updateStickyBar với key:', variantKey);
+                console.log('▶️ Gọi updateStickyBar với key:', variantKey);
 
                 if (!variantKey) {
-                    console.error('Giá trị variantKey rỗng hoặc không xác định');
+                    console.error('⛔ Giá trị variantKey rỗng hoặc không xác định');
                     return;
                 }
 
                 if (!variantData) {
-                    console.error('Không tìm thấy dữ liệu variantData');
+                    console.error('⛔ Không tìm thấy dữ liệu variantData');
                     return;
                 }
 
                 const variant = variantData[variantKey];
                 if (!variant) {
-                    console.error('Không tìm thấy biến thể với key:', variantKey);
+                    console.error('⛔ Không tìm thấy biến thể với key:', variantKey);
                     return;
                 }
 
+                console.log('✅ Biến thể tìm được:', variant);
+
+                // Lấy phần tử DOM (nếu không có thì chỉ warning)
                 const stickyImage = document.getElementById('sticky-image');
                 const stickyName = document.getElementById('sticky-name');
                 const stickyVariant = document.getElementById('sticky-variant');
                 const stickyPrice = document.getElementById('sticky-price');
                 const stickyOriginalPrice = document.getElementById('sticky-original-price');
 
-                // Kiểm tra xem các element có tồn tại không
-                if (!stickyImage || !stickyName || !stickyVariant || !stickyPrice || !stickyOriginalPrice) {
-                    console.error('Không tìm thấy một số phần tử của sticky bar');
-                    return;
-                }
-
-                console.log('Đang cập nhật sticky bar với biến thể:', variant);
-
-                // Hình ảnh ưu tiên primary hoặc ảnh đầu tiên
-                if (variant.image) {
-                    stickyImage.src = variant.image;
-                } else if (variant.images && variant.images.length > 0) {
-                    stickyImage.src = variant.images[0];
-                }
-
-                // Tên sản phẩm giữ nguyên
-                // Tên thuộc tính biến thể
-                if (attributeOrder && attributeOrder.length > 0) {
-                    stickyVariant.textContent = attributeOrder.map(attr => {
-                        const selected = document.querySelector(`input[data-attr-name="${attr}"]:checked`);
-                        return selected ? selected.value : '';
-                    }).join(', ');
+                // Cập nhật hình ảnh
+                if (stickyImage) {
+                    if (variant.image) {
+                        stickyImage.src = variant.image;
+                        console.log('🖼️ Ảnh chính được cập nhật từ variant.image:', variant.image);
+                    } else if (variant.images?.length > 0) {
+                        stickyImage.src = variant.images[0];
+                        console.log('🖼️ Ảnh được lấy từ variant.images[0]:', variant.images[0]);
+                    } else {
+                        stickyImage.src = '/images/no-image.png';
+                        console.warn('⚠️ Không có ảnh sản phẩm, dùng fallback /images/no-image.png');
+                    }
                 } else {
-                    stickyVariant.textContent = '';
+                    console.warn('⚠️ Không tìm thấy phần tử sticky-image');
                 }
 
-                // Giá
-                if (variant.formatted_price) {
-                    stickyPrice.textContent = variant.formatted_price;
+                // Cập nhật tên thuộc tính biến thể (VD: màu, dung lượng...)
+                if (stickyVariant) {
+                    if (attributeOrder?.length > 0) {
+                        const attrValues = attributeOrder.map(attr => {
+                            const selected = document.querySelector(
+                                `input[data-attr-name="${attr}"]:checked`);
+                            return selected?.value || '';
+                        });
+                        stickyVariant.textContent = attrValues.join(', ');
+                        console.log('🔤 Thuộc tính biến thể:', attrValues);
+                    } else {
+                        stickyVariant.textContent = '';
+                        console.log('ℹ️ Không có attributeOrder hoặc rỗng');
+                    }
                 } else {
-                    // Fallback: tính toán giá từ sale_price hoặc price
-                    const salePrice = parseInt(variant.sale_price) || 0;
-                    const originalPrice = parseInt(variant.price) || 0;
-                    const displayPrice = salePrice && salePrice < originalPrice ? salePrice : originalPrice;
-                    stickyPrice.textContent = displayPrice.toLocaleString('vi-VN') + '₫';
+                    console.warn('⚠️ Không tìm thấy phần tử sticky-variant');
                 }
 
-                // Hiển thị giá gốc bị gạch nếu có sale hoặc flash sale
+                // Cập nhật giá hiển thị
                 const salePrice = parseInt(variant.sale_price) || 0;
                 const originalPrice = parseInt(variant.price) || 0;
-                const hasSale = salePrice && salePrice < originalPrice;
-                const now = new Date();
+                const displayPrice = salePrice && salePrice < originalPrice ? salePrice : originalPrice;
+                const formattedPrice = variant.formatted_price || displayPrice.toLocaleString('vi-VN') + '₫';
+
+                if (stickyPrice) {
+                    stickyPrice.textContent = formattedPrice;
+                    console.log('💰 Giá hiển thị:', formattedPrice);
+                } else {
+                    console.warn('⚠️ Không tìm thấy phần tử sticky-price');
+                }
+
+                // Kiểm tra xem có sale không để hiển thị giá gốc gạch
                 let isFlashSale = false;
+                const now = new Date();
+
                 if (variant.sale_price_starts_at && variant.sale_price_ends_at) {
                     const start = new Date(variant.sale_price_starts_at);
                     const end = new Date(variant.sale_price_ends_at);
                     isFlashSale = salePrice && start <= now && now <= end;
-                }
-                if ((hasSale || isFlashSale) && originalPrice > 0) {
-                    stickyOriginalPrice.textContent = originalPrice.toLocaleString('vi-VN') + '₫';
-                    stickyOriginalPrice.classList.remove('hidden');
-                } else {
-                    stickyOriginalPrice.classList.add('hidden');
+                    console.log('⏰ Flash Sale?', isFlashSale,
+                        `(Từ ${start.toLocaleString()} đến ${end.toLocaleString()})`);
                 }
 
-                console.log('Cập nhật sticky bar thành công');
+                const hasSale = salePrice && salePrice < originalPrice;
+                if (stickyOriginalPrice) {
+                    if ((hasSale || isFlashSale) && originalPrice > 0) {
+                        stickyOriginalPrice.textContent = originalPrice.toLocaleString('vi-VN') + '₫';
+                        stickyOriginalPrice.classList.remove('hidden');
+                        console.log('📉 Giá gốc (gạch):', stickyOriginalPrice.textContent);
+                    } else {
+                        stickyOriginalPrice.classList.add('hidden');
+                        console.log('📉 Không có giảm giá, ẩn giá gốc');
+                    }
+                } else {
+                    console.warn('⚠️ Không tìm thấy phần tử sticky-original-price');
+                }
+
+                console.log('✅ Cập nhật sticky bar hoàn tất\n');
             }
 
             // Kiểm tra nút và modal có tồn tại
@@ -1134,14 +1505,17 @@
                 });
             }
 
-            // Sự kiện khi chọn thuộc tính - ĐÃ CÓ TRONG PHẦN GẮN SỰ KIỆN CHO INPUT RADIO Ở TRÊN
-            // Không cần thêm event listener trùng lặp ở đây
-
-            // Gọi khi tải trang - ĐÃ CÓ TRONG PHẦN KHỞI TẠO Ở TRÊN
-            // Không cần thêm event listener trùng lặp ở đây
-
             scrollObserver.observe(mainCtaButtons);
 
+            // Cập nhật navigation thumbnail
+            /**
+             * Cập nhật navigation thumbnail (ẩn/hiện nút prev/next nếu số lượng thumbnail nhiều).
+             */
+            function updateThumbNavigation() {
+                const thumbs = mainThumbnailsContainer.querySelectorAll('.thumbnail-item');
+                thumbsPrevBtn.classList.toggle('visible', thumbs.length > 5);
+                thumbsNextBtn.classList.toggle('visible', thumbs.length > 5);
+            }
         });
     </script>
 @endpush

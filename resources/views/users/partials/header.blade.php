@@ -1,580 +1,577 @@
-<header class="navbar navbar-expand-lg navbar-dark bg-dark d-block relative p-0" data-sticky-navbar="{&quot;offset&quot;: 500}">
-  <div class="container d-block py-1 py-lg-3" data-bs-theme="dark">
-    <div class="navbar-stuck-hide pt-1"></div>
-    <div class="row flex-nowrap align-items-center g-0">
-      <div class="col col-lg-3 d-flex align-items-center">
-
-        <!-- Mobile offcanvas menu toggler (Hamburger) -->
-        <button type="button" class="navbar-toggler me-4 me-lg-0" data-bs-toggle="offcanvas" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <!-- Navbar brand (Logo) -->
-        <a href="index.html" class="navbar-brand me-0">
-          <span class="d-none d-sm-flex flex-shrink-0 text-primary me-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">
-              <path d="M36 18.01c0 8.097-5.355 14.949-12.705 17.2a18.12 18.12 0 0 1-5.315.79C9.622 36 2.608 30.313.573 22.611.257 21.407.059 20.162 0 18.879v-1.758c.02-.395.059-.79.099-1.185.099-.908.277-1.817.514-2.686C2.687 5.628 9.682 0 18 0c5.572 0 10.551 2.528 13.871 6.517 1.502 1.797 2.648 3.91 3.359 6.201.494 1.659.771 3.436.771 5.292z" fill="currentColor"></path>
-              <g fill="#fff">
-                <path d="M17.466 21.624c-.514 0-.988-.316-1.146-.829-.198-.632.138-1.303.771-1.501l7.666-2.469-1.205-8.254-13.317 4.621a1.19 1.19 0 0 1-1.521-.75 1.19 1.19 0 0 1 .751-1.521l13.89-4.818c.553-.197 1.166-.138 1.64.158a1.82 1.82 0 0 1 .85 1.284l1.344 9.183c.138.987-.494 1.994-1.482 2.33l-7.864 2.528-.375.04zm7.31.138c-.178-.632-.85-1.007-1.482-.81l-5.177 1.58c-2.331.79-3.28.02-3.418-.099l-6.56-8.412a4.25 4.25 0 0 0-4.406-1.758l-3.122.987c-.237.889-.415 1.777-.514 2.686l4.228-1.363a1.84 1.84 0 0 1 1.857.81l6.659 8.551c.751.948 2.015 1.323 3.359 1.323.909 0 1.857-.178 2.687-.474l5.078-1.54c.632-.178 1.008-.829.81-1.481z"></path>
-                <use href="#czlogo"></use>
-                <use href="#czlogo" x="8.516" y="-2.172"></use>
-              </g>
-              <defs>
-                <path id="czlogo" d="M18.689 28.654a1.94 1.94 0 0 1-1.936 1.935 1.94 1.94 0 0 1-1.936-1.935 1.94 1.94 0 0 1 1.936-1.935 1.94 1.94 0 0 1 1.936 1.935z"></path>
-              </defs>
-            </svg>
-          </span>
-          Cartzilla
-        </a>
-      </div>
-      <div class="col col-lg-9 d-flex align-items-center justify-content-end">
-
-        <!-- Search visible on screens > 991px wide (lg breakpoint) -->
-        <div class="position-relative flex-fill d-none d-lg-block pe-4 pe-xl-5">
-          <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
-          <input type="search"
-            class="form-control form-control-lg form-icon-start border-white rounded-pill bg-transparent text-white"
-            placeholder="Tìm kiếm sản phẩm">
-
+<div class="bg-gray-100 dark:bg-gray-800">
+  <header id="page-header" class="bg-gray-900 text-white sticky top-0 z-50 border-b border-transparent transition-all duration-300">
+    <div class="container mx-auto px-4 h-20">
+      <div id="header-main" class="flex items-center justify-between h-full">
+        <div class="flex justify-start">
+          <a href="#" class="flex-shrink-0">
+            <img class="h-12 sm:h-14 w-auto" src="\public\assets\users\logo\logo-full.svg" alt="Logo">
+          </a>
         </div>
-        <!-- Sale link visible on screens > 1200px wide (xl breakpoint) -->
-        <a class="d-none d-xl-flex align-items-center text-decoration-none animate-shake navbar-stuck-hide me-3 me-xl-4 me-xxl-5" href="shop-catalog-electronics.html">
-          <div class="btn btn-icon btn-lg fs-lg text-primary bg-body-secondary bg-opacity-75 pe-none rounded-circle">
-            <i class="ci-percent animate-target"></i>
-          </div>
-          <div class="ps-2 text-nowrap">
-            <div class="fs-xs text-body">Only this month</div>
-            <div class="fw-medium text-white">Super Sale 20%</div>
-          </div>
-        </a>
 
-        <!-- Button group -->
-        <div class="d-flex align-items-center">
+        <div class="flex-1 flex justify-center">
+          <nav class="hidden lg:flex items-center space-x-8">
+            <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Mac</a>
+            <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">iPad</a>
+            <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">iPhone</a>
+            <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Watch</a>
+            <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">AirPods</a>
+            <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">TV & Nhà</a>
+            <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Giải trí</a>
+            <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Phụ kiện</a>
+            <a href="#" class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Hỗ trợ</a>
+          </nav>
+        </div>
 
-          <!-- Navbar stuck nav toggler -->
-          <button type="button" class="navbar-toggler d-none navbar-stuck-show me-3" data-bs-toggle="collapse" data-bs-target="#stuckNav" aria-controls="stuckNav" aria-expanded="false" aria-label="Toggle navigation in navbar stuck state">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-
-          <!-- Theme switcher (light/dark/auto) -->
-          <div class="dropdown">
-            <button type="button" class="theme-switcher btn btn-icon btn-lg btn-outline-secondary fs-lg border-0 rounded-circle animate-scale" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Toggle theme (light)">
-              <span class="theme-icon-active d-flex animate-target">
-                <i class="ci-sun"></i>
-              </span>
+        <div class="flex justify-end">
+          <div class="flex items-center space-x-2 sm:space-x-4">
+            <button class="js-search-trigger p-2 rounded-full text-gray-300 hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
             </button>
-            <ul class="dropdown-menu" style="--cz-dropdown-min-width: 9rem">
-              <li>
-                <button type="button" class="dropdown-item active" data-bs-theme-value="light" aria-pressed="true">
-                  <span class="theme-icon d-flex fs-base me-2">
-                    <i class="ci-sun"></i>
-                  </span>
-                  <span class="theme-label">Light</span>
-                  <i class="item-active-indicator ci-check ms-auto"></i>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dropdown-item" data-bs-theme-value="dark" aria-pressed="false">
-                  <span class="theme-icon d-flex fs-base me-2">
-                    <i class="ci-moon"></i>
-                  </span>
-                  <span class="theme-label">Dark</span>
-                  <i class="item-active-indicator ci-check ms-auto"></i>
-                </button>
-              </li>
-              <li>
-                <button type="button" class="dropdown-item" data-bs-theme-value="auto" aria-pressed="false">
-                  <span class="theme-icon d-flex fs-base me-2">
-                    <i class="ci-auto"></i>
-                  </span>
-                  <span class="theme-label">Auto</span>
-                  <i class="item-active-indicator ci-check ms-auto"></i>
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Nút bật/tắt thanh tìm kiếm (chỉ hiện trên màn hình nhỏ hơn 992px) -->
-          <button type="button"
-            class="btn btn-icon btn-lg fs-xl btn-outline-secondary border-0 rounded-circle animate-shake d-lg-none"
-            data-bs-toggle="collapse"
-            data-bs-target="#searchBar"
-            aria-expanded="false"
-            aria-controls="searchBar"
-            aria-label="Toggle search bar"
-            title="Tìm kiếm">
-            <i class="ci-search animate-target"></i>
-          </button>
-
-
-          @php
-          $user = Auth::user();
-          @endphp
-
-          <!-- Account button visible on screens > 768px wide (md breakpoint) -->
-          <li class="nav-item dropdown d-none d-md-inline-flex">
-            <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-shake dropdown-toggle"
-              href="#"
-              role="button"
-              data-bs-toggle="dropdown"
-              aria-expanded="false">
-              @auth
-              {{-- Hiển thị chữ cái đầu tên người dùng --}}
-              <span class="fw-bold text-uppercase">{{ strtoupper(Auth::user()->name[0]) }}</span>
-              @else
-              {{-- Biểu tượng người dùng mặc định --}}
-              <i class="ci-user animate-target"></i>
-              @endauth
-              <span class="visually-hidden">Account</span>
+            <a href="#" class="hidden md:block p-2 rounded-full text-gray-300 hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
             </a>
 
-            <ul class="dropdown-menu dropdown-menu-end">
-              @guest
-              <li><a class="dropdown-item" href="{{ route('login') }}">Đăng nhập</a></li>
-              <li><a class="dropdown-item" href="{{ route('register') }}">Đăng ký</a></li>
-              @else
-              <li><a class="dropdown-item" href="{{ route('profile.edit') }}">Tài khoản của tôi</a></li>
-
-              {{-- Nếu là admin, hiển thị nút quay lại admin --}}
-              @if(
-              $user->roles->contains('id', 1) ||
-              $user->roles->contains('id', 4) ||
-              $user->roles->contains('id', 5)
-              )
-              <li><a class="dropdown-item" href="{{ route('admin.dashboard') }}">Truy cập trang Quản Trị</a></li>
-              @endif
-
-              <li>
-                <form action="{{ route('logout') }}" method="POST">
-                  @csrf
-                  <button class="dropdown-item" type="submit">Đăng xuất</button>
-                </form>
-              </li>
-              @endguest
-            </ul>
-          </li>
-
-          <!-- Notification dropdown -->
-          <div class="dropdown" x-data="{
-    notificationOpen: false,
-    unreadCount: {{ $unreadNotificationsCount }},
-    markAsRead() {
-        if (this.unreadCount > 0) {
-            fetch('{{ route('notifications.markAsRead') }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                }
-            }).then(() => {
-                this.unreadCount = 0;
-            });
-        }
-    }
-}">
-            <!-- Nút chuông -->
-            <button type="button"
-              class="btn btn-icon btn-lg btn-outline-secondary fs-lg border-0 rounded-circle animate-scale position-relative"
-              data-bs-toggle="dropdown"
-              @click="markAsRead"
-              aria-expanded="false"
-              aria-label="Thông báo">
-              <span class="d-flex animate-target">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 
-            14.158V11a6.002 6.002 0 00-4-5.659V5a2 
-            2 0 10-4 0v.341C7.67 6.165 6 8.388 
-            6 11v3.159c0 .538-.214 1.055-.595 
-            1.436L4 17h5m6 0v1a3 3 0 
-            11-6 0v-1m6 0H9" />
-                </svg>
-              </span>
-
-              <!-- Badge số lượng chưa đọc -->
-              <template x-if="unreadCount > 0">
-                <span class="position-absolute top-0 end-0 translate-middle p-1 bg-danger border border-light rounded-circle">
-                  <span class="visually-hidden">Thông báo chưa đọc</span>
-                </span>
-              </template>
-            </button>
-
-            <!-- Dropdown thông báo -->
-            <div class="dropdown-menu dropdown-menu-end mt-3 shadow rounded border"
-              style="min-width: 20rem; max-height: 350px; overflow-y: auto;">
-              <div class="bg-dark px-3 py-2 border-bottom fw-semibold text-white">Thông báo</div>
-              <ul class="list-unstyled mb-0">
-                @forelse($recentNotifications as $notification)
-                <li>
-                  <a class="dropdown-item d-flex align-items-start py-2" href="#">
-                    <div class="me-2">
-                      {!! $notification['icon'] !!}
+            <!-- User Menu Container -->
+            <div class="relative">
+              <button id="user-menu-trigger" class="w-9 h-9 rounded-full flex items-center justify-center text-gray-300 hover:bg-white/10 transition-colors">
+                <div id="user-icon-logged-out">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                </div>
+                <div id="user-icon-logged-in" class="hidden">
+                  <div class="relative">
+                    <div id="user-avatar"
+                      class="w-7 h-7 rounded-full flex items-center justify-center bg-gray-700"
+                      data-user-name="{{ Auth::check() ? Auth::user()->name : '' }}">
+                      <span id="user-initial" class="text-sm font-semibold text-white"></span>
                     </div>
-                    <div style="word-break: break-word;">
-                      <div class="fw-medium text-wrap text-break">{{ $notification['title'] }}</div>
-                      <div class="small text-muted">{{ $notification['time'] }}</div>
+                  </div>
+              </button>
+              <!-- Dropdown Container -->
+              <div id="user-dropdown-menu" class="user-dropdown-menu absolute top-full right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-20 overflow-hidden">
+                <!-- Main Menu View -->
+                <div id="main-menu-view">
+                  <div class="py-2">
+                    @auth
+                    <!-- Nút chuyển đến tab thông báo -->
+                    <a href="#" id="notification-trigger" class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors relative">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                      </svg>
+                      <span>Thông báo</span>
+                      @if($unreadNotificationsCount > 0)
+                      <span class="ml-auto text-xs bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">{{ $unreadNotificationsCount }}</span>
+                      @endif
+                    </a>
+
+                    <!-- Tài khoản -->
+                    <a href="{{ route('profile.edit') }}" class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span>Tài khoản của tôi</span>
+                    </a>
+
+                    @if(
+                    Auth::user()->roles->contains('id', 1) ||
+                    Auth::user()->roles->contains('id', 4) ||
+                    Auth::user()->roles->contains('id', 5)
+                    )
+                    <!-- Trang quản trị -->
+                    <a href="{{ route('admin.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3h18v18H3V3z"></path>
+                        <path d="M9 9h6v6H9z"></path>
+                      </svg>
+                      <span>Trang quản trị</span>
+                    </a>
+                    @endif
+
+                    <div class="border-t border-gray-700 my-2"></div>
+
+                    <!-- Logout -->
+                    <form method="POST" action="{{ route('logout') }}">
+                      @csrf
+                      <button type="submit" class="w-full text-left flex items-center px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                          <polyline points="16 17 21 12 16 7"></polyline>
+                          <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span>Đăng xuất</span>
+                      </button>
+                    </form>
+                    @endauth
+
+                    @guest
+                    <!-- Nếu chưa đăng nhập -->
+                    <a href="{{ route('login') }}" class="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700">Đăng nhập</a>
+                    <a href="{{ route('register') }}" class="block px-4 py-2 text-sm text-gray-200 hover:bg-gray-700">Đăng ký</a>
+                    @endguest
+                  </div>
+                </div>
+                <!-- Notification Detail View (initially hidden) -->
+                <div id="notification-detail-view" class="hidden">
+                  <div class="p-4 border-b border-gray-700">
+                    <div class="flex justify-between items-center">
+                      <button id="back-to-menu-btn" class="p-1 -ml-2 text-gray-400 hover:text-white rounded-full transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                          <line x1="19" y1="12" x2="5" y2="12"></line>
+                          <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                      </button>
+                      <h3 class="text-lg font-semibold text-white">Thông báo</h3>
+                      <a href="#" class="text-sm text-blue-400 hover:text-blue-300 transition-colors">Xem tất cả</a>
                     </div>
-                  </a>
-                </li>
-                @empty
-                <li class="dropdown-item text-center text-muted py-3">
-                  Không có thông báo mới.
-                </li>
-                @endforelse
-              </ul>
+                  </div>
+                  <div class="max-h-96 overflow-y-auto">
+                    @forelse($recentNotifications as $notification)
+                    <a href="#" class="flex items-start p-4 hover:bg-gray-700/50 transition-colors">
+                      <div class="flex-shrink-0 w-10 h-10 bg-{{ $notification['color'] ?? 'gray' }}-500/20 text-{{ $notification['color'] ?? 'gray' }}-400 rounded-full flex items-center justify-center">
+                    @if ($notification['icon'] === "check")
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        @elseif ($notification['icon'] === "warning")
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                          <line x1="12" x2="12" y1="9" y2="13"></line>
+                          <line x1="12" x2="12.01" y1="17" y2="17"></line>
+                        </svg>
+                        @else
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <line x1="12" x2="12" y1="2" y2="22" />
+                          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                        @endif
+                      </div>
+                      <div class="ml-4 flex-1">
+                        <p class="text-sm font-medium text-gray-200">{{ $notification['title'] }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ $notification['time'] }}</p>
+                      </div>
+                    </a>
+                    @empty
+                    <li class="dropdown-item text-center text-muted py-3">
+                      Không có thông báo mới.
+                    </li>
+                    @endforelse
+
+                  </div>
+                </div>
               </div>
             </div>
+
+            <a href="#" class="p-2 rounded-full text-gray-300 hover:text-white transition-colors relative">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
+              <span class="absolute top-0 right-0 flex justify-center items-center h-4 w-4 bg-red-500 text-white text-[10px] font-semibold rounded-full transform translate-x-1/3 -translate-y-1/3">3</span>
+            </a>
+
+            <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-full text-gray-300 hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                <line x1="4" x2="20" y1="12" y2="12" />
+                <line x1="4" x2="20" y1="6" y2="6" />
+                <line x1="4" x2="20" y1="18" y2="18" />
+              </svg>
+            </button>
           </div>
+        </div>
+      </div>
 
-          <!-- Wishlist button visible on screens > 768px wide (md breakpoint) -->
-          <a class="btn btn-icon btn-lg fs-lg btn-outline-secondary border-0 rounded-circle animate-pulse d-none d-md-inline-flex" href="account-wishlist.html">
-            <i class="ci-heart animate-target"></i>
-            <span class="visually-hidden">Wishlist</span>
-          </a>
-
-          <!-- Cart button -->
-          <button type="button" class="btn btn-icon btn-lg btn-secondary position-relative rounded-circle ms-2" data-bs-toggle="offcanvas" data-bs-target="#shoppingCart" aria-controls="shoppingCart" aria-label="Shopping cart">
-            <span class="position-absolute top-0 start-100 mt-n1 ms-n3 badge text-bg-success border border-3 border-dark rounded-pill" style="--cz-badge-padding-y: .25em; --cz-badge-padding-x: .42em">3</span>
-            <span class="position-absolute top-0 start-0 d-flex align-items-center justify-content-center w-100 h-100 rounded-circle animate-slide-end fs-lg">
-              <i class="ci-shopping-cart animate-target ms-n1"></i>
-            </span>
+      <div id="header-search" class="hidden items-center justify-center h-full">
+        <div class="w-full max-w-2xl flex items-center space-x-4">
+          <div class="search-wrapper w-full rounded-full p-1 bg-white/10">
+            <div class="relative bg-transparent rounded-full">
+              <input type="search" placeholder="Tìm kiếm sản phẩm..." class="search-input w-full bg-transparent text-gray-300 rounded-full py-2.5 pl-6 pr-16 text-base placeholder-gray-400 focus:outline-none">
+              <button type="submit" class="search-submit-btn absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-110 focus:outline-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <button id="search-close-btn" class="text-gray-400 hover:text-white transition-colors flex-shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-7 h-7">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
       </div>
     </div>
-    <div class="navbar-stuck-hide pb-1"></div>
-  </div>
 
-  <!-- Search visible on screens < 992px wide (lg breakpoint). It is hidden inside collapse by default -->
-  <div class="collapse position-absolute top-100 z-2 w-100 bg-dark d-lg-none" id="searchBar">
-    <div class="container position-relative my-3" data-bs-theme="dark">
-      <i class="ci-search position-absolute top-50 translate-middle-y d-flex fs-lg text-white ms-3"></i>
-      <input type="search" class="form-control form-icon-start border-white rounded-pill" placeholder="Search the products" data-autofocus="collapse">
-    </div>
-  </div>
+    <div id="mobile-menu" class="lg:hidden bg-gray-900/95 backdrop-blur-lg border-t border-gray-700/60">
+      <div class="px-5 py-4 space-y-4">
+        <div class="space-y-1">
+          <a href="#" class="flex items-center px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3">
+              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Tài khoản</span>
+          </a>
+          <a href="#" class="flex items-center px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span>Yêu thích</span>
+          </a>
+          <a href="#" class="flex items-center px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span>Thông báo</span>
+          </a>
+        </div>
 
-  <!-- Main navigation that turns into offcanvas on screens < 992px wide (lg breakpoint) -->
-  <div class="collapse navbar-stuck-hide" id="stuckNav">
-    <nav class="offcanvas offcanvas-start" id="navbarNav" tabindex="-1" aria-labelledby="navbarNavLabel">
-      <div class="offcanvas-header py-3">
-        <h5 class="offcanvas-title" id="navbarNavLabel">Browse Cartzilla</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-      </div>
-      <div class="offcanvas-body py-3 py-lg-0">
-        <div class="container px-0 px-lg-3">
-          <div class="row">
-
-
-
-            <!-- Navbar nav -->
-            <div class="col-lg-9 d-lg-flex pt-3 pt-lg-0 ps-lg-0">
-              <ul class="navbar-nav position-relative">
-                <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle active" aria-current="page" href="/" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Trang chủ</a>
-                  {{-- <ul class="dropdown-menu">
-                    <li class="hover-effect-opacity px-2 mx-n2">
-                      <a class="dropdown-item d-block mb-0" href="home-electronics.html">
-                        <span class="fw-medium">Electronics Store</span>
-                        <span class="d-block fs-xs text-body-secondary">Megamenu + Hero slider</span>
-                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
-                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/electronics-light.jpg" alt="Electronics Store">
-                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/electronics-dark.jpg" alt="Electronics Store">
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
-                        </div>
-                      </a>
-                    </li>
-                    <li class="hover-effect-opacity px-2 mx-n2">
-                      <a class="dropdown-item d-block mb-0" href="home-fashion-v1.html">
-                        <span class="fw-medium">Fashion Store v.1</span>
-                        <span class="d-block fs-xs text-body-secondary">Hero promo slider</span>
-                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
-                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/fashion-1-light.jpg" alt="Fashion Store v.1">
-                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/fashion-1-dark.jpg" alt="Fashion Store v.1">
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
-                        </div>
-                      </a>
-                    </li>
-                    <li class="hover-effect-opacity px-2 mx-n2">
-                      <a class="dropdown-item d-block mb-0" href="home-fashion-v2.html">
-                        <span class="fw-medium">Fashion Store v.2</span>
-                        <span class="d-block fs-xs text-body-secondary">Hero banner with hotspots</span>
-                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
-                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/fashion-2-light.jpg" alt="Fashion Store v.2">
-                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/fashion-2-dark.jpg" alt="Fashion Store v.2">
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
-                        </div>
-                      </a>
-                    </li>
-                    <li class="hover-effect-opacity px-2 mx-n2">
-                      <a class="dropdown-item d-block mb-0" href="home-furniture.html">
-                        <span class="fw-medium">Furniture Store</span>
-                        <span class="d-block fs-xs text-body-secondary">Fancy product carousel</span>
-                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
-                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/furniture-light.jpg" alt="Furniture Store">
-                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/furniture-dark.jpg" alt="Furniture Store">
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
-                        </div>
-                      </a>
-                    </li>
-                    <li class="hover-effect-opacity px-2 mx-n2">
-                      <a class="dropdown-item d-block mb-0" href="home-grocery.html">
-                        <span class="fw-medium">Grocery Store</span>
-                        <span class="d-block fs-xs text-body-secondary">Hero slider + Category cards</span>
-                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
-                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/grocery-light.jpg" alt="Grocery Store">
-                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/grocery-dark.jpg" alt="Grocery Store">
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
-                        </div>
-                      </a>
-                    </li>
-                    <li class="hover-effect-opacity px-2 mx-n2">
-                      <a class="dropdown-item d-block mb-0" href="home-marketplace.html">
-                        <span class="fw-medium">Marketplace</span>
-                        <span class="d-block fs-xs text-body-secondary">Multi-vendor, digital goods</span>
-                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
-                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/marketplace-light.jpg" alt="Marketplace">
-                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/marketplace-dark.jpg" alt="Marketplace">
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
-                        </div>
-                      </a>
-                    </li>
-                    <li class="hover-effect-opacity px-2 mx-n2">
-                      <a class="dropdown-item d-block mb-0" href="home-single-store.html">
-                        <span class="fw-medium">Single Product Store</span>
-                        <span class="d-block fs-xs text-body-secondary">Single product / mono brand</span>
-                        <div class="d-none d-lg-block hover-effect-target position-absolute top-0 start-100 bg-body border border-light-subtle rounded rounded-start-0 transition-none invisible opacity-0 pt-2 px-2 ms-n2" style="width: 212px; height: calc(100% + 2px); margin-top: -1px">
-                          <img class="position-relative z-2 d-none-dark" src="assets/img/mega-menu/demo-preview/single-store-light.jpg" alt="Single Product Store">
-                          <img class="position-relative z-2 d-none d-block-dark" src="assets/img/mega-menu/demo-preview/single-store-dark.jpg" alt="Single Product Store">
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none-dark" style="box-shadow: .875rem .5rem 2rem -.5rem #676f7b; opacity: .1"></span>
-                          <span class="position-absolute top-0 start-0 w-100 h-100 rounded rounded-start-0 d-none d-block-dark" style="box-shadow: .875rem .5rem 1.875rem -.5rem #080b12; opacity: .25"></span>
-                        </div>
-                      </a>
-                    </li>
-                  </ul> --}}
-                </li>
-
-                <li class="nav-item dropdown position-static me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="/danh-muc-san-pham" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Danh mục</a>
-                  {{-- <div class="dropdown-menu rounded-4 p-4">
-                    <div class="d-flex flex-column flex-lg-row gap-4">
-                      <div style="min-width: 190px">
-                        <div class="h6 mb-2">Electronics Store</div>
-                        <ul class="nav flex-column gap-2 mt-0">
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-categories-electronics.html">Categories Page</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-electronics.html">Catalog with Side Filters</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-general-electronics.html">Product General Info</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-details-electronics.html">Product Details</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-reviews-electronics.html">Product Reviews</a>
-                          </li>
-                        </ul>
-                        <div class="h6 pt-4 mb-2">Fashion Store</div>
-                        <ul class="nav flex-column gap-2 mt-0">
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-fashion.html">Catalog with Side Filters</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-fashion.html">Product Page</a>
-                          </li>
-                        </ul>
-                        <div class="h6 pt-4 mb-2">Furniture Store</div>
-                        <ul class="nav flex-column gap-2 mt-0">
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-furniture.html">Catalog with Top Filters</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-furniture.html">Product Page</a>
-                          </li>
-                        </ul>
-                      </div>
-                      <div style="min-width: 190px">
-                        <div class="h6 mb-2">Grocery Store</div>
-                        <ul class="nav flex-column gap-2 mt-0">
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-grocery.html">Catalog with Side Filters</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-grocery.html">Product Page</a>
-                          </li>
-                        </ul>
-                        <div class="h6 pt-4 mb-2">Marketplace</div>
-                        <ul class="nav flex-column gap-2 mt-0">
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-catalog-marketplace.html">Catalog with Top Filters</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="shop-product-marketplace.html">Digital Product Page</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-marketplace.html">Cart / Checkout</a>
-                          </li>
-                        </ul>
-                      </div>
-                      <div style="min-width: 190px">
-                        <div class="h6 mb-2">Checkout v.1</div>
-                        <ul class="nav flex-column gap-2 mt-0">
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-cart.html">Shopping Cart</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-delivery-1.html">Delivery Info (Step 1)</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-delivery-2.html">Delivery Info (Step 2)</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-shipping.html">Shipping Address</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-payment.html">Payment</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v1-thankyou.html">Thank You Page</a>
-                          </li>
-                        </ul>
-                        <div class="h6 pt-4 mb-2">Checkout v.2</div>
-                        <ul class="nav flex-column gap-2 mt-0">
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-cart.html">Shopping Cart</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-delivery.html">Delivery Info</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-pickup.html">Pickup from Store</a>
-                          </li>
-                          <li class="d-flex w-100 pt-1">
-                            <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="checkout-v2-thankyou.html">Thank You Page</a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div> --}}
-                </li>
-                <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Account</a>
-                  <ul class="dropdown-menu">
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Auth Pages</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="account-signin.html">Sign In</a></li>
-                        <li><a class="dropdown-item" href="account-signup.html">Sign Up</a></li>
-                        <li><a class="dropdown-item" href="account-password-recovery.html">Password Recovery</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Shop User</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="account-orders.html">Orders History</a></li>
-                        <li><a class="dropdown-item" href="account-wishlist.html">Wishlist</a></li>
-                        <li><a class="dropdown-item" href="account-payment.html">Payment Methods</a></li>
-                        <li><a class="dropdown-item" href="account-reviews.html">My Reviews</a></li>
-                        <li><a class="dropdown-item" href="account-info.html">Personal Info</a></li>
-                        <li><a class="dropdown-item" href="account-addresses.html">Addresses</a></li>
-                        <li><a class="dropdown-item" href="account-notifications.html">Notifications</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Marketplace User</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="account-marketplace-dashboard.html">Dashboard</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-products.html">Products</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-sales.html">Sales</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-payouts.html">Payouts</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-purchases.html">Purchases</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-favorites.html">Favorites</a></li>
-                        <li><a class="dropdown-item" href="account-marketplace-settings.html">Settings</a></li>
-                      </ul>
-                    </li>
-                  </ul>
-                </li>
-                <li class="nav-item dropdown me-lg-n1 me-xl-0">
-                  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" data-bs-auto-close="outside" aria-expanded="false">Pages</a>
-                  <ul class="dropdown-menu">
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">About</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="about-v1.html">About v.1</a></li>
-                        <li><a class="dropdown-item" href="about-v2.html">About v.2</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Blog</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="blog-grid-v1.html">Grid View v.1</a></li>
-                        <li><a class="dropdown-item" href="blog-grid-v2.html">Grid View v.2</a></li>
-                        <li><a class="dropdown-item" href="blog-list.html">List View</a></li>
-                        <li><a class="dropdown-item" href="blog-single-v1.html">Single Post v.1</a></li>
-                        <li><a class="dropdown-item" href="blog-single-v2.html">Single Post v.2</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Contact</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="contact-v1.html">Contact v.1</a></li>
-                        <li><a class="dropdown-item" href="contact-v2.html">Contact v.2</a></li>
-                        <li><a class="dropdown-item" href="contact-v3.html">Contact v.3</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">Help Center</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="help-topics-v1.html">Help Topics v.1</a></li>
-                        <li><a class="dropdown-item" href="help-topics-v2.html">Help Topics v.2</a></li>
-                        <li><a class="dropdown-item" href="help-single-article-v1.html">Help Single Article v.1</a></li>
-                        <li><a class="dropdown-item" href="help-single-article-v2.html">Help Single Article v.2</a></li>
-                      </ul>
-                    </li>
-                    <li class="dropend">
-                      <a class="dropdown-item dropdown-toggle" href="#!" role="button" data-bs-toggle="dropdown" data-bs-trigger="hover" aria-expanded="false">404 Error</a>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="404-electronics.html">404 Electronics</a></li>
-                        <li><a class="dropdown-item" href="404-fashion.html">404 Fashion</a></li>
-                        <li><a class="dropdown-item" href="404-furniture.html">404 Furniture</a></li>
-                        <li><a class="dropdown-item" href="404-grocery.html">404 Grocery</a></li>
-                      </ul>
-                    </li>
-                    <li><a class="dropdown-item" href="terms-and-conditions.html">Terms &amp; Conditions</a></li>
-                  </ul>
-                </li>
-                <li class="nav-item me-lg-n2 me-xl-0">
-                  <a class="nav-link" href="docs/installation.html">Docs</a>
-                </li>
-                <li class="nav-item me-lg-n2 me-xl-0">
-                  <a class="nav-link" href="docs/typography.html">Components</a>
-                </li>
-              </ul>
-            </div>
+        <div class="border-t border-gray-700/60 pt-4 mt-4">
+          <h3 class="px-3 text-xs font-semibold uppercase text-gray-500 tracking-wider mb-2">Danh mục</h3>
+          <div class="space-y-1">
+            <a href="#" class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">Mac</a>
+            <a href="#" class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">iPad</a>
+            <a href="#" class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">iPhone</a>
+            <a href="#" class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">Watch</a>
+            <a href="#" class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">AirPods</a>
+            <a href="#" class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">TV & Nhà</a>
+            <a href="#" class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">Giải trí</a>
+            <a href="#" class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">Phụ kiện</a>
+            <a href="#" class="block px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">Hỗ trợ</a>
           </div>
         </div>
       </div>
-      <div class="offcanvas-header border-top px-0 py-3 mt-3 d-md-none">
-        <div class="nav nav-justified w-100">
-          <a class="nav-link border-end" href="account-signin.html">
-            <i class="ci-user fs-lg opacity-60 me-2"></i>
-            Account
-          </a>
-          <a class="nav-link" href="account-wishlist.html">
-            <i class="ci-heart fs-lg opacity-60 me-2"></i>
-            Wishlist
-          </a>
-        </div>
-      </div>
-    </nav>
-  </div>
-</header>
+    </div>
+  </header>
+</div>
+<style>
+  /* Sử dụng font Inter làm font chữ mặc định */
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* --- CSS cho hiệu ứng chuyển động --- */
+  #mobile-menu {
+    transition: max-height 0.3s ease-in-out;
+    max-height: 0;
+    overflow: hidden;
+  }
+
+  #mobile-menu.open {
+    max-height: 100vh;
+  }
+
+  /* Dropdown menu styling */
+  #user-dropdown-menu {
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out, width 0.3s ease-in-out;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    /* Ngăn tương tác khi ẩn */
+  }
+
+  /* Hiển thị dropdown khi có class 'open' */
+  #user-dropdown-menu.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    /* Cho phép tương tác khi hiện */
+  }
+
+  /* Style cho avatar người dùng khi đã đăng nhập */
+  #user-avatar {
+    background-color: rgba(255, 255, 255, 0.1);
+    /* Màu nền xám nhạt ban đầu */
+    transition: background-color 0.3s ease-in-out;
+  }
+
+  /* Khi header được cuộn, nền của avatar sẽ nhạt hơn */
+  #page-header.scrolled #user-avatar {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  /* --- Styles for Animated Search Bar --- */
+  .search-wrapper.is-focused {
+    background-image: linear-gradient(to right, #9aadf9, #b0d4d2, #f2adda, #b0d4d2, #9aadf9);
+    background-size: 300% auto;
+    animation: animated-gradient 8s linear infinite;
+  }
+
+  .search-wrapper .relative.is-focused-inner {
+    background-color: white;
+  }
+
+  .search-wrapper .relative.is-focused-inner .search-input {
+    color: #1f2937;
+  }
+
+  .search-wrapper .relative.is-focused-inner .search-input::placeholder {
+    color: #6b7280;
+  }
+
+  @keyframes animated-gradient {
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .search-submit-btn.is-focused {
+    background-image: linear-gradient(to right, #9aadf9, #b0d4d2, #f2adda, #b0d4d2, #9aadf9);
+    background-size: 300% auto;
+    animation: animated-gradient 8s linear infinite;
+  }
+
+  /* --- Style cho header khi cuộn --- */
+  #page-header.scrolled {
+    background-color: rgba(17, 24, 39, 0.85);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    border-bottom-color: rgba(55, 65, 81, 0.6);
+  }
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // --- SIMULATE LOGIN STATE ---
+    const isLoggedIn = true;
+    const userAvatar = document.getElementById('user-avatar');
+    const userName = userAvatar?.dataset.userName || "";
+    const hasNotifications = true;
+
+    // --- Elements ---
+    const pageHeader = document.getElementById('page-header');
+    const headerMain = document.getElementById('header-main');
+    const headerSearch = document.getElementById('header-search');
+
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    const searchTriggerBtn = document.querySelector('.js-search-trigger');
+    const searchCloseBtn = document.getElementById('search-close-btn');
+    const searchInputInHeader = headerSearch.querySelector('.search-input');
+
+    const userIconLoggedOut = document.getElementById('user-icon-logged-out');
+    const userIconLoggedIn = document.getElementById('user-icon-logged-in');
+    const userInitial = document.getElementById('user-initial');
+    const notificationDot = document.getElementById('notification-dot');
+
+    const userMenuTrigger = document.getElementById('user-menu-trigger'); // This is the button now
+    const userDropdownMenu = document.getElementById('user-dropdown-menu');
+
+    // Dropdown Views
+    const mainMenuView = document.getElementById('main-menu-view');
+    const notificationDetailView = document.getElementById('notification-detail-view');
+
+    // View Triggers
+    const notificationTrigger = document.getElementById('notification-trigger');
+    const backToMenuBtn = document.getElementById('back-to-menu-btn');
+
+    // --- Setup UI based on Login State ---
+    const setupUserUI = () => {
+      if (isLoggedIn) {
+        userIconLoggedOut.classList.add('hidden');
+        userIconLoggedIn.classList.remove('hidden');
+        userInitial.textContent = userName.charAt(0).toUpperCase();
+
+        if (hasNotifications) {
+          notificationDot.classList.remove('hidden');
+        } else {
+          notificationDot.classList.add('hidden');
+        }
+      } else {
+        userIconLoggedOut.classList.remove('hidden');
+        userIconLoggedIn.classList.add('hidden');
+        notificationDot.classList.add('hidden');
+      }
+    };
+
+    // --- User Dropdown Menu Toggle ---
+    userMenuTrigger.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const isOpening = !userDropdownMenu.classList.contains('open');
+      userDropdownMenu.classList.toggle('open');
+
+      // Reset to main menu view and original size when opening
+      if (isOpening) {
+        mainMenuView.classList.remove('hidden');
+        notificationDetailView.classList.add('hidden');
+        userDropdownMenu.classList.remove('w-80', 'sm:w-96');
+        userDropdownMenu.classList.add('w-56');
+      }
+    });
+
+    // --- Switch to Notification View ---
+    notificationTrigger.addEventListener('click', (event) => {
+      event.preventDefault();
+      userDropdownMenu.classList.remove('w-56');
+      userDropdownMenu.classList.add('w-80', 'sm:w-96');
+      mainMenuView.classList.add('hidden');
+      notificationDetailView.classList.remove('hidden');
+
+      // Gọi Laravel để mark as read + ẩn dấu đỏ
+      fetch('/notifications/mark-as-read', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+          'Accept': 'application/json'
+        }
+      }).then(res => {
+        if (res.ok) {
+          const badge = document.querySelector('#notification-trigger span.ml-auto');
+          if (badge) badge.remove(); // Ẩn số đỏ bên phải
+        }
+      });
+    });
+
+
+
+    // --- Switch back to Main Menu View ---
+    backToMenuBtn.addEventListener('click', () => {
+      userDropdownMenu.classList.remove('w-80', 'sm:w-96');
+      userDropdownMenu.classList.add('w-56');
+      notificationDetailView.classList.add('hidden');
+      mainMenuView.classList.remove('hidden');
+    });
+
+    // --- Close dropdown when clicking outside ---
+    window.addEventListener('click', (event) => {
+      if (!userMenuTrigger.contains(event.target) && !userDropdownMenu.contains(event.target) && userDropdownMenu.classList.contains('open')) {
+        userDropdownMenu.classList.remove('open');
+      }
+    });
+
+    // --- Mobile Menu Toggle ---
+    mobileMenuBtn.addEventListener('click', () => {
+      const isSearchActive = !headerMain.classList.contains('flex');
+      if (isSearchActive) {
+        closeSearch();
+      }
+      mobileMenu.classList.toggle('open');
+    });
+
+    // --- Header Scroll Effect ---
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 10) {
+        pageHeader.classList.add('scrolled');
+      } else {
+        pageHeader.classList.remove('scrolled');
+      }
+    });
+
+    // --- Header Search State Logic ---
+    const openSearch = () => {
+      if (mobileMenu.classList.contains('open')) {
+        mobileMenu.classList.remove('open');
+      }
+      headerMain.classList.remove('flex');
+      headerMain.classList.add('hidden');
+      headerSearch.classList.remove('hidden');
+      headerSearch.classList.add('flex');
+      setTimeout(() => {
+        searchInputInHeader.focus();
+      }, 50);
+    };
+
+    const closeSearch = () => {
+      headerSearch.classList.remove('flex');
+      headerSearch.classList.add('hidden');
+      headerMain.classList.remove('hidden');
+      headerMain.classList.add('flex');
+    };
+
+    searchTriggerBtn.addEventListener('click', openSearch);
+    searchCloseBtn.addEventListener('click', closeSearch);
+
+    document.addEventListener('keydown', (e) => {
+      const isSearchActive = headerSearch.classList.contains('flex');
+      if (e.key === 'Escape' && isSearchActive) {
+        closeSearch();
+      }
+    });
+
+    // --- Animated Search Bar Logic ---
+    document.querySelectorAll('.search-input').forEach(input => {
+      const wrapper = input.closest('.search-wrapper');
+      if (!wrapper) return;
+
+      const innerBg = wrapper.querySelector('.relative');
+      const button = wrapper.querySelector('.search-submit-btn');
+      if (!innerBg || !button) return;
+
+      let initialTimeout, placeholderInterval, typingTimeout;
+      const originalPlaceholder = input.placeholder;
+
+      const typeWriter = (text, i = 0) => {
+        clearTimeout(typingTimeout);
+        if (input !== document.activeElement) return;
+        if (i === 0) input.placeholder = '';
+        if (i < text.length) {
+          input.placeholder += text.charAt(i);
+          typingTimeout = setTimeout(() => typeWriter(text, i + 1), 60);
+        }
+      };
+
+      const startPlaceholderCycle = () => {
+        const placeholders = ["iPhone 16 Pro Max", "MacBook Air M3", "Apple Watch Series 10"];
+        let currentIndex = 0;
+        typeWriter(placeholders[currentIndex]);
+        placeholderInterval = setInterval(() => {
+          currentIndex = (currentIndex + 1) % placeholders.length;
+          typeWriter(placeholders[currentIndex]);
+        }, 4000);
+      };
+
+      const stopAllAnimations = () => {
+        clearTimeout(initialTimeout);
+        clearInterval(placeholderInterval);
+        clearTimeout(typingTimeout);
+      };
+
+      input.addEventListener('focus', () => {
+        wrapper.classList.add('is-focused');
+        innerBg.classList.add('is-focused-inner');
+        button.classList.add('is-focused');
+        stopAllAnimations();
+        input.placeholder = "Tìm kiếm sản phẩm...";
+        initialTimeout = setTimeout(startPlaceholderCycle, 2500);
+      });
+
+      input.addEventListener('blur', () => {
+        wrapper.classList.remove('is-focused');
+        innerBg.classList.remove('is-focused-inner');
+        button.classList.remove('is-focused');
+        stopAllAnimations();
+        if (input.value === '') {
+          input.placeholder = originalPlaceholder;
+        }
+      });
+
+      input.addEventListener('input', stopAllAnimations);
+    });
+
+    // --- Initial Setup ---
+    setupUserUI();
+  });
+</script>

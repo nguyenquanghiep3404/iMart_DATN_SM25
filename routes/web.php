@@ -1,29 +1,39 @@
 <?php
 
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\DashboardAdminController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\AttributeController;
-use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\Admin\PostController;
-use App\Http\Controllers\Admin\PostTagController;
-use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Users\BlogController;
+use App\Http\Controllers\Users\HomeController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CommentController;
+use App\Http\Controllers\Admin\ShipperManagementController;
+use App\Http\Controllers\Admin\PostTagController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Shipper\ShipperController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
-use App\Http\Controllers\Admin\AiController;
-use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Users\CartController;
+use App\Http\Controllers\Admin\SpecificationController;
+use App\Http\Controllers\Admin\SpecificationGroupController;
 
+
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
+Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 
 
 //==========================================================================
@@ -37,6 +47,12 @@ Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestio
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
+// BLOG ROUTES (PUBLIC)
+Route::prefix('blog')->group(function () {
+    Route::get('/', [BlogController::class, 'home'])->name('users.blogs.home');
+    Route::get('/tat-ca', [BlogController::class, 'index'])->name('users.blogs.index');
+    Route::get('/{slug}', [BlogController::class, 'show'])->name('users.blogs.show');
+});
 // Trang About và Help , terms
 Route::get('/about', [HomeController::class, 'about'])->name('users.about');
 Route::get('/help', [HomeController::class, 'help'])->name('users.help');
@@ -63,6 +79,22 @@ Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.in
 Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
 Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSelected'])->name('wishlist.removeSelected');
 
+ // router cart
+ Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+ Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+ // routes/web.php
+ Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
+ Route::get('/session/flush-message', function () {
+    session()->forget(['success', 'error']);
+    return response()->noContent(); // Trả về 204
+})->name('session.flush.message');
+// Áp dụng mã giảm giá
+Route::post('/cart/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
+
+// Xóa mã giảm giá
+Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
+
+
 //==========================================================================
 // ADMIN ROUTES
 //==========================================================================
@@ -83,6 +115,16 @@ Route::prefix('admin')
         // Route riêng cho việc xóa ảnh gallery
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
             ->name('products.gallery.delete');
+
+            // Route xóa mềm người dùng
+        // Route::middleware('can:is-admin')->group(function () {
+            Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/trash', [UserController::class, 'trash'])->name('trash');
+            Route::patch('/{user}/restore', [UserController::class, 'restore'])->name('restore');
+            Route::delete('/{user}/force-delete', [UserController::class, 'forceDelete'])->name('forceDelete');
+            });
+
+        Route::get('/api/specifications-by-category/{category}', [ProductController::class, 'getSpecificationsForCategory'])->name('api.specifications.by_category');
         Route::resource('products', ProductController::class);
         // User routes
         // --- Routes cho Quản Lí Người Dùng ---
@@ -94,6 +136,14 @@ Route::prefix('admin')
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // --- Routes quản lí shipper ---
+        Route::prefix('shippers')->name('shippers.')->group(function() {
+            Route::get('/trash', [ShipperManagementController::class, 'trash'])->name('trash');
+            Route::patch('/{shipper}/restore', [ShipperManagementController::class, 'restore'])->name('restore');
+            Route::delete('/{shipper}/force-delete', [ShipperManagementController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('shippers', ShipperManagementController::class);
 
         // --- Routes cho Thư viện Media ---
         Route::prefix('media')->name('media.')->group(function () {
@@ -110,7 +160,6 @@ Route::prefix('admin')
             // Routes với tham số {uploadedFile}
             Route::patch('/{uploadedFile}', [UploadedFileController::class, 'update'])->name('update');
             Route::delete('/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('destroy');
-
             Route::post('/{uploadedFile}/recrop', [UploadedFileController::class, 'recrop'])->name('recrop');
         });
         // Route quản lí vai trò
@@ -164,6 +213,18 @@ Route::prefix('admin')
         Route::post('attributes/{attribute}/values', [AttributeController::class, 'storeValue'])->name('attributes.values.store');
         Route::put('attributes/{attribute}/values/{value}', [AttributeController::class, 'updateValue'])->name('attributes.values.update');
         Route::delete('attributes/{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
+
+        // --- Specification Groups ---
+        Route::get('specification-groups/trashed', [SpecificationGroupController::class, 'trashed'])->name('specification-groups.trashed');
+        Route::post('specification-groups/{id}/restore', [SpecificationGroupController::class, 'restore'])->name('specification-groups.restore');
+        Route::delete('specification-groups/{id}/force-delete', [SpecificationGroupController::class, 'forceDelete'])->name('specification-groups.forceDelete');;
+        Route::resource('specification-groups', SpecificationGroupController::class);
+
+        // --- Specifications ---
+        Route::get('specifications/trashed', [SpecificationController::class, 'trashed'])->name('specifications.trashed');
+        Route::post('specifications/{id}/restore', [SpecificationController::class, 'restore'])->name('specifications.restore');
+        Route::delete('specifications/{id}/force-delete', [SpecificationController::class, 'forceDelete'])->name('specifications.force-delete');
+        Route::resource('specifications', SpecificationController::class);
         // Review routes
         // Admin - Quản lý đánh giá
         Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
@@ -239,18 +300,26 @@ Route::prefix('admin')
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
+            // Group các route dành cho shipper và bảo vệ chúng
+        Route::prefix('shipper')
+        ->name('shipper.')
+        ->middleware(['auth', 'verified']) // <-- Bảo vệ toàn bộ nhóm
+        ->group(function () {
 
-// Group các route dành cho shipper và bảo vệ chúng
-Route::middleware(['auth', 'verified'])->prefix('shipper')->name('shipper.')->group(function () {
+        // http://127.0.0.1:8000/shipper/dashboard
+        Route::get('/dashboard', [ShipperController::class, 'dashboard'])->name('dashboard')->middleware('can:access_shipper_dashboard');
 
-    // Màn hình Dashboard chính
-    Route::get('/dashboard', [ShipperController::class, 'dashboard'])->name('dashboard');
-    // Route để lấy thông tin chi tiết của một đơn hàng (dùng cho AJAX)
-    Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
-    // Route để cập nhật trạng thái đơn hàng (dùng cho AJAX)
-    Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus');
-});
+        // Các route khác của shipper
+        Route::get('/stats', [ShipperController::class, 'stats'])->name('stats');
+        Route::get('/history', [ShipperController::class, 'history'])->name('history');
+        Route::get('/profile', [ShipperController::class, 'profile'])->name('profile');
+        Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
+        Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus');
 
+    });
+     Route::get('/test-403', function () {
+            abort(403);
+        });
 
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)

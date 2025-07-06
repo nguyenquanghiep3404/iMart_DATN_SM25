@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Header Design - Dark Mode</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Add some content to enable scrolling and see the sticky effect */
+            height: 200vh; 
+        }
+
+        /* Frosted glass effect for the header - Apple's dark style */
+        .header-glass-dark {
+            background-color: rgba(28, 28, 30, 0.75); /* Dark, semi-transparent background */
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Transition for smooth effects */
+        .smooth-transition {
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Custom styles for the search input in dark mode */
+        .search-input-dark {
+            background-color: rgba(58, 58, 60, 0.8);
+            color: #f5f5f7;
+            border: 1px solid transparent;
+        }
+        .search-input-dark::placeholder {
+            color: #a1a1a6;
+        }
+        .search-input-dark:focus {
+            background-color: rgba(72, 72, 74, 0.9);
+            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.6); /* Apple's blue focus ring */
+            border-color: rgba(0, 122, 255, 0.5);
+        }
+        
+        /* Dropdown menu styling for dark mode */
+        .dropdown-menu {
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+        }
+
+        .group:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        /* Badge for notification/cart count */
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: #0A84FF; /* Apple's blue for notifications */
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            border: 2px solid #1c1c1e; /* Match dark background */
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-300">
+
+    <!-- Header Component -->
+    <header id="app-header" class="fixed top-0 left-0 right-0 z-50 smooth-transition">
+        <div class="container mx-auto px-4">
+            <nav class="flex items-center justify-between h-20">
+
+                <!-- Left Section: Logo & Categories -->
+                <div class="flex items-center space-x-8">
+                    <!-- Logo -->
+                    <a href="#" class="text-2xl font-bold text-gray-100">Logo</a>
+
+                    <!-- Product Categories Dropdown -->
+                    <div class="hidden md:flex items-center space-x-6">
+                        <div class="group relative">
+                            <button class="flex items-center text-gray-300 hover:text-white smooth-transition">
+                                <span>Danh mục sản phẩm</span>
+                                <svg class="w-4 h-4 ml-1 group-hover:rotate-180 smooth-transition" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div class="dropdown-menu absolute mt-2 w-56 bg-[#1c1c1e] rounded-lg shadow-xl py-2 border border-gray-700">
+                                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white smooth-transition">Điện thoại & Phụ kiện</a>
+                                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white smooth-transition">Laptop & PC</a>
+                                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white smooth-transition">Thời trang nam</a>
+                                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white smooth-transition">Thời trang nữ</a>
+                                <a href="#" class="block px-4 py-2 text-gray-300 hover:bg-gray-700 hover:text-white smooth-transition">Đồ gia dụng</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center Section: Search Bar -->
+                <div class="hidden lg:flex flex-grow max-w-xl mx-8">
+                    <div class="relative w-full">
+                        <input type="search" placeholder="Tìm kiếm sản phẩm..." class="search-input-dark w-full py-2.5 pl-12 pr-4 rounded-full focus:outline-none smooth-transition">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-4">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Section: Icons -->
+                <div class="flex items-center space-x-5">
+                    <!-- Wishlist, Cart, Notification, Account Icons -->
+                    <a href="#" class="text-gray-300 hover:text-white smooth-transition" aria-label="Yêu thích">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 016.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path></svg>
+                    </a>
+                    <a href="#" class="relative text-gray-300 hover:text-white smooth-transition" aria-label="Giỏ hàng">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        <span class="badge">3</span>
+                    </a>
+                    <a href="#" class="relative text-gray-300 hover:text-white smooth-transition" aria-label="Thông báo">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <span class="badge">5</span>
+                    </a>
+                    <a href="#" class="text-gray-300 hover:text-white smooth-transition" aria-label="Tài khoản">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </a>
+                    
+                    <!-- Hamburger Menu for Mobile -->
+                    <button class="lg:hidden text-gray-300 hover:text-white">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 pt-24">
+        <h1 class="text-3xl font-bold text-gray-100">Nội dung trang web</h1>
+        <p class="mt-4 text-gray-400">Cuộn trang xuống để xem hiệu ứng của header.</p>
+    </main>
+
+    <script>
+        // JavaScript to add a background effect on scroll
+        window.addEventListener('scroll', function() {
+            const header = document.getElementById('app-header');
+            if (window.scrollY > 10) {
+                header.classList.add('header-glass-dark');
+            } else {
+                header.classList.remove('header-glass-dark');
+            }
+        });
+    </script>
+
+</body>
+</html>

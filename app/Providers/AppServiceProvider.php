@@ -66,6 +66,11 @@ class AppServiceProvider extends ServiceProvider
                 // Admin được vào, hoặc những ai có quyền cụ thể
                 return $user->hasRole('admin') || $user->hasPermissionTo('access_admin_dashboard');
             });
+            // Gate của luồng shipper
+            Gate::define('access_shipper_dashboard', function (User $user) {
+                // Chỉ những người dùng có vai trò 'shipper' mới được phép
+                return $user->hasRole('shipper');
+            });
 
             // Không còn các Gate như 'manage-users', 'manage-roles' ở đây nữa
             // vì chúng đã được chuyển vào các file Policy tương ứng.
@@ -85,21 +90,15 @@ class AppServiceProvider extends ServiceProvider
                     ->take(5)
                     ->get()
                     ->map(function ($notification) {
-                        $message = $notification->data['message'] ?? 'Thông báo mới';
-                        $type = class_basename($notification->type);
-                        $icon = match (true) {
-                            str_contains($type, 'User') => '<svg class="h-6 w-6 text-green-500" ...>...</svg>',
-                            str_contains($type, 'Order') => '<svg class="h-6 w-6 text-blue-500" ...>...</svg>',
-                            str_contains($type, 'Review') => '<svg class="h-6 w-6 text-yellow-500" ...>...</svg>',
-                            default => '<svg class="h-6 w-6 text-gray-400" ...>...</svg>',
-                        };
-
                         return [
-                            'title' => $message,
+                            'title' => $notification->data['title'] ?? 'Thông báo',
+                            'message' => $notification->data['message'] ?? '',
+                            'icon' => $notification->data['icon'] ?? 'default',
+                            'color' => $notification->data['color'] ?? 'gray',
                             'time' => $notification->created_at->diffForHumans(),
-                            'icon' => $icon,
                         ];
                     });
+
 
                 $view->with(compact('unreadNotificationsCount', 'recentNotifications'));
             }

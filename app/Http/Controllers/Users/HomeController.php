@@ -22,6 +22,7 @@ class HomeController extends Controller
 {
     public function index()
     {
+        // Lấy danh sách banner
         $banners = Banner::with('desktopImage')
             ->where('status', 'active')
             ->orderBy('order')
@@ -39,19 +40,8 @@ class HomeController extends Controller
                 if ($variant) {
                     $isOnSale = false;
 
-                    if (
-                        $variant->sale_price &&
-                        $variant->sale_price_starts_at &&
-                        $variant->sale_price_ends_at &&
-                        $variant->price > 0
-                    ) {
-                        try {
-                            $startDate = \Carbon\Carbon::parse($variant->sale_price_starts_at);
-                            $endDate = \Carbon\Carbon::parse($variant->sale_price_ends_at);
-                            $isOnSale = $now->between($startDate, $endDate);
-                        } catch (\Exception $e) {
-                            \Log::error('Lỗi phân tích ngày tháng: ' . $e->getMessage());
-                        }
+                    if ($variant->sale_price && $variant->price > 0) {
+                        $isOnSale = true;
                     }
 
                     $variant->discount_percent = $isOnSale
@@ -122,18 +112,41 @@ class HomeController extends Controller
         // Tính rating & discount
         $calculateAverageRating($latestProducts);
 
+        // Lấy danh sách sản phẩm nổi bật từ cache hoặc database
         if (auth()->check()) {
             $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
-            $recentNotifications = auth()->user()->notifications()->take(10)->get();
+
+            $recentNotifications = auth()->user()->notifications()
+                ->latest()
+                ->take(10)
+                ->get()
+                ->map(function ($notification) {
+                    return [
+                        'title' => $notification->data['title'] ?? 'Thông báo',
+                        'message' => $notification->data['message'] ?? '',
+                        'icon' => $notification->data['icon'] ?? 'default',
+                        'color' => $notification->data['color'] ?? 'gray',
+                        'time' => $notification->created_at->diffForHumans(),
+                    ];
+                });
         } else {
             $unreadNotificationsCount = 0;
             $recentNotifications = collect();
         }
 
+
+
+        $featuredPosts = Post::with('coverImage')
+            ->where('status', 'published')
+            ->where('is_featured', true)
+            ->latest('published_at')
+            ->take(3)
+            ->get();
         return view('users.home', compact(
             'featuredProducts',
             'latestProducts',
             'banners',
+            'featuredPosts',
             'unreadNotificationsCount',
             'recentNotifications',
         ));
@@ -164,6 +177,7 @@ class HomeController extends Controller
             ->firstOrFail();
 
         $product->increment('view_count');
+
 
         $averageRating = $product->reviews->avg('rating') ?? 0;
         $product->average_rating = round($averageRating, 1);
@@ -274,7 +288,9 @@ class HomeController extends Controller
                 $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
             }
         }
+        $attributesGrouped = collect($attributes)->map(fn($values) => $values->sortBy('value')->values());
 
+        $variantCombinations = $availableCombinations;
         return view('users.show', compact(
             'product',
             'relatedProducts',
@@ -288,6 +304,8 @@ class HomeController extends Controller
             'comments',
             'attributeOrder',
             'initialVariantAttributes',
+            'variantCombinations',
+            'attributesGrouped'
         ));
     }
 
@@ -409,14 +427,6 @@ class HomeController extends Controller
                         })->limit(1));
                 break;
 
-            case 'dang_giam_gia':
-                $query->whereHas('variants', fn($q) => $q->whereNotNull('sale_price')
-                    ->where('sale_price', '>', 0)
-                    ->where('sale_price_starts_at', '<=', $now)
-                    ->where('sale_price_ends_at', '>=', $now))
-                    ->orderByDesc('created_at');
-                break;
-
             case 'noi_bat':
                 $query->where('is_featured', 1)->orderByDesc('created_at');
                 break;
@@ -440,19 +450,8 @@ class HomeController extends Controller
             }
         }
 
-
-        // 📚 Lấy tất cả danh mục hoạt động (tạm thời disable chức năng show_on_homepage)
-        // $categories = Category::where('show_on_homepage', true)
-        //    ->where('status', 'active')
-        //    ->get();
-        $categories = Category::where('status', 'active')
-            ->orderBy('name')
-            ->get();
-
-        $currentCategory = $categoryId ? $category : null;
         $categories = Category::all();
         $parentCategories = $categories->whereNull('parent_id');
-
 
         if ($request->ajax()) {
             return response()->json([
