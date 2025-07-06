@@ -1,5 +1,6 @@
 <?php
 
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
@@ -29,7 +30,8 @@ use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Users\CartController;
 use App\Http\Controllers\Admin\SpecificationController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
-
+use App\Http\Controllers\Users\PaymentController;
+use App\Http\Controllers\LocationController;
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
@@ -95,6 +97,16 @@ Route::post('/cart/apply-voucher', [CartController::class, 'applyVoucher'])->nam
 // Xóa mã giảm giá
 Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
 
+// Routes cho thanh toán ( Sang PaymentController )
+Route::get('/payments', [PaymentController::class, 'index'])->name('payments.information');
+Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
+Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
+// LOCATION API ROUTES
+//==========================================================================
+Route::prefix('api/locations')->name('api.locations.')->group(function () {
+    Route::get('/provinces', [LocationController::class, 'getProvinces'])->name('provinces');
+    Route::get('/wards/{provinceCode}', [LocationController::class, 'getWardsByProvince'])->name('wards');
+});
 
 //==========================================================================
 // ADMIN ROUTES
@@ -321,7 +333,6 @@ Route::prefix('admin')
      Route::get('/test-403', function () {
             abort(403);
         });
-
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';

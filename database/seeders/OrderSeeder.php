@@ -35,14 +35,15 @@ class OrderSeeder extends Seeder
             $actualSubTotal = 0;
 
             for ($i = 0; $i < $itemCount; $i++) {
-                $variantToOrder = $availableVariants->isNotEmpty() ? $availableVariants->random() : ProductVariant::factory()->create(['stock_quantity' => rand(1,5)]); // Tạo nếu không có
+                $variantToOrder = $availableVariants->isNotEmpty() ? $availableVariants->random() : ProductVariant::factory()->create(['stock_quantity' => rand(1, 5)]); // Tạo nếu không có
 
                 if (!$variantToOrder) continue;
 
                 $quantityOrdered = rand(1, min(3, $variantToOrder->stock_quantity > 0 ? $variantToOrder->stock_quantity : 1));
-                
+
                 $orderItem = OrderItem::factory()->create([
                     'order_id' => $order->id,
+                    'sku' => $variantToOrder->sku,
                     'product_variant_id' => $variantToOrder->id,
                     'quantity' => $quantityOrdered,
                     // Giá và tổng tiền sẽ được tính trong OrderItemFactory

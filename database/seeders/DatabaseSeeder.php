@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             CouponSeeder::class,
             CommentSeeder::class,       // Tạo comment sau khi có Post/Review
             WishlistSeeder::class,
+            LocationSeeder::class,      // Tạo tỉnh thành và phường xã trước address
             AddressSeeder::class,
             SystemSettingSeeder::class,
             ContactFormSeeder::class,
