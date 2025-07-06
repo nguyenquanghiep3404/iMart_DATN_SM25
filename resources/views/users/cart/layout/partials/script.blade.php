@@ -24,6 +24,11 @@
                     }, 0);
                     const totalQtySpan = document.getElementById('total-quantity');
                     if (totalQtySpan) totalQtySpan.textContent = totalQty;
+                    const cartBadge = document.getElementById('cart-badge');
+                    if (cartBadge) {
+                        cartBadge.textContent = totalQty;
+                        cartBadge.style.display = totalQty > 0 ? 'flex' : 'none';
+                    }
                 }
 
                 function updateQuantity(newQuantity, oldQuantity) {

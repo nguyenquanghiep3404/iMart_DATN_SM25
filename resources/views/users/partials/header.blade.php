@@ -128,7 +128,7 @@
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                     </button>
-                    <a href="#"
+                    <a href="/wishlist"
                         class="hidden md:block p-2 rounded-full text-gray-300 hover:text-white transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -251,7 +251,7 @@
                         </div>
                     </div>
 
-                    <a href="/cart"
+                    <a href="{{ route('cart.index') }}"
                         class="p-2 rounded-full text-gray-300 hover:text-white transition-colors relative">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -260,9 +260,15 @@
                             <line x1="3" y1="6" x2="21" y2="6"></line>
                             <path d="M16 10a4 4 0 0 1-8 0"></path>
                         </svg>
-                        <span
-                            class="absolute top-0 right-0 flex justify-center items-center h-4 w-4 bg-red-500 text-white text-[10px] font-semibold rounded-full transform translate-x-1/3 -translate-y-1/3">3</span>
+
+                        <span id="cart-badge"
+                            class="absolute top-0 right-0 flex justify-center items-center h-4 w-4 bg-red-500 text-white text-[10px] font-semibold rounded-full transform translate-x-1/3 -translate-y-1/3"
+                            style="{{ $cartItemCount > 0 ? '' : 'display: none;' }}">
+                            {{ $cartItemCount }}
+                        </span>
                     </a>
+
+
 
                     <button id="mobile-menu-btn"
                         class="lg:hidden p-2 rounded-full text-gray-300 hover:text-white transition-colors">
@@ -320,7 +326,7 @@
                     </svg>
                     <span>Tài khoản</span>
                 </a>
-                <a href="#"
+                <a href="/wishlist"
                     class="flex items-center px-3 py-2 text-gray-200 font-semibold hover:bg-white/10 rounded-md">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"

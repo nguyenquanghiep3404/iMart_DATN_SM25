@@ -20,6 +20,7 @@ use App\Models\Product;
 use App\Policies\ProductPolicy;
 use App\Models\Category;
 use App\Policies\CategoryPolicy;
+use Illuminate\Support\Facades\View; 
 
 
 class AppServiceProvider extends ServiceProvider
@@ -114,6 +115,10 @@ class AppServiceProvider extends ServiceProvider
         //     // Bỏ qua lỗi khi migrate
         //     return;
         // }
-
+        View::composer('*', function ($view) {
+            $cart = session()->get('cart', []);
+            $totalQuantity = array_sum(array_column($cart, 'quantity'));
+            $view->with('cartItemCount', $totalQuantity);
+        });
     }
 }

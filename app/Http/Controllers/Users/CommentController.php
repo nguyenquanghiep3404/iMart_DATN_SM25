@@ -11,6 +11,17 @@ class CommentController extends Controller
 {
     public function store(Request $request)
     {
+        if (!Auth::check()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn cần đăng nhập để bình luận.',
+                ], 401);
+            }
+    
+            return redirect()->route('login')->with('warning', 'Bạn cần đăng nhập để bình luận.');
+        }
+    
         $validated = $request->validate([
             'commentable_type' => 'required|string',
             'commentable_id'   => 'required|integer',

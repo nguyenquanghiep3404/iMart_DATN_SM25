@@ -11,14 +11,14 @@
     </nav>
     <!-- Items in the cart + Order summary -->
     <section class="container pb-5 mb-2 mb-md-3 mb-lg-4 mb-xl-5">
-        <h1 class="h3 mb-4">Shopping cart</h1>
+        <h1 class="h3 mb-4">Giỏ Hàng</h1>
         <div class="row">
 
             <!-- Items list -->
             <div class="col-lg-8">
                 <div class="pe-lg-2 pe-xl-3 me-xl-3">
-                    <p class="fs-sm">Buy <span class="text-dark-emphasis fw-semibold">$183</span> more to get <span
-                            class="text-dark-emphasis fw-semibold">Free Shipping</span></p>
+                    {{-- <p class="fs-sm">Buy <span class="text-dark-emphasis fw-semibold">$183</span> more to get <span
+                            class="text-dark-emphasis fw-semibold">Free Shipping</span></p> --}}
                     <div class="progress w-100 overflow-visible mb-4" role="progressbar" aria-label="Free shipping progress"
                         aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="height: 4px">
                         <div class="progress-bar bg-warning rounded-pill position-relative overflow-visible"
@@ -34,19 +34,19 @@
                     <table class="table position-relative z-2 mb-4">
                         <thead>
                             <tr>
-                                <th scope="col" class="fs-sm fw-normal py-3 ps-0"><span class="text-body">Product</span>
+                                <th scope="col" class="fs-sm fw-normal py-3 ps-0"><span class="text-body">Sản Phẩm</span>
                                 </th>
                                 <th scope="col" class="text-body fs-sm fw-normal py-3 d-none d-xl-table-cell"><span
-                                        class="text-body">Price</span></th>
+                                        class="text-body">Gía</span></th>
                                 <th scope="col" class="text-body fs-sm fw-normal py-3 d-none d-md-table-cell"><span
-                                        class="text-body">Quantity</span></th>
+                                        class="text-body">Số Lượng</span></th>
                                 <th scope="col" class="text-body fs-sm fw-normal py-3 d-none d-md-table-cell"><span
-                                        class="text-body">Total</span></th>
+                                        class="text-body">Tổng tiền</span></th>
                                 <th scope="col" class="py-0 px-0">
                                     <div class="nav justify-content-end">
                                         <button type="button"
-                                            class="nav-link d-inline-block text-decoration-underline text-nowrap py-3 px-0">Clear
-                                            cart</button>
+                                            class="nav-link d-inline-block text-decoration-underline text-nowrap py-3 px-0">Xóa
+                                        </button>
                                     </div>
                                 </th>
                             </tr>
@@ -134,9 +134,9 @@
                     </table>
 
                     <div class="nav position-relative z-2 mb-4 mb-lg-0">
-                        <a class="nav-link animate-underline px-0" href="shop-catalog-electronics.html">
+                        <a href="javascript:void(0);" onclick="window.history.back();">
                             <i class="ci-chevron-left fs-lg me-1"></i>
-                            <span class="animate-target">Continue shopping</span>
+                            <span class="animate-target">Tiếp tục mua sắm</span>
                         </a>
                     </div>
                 </div>

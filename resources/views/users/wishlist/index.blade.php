@@ -103,11 +103,11 @@
 
                                         <div class="ratio mb-2" style="--cz-aspect-ratio: calc(240 / 258 * 100%)">
                                             <img src="{{ asset('storage/' . $product->productVariant->image) }}"
-                                                alt="{{ $product->productVariant->name }}">
+                                                alt="...">
                                         </div>
 
                                         <h3 class="fs-sm fw-medium text-truncate mb-0 text-dark">
-                                            {{ $product->productVariant->name }}
+                                            {{ $product->productVariant->name ?? $product->productVariant->product->name }}
                                         </h3>
                                     </a>
                                 </div>

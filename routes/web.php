@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Users\CartController;
+use App\Http\Controllers\Admin\OrderManagerController;
 
 // use App\Http\Controllers\Users\CommentController as UserCommentController;
 use App\Http\Controllers\Users\CommentController;
@@ -234,7 +235,8 @@ Route::prefix('admin')
         Route::put('/banners/{banner}', [BannerController::class, 'update'])->name('banners.update');
         Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
 
-
+        // quản lý nhân viên quản lý đơn hàng
+        Route::get('/odermannager', [OrderManagerController::class, 'index'])->name('index');
 
         // Quản lý comment
         Route::get('/comments', [AdminCommentController::class, 'index'])->name('comment.index');
