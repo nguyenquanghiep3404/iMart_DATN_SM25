@@ -93,8 +93,7 @@
         <div id="header-main" class="flex items-center justify-between h-full">
             <div class="flex justify-start">
                 <a href="/" class="flex-shrink-0">
-                    <img class="h-12 sm:h-14 w-auto" src="{{ asset('assets/users/logo/Bản sao của iMart (2).svg') }}"
-                        alt="Logo">
+                    <img class="h-12 sm:h-14 w-auto" src="{{ asset('assets/users/logo/logo-full.svg') }}" alt="Logo">
                 </a>
             </div>
 

@@ -1,4 +1,4 @@
-{{-- Giả sử bạn có biến $unreadNotificationsCount và $recentNotifications từ Controller --}}
+
 @php
 $unreadNotificationsCount = 5; // Ví dụ
 $recentNotifications = [
