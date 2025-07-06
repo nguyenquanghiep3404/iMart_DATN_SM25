@@ -183,11 +183,27 @@
 
                 <!-- START: Specification Groups Section -->
                 <div class="mt-8 pt-8 border-t border-gray-200">
-                    <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
                         <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         Nhóm thông số kỹ thuật
                     </h3>
-                    <p class="text-sm text-gray-500 mb-4">Chọn các nhóm thông số sẽ được áp dụng cho tất cả sản phẩm thuộc danh mục này.</p>
+                    <p class="text-sm text-gray-500 mb-6">Chọn các nhóm thông số sẽ được áp dụng cho tất cả sản phẩm thuộc danh mục này.</p>
+                    
+                    <form method="GET" action="{{ route('admin.categories.edit', $category->id) }}" class="mb-6">
+                        <div class="relative">
+                            <input type="text" name="spec_search" value="{{ $specSearch ?? '' }}" placeholder="Tìm kiếm nhóm thông số..."
+                                   class="block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm transition duration-200 ease-in-out focus:ring-2 focus:ring-indigo-500 focus:border-transparent hover:bg-white pl-10 pr-24">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <button type="submit" class="absolute inset-y-0 right-0 px-4 py-2 bg-indigo-600 text-white font-semibold rounded-r-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                Tìm kiếm
+                            </button>
+                        </div>
+                    </form>
+
                     <div class="spec-group-grid">
                         @forelse ($specificationGroups as $group)
                             <label for="spec_group_{{ $group->id }}" class="spec-group-item cursor-pointer">
@@ -199,7 +215,25 @@
                                 <span class="font-medium text-gray-700">{{ $group->name }}</span>
                             </label>
                         @empty
-                            <p class="text-gray-500 col-span-full">Chưa có nhóm thông số nào. Vui lòng <a href="{{ route('admin.specification-groups.create') }}" class="text-indigo-600 hover:underline">tạo nhóm mới</a> trước.</p>
+                            <div class="col-span-full text-center py-8 px-4 bg-gray-50 rounded-lg">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                                  <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                                </svg>
+                                <h3 class="mt-2 text-base font-medium text-gray-900">
+                                    @if(!empty($specSearch))
+                                        Không tìm thấy nhóm thông số nào với từ khóa "{{ $specSearch }}"
+                                    @else
+                                        Chưa có nhóm thông số nào
+                                    @endif
+                                </h3>
+                                <p class="mt-1 text-base text-gray-500">
+                                     @if(empty($specSearch))
+                                        Vui lòng <a href="#" class="text-indigo-600 hover:underline font-semibold">tạo nhóm mới</a> để bắt đầu.
+                                     @else
+                                        Hãy thử với một từ khóa khác hoặc xóa bộ lọc.
+                                     @endif
+                                </p>
+                            </div>
                         @endforelse
                     </div>
                     @error('specification_groups')

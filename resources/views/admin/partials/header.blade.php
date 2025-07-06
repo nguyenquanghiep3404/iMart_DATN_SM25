@@ -1,4 +1,4 @@
-{{-- Giả sử bạn có biến $unreadNotificationsCount và $recentNotifications từ Controller --}}
+
 @php
 
 // Giả lập thông tin user để hiển thị
