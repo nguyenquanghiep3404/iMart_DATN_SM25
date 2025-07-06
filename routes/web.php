@@ -1,5 +1,6 @@
 <?php
 
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
@@ -14,6 +15,7 @@ use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
@@ -29,6 +31,8 @@ use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Users\PaymentController;
+use App\Http\Controllers\LocationController;
 
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
@@ -60,6 +64,10 @@ Route::get('/help', [HomeController::class, 'help'])->name('users.help');
 Route::get('/help/{slug}', [HomeController::class, 'helpAnswer'])->name('users.help.answer');
 Route::get('/terms', [HomeController::class, 'terms'])->name('users.terms');
 // các trang không cần đăng nhập ở dưới đây
+Route::post('/notifications/mark-as-read', function () {
+    auth()->user()->unreadNotifications->markAsRead();
+    return response()->json(['status' => 'success']);
+})->name('notifications.markAsRead')->middleware('auth');
 
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -91,6 +99,16 @@ Route::post('/cart/apply-voucher', [CartController::class, 'applyVoucher'])->nam
 // Xóa mã giảm giá
 Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
 
+// Routes cho thanh toán ( Sang PaymentController )
+Route::get('/payments', [PaymentController::class, 'index'])->name('payments.information');
+Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
+Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
+// LOCATION API ROUTES
+//==========================================================================
+Route::prefix('api/locations')->name('api.locations.')->group(function () {
+    Route::get('/provinces', [LocationController::class, 'getProvinces'])->name('provinces');
+    Route::get('/wards/{provinceCode}', [LocationController::class, 'getWardsByProvince'])->name('wards');
+});
 
 //==========================================================================
 // ADMIN ROUTES
@@ -170,12 +188,38 @@ Route::prefix('admin')
         // Route quản lí vai trò
         Route::resource('roles', RoleController::class);
 
+        // 1. Route hiển thị trang chính của thư viện
+        Route::get('/media', [UploadedFileController::class, 'index'])->name('media.index');
+        // 2. Route xử lý việc tải file lên (sẽ được gọi bằng AJAX)
+        Route::post('/media', [UploadedFileController::class, 'store'])->name('media.store');
+        // 3. Route xử lý việc cập nhật thông tin file (sửa alt text, v.v. - AJAX)
+        Route::patch('/media/{uploadedFile}', [UploadedFileController::class, 'update'])->name('media.update');
+        Route::delete('/media/{uploadedFile}', [UploadedFileController::class, 'destroy'])->name('media.destroy');
+        Route::get('/media/fetch', [UploadedFileController::class, 'fetchForModal'])->name('media.fetchForModal');
+        Route::get('/media/trash', [UploadedFileController::class, 'trash'])->name('media.trash');
+        Route::post('/media/restore/{id}', [UploadedFileController::class, 'restore'])->name('media.restore');
+        Route::delete('/media/force-delete/{id}', [UploadedFileController::class, 'forceDelete'])->name('media.forceDelete');
+        Route::post('media/bulk-delete', [UploadedFileController::class, 'bulkDelete'])->name('media.bulk-delete');
+
+        // Route riêng cho việc xóa ảnh gallery của sản phẩm
+        // {uploadedFile} ở đây sẽ là ID của bản ghi trong bảng uploaded_files
+        // Laravel sẽ tự động thực hiện Route Model Binding nếu tham số trong controller là UploadedFile $uploadedFile
         // Route::middleware('can:manage-content')->group(function () {
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
             ->name('products.gallery.delete');
 
         // Category routes
         // Route::resource('categories', CategoryController::class);
+
+
+        // Route::middleware('can:manage-content')->group(function () {
+        Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
+            ->name('products.gallery.delete');
+
+        // Category routes
+        // Route::resource('categories', CategoryController::class);
+
+
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::get('/categories/trash', [CategoryController::class, 'trash'])->name('categories.trash');
         Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
@@ -225,6 +269,11 @@ Route::prefix('admin')
 
 
         // Banner routes
+
+        Route::get('/banners/trash', [BannerController::class, 'trash'])->name('banners.trash');
+        Route::post('/banners/{banner}/restore', [BannerController::class, 'restore'])->name('banners.restore');
+        Route::delete('/banners/{banner}/force-delete', [BannerController::class, 'forceDelete'])->name('banners.forceDelete');
+
         Route::get('/banners', [BannerController::class, 'index'])->name('banners.index');
         Route::get('/banners/create', [BannerController::class, 'create'])->name('banners.create');
         Route::post('/banners', [BannerController::class, 'store'])->name('banners.store');
@@ -275,6 +324,9 @@ Route::prefix('admin')
         Route::post('coupons/validate', [CouponController::class, 'validateCoupon'])->name('coupons.validate');
         Route::post('/coupons/restore/{id}', [CouponController::class, 'restore'])->name('coupons.restore');
         Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
+
+
+        // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')
@@ -292,12 +344,9 @@ Route::prefix('shipper')
         Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
         Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus');
     });
-Route::get('/test-403', function () {
-    abort(403);
-});
-
-
-
+     Route::get('/test-403', function () {
+            abort(403);
+        });
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';

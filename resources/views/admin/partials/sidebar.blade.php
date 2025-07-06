@@ -1,6 +1,4 @@
 @php
-    // Xác định mục nav cha nào đang active dựa trên route hiện tại
-    // Điều này giúp sidebar tự động mở đúng mục khi tải lại trang hoặc truy cập trực tiếp vào link con
     $activeParentNav = null;
     $currentRouteName = request()->route()->getName();
     if (str_starts_with($currentRouteName, 'admin.dashboard')) {
@@ -41,14 +39,28 @@
     class="w-[300px] lg:w-[250px] xl:w-[300px] border-r border-slate-200 overflow-y-auto sidebar-scrollbar fixed left-0 top-0 h-full bg-white z-40 transition-transform duration-300 print:hidden"
     :class="sideMenu ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
     <div>
-        <div class="flex h-[65px] items-center border-b border-slate-200 px-6">
-            <a href="{{ route('admin.dashboard') }}">
-                {{-- Đặt chiều cao cho logo, chiều rộng sẽ tự động điều chỉnh --}}
-                <img src="{{ asset('assets/users/logo/bfc4baa4-0e46-4289-8f62-2aea6a7d2a4b.png') }}" alt=""
-                    width="200px" style="margin-left: 30px;">
+        {{-- PHẦN HEADER CỦA SIDEBAR --}}
+        <div class="flex h-[65px] items-center justify-center border-b border-slate-200 px-3 lg:px-6 py-4">
 
-            </a>
-        </div>
+<a href="{{ route('admin.dashboard') }}">
+
+{{-- Logo đầy đủ - Hiển thị trên màn hình từ lg trở lên --}}
+
+<img class="hidden lg:block" src="{{ asset('assets/users/logo/logo-full.svg') }}" alt="Full Logo"
+
+style="width: 150px; ">
+
+{{-- Logo icon - Hiển thị trên màn hình nhỏ hơn lg --}}
+
+<img class="block lg:hidden" src="{{ asset('assets/users/logo/logo-icon.svg') }}" alt="Icon Logo"
+
+style="width: 40px;">
+
+</a>
+
+</div>
+        {{-- KẾT THÚC HEADER --}}
+
         <div class="px-3 py-5" x-data="{ openNav: {{ $activeParentNav ?? 'null' }} }">
             <ul class="space-y-1">
                 {{-- 1. Trang chủ --}}
@@ -291,6 +303,7 @@
                         <li>
 
 
+<<<<<<< HEAD
                             <!-- <a href=""
                                 class="block w-full py-1.5
                             <a href="{{ route('admin.roles.index') }}" {{-- Giả sử route --}}
@@ -300,6 +313,9 @@
                                 Vai trò của người dùng
                             </a> -->
                         </li>
+=======
+                            </li>
+>>>>>>> 39222e361a52975195f3b53dc079d61e47f5a70d
                         <li>
 
                             <a href="{{ route('admin.users.create') }}"
