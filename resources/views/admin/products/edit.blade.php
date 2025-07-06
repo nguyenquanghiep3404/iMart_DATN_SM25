@@ -10,11 +10,19 @@
         body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
         .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.05), 0 3px 7px -3px rgba(0, 0, 0, 0.05); padding: 1.75rem; margin-bottom: 1.75rem; }
         .card-header { display: flex; align-items: center; color: #1e3a8a; font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e2e8f0; }
-        .input-group { margin-bottom: 1.25rem; }
-        .input-group label { display: block; color: #4b5563; font-weight: 500; margin-bottom: 0.5rem; }
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .input-group label {
+            display: block;
+            color: #4b5563;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
         .input-field, .select-field, .textarea-field { width: 100%; padding: 0.875rem 1.125rem; border: 1px solid #cbd5e1; border-radius: 0.625rem; background-color: #f8fafc; }
         .input-field:focus, .select-field:focus, .textarea-field:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); background-color: white; }
-        .btn { padding: 0.875rem 1.75rem; border-radius: 0.625rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-transform: uppercase; border: 1px solid transparent; }
+        .btn { padding: 0.875rem 1.75rem; border-radius: 0.625rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-transform: uppercase; border: 1px solid transparent; transition: all 0.2s ease-in-out; }
         .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
         .btn-primary { background-color: #2563eb; color: white; }
         .btn-secondary { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
@@ -36,14 +44,22 @@
         .form-check-input { height: 1.125rem; width: 1.125rem; }
         .required-star { color: #ef4444; font-weight: bold; }
         .label-with-action { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-        .svg-icon { width: 1.25rem; height: 1.25rem; stroke: currentColor; fill: none; }
+        .svg-icon { width: 1.25rem; height: 1.25rem; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
         .card-header .svg-icon { margin-right: 0.5rem; }
         button .svg-icon { margin-right: 0.5rem; }
         .hidden { display: none !important; }
         .modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
         .modal.show { display: flex; align-items: center; justify-content: center; }
         .input-group label.flex {display: flex;margin-bottom: 0;}
-        .input-group .form-section-heading {
+        .input-group .form-section-heading { margin-bottom: 0; }
+        .action-dropdown { position: relative; display: inline-block; }
+        .action-dropdown-content { display: none; position: absolute; right: 0; background-color: #ffffff; min-width: 220px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1); z-index: 100; border-radius: 0.5rem; padding: 0.5rem 0; border: 1px solid #e2e8f0; }
+        .action-dropdown-content .dropdown-header { padding: 0.5rem 1rem; font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; }
+        .action-dropdown-content a { color: #334155; padding: 0.65rem 1rem; text-decoration: none; display: block; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
+        .action-dropdown-content a:hover { background-color: #f1f5f9; }
+        .action-dropdown-content a.disabled { color: #94a3b8; cursor: not-allowed; background-color: transparent; }
+        .action-dropdown:hover .action-dropdown-content { display: block; }
+        .label-with-action label {
         margin-bottom: 0;
         }
     </style>
@@ -165,9 +181,12 @@
                                     <div class="input-group"><label for="simple_sku">SKU <span class="required-star">*</span></label><input type="text" id="simple_sku" name="simple_sku" class="input-field" value="{{ old('simple_sku', $simpleVariant?->sku ?? '') }}"></div>
                                     <div class="input-group"><label for="simple_price">Giá bán <span class="required-star">*</span> (VNĐ)</label><input type="number" id="simple_price" name="simple_price" class="input-field" value="{{ old('simple_price', $simpleVariant?->price ?? '') }}"></div>
                                     <div class="input-group">
-                                        <div class="label-with-action"><label for="simple_sale_price">Giá khuyến mãi (VNĐ)</label><a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm">Lên lịch</a></div>
-                                        <input type="number" name="simple_sale_price" class="input-field" value="{{ old('simple_sale_price', $simpleVariant?->sale_price ?? '') }}">
-                                    </div>
+    <div class="label-with-action">
+        <label for="simple_sale_price">Giá khuyến mãi (VNĐ)</label>
+        <a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm">Lên lịch</a>
+    </div>
+    <input type="number" id="simple_sale_price" name="simple_sale_price" class="input-field" value="{{ old('simple_sale_price', $simpleVariant?->sale_price ?? '') }}">
+</div>
                                     <div class="input-group"><label for="simple_stock_quantity">Số lượng tồn kho <span class="required-star">*</span></label><input type="number" id="simple_stock_quantity" name="simple_stock_quantity" class="input-field" value="{{ old('simple_stock_quantity', $simpleVariant?->stock_quantity ?? '') }}"></div>
                                 </div>
                                 <div class="schedule-container {{ old('simple_sale_price_starts_at', $simpleVariant?->sale_price_starts_at) || old('simple_sale_price_ends_at', $simpleVariant?->sale_price_ends_at) ? '' : 'hidden' }} mt-2">
@@ -198,11 +217,18 @@
                                 <div class="input-group md:col-span-2 pt-4 mt-4 border-t">
                                     <label>Ảnh Sản Phẩm <span class="required-star">*</span></label>
                                     <div class="flex space-x-2 mb-3">
-                                        <label for="simple_product_image_input" class="btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
+                                        <label for="simple_product_image_input" class="form-section-heading btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
                                         <input type="file" id="simple_product_image_input" class="hidden" accept="image/*" multiple onchange="handleSimpleProductImages(event)">
                                         <button type="button" id="open-library-btn-simple" class="btn btn-secondary btn-sm"><i class="fas fa-photo-video mr-2"></i> Thêm từ thư viện</button>
                                     </div>
                                     <div id="simple_product_image_preview_container" class="image-preview-container mt-2"></div>
+                                </div>
+                                {{-- NEW: Specifications container for simple product --}}
+                                <div class="pt-4 mt-4 border-t border-gray-200">
+                                    <h4 class="text-md font-semibold text-gray-700 mb-2">Thông số kỹ thuật</h4>
+                                    <div id="simpleSpecificationsContainer" class="space-y-4">
+                                        <p class="text-gray-500 text-sm">Vui lòng chọn danh mục để tải thông số.</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -284,7 +310,7 @@
                         </div>
                     </div>
 
-                            <div class="card">
+                        <div class="card">
                                 <div class="card-header">
                                     <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><path d="M11 8l2 2"></path></svg>
                                     Tối Ưu Hóa SEO
@@ -371,16 +397,18 @@ let variantIndexGlobal = 0;
 let tagify;
 window.mediaLibraryTarget = null;
 let selectedProductAttributes = [];
+let fetchedSpecifications = []; // NEW: For storing specs from API
 
 @php
+    // UPDATED: Load specifications and attribute details
+    $product->load('variants.attributeValues.attribute', 'variants.images', 'variants.specifications.specification.specificationGroup', 'coverImage', 'galleryImages');
+    $jsProduct = $product->toArray();
     $jsAttributes = $attributes->map(function ($attr) {
         return [
             'id' => $attr->id, 'name' => $attr->name, 'slug' => $attr->slug,
             'attributeValues' => $attr->attributeValues->map(fn($val) => ['id' => $val->id, 'value' => $val->value, 'meta' => $val->meta])->values()->all(),
         ];
     })->values()->all();
-    $product->load('variants.attributeValues', 'variants.images', 'coverImage', 'galleryImages');
-    $jsProduct = $product->toArray();
     $oldInput = session()->getOldInput();
 @endphp
 
@@ -388,7 +416,7 @@ const allAttributesFromPHP = @json($jsAttributes, JSON_UNESCAPED_UNICODE);
 const productBeingEdited = @json($jsProduct, JSON_UNESCAPED_UNICODE);
 const oldData = @json($oldInput, JSON_UNESCAPED_UNICODE);
 let currentProductType = productBeingEdited.type;
-const originalProductTypeFromServer = productBeingEdited.type; // Lưu loại sản phẩm gốc
+const originalProductTypeFromServer = productBeingEdited.type; 
 
 // =================================================================
 // CÁC HÀM TIỆN ÍCH, AI, UPLOAD
@@ -509,6 +537,174 @@ async function callGeminiAPI(prompt, isStructured = false, schema = null) {
         showMessageModal("Lỗi Hệ Thống", `Không thể kết nối đến máy chủ AI: ${error.message}`, "error");
         return null;
     }
+}
+
+// =================================================================
+// LOGIC THÔNG SỐ KỸ THUẬT (SPECIFICATIONS) - NEW
+// =================================================================
+
+/**
+ * Helper to convert the spec array from PHP to a key-value object for easier access.
+ * The pivot contains the value for the specific variant.
+ * @param {Array} specsArray - The array of specification objects from the product data.
+ * @returns {Object} - An object like { spec_id: 'value' }.
+ */
+function mapSpecsToObject(specsArray) {
+    if (!Array.isArray(specsArray)) return {};
+    return specsArray.reduce((acc, item) => {
+        // The structure is item -> specification -> pivot -> value
+        if (item && item.specification && item.specification.id && item.pivot) {
+            acc[item.specification.id] = item.pivot.value;
+        }
+        return acc;
+    }, {});
+}
+
+/**
+ * Renders specification input fields into a designated container.
+ * @param {HTMLElement} container - The container element to render into.
+ * @param {string} namePrefix - The prefix for the input name (e.g., 'specifications' or 'variants[0][specifications]').
+ * @param {object} existingData - An object of existing specification data to repopulate fields.
+ */
+function renderSpecifications(container, namePrefix, existingData = {}) {
+    if (!container) return;
+    container.innerHTML = ''; // Clear previous content
+    if (!fetchedSpecifications || fetchedSpecifications.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm">Danh mục này không có thông số kỹ thuật.</p>';
+        return;
+    }
+
+    fetchedSpecifications.forEach(group => {
+        const groupEl = document.createElement('div');
+        groupEl.className = 'spec-group-container mb-4';
+        let groupHTML = `<h5 class="text-sm font-semibold text-gray-600 mb-3 mt-3">${group.name}</h5><div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">`;
+        if (group.specifications && group.specifications.length) {
+            group.specifications.forEach(spec => {
+                const inputName = `${namePrefix}[${spec.id}]`;
+                const oldValue = existingData[spec.id] || '';
+                groupHTML += `
+                    <div class="input-group !mb-0">
+                        <label for="${namePrefix}_spec_${spec.id}" class="!text-xs !font-normal !text-gray-500">${spec.name}</label>
+                        <input type="text" id="${namePrefix}_spec_${spec.id}" name="${inputName}" class="input-field !py-2 !text-sm" value="${oldValue}">
+                    </div>`;
+            });
+        }
+        groupHTML += '</div>';
+        groupEl.innerHTML = groupHTML;
+        container.appendChild(groupEl);
+    });
+}
+
+/**
+ * Fetches specifications when the category changes and updates all relevant sections.
+ */
+async function handleCategoryChange() {
+    const categoryId = document.getElementById('category_id').value;
+    const simpleSpecContainer = document.getElementById('simpleSpecificationsContainer');
+
+    // Reset if no category is selected
+    if (!categoryId) {
+        fetchedSpecifications = [];
+        if (simpleSpecContainer) renderSpecifications(simpleSpecContainer, 'specifications');
+        document.querySelectorAll('.variant-specifications-container').forEach(container => {
+            const variantIndex = container.closest('.variant-card').dataset.variantIndex;
+            renderSpecifications(container, `variants[${variantIndex}][specifications]`);
+        });
+        return;
+    }
+
+    try {
+        const response = await fetch(`{{ url('admin/api/specifications-by-category') }}/${categoryId}`);
+        if (!response.ok) throw new Error('Network response was not ok');
+        fetchedSpecifications = await response.json();
+
+        // Render for simple product if it's visible
+        if (simpleSpecContainer && document.getElementById('simpleProductFields').style.display !== 'none') {
+            const simpleVariant = productBeingEdited.variants.length > 0 ? productBeingEdited.variants[0] : null;
+            const existingSimpleSpecs = simpleVariant ? mapSpecsToObject(simpleVariant.specifications) : {};
+            renderSpecifications(simpleSpecContainer, 'specifications', existingSimpleSpecs);
+        }
+
+        // Render for all existing variant cards
+        document.querySelectorAll('.variant-card').forEach(card => {
+            const variantIndex = card.dataset.variantIndex;
+            const variantSpecContainer = card.querySelector('.variant-specifications-container');
+            const variantId = card.querySelector(`input[name="variants[${variantIndex}][id]"]`)?.value;
+            let variantData = null;
+            if (variantId) {
+                variantData = productBeingEdited.variants.find(v => v.id == variantId);
+            }
+            const existingVariantSpecs = variantData ? mapSpecsToObject(variantData.specifications) : {};
+            renderSpecifications(variantSpecContainer, `variants[${variantIndex}][specifications]`, existingVariantSpecs);
+        });
+
+    } catch (error) {
+        console.error('Error fetching specifications:', error);
+        fetchedSpecifications = [];
+        showMessageModal('Lỗi', 'Không thể tải thông số kỹ thuật.', 'error');
+    }
+}
+
+/**
+ * Copies specification values from a source variant to a target variant.
+ * @param {string} sourceIndex - The index of the source variant card.
+ * @param {string} targetIndex - The index of the target variant card.
+ */
+function copySpecificationsFrom(sourceIndex, targetIndex) {
+    const sourceCard = document.querySelector(`.variant-card[data-variant-index="${sourceIndex}"]`);
+    const targetCard = document.querySelector(`.variant-card[data-variant-index="${targetIndex}"]`);
+    if (!sourceCard || !targetCard) return;
+
+    const sourceInputs = sourceCard.querySelectorAll('.variant-specifications-container input[type="text"]');
+    sourceInputs.forEach(sourceInput => {
+        // Extract spec ID from the name attribute, e.g., variants[0][specifications][12] -> 12
+        const match = sourceInput.name.match(/\[specifications\]\[(\d+)\]$/);
+        if (match && match[1]) {
+            const specId = match[1];
+            const targetInput = targetCard.querySelector(`.variant-specifications-container input[name$="[${specId}]"]`);
+            if (targetInput) {
+                targetInput.value = sourceInput.value;
+            }
+        }
+    });
+    showMessageModal('Thành công', `Đã sao chép thông số từ Biến thể #${parseInt(sourceIndex) + 1} sang Biến thể #${parseInt(targetIndex) + 1}.`, 'success');
+}
+
+/**
+ * Updates the "Copy From" dropdown menu for all variant cards.
+ */
+function updateAllCopySpecButtons() {
+    const allVariantCards = Array.from(document.querySelectorAll('.variant-card'));
+    allVariantCards.forEach(targetCard => {
+        const targetIndex = targetCard.dataset.variantIndex;
+        const dropdownContent = targetCard.querySelector('.action-dropdown-content');
+        if (!dropdownContent) return;
+
+        dropdownContent.innerHTML = ''; // Clear existing items
+
+        const otherVariants = allVariantCards.filter(card => card.dataset.variantIndex !== targetIndex);
+
+        if (otherVariants.length > 0) {
+            const header = document.createElement('div');
+            header.className = 'dropdown-header';
+            header.textContent = 'Sao chép thông số từ';
+            dropdownContent.appendChild(header);
+
+            otherVariants.forEach(sourceCard => {
+                const sourceIndex = sourceCard.dataset.variantIndex;
+                const link = document.createElement('a');
+                link.href = 'javascript:void(0);';
+                link.textContent = `Biến thể #${parseInt(sourceIndex) + 1}`;
+                link.onclick = () => copySpecificationsFrom(sourceIndex, targetIndex);
+                dropdownContent.appendChild(link);
+            });
+        } else {
+            const disabledLink = document.createElement('a');
+            disabledLink.className = 'disabled';
+            disabledLink.textContent = 'Không có biến thể khác';
+            dropdownContent.appendChild(disabledLink);
+        }
+    });
 }
 
 // =================================================================
@@ -690,8 +886,17 @@ function addVariantCard(variantData = {}) {
 
     variantCard.innerHTML = `
         <div class="variant-header">
-            <div class="flex items-center"><h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4>${variantData.id ? `<input type="hidden" name="variants[${currentVariantIndex}][id]" value="${variantData.id}">` : ''}</div>
-            <button type="button" class="remove-variant-btn btn btn-danger btn-sm">Xóa</button>
+            <div class="flex items-center">
+                <h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4>
+                ${variantData.id ? `<input type="hidden" name="variants[${currentVariantIndex}][id]" value="${variantData.id}">` : ''}
+            </div>
+            <div class="flex items-center space-x-2">
+                <div class="action-dropdown">
+                    <button type="button" class="btn btn-secondary btn-sm !uppercase !font-medium">Tùy chọn</button>
+                    <div class="action-dropdown-content"></div>
+                </div>
+                <button type="button" class="remove-variant-btn btn btn-danger btn-sm">Xóa</button>
+            </div>
         </div>
         ${attributesHTML}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -722,21 +927,34 @@ function addVariantCard(variantData = {}) {
         <div class="input-group md:col-span-2 mt-4 pt-4 border-t border-gray-200">
             <label class="text-sm font-medium">Ảnh Biến Thể</label>
             <div class="flex space-x-2 mb-3">
-                <label for="variant_${currentVariantIndex}_image_input" class="btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
+                <label for="variant_${currentVariantIndex}_image_input" class="form-section-heading btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
                 <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
                 <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><i class="fas fa-photo-video mr-2"></i>Thêm từ thư viện</button>
             </div>
             <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
             <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
         </div>
+        <div class="pt-4 mt-4 border-t border-gray-200">
+            <h4 class="text-md font-semibold text-gray-700 mb-2">Thông số kỹ thuật biến thể</h4>
+            <div class="variant-specifications-container space-y-4" id="variant_${currentVariantIndex}_specifications_container">
+                <p class="text-gray-500 text-sm">Vui lòng chọn danh mục để tải thông số.</p>
+            </div>
+        </div>
         <div class="mt-4"><label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio" ${variantData.is_default ? 'checked' : ''}><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="${variantData.is_default ? 'true' : 'false'}" class="is-default-hidden-input"> Đặt làm mặc định</label></div>
     `;
 
     document.getElementById('variantsContainer').appendChild(variantCard);
-    variantCard.querySelector('.remove-variant-btn').addEventListener('click', function() { this.closest('.variant-card').remove(); updateDefaultVariantRadioAndHiddenFields(); });
+    
+    // Render specs for the new card
+    const newSpecContainer = document.getElementById(`variant_${currentVariantIndex}_specifications_container`);
+    const existingSpecs = mapSpecsToObject(variantData.specifications);
+    renderSpecifications(newSpecContainer, `variants[${currentVariantIndex}][specifications]`, existingSpecs);
+
+    variantCard.querySelector('.remove-variant-btn').addEventListener('click', function() { this.closest('.variant-card').remove(); updateDefaultVariantRadioAndHiddenFields(); updateAllCopySpecButtons(); });
     variantCard.querySelector('.variant-default-radio').addEventListener('change', handleDefaultVariantChange);
     variantIndexGlobal++;
     updateDefaultVariantRadioAndHiddenFields();
+    updateAllCopySpecButtons();
 }
 
 // =================================================================
@@ -785,6 +1003,7 @@ function performTypeSwitch(newType) {
         
         variantsContainer.innerHTML = '';
         variantIndexGlobal = 0;
+        updateAllCopySpecButtons();
 
     } else if (newType === 'variable') {
         simpleFieldsDiv.style.display = 'none';
@@ -820,6 +1039,7 @@ function performTypeSwitch(newType) {
         }
     }
     currentProductType = newType;
+    handleCategoryChange(); // Refresh specs for the new view
 }
 
 // =================================================================
@@ -854,6 +1074,11 @@ function initializeFormWithProductData() {
             addImagesToProductForm(uniqueImages, previewCont, idsCont, 'simple');
             if (productBeingEdited.cover_image) setSimpleProductPrimaryImage(productBeingEdited.cover_image.id);
         }
+    }
+
+    // Fetch and render specifications for the current category on page load
+    if (productBeingEdited.category_id) {
+        handleCategoryChange();
     }
 }
 
@@ -976,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === BẮT ĐẦU KHỐI LOGIC CHUYỂN ĐỔI LOẠI SẢN PHẨM (ĐÃ CẬP NHẬT) ===
+    // === LOGIC CHUYỂN ĐỔI LOẠI SẢN PHẨM ===
     const typeRadios = document.querySelectorAll('.product-type-radio');
     const typeSwitchModal = document.getElementById('typeSwitchConfirmationModal');
     const cancelSwitchBtn = document.getElementById('cancelTypeSwitch');
@@ -990,49 +1215,38 @@ document.addEventListener('DOMContentLoaded', () => {
             const newType = e.target.value;
             if (newType === currentProductType) return;
 
-            // **LOGIC MỚI: Xử lý chuyển từ Đơn giản -> Biến thể**
             if (currentProductType === 'simple' && newType === 'variable') {
-                // 1. Thay đổi UI sang chế độ chọn thuộc tính
                 document.getElementById('simpleProductFields').style.display = 'none';
                 const variableFields = document.getElementById('variableProductFields');
                 variableFields.style.display = 'block';
                 document.getElementById('variantsContainer').style.display = 'none';
                 document.getElementById('addVariantButton').style.display = 'none';
 
-                // 2. Tạo và hiển thị nút đặc biệt để tạo biến thể đầu tiên
                 let generateBtn = document.getElementById('generate-variant-from-simple-btn');
                 if (!generateBtn) {
                     generateBtn = document.createElement('button');
                     generateBtn.type = 'button';
                     generateBtn.id = 'generate-variant-from-simple-btn';
                     generateBtn.className = 'btn btn-primary mt-4';
-                    generateBtn.innerHTML = `<svg class="svg-icon mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14" /></svg> Tạo biến thể đầu tiên từ dữ liệu sản phẩm đơn giản`;
+                    generateBtn.innerHTML = `<svg class="svg-icon mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14" /></svg> Tạo biến thể đầu tiên`;
                     
                     document.getElementById('productAttributesContainer').parentElement.insertAdjacentElement('afterend', generateBtn);
 
                     generateBtn.addEventListener('click', () => {
-                        // 3. Kiểm tra đã chọn thuộc tính chưa
                         updateSelectedAttributesForVariants();
                         if (selectedProductAttributes.length === 0) {
                             showMessageModal('Thiếu thuộc tính', 'Vui lòng chọn ít nhất một thuộc tính để tạo biến thể.', 'error');
                             return;
                         }
-
-                        // 4. Thực hiện chuyển đổi và tạo biến thể
                         performTypeSwitch(newType);
-
-                        // 5. Dọn dẹp UI, hiển thị các nút bình thường
                         document.getElementById('variantsContainer').style.display = 'block';
                         document.getElementById('addVariantButton').style.display = 'inline-flex';
                         generateBtn.remove();
                     });
                 }
-                // Dừng lại ở đây, không cập nhật currentProductType ngay
-                // Chờ người dùng nhấn nút "Tạo biến thể đầu tiên"
                 return; 
             }
 
-            // Logic có sẵn: Xử lý "hoàn tác" khi chuyển về lại biến thể
             if (originalProductTypeFromServer === 'variable' && newType === 'variable') {
                 reloadModal.classList.remove('hidden');
                 confirmReloadBtn.onclick = () => window.location.reload();
@@ -1044,11 +1258,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Logic có sẵn: Xử lý khi chuyển từ Biến thể -> Đơn giản (hiện modal xác nhận)
             if (currentProductType === 'variable' && newType === 'simple') {
                 typeSwitchModal.classList.remove('hidden');
             } else {
-                // Trường hợp khác (ít xảy ra)
                 performTypeSwitch(newType);
             }
         });
@@ -1063,11 +1275,15 @@ document.addEventListener('DOMContentLoaded', () => {
         performTypeSwitch('simple');
         typeSwitchModal.classList.add('hidden');
     });
-    // === KẾT THÚC KHỐI LOGIC CHUYỂN ĐỔI ===
+    
+    // Listen for category changes to load specs
+    document.getElementById('category_id').addEventListener('change', handleCategoryChange);
 
     // Final Form Initialization
     if (oldData && Object.keys(oldData).length > 0) {
         console.warn("Validation failed. Repopulating form state from old input.");
+        // The form is already repopulated by Laravel's old() helper, 
+        // we just need to re-initialize JS-dependent parts.
         initializeFormWithProductData();
     } else if (productBeingEdited) {
         console.log("Initializing form with existing product data.");
