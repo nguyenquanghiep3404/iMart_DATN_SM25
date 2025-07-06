@@ -10,13 +10,13 @@ use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Users\BlogController;
+use App\Http\Controllers\Users\CartController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\CommentController;
-use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CategoryController;
@@ -25,13 +25,15 @@ use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Shipper\ShipperController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
-use App\Http\Controllers\Admin\DashboardAdminController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Users\CartController;
 use App\Http\Controllers\Admin\SpecificationController;
+use App\Http\Controllers\Admin\DashboardAdminController;
+use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
+use App\Http\Controllers\Admin\ContentStaffManagementController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Users\PaymentController;
 use App\Http\Controllers\LocationController;
+
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
@@ -82,12 +84,12 @@ Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.in
 Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
 Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSelected'])->name('wishlist.removeSelected');
 
- // router cart
- Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
- Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
- // routes/web.php
- Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
- Route::get('/session/flush-message', function () {
+// router cart
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+// routes/web.php
+Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
+Route::get('/session/flush-message', function () {
     session()->forget(['success', 'error']);
     return response()->noContent(); // Trả về 204
 })->name('session.flush.message');
@@ -129,13 +131,13 @@ Route::prefix('admin')
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
             ->name('products.gallery.delete');
 
-            // Route xóa mềm người dùng
+        // Route xóa mềm người dùng
         // Route::middleware('can:is-admin')->group(function () {
-            Route::prefix('users')->name('users.')->group(function () {
+        Route::prefix('users')->name('users.')->group(function () {
             Route::get('/trash', [UserController::class, 'trash'])->name('trash');
             Route::patch('/{user}/restore', [UserController::class, 'restore'])->name('restore');
             Route::delete('/{user}/force-delete', [UserController::class, 'forceDelete'])->name('forceDelete');
-            });
+        });
 
         Route::get('/api/specifications-by-category/{category}', [ProductController::class, 'getSpecificationsForCategory'])->name('api.specifications.by_category');
         Route::resource('products', ProductController::class);
@@ -151,12 +153,20 @@ Route::prefix('admin')
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
         // --- Routes quản lí shipper ---
-        Route::prefix('shippers')->name('shippers.')->group(function() {
+        Route::prefix('shippers')->name('shippers.')->group(function () {
             Route::get('/trash', [ShipperManagementController::class, 'trash'])->name('trash');
             Route::patch('/{shipper}/restore', [ShipperManagementController::class, 'restore'])->name('restore');
             Route::delete('/{shipper}/force-delete', [ShipperManagementController::class, 'forceDelete'])->name('force-delete');
         });
         Route::resource('shippers', ShipperManagementController::class);
+
+        // --- Routes quản lí nhân viên content ---
+        Route::prefix('content-staffs')->name('content_staffs.')->group(function () {
+            Route::get('/trash', [ContentStaffManagementController::class, 'trash'])->name('trash');
+            Route::patch('/{contentStaff}/restore', [\App\Http\Controllers\Admin\ContentStaffManagementController::class, 'restore'])->name('restore');
+            Route::delete('/{contentStaff}/force-delete', [\App\Http\Controllers\Admin\ContentStaffManagementController::class, 'forceDelete'])->name('force-delete');
+        });
+        Route::resource('content-staffs', \App\Http\Controllers\Admin\ContentStaffManagementController::class);
 
         // --- Routes cho Thư viện Media ---
         Route::prefix('media')->name('media.')->group(function () {
@@ -198,6 +208,9 @@ Route::prefix('admin')
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
             ->name('products.gallery.delete');
 
+        // Category routes
+        // Route::resource('categories', CategoryController::class);
+
 
         // Route::middleware('can:manage-content')->group(function () {
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
@@ -205,6 +218,7 @@ Route::prefix('admin')
 
         // Category routes
         // Route::resource('categories', CategoryController::class);
+
 
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::get('/categories/trash', [CategoryController::class, 'trash'])->name('categories.trash');
@@ -311,13 +325,14 @@ Route::prefix('admin')
         Route::post('/coupons/restore/{id}', [CouponController::class, 'restore'])->name('coupons.restore');
         Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
 
+
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
-            // Group các route dành cho shipper và bảo vệ chúng
-        Route::prefix('shipper')
-        ->name('shipper.')
-        ->middleware(['auth', 'verified']) // <-- Bảo vệ toàn bộ nhóm
-        ->group(function () {
+// Group các route dành cho shipper và bảo vệ chúng
+Route::prefix('shipper')
+    ->name('shipper.')
+    ->middleware(['auth', 'verified']) // <-- Bảo vệ toàn bộ nhóm
+    ->group(function () {
 
         // http://127.0.0.1:8000/shipper/dashboard
         Route::get('/dashboard', [ShipperController::class, 'dashboard'])->name('dashboard')->middleware('can:access_shipper_dashboard');
@@ -328,7 +343,6 @@ Route::prefix('admin')
         Route::get('/profile', [ShipperController::class, 'profile'])->name('profile');
         Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
         Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus');
-
     });
      Route::get('/test-403', function () {
             abort(403);
