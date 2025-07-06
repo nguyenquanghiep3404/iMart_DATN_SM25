@@ -118,11 +118,11 @@ class HomeController extends Controller
         $calculateAverageRating($latestProducts);
 
         $featuredPosts = Post::with('coverImage')
-    ->where('status', 'published')
-    ->where('is_featured', true)
-    ->latest('published_at')
-    ->take(3)
-    ->get();
+            ->where('status', 'published')
+            ->where('is_featured', true)
+            ->latest('published_at')
+            ->take(3)
+            ->get();
 
 
         return view('users.home', compact('featuredProducts', 'latestProducts', 'banners', 'featuredPosts'));
@@ -157,7 +157,7 @@ class HomeController extends Controller
             ->firstOrFail();
 
         $product->increment('view_count');
-        
+
 
         $averageRating = $product->reviews->avg('rating') ?? 0;
         $product->average_rating = round($averageRating, 1);
@@ -232,7 +232,7 @@ class HomeController extends Controller
                 $images = [asset('images/placeholder.jpg')];
             }
             $mainImage = $variant->primaryImage ? Storage::url($variant->primaryImage->path) : ($images[0] ?? null);
-            
+
             $variantData[$variantKeyStr] = [
                 'price' => $originalPrice,
                 'sale_price' => $salePrice,
@@ -247,6 +247,25 @@ class HomeController extends Controller
                 'variant_id' => $variant->id,
             ];
         }
+
+        $variantSpecs = [];
+foreach ($product->variants as $variant) {
+    $variantKey = [];
+    foreach ($attributeOrder as $attrName) {
+        $attrValue = $variant->attributeValues->firstWhere('attribute.name', $attrName);
+        $variantKey[] = $attrValue?->value ?? '';
+    }
+    $variantKeyStr = implode('_', $variantKey);
+
+    $groupedSpecs = [];
+    foreach ($variant->specifications as $spec) {
+        $groupName = $spec->group->name ?? 'Other';
+        $groupedSpecs[$groupName][$spec->name] = $spec->pivot->value;
+    }
+
+    $variantSpecs[$variantKeyStr] = $groupedSpecs;
+}
+
 
         $relatedProducts = Product::with(['category', 'coverImage'])
             ->where('category_id', $product->category_id)
@@ -271,6 +290,15 @@ class HomeController extends Controller
         $attributesGrouped = collect($attributes)->map(fn($values) => $values->sortBy('value')->values());
 
         $variantCombinations = $availableCombinations;
+        // ✅ Lấy thông số kỹ thuật theo nhóm (chỉ lấy từ biến thể mặc định)
+        $specGroupsData = [];
+        if ($defaultVariant) {
+            foreach ($defaultVariant->specifications as $spec) {
+                $groupName = $spec->group->name ?? 'Khác';
+                $specGroupsData[$groupName][$spec->name] = $spec->pivot->value;
+            }
+        }
+
         return view('users.show', compact(
             'product',
             'relatedProducts',
@@ -285,7 +313,9 @@ class HomeController extends Controller
             'attributeOrder',
             'initialVariantAttributes',
             'variantCombinations',
-            'attributesGrouped'
+            'attributesGrouped',
+            'specGroupsData',
+            'variantSpecs' // 👈 Quan trọng
         ));
     }
 
