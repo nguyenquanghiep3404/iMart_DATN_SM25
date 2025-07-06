@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Mục Sản Phẩm - Đồ Điện Tử Cao Cấp</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        /* Custom styles inspired by modern e-commerce sites */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f7; /* Apple-like light gray background */
+        }
+        
+        /* Custom scrollbar for filter section */
+        .filter-scrollbar::-webkit-scrollbar { width: 6px; }
+        .filter-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .filter-scrollbar::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 6px; }
+        .filter-scrollbar::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+
+        /* Accordion styles for filters */
+        details > summary {
+            list-style: none;
+            cursor: pointer;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+        details .accordion-icon {
+            transition: transform 0.2s ease-in-out;
+        }
+        details[open] .accordion-icon {
+            transform: rotate(180deg);
+        }
+        
+        /* Custom checkbox style */
+        .custom-checkbox {
+            appearance: none;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            width: 1.15em;
+            height: 1.15em;
+            border-radius: 4px;
+            display: inline-block;
+            position: relative;
+            cursor: pointer;
+        }
+        .custom-checkbox:checked {
+            background-color: #0071e3;
+            border-color: #0071e3;
+        }
+        .custom-checkbox:checked::after {
+            content: '\f00c'; /* Font Awesome check icon */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: white;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.75em;
+        }
+
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Breadcrumbs -->
+        <nav class="text-sm mb-4" aria-label="Breadcrumb">
+            <ol class="list-none p-0 inline-flex space-x-2">
+                <li class="flex items-center">
+                    <a href="#" class="text-gray-500 hover:text-blue-600">Trang chủ</a>
+                </li>
+                <li class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 text-xs mx-2"></i>
+                    <a href="#" class="text-gray-500 hover:text-blue-600">Điện tử</a>
+                </li>
+                <li class="flex items-center">
+                    <i class="fas fa-chevron-right text-gray-400 text-xs mx-2"></i>
+                    <span class="font-semibold text-gray-800">Điện thoại</span>
+                </li>
+            </ol>
+        </nav>
+
+        <!-- Main Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+            <!-- Filter Sidebar (Left Column) -->
+            <aside id="filter-sidebar" class="hidden lg:block col-span-1 bg-white p-6 rounded-xl shadow-sm h-fit">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-900">Bộ Lọc</h2>
+                    <button id="close-filter-btn" class="lg:hidden text-gray-500 hover:text-gray-800">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Filter sections with accordion -->
+                <div class="space-y-4 filter-scrollbar max-h-[80vh] overflow-y-auto pr-2">
+                    
+                    <details class="border-b border-gray-200 pb-4" open>
+                        <summary class="flex justify-between items-center font-semibold text-gray-800 py-2">
+                            <span>Danh Mục</span>
+                            <i class="fas fa-chevron-down accordion-icon"></i>
+                        </summary>
+                        <ul class="space-y-2 text-sm pt-3">
+                            <li><a href="#" class="text-blue-600 hover:underline font-medium">Điện thoại</a></li>
+                            <li><a href="#" class="text-gray-600 hover:text-blue-600 hover:underline">Máy tính bảng</a></li>
+                            <li><a href="#" class="text-gray-600 hover:text-blue-600 hover:underline">Laptop</a></li>
+                            <li><a href="#" class="text-gray-600 hover:text-blue-600 hover:underline">Tai nghe</a></li>
+                            <li><a href="#" class="text-gray-600 hover:text-blue-600 hover:underline">Phụ kiện</a></li>
+                        </ul>
+                    </details>
+                    
+                    <details class="border-b border-gray-200 pb-4" open>
+                        <summary class="flex justify-between items-center font-semibold text-gray-800 py-2">
+                            <span>Thương Hiệu</span>
+                            <i class="fas fa-chevron-down accordion-icon"></i>
+                        </summary>
+                        <div class="space-y-3 text-sm pt-3">
+                            <label class="flex items-center"><input type="checkbox" class="custom-checkbox"><span class="ml-3 text-gray-700">Apple</span></label>
+                            <label class="flex items-center"><input type="checkbox" class="custom-checkbox" checked><span class="ml-3 text-gray-700">Samsung</span></label>
+                            <label class="flex items-center"><input type="checkbox" class="custom-checkbox"><span class="ml-3 text-gray-700">Sony</span></label>
+                            <label class="flex items-center"><input type="checkbox" class="custom-checkbox"><span class="ml-3 text-gray-700">Xiaomi</span></label>
+                            <label class="flex items-center"><input type="checkbox" class="custom-checkbox"><span class="ml-3 text-gray-700">Dell</span></label>
+                        </div>
+                    </details>
+
+                    <details class="border-b border-gray-200 pb-4">
+                        <summary class="flex justify-between items-center font-semibold text-gray-800 py-2">
+                            <span>Khoảng Giá</span>
+                            <i class="fas fa-chevron-down accordion-icon"></i>
+                        </summary>
+                        <div class="flex items-center space-x-2 pt-3">
+                            <input type="number" placeholder="Từ" class="w-full text-sm p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <span>-</span>
+                            <input type="number" placeholder="Đến" class="w-full text-sm p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </details>
+                    
+                    <details class="pb-4">
+                        <summary class="flex justify-between items-center font-semibold text-gray-800 py-2">
+                            <span>Đánh Giá</span>
+                            <i class="fas fa-chevron-down accordion-icon"></i>
+                        </summary>
+                        <div class="space-y-2 text-sm pt-3">
+                            <label class="flex items-center"><input type="radio" name="rating" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"><span class="ml-2 text-gray-600 flex items-center"><i class="fas fa-star text-yellow-400"></i><span class="ml-1.5">từ 5 sao</span></span></label>
+                            <label class="flex items-center"><input type="radio" name="rating" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"><span class="ml-2 text-gray-600 flex items-center"><i class="fas fa-star text-yellow-400"></i><span class="ml-1.5">từ 4 sao</span></span></label>
+                            <label class="flex items-center"><input type="radio" name="rating" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"><span class="ml-2 text-gray-600 flex items-center"><i class="fas fa-star text-yellow-400"></i><span class="ml-1.5">từ 3 sao</span></span></label>
+                        </div>
+                    </details>
+                </div>
+                
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <button class="w-full bg-blue-600 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-blue-700 transition duration-300">Áp Dụng</button>
+                    <button class="w-full mt-2 bg-gray-100 text-gray-700 font-bold py-2.5 px-4 rounded-lg hover:bg-gray-200 transition duration-300">Xóa Lọc</button>
+                </div>
+            </aside>
+
+            <!-- Product Grid (Right Column) -->
+            <main class="lg:col-span-3">
+                <div class="bg-white p-4 rounded-xl shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-center">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Điện Thoại</h1>
+                        <p class="text-sm text-gray-500 mt-1">Tìm thấy 128 sản phẩm</p>
+                    </div>
+                    <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+                        <button id="open-filter-btn" class="lg:hidden p-2 rounded-md bg-gray-100 hover:bg-gray-200"><i class="fas fa-filter text-gray-600"></i><span class="ml-2 font-semibold">Lọc</span></button>
+                        <div class="flex items-center space-x-2">
+                            <label for="sort" class="text-sm font-medium text-gray-600">Sắp xếp:</label>
+                            <select id="sort" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
+                                <option>Mới nhất</option>
+                                <option>Giá: Tăng dần</option>
+                                <option>Giá: Giảm dần</option>
+                                <option>Bán chạy nhất</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                    <!-- Product Card - New Design -->
+                    <div class="bg-white rounded-xl border border-gray-200/80 overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <a href="#" class="block">
+                            <div class="relative">
+                                <img src="https://placehold.co/600x600/e2e8f0/334155?text=Sản+Phẩm" onerror="this.onerror=null;this.src='https://placehold.co/600x600/e2e8f0/334155?text=Lỗi+Ảnh';" alt="Tên sản phẩm" class="w-full h-56 object-cover">
+                                <div class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">-15%</div>
+                            </div>
+                            <div class="p-4 flex flex-col h-full">
+                                <h3 class="text-base font-bold text-gray-800 flex-grow min-h-[40px]">iPhone 15 Pro Max 256GB</h3>
+                                <div class="mt-2">
+                                    <span class="text-lg font-extrabold text-red-600">28.990.000₫</span>
+                                    <span class="text-sm text-gray-500 line-through ml-2">34.000.000₫</span>
+                                </div>
+                                <div class="text-xs bg-gray-100 rounded p-1.5 mt-2 inline-block">
+                                    Trả góp <strong>0%</strong> qua thẻ tín dụng
+                                </div>
+                                <div class="flex items-center mt-2 text-sm text-gray-500">
+                                    <div class="flex text-yellow-400"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></div>
+                                    <span class="ml-2">(125)</span>
+                                </div>
+                            </div>
+                        </a>
+                        <div class="p-4 pt-0">
+                            <button class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">Thêm vào giỏ</button>
+                        </div>
+                    </div>
+                    <!-- Repeat other cards with the new design -->
+                    <div class="bg-white rounded-xl border border-gray-200/80 overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <a href="#" class="block">
+                            <div class="relative"><img src="https://placehold.co/600x600/e2e8f0/334155?text=Sản+Phẩm" onerror="this.onerror=null;this.src='https://placehold.co/600x600/e2e8f0/334155?text=Lỗi+Ảnh';" alt="Tên sản phẩm" class="w-full h-56 object-cover"></div>
+                            <div class="p-4 flex flex-col h-full">
+                                <h3 class="text-base font-bold text-gray-800 flex-grow min-h-[40px]">Samsung Galaxy S24 Ultra</h3>
+                                <div class="mt-2"><span class="text-lg font-extrabold text-red-600">31.490.000₫</span></div>
+                                <div class="text-xs bg-gray-100 rounded p-1.5 mt-2 inline-block">Quà tặng trị giá <strong>2.000.000₫</strong></div>
+                                <div class="flex items-center mt-2 text-sm text-gray-500">
+                                    <div class="flex text-yellow-400"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                                    <span class="ml-2">(98)</span>
+                                </div>
+                            </div>
+                        </a>
+                        <div class="p-4 pt-0"><button class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">Thêm vào giỏ</button></div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-gray-200/80 overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <a href="#" class="block">
+                            <div class="relative"><img src="https://placehold.co/600x600/e2e8f0/334155?text=Sản+Phẩm" onerror="this.onerror=null;this.src='https://placehold.co/600x600/e2e8f0/334155?text=Lỗi+Ảnh';" alt="Tên sản phẩm" class="w-full h-56 object-cover"></div>
+                            <div class="p-4 flex flex-col h-full">
+                                <h3 class="text-base font-bold text-gray-800 flex-grow min-h-[40px]">Macbook Air M3 13-inch</h3>
+                                <div class="mt-2"><span class="text-lg font-extrabold text-red-600">27.990.000₫</span></div>
+                                <div class="text-xs bg-gray-100 rounded p-1.5 mt-2 inline-block">Trả góp <strong>0%</strong></div>
+                                <div class="flex items-center mt-2 text-sm text-gray-500">
+                                    <div class="flex text-yellow-400"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                                    <span class="ml-2">(75)</span>
+                                </div>
+                            </div>
+                        </a>
+                        <div class="p-4 pt-0"><button class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300">Thêm vào giỏ</button></div>
+                    </div>
+                </div>
+
+                <div class="mt-10 flex justify-center">
+                    <nav class="inline-flex rounded-lg shadow-sm -space-x-px" aria-label="Pagination">
+                        <a href="#" class="relative inline-flex items-center px-3 py-2 rounded-l-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><i class="fas fa-chevron-left"></i></a>
+                        <a href="#" aria-current="page" class="relative z-10 inline-flex items-center px-4 py-2 border border-blue-500 bg-blue-50 text-sm font-medium text-blue-600">1</a>
+                        <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">2</a>
+                        <a href="#" class="relative hidden md:inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">3</a>
+                        <a href="#" class="relative inline-flex items-center px-3 py-2 rounded-r-lg border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"><i class="fas fa-chevron-right"></i></a>
+                    </nav>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        const openFilterBtn = document.getElementById('open-filter-btn');
+        const closeFilterBtn = document.getElementById('close-filter-btn');
+        const filterSidebar = document.getElementById('filter-sidebar');
+
+        openFilterBtn.addEventListener('click', () => {
+            filterSidebar.classList.remove('hidden');
+            filterSidebar.classList.add('fixed', 'top-0', 'left-0', 'w-full', 'h-full', 'bg-black', 'bg-opacity-50', 'z-50', 'lg:hidden');
+            const innerFilter = filterSidebar.querySelector('.bg-white');
+            innerFilter.classList.add('w-4/5', 'max-w-sm', 'h-full', 'shadow-2xl');
+            innerFilter.classList.remove('lg:block');
+        });
+
+        const closeFilter = () => {
+            filterSidebar.classList.add('hidden');
+            filterSidebar.classList.remove('fixed', 'top-0', 'left-0', 'w-full', 'h-full', 'bg-black', 'bg-opacity-50', 'z-50', 'lg:hidden');
+        };
+
+        closeFilterBtn.addEventListener('click', closeFilter);
+        filterSidebar.addEventListener('click', (e) => {
+             if (e.target === filterSidebar) {
+                closeFilter();
+             }
+        });
+    </script>
+</body>
+</html>
