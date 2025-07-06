@@ -137,7 +137,7 @@
                     @forelse($recentNotifications as $notification)
                     <a href="#" class="flex items-start p-4 hover:bg-gray-700/50 transition-colors">
                       <div class="flex-shrink-0 w-10 h-10 bg-{{ $notification['color'] ?? 'gray' }}-500/20 text-{{ $notification['color'] ?? 'gray' }}-400 rounded-full flex items-center justify-center">
-                    @if ($notification['icon'] === "check")
+                        @if ($notification['icon'] === "check")
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                           <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -173,15 +173,18 @@
               </div>
             </div>
 
-            <a href="#" class="p-2 rounded-full text-gray-300 hover:text-white transition-colors relative">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+            <a href="/cart"
+              class="p-2 rounded-full text-gray-300 hover:text-white transition-colors relative">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" class="w-5 h-5">
                 <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                 <line x1="3" y1="6" x2="21" y2="6"></line>
                 <path d="M16 10a4 4 0 0 1-8 0"></path>
               </svg>
-              <span class="absolute top-0 right-0 flex justify-center items-center h-4 w-4 bg-red-500 text-white text-[10px] font-semibold rounded-full transform translate-x-1/3 -translate-y-1/3">3</span>
+              <span
+                class="absolute top-0 right-0 flex justify-center items-center h-4 w-4 bg-red-500 text-white text-[10px] font-semibold rounded-full transform translate-x-1/3 -translate-y-1/3">3</span>
             </a>
-
             <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-full text-gray-300 hover:text-white transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                 <line x1="4" x2="20" y1="12" y2="12" />

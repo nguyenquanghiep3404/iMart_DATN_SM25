@@ -50,7 +50,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        ProductVariant::observe(ProductVariantObserver::class);
         Paginator::useTailwind();
 
         // Đăng ký listener cho sự kiện Verified

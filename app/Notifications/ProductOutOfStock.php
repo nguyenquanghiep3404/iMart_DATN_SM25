@@ -26,7 +26,9 @@ class ProductOutOfStock extends Notification implements ShouldQueue
     public function toArray($notifiable)
     {
         return [
-            'message' => "Sản phẩm {$this->variant->name} - SKU: {$this->variant->sku} đã hết hàng.",
+            'message' => "Sản phẩm {$this->variant->product->name} - SKU: {$this->variant->sku} đã hết hàng.",
+            'icon' => '❗',
+            'color' => 'red',
             'variant_id' => $this->variant->id,
         ];
     }
@@ -35,7 +37,7 @@ class ProductOutOfStock extends Notification implements ShouldQueue
     public function toBroadcast($notifiable)
     {
         return new BroadcastMessage([
-            'message' => "Thông báo: Sản phẩm {$this->variant->name} - SKU: {$this->variant->sku} đã hết hàng.",
+            'message' => "Thông báo: Sản phẩm {$this->variant->product->name} - SKU: {$this->variant->sku} đã hết hàng.",
         ]);
     }
 }

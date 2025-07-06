@@ -132,8 +132,7 @@ $user = auth()->user() ?? (object)[
             x-transition:leave="transition ease-in duration-150 origin-top"
             x-transition:leave-start="opacity-100 scale-y-100"
             x-transition:leave-end="opacity-0 scale-y-90"
-            class="absolute right-0 sm:-right-10 mt-2 w-80 sm:w-96 max-h-[80vh] overflow-y-auto shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 z-50"
-            style="display: none;">
+            class="absolute right-0 sm:-right-10 mt-2 w-80 sm:w-96 max-h-[80vh] overflow-y-auto shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 z-50">
             <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-600">
                 <h4 class="font-semibold text-slate-800 dark:text-slate-100">Thông báo</h4>
             </div>
@@ -143,10 +142,12 @@ $user = auth()->user() ?? (object)[
                     <a class="block p-4" href="#">
                         <div class="flex items-start space-x-3">
                             <div class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-500 flex items-center justify-center">
-                                {!! $notification['icon'] !!}
+                                {{ $notification['icon'] ?? '🔔' }}
                             </div>
                             <div class="flex-1">
-                                <p class="text-sm text-slate-700 dark:text-slate-200 leading-tight break-words">{{ $notification['title'] }}</p>
+                                <p class="text-sm text-slate-700 dark:text-slate-200 leading-tight break-words font-semibold">
+                                    {{ $notification['message'] }}
+                                </p>
                                 <span class="text-xs text-slate-500 dark:text-slate-400">{{ $notification['time'] }}</span>
                             </div>
                         </div>
@@ -165,7 +166,6 @@ $user = auth()->user() ?? (object)[
             </div>
         </div>
     </div>
-
     {{-- Profile User --}}
     <div class="relative w-[70%] flex justify-end items-center" x-data="{ userOption: false }">
         <!-- Avatar button -->
