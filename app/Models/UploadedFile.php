@@ -104,7 +104,7 @@ class UploadedFile extends Model
         // Trường hợp đặc biệt: Nếu là ProductVariant, hiển thị tên sản phẩm cha
         if ($this->attachable_type === 'App\\Models\\ProductVariant' && $this->attachable->product) {
             // Giả định ProductVariant có relationship 'product' và Product có 'name'
-            return 'Sản phẩm: ' . $this->attachable->product->name;
+return 'Sản phẩm: ' . $this->attachable->product->name;
         }
 
         // Các trường hợp khác, hiển thị tên của đối tượng nếu có

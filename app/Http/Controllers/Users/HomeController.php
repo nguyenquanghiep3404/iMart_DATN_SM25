@@ -3,19 +3,13 @@
 namespace App\Http\Controllers\Users;
 
 use Carbon\Carbon;
-
 use App\Models\Post;
-
-
 use App\Models\Banner;
 use App\Models\Comment;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Str;
-
 use App\Models\PostCategory;
-
-
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Log;
@@ -28,6 +22,7 @@ class HomeController extends Controller
 {
     public function index()
     {
+        // Lấy danh sách banner
         $banners = Banner::with('desktopImage')
             ->where('status', 'active')
             ->orderBy('order')
@@ -117,20 +112,45 @@ class HomeController extends Controller
         // Tính rating & discount
         $calculateAverageRating($latestProducts);
 
+        // Lấy danh sách sản phẩm nổi bật từ cache hoặc database
+        if (auth()->check()) {
+            $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
+
+            $recentNotifications = auth()->user()->notifications()
+                ->latest()
+                ->take(10)
+                ->get()
+                ->map(function ($notification) {
+                    return [
+                        'title' => $notification->data['title'] ?? 'Thông báo',
+                        'message' => $notification->data['message'] ?? '',
+                        'icon' => $notification->data['icon'] ?? 'default',
+                        'color' => $notification->data['color'] ?? 'gray',
+                        'time' => $notification->created_at->diffForHumans(),
+                    ];
+                });
+        } else {
+            $unreadNotificationsCount = 0;
+            $recentNotifications = collect();
+        }
+
+
+
         $featuredPosts = Post::with('coverImage')
-    ->where('status', 'published')
-    ->where('is_featured', true)
-    ->latest('published_at')
-    ->take(3)
-    ->get();
-
-
-        return view('users.home', compact('featuredProducts', 'latestProducts', 'banners', 'featuredPosts'));
+            ->where('status', 'published')
+            ->where('is_featured', true)
+            ->latest('published_at')
+            ->take(3)
+            ->get();
+        return view('users.home', compact(
+            'featuredProducts',
+            'latestProducts',
+            'banners',
+            'featuredPosts',
+            'unreadNotificationsCount',
+            'recentNotifications',
+        ));
     }
-
-
-
-
 
     public function show($slug)
     {
@@ -157,7 +177,7 @@ class HomeController extends Controller
             ->firstOrFail();
 
         $product->increment('view_count');
-        
+
 
         $averageRating = $product->reviews->avg('rating') ?? 0;
         $product->average_rating = round($averageRating, 1);
@@ -232,7 +252,7 @@ class HomeController extends Controller
                 $images = [asset('images/placeholder.jpg')];
             }
             $mainImage = $variant->primaryImage ? Storage::url($variant->primaryImage->path) : ($images[0] ?? null);
-            
+
             $variantData[$variantKeyStr] = [
                 'price' => $originalPrice,
                 'sale_price' => $salePrice,
@@ -299,7 +319,6 @@ class HomeController extends Controller
         $currentCategory = null;
         if ($id) {
             $currentCategory = Category::with('parent')->findOrFail($id);
-
             if ($slug !== Str::slug($currentCategory->name)) {
                 return redirect()->route('products.byCategory', [
                     'id' => $currentCategory->id,
@@ -446,7 +465,6 @@ class HomeController extends Controller
 
         return view('users.shop', compact('products', 'categories', 'parentCategories', 'currentCategory'));
     }
-
 
     /**
      * Hiển thị trang About , Help, Terms

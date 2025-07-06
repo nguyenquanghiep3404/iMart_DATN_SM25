@@ -1,5 +1,7 @@
 @extends('admin.layouts.app')
 
+@section('title', 'Thống kê')
+
 @section('content')
 <div class="body-content px-8 py-8 bg-slate-100">
     <div class="flex justify-between items-end flex-wrap">
