@@ -13,40 +13,118 @@
                 <i class="ci-check fs-4"></i>
               </div>
               <div class="w-100 ps-3">
-                <div class="fs-sm mb-1">Order #234000</div>
+                <div class="fs-sm mb-1">Đơn hàng {{ $order ? '#' . $order->order_code : '#N/A' }}</div>
                 <div class="d-sm-flex align-items-center">
-                  <h1 class="h4 mb-0 me-3">Thank you for your order!</h1>
+                  <h1 class="h4 mb-0 me-3">Cảm ơn bạn đã đặt hàng!</h1>
+                  @if($order)
                   <div class="nav mt-2 mt-sm-0 ms-auto">
-                    <a class="nav-link text-decoration-underline p-0" href="#!">Track order</a>
+                    <a class="nav-link text-decoration-underline p-0" href="#!">Theo dõi đơn hàng</a>
+                  </div>
+                  @endif
+                </div>
+              </div>
+            </div>
+            @if($order)
+            <div class="d-flex flex-column gap-4 pt-3 pb-5 mt-3">
+              <div>
+                <h3 class="h6 mb-2">Địa chỉ giao hàng</h3>
+                <p class="fs-sm mb-1"><strong>{{ $order->customer_name }}</strong></p>
+                <p class="fs-sm mb-1">{{ $order->customer_phone }}</p>
+                <p class="fs-sm mb-0">{{ $order->shipping_full_address_with_type }}</p>
+              </div>
+              <div>
+                <h3 class="h6 mb-2">Phương thức vận chuyển</h3>
+                <p class="fs-sm mb-1">
+                  @if(str_contains(strtolower($order->shipping_method), 'giao hàng nhanh'))
+                    <span class="fw-medium">Giao hàng nhanh</span>
+                  @elseif(str_contains(strtolower($order->shipping_method), 'nhận tại cửa hàng'))
+                    <span class="fw-medium">Nhận tại cửa hàng</span>
+                  @elseif(str_contains(strtolower($order->shipping_method), 'giao hàng tiêu chuẩn'))
+                    <span class="fw-medium">Giao hàng tiêu chuẩn</span>
+                  @else
+                    <span class="fw-medium">{{ $order->shipping_method }}</span>
+                  @endif
+                  <span class="text-body-secondary">
+                    @if($order->shipping_fee > 0)
+                      - {{ number_format($order->shipping_fee, 0, ',', '.') }} VNĐ
+                    @else
+                      - Miễn phí
+                    @endif
+                  </span>
+                </p>
+                @if($order->desired_delivery_date)
+                <p class="fs-sm mb-0">{{ $order->desired_delivery_date }}</p>
+                @endif
+                @if($order->desired_delivery_time_slot)
+                <p class="fs-sm mb-0 text-muted">Khung giờ: {{ $order->desired_delivery_time_slot }}</p>
+                @endif
+              </div>
+              <div>
+                <h3 class="h6 mb-2">Phương thức thanh toán</h3>
+                <p class="fs-sm mb-1">
+                  @if($order->payment_method === 'cod')
+                    Thanh toán khi nhận hàng (COD)
+                  @elseif($order->payment_method === 'bank_transfer')
+                    Chuyển khoản ngân hàng
+                  @elseif($order->payment_method === 'vnpay')
+                    VNPay
+                  @else
+                    {{ $order->payment_method }}
+                  @endif
+                </p>
+                <p class="fs-sm mb-0 text-muted">
+                  Trạng thái: 
+                  @if($order->payment_status === 'pending')
+                    <span class="badge bg-warning">Chờ thanh toán</span>
+                  @elseif($order->payment_status === 'paid')
+                    <span class="badge bg-success">Đã thanh toán</span>
+                  @else
+                    <span class="badge bg-secondary">{{ $order->payment_status }}</span>
+                  @endif
+                </p>
+              </div>
+              <div>
+                <h3 class="h6 mb-2">Tổng đơn hàng</h3>
+                <div class="fs-sm">
+                  <div class="d-flex justify-content-between mb-1">
+                    <span>Tạm tính:</span>
+                    <span>{{ number_format($order->sub_total, 0, ',', '.') }} VNĐ</span>
+                  </div>
+                  @if($order->discount_amount > 0)
+                  <div class="d-flex justify-content-between mb-1">
+                    <span>Giảm giá:</span>
+                    <span class="text-danger">-{{ number_format($order->discount_amount, 0, ',', '.') }} VNĐ</span>
+                  </div>
+                  @endif
+                  <div class="d-flex justify-content-between mb-1">
+                    <span>Phí vận chuyển:</span>
+                    <span>{{ $order->shipping_fee > 0 ? number_format($order->shipping_fee, 0, ',', '.') . ' VNĐ' : 'Miễn phí' }}</span>
+                  </div>
+                  <div class="d-flex justify-content-between border-top pt-2 fw-bold">
+                    <span>Tổng cộng:</span>
+                    <span>{{ number_format($order->grand_total, 0, ',', '.') }} VNĐ</span>
                   </div>
                 </div>
               </div>
             </div>
-            <div class="d-flex flex-column gap-4 pt-3 pb-5 mt-3">
-              <div>
-                <h3 class="h6 mb-2">Delivery</h3>
-                <p class="fs-sm mb-0">567 Cherry Souse Lane Sacramento, 95829</p>
-              </div>
-              <div>
-                <h3 class="h6 mb-2">Time</h3>
-                <p class="fs-sm mb-0">Sunday, May 9, 12:00 - 14:00</p>
-              </div>
-              <div>
-                <h3 class="h6 mb-2">Payment</h3>
-                <p class="fs-sm mb-0">Visa: **** **** **** 8395</p>
+            @endif
+            @if($order && $order->payment_method === 'cod')
+            <div class="bg-warning rounded px-4 py-4" style="--cz-bg-opacity: .2">
+              <div class="py-3">
+                <h2 class="h5 text-center pb-2 mb-1">📦 Lưu ý quan trọng</h2>
+                <p class="fs-sm text-center mb-2">Bạn đã chọn thanh toán khi nhận hàng (COD)</p>
+                <p class="fs-sm text-center mb-0">Vui lòng chuẩn bị đủ tiền mặt <strong>{{ number_format($order->grand_total, 0, ',', '.') }} VNĐ</strong> khi nhận hàng.</p>
               </div>
             </div>
+            @else
             <div class="bg-success rounded px-4 py-4" style="--cz-bg-opacity: .2">
               <div class="py-3">
-                <h2 class="h4 text-center pb-2 mb-1">🎉 Congratulations! 30% off your new purchase!</h2>
-                <p class="fs-sm text-center mb-4">Use the coupon now or look for it in your personal account.</p>
-                <div class="d-flex gap-2 mx-auto" style="max-width: 500px">
-                  <input type="text" class="form-control border-white border-opacity-10 w-100" id="couponCode" value="30%SALEOFF" readonly="">
-                  <button type="button" class="btn btn-dark" data-copy-text-from="#couponCode">Copy coupon</button>
-                </div>
+                <h2 class="h5 text-center pb-2 mb-1">🎉 Cảm ơn bạn đã tin tưởng iMart!</h2>
+                <p class="fs-sm text-center mb-0">Đơn hàng của bạn đang được xử lý và sẽ sớm được giao đến tận nơi.</p>
               </div>
             </div>
-            <p class="fs-sm pt-4 pt-md-5 mt-2 mt-sm-3 mt-md-0 mb-0">Need help?<a class="fw-medium ms-2" href="#!">Contact us</a></p>
+            @endif
+            <p class="fs-sm pt-4 pt-md-5 mt-2 mt-sm-3 mt-md-0 mb-0">Cần hỗ trợ?<a class="fw-medium ms-2" href="#!">Liên hệ chúng tôi</a></p>
           </div>
         </div>
 
@@ -192,8 +270,8 @@
                 </div>
               </div>
 
-              <a class="btn btn-lg btn-primary w-100" href="shop-catalog-electronics.html">
-                Continue shopping
+              <a class="btn btn-lg btn-primary w-100" href="{{ route('users.home') }}">
+                Tiếp tục mua sắm
                 <i class="ci-chevron-right fs-lg ms-1 me-n1"></i>
               </a>
             </div>
@@ -202,21 +280,4 @@
       </div>
     </main>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Get order data from URL parameters or sessionStorage
-  const urlParams = new URLSearchParams(window.location.search);
-  
-  // Update order details
-  document.getElementById('orderNumber').textContent = '#' + (urlParams.get('order_id') || 'N/A');
-  document.getElementById('orderDate').textContent = new Date().toLocaleDateString('vi-VN');
-  document.getElementById('paymentMethod').textContent = urlParams.get('payment_method') || 'N/A';
-  document.getElementById('shippingMethod').textContent = urlParams.get('shipping_method') || 'N/A';
-  
-  // Update shipping details
-  document.getElementById('receiverName').textContent = urlParams.get('receiver_name') || 'N/A';
-  document.getElementById('receiverPhone').textContent = urlParams.get('receiver_phone') || 'N/A';
-  document.getElementById('shippingAddress').textContent = urlParams.get('shipping_address') || 'N/A';
-});
-</script>
 @endsection 

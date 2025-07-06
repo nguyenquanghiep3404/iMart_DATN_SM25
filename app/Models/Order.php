@@ -47,8 +47,7 @@ class Order extends Model
         'tax_amount' => 'decimal:2',
         'grand_total' => 'decimal:2',
         'delivered_at' => 'datetime',
-        'cancelled_at' => 'datetime',
-        'desired_delivery_date' => 'date',
+        'cancelled_at' => 'datetime'
     ];
 
     // Helper methods

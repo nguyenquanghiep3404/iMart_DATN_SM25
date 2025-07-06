@@ -52,11 +52,11 @@
       <div class="container py-5">
         <div class="row pt-1 pt-sm-3 pt-lg-4 pb-2 pb-md-3 pb-lg-4 pb-xl-5">
 
-          <!-- Delivery info (Step 1) -->
+          <!--Thông tin giao hàng (Bước 1) -->
           <div class="col-lg-8 col-xl-7 mb-5 mb-lg-0">
             <div class="d-flex flex-column gap-5 pe-lg-4 pe-xl-0">
-              
-              <!-- Step 1: Delivery Information -->
+
+              <!-- Thông tin giao hàng (Bước 1) -->
               <div class="d-flex align-items-start" id="step-1">
                 <div class="d-flex align-items-center justify-content-center bg-danger text-white rounded-circle fs-sm fw-semibold lh-1 flex-shrink-0" style="width: 2rem; height: 2rem; margin-top: -.125rem">1</div>
                 <div class="flex-grow-0 flex-shrink-0 ps-3 ps-md-4" style="width: calc(100% - 2rem)">
@@ -64,41 +64,21 @@
                   <div class="ms-n5 ms-sm-0">
                     <p class="fs-sm mb-4">Vui lòng chọn địa chỉ của bạn để xem các tùy chọn giao hàng và chi phí.</p>
                     
-                    <!-- Address Selection Form -->
+                    <!-- Biểu mẫu lựa chọn địa chỉ -->
                     <div class="row g-3 mb-4">
                       <div class="col-12">
                         <label for="province" class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
                         <select class="form-select" id="province" name="province" required>
                           <option value="">Chọn tỉnh/thành phố</option>
-                          <option value="ha-noi">Hà Nội</option>
-                          <option value="ho-chi-minh">Thành phố Hồ Chí Minh</option>
-                          <option value="da-nang">Đà Nẵng</option>
-                          <option value="can-tho">Cần Thơ</option>
-                          <option value="hai-phong">Hải Phòng</option>
-                        </select>
-                      </div>
-                      
-                      <div class="col-md-6">
-                        <label for="district" class="form-label">Quận/Huyện <span class="text-danger">*</span></label>
-                        <select class="form-select" id="district" name="district" required>
-                          <option value="">Chọn quận/huyện</option>
-                          <option value="ba-dinh">Ba Đình</option>
-                          <option value="hoan-kiem">Hoàn Kiếm</option>
-                          <option value="hai-ba-trung">Hai Bà Trưng</option>
-                          <option value="dong-da">Đống Đa</option>
-                          <option value="tay-ho">Tây Hồ</option>
+                          <!-- Dữ liệu sẽ được load từ API -->
                         </select>
                       </div>
                       
                       <div class="col-md-6">
                         <label for="ward" class="form-label">Phường/Xã <span class="text-danger">*</span></label>
-                        <select class="form-select" id="ward" name="ward" required>
-                          <option value="">Chọn phường/xã</option>
-                          <option value="phuc-xa">Phúc Xá</option>
-                          <option value="truc-bach">Trúc Bạch</option>
-                          <option value="vinh-phuc">Vĩnh Phúc</option>
-                          <option value="cong-vi">Cống Vị</option>
-                          <option value="lieu-giai">Liễu Giai</option>
+                        <select class="form-select" id="ward" name="ward" required disabled>
+                          <option value="">Chọn tỉnh/thành phố trước</option>
+                          <!-- Dữ liệu sẽ được load từ API khi chọn tỉnh -->
                         </select>
                       </div>
                     </div>
@@ -106,7 +86,7 @@
                     <h3 class="h6 border-bottom pb-4 mb-0">Chọn phương thức vận chuyển</h3>
                     <div class="mb-lg-4" id="shippingMethod" role="list">
 
-                      <!-- Courier delivery option -->
+                      <!-- Tùy chọn giao hàng chuyển phát nhanh -->
                       <div class="border-bottom">
                         <div class="form-check mb-0" role="listitem" data-bs-toggle="collapse" data-bs-target="#courier" aria-expanded="false" aria-controls="courier">
                           <label class="form-check-label d-flex align-items-center text-dark-emphasis fw-semibold py-4">
@@ -240,7 +220,7 @@
                         </div>
                       </div>
 
-                      <!-- Pickup from store option -->
+                      <!-- Tùy chọn nhận hàng tại cửa hàng -->
                       <div class="border-bottom">
                         <div class="form-check mb-0" role="listitem" data-bs-toggle="collapse" data-bs-target="#pickup" aria-expanded="false" aria-controls="pickup">
                           <label class="form-check-label d-flex align-items-center text-dark-emphasis fw-semibold py-4">
@@ -406,7 +386,7 @@
                         </div>
                       </div>
 
-                      <!-- Local shipping option -->
+                      <!-- Tùy chọn giao hàng địa phương -->
                       <div class="border-bottom">
                         <div class="form-check mb-0" role="listitem" data-bs-toggle="collapse" data-bs-target="#shipping" aria-expanded="false" aria-controls="shipping">
                           <label class="form-check-label d-flex align-items-center text-dark-emphasis fw-semibold py-4">
@@ -434,7 +414,7 @@
                 </div>
               </div>
 
-              <!-- Step 1 Summary (when completed) -->
+              <!-- Tóm tắt Bước 1 (khi hoàn thành) -->
               <div class="d-flex align-items-start" id="step-1-summary" style="display: none !important;">
                 <div class="d-flex align-items-center justify-content-center bg-success text-white rounded-circle flex-shrink-0" style="width: 2rem; height: 2rem; margin-top: -.125rem">
                   <i class="ci-check fs-base"></i>
@@ -471,19 +451,26 @@
                     <div class="row row-cols-1 row-cols-sm-2 g-3 g-sm-4 mb-4">
                       <div class="col">
                         <label for="shipping-fn" class="form-label">Họ & tên <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control form-control-lg" id="shipping-fn" required="" pattern="[a-zA-ZÀ-ỹ\s]+" title="Chỉ được nhập chữ và khoảng trắng">
+                        <input type="text" class="form-control form-control-lg" id="shipping-fn" required="" 
+                               pattern="[a-zA-ZÀ-ỹ\s]+" title="Chỉ được nhập chữ và khoảng trắng"
+                               value="{{ Auth::check() ? Auth::user()->name : '' }}">
                       </div>
                       <div class="col">
                         <label for="shipping-address" class="form-label">Số nhà / Tên đường <span class="text-danger">*</span></label>
                         <input type="text" class="form-control form-control-lg" id="shipping-address" required="" minlength="5" title="Vui lòng nhập địa chỉ chi tiết (tối thiểu 5 ký tự)">
                       </div>
                       <div class="col">
-                        <label for="shipping-email" class="form-label">Địa chỉ email</label>
-                        <input type="email" class="form-control form-control-lg" id="shipping-email" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Vui lòng nhập email đúng định dạng (vd: example@gmail.com)">
+                        <label for="shipping-email" class="form-label">Địa chỉ email <span class="text-danger">*</span></label>
+                        <input type="email" class="form-control form-control-lg" id="shipping-email" required="" 
+                               pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" 
+                               title="Vui lòng nhập email đúng định dạng (vd: example@gmail.com)"
+                               value="{{ Auth::check() ? Auth::user()->email : '' }}">
                       </div>
                       <div class="col">
                         <label for="shipping-mobile" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
-                        <input type="tel" class="form-control form-control-lg" id="shipping-mobile" required="" pattern="[0-9]{10,11}" title="Vui lòng nhập số điện thoại 10-11 số">
+                        <input type="tel" class="form-control form-control-lg" id="shipping-mobile" required="" 
+                               pattern="[0-9]{10,11}" title="Vui lòng nhập số điện thoại 10-11 số"
+                               value="{{ Auth::check() && Auth::user()->phone_number ? Auth::user()->phone_number : '' }}">
                       </div>
                       <div class="col">
                         <label class="form-label">Địa chỉ từ bước trước</label>
@@ -517,7 +504,7 @@
                 </div>
               </div>
 
-              <!-- Step 2 Summary (when completed) -->
+              <!-- Tóm tắt Bước 2 (khi hoàn thành) -->
               <div class="d-flex align-items-start" id="step-2-summary" style="display: none !important;">
                 <div class="d-flex align-items-center justify-content-center bg-success text-white rounded-circle flex-shrink-0" style="width: 2rem; height: 2rem; margin-top: -.125rem">
                   <i class="ci-check fs-base"></i>
@@ -544,7 +531,7 @@
                 </div>
               </div>
 
-              <!-- Step 3: Payment -->
+              <!-- Step 3: Thanh toán  -->
               <div class="d-flex align-items-start" id="step-3" style="display: none !important;">
                 <div class="d-flex align-items-center justify-content-center bg-danger text-white rounded-circle fs-sm fw-semibold lh-1 flex-shrink-0" style="width: 2rem; height: 2rem; margin-top: -.125rem">3</div>
                 <div class="w-100 ps-3 ps-md-4">
@@ -595,7 +582,7 @@
             </div>
           </div>
 
-          <!-- Order summary (sticky sidebar) -->
+          <!-- Tóm tắt đơn hàng (thanh bên cố định) -->
           <aside class="col-lg-4 offset-xl-1" style="margin-top: -100px">
             <div class="position-sticky top-0" style="padding-top: 100px">
               <div class="bg-body-tertiary rounded-5 p-4 mb-3">
@@ -604,44 +591,44 @@
                     <div class="d-flex align-items-center justify-content-between mb-4">
                       <h5 class="mb-0">Tổng đơn hàng</h5>
                       <div class="nav">
-                        <a class="nav-link text-decoration-underline p-0" href="checkout-v1-cart.html">Sửa</a>
+                        <a class="nav-link text-decoration-underline p-0" href="{{ route('cart.index') }}">Sửa</a>
                       </div>
                     </div>
                     <a class="d-flex align-items-center gap-2 text-decoration-none" href="#orderPreview" data-bs-toggle="offcanvas">
-                      <div class="ratio ratio-1x1" style="max-width: 64px">
-                        <img src="assets/img/shop/electronics/thumbs/08.png" class="d-block p-1" alt="iPhone">
-                      </div>
-                      <div class="ratio ratio-1x1" style="max-width: 64px">
-                        <img src="assets/img/shop/electronics/thumbs/09.png" class="d-block p-1" alt="iPad Pro">
-                      </div>
-                      <div class="ratio ratio-1x1" style="max-width: 64px">
-                        <img src="assets/img/shop/electronics/thumbs/01.png" class="d-block p-1" alt="Smart Watch">
-                      </div>
+                      @foreach($items->take(3) as $item)
+                        <div class="ratio ratio-1x1" style="max-width: 64px">
+                          <img src="{{ $item->productVariant->primaryImage->file_url ?? asset('assets/users/img/no-image.png') }}" 
+                               class="d-block p-1 rounded" alt="{{ $item->productVariant->product->name }}">
+                        </div>
+                      @endforeach
+                      @if($items->count() > 3)
+                        <div class="d-flex align-items-center justify-content-center bg-light rounded" style="width: 64px; height: 64px;">
+                          <span class="fs-sm text-muted">+{{ $items->count() - 3 }}</span>
+                        </div>
+                      @endif
                       <i class="ci-chevron-right text-body fs-xl p-0 ms-auto"></i>
                     </a>
                   </div>
                   <ul class="list-unstyled fs-sm gap-3 mb-0">
                     <li class="d-flex justify-content-between">
-                      Tạm tính (3 sản phẩm):
-                      <span class="text-dark-emphasis fw-medium">2.427.000 VNĐ</span>
+                      Tạm tính ({{ $total_quantity }} sản phẩm):
+                      <span class="text-dark-emphasis fw-medium">{{ number_format($subtotal, 0, ',', '.') }} VNĐ</span>
                     </li>
+                    @if($discount > 0)
                     <li class="d-flex justify-content-between">
-                      Giảm giá:
-                      <span class="text-danger fw-medium">-110.000 VNĐ</span>
+                      Giảm giá @if($voucher)({{ $voucher['code'] }})@endif:
+                      <span class="text-danger fw-medium">-{{ number_format($discount, 0, ',', '.') }} VNĐ</span>
                     </li>
-                    <li class="d-flex justify-content-between">
-                      Thuế:
-                      <span class="text-dark-emphasis fw-medium">73.400 VNĐ</span>
-                    </li>
+                    @endif
                     <li class="d-flex justify-content-between">
                       Phí vận chuyển:
-                      <span class="text-dark-emphasis fw-medium">35.000 VNĐ</span>
+                      <span class="text-dark-emphasis fw-medium" id="shipping-fee-display">Chọn phương thức vận chuyển</span>
                     </li>
                   </ul>
                   <div class="border-top pt-4 mt-4">
                     <div class="d-flex justify-content-between mb-3">
                       <span class="fs-sm">Tổng cộng:</span>
-                      <span class="h5 mb-0">2.425.400 VNĐ</span>
+                      <span class="h5 mb-0" id="grand-total-display">{{ number_format($total, 0, ',', '.') }} VNĐ</span>
                     </div>
                   </div>
                 </div>
@@ -685,9 +672,64 @@
       </div>
     </main>
 
+    <!-- Đặt hàng Xem trước Offcanvas -->
+    <div class="offcanvas offcanvas-end" id="orderPreview" tabindex="-1" aria-labelledby="orderPreviewLabel">
+      <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title" id="orderPreviewLabel">Chi tiết đơn hàng</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        @foreach($items as $item)
+          <div class="d-flex gap-3 pb-4 border-bottom mb-4">
+            <div class="flex-shrink-0">
+              <img src="{{ $item->productVariant->primaryImage->file_url ?? asset('assets/users/img/no-image.png') }}" 
+                   alt="{{ $item->productVariant->product->name }}" 
+                   class="rounded" style="width: 80px; height: 80px; object-fit: cover;">
+            </div>
+            <div class="flex-grow-1">
+              <h6 class="mb-1">{{ $item->productVariant->product->name }}</h6>
+              @if($item->productVariant->attributeValues->count() > 0)
+                <p class="fs-sm text-muted mb-1">
+                  @foreach($item->productVariant->attributeValues as $attrValue)
+                    {{ $attrValue->attribute->name }}: {{ $attrValue->value }}
+                    @if(!$loop->last), @endif
+                  @endforeach
+                </p>
+              @endif
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="fs-sm text-muted">{{ number_format($item->price, 0, ',', '.') }} VNĐ × {{ $item->quantity }}</span>
+                <span class="fw-medium">{{ number_format($item->price * $item->quantity, 0, ',', '.') }} VNĐ</span>
+              </div>
+            </div>
+          </div>
+        @endforeach
+        
+        <div class="border-top pt-4">
+          <div class="d-flex justify-content-between mb-2">
+            <span>Tạm tính:</span>
+            <span>{{ number_format($subtotal, 0, ',', '.') }} VNĐ</span>
+          </div>
+          @if($discount > 0)
+          <div class="d-flex justify-content-between mb-2">
+            <span>Giảm giá @if($voucher)({{ $voucher['code'] }})@endif:</span>
+            <span class="text-danger">-{{ number_format($discount, 0, ',', '.') }} VNĐ</span>
+          </div>
+          @endif
+          <div class="d-flex justify-content-between mb-2">
+            <span>Phí vận chuyển:</span>
+            <span id="offcanvas-shipping-fee">Chọn phương thức</span>
+          </div>
+          <div class="d-flex justify-content-between border-top pt-2 fw-bold">
+            <span>Tổng cộng:</span>
+            <span id="offcanvas-grand-total">{{ number_format($total, 0, ',', '.') }} VNĐ</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script>
       document.addEventListener('DOMContentLoaded', function() {
-        // Get all elements
+        // Lấy tất cả các phần tử
         const step1 = document.getElementById('step-1');
         const step1Summary = document.getElementById('step-1-summary');
         const step2 = document.getElementById('step-2');
@@ -702,12 +744,89 @@
         const editShippingBtn = document.getElementById('edit-shipping-address');
         const placeOrderBtn = document.getElementById('place-order');
 
-        // Helper function to update delivery summary
+        // Các yếu tố vị trí
+        const provinceSelect = document.getElementById('province');
+        const wardSelect = document.getElementById('ward');
+
+        // Tải các tỉnh khi tải trang
+        loadProvinces();
+
+        // Xử lý thay đổi tỉnh
+        provinceSelect.addEventListener('change', function() {
+          const provinceCode = this.value;
+          if (provinceCode) {
+            loadWards(provinceCode);
+            wardSelect.disabled = false;
+          } else {
+            wardSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố trước</option>';
+            wardSelect.disabled = true;
+          }
+          updateDeliverySummary();
+        });
+
+        // Xử lý thay đổi xã
+        wardSelect.addEventListener('change', function() {
+          updateDeliverySummary();
+        });
+
+        // Tải các tỉnh từ API
+        async function loadProvinces() {
+          try {
+            const response = await fetch('/api/locations/provinces');
+            const data = await response.json();
+            
+            if (data.success) {
+              provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+              data.data.forEach(province => {
+                const option = document.createElement('option');
+                option.value = province.code;
+                option.textContent = province.name_with_type;
+                option.dataset.name = province.name;
+                provinceSelect.appendChild(option);
+              });
+            } else {
+              console.error('Error loading provinces:', data.message);
+            }
+          } catch (error) {
+            console.error('Error fetching provinces:', error);
+          }
+        }
+
+        // Tải phường từ API
+        async function loadWards(provinceCode) {
+          try {
+            wardSelect.innerHTML = '<option value="">Đang tải...</option>';
+            wardSelect.disabled = true;
+            
+            const response = await fetch(`/api/locations/wards/${provinceCode}`);
+            const data = await response.json();
+            
+            if (data.success) {
+              wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+              data.data.forEach(ward => {
+                const option = document.createElement('option');
+                option.value = ward.code;
+                option.textContent = ward.name_with_type;
+                option.dataset.name = ward.name;
+                wardSelect.appendChild(option);
+              });
+              wardSelect.disabled = false;
+            } else {
+              console.error('Error loading wards:', data.message);
+              wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+            }
+          } catch (error) {
+            console.error('Error fetching wards:', error);
+            wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+          }
+        }
+
+        // Chức năng trợ giúp để cập nhật tóm tắt giao hàng
         function updateDeliverySummary() {
           const selectedMethodEl = document.querySelector('input[name="shipping-method"]:checked');
           const selectedTimeEl = document.querySelector('input[name="courier-time"]:checked') || document.querySelector('input[name="pickup-time"]:checked');
-          
-          // Update shipping method and time
+
+          // Cập nhật phương thức và thời gian giao hàng
           const methodElement = document.getElementById('selected-shipping-method');
           const timeElement = document.getElementById('selected-shipping-time');
           
@@ -737,16 +856,17 @@
             methodElement.textContent = 'Chưa chọn phương thức';
             timeElement.textContent = 'Chưa chọn thời gian';
           }
-          
-          // Update location info
+
+          // Cập nhật thông tin địa điểm
           const province = document.getElementById('province');
-          const district = document.getElementById('district');
           const ward = document.getElementById('ward');
           const deliveryLocationEl = document.getElementById('delivery-location');
           
-          if (province && district && ward && deliveryLocationEl) {
-            if (province.selectedIndex > 0 && district.selectedIndex > 0 && ward.selectedIndex > 0) {
-              const locationText = `${ward.options[ward.selectedIndex].text}, ${district.options[district.selectedIndex].text}, ${province.options[province.selectedIndex].text}`;
+          if (province && ward && deliveryLocationEl) {
+            if (province.selectedIndex > 0 && ward.selectedIndex > 0) {
+              const provinceText = province.options[province.selectedIndex].textContent;
+              const wardText = ward.options[ward.selectedIndex].textContent;
+              const locationText = `${wardText}, ${provinceText}`;
               deliveryLocationEl.textContent = locationText;
             } else {
               deliveryLocationEl.textContent = 'Chưa chọn địa chỉ';
@@ -754,7 +874,7 @@
           }
         }
 
-        // Helper function to update shipping summary
+        // Chức năng trợ giúp để cập nhật tóm tắt vận chuyển
         function updateShippingSummary() {
           const fullName = document.getElementById('shipping-fn').value || '';
           const mobile = document.getElementById('shipping-mobile').value || '';
@@ -764,7 +884,7 @@
           const receiverInfoEl = document.getElementById('receiver-info');
           const shippingAddressInfoEl = document.getElementById('shipping-address-info');
           
-          // Update receiver info only if we have actual data
+          // Chỉ cập nhật thông tin người nhận nếu chúng tôi có dữ liệu thực tế
           if (receiverInfoEl) {
             if (fullName.trim() || mobile.trim()) {
               const receiverInfo = fullName.trim() + (mobile ? ' - ' + mobile : '');
@@ -773,8 +893,8 @@
               receiverInfoEl.textContent = 'Chưa có thông tin';
             }
           }
-          
-          // Update address info using auto-filled address + street address
+
+          // Cập nhật thông tin địa chỉ sử dụng địa chỉ tự động điền + địa chỉ đường
           if (shippingAddressInfoEl) {
             if (address.trim() || autoFilledAddress.trim()) {
               let fullAddress = address.trim();
@@ -788,50 +908,45 @@
           }
         }
 
-        // Function to show only relevant steps
+        // Chức năng để hiển thị chỉ các bước liên quan
         function showStep(activeStep) {
-          // Hide all steps first
+          // Ẩn tất cả các bước trước
           [step1, step1Summary, step2, step2Summary, step3, step2Inactive, step3Inactive].forEach(el => {
             if (el) el.style.display = 'none';
           });
-          
-          // Show appropriate steps based on active step
+
+          // Hiển thị các bước phù hợp dựa trên bước hoạt động
           if (activeStep === 1) {
-            // Step 1: Show current step + inactive steps for 2 & 3
+            // Bước 1: Hiển thị bước hiện tại + các bước không hoạt động cho 2 & 3
             step1.style.display = 'flex';
             step2Inactive.style.display = 'flex';
             step3Inactive.style.display = 'flex';
           } else if (activeStep === 2) {
-            // Step 2: Show step 1 summary + current step + inactive step 3
+            // Bước 2: Hiển thị tóm tắt bước 1 + bước hiện tại + bước không hoạt động 3
             step1Summary.style.display = 'flex';
             step2.style.display = 'flex';
             step3Inactive.style.display = 'flex';
           } else if (activeStep === 3) {
-            // Step 3: Show only completed summaries + current step (no inactive steps)
+            // Bước 3: Hiển thị chỉ các tóm tắt đã hoàn thành + bước hiện tại (không có bước không hoạt động)
             step1Summary.style.display = 'flex';
             step2Summary.style.display = 'flex';
             step3.style.display = 'flex';
-            // NO inactive steps shown at step 3
+            // KHÔNG có bước không hoạt động nào được hiển thị ở bước 3
           }
         }
 
-        // Step 1 to Step 2
+        // Bước 1 đến Bước 2
         continueToAddressBtn.addEventListener('click', function() {
-          // Detailed validation for step 1
+          // Kiểm tra chi tiết cho bước 1
           const selectedMethod = document.querySelector('input[name="shipping-method"]:checked');
           const selectedTime = document.querySelector('input[name="courier-time"]:checked') || document.querySelector('input[name="pickup-time"]:checked');
           const province = document.getElementById('province');
-          const district = document.getElementById('district');  
           const ward = document.getElementById('ward');
           
           let errors = [];
           
           if (!province || province.selectedIndex === 0) {
             errors.push('Tỉnh/Thành phố');
-          }
-          
-          if (!district || district.selectedIndex === 0) {
-            errors.push('Quận/Huyện');
           }
           
           if (!ward || ward.selectedIndex === 0) {
@@ -853,17 +968,19 @@
             return;
           }
           
-          // Auto-fill address in step 2
-          const fullAddress = `${ward.options[ward.selectedIndex].text}, ${district.options[district.selectedIndex].text}, ${province.options[province.selectedIndex].text}`;
+          // Tự động điền địa chỉ ở bước 2
+          const provinceText = province.options[province.selectedIndex].textContent;
+          const wardText = ward.options[ward.selectedIndex].textContent;
+          const fullAddress = `${wardText}, ${provinceText}`;
           document.getElementById('auto-filled-address').value = fullAddress;
           
           updateDeliverySummary();
           showStep(2);
         });
 
-        // Step 2 to Step 3
+        // Bước 2 đến Bước 3
         continueToPaymentBtn.addEventListener('click', function() {
-          // Detailed validation for step 2 - only required fields
+          // Kiểm tra chi tiết cho bước 2 - chỉ các trường bắt buộc
           const fullName = document.getElementById('shipping-fn').value.trim();
           const mobile = document.getElementById('shipping-mobile').value.trim();
           const address = document.getElementById('shipping-address').value.trim();
@@ -889,8 +1006,8 @@
             errors.push('Số nhà / Tên đường (tối thiểu 5 ký tự)');
           }
 
-          if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-            errors.push('Email (không đúng định dạng)');
+          if (!email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+            errors.push('Email (bắt buộc và đúng định dạng)');
           }
 
           if (errors.length > 0) {
@@ -902,22 +1019,34 @@
           showStep(3);
         });
 
-        // Edit delivery info
+        // Chỉnh sửa thông tin giao hàng
         editDeliveryBtn.addEventListener('click', function() {
           showStep(1);
         });
 
-        // Edit shipping address
+        // Chỉnh sửa địa chỉ giao hàng
         editShippingBtn.addEventListener('click', function() {
           showStep(2);
         });
 
-        // Update delivery summary when shipping method changes
+        // Bảng phí vận chuyển
+        const shippingFees = {
+          'Giao hàng nhanh': 35000,
+          'Nhận tại cửa hàng': 0,
+          'Giao hàng tiêu chuẩn': 25000
+        };
+
+        // Giá trị cơ sở từ máy chủ
+        const baseSubtotal = {{ $subtotal }};
+        const baseDiscount = {{ $discount }};
+
+        // Cập nhật tóm tắt giao hàng khi phương thức giao hàng thay đổi
         document.querySelectorAll('input[name="shipping-method"]').forEach(function(radio) {
           radio.addEventListener('change', function() {
             updateDeliverySummary();
+            updateShippingFee();
             
-            // Reset time selection when changing shipping method
+            // Đặt lại lựa chọn thời gian khi thay đổi phương thức vận chuyển
             document.querySelectorAll('input[name="courier-time"], input[name="pickup-time"]').forEach(input => {
               input.checked = false;
             });
@@ -925,10 +1054,73 @@
           });
         });
 
-        // Update delivery summary when time selection changes
+        // Chức năng cập nhật phí vận chuyển và tổng số
+        function updateShippingFee() {
+          const selectedMethod = document.querySelector('input[name="shipping-method"]:checked');
+          if (selectedMethod) {
+            // Lấy văn bản nhãn từ khoảng đầu tiên (tên phương thức)
+            const labelElement = selectedMethod.closest('label');
+            if (!labelElement) {
+              console.error('Label element not found');
+              return;
+            }
+
+            // Làm sạch văn bản bằng cách xóa khoảng trắng và dòng mới thừa
+            const labelText = labelElement.textContent
+              .replace(/\s+/g, ' ') // Thay thế nhiều khoảng trắng/dòng mới bằng một khoảng trắng
+              .trim();
+            
+            console.log('Cleaned label text:', labelText);
+            
+            let shippingFee = 0;
+            if (labelText.includes('Giao hàng nhanh')) {
+              shippingFee = 35000;
+            } else if (labelText.includes('Giao hàng tiêu chuẩn')) {
+              shippingFee = 25000;
+            } // Nhận tại hàng vẫn là 0
+            
+            console.log('Calculated shipping fee:', shippingFee);
+            
+            const grandTotal = baseSubtotal + shippingFee - baseDiscount;
+            const shippingFeeFormatted = shippingFee === 0 ? 'Miễn phí' : number_format(shippingFee) + ' VNĐ';
+            
+            // Cập nhật tất cả các màn hình hiển thị phí vận chuyển
+            document.getElementById('shipping-fee-display').textContent = shippingFeeFormatted;
+            document.getElementById('grand-total-display').textContent = number_format(grandTotal) + ' VNĐ';
+            document.getElementById('offcanvas-shipping-fee').textContent = shippingFeeFormatted;
+            document.getElementById('offcanvas-grand-total').textContent = number_format(grandTotal) + ' VNĐ';
+
+            // Cũng cập nhật phương thức vận chuyển hiển thị trong phần tóm tắt
+            const methodElement = document.getElementById('selected-shipping-method');
+            if (methodElement) {
+              methodElement.textContent = labelText;
+            }
+          } else {
+            // Đặt lại màn hình khi không có phương pháp nào được chọn
+            const displays = [
+              'shipping-fee-display',
+              'grand-total-display',
+              'offcanvas-shipping-fee',
+              'offcanvas-grand-total'
+            ];
+            displays.forEach(id => {
+              const element = document.getElementById(id);
+              if (element) {
+                element.textContent = id.includes('shipping') ? 'Chọn phương thức vận chuyển' : number_format(baseSubtotal - baseDiscount) + ' VNĐ';
+              }
+            });
+          }
+        }
+
+        // Chức năng định dạng số
+        function number_format(number) {
+          return new Intl.NumberFormat('vi-VN').format(number);
+        }
+
+        // Cập nhật tóm tắt giao hàng khi lựa chọn thời gian thay đổi
         document.querySelectorAll('input[name="courier-time"], input[name="pickup-time"]').forEach(function(radio) {
           radio.addEventListener('change', function() {
-            // Uncheck other time selections
+            // Bỏ chọn các lựa chọn thời gian khác
             const name = this.getAttribute('name');
             document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
               if (input !== this) input.checked = false;
@@ -937,28 +1129,40 @@
           });
         });
 
-        // Update delivery summary when address changes
-        ['province', 'district', 'ward'].forEach(function(id) {
-          const element = document.getElementById(id);
-          if (element) {
-            element.addEventListener('change', updateDeliverySummary);
-          }
-        });
+        // Cập nhật tóm tắt giao hàng khi địa chỉ thay đổi 
+        // Lưu ý: người nghe thay đổi tỉnh và phường đã được thêm vào ở trên
 
-        // Initial update
+        // Cập nhật ban đầu
         updateDeliverySummary();
 
-        // Place order
+        // Đặt hàng
         placeOrderBtn.addEventListener('click', function() {
           let errors = [];
 
-          // Step 3 validation
-          const selectedPaymentMethod = document.querySelector('input[name="payment-method"]:checked');
-          if (!selectedPaymentMethod) {
-            errors.push('Phương thức thanh toán');
+          // Validate địa chỉ
+          const province = document.getElementById('province');
+          const ward = document.getElementById('ward');
+          const selectedShippingMethod = document.querySelector('input[name="shipping-method"]:checked');
+          const selectedTime = document.querySelector('input[name="courier-time"]:checked') || document.querySelector('input[name="pickup-time"]:checked');
+
+          if (!province || province.selectedIndex === 0) {
+            errors.push('Tỉnh/Thành phố');
+          }
+          
+          if (!ward || ward.selectedIndex === 0) {
+            errors.push('Phường/Xã');
           }
 
-          // Validate all previous steps again
+          if (!selectedShippingMethod) {
+            errors.push('Phương thức vận chuyển');
+          } else {
+            const methodLabel = selectedShippingMethod.nextElementSibling.textContent.trim().toLowerCase();
+            if ((methodLabel.includes('giao hàng nhanh') || methodLabel.includes('nhận tại cửa hàng')) && !selectedTime) {
+              errors.push('Thời gian ' + (methodLabel.includes('giao hàng nhanh') ? 'giao hàng' : 'nhận hàng'));
+            }
+          }
+
+          // Validate thông tin người nhận
           const fullName = document.getElementById('shipping-fn').value.trim();
           const mobile = document.getElementById('shipping-mobile').value.trim();
           const address = document.getElementById('shipping-address').value.trim();
@@ -976,29 +1180,68 @@
             errors.push('Địa chỉ');
           }
 
-          if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+          if (!email || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
             errors.push('Email');
           }
 
+          // Bước 3 xác thực
+          const selectedPaymentMethod = document.querySelector('input[name="payment-method"]:checked');
+          if (!selectedPaymentMethod) {
+            errors.push('Phương thức thanh toán');
+          }
+
           if (errors.length > 0) {
-            alert('Vui lòng điền ' + errors.join(', '));
+            alert('Vui lòng điền đầy đủ thông tin: ' + errors.join(', '));
             return;
           }
-          
-          // All validations passed - get order summary
-          const paymentMethodText = selectedPaymentMethod.nextElementSibling.querySelector('.fw-medium').textContent;
-          
-          // Redirect to success page with order details
-          const params = new URLSearchParams({
-            order_id: 'ORD' + Date.now(), // Tạo mã đơn hàng tạm thời
-            payment_method: paymentMethodText,
-            shipping_method: document.querySelector('input[name="shipping-method"]:checked').nextElementSibling.textContent.trim().split('\n')[0],
-            receiver_name: fullName,
-            receiver_phone: mobile,
-            shipping_address: address + ', ' + document.getElementById('auto-filled-address').value
-          });
 
-          window.location.href = '/payments/success?' + params.toString();
+          // Tắt nút và hiển thị tải
+          placeOrderBtn.disabled = true;
+          placeOrderBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang xử lý...';
+
+          // Chuẩn bị dữ liệu đơn hàng
+          const orderData = {
+            province_code: province.value,
+            ward_code: ward.value,
+            shipping_method: selectedShippingMethod.closest('label').querySelector('.form-check-input').nextSibling.textContent.trim(),
+            shipping_time: selectedTime ? selectedTime.closest('.swiper-slide').querySelector('.h6').textContent + ' ' + selectedTime.nextElementSibling.textContent : null,
+            full_name: fullName,
+            phone: mobile,
+            email: email,
+            address: address,
+            postcode: document.getElementById('shipping-postcode').value.trim(),
+            payment_method: selectedPaymentMethod.id,
+            notes: null
+          };
+
+          // Gửi đơn hàng qua AJAX
+          fetch('{{ route("payments.process") }}', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(orderData)
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Chuyển hướng đến trang thành công với ID đơn hàng
+              window.location.href = '{{ route("payments.success") }}?order_id=' + data.order.id;
+            } else {
+              throw new Error(data.message || 'Có lỗi xảy ra khi đặt hàng');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra: ' + error.message);
+          })
+          .finally(() => {
+            // Kích hoạt lại nút
+            placeOrderBtn.disabled = false;
+            placeOrderBtn.innerHTML = 'Đặt hàng <i class="ci-check fs-lg ms-1 me-n1"></i>';
+          });
         });
       });
     </script>
