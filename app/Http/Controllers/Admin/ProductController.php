@@ -17,6 +17,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Models\OrderItem;
 
 class ProductController extends Controller
 {
@@ -289,7 +290,7 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $this->authorize('update', $product);
-
+        $hasBeenSold = $product->variants()->whereHas('orderItems')->exists();
         $product->load([
             'category',
             'variants' => fn($q) => $q->orderBy('is_default', 'desc'),
@@ -303,7 +304,7 @@ class ProductController extends Controller
         $categories = $this->formatCategoriesForSelect($allCategories);
         $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
 
-        return view('admin.products.edit', compact('product', 'categories', 'attributes'));
+        return view('admin.products.edit', compact('product', 'categories', 'attributes', 'hasBeenSold'));
     }
 
     /**
@@ -323,12 +324,10 @@ class ProductController extends Controller
             $productData['updated_by'] = Auth::id();
             $product->update($productData);
 
-            // 2. Handle product type switching logic
             $typeChanged = ($originalType !== $newType);
 
             if ($typeChanged) {
-                // When switching, we clean up the old state completely.
-                // Detach all images from variants and the product itself to avoid conflicts
+                // Clean up old state completely when switching types
                 UploadedFile::where('attachable_id', $product->id)
                     ->where('attachable_type', Product::class)
                     ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
@@ -339,14 +338,11 @@ class ProductController extends Controller
                         ->whereIn('attachable_id', $variantIds)
                         ->update(['attachable_id' => null, 'attachable_type' => null]);
                 }
-
-                // Delete all old variants before creating new ones based on the new type
                 $product->variants()->delete();
             }
 
-            // 3. Create/Update variants and images based on the NEW type
+            // 3. Create/Update variants based on the NEW type
             if ($newType === 'simple') {
-                // This logic runs for both "update existing simple" and "switch to simple"
                 $variantData = [
                     'sku' => $request->input('simple_sku'),
                     'price' => $request->input('simple_price'),
@@ -361,15 +357,21 @@ class ProductController extends Controller
                     'is_default' => true,
                     'status' => 'active',
                 ];
-
-                // Use updateOrCreate to handle both existing and new simple variants after a switch
                 $product->variants()->updateOrCreate(['product_id' => $product->id], $variantData);
-
-                // Sync images for the simple product
                 $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images', []));
 
-            } elseif ($newType === 'variable' && $request->has('variants')) {
-                // This logic runs for both "update existing variable" and "switch to variable"
+            } elseif ($newType === 'variable') {
+                // *** NEW LOGIC ***
+                // Enforce that if the type is variable, variant data must be submitted.
+                // This relies on the front-end to create at least one variant.
+                if (!$request->has('variants') || empty($request->input('variants'))) {
+                     // If switching from simple to variable and no variants are provided,
+                     // it's an invalid state. The front-end should prevent this.
+                     // We add a backend check for safety.
+                    return back()
+                        ->withInput()
+                        ->with('error', 'Sản phẩm có biến thể phải có ít nhất một biến thể. Vui lòng tạo biến thể trước khi lưu.');
+                }
                 $this->syncProductVariants($product, $request->input('variants'), $request);
             }
 

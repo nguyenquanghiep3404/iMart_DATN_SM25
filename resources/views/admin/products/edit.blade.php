@@ -80,7 +80,17 @@
                 </ul>
             </div>
         @endif
-        
+        @if ($hasBeenSold)
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 mb-6 rounded-md shadow-md" role="alert">
+        <div class="flex items-center">
+            <svg class="svg-icon text-yellow-500 mr-3 h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <h3 class="font-medium">Lưu ý quan trọng</h3>
+        </div>
+        <p class="mt-2 text-sm ml-9">
+            Sản phẩm này đã có trong các đơn hàng cũ. Việc thay đổi thông tin (như tên, giá, SKU) sẽ chỉ áp dụng cho các lần mua hàng <strong>mới</strong> và <strong>không</strong> làm thay đổi dữ liệu trong các đơn hàng đã được tạo.
+        </p>
+    </div>
+@endif
         <form id="editProductForm" action="{{ route('admin.products.update', $product->id) }}" method="POST">
             @csrf
             @method('PUT')
@@ -274,25 +284,25 @@
                         </div>
                     </div>
 
-                        <div class="card">
-                            <div class="card-header">
-                                <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><path d="M11 8l2 2"></path></svg>
-                                Tối Ưu Hóa SEO
-                                <button type="button" id="generateAllSeoAI" class="btn btn-ai btn-sm ml-auto"><span class="button-text">✨ Tạo Tất Cả SEO</span><span class="loading-spinner hidden"></span></button>
+                            <div class="card">
+                                <div class="card-header">
+                                    <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><path d="M11 8l2 2"></path></svg>
+                                    Tối Ưu Hóa SEO
+                                    <button type="button" id="generateAllSeoAI" class="btn btn-ai btn-sm ml-auto"><span class="button-text">✨ Tạo Tất Cả SEO</span><span class="loading-spinner hidden"></span></button>
+                                </div>
+                                <div class="input-group">
+                                    <label for="meta_title">Meta Title</label>
+                                    <input type="text" id="meta_title" name="meta_title" class="input-field" value="{{ old('meta_title', $product->meta_title) }}">
+                                </div>
+                                <div class="input-group">
+                                    <label for="meta_description">Meta Description</label>
+                                    <textarea id="meta_description" name="meta_description" class="textarea-field" rows="3">{{ old('meta_description', $product->meta_description) }}</textarea>
+                                </div>
+                                <div class="input-group">
+                                    <label for="meta_keywords">Meta Keywords</label>
+                                    <input type="text" id="meta_keywords" name="meta_keywords" class="input-field" value="{{ old('meta_keywords', $product->meta_keywords) }}">
+                                </div>
                             </div>
-                            <div class="input-group">
-                                <label for="meta_title">Meta Title</label>
-                                <input type="text" id="meta_title" name="meta_title" class="input-field" value="{{ old('meta_title', $product->meta_title) }}">
-                            </div>
-                            <div class="input-group">
-                                <label for="meta_description">Meta Description</label>
-                                <textarea id="meta_description" name="meta_description" class="textarea-field" rows="3">{{ old('meta_description', $product->meta_description) }}</textarea>
-                            </div>
-                            <div class="input-group">
-                                <label for="meta_keywords">Meta Keywords</label>
-                                <input type="text" id="meta_keywords" name="meta_keywords" class="input-field" value="{{ old('meta_keywords', $product->meta_keywords) }}">
-                            </div>
-                        </div>
                 </div>
             </div>
 
@@ -619,7 +629,7 @@ function removeVariantImage(btn, index, id) {
 
 
 // =================================================================
-// LOGIC FORM VÀ BIẾN THỂ (Đã cập nhật)
+// LOGIC FORM VÀ BIẾN THỂ
 // =================================================================
 function toggleSchedule(element) {
     const sectionContainer = element.closest('#simpleProductFields, .variant-card');
@@ -966,29 +976,66 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // === BẮT ĐẦU KHỐI CODE MỚI ĐÃ SỬA LỖI ===
+    // === BẮT ĐẦU KHỐI LOGIC CHUYỂN ĐỔI LOẠI SẢN PHẨM (ĐÃ CẬP NHẬT) ===
     const typeRadios = document.querySelectorAll('.product-type-radio');
     const typeSwitchModal = document.getElementById('typeSwitchConfirmationModal');
     const cancelSwitchBtn = document.getElementById('cancelTypeSwitch');
     const confirmSwitchBtn = document.getElementById('confirmTypeSwitch');
-
     const reloadModal = document.getElementById('reloadConfirmationModal');
     const cancelReloadBtn = document.getElementById('cancelReload');
     const confirmReloadBtn = document.getElementById('confirmReload');
-
+    
     typeRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             const newType = e.target.value;
             if (newType === currentProductType) return;
 
-            // --- LOGIC MỚI: Xử lý trường hợp "hoàn tác" ---
+            // **LOGIC MỚI: Xử lý chuyển từ Đơn giản -> Biến thể**
+            if (currentProductType === 'simple' && newType === 'variable') {
+                // 1. Thay đổi UI sang chế độ chọn thuộc tính
+                document.getElementById('simpleProductFields').style.display = 'none';
+                const variableFields = document.getElementById('variableProductFields');
+                variableFields.style.display = 'block';
+                document.getElementById('variantsContainer').style.display = 'none';
+                document.getElementById('addVariantButton').style.display = 'none';
+
+                // 2. Tạo và hiển thị nút đặc biệt để tạo biến thể đầu tiên
+                let generateBtn = document.getElementById('generate-variant-from-simple-btn');
+                if (!generateBtn) {
+                    generateBtn = document.createElement('button');
+                    generateBtn.type = 'button';
+                    generateBtn.id = 'generate-variant-from-simple-btn';
+                    generateBtn.className = 'btn btn-primary mt-4';
+                    generateBtn.innerHTML = `<svg class="svg-icon mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14" /></svg> Tạo biến thể đầu tiên từ dữ liệu sản phẩm đơn giản`;
+                    
+                    document.getElementById('productAttributesContainer').parentElement.insertAdjacentElement('afterend', generateBtn);
+
+                    generateBtn.addEventListener('click', () => {
+                        // 3. Kiểm tra đã chọn thuộc tính chưa
+                        updateSelectedAttributesForVariants();
+                        if (selectedProductAttributes.length === 0) {
+                            showMessageModal('Thiếu thuộc tính', 'Vui lòng chọn ít nhất một thuộc tính để tạo biến thể.', 'error');
+                            return;
+                        }
+
+                        // 4. Thực hiện chuyển đổi và tạo biến thể
+                        performTypeSwitch(newType);
+
+                        // 5. Dọn dẹp UI, hiển thị các nút bình thường
+                        document.getElementById('variantsContainer').style.display = 'block';
+                        document.getElementById('addVariantButton').style.display = 'inline-flex';
+                        generateBtn.remove();
+                    });
+                }
+                // Dừng lại ở đây, không cập nhật currentProductType ngay
+                // Chờ người dùng nhấn nút "Tạo biến thể đầu tiên"
+                return; 
+            }
+
+            // Logic có sẵn: Xử lý "hoàn tác" khi chuyển về lại biến thể
             if (originalProductTypeFromServer === 'variable' && newType === 'variable') {
                 reloadModal.classList.remove('hidden');
-
-                confirmReloadBtn.onclick = () => {
-                    window.location.reload();
-                };
-
+                confirmReloadBtn.onclick = () => window.location.reload();
                 cancelReloadBtn.onclick = () => {
                     e.target.checked = false;
                     document.querySelector('.product-type-radio[value="simple"]').checked = true;
@@ -996,11 +1043,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 return;
             }
-            // --- KẾT THÚC LOGIC MỚI ---
 
+            // Logic có sẵn: Xử lý khi chuyển từ Biến thể -> Đơn giản (hiện modal xác nhận)
             if (currentProductType === 'variable' && newType === 'simple') {
                 typeSwitchModal.classList.remove('hidden');
             } else {
+                // Trường hợp khác (ít xảy ra)
                 performTypeSwitch(newType);
             }
         });
@@ -1015,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', () => {
         performTypeSwitch('simple');
         typeSwitchModal.classList.add('hidden');
     });
-    // === KẾT THÚC KHỐI CODE MỚI ===
+    // === KẾT THÚC KHỐI LOGIC CHUYỂN ĐỔI ===
 
     // Final Form Initialization
     if (oldData && Object.keys(oldData).length > 0) {
