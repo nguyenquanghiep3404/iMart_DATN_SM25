@@ -308,14 +308,14 @@ Route::prefix('admin')
 
 
         // Quản lý comment
-        Route::get('/comments', [CommentController::class, 'index'])->name('comment.index');
+        Route::get('/comments', [AdminCommentController::class, 'index'])->name('comment.index');
         Route::get('products/{id}-{slug}', [ProductController::class, 'show'])->name('products.show');
         Route::get('posts/{id}-{slug}', [PostController::class, 'show'])->name('posts.show');
 
-        Route::get('comments/{comment}', [CommentController::class, 'show'])->name('comments.show');
-        Route::get('comments/{comment}/edit', [CommentController::class, 'edit'])->name('comments.edit');
-        Route::post('comments/{comment}/status', [CommentController::class, 'updateStatus'])->name('comments.updateStatus');
-        Route::post('comment/replies', [CommentController::class, 'replyStore'])->name('replies.store');
+        Route::get('comments/{comment}', [AdminCommentController::class, 'show'])->name('comments.show');
+        Route::get('comments/{comment}/edit', [AdminCommentController::class, 'edit'])->name('comments.edit');
+        Route::post('comments/{comment}/status', [AdminCommentController::class, 'updateStatus'])->name('comments.updateStatus');
+        Route::post('comment/replies', [AdminCommentController::class, 'replyStore'])->name('replies.store');
 
         //quản lý danh mục bài viết
         Route::get('categories_post/create-with-children', [PostCategoryController::class, 'createWithChildren'])
