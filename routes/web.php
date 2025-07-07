@@ -1,6 +1,4 @@
 <?php
-
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
@@ -33,13 +31,24 @@ use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Users\PaymentController;
 use App\Http\Controllers\LocationController;
-
+use App\Http\Controllers\Admin\VNPayController;
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+// Route::post('/vnpay/payment', [VNPayController::class, 'createPayment'])->name('vnpay.payment');
+// Route::get('/vnpay/return', [VNPayController::class, 'handleReturn'])->name('vnpay.return');
 
+Route::prefix('payments')->name('payments.')->group(function () {
+    Route::get('/', [PaymentController::class, 'index'])->name('index');
+    Route::post('/process', [PaymentController::class, 'processOrder'])->name('process');
+    Route::get('/success', [PaymentController::class, 'success'])->name('success');
+
+    // Routes cho VNPay
+    Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
+    Route::get('/vnpay-ipn', [PaymentController::class, 'vnpayIpn'])->name('vnpay.ipn');
+});
 
 //==========================================================================
 // FRONTEND ROUTES (PUBLIC)
