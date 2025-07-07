@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Providers;
+
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 // Import các lớp cho xác thực người dùng
@@ -21,6 +22,9 @@ use App\Policies\ProductPolicy;
 use App\Models\Category;
 use App\Policies\CategoryPolicy;
 use Illuminate\Support\Facades\View; 
+use App\Models\ProductVariant;
+use App\Observers\ProductVariantObserver;
+
 
 
 class AppServiceProvider extends ServiceProvider
@@ -32,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
     {
         //
     }
-        protected $policies = [
+    protected $policies = [
         User::class => UserPolicy::class,
         Role::class => RolePolicy::class,
         Attribute::class => AttributePolicy::class,
@@ -56,7 +60,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Phân quyền
         try {
-        // Chỉ giữ lại các Gate chung, không gắn với Model CRUD
+            // Chỉ giữ lại các Gate chung, không gắn với Model CRUD
             Gate::define('access_admin_dashboard', function (User $user) {
                 // Admin được vào, hoặc những ai có quyền cụ thể
                 return $user->hasRole('admin') || $user->hasPermissionTo('access_admin_dashboard');
@@ -73,6 +77,31 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Exception $e) {
             return;
         }
+
+
+        View::composer('*', function ($view) {
+            $user = auth()->user();
+            if ($user) {
+                $unreadNotificationsCount = $user->unreadNotifications()->count();
+
+                $recentNotifications = $user->notifications()
+                    ->orderBy('created_at', 'desc')
+                    ->take(5)
+                    ->get()
+                    ->map(function ($notification) {
+                        return [
+                            'title' => $notification->data['title'] ?? 'Thông báo',
+                            'message' => $notification->data['message'] ?? '',
+                            'icon' => $notification->data['icon'] ?? 'default',
+                            'color' => $notification->data['color'] ?? 'gray',
+                            'time' => $notification->created_at->diffForHumans(),
+                        ];
+                    });
+
+
+                $view->with(compact('unreadNotificationsCount', 'recentNotifications'));
+            }
+        });
         // try {
         // // --- LOGIC PHÂN QUYỀN MỚI DỰA TRÊN PERMISSION ---
 
@@ -115,6 +144,7 @@ class AppServiceProvider extends ServiceProvider
         //     // Bỏ qua lỗi khi migrate
         //     return;
         // }
+
         View::composer('*', function ($view) {
             $cart = session()->get('cart', []);
             $totalQuantity = array_sum(array_column($cart, 'quantity'));

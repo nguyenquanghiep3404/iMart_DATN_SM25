@@ -145,16 +145,36 @@ class CategoryController extends Controller
 
         return $flattenTree();
     }
-    public function create()
+    public function create(Request $request)
     {
+        $specSearch = $request->input('spec_search');
+
+        $specQuery = SpecificationGroup::orderBy('name');
+        if ($specSearch) {
+            $specQuery->where('name', 'like', '%' . $specSearch . '%');
+        }
+        $specificationGroups = $specQuery->get();
+
         $parents = Category::whereNull('parent_id')->orderBy('name')->get();
-        return view('admin.category.create', compact('parents'));
+
+        return view('admin.category.create', compact('parents', 'specificationGroups', 'specSearch'));
     }
+
+    /**
+     * Lưu danh mục mới vào cơ sở dữ liệu.
+     */
     public function store(CategoryRequest $request)
     {
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
-        Category::create($data);
+
+        $category = Category::create($data);
+
+        // Gán nhóm thông số cho danh mục vừa tạo
+        if ($request->has('specification_groups')) {
+            $category->specificationGroups()->sync($request->input('specification_groups'));
+        }
+
         return redirect()->route('admin.categories.index')
             ->with('success', 'Danh mục đã được tạo thành công.');
     }
@@ -163,31 +183,47 @@ class CategoryController extends Controller
         $category->load('parent', 'children')->loadCount('products');
         return view('admin.category.show', compact('category'));
     }
-    public function edit(Category $category)
+    public function edit(Request $request, Category $category)
     {
-    $specificationGroups = SpecificationGroup::orderBy('name')->get();
-    $categorySpecificationGroupIds = $category->specificationGroups()->pluck('specification_groups.id')->toArray();
 
+        $specSearch = $request->input('spec_search');
+
+
+        $specQuery = SpecificationGroup::orderBy('name');
+        if ($specSearch) {
+            $specQuery->where('name', 'like', '%' . $specSearch . '%');
+        }
+        $specificationGroups = $specQuery->get();
+
+        $categorySpecificationGroupIds = $category->specificationGroups()->pluck('specification_groups.id')->toArray();
 
         $parents = Category::whereNull('parent_id')
             ->whereNot('id', $category->id)
             ->orderBy('name', "asc")
             ->pluck('name', 'id');
-        return view('admin.category.edit', compact('category', 'parents','specificationGroups','categorySpecificationGroupIds'));
+
+        return view('admin.category.edit', compact(
+            'category',
+            'parents',
+            'specificationGroups',
+            'categorySpecificationGroupIds',
+            'specSearch' 
+        ));
     }
-    public function update(CategoryRequest $request, Category $category)
+   public function update(CategoryRequest $request, Category $category)
     {
-    if ($request->has('specification_groups')) {
-        $category->specificationGroups()->sync($request->input('specification_groups'));
-    } else {
-        
-        $category->specificationGroups()->sync([]);
-    }
+        // Gán nhóm thông số cho danh mục
+        // Sử dụng mảng rỗng làm giá trị mặc định nếu không có nhóm nào được chọn
+        $category->specificationGroups()->sync($request->input('specification_groups', []));
+
+        // Validate và cập nhật dữ liệu danh mục
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
         $category->update($data);
+
+        // !!! FIX: Luôn chuyển hướng về trang index sau khi cập nhật thành công
         return redirect()->route('admin.categories.index')
-            ->with('success', 'Danh mục đã được cập nhật thành công.');
+            ->with('success', "Danh mục '{$category->name}' đã được cập nhật thành công.");
     }
     public function destroy(Category $category)
     {

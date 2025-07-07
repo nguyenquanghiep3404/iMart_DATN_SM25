@@ -15,6 +15,9 @@
                 <i class="fas fa-plus"></i>
                 <span>Thêm banner mới</span>
             </button>
+            <a href="{{ route('admin.banners.trash') }}" class="ml-4 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium border border-gray-300">
+                🗑 Thùng rác
+            </a>
         </div>
 
         @if(session('success'))

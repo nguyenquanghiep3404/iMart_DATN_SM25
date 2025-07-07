@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Chi tiết bài viết')
+@section('title', 'Thông tin bài viết')
 
 @push('styles')
     <style>
@@ -263,7 +263,7 @@
     <div class="body-content px-4 md:px-8 py-8 bg-gray-50">
         <div class="container mx-auto max-w-screen-xl">
             <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900">Chi tiết bài viết</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Thông tin bài viết</h1>
                 <nav aria-label="breadcrumb" class="mt-3 flex items-center text-sm text-gray-600">
                     <a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800 transition">Bảng
                         điều khiển</a>
@@ -334,7 +334,7 @@
 
                         <div class="meta-item">
                             <label class="font-semibold text-lg text-gray-700 block mb-2">Lượt xem</label>
-                            <p class="text-gray-900 leading-6">{{ $post->views ?? 0 }}</p>
+                            <p class="text-gray-900 leading-6">{{ $post->view_count ?? 0 }}</p>
                         </div>
 
                         <div class="meta-item">

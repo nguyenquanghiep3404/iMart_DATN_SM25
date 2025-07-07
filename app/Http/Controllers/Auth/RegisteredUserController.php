@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use App\Notifications\NewUserRegistered;
 
 class RegisteredUserController extends Controller
 {
@@ -70,9 +71,10 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+        $admin = User::find(1); // hoặc lấy theo vai trò
+        $admin->notify(new NewUserRegistered($user));
         $user->roles()->attach(2);
         event(new Registered($user));
-
         Auth::login($user);
 
         return redirect(route('users.home', absolute: false));

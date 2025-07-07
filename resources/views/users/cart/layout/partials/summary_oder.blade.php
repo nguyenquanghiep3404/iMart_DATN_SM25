@@ -27,7 +27,7 @@
                             {{ number_format($total, 0, ',', '.') }}₫
                         </span>
                     </div>
-                    <a class="btn btn-lg btn-primary w-100" href="checkout-v1-delivery-1.html">
+                    <a class="btn btn-lg btn-primary w-100" href="{{ route('payments.information') }}">
                         Tiến hành thanh toán
                         <i class="ci-chevron-right fs-lg ms-1 me-n1"></i>
                     </a>

@@ -209,15 +209,48 @@ class PostController extends Controller
     }
 
     public function preview($id)
-    {
-        $post = Post::with(['category', 'tags', 'coverImage', 'user'])->findOrFail($id);
+{
+    $post = Post::with(['coverImage', 'category', 'tags', 'user'])->findOrFail($id);
 
-        if (!$this->canAccessPost($post)) {
-            return redirect()->route('admin.posts.index')->with('error', 'Bạn không được phép xem trước bài viết này.');
-        }
-
-        return view('admin.posts.preview', compact('post'));
+    if (!$this->canAccessPost($post)) {
+        return redirect()->route('admin.posts.index')->with('error', 'Bạn không được phép xem trước bài viết này.');
     }
+
+    // Lấy các bài liên quan (đã publish)
+    $relatedPosts = Post::where('id', '!=', $post->id)
+        ->where('status', 'published')
+        ->latest()
+        ->take(3)
+        ->get();
+
+    // Lấy các bài nổi bật
+    $featuredPosts = Post::with('coverImage')
+        ->where('status', 'published')
+        ->where('id', '!=', $post->id)
+        ->where('is_featured', true)
+        ->latest('published_at')
+        ->take(3)
+        ->get();
+
+    // Danh mục cha
+    $parentCategories = PostCategory::withCount('posts')
+        ->whereNull('parent_id')
+        ->orderBy('name')
+        ->get();
+
+    // Tất cả tag
+    $allTags = PostTag::latest()->get();
+
+    // View riêng của admin (bạn copy toàn bộ HTML từ users.blogs.show sang file này)
+    return view('admin.posts.preview', compact(
+        'post',
+        'relatedPosts',
+        'featuredPosts',
+        'parentCategories',
+        'allTags'
+    ))->with('isPreview', true);
+}
+
 
     public function destroy(Post $post)
     {
