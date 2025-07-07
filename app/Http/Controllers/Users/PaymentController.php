@@ -54,6 +54,10 @@ class PaymentController extends Controller
         if ($cartData['items']->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Giỏ hàng đang trống.'], 400);
         }
+        // Nếu là thanh toán VNPay
+        if ($request->payment_method === 'vnpay') {
+            return $this->createVnpayPayment($request, $cartData);
+        }
         try {
             DB::beginTransaction();
             // Tạo mã đơn hàng
@@ -118,6 +122,7 @@ class PaymentController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_variant_id' => $variant->id,
+                    'sku' => $variant->sku,
                     'product_name' => $variant->product->name,
                     'variant_attributes' => $variantAttributes,
                     'quantity' => $item->quantity,
@@ -164,6 +169,239 @@ class PaymentController extends Controller
                 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
             ], 500);
         }
+    }
+    private function createVnpayPayment(Request $request, array $cartData)
+    {
+        DB::beginTransaction();
+        try {
+            $orderCode = 'DH-' . strtoupper(Str::random(10));
+            $shippingFee = $this->calculateShippingFee($request->shipping_method);
+            $grandTotal = $cartData['subtotal'] + $shippingFee - $cartData['discount'];
+
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'guest_id' => !Auth::check() ? session()->getId() : null,
+                'order_code' => $orderCode,
+                'customer_name' => $request->full_name,
+                'customer_email' => $request->email,
+                'customer_phone' => $request->phone,
+                'shipping_address_line1' => $request->address,
+                'shipping_province_code' => $request->province_code,
+                'shipping_ward_code' => $request->ward_code,
+                'sub_total' => $cartData['subtotal'],
+                'shipping_fee' => $shippingFee,
+                'discount_amount' => $cartData['discount'],
+                'grand_total' => $grandTotal,
+                'payment_method' => 'vnpay',
+                'payment_status' => Order::PAYMENT_PENDING,
+                'status' => Order::STATUS_PENDING_CONFIRMATION,
+                'notes_from_customer' => $request->notes,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            foreach ($cartData['items'] as $item) {
+                $variant = $item->productVariant ?? ProductVariant::find($item->productVariant->id);
+                if (!$variant) {
+                    throw new \Exception("Không tìm thấy biến thể sản phẩm cho một mục trong giỏ hàng.");
+                }
+
+                $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
+                    return [$attrValue->attribute->name => $attrValue->value];
+                })->toArray();
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_variant_id' => $variant->id,
+                    'sku' => $variant->sku,
+                    'product_name' => $variant->product->name,
+                    'variant_attributes' => $variantAttributes,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'total_price' => $item->price * $item->quantity,
+                ]);
+            }
+
+            $vnp_Url = config('vnpay.url');
+            $vnp_Returnurl = url(config('vnpay.return_url'));
+            $vnp_TmnCode = config('vnpay.tmn_code');
+            $vnp_HashSecret = config('vnpay.hash_secret');
+            $vnp_TxnRef = $order->order_code;
+            $vnp_OrderInfo = "Thanh toan don hang " . $order->order_code;
+            $vnp_OrderType = 'billpayment';
+            $vnp_Amount = $order->grand_total * 100;
+            $vnp_Locale = 'vn';
+            $vnp_BankCode = '';
+            $vnp_IpAddr = $request->ip();
+
+            $inputData = [
+                "vnp_Version" => "2.1.0",
+                "vnp_TmnCode" => $vnp_TmnCode,
+                "vnp_Amount" => $vnp_Amount,
+                "vnp_Command" => "pay",
+                "vnp_CreateDate" => date('YmdHis'),
+                "vnp_CurrCode" => "VND",
+                "vnp_IpAddr" => $vnp_IpAddr,
+                "vnp_Locale" => $vnp_Locale,
+                "vnp_OrderInfo" => $vnp_OrderInfo,
+                "vnp_OrderType" => $vnp_OrderType,
+                "vnp_ReturnUrl" => $vnp_Returnurl,
+                "vnp_TxnRef" => $vnp_TxnRef,
+            ];
+
+            if (isset($vnp_BankCode) && $vnp_BankCode != "") {
+                $inputData['vnp_BankCode'] = $vnp_BankCode;
+            }
+
+            ksort($inputData);
+            $query = "";
+            $i = 0;
+            $hashdata = "";
+            foreach ($inputData as $key => $value) {
+                if ($i == 1) {
+                    $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+                } else {
+                    $hashdata .= urlencode($key) . "=" . urlencode($value);
+                    $i = 1;
+                }
+                $query .= urlencode($key) . "=" . urlencode($value) . '&';
+            }
+
+            $vnp_Url = $vnp_Url . "?" . $query;
+            if (isset($vnp_HashSecret)) {
+                $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+                $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đang chuyển hướng đến VNPay...',
+                'payment_url' => $vnp_Url
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tạo thanh toán: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    /**
+     * Xử lý khi VNPay redirect người dùng về
+     */
+    public function vnpayReturn(Request $request)
+    {
+        $vnp_SecureHash = $request->vnp_SecureHash;
+        $inputData = $request->except('vnp_SecureHash');
+        $vnp_HashSecret = config('vnpay.hash_secret');
+
+        ksort($inputData);
+        $hashData = "";
+        $i = 0;
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+        if ($secureHash == $vnp_SecureHash) {
+            $order = Order::where('order_code', $request->vnp_TxnRef)->first();
+
+            if ($order) {
+                if ($request->vnp_ResponseCode == '00') {
+                    // Cập nhật trạng thái đơn hàng thành đã thanh toán
+                    // Chỉ cập nhật nếu trạng thái đang là "chờ thanh toán" để tránh xử lý lại
+                    if ($order->payment_status == Order::PAYMENT_PENDING) {
+                        $order->payment_status = Order::PAYMENT_PAID;
+                        $order->save();
+
+                        // Trừ tồn kho
+                        foreach ($order->items as $item) {
+                            $variant = ProductVariant::find($item->product_variant_id);
+                            if ($variant && $variant->manage_stock) {
+                                $variant->decrement('stock_quantity', $item->quantity);
+                            }
+                        }
+
+                        // Xóa giỏ hàng
+                        $this->clearCart();
+                    }
+                    // Chuyển hướng đến trang thành công
+                    return redirect()->route('payments.success', ['order_id' => $order->id])
+                        ->with('success', 'Thanh toán thành công!');
+                } else {
+                    // Thanh toán thất bại, có thể xóa đơn hàng hoặc cập nhật trạng thái thất bại
+                    $order->status = Order::STATUS_CANCELLED;
+                    $order->payment_status = Order::PAYMENT_FAILED;
+                    $order->cancellation_reason = 'Thanh toán VNPay thất bại.';
+                    $order->save();
+
+                    return redirect()->route('cart.index')->with('error', 'Thanh toán thất bại. Vui lòng thử lại.');
+                }
+            } else {
+                return redirect()->route('cart.index')->with('error', 'Không tìm thấy đơn hàng.');
+            }
+        } else {
+            return redirect()->route('cart.index')->with('error', 'Chữ ký không hợp lệ.');
+        }
+    }
+
+    /**
+     * Xử lý IPN từ VNPay (server-to-server)
+     */
+    public function vnpayIpn(Request $request)
+    {
+        $vnp_SecureHash = $request->vnp_SecureHash;
+        $inputData = $request->except('vnp_SecureHash');
+        $vnp_HashSecret = config('vnpay.hash_secret');
+
+        ksort($inputData);
+        $hashData = "";
+        $i = 0;
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+        if ($secureHash == $vnp_SecureHash) {
+            $order = Order::where('order_code', $request->vnp_TxnRef)->first();
+            if ($order) {
+                if ($request->vnp_ResponseCode == '00' && $request->vnp_TransactionStatus == '00') {
+                    if ($order->payment_status == Order::PAYMENT_PENDING) {
+                        $order->payment_status = Order::PAYMENT_PAID;
+                        $order->save();
+
+                        foreach ($order->items as $item) {
+                            $variant = ProductVariant::find($item->product_variant_id);
+                            if ($variant && $variant->manage_stock) {
+                                $variant->decrement('stock_quantity', $item->quantity);
+                            }
+                        }
+                    }
+                } else {
+                    $order->status = Order::STATUS_CANCELLED;
+                    $order->payment_status = Order::PAYMENT_FAILED;
+                    $order->save();
+                }
+                return response()->json(['RspCode' => '00', 'Message' => 'Confirm Success']);
+            }
+            return response()->json(['RspCode' => '01', 'Message' => 'Order not found']);
+        }
+        return response()->json(['RspCode' => '97', 'Message' => 'Invalid Checksum']);
     }
     /**
      * Trang thành công
@@ -212,7 +450,7 @@ class PaymentController extends Controller
             $sessionCart = session('cart', []);
             $items = collect($sessionCart)->map(function ($data) {
                 $variant = ProductVariant::with('product', 'attributeValues.attribute', 'primaryImage')->find($data['variant_id']);
-                return (object)[
+                return (object) [
                     'id' => $data['variant_id'],
                     'productVariant' => $variant,
                     'price' => $data['price'],
