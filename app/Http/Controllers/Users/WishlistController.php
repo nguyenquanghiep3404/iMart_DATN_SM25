@@ -20,14 +20,13 @@ class WishlistController extends Controller
             ->first();
 
         $products = $wishlist ? $wishlist->items : collect();
-        // dd($products->toArray());
         return view('users.wishlist.index', compact('products'));
     }
 
-    public function removeSelected(Request $request)
-    {
-        $userId = auth()->id();
-        $productVariantIds = $request->input('wishlist_ids'); 
+public function removeSelected(Request $request)
+{
+    $userId = auth()->id();
+    $productVariantIds = $request->input('wishlist_ids'); 
 
         if (empty($productVariantIds) || !is_array($productVariantIds)) {
             return redirect()->back()->with('error', 'không có sản phẩm yêu thích nào được chọn');

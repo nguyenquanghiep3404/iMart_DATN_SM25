@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
+// use App\Http\Controllers\Admin\CommentController;
 use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
@@ -27,14 +28,14 @@ use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Users\CartController;
 use App\Http\Controllers\Admin\OrderManagerController;
-
 // use App\Http\Controllers\Users\CommentController as UserCommentController;
 use App\Http\Controllers\Users\CommentController;
-
 use App\Http\Controllers\Admin\SpecificationController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
+// use App\Http\Controllers\Users\CommentController;
 
 
+Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
@@ -83,6 +84,7 @@ Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSele
 Route::post('/wishlist/add', [WishlistController::class, 'add'])->name('wishlist.add');
 Route::get('/product/{id}', [\App\Http\Controllers\Users\ProductController::class, 'show'])
     ->name('frontend.product.show');
+
  // router cart
  Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
  Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
@@ -94,12 +96,9 @@ Route::get('/product/{id}', [\App\Http\Controllers\Users\ProductController::clas
 })->name('session.flush.message');
 // Áp dụng mã giảm giá
 Route::post('/cart/apply-voucher', [CartController::class, 'applyVoucher'])->name('cart.apply-voucher');
+
 // Xóa mã giảm giá
 Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->name('cart.remove-voucher');
-
-// bình luận phía user
-Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
-
 
 
 //==========================================================================
@@ -245,15 +244,14 @@ Route::prefix('admin')
 
 
         // Quản lý comment
-        Route::get('/comments', [AdminCommentController::class, 'index'])->name('comment.index');
+        Route::get('/comments', [CommentController::class, 'index'])->name('comment.index');
         Route::get('products/{id}-{slug}', [ProductController::class, 'show'])->name('products.show');
         Route::get('posts/{id}-{slug}', [PostController::class, 'show'])->name('posts.show');
-        
-        Route::get('comments/{comment}', [AdminCommentController::class, 'show'])->name('comments.show');
-        Route::get('comments/{comment}/edit', [AdminCommentController::class, 'edit'])->name('comments.edit');
-        Route::post('comments/{comment}/status', [AdminCommentController::class, 'updateStatus'])->name('comments.updateStatus');
-        Route::post('comment/replies', [AdminCommentController::class, 'replyStore'])->name('replies.store');
-        
+
+        Route::get('comments/{comment}', [CommentController::class, 'show'])->name('comments.show');
+        Route::get('comments/{comment}/edit', [CommentController::class, 'edit'])->name('comments.edit');
+        Route::post('comments/{comment}/status', [CommentController::class, 'updateStatus'])->name('comments.updateStatus');
+        Route::post('comment/replies', [CommentController::class, 'replyStore'])->name('replies.store');
 
         //quản lý danh mục bài viết
         Route::get('categories_post/create-with-children', [PostCategoryController::class, 'createWithChildren'])
