@@ -704,6 +704,22 @@
                                             </div>
                                         </label>
                                     </div>
+                                    <div class="form-check mb-3">
+                                        <input type="radio" class="form-check-input" name="payment-method"
+                                            id="momo" value="momo">
+                                        <label class="form-check-label" for="momo">
+                                            <span class="fw-medium">Ví điện tử MoMo</span>
+                                            <div class="fs-sm text-body-secondary mt-1">Thanh toán qua ví điện tử MoMo</div>
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input type="radio" class="form-check-input" name="payment-method"
+                                            id="qr" value="qr">
+                                        <label class="form-check-label" for="qr">
+                                            <span class="fw-medium">Chuyển khoản mã QR</span>
+                                            <div class="fs-sm text-body-secondary mt-1">Chuyển khoản qua mã Qr trực tiếp</div>
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <button type="button" class="btn btn-lg btn-success w-100" id="place-order">
@@ -1020,7 +1036,7 @@
                             'nhận tại cửa hàng')) {
                         if (selectedTimeEl) {
                             const dayText = selectedTimeEl.closest('.swiper-slide').querySelector('.h6')
-                            .textContent;
+                                .textContent;
                             const timeText = selectedTimeEl.nextElementSibling.textContent;
                             timeElement.textContent = `${dayText} ${timeText}`;
                         } else {
@@ -1377,7 +1393,7 @@
 
                 // Bước 3 xác thực
                 const selectedPaymentMethod = document.querySelector(
-                'input[name="payment-method"]:checked');
+                    'input[name="payment-method"]:checked');
                 if (!selectedPaymentMethod) {
                     errors.push('Phương thức thanh toán');
                 }

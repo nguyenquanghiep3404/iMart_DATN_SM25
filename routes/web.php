@@ -37,19 +37,19 @@ Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
-// Route::post('/vnpay/payment', [VNPayController::class, 'createPayment'])->name('vnpay.payment');
-// Route::get('/vnpay/return', [VNPayController::class, 'handleReturn'])->name('vnpay.return');
 
 Route::prefix('payments')->name('payments.')->group(function () {
     Route::get('/', [PaymentController::class, 'index'])->name('index');
     Route::post('/process', [PaymentController::class, 'processOrder'])->name('process');
     Route::get('/success', [PaymentController::class, 'success'])->name('success');
 
-    // Routes cho VNPay
+    // Routes cho VNPay - nguyenquanghiep3404
     Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
     Route::get('/vnpay-ipn', [PaymentController::class, 'vnpayIpn'])->name('vnpay.ipn');
+    // Routes cho Momo - nguyenquanghiep3404
+    Route::get('/momo-return', [PaymentController::class, 'momoReturn'])->name('momo.return');
+    Route::post('/momo-ipn', [PaymentController::class, 'momoIpn'])->name('momo.ipn'); // MoMo IPN dùng phương thức POST
 });
-
 //==========================================================================
 // FRONTEND ROUTES (PUBLIC)
 //==========================================================================
@@ -112,6 +112,7 @@ Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->n
 Route::get('/payments', [PaymentController::class, 'index'])->name('payments.information');
 Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
 Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
+
 // LOCATION API ROUTES
 //==========================================================================
 Route::prefix('api/locations')->name('api.locations.')->group(function () {
