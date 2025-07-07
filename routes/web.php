@@ -236,7 +236,13 @@ Route::prefix('admin')
         Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
 
         // quản lý nhân viên quản lý đơn hàng
-        Route::get('/odermannager', [OrderManagerController::class, 'index'])->name('index');
+        Route::get('/odermannager', [OrderManagerController::class, 'index'])->name('odermannager.index');
+        Route::get('admin/order-manager/{user}/edit', [OrderManagerController::class, 'edit'])->name('order-manager.edit');
+        Route::put('order-manager/{user}', [OrderManagerController::class, 'update'])->name('order-manager.update');
+        Route::get('/odermannager/create', [OrderManagerController::class, 'create'])->name('order-manager.create');
+        Route::post('/order-manager', [OrderManagerController::class, 'store'])->name('order-manager.store');
+        Route::get('/odermannager/{user}', [OrderManagerController::class, 'show'])->name('odermannager.show');
+
 
         // Quản lý comment
         Route::get('/comments', [AdminCommentController::class, 'index'])->name('comment.index');

@@ -1,7 +1,8 @@
 @extends('admin.layouts.app')
-
 @include('admin.oderMannager.layouts.css')
-
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 @section('content')
     <div class="p-4 md:p-8 bg-gray-100 min-h-screen">
         <div class="max-w-screen-2xl mx-auto space-y-6">
@@ -56,14 +57,27 @@
                                     <td class="px-6 py-4">{{ \Carbon\Carbon::parse($user->created_at)->format('d/m/Y') }}
                                     </td>
                                     <td class="px-6 py-4 text-right">
-                                        <button onclick="openModal()"
+                                        <a href="{{ route('admin.order-manager.edit', $user->id) }}"
                                             class="text-indigo-600 hover:underline text-sm font-medium">
                                             <i class="fas fa-edit mr-1"></i>Sửa
-                                        </button>
-                                        <button class="text-red-600 hover:underline text-sm font-medium">
-                                            <i class="fas fa-trash-alt mr-1"></i>Xoá
-                                        </button>
+                                        </a>
+
+                                        <form action="" method="POST" class="inline"
+                                            onsubmit="return confirm('Bạn có chắc muốn xóa nhân viên này không?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="text-red-600 hover:underline text-sm font-medium bg-transparent border-0 p-0">
+                                                <i class="fas fa-trash-alt mr-1"></i>Xoá
+                                            </button>
+                                        </form>
+                                        <a href="{{ route('admin.odermannager.show', $user->id) }}"
+                                            class="text-gray-600 hover:underline text-sm font-medium mr-3"
+                                            title="Xem chi tiết">
+                                            <i class="fas fa-eye mr-1"></i>Xem
+                                        </a>
                                     </td>
+
                                 </tr>
                             @empty
                                 <tr>
@@ -88,42 +102,7 @@
                         <i class="fas fa-times fa-lg"></i>
                     </button>
                 </div>
-
-                <div class="p-8 space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Họ và Tên <span
-                                    class="text-red-500">*</span></label>
-                            <input type="text" id="name" required
-                                class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="Nguyễn Văn A">
-                        </div>
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email <span
-                                    class="text-red-500">*</span></label>
-                            <input type="email" id="email" required
-                                class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="example@email.com">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
-                            <input type="password" id="password"
-                                class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                placeholder="Để trống nếu không đổi">
-                        </div>
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                            <select id="status"
-                                class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                                <option value="active">Đang hoạt động</option>
-                                <option value="inactive">Không hoạt động</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
+                @include('admin.oderMannager.layouts.create')
                 <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3 rounded-b-2xl">
                     <button type="button" onclick="closeModal()"
                         class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Hủy</button>
@@ -134,15 +113,7 @@
             </form>
         </div>
     </div>
-
+    {{ $users->links() }}
     {{-- Scripts --}}
-    <script>
-        function openModal() {
-            document.getElementById('staff-modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('staff-modal').classList.add('hidden');
-        }
-    </script>
+    @include('admin.oderMannager.layouts.script')
 @endsection

@@ -217,4 +217,32 @@
         // --- INITIALIZATION ---
         renderTable(mockStaff);
     });
+    toastr.options = {
+        "closeButton": true,
+        "progressBar": true,
+        "positionClass": "toast-top-right", // trượt từ phải vào
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "3000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "slideDown",
+        "hideMethod": "slideUp"
+    };
+
+    @if (session('success'))
+        toastr.success("{{ session('success') }}");
+    @endif
+
+    @if (session('error'))
+        toastr.error("{{ session('error') }}");
+    @endif
+    // function openModal() {
+    //     document.getElementById('staff-modal').classList.remove('hidden');
+    // }
+
+    // function closeModal() {
+    //     document.getElementById('staff-modal').classList.add('hidden');
+    // }
 </script>
