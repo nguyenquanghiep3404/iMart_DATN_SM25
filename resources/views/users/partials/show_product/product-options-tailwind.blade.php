@@ -35,17 +35,26 @@
             </svg>
             So sánh
         </button>
-        <button id="favorite-btn"
-            class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors">
-            <span id="favorite-icon-container">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" />
-                </svg>
-            </span>
-            <span>Yêu thích</span>
-        </button>
+        <form action="{{ route('wishlist.add') }}" method="POST" id="wishlist-form">
+            @csrf
+            <input type="hidden" name="product_variant_id" id="product_variant_id_input">
+            <input type="hidden" name="image" id="variant-image">
+            <input type="hidden" name="product_id" value="{{ $product->id }}">
+            <input type="hidden" name="variant_key" id="variant_key_input">
+
+            <button type="submit" id="favorite-btn"
+                class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors">
+                <span id="favorite-icon-container">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" />
+                    </svg>
+                </span>
+                <span>Yêu thích</span>
+            </button>
+        </form>
+
         <div class="relative">
             <button id="share-btn"
                 class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-blue-600">
@@ -393,7 +402,7 @@
                     </svg>
                     THÊM VÀO GIỎ HÀNG
                 </button>
-                <button
+                <button type="submit" name="buy_now" value="1"
                     class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
                     MUA NGAY
                 </button>
@@ -515,13 +524,30 @@
         const form = document.getElementById('add-to-cart-form');
         if (!form) return;
 
+        let clickedBtn = null;
+
+        // Ghi lại nút submit nào được click
+        form.querySelectorAll('button[type="submit"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                clickedBtn = this;
+            });
+        });
+
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
             const formData = new FormData(form);
-            const submitBtn = form.querySelector('button[type="submit"]');
+
+            // Nếu nút được bấm có name/value, append vào formData
+            if (clickedBtn?.name) {
+                formData.append(clickedBtn.name, clickedBtn.value);
+            }
+
+            const submitBtn = clickedBtn || form.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+
             submitBtn.disabled = true;
-            submitBtn.innerHTML = 'Đang thêm...';
+            submitBtn.innerHTML = 'Đang xử lý...';
 
             fetch(form.action, {
                     method: 'POST',
@@ -533,27 +559,47 @@
                 })
                 .then(async res => {
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'THÊM VÀO GIỎ HÀNG';
+                    submitBtn.innerHTML = originalBtnText;
+
+                    const data = await res.json();
 
                     if (!res.ok) {
-                        const data = await res.json();
                         throw new Error(data.message || 'Lỗi khi thêm sản phẩm vào giỏ hàng.');
                     }
 
-                    return res.text(); // Nếu controller redirect, dùng .text()
+                    // ✅ Nếu controller trả về redirect → chuyển trang
+                    if (data.redirect) {
+                        window.location.href = data.redirect;
+                        return;
+                    }
+
+                    // ✅ Nếu không có redirect → chỉ hiện thông báo
+                    showSlideAlert('success', data.message || 'Đã thêm sản phẩm vào giỏ hàng!');
+                    const cartBadge = document.getElementById('cart-badge');
+                    const quantityInput = document.getElementById('quantity_input');
+                    const addedQty = parseInt(quantityInput?.value || 1);
+
+                    if (cartBadge) {
+                        const currentQty = parseInt(cartBadge.textContent) || 0;
+                        const newQty = currentQty + addedQty;
+
+                        cartBadge.textContent = newQty;
+                        cartBadge.style.display = newQty > 0 ? 'flex' : 'none';
+                    }
+
                 })
-                .then(() => {
-                    showSlideAlert('success', 'Đã thêm sản phẩm vào giỏ hàng!');
-                    // TODO: cập nhật giỏ hàng ở header nếu có
-                })
+
                 .catch(error => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
                     showSlideAlert('error', error.message || 'Đã xảy ra lỗi.');
                 });
         });
 
+
         // Hàm thông báo toastr
         window.showSlideAlert = window.showSlideAlert || function(type = 'info', message = '', duration =
-        4000) {
+            4000) {
             if (typeof toastr !== 'undefined') {
                 toastr.options = {
                     closeButton: true,
@@ -567,7 +613,83 @@
             }
         };
     });
+    document.getElementById('favorite-form').addEventListener('submit', function(e) {
+        e.preventDefault(); // Ngăn form submit mặc định
+
+        const form = this;
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    toastr.success('Đã thêm vào yêu thích!');
+                    // Đổi màu icon, v.v...
+                } else {
+                    toastr.warning(data.message || 'Thêm thất bại!');
+                }
+            })
+            .catch(err => {
+                console.error('Lỗi:', err);
+                toastr.error('Đã xảy ra lỗi khi gửi yêu cầu!');
+            });
+    });
+
+    // Toastr cấu hình
+    toastr.options = {
+        "closeButton": true,
+        "progressBar": true,
+        "positionClass": "toast-top-right", // Hiển thị góc trên bên phải
+        "timeOut": "3000",
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "showMethod": "slideDown",
+        "hideMethod": "slideUp"
+    };
+    const variantData = @json($variantData);
+    const attributeOrder = @json($attributeOrder);
+
+    const variantKeyInput = document.getElementById('variant_key_input');
+    const variantImageInput = document.getElementById('variant-image');
+    const productVariantIdInput = document.getElementById('product_variant_id_input');
+
+    const currentSelections = {};
+
+    document.querySelectorAll('[data-attribute-name]').forEach(select => {
+        select.addEventListener('change', function() {
+            const attr = this.dataset.attributeName;
+            currentSelections[attr] = this.value;
+            updateVariantFields();
+        });
+    });
+
+    function updateVariantFields() {
+        const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
+        variantKeyInput.value = key;
+
+        if (variantData[key]) {
+            productVariantIdInput.value = variantData[key].id || '';
+            variantImageInput.value = variantData[key].image || '';
+        } else {
+            productVariantIdInput.value = '';
+            variantImageInput.value = '';
+        }
+
+        // DEBUG: in ra để kiểm tra
+        console.log("KEY:", key);
+        console.log("ID:", productVariantIdInput.value);
+        console.log("Image:", variantImageInput.value);
+    }
+
+    document.addEventListener('DOMContentLoaded', updateVariantFields);
 </script>
+
 
 
 
