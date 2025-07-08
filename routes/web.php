@@ -49,6 +49,9 @@ Route::prefix('payments')->name('payments.')->group(function () {
     // Routes cho Momo - nguyenquanghiep3404
     Route::get('/momo-return', [PaymentController::class, 'momoReturn'])->name('momo.return');
     Route::post('/momo-ipn', [PaymentController::class, 'momoIpn'])->name('momo.ipn'); // MoMo IPN dùng phương thức POST
+
+    // Routes cho thanh toán qr tự xây- nguyenquanghiep3404
+    Route::get('/bank-transfer-qr/{order}', [PaymentController::class, 'showBankTransferQr'])->name('bank_transfer_qr');
 });
 //==========================================================================
 // FRONTEND ROUTES (PUBLIC)

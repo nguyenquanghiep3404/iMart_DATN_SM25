@@ -47,7 +47,7 @@ class PaymentController extends Controller
             'email' => 'required|email|max:255',
             'address' => 'required|string|min:5|max:500',
             'postcode' => 'nullable|string|max:10',
-            'payment_method' => 'required|string|in:cod,bank_transfer,vnpay,momo',
+            'payment_method' => 'required|string|in:cod,bank_transfer,vnpay,bank_transfer_qr',
             'notes' => 'nullable|string|max:1000',
         ]);
         // Kiểm tra giỏ hàng
@@ -59,8 +59,89 @@ class PaymentController extends Controller
         if ($request->payment_method === 'vnpay') {
             return $this->createVnpayPayment($request, $cartData);
         }
+        // momo
         if ($request->payment_method === 'momo') {
             return $this->createMomoPayment($request, $cartData);
+        }
+
+        if ($request->payment_method === 'bank_transfer_qr') {
+    try {
+        DB::beginTransaction();
+
+        // Tạo mã đơn hàng
+        $orderCode = 'DH-' . strtoupper(Str::random(10));
+        // Tính toán shipping fee dựa vào phương thức
+        $shippingFee = $this->calculateShippingFee($request->shipping_method);
+        // Format delivery date/time
+        $deliveryInfo = $this->formatDeliveryDateTime(
+            $request->shipping_method,
+            $request->shipping_time
+        );
+
+        // Tạo đơn hàng ngay lập tức với trạng thái "Chờ thanh toán"
+        $order = Order::create([
+            'user_id' => Auth::id(),
+            'guest_id' => !Auth::check() ? session()->getId() : null,
+            'order_code' => $orderCode,
+            'customer_name' => $request->full_name,
+            'customer_email' => $request->email,
+            'customer_phone' => $request->phone,
+            'shipping_address_line1' => $request->address,
+            'shipping_province_code' => $request->province_code,
+            'shipping_ward_code' => $request->ward_code,
+            'shipping_zip_code' => $request->postcode,
+            'shipping_country' => 'Vietnam',
+            'sub_total' => $cartData['subtotal'],
+            'shipping_fee' => $shippingFee,
+            'discount_amount' => $cartData['discount'],
+            'grand_total' => $cartData['subtotal'] + $shippingFee - $cartData['discount'],
+            'payment_method' => 'bank_transfer_qr', // Đặt phương thức thanh toán
+            'payment_status' => Order::PAYMENT_PENDING, // Đặt trạng thái chờ thanh toán
+            'shipping_method' => $request->shipping_method,
+            'status' => Order::STATUS_PENDING_CONFIRMATION,
+            'notes_from_customer' => $request->notes,
+            'desired_delivery_date' => $deliveryInfo['date'],
+            'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        // Tạo order items
+        foreach ($cartData['items'] as $item) {
+            $variant = $item->productVariant ?? ProductVariant::find($item->productVariant->id);
+            if (!$variant) {
+                throw new \Exception("Không tìm thấy biến thể sản phẩm.");
+            }
+            $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
+                return [$attrValue->attribute->name => $attrValue->value];
+            })->toArray();
+
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_variant_id' => $variant->id,
+                'sku' => $variant->sku,
+                'product_name' => $variant->product->name,
+                'variant_attributes' => $variantAttributes,
+                'quantity' => $item->quantity,
+                'price' => $item->price,
+                'total_price' => $item->price * $item->quantity,
+            ]);
+        }
+
+        // Xóa giỏ hàng hoặc session "Mua Ngay"
+        $this->clearPurchaseSession();
+        DB::commit();
+
+        // Trả về một URL để frontend tự chuyển hướng
+        return response()->json([
+            'success' => true,
+            'redirect_url' => route('payments.bank_transfer_qr', ['order' => $order->id])
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
+    }
         }
         try {
             DB::beginTransaction();
@@ -653,6 +734,17 @@ class PaymentController extends Controller
         }
         session()->forget(['applied_voucher', 'applied_coupon', 'discount']);
     }
+public function showBankTransferQr(Order $order)
+{
+    // Kiểm tra để đảm bảo người dùng chỉ xem được đơn hàng của chính họ
+    $isOwner = (Auth::check() && $order->user_id === Auth::id()) || ($order->guest_id && $order->guest_id === session()->getId());
+
+    if (!$isOwner) {
+        abort(404);
+    }
+
+    return view('users.payments.bank_transfer_qr', compact('order'));
+}
 
     /**
      * Trang thành công
