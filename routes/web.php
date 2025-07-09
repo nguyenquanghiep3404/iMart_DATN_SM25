@@ -41,21 +41,30 @@ Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name('cart.addMultiple');
+Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
+
 // cart_offcanvas
 Route::get('/cart/offcanvas', [CarOffController::class, 'index']);
 // Route::post('/vnpay/payment', [VNPayController::class, 'createPayment'])->name('vnpay.payment');
 // Route::get('/vnpay/return', [VNPayController::class, 'handleReturn'])->name('vnpay.return');
+
 
 Route::prefix('payments')->name('payments.')->group(function () {
     Route::get('/', [PaymentController::class, 'index'])->name('index');
     Route::post('/process', [PaymentController::class, 'processOrder'])->name('process');
     Route::get('/success', [PaymentController::class, 'success'])->name('success');
 
-    // Routes cho VNPay
+    // Routes cho VNPay - nguyenquanghiep3404
     Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
     Route::get('/vnpay-ipn', [PaymentController::class, 'vnpayIpn'])->name('vnpay.ipn');
-});
+    // Routes cho Momo - nguyenquanghiep3404
+    Route::get('/momo-return', [PaymentController::class, 'momoReturn'])->name('momo.return');
+    Route::post('/momo-ipn', [PaymentController::class, 'momoIpn'])->name('momo.ipn'); // MoMo IPN dùng phương thức POST
 
+    // Routes cho thanh toán qr tự xây- nguyenquanghiep3404
+    Route::get('/bank-transfer-qr/{order}', [PaymentController::class, 'showBankTransferQr'])->name('bank_transfer_qr');
+});
 //==========================================================================
 // FRONTEND ROUTES (PUBLIC)
 //==========================================================================
@@ -99,7 +108,7 @@ Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.in
 Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
 Route::post('/wishlist/remove-selected', [WishlistController::class, 'removeSelected'])->name('wishlist.removeSelected');
 Route::post('/wishlist/add', [WishlistController::class, 'add'])->name('wishlist.add');
-Route::get('/product/{id}', [\App\Http\Controllers\Users\ProductController::class, 'show'])
+Route::get('/product/{id}', [ProductController::class, 'show'])
     ->name('frontend.product.show');
 
 // router cart
@@ -121,6 +130,7 @@ Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->n
 Route::get('/payments', [PaymentController::class, 'index'])->name('payments.information');
 Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
 Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
+
 // LOCATION API ROUTES
 //==========================================================================
 Route::prefix('api/locations')->name('api.locations.')->group(function () {
@@ -181,10 +191,10 @@ Route::prefix('admin')
         // --- Routes quản lí nhân viên content ---
         Route::prefix('content-staffs')->name('content_staffs.')->group(function () {
             Route::get('/trash', [ContentStaffManagementController::class, 'trash'])->name('trash');
-            Route::patch('/{contentStaff}/restore', [\App\Http\Controllers\Admin\ContentStaffManagementController::class, 'restore'])->name('restore');
-            Route::delete('/{contentStaff}/force-delete', [\App\Http\Controllers\Admin\ContentStaffManagementController::class, 'forceDelete'])->name('force-delete');
+            Route::patch('/{contentStaff}/restore', [ContentStaffManagementController::class, 'restore'])->name('restore');
+            Route::delete('/{contentStaff}/force-delete', [ContentStaffManagementController::class, 'forceDelete'])->name('force-delete');
         });
-        Route::resource('content-staffs', \App\Http\Controllers\Admin\ContentStaffManagementController::class);
+        Route::resource('content-staffs', ContentStaffManagementController::class);
 
         // --- Routes cho Thư viện Media ---
         Route::prefix('media')->name('media.')->group(function () {
@@ -307,6 +317,8 @@ Route::prefix('admin')
         Route::get('/order-manager/{user}/edit', [OrderManagerController::class, 'edit'])->name('order-manager.edit');
         Route::put('/order-manager/{user}', [OrderManagerController::class, 'update'])->name('order-manager.update');
         Route::post('/order-manager/store', [OrderManagerController::class, 'store'])->name('order-manager.store');
+        Route::delete('/order-manager/{user}', [OrderManagerController::class, 'destroy'])->name('order-manager.destroy');
+
 
         // Route khác nếu cần
         Route::get('/staff', [OrderManagerController::class, 'staffIndex'])->name('staff.index');

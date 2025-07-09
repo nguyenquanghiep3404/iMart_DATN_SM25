@@ -62,7 +62,8 @@
                                             <i class="fas fa-edit mr-1"></i>Sửa
                                         </a>
 
-                                        <form action="" method="POST" class="inline"
+                                        <form action="{{ route('admin.order-manager.destroy', $user->id) }}" method="POST"
+                                            class="inline"
                                             onsubmit="return confirm('Bạn có chắc muốn xóa nhân viên này không?');">
                                             @csrf
                                             @method('DELETE')
@@ -95,15 +96,16 @@
         {{-- Modal thêm/sửa nhân viên --}}
         <div id="staff-modal"
             class="modal hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <form id="staff-form" class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-2xl">
+            <a href="{{ route('admin.order-manager.create') }}"
+                class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-2xl block">
                 <div class="p-6 border-b border-gray-200 flex justify-between items-center">
                     <h2 id="modal-title" class="text-xl font-bold text-gray-800">Thêm nhân viên mới</h2>
-                    <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <span class="text-gray-400 hover:text-gray-600">
                         <i class="fas fa-times fa-lg"></i>
-                    </button>
+                    </span>
                 </div>
-                @include('admin.oderMannager.layouts.create')
-            </form>
+                {{-- Bạn có thể hiển thị nội dung tóm tắt ở đây nếu muốn --}}
+            </a>
         </div>
     </div>
     {{ $users->links() }}

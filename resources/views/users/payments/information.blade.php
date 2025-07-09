@@ -704,8 +704,23 @@
                                             </div>
                                         </label>
                                     </div>
+                                    <div class="form-check mb-3">
+                                        <input type="radio" class="form-check-input" name="payment-method"
+                                            id="momo" value="momo">
+                                        <label class="form-check-label" for="momo">
+                                            <span class="fw-medium">Ví điện tử MoMo</span>
+                                            <div class="fs-sm text-body-secondary mt-1">Thanh toán qua ví điện tử MoMo
+                                            </div>
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="radio" name="payment-method"
+                                            id="bank_transfer_qr" value="bank_transfer_qr">
+                                        <label class="form-check-label" for="bank_transfer_qr">
+                                            Chuyển khoản qua QR Code
+                                        </label>
+                                    </div>
                                 </div>
-
                                 <button type="button" class="btn btn-lg btn-success w-100" id="place-order">
                                     Đặt hàng
                                     <i class="ci-check fs-lg ms-1 me-n1"></i>
@@ -1020,7 +1035,7 @@
                             'nhận tại cửa hàng')) {
                         if (selectedTimeEl) {
                             const dayText = selectedTimeEl.closest('.swiper-slide').querySelector('.h6')
-                            .textContent;
+                                .textContent;
                             const timeText = selectedTimeEl.nextElementSibling.textContent;
                             timeElement.textContent = `${dayText} ${timeText}`;
                         } else {
@@ -1377,7 +1392,7 @@
 
                 // Bước 3 xác thực
                 const selectedPaymentMethod = document.querySelector(
-                'input[name="payment-method"]:checked');
+                    'input[name="payment-method"]:checked');
                 if (!selectedPaymentMethod) {
                     errors.push('Phương thức thanh toán');
                 }
@@ -1427,6 +1442,8 @@
                             if (data.payment_url) {
                                 // Chuyển hướng người dùng đến cổng thanh toán VNPay
                                 window.location.href = data.payment_url;
+                            } else if (data.redirect_url) { // Dành cho Chuyển khoản QR
+                                window.location.href = data.redirect_url;
                             } else {
                                 // Nếu là COD hoặc các phương thức khác, chuyển đến trang thành công
                                 window.location.href = '{{ route('payments.success') }}?order_id=' +

@@ -1,5 +1,6 @@
 @extends('users.layouts.app')
 @section('content')
+    @include('users.messenger')
     @include('users.cart.layout.partials.css')
     <!-- Breadcrumb -->
     <nav class="container pt-3 my-3 my-md-4" aria-label="breadcrumb">
@@ -13,7 +14,6 @@
     <section class="container pb-5 mb-2 mb-md-3 mb-lg-4 mb-xl-5">
         <h1 class="h3 mb-4">Giỏ Hàng</h1>
         <div class="row">
-
             <!-- Items list -->
             <div class="col-lg-8">
                 <div class="pe-lg-2 pe-xl-3 me-xl-3">
@@ -44,8 +44,9 @@
                                         class="text-body">Tổng tiền</span></th>
                                 <th scope="col" class="py-0 px-0">
                                     <div class="nav justify-content-end">
-                                        <button type="button"
-                                            class="nav-link d-inline-block text-decoration-underline text-nowrap py-3 px-0">Xóa
+                                        <button type="button" id="clear-cart-btn"
+                                            class="nav-link d-inline-block text-decoration-underline text-nowrap py-3 px-0">
+                                            Xóa
                                         </button>
                                     </div>
                                 </th>
@@ -55,42 +56,35 @@
 
                             <!-- Item -->
                             @foreach ($items as $item)
-                                <?php
-                                // var_dump($item)
-                                ?>
-                                <tr data-item-id="{{ $item->id }}"
-                                    data-stock="{{ $item->productVariant->stock_quantity }}">
+                                <tr data-item-id="{{ $item['id'] }}" data-stock="{{ $item['stock_quantity'] }}">
                                     <td class="py-3 ps-0">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ asset($item->productVariant->image_url) }}" alt="Ảnh biến thể"
-                                                width="90" height="90">
+                                            <img src="{{ asset($item['image'] ?: 'path/to/default.jpg') }}"
+                                                alt="Ảnh sản phẩm" width="90" height="90">
+
                                             <div class="w-100 min-w-0 ps-2 ps-xl-3">
                                                 <h5 class="d-flex animate-underline mb-2">
-                                                    <a href="{{ route('users.products.show', $item->productVariant->product->slug) }}"
-                                                        class="d-block fs-sm fw-medium text-truncate animate-target">
-                                                        {{ $item->productVariant->product->name ?? 'Tên sản phẩm' }}
+                                                    <a
+                                                        href="{{ route('users.products.show', $item['slug']) }}?variant_id={{ $item['id'] }}">
+                                                        {{ $item['name'] }}
                                                     </a>
                                                 </h5>
-                                                @foreach ($item->productVariant->attributeValues as $attrValue)
-                                                    <ul class="list-unstyled gap-1 fs-xs mb-0">
-                                                        <li><span
-                                                                class="text-body-secondary">{{ $attrValue->attribute->name ?? 'Thuộc tính' }}</span>
-                                                            <span
-                                                                class="text-dark-emphasis fw-medium">{{ $attrValue->value }}</span>
-                                                        </li>
-                                                        <li class="d-xl-none"><span
-                                                                class="text-body-secondary">Price:</span> <span
-                                                                class="text-dark-emphasis fw-medium">{{ number_format($item->price, 0, ',', '.') }}đ</span>
-                                                        </li>
-                                                    </ul>
-                                                @endforeach
+                                                <!-- Nếu có thuộc tính, hiển thị ở đây -->
+                                                <ul class="list-unstyled gap-1 fs-xs mb-0">
+                                                    <!-- ví dụ: -->
+                                                    <li><span class="text-body-secondary">Price:</span>
+                                                        <span
+                                                            class="text-dark-emphasis fw-medium">{{ number_format($item['price'], 0, ',', '.') }}đ</span>
+                                                    </li>
+                                                </ul>
                                                 <div class="count-input rounded-2 d-md-none mt-3">
+                                                    <!-- Số lượng -->
                                                     <button type="button" class="btn btn-sm btn-icon" data-decrement=""
                                                         aria-label="Decrement quantity">
                                                         <i class="ci-minus"></i>
                                                     </button>
                                                     <input type="number" class="form-control form-control-sm"
-                                                        value="1" readonly="">
+                                                        value="{{ $item['quantity'] }}" readonly>
                                                     <button type="button" class="btn btn-sm btn-icon" data-increment=""
                                                         aria-label="Increment quantity">
                                                         <i class="ci-plus"></i>
@@ -100,7 +94,7 @@
                                         </div>
                                     </td>
                                     <td class="h6 py-3 d-none d-xl-table-cell">
-                                        {{ number_format($item->price, 0, ',', '.') }}đ</td>
+                                        {{ number_format($item['price'], 0, ',', '.') }}đ</td>
                                     <td class="py-3 d-none d-md-table-cell">
                                         <div class="count-input d-flex align-items-center justify-content-between">
                                             <button type="button" class="btn btn-icon btn-decrement"
@@ -108,21 +102,20 @@
                                                 <i class="ci-minus"></i>
                                             </button>
                                             <input type="number" class="form-control quantity-input text-center"
-                                                value="{{ $item->quantity }}" readonly>
+                                                value="{{ $item['quantity'] }}" readonly>
                                             <button type="button" class="btn btn-icon btn-increment"
                                                 aria-label="Increment quantity">
                                                 <i class="ci-plus"></i>
                                             </button>
                                         </div>
                                     </td>
-                                    </td>
                                     <td class="h6 py-3 d-none d-xl-table-cell item-subtotal"
-                                        data-price="{{ $item->price }}">
-                                        {{ number_format($item->price * $item->quantity, 0, ',', '.') }}đ
+                                        data-price="{{ $item['price'] }}">
+                                        {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}đ
                                     </td>
                                     <td class="text-end py-3 px-0">
                                         <button type="button" class="btn-close fs-sm btn-remove-item"
-                                            data-id="{{ $item->id }}" data-bs-toggle="tooltip"
+                                            data-id="{{ $item['id'] }}" data-bs-toggle="tooltip"
                                             data-bs-custom-class="tooltip-sm" data-bs-title="Remove"
                                             aria-label="Remove from cart">
                                         </button>
@@ -147,12 +140,64 @@
             @include('users.cart.layout.partials.summary_oder')
         </div>
     </section>
-
-
     <!-- Trending products (Carousel) -->
     @include('users.cart.layout.partials.product_trending')
-
     <!-- Subscription form + Vlog -->
     @include('users.cart.layout.partials.form')
 @endsection
 @include('users.cart.layout.partials.script')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const clearBtn = document.getElementById('clear-cart-btn');
+        clearBtn.addEventListener('click', function() {
+            if (confirm('Bạn có chắc muốn xóa toàn bộ giỏ hàng?')) {
+                fetch("{{ route('cart.clear') }}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            toastr.success(data.message);
+                            // Cập nhật UI giỏ hàng thành rỗng
+                            // Ví dụ: xóa tất cả dòng sản phẩm trong bảng giỏ hàng
+                            const tbody = document.querySelector('table tbody');
+                            if (tbody) {
+                                tbody.innerHTML = ''; // xoá hết các sản phẩm
+                            }
+                            // Cập nhật tổng tiền và số lượng thành 0 (nếu có)
+                            const totalPriceElem = document.querySelector(
+                            '.total-price'); // sửa selector cho đúng với trang bạn
+                            const totalQtyElem = document.querySelector('.total-quantity');
+                            if (totalPriceElem) totalPriceElem.textContent = '0₫';
+                            if (totalQtyElem) totalQtyElem.textContent = '0';
+
+                            // Nếu bạn có phần hiển thị "giỏ hàng rỗng" có thể hiển thị ở đây
+                        } else {
+                            toastr.error('Xảy ra lỗi khi xóa giỏ hàng');
+                        }
+                    })
+                    .catch(error => {
+                        toastr.error('Lỗi kết nối server');
+                        console.error(error);
+                    });
+            }
+        });
+    });
+
+    toastr.options = {
+        closeButton: true,
+        progressBar: true,
+        positionClass: "toast-top-right",
+        timeOut: "3000",
+        showDuration: "300",
+        hideDuration: "1000",
+        showMethod: "slideDown",
+        hideMethod: "slideUp"
+    };
+</script>

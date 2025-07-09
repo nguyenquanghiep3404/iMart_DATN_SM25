@@ -147,6 +147,9 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('*', function ($view) {
             $cart = session()->get('cart', []);
+            // dd($cart);
+            // dd(session()->all());
+
             $totalQuantity = array_sum(array_column($cart, 'quantity'));
             $view->with('cartItemCount', $totalQuantity);
         });

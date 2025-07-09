@@ -68,16 +68,29 @@ class OrderManagerController extends Controller
     }
     public function store(Request $request)
     {
-        dd($request->all());
+        // dd($request->all());
         // Validate dữ liệu
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'phone_number' => ['required', 'regex:/^(0|\+84)[0-9]{9}$/'],
+            'phone_number' => ['required', 'regex:/^(0|\+84)[0-9]{9}$/', 'unique:users,phone_number'],
             'status' => 'required|in:active,inactive',
-            'password' => 'required|string|min:6|confirmed',  // password_confirmation phải khớp
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'name.required' => 'Vui lòng nhập họ và tên.',
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không hợp lệ.',
+            'email.unique' => 'Email đã được sử dụng.',
+            'phone_number.required' => 'Vui lòng nhập số điện thoại.',
+            'phone_number.regex' => 'Số điện thoại không đúng định dạng.',
+            'phone_number.unique' => 'Số điện thoại đã tồn tại.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.min' => 'Mật khẩu phải có ít nhất :min ký tự.',
+            'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
         ]);
-
+        
         // Tạo user mới
         $user = new User();
         $user->name = $validated['name'];
@@ -118,6 +131,13 @@ class OrderManagerController extends Controller
         $users = $query->latest()->paginate(10)->withQueryString();
 
         return view('admin.oderMannager.index', compact('users'));
+    }
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        $user->roles()->detach(); 
+        $user->delete();
+        return redirect()->route('admin.order-manager.index')->with('success', 'Đã xoá nhân viên thành công!');
     }
 }
 
