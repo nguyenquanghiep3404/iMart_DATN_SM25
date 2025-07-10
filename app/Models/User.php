@@ -1,11 +1,13 @@
 <?php
 
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -19,6 +21,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'status',
         'last_login_at',
         'password',
+        'avatar_path',
     ];
 
     protected $hidden = [
@@ -74,8 +77,11 @@ class User extends Authenticatable implements MustVerifyEmail
     // Mối quan hệ đa hình cho avatar
     public function avatar()
     {
-        return $this->morphOne(UploadedFile::class, 'attachable')->where('type', 'avatar');
+        return $this->morphOne(\App\Models\UploadedFile::class, 'attachable')
+            ->where('type', 'avatar')
+            ->whereNull('deleted_at'); // Bỏ qua bản ghi đã soft delete
     }
+
     public function cart()
     {
         return $this->hasOne(Cart::class);
@@ -86,12 +92,11 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($this->avatar && $this->avatar->path) {
             return asset('storage/' . $this->avatar->path);
         }
-        // Trả về ảnh placeholder nếu không có avatar
-        return asset('adminlte/dist/img/avatar_placeholder.png'); // Hoặc một ảnh placeholder khác
+
+        return null;
     }
 
-
-   public function hasRole($role): bool
+    public function hasRole($role): bool
     {
         // Nếu đầu vào là một mảng các tên vai trò
         if (is_array($role)) {

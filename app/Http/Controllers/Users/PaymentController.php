@@ -47,7 +47,7 @@ class PaymentController extends Controller
             'email' => 'required|email|max:255',
             'address' => 'required|string|min:5|max:500',
             'postcode' => 'nullable|string|max:10',
-            'payment_method' => 'required|string|in:cod,bank_transfer,vnpay,bank_transfer_qr',
+            'payment_method' => 'required|string|in:cod,bank_transfer,vnpay,bank_transfer_qr,momo',
             'notes' => 'nullable|string|max:1000',
         ]);
         // Kiểm tra giỏ hàng

@@ -32,7 +32,7 @@
 
         </main>
         @include('users.partials.show_product.product-details-tailwind')
-        sticky-bar.blade.php
+        <!-- sticky-bar.blade.php -->
     </div>
     <!-- Image Lightbox Modal -->
     <div id="image-lightbox-modal"

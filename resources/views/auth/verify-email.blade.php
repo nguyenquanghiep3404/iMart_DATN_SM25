@@ -23,8 +23,12 @@
       <!-- Nội dung xác minh -->
       <h1 class="h2 mt-auto">Xác minh email</h1>
       <p class="pb-2 pb-md-3 text-muted">
-        Cảm ơn bạn đã đăng ký! Vui lòng xác minh địa chỉ email của bạn bằng cách nhấp vào liên kết đã được gửi đến hộp thư của bạn. Nếu bạn không nhận được email, bạn có thể yêu cầu gửi lại bên dưới.
-      </p>
+            @if (session('email_changed'))
+            Bạn đã thay đổi email. Vui lòng xác minh địa chỉ email mới của bạn bằng cách nhấp vào liên kết đã được gửi đến hộp thư.
+            @else
+            Cảm ơn bạn đã đăng ký! Vui lòng xác minh địa chỉ email của bạn bằng cách nhấp vào liên kết đã được gửi đến hộp thư của bạn. Nếu bạn không nhận được email, bạn có thể yêu cầu gửi lại bên dưới.
+            @endif
+        </p>
 
       @if (session('status') == 'verification-link-sent')
         <div class="alert alert-success text-center">
