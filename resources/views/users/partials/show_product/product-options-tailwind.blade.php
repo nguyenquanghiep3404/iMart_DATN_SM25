@@ -393,7 +393,7 @@
                     </svg>
                     THÊM VÀO GIỎ HÀNG
                 </button>
-                <button
+                <button type="button" id="buy-now-btn"
                     class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
                     MUA NGAY
                 </button>
@@ -551,6 +551,64 @@
                 });
         });
 
+        // Xử lý nút "Mua ngay"
+        const buyNowBtn = document.getElementById('buy-now-btn');
+        if (buyNowBtn) {
+            buyNowBtn.addEventListener('click', function() {
+                // Lấy dữ liệu từ form
+                const formData = new FormData(form);
+                // Validation đơn giản
+                const variantKey = document.getElementById('variant_key_input').value;
+                const quantity = document.getElementById('quantity_input').value;
+                if (!variantKey) {
+                    showSlideAlert('error', 'Vui lòng chọn phiên bản sản phẩm.');
+                    return;
+                }
+                // Disable button và thay đổi text
+                buyNowBtn.disabled = true;
+                buyNowBtn.innerHTML = 'Đang xử lý...';
+                // Tạo dữ liệu gửi
+                const buyNowData = {
+                    product_id: formData.get('product_id'),
+                    variant_key: formData.get('variant_key'),
+                    quantity: formData.get('quantity')
+                };
+                // Gửi request đến endpoint Buy Now
+                fetch('{{ route("buy-now.checkout") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(buyNowData)
+                })
+                .then(async res => {
+                    if (!res.ok) {
+                        const data = await res.json();
+                        throw new Error(data.message || 'Có lỗi xảy ra khi xử lý.');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Chuyển hướng đến trang thanh toán
+                        window.location.href = data.redirect_url;
+                    } else {
+                        throw new Error(data.message || 'Có lỗi xảy ra.');
+                    }
+                })
+                .catch(error => {
+                    showSlideAlert('error', error.message || 'Đã xảy ra lỗi.');
+                })
+                .finally(() => {
+                    // Khôi phục button
+                    buyNowBtn.disabled = false;
+                    buyNowBtn.innerHTML = 'MUA NGAY';
+                });
+            });
+        }
+        
         // Hàm thông báo toastr
         window.showSlideAlert = window.showSlideAlert || function(type = 'info', message = '', duration =
         4000) {

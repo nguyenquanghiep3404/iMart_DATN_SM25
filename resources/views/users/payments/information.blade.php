@@ -589,10 +589,18 @@
                 <div class="p-sm-2 p-lg-0 p-xl-2">
                   <div class="border-bottom pb-4 mb-4">
                     <div class="d-flex align-items-center justify-content-between mb-4">
-                      <h5 class="mb-0">Tổng đơn hàng</h5>
+                      <h5 class="mb-0">
+                        @if(isset($is_buy_now) && $is_buy_now)
+                          Đơn hàng mua ngay
+                        @else
+                          Tổng đơn hàng
+                        @endif
+                      </h5>
+                      @unless(isset($is_buy_now) && $is_buy_now)
                       <div class="nav">
                         <a class="nav-link text-decoration-underline p-0" href="{{ route('cart.index') }}">Sửa</a>
                       </div>
+                      @endunless
                     </div>
                     <a class="d-flex align-items-center gap-2 text-decoration-none" href="#orderPreview" data-bs-toggle="offcanvas">
                       @foreach($items->take(3) as $item)
@@ -614,7 +622,7 @@
                       Tạm tính ({{ $total_quantity }} sản phẩm):
                       <span class="text-dark-emphasis fw-medium">{{ number_format($subtotal, 0, ',', '.') }} VNĐ</span>
                     </li>
-                    @if($discount > 0)
+                    @if($discount > 0 && (!isset($is_buy_now) || !$is_buy_now))
                     <li class="d-flex justify-content-between">
                       Giảm giá @if($voucher)({{ $voucher['code'] }})@endif:
                       <span class="text-danger fw-medium">-{{ number_format($discount, 0, ',', '.') }} VNĐ</span>
@@ -709,7 +717,7 @@
             <span>Tạm tính:</span>
             <span>{{ number_format($subtotal, 0, ',', '.') }} VNĐ</span>
           </div>
-          @if($discount > 0)
+          @if($discount > 0 && (!isset($is_buy_now) || !$is_buy_now))
           <div class="d-flex justify-content-between mb-2">
             <span>Giảm giá @if($voucher)({{ $voucher['code'] }})@endif:</span>
             <span class="text-danger">-{{ number_format($discount, 0, ',', '.') }} VNĐ</span>
@@ -1214,8 +1222,12 @@
             notes: null
           };
 
+          // Xác định endpoint dựa vào loại đơn hàng
+          const isBuyNow = {{ isset($is_buy_now) && $is_buy_now ? 'true' : 'false' }};
+          const processUrl = isBuyNow ? '{{ route("buy-now.process") }}' : '{{ route("payments.process") }}';
+          
           // Gửi đơn hàng qua AJAX
-          fetch('{{ route("payments.process") }}', {
+          fetch(processUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

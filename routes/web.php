@@ -101,6 +101,11 @@ Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->n
 Route::get('/payments', [PaymentController::class, 'index'])->name('payments.information');
 Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
 Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
+
+// Routes cho Buy Now - phiên thanh toán riêng biệt
+Route::post('/buy-now/checkout', [PaymentController::class, 'buyNowCheckout'])->name('buy-now.checkout');
+Route::get('/buy-now/information', [PaymentController::class, 'buyNowInformation'])->name('buy-now.information');
+Route::post('/buy-now/process', [PaymentController::class, 'processBuyNowOrder'])->name('buy-now.process');
 // LOCATION API ROUTES
 //==========================================================================
 Route::prefix('api/locations')->name('api.locations.')->group(function () {

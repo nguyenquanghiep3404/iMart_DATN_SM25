@@ -121,6 +121,7 @@ class PaymentController extends Controller
                     'product_name' => $variant->product->name,
                     'variant_attributes' => $variantAttributes,
                     'quantity' => $item->quantity,
+                    'sku' => $variant->sku,
                     'price' => $item->price,
                     'total_price' => $item->price * $item->quantity,
                 ]);
@@ -307,5 +308,250 @@ class PaymentController extends Controller
         }
         // Xóa voucher đã áp dụng
         session()->forget(['applied_voucher', 'applied_coupon', 'discount']);
+    }
+    /**
+     * Tạo phiên Buy Now và chuyển đến trang thanh toán
+     */
+    public function buyNowCheckout(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|integer|exists:products,id',
+            'variant_key' => 'nullable|string',
+            'quantity' => 'required|integer|min:1|max:5',
+        ]);
+        $product = Product::findOrFail($request->product_id);
+        $variant = null;
+        // Tìm variant dựa vào variant_key hoặc lấy variant đầu tiên
+        if ($request->variant_key) {
+            $variant = ProductVariant::where('product_id', $product->id)->get()
+                ->first(function ($variant) use ($request) {
+                    $attributes = $variant->attributeValues->pluck('value')->toArray();
+                    return implode('_', $attributes) === $request->variant_key;
+                });
+        }
+        if (!$variant) {
+            $variant = ProductVariant::where('product_id', $product->id)->first();
+        }
+        if (!$variant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sản phẩm chưa có biến thể, vui lòng liên hệ quản trị viên.'
+            ], 422);
+        }
+        // Kiểm tra tồn kho
+        if ($variant->manage_stock && $variant->stock_quantity < $request->quantity) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Số lượng vượt quá tồn kho. Hiện chỉ còn ' . $variant->stock_quantity . ' sản phẩm.'
+            ], 422);
+        }
+        // Tính giá hiện tại sale price hoặc regular price
+        $now = now();
+        $isOnSale = $variant->sale_price &&
+            (!$variant->sale_price_starts_at || $variant->sale_price_starts_at <= $now) &&
+            (!$variant->sale_price_ends_at || $variant->sale_price_ends_at >= $now);
+        $finalPrice = $isOnSale ? $variant->sale_price : $variant->price;
+        // Tạo session buy now tạm thời tách biệt với cart thông thường
+        session()->put('buy_now_session', [
+            'product_id' => $product->id,
+            'variant_id' => $variant->id,
+            'name' => $product->name,
+            'price' => $finalPrice,
+            'quantity' => $request->quantity,
+            'image' => $variant->image_url,
+            'created_at' => now()->timestamp
+        ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Chuyển đến trang thanh toán...',
+            'redirect_url' => route('buy-now.information')
+        ]);
+    }
+    /**
+     * Hiển thị trang thanh toán cho Buy Now
+     */
+    public function buyNowInformation()
+    {
+        // Kiểm tra có session Buy Now không
+        if (!session()->has('buy_now_session')) {
+            return redirect()->route('cart.index')->with('error', 'Phiên mua hàng đã hết hạn.');
+        }
+        // Lấy dữ liệu từ session Buy Now
+        $buyNowData = $this->getBuyNowData();
+        if (!$buyNowData['items'] || $buyNowData['items']->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Không tìm thấy sản phẩm.');
+        }
+        // Thêm flag để template biết đây là Buy Now
+        $buyNowData['is_buy_now'] = true;
+        return view('users.payments.information', $buyNowData);
+    }
+
+    /**
+     * Xử lý đặt hàng Buy Now
+     */
+    public function processBuyNowOrder(Request $request)
+    {
+        // Validate dữ liệu (giống như processOrder)
+        $request->validate([
+            'province_code' => 'required|string|exists:provinces,code',
+            'ward_code' => 'required|string|exists:wards,code',
+            'shipping_method' => 'required|string',
+            'shipping_time' => 'nullable|string',
+            'full_name' => 'required|string|max:255',
+            'phone' => 'required|string|regex:/^[0-9]{10,11}$/',
+            'email' => 'required|email|max:255',
+            'address' => 'required|string|min:5|max:500',
+            'postcode' => 'nullable|string|max:10',
+            'payment_method' => 'required|string|in:cod,bank_transfer,vnpay',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+        // Kiểm tra session Buy Now
+        if (!session()->has('buy_now_session')) {
+            return response()->json(['success' => false, 'message' => 'Phiên mua hàng đã hết hạn.'], 400);
+        }
+        $buyNowData = $this->getBuyNowData();
+        if (!$buyNowData['items'] || $buyNowData['items']->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy sản phẩm.'], 400);
+        }
+        try {
+            DB::beginTransaction();
+            // Tạo mã đơn hàng
+            $orderCode = 'DH-' . strtoupper(Str::random(10));
+            // Tính toán shipping fee
+            $shippingFee = $this->calculateShippingFee($request->shipping_method);
+            // Format delivery date/time
+            $deliveryInfo = $this->formatDeliveryDateTime(
+                $request->shipping_method,
+                $request->shipping_time
+            );
+            // Tạo đơn hàng
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'guest_id' => !Auth::check() ? session()->getId() : null,
+                'order_code' => $orderCode,
+                'customer_name' => $request->full_name,
+                'customer_email' => $request->email,
+                'customer_phone' => $request->phone,
+                // Địa chỉ giao hàng
+                'shipping_address_line1' => $request->address,
+                'shipping_address_line2' => null,
+                'shipping_province_code' => $request->province_code,
+                'shipping_ward_code' => $request->ward_code,
+                'shipping_zip_code' => $request->postcode,
+                'shipping_country' => 'Vietnam',
+                // Địa chỉ thanh toán (mặc định giống địa chỉ giao hàng)
+                'billing_address_line1' => $request->address,
+                'billing_province_code' => $request->province_code,
+                'billing_ward_code' => $request->ward_code,
+                'billing_zip_code' => $request->postcode,
+                'billing_country' => 'Vietnam',
+                // Thông tin tài chính
+                'sub_total' => $buyNowData['subtotal'],
+                'shipping_fee' => $shippingFee,
+                'discount_amount' => 0, // Buy Now không áp dụng voucher
+                'tax_amount' => 0,
+                'grand_total' => $buyNowData['subtotal'] + $shippingFee,
+                // Phương thức thanh toán và vận chuyển
+                'payment_method' => $request->payment_method,
+                'payment_status' => $request->payment_method === 'cod' ? Order::PAYMENT_PENDING : Order::PAYMENT_PENDING,
+                'shipping_method' => $request->shipping_method,
+                'status' => Order::STATUS_PENDING_CONFIRMATION,
+                // Ghi chú và thông tin khác
+                'notes_from_customer' => $request->notes,
+                'desired_delivery_date' => $deliveryInfo['date'],
+                'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+            // Tạo order item (chỉ có 1 sản phẩm trong Buy Now)
+            $item = $buyNowData['items']->first();
+            $variant = $item->productVariant;
+            // Kiểm tra tồn kho lần cuối
+            if ($variant->manage_stock && $variant->stock_quantity < $item->quantity) {
+                throw new \Exception("Sản phẩm {$variant->product->name} không đủ hàng.");
+            }
+            // Lấy thông tin thuộc tính của variant
+            $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
+                return [$attrValue->attribute->name => $attrValue->value];
+            })->toArray();
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_variant_id' => $variant->id,
+                'product_name' => $variant->product->name,
+                'variant_attributes' => $variantAttributes,
+                'quantity' => $item->quantity,
+                'sku' => $variant->sku,
+                'price' => $item->price,
+                'total_price' => $item->price * $item->quantity,
+            ]);
+            // Trừ tồn kho nếu có quản lý kho
+            if ($variant->manage_stock) {
+                $variant->decrement('stock_quantity', $item->quantity);
+            }
+            // Xóa session Buy Now
+            $this->clearBuyNowSession();
+            DB::commit();
+            // Trả về thông tin đơn hàng
+            return response()->json([
+                'success' => true,
+                'message' => 'Đặt hàng thành công!',
+                'order' => [
+                    'id' => $order->id,
+                    'order_code' => $order->order_code,
+                    'grand_total' => $order->grand_total,
+                    'payment_method' => $order->payment_method,
+                    'shipping_method' => $order->shipping_method,
+                    'customer_name' => $order->customer_name,
+                    'customer_phone' => $order->customer_phone,
+                    'shipping_address' => $order->shipping_full_address_with_type,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    /**
+     * Lấy dữ liệu giỏ hàng cho Buy Now
+     */
+    private function getBuyNowData()
+    {
+        $buyNowSession = session('buy_now_session');
+        if (!$buyNowSession) {
+            return ['items' => collect(), 'subtotal' => 0, 'discount' => 0, 'total' => 0];
+        }
+        $product = Product::findOrFail($buyNowSession['product_id']);
+        $variant = ProductVariant::findOrFail($buyNowSession['variant_id']);
+        $items = collect([
+            (object)[
+                'id' => $variant->id,
+                'productVariant' => $variant,
+                'price' => $buyNowSession['price'],
+                'quantity' => $buyNowSession['quantity'],
+                'stock_quantity' => $variant->stock_quantity,
+            ]
+        ]);
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+        $discount = 0; // Buy Now không áp dụng voucher
+        $total = max(0, $subtotal - $discount);
+        return [
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'discount' => $discount,
+            'total' => $total,
+            'voucher' => null,
+            'items_count' => $items->count(),
+            'total_quantity' => $items->sum('quantity')
+        ];
+    }
+    /**
+     * Xóa session Buy Now
+     */
+    private function clearBuyNowSession()
+    {
+        session()->forget('buy_now_session');
     }
 }
