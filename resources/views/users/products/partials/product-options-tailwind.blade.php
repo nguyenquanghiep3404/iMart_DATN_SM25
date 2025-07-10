@@ -400,7 +400,7 @@
                     </svg>
                     THÊM VÀO GIỎ HÀNG
                 </button>
-                <button type="submit" name="buy_now" value="1"
+                <button type="button" id="buy-now-btn"
                     class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
                     MUA NGAY
                 </button>
@@ -538,6 +538,89 @@
                 });
         });
 
+        // Xử lý nút "Mua ngay"
+        const buyNowBtn = document.getElementById('buy-now-btn');
+        if (buyNowBtn) {
+            buyNowBtn.addEventListener('click', function() {
+                // Lấy dữ liệu từ form
+                const form = document.getElementById('add-to-cart-form');
+                const formData = new FormData(form);
+                // Validation chi tiết hơn
+                const variantKey = inputVariantKey.value?.trim();
+                const quantity = parseInt(quantityInput.value) || 1;
+                const productId = formData.get('product_id');
+                // Kiểm tra variant key (chỉ với sản phẩm có biến thể)
+                const hasVariants = Object.keys(variantData).length > 1;
+                if (hasVariants && (!variantKey || variantKey === '' || variantKey === '_' || variantKey.includes('undefined'))) {
+                    toastr.error('Vui lòng chọn đầy đủ thông tin sản phẩm');
+                    return;
+                }
+                // Kiểm tra product ID
+                if (!productId) {
+                    toastr.error('Không tìm thấy thông tin sản phẩm.');
+                    return;
+                }
+                // Kiểm tra số lượng tồn kho
+                const currentVariant = variantData[variantKey];
+                if (currentVariant && currentVariant.stock_quantity !== undefined) {
+                    if (quantity > currentVariant.stock_quantity) {
+                        toastr.error(`Số lượng vượt quá tồn kho. Chỉ còn ${currentVariant.stock_quantity} sản phẩm.`);
+                        return;
+                    }
+                }
+                // Disable button và thay đổi text với loading
+                buyNowBtn.disabled = true;
+                buyNowBtn.innerHTML = '<span class="inline-block animate-spin mr-2"></span>Đang xử lý...';
+                // Tạo dữ liệu gửi với validation
+                const buyNowData = {
+                    product_id: parseInt(productId),
+                    variant_key: variantKey,
+                    quantity: quantity
+                };
+                console.log('Buy Now Data:', buyNowData);
+                // Gửi request đến endpoint Buy Now
+                fetch('{{ route("buy-now.checkout") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(buyNowData)
+                })
+                .then(async res => {
+                    const contentType = res.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error('Server trả về định dạng không hợp lệ');
+                    }
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || `Lỗi server: ${res.status}`);
+                    }
+                    return data;
+                })
+                .then(data => {
+                    console.log(' Buy Now Response:', data);
+                    if (data.success && data.redirect_url) {
+                        // Chuyển hướng ngay lập tức
+                        window.location.href = data.redirect_url;
+                    } else {
+                        throw new Error(data.message || 'Phản hồi không hợp lệ từ server.');
+                    }
+                })
+                .catch(error => {
+                    console.error(' Buy Now Error:', error);
+                    toastr.error(error.message || 'Đã xảy ra lỗi khi xử lý. Vui lòng thử lại.');
+                })
+                .finally(() => {
+                    // Khôi phục button sau delay để tránh spam click
+                    setTimeout(() => {
+                        buyNowBtn.disabled = false;
+                        buyNowBtn.innerHTML = 'MUA NGAY';
+                    }, 1000);
+                });
+            });
+        }
         // Khởi tạo cập nhật lần đầu
         updateVariantFields();
     });
