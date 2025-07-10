@@ -87,112 +87,41 @@
                 </div>
             </div>
 
-
             <!-- Content for Specs Tab -->
             <div id="tab-specs-content" class="tab-content">
                 <div class="space-y-3" id="specs-accordion">
-                    <!-- Màn hình -->
-                    <div>
-                        <button
-                            class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                            <span class="font-semibold text-gray-800">Màn hình</span>
-                            <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div class="accordion-content">
-                            <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                                <dl class="divide-y divide-gray-100">
-                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                        <dt class="text-sm font-medium text-gray-600">Công nghệ màn hình</dt>
-                                        <dd class="text-sm text-gray-800 col-span-2">OLED</dd>
+                    @if (!empty($specGroupsData))
+                        <div class="space-y-3" id="specs-accordion">
+                            @foreach ($specGroupsData as $groupName => $specs)
+                                <div>
+                                    <button
+                                        class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                        <span class="font-semibold text-gray-800">{{ $groupName }}</span>
+                                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-content hidden">
+                                        <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
+                                            <dl class="divide-y divide-gray-100">
+                                                @foreach ($specs as $specName => $value)
+                                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
+                                                        <dt class="text-sm font-medium text-gray-600">
+                                                            {{ $specName }}</dt>
+                                                        <dd class="text-sm text-gray-800 col-span-2">{{ $value }}
+                                                        </dd>
+                                                    </div>
+                                                @endforeach
+                                            </dl>
+                                        </div>
                                     </div>
-                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                        <dt class="text-sm font-medium text-gray-600">Độ phân giải</dt>
-                                        <dd class="text-sm text-gray-800 col-span-2">Super Retina XDR (2796 x 1290
-                                            Pixels)</dd>
-                                    </div>
-                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                        <dt class="text-sm font-medium text-gray-600">Tần số quét</dt>
-                                        <dd class="text-sm text-gray-800 col-span-2">120 Hz ProMotion</dd>
-                                    </div>
-                                </dl>
-                            </div>
+                                </div>
+                            @endforeach
                         </div>
-                    </div>
-                    <!-- Camera -->
-                    <div>
-                        <button
-                            class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                            <span class="font-semibold text-gray-800">Camera</span>
-                            <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div class="accordion-content">
-                            <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                                <dl class="divide-y divide-gray-100">
-                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                        <dt class="text-sm font-medium text-gray-600">Camera sau</dt>
-                                        <dd class="text-sm text-gray-800 col-span-2">Chính 48 MP & Phụ 12 MP, 12 MP
-                                        </dd>
-                                    </div>
-                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                        <dt class="text-sm font-medium text-gray-600">Camera trước</dt>
-                                        <dd class="text-sm text-gray-800 col-span-2">12 MP</dd>
-                                    </div>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Hệ điều hành & CPU -->
-                    <div>
-                        <button
-                            class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                            <span class="font-semibold text-gray-800">Hệ điều hành & CPU</span>
-                            <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div class="accordion-content">
-                            <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                                <dl class="divide-y divide-gray-100">
-                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                        <dt class="text-sm font-medium text-gray-600">Chip xử lý (CPU)</dt>
-                                        <dd class="text-sm text-gray-800 col-span-2">Apple A17 Pro 6 nhân</dd>
-                                    </div>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Kết nối -->
-                    <div>
-                        <button
-                            class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                            <span class="font-semibold text-gray-800">Kết nối</span>
-                            <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </button>
-                        <div class="accordion-content">
-                            <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                                <dl class="divide-y divide-gray-100">
-                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                        <dt class="text-sm font-medium text-gray-600">Cổng kết nối/sạc</dt>
-                                        <dd class="text-sm text-gray-800 col-span-2">Type-C</dd>
-                                    </div>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -290,7 +219,8 @@
                 </div>
             </div>
             <!-- New Comment Form -->
-            @include('users.partials.show_product.product-comments')
+            @include('users.products.partials.product-comments')
+            
 
 
         </div>
@@ -361,6 +291,7 @@
         </div>
     </section>
 </div>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Gửi bình luận chính
@@ -471,201 +402,11 @@
     }
 </script>
 
-@if (!empty($specGroupsData))
-    <div class="space-y-3" id="specs-accordion">
-        @foreach ($specGroupsData as $groupName => $specs)
-            <div>
-                <button
-                    class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                    onclick="this.nextElementSibling.classList.toggle('hidden')">
-                    <span class="font-semibold text-gray-800">{{ $groupName }}</span>
-                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div class="accordion-content hidden">
-                    <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                        <dl class="divide-y divide-gray-100">
-                            @foreach ($specs as $specName => $value)
-                                <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                    <dt class="text-sm font-medium text-gray-600">{{ $specName }}</dt>
-                                    <dd class="text-sm text-gray-800 col-span-2">{{ $value }}</dd>
-                                </div>
-                            @endforeach
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        @endforeach
-    </div>
-@endif
+
 
 
 </div>
 </div>
 </section>
 
-<!-- PHẦN 4: ĐÁNH GIÁ & NHẬN XÉT -->
-<section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-900">Đánh giá & Nhận xét từ khách hàng</h2>
-        <button id="write-review-btn"
-            class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Viết
-            đánh giá</button>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="flex flex-col items-center justify-center md:border-r md:border-gray-200 md:pr-8">
-            <p class="text-4xl font-bold text-gray-800">4.9 / 5</p>
-            <div class="flex text-yellow-400 my-2">★★★★☆</div>
-            <p class="text-sm text-gray-600">(1,258 đánh giá)</p>
-        </div>
-        <div class="col-span-2">
-            <div class="space-y-1">
-                <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">5 ★</span>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 85%"></div>
-                    </div><span class="text-gray-600 w-12 text-right">1000</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">4 ★</span>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 12%"></div>
-                    </div><span class="text-gray-600 w-12 text-right">250</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">3 ★</span>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 2%"></div>
-                    </div><span class="text-gray-600 w-12 text-right">8</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">2 ★</span>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 0%"></div>
-                    </div><span class="text-gray-600 w-12 text-right">0</span>
-                </div>
-                <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">1 ★</span>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                        <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 1%"></div>
-                    </div><span class="text-gray-600 w-12 text-right">2</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- PHẦN 5: HỎI & ĐÁP VỚI TRỢ LÝ AI -->
-<section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Hỏi & Đáp với Trợ lý AI</h2>
-    <div class="mb-6">
-        <textarea id="qna-textarea" placeholder="Nhập câu hỏi của bạn về iPhone 15 Pro Max..."
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-            rows="3"></textarea>
-        <button id="ask-ai-btn"
-            class="mt-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd"
-                    d="M10 3a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3zM10 15a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 15zM4.134 5.866a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.06 1.06a.75.75 0 11-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM15 10a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0115 10zM10 4a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 4zM5.866 14.134a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm9.193-9.193a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zM10 16a6 6 0 100-12 6 6 0 000 12z"
-                    clip-rule="evenodd" />
-            </svg>
-            ✨ Hỏi AI ngay
-        </button>
-    </div>
-    <div id="ai-answer-container" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <!-- AI Answer will be injected here -->
-    </div>
-    <h3 class="text-lg font-bold text-gray-800 mb-4 border-t pt-6">Hoặc xem các câu hỏi thường gặp</h3>
-    <div id="qna-list" class="space-y-4">
-        <!-- Q&A items will be dynamically inserted here -->
-    </div>
-    <!-- Pagination -->
-    <nav id="qna-pagination" class="flex items-center justify-center mt-6"></nav>
-</section>
-
-<!-- PHẦN 6: SẢN PHẨM TƯƠNG TỰ -->
-<section>
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Sản phẩm tương tự</h2>
-    <div class="carousel flex gap-4 overflow-x-auto pb-4">
-        <div
-            class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform">
-            <img src="https://placehold.co/200x200/e0e0e0/333?text=iPhone+15+Plus" class="w-full h-40 object-cover">
-            <div class="p-3">
-                <h4 class="font-semibold text-sm text-gray-800 truncate">iPhone 15 Plus 128GB</h4>
-                <p class="font-bold text-red-600 mt-1">24.990.000₫</p>
-                <div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.8 ★</div>
-            </div>
-        </div>
-        <div
-            class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform">
-            <img src="https://placehold.co/200x200/e0e0e0/333?text=Galaxy+S24+Ultra" class="w-full h-40 object-cover">
-            <div class="p-3">
-                <h4 class="font-semibold text-sm text-gray-800 truncate">Samsung Galaxy S24 Ultra</h4>
-                <p class="font-bold text-red-600 mt-1">28.490.000₫</p>
-                <div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.9 ★</div>
-            </div>
-        </div>
-        <div
-            class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform">
-            <img src="https://placehold.co/200x200/e0e0e0/333?text=iPhone+15+Pro" class="w-full h-40 object-cover">
-            <div class="p-3">
-                <h4 class="font-semibold text-sm text-gray-800 truncate">iPhone 15 Pro 128GB</h4>
-                <p class="font-bold text-red-600 mt-1">27.990.000₫</p>
-                <div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.9 ★</div>
-            </div>
-        </div>
-    </div>
-</section>
 </div>
-
-<script>
-    < script >
-        const variantSpecs = @json($variantSpecs);
-
-    function updateSpecifications(variantKey) {
-        const container = document.getElementById('specs-accordion');
-        if (!container || !variantSpecs[variantKey]) return;
-
-        const specs = variantSpecs[variantKey];
-        let html = '';
-
-        for (const groupName in specs) {
-            html += `
-                <div>
-                    <button onclick="this.nextElementSibling.classList.toggle('hidden')"
-                        class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                        <span class="font-semibold text-gray-800">${groupName}</span>
-                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div class="accordion-content hidden">
-                        <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                            <dl class="divide-y divide-gray-100">
-            `;
-
-            for (const specName in specs[groupName]) {
-                html += `
-                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                        <dt class="text-sm font-medium text-gray-600">${specName}</dt>
-                        <dd class="text-sm text-gray-800 col-span-2">${specs[groupName][specName]}</dd>
-                    </div>
-                `;
-            }
-
-            html += `
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        container.innerHTML = html;
-    }
-
-    // Gọi updateSpecifications() khi người dùng chọn biến thể mới
-    // Ví dụ: khi biến thể được chọn thì gọi:
-    // updateSpecifications('Đen_128GB')  // tương ứng với variantKeyStr
-</script>
-
-</script>

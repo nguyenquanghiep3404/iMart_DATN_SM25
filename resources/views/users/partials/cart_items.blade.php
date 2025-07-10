@@ -1,4 +1,4 @@
-@if (isset($items) && $items->isNotEmpty())
+{{-- @if (isset($items) && $items->isNotEmpty())
     <div id="cart-items-wrapper">
         @foreach ($items as $item)
             <div class="d-flex align-items-center mb-3 border-bottom pb-2 cart-item" data-item-id="{{ $item['id'] }}"
@@ -182,4 +182,4 @@
             });
         });
     });
-</script>
+</script> --}}

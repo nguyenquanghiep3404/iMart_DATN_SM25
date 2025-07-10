@@ -1,9 +1,12 @@
 <?php
+
+use App\Http\Controllers\Admin\HomepageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AiController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
@@ -16,6 +19,7 @@ use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Users\PaymentController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Users\WishlistController;
 use App\Http\Controllers\Users\CommentController;
@@ -30,13 +34,9 @@ use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\SpecificationController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
-use App\Http\Controllers\Users\PaymentController;
-use App\Http\Controllers\LocationController;
-use App\Http\Controllers\Admin\VNPayController;
 use App\Http\Controllers\Users\CarOffController;
 
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
-
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
 // Route::post('cart/remove', [CarOffController::class, 'removeItem'])->name('cart.removeItem');
@@ -74,6 +74,7 @@ Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.pro
 Route::get('/danh-muc-san-pham/{id}-{slug}', [HomeController::class, 'allProducts'])->name('products.byCategory');
 Route::get('/danh-muc-san-pham', [HomeController::class, 'allProducts'])->name('users.products.all');
 Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestions'])->name('products.compare_suggestions');
+Route::post('/api/compare-suggestions', [HomeController::class, 'compareSuggestions']);
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
@@ -347,6 +348,44 @@ Route::prefix('admin')
         Route::resource('categories_post', PostCategoryController::class)
             ->names('categories_post');
 
+        // Route quản lí trang chủ (client)
+
+        // ✅ Hiển thị trang quản lý trang chủ (dùng index vì là quản lý tổng thể)
+        Route::get('/homepage', [HomepageController::class, 'index'])->name('admin.homepage.index');
+
+        // ✅ Lưu toàn bộ thay đổi
+        Route::post('/homepage/update', [HomepageController::class, 'update'])->name('homepage.update');
+
+        // ✅ Sắp xếp banner (drag & drop)
+        Route::post('/homepage/banners/sort', [HomepageController::class, 'sortBanners'])->name('admin.homepage.banners.sort');
+
+        // ✅ Lưu danh mục hiển thị
+        Route::post('/homepage/categories', [HomepageController::class, 'saveCategories'])->name('admin.homepage.categories.save');
+
+        // ✅ Sắp xếp danh mục
+        Route::post('/homepage/categories/sort', [HomepageController::class, 'sortCategories'])->name('admin.homepage.categories.sort');
+
+        // ✅ Lấy danh sách danh mục từ DB (dùng cho fetch)
+        Route::get('/homepage/categories/list', [HomepageController::class, 'getCategories'])->name('admin.homepage.categories.list');
+
+        // ✅ Thêm khối sản phẩm 
+        Route::post('/homepage/product-blocks', [HomepageController::class, 'storeProductBlock'])->name('homepage.blocks.store');
+
+        // ✅ Xoá khối sản phẩm 
+        Route::delete('/homepage/product-blocks/{id}', [HomepageController::class, 'destroyProductBlock'])->name('homepage.blocks.destroy');
+
+        Route::get('/homepage/products/search', [HomepageController::class, 'searchProducts'])->name('homepage.products.search');
+
+
+        // ✅ Cập nhật thứ tự khối sản phẩm
+        Route::post('/homepage/product-blocks/sort', [HomepageController::class, 'sortProductBlocks'])->name('admin.homepage.blocks.sort');
+        Route::post('/homepage/block/{block}/add-products', [HomepageController::class, 'addProductsToBlock'])->name('homepage.blocks.add-products');
+        Route::post('/homepage/product-blocks/{block}/products', [HomepageController::class, 'addProductsToBlock'])
+    ->name('homepage.blocks.add-products');
+
+
+
+
         // Post routes
         Route::get('posts/trashed', [PostController::class, 'trashed'])->name('posts.trashed'); // Danh sách bài đã xóa
         Route::get('posts/preview/{id}', [PostController::class, 'preview'])->name('posts.preview');
@@ -385,9 +424,9 @@ Route::prefix('shipper')
         Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
         Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus');
     });
-     Route::get('/test-403', function () {
-            abort(403);
-        });
+Route::get('/test-403', function () {
+    abort(403);
+});
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';

@@ -102,6 +102,15 @@ class AppServiceProvider extends ServiceProvider
                 $view->with(compact('unreadNotificationsCount', 'recentNotifications'));
             }
         });
+        // Chia sẻ danh mục hiển thị trên header (menu client)
+        View::composer('*', function ($view) {
+            $menuCategories = \App\Models\Category::where('show_on_homepage', true)
+                ->orderBy('order')
+                ->get();
+
+            $view->with('menuCategories', $menuCategories);
+        });
+
         // try {
         // // --- LOGIC PHÂN QUYỀN MỚI DỰA TRÊN PERMISSION ---
 
