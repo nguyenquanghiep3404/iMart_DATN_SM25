@@ -32,7 +32,7 @@
 
         </main>
         @include('users.partials.show_product.product-details-tailwind')
-        sticky-bar.blade.php
+        <!-- sticky-bar.blade.php -->
     </div>
     <!-- Image Lightbox Modal -->
     <div id="image-lightbox-modal"
@@ -154,7 +154,8 @@
     </div>
 
     <!-- Compare Modal -->
-    <div id="compare-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div id="compare-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
+        data-variant-id="">
         <div class="w-full max-w-3xl bg-white rounded-xl shadow-2xl flex flex-col max-h-[95vh]">
             <!-- Modal Header -->
             <div class="flex justify-between items-center p-4 border-b border-gray-200 flex-shrink-0">
@@ -171,7 +172,7 @@
             <div class="p-4 sm:p-6 overflow-y-auto product-list flex-grow">
                 <!-- Search Bar -->
                 <div class="relative mb-6">
-                    <input type="text" id="compare-search" placeholder="Nhập sản phẩm bạn muốn so sánh"
+                    <input type="text" id="search-product" placeholder="Nhập sản phẩm bạn muốn so sánh"
                         class="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-400 focus:border-red-400">
                     <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none"
@@ -183,116 +184,29 @@
                 </div>
 
                 <!-- Suggestion Title -->
-                <h4 class="text-base font-semibold text-gray-600 mb-4">Gợi ý sản phẩm cùng phân khúc</h4>
+                <h4 class="text-base font-semibold text-gray-600 mb-4">Sản phẩm đã xem gần đây</h4>
 
                 <!-- Suggested Product List -->
                 <div id="suggested-products" class="space-y-3">
-                    <!-- Product Item 1 -->
-                    <div
-                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
-                        <img src="https://placehold.co/100x100/e0e0e0/333?text=S25+Ultra" alt="Samsung Galaxy S25 Ultra"
-                            class="w-24 h-24 object-cover rounded-md flex-shrink-0">
-                        <div class="flex-grow">
-                            <p class="font-bold text-lg text-red-600">28.490.000₫ <span
-                                    class="text-sm text-gray-500 line-through ml-2">33.990.000₫</span> <span
-                                    class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-16%</span>
-                            </p>
-                            <p class="font-semibold text-gray-800 mt-1">Samsung Galaxy S25 Ultra 5G 12GB 256GB</p>
-                            <div class="flex gap-2 mt-2">
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">256
-                                    GB</span>
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">512
-                                    GB</span>
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">1 TB</span>
-                            </div>
-                        </div>
-                        <button
-                            class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0"
-                            data-product-id="2" data-product-name="Samsung Galaxy S25 Ultra 5G 12GB 256GB"
-                            data-product-image="https://placehold.co/100x100/e0e0e0/333?text=S25+Ultra"
-                            data-product-variant="256GB">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Thêm vào so sánh
-                        </button>
-                    </div>
-                    <!-- Product Item 2 -->
-                    <div
-                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
-                        <img src="https://placehold.co/100x100/d0d0f0/333?text=iPhone+16" alt="iPhone 16 Plus"
-                            class="w-24 h-24 object-cover rounded-md flex-shrink-0">
-                        <div class="flex-grow">
-                            <p class="font-bold text-lg text-red-600">21.990.000₫ <span
-                                    class="text-sm text-gray-500 line-through ml-2">25.990.000₫</span> <span
-                                    class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-15%</span>
-                            </p>
-                            <p class="font-semibold text-gray-800 mt-1">iPhone 16 Plus 128GB</p>
-                            <div class="flex gap-2 mt-2">
-                                <span
-                                    class="px-3 py-1 text-xs font-semibold border-red-500 bg-red-50 text-red-700 rounded-md">128
-                                    GB</span>
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">256
-                                    GB</span>
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">512
-                                    GB</span>
-                            </div>
-                        </div>
-                        <button
-                            class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0"
-                            data-product-id="3" data-product-name="iPhone 16 Plus 128GB"
-                            data-product-image="https://placehold.co/100x100/d0d0f0/333?text=iPhone+16"
-                            data-product-variant="128GB">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Thêm vào so sánh
-                        </button>
-                    </div>
-                    <!-- Product Item 3 -->
-                    <div
-                        class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
-                        <img src="https://placehold.co/100x100/c0c0e0/333?text=Xiaomi+15" alt="Xiaomi 15 Pro"
-                            class="w-24 h-24 object-cover rounded-md flex-shrink-0">
-                        <div class="flex-grow">
-                            <p class="font-bold text-lg text-red-600">24.990.000₫ <span
-                                    class="text-sm text-gray-500 line-through ml-2">28.990.000₫</span> <span
-                                    class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-14%</span>
-                            </p>
-                            <p class="font-semibold text-gray-800 mt-1">Xiaomi 15 Pro 12GB 256GB</p>
-                            <div class="flex gap-2 mt-2">
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">256
-                                    GB</span>
-                                <span class="px-3 py-1 text-xs font-semibold border border-gray-300 rounded-md">512
-                                    GB</span>
-                            </div>
-                        </div>
-                        <button
-                            class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0"
-                            data-product-id="4" data-product-name="Xiaomi 15 Pro 12GB 256GB"
-                            data-product-image="https://placehold.co/100x100/c0c0e0/333?text=Xiaomi+15"
-                            data-product-variant="256GB">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            Thêm vào so sánh
-                        </button>
-                    </div>
+                    <!-- Dữ liệu gợi ý sẽ được đổ bằng JavaScript -->
                 </div>
+
             </div>
 
             <!-- Bottom Comparison Bar -->
-            <div id="comparison-bar" class="flex-shrink-0 bg-gray-800 text-white p-4 rounded-b-xl shadow-lg">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center gap-3" id="selected-products">
-                        <!-- Sản phẩm hiện tại sẽ được thêm động qua JavaScript -->
-                        <div class="hidden md:flex items-center justify-center gap-2 bg-gray-700 p-2 rounded-lg w-48 h-[56px]"
+            <div id="comparison-bar" class="flex-shrink-0 bg-gray-800 text-white p-4 rounded-b-xl shadow-lg w-full">
+                <div class="w-full max-w-6xl mx-auto space-y-4">
+                    <!-- 3 ô sản phẩm -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="flex items-center justify-center gap-2 bg-gray-700 p-3 rounded-lg h-[64px]"
+                            data-product-slot="1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            <span class="text-sm text-gray-400">Sản phẩm 1</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 bg-gray-700 p-3 rounded-lg h-[64px]"
                             data-product-slot="2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -300,7 +214,7 @@
                             </svg>
                             <span class="text-sm text-gray-400">Sản phẩm 2</span>
                         </div>
-                        <div class="hidden md:flex items-center justify-center gap-2 bg-gray-700 p-2 rounded-lg w-48 h-[56px]"
+                        <div class="flex items-center justify-center gap-2 bg-gray-700 p-3 rounded-lg h-[64px]"
                             data-product-slot="3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -309,17 +223,16 @@
                             <span class="text-sm text-gray-400">Sản phẩm 3</span>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
+
+                    <!-- 2 nút căn giữa bên dưới -->
+                    <div class="flex justify-center items-center gap-4">
                         <button id="clear-compare-btn"
-                            class="text-sm font-semibold hover:bg-gray-700 px-4 py-2 rounded-lg">Xóa tất cả</button>
+                            class="text-sm font-semibold bg-red-600 hover:bg-red-700 px-5 py-2 rounded-lg text-white">
+                            Xóa tất cả
+                        </button>
                         <button id="compare-now-btn"
-                            class="text-sm font-bold bg-white text-gray-900 px-6 py-2 rounded-lg hover:bg-gray-200">So sánh
-                            ngay</button>
-                        <button id="toggle-compare-bar" class="p-2 hover:bg-gray-700 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                            </svg>
+                            class="text-sm font-bold bg-white text-gray-900 px-6 py-2 rounded-lg hover:bg-gray-200">
+                            So sánh ngay
                         </button>
                     </div>
                 </div>
@@ -603,12 +516,14 @@
 
 @push('scripts')
     <script>
-        window.productType = @json($product->type); // 👈 thêm dòng này
-        console.log('Loại sản phẩm:', window.productType); // ✅ log kiểm tra
+        window.productType = @json($product->type);
+        console.log('Loại sản phẩm:', window.productType);
         window.variantData = @json($variantData);
         window.attributeOrder = @json($attributeOrder);
         window.availableCombinations = @json($availableCombinations);
         window.attributes = @json($attributes);
+        window.variantSpecs = @json($variantSpecs);
+        window.currentProductId = @json($product->id);
         window.currentSelections = @php
             $initialSelections = $defaultVariant ? $defaultVariant->attributeValues->pluck('value', 'attribute.name')->all() : [];
             echo json_encode($initialSelections);
@@ -628,8 +543,10 @@
         @endphp
 
         window.initialImages = @json($initialImages);
+        window.defaultVariantId = @json($defaultVariant ? $defaultVariant->id : null); // Thêm variant_id mặc định
 
         document.addEventListener('DOMContentLoaded', function() {
+            saveRecentProduct();
             // GALLERY DATA
             let galleryData = window.initialImages.map((img, index) => ({
                 thumb: img,
@@ -659,23 +576,6 @@
             const nextBtn = document.getElementById('gallery-next-btn');
             const thumbsPrevBtn = document.getElementById('thumbs-prev-btn');
             const thumbsNextBtn = document.getElementById('thumbs-next-btn');
-
-            // Kiểm tra các phần tử cần thiết
-            if (!mainImage) {
-                console.error('Element #mainImage not found');
-                return;
-            }
-            if (!mainThumbnailsContainer) {
-                console.warn('Element #main-thumbnails not found');
-            }
-            if (!lightboxModal) {
-                console.warn('Element #image-lightbox-modal not found');
-            }
-            if (!prevBtn || !nextBtn) {
-                console.error('Không tìm thấy nút prev hoặc next trong gallery');
-                return;
-            }
-
             const priceEls = document.querySelectorAll('#product-price');
             const originalPriceEls = document.querySelectorAll('#original-price');
             const discountPercentEls = document.querySelectorAll('#discount-percent');
@@ -689,34 +589,325 @@
             const tabSpecsContent = document.getElementById('tab-specs-content');
             const descriptionWrapper = document.getElementById('description-wrapper');
             const readMoreBtn = document.getElementById('read-more-btn');
+            const compareBtn = document.getElementById('compare-btn');
+            const compareModal = document.getElementById('compare-modal');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const suggestedProductsContainer = document.getElementById('suggested-products');
+            const comparisonBar = document.getElementById('comparison-bar');
+            const clearCompareBtn = document.getElementById('clear-compare-btn');
+            const compareNowBtn = document.getElementById('compare-now-btn');
 
             const variantData = window.variantData || {};
             const attributeOrder = window.attributeOrder || [];
             const availableCombinations = window.availableCombinations || {};
             let currentSelections = window.currentSelections || {};
 
-            console.log('Giá trị currentSelections ban đầu:', currentSelections);
-            console.log('Các tổ hợp biến thể khả dụng:', availableCombinations);
+            // Hàm format giá tiền sang định dạng VND
+            function formatPrice(price) {
+                return price.toLocaleString('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND'
+                });
+            }
 
-            /**
-             * Lấy key của biến thể hiện tại dựa trên các thuộc tính đã chọn.
-             * Trả về chuỗi key dạng 'Dung lượng_Màu sắc'...
-             */
+            // Hàm lấy sản phẩm đã xem từ localStorage
+            async function fetchSuggestedProducts(variantId) {
+                try {
+                    const recentProducts = JSON.parse(localStorage.getItem('recent_product_ids') || '[]');
+                    console.log('Gửi danh sách sản phẩm đã xem:', recentProducts);
+                    const response = await fetch('/api/compare-suggestions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                        },
+                        body: JSON.stringify({
+                            variant_id: variantId,
+                            recent_product_ids: recentProducts.map(item => ({
+                                id: item.id,
+                                variant_key: item.variant_key
+                            }))
+                        })
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.suggested) {
+                        renderSuggestedProducts(data.suggested);
+                    } else {
+                        suggestedProductsContainer.innerHTML =
+                            '<p class="text-gray-500">Chưa có sản phẩm nào đã xem gần đây.</p>';
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi lấy sản phẩm đã xem:', error);
+                    suggestedProductsContainer.innerHTML =
+                        '<p class="text-red-500">Lỗi khi tải sản phẩm đã xem gần đây.</p>';
+                }
+            }
+
+            function saveRecentProduct() {
+                const productId = window.currentProductId;
+                const productName = @json($product->name);
+                const attributeOrder = window.attributeOrder || [];
+                const currentSelections = window.currentSelections || {};
+                const variantKey = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
+                const variantName = attributeOrder.map(attr => currentSelections[attr]).filter(Boolean).join(' ');
+                const variant = window.variantData[variantKey];
+
+                // Fallback ảnh: ưu tiên ảnh variant, sau đó ảnh đại diện sản phẩm
+                let image = variant?.image;
+                if (!image || typeof image !== 'string') {
+                    image = @json($product->coverImage ? Storage::url($product->coverImage->path) : '/images/no-image.png');
+                }
+
+                // Ép giá về số nguyên (nếu có)
+                const price = variant?.price ? parseInt(variant.price) : parseInt(@json($product->price));
+                const salePrice = variant?.sale_price ? parseInt(variant.sale_price) : null;
+
+                // Lấy danh sách sản phẩm đã lưu
+                let recentProducts = JSON.parse(localStorage.getItem('recent_product_ids') || '[]');
+
+                // Lọc bỏ bản ghi hỏng hoặc trùng
+                recentProducts = recentProducts.filter(item =>
+                    typeof item === 'object' &&
+                    item.id &&
+                    item.variant_key !== undefined &&
+                    !(item.id === productId && item.variant_key === variantKey)
+                );
+
+                // Thêm sản phẩm mới vào đầu danh sách
+                recentProducts.unshift({
+                    id: productId,
+                    name: productName,
+                    variant_key: variantKey,
+                    variant_name: variantName,
+                    image: image,
+                    price: price,
+                    sale_price: salePrice
+                });
+
+                // Giới hạn tối đa 10 sản phẩm
+                recentProducts = recentProducts.slice(0, 10);
+
+                // Lưu vào localStorage
+                localStorage.setItem('recent_product_ids', JSON.stringify(recentProducts));
+                console.log('✅ Đã lưu sản phẩm vào danh sách đã xem:', recentProducts);
+            }
+
+            function renderSuggestedProducts(products) {
+                suggestedProductsContainer.innerHTML = '';
+                products.forEach(product => {
+                    const hasSale = product.sale_price && product.sale_price < product.price;
+                    const discount = hasSale ? Math.round((1 - product.sale_price / product.price) * 100) :
+                        0;
+                    const displayPrice = hasSale ? product.sale_price : product.price;
+                    const imageUrl = product.cover_image || '/images/no-image.png';
+                    const productNameWithVariant = product.variant_name ?
+                        `${product.name} ${product.variant_name}` :
+                        product.name;
+                    const productHtml = `
+            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
+                <img src="${imageUrl}" 
+                     alt="${productNameWithVariant}" 
+                     class="w-24 h-24 object-cover rounded-md flex-shrink-0">
+                <div class="flex-grow">
+                    <p class="font-bold text-lg text-red-600">
+                        ${formatPrice(displayPrice)}
+                        ${hasSale ? `
+                                    <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(product.price)}</span>
+                                    <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
+                                ` : ''}
+                    </p>
+                    <p class="font-semibold text-gray-800 mt-1">${productNameWithVariant}</p>
+                </div>
+                <button class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0"
+                        data-product-id="${product.id}"
+                        data-product-name="${productNameWithVariant}"
+                        data-product-image="${imageUrl}"
+                        data-product-variant="${product.variant_id}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Thêm vào so sánh
+                </button>
+            </div>
+        `;
+                    suggestedProductsContainer.insertAdjacentHTML('beforeend', productHtml);
+                });
+            }
+
+            // Hàm mở modal và lấy sản phẩm gợi ý
+            function openCompareModal() {
+                if (!window.defaultVariantId) {
+                    console.error('Không tìm thấy defaultVariantId');
+                    suggestedProductsContainer.innerHTML =
+                        '<p class="text-red-500">Lỗi: Không xác định được biến thể sản phẩm.</p>';
+                    compareModal.classList.remove('hidden');
+                    return;
+                }
+                compareModal.dataset.variantId = window.defaultVariantId;
+                compareModal.classList.remove('hidden');
+                fetchSuggestedProducts(window.defaultVariantId);
+            }
+
+            // Hàm đóng modal
+            function closeCompareModal() {
+                compareModal.classList.add('hidden');
+                suggestedProductsContainer.innerHTML = '';
+            }
+
+            // Xử lý thêm sản phẩm vào so sánh
+            suggestedProductsContainer?.addEventListener('click', (e) => {
+                const btn = e.target.closest('.add-to-compare');
+                if (btn) {
+                    const slot = Array.from(document.querySelectorAll('[data-product-slot]'))
+                        .find(slot => !slot.dataset.productId);
+                    if (slot) {
+                        slot.dataset.productId = btn.dataset.productId;
+                        slot.dataset.productName = btn.dataset.productName;
+                        slot.dataset.productVariant = btn.dataset.productVariant;
+                        slot.innerHTML = `
+                            <img src="${btn.dataset.productImage || 'https://placehold.co/32x32/e0e0e0/333?text=Product'}" 
+                                 alt="${btn.dataset.productName}" class="w-8 h-8 object-cover rounded-md">
+                            <span class="text-sm text-white">${btn.dataset.productName}${btn.dataset.productVariant ? ' (Biến thể #' + btn.dataset.productVariant + ')' : ''}</span>
+                        `;
+                    } else {
+                        alert('Đã đạt giới hạn 3 sản phẩm so sánh!');
+                    }
+                }
+            });
+
+            // Xóa tất cả sản phẩm so sánh
+            clearCompareBtn?.addEventListener('click', () => {
+                document.querySelectorAll('[data-product-slot]').forEach(slot => {
+                    slot.dataset.productId = '';
+                    slot.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span class="text-sm text-gray-400">Sản phẩm ${slot.dataset.productSlot}</span>
+                    `;
+                });
+            });
+
+            // Xử lý so sánh ngay
+            compareNowBtn?.addEventListener('click', () => {
+                const productIds = Array.from(document.querySelectorAll('[data-product-slot]'))
+                    .filter(slot => slot.dataset.productId)
+                    .map(slot => slot.dataset.productId);
+                if (productIds.length > 0) {
+                    window.location.href = `/compare?products=${productIds.join(',')}`;
+                } else {
+                    alert('Vui lòng chọn ít nhất một sản phẩm để so sánh!');
+                }
+            });
+
+            // Hàm lấy danh sách so sánh từ localStorage
+            function getCompareList() {
+                try {
+                    return JSON.parse(localStorage.getItem('compareList') || '[]');
+                } catch {
+                    return [];
+                }
+            }
+            // Hàm lưu danh sách so sánh vào localStorage
+            function setCompareList(list) {
+                localStorage.setItem('compareList', JSON.stringify(list));
+            }
+            // Hàm render các slot trong modal so sánh
+            function renderCompareSlots() {
+                const slots = document.querySelectorAll('[data-product-slot]');
+                const list = getCompareList();
+                slots.forEach((slot, i) => {
+                    const item = list[i];
+                    if (item) {
+                        slot.className =
+                            'flex flex-col items-center justify-center h-40 bg-gray-50 relative rounded-2xl shadow border border-gray-200 mx-2';
+                        slot.dataset.productId = item.id;
+                        slot.dataset.productName = item.name;
+                        slot.dataset.productVariant = item.variant_id;
+                        slot.innerHTML = `
+                <button class="remove-compare absolute top-2 right-2 text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-100 rounded-full w-7 h-7 flex items-center justify-center transition z-10" title="Xóa khỏi so sánh" data-index="${i}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-lg mx-auto mt-2">
+                <div class="flex flex-col items-center justify-center mt-2">
+                    <span class="text-base text-gray-900 font-bold leading-tight text-center">${item.name}</span>
+                    ${item.variant_name ? `<span class="text-sm text-gray-500 text-center">${item.variant_name}</span>` : ''}
+                </div>
+            `;
+                    } else {
+                        slot.className =
+                            'flex flex-col items-center justify-center h-40 bg-gray-50 relative rounded-2xl border-2 border-dashed border-gray-300 mx-2';
+                        slot.dataset.productId = '';
+                        slot.innerHTML = `
+                <span class="text-3xl text-gray-300">+</span>
+                <span class="text-sm text-gray-400 mt-1">Thêm sản phẩm</span>
+            `;
+                    }
+                });
+            }
+            // Sự kiện xóa sản phẩm khỏi so sánh
+            document.getElementById('comparison-bar')?.addEventListener('click', function(e) {
+                const btn = e.target.closest('.remove-compare');
+                if (btn) {
+                    const idx = parseInt(btn.dataset.index);
+                    let list = getCompareList();
+                    list.splice(idx, 1);
+                    setCompareList(list);
+                    renderCompareSlots();
+                }
+            });
+            // Sự kiện cho nút So sánh (thêm vào localStorage và mở modal)
+            compareBtn?.addEventListener('click', () => {
+                const productId = @json($product->id);
+                const productName = @json($product->name);
+                const attributeOrder = window.attributeOrder || [];
+                const currentSelections = window.currentSelections || {};
+                const variantKey = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
+                const variant = window.variantData[variantKey];
+                const productImage = variant?.image || @json(
+                    $product->coverImage
+                        ? Storage::url($product->coverImage->path)
+                        : 'https://placehold.co/100x100/e0e0e0/333?text=Product');
+                const variantName = attributeOrder.map(attr => currentSelections[attr]).filter(Boolean)
+                    .join(', ');
+                let list = getCompareList();
+                // Không thêm trùng
+                if (!list.some(item => item.id == productId && item.variant_id == variant?.variant_id)) {
+                    if (list.length >= 3) {
+                        alert('Bạn chỉ có thể so sánh tối đa 3 sản phẩm!');
+                        return;
+                    }
+                    list.push({
+                        id: productId,
+                        name: productName,
+                        image: productImage,
+                        variant_id: variant?.variant_id,
+                        variant_name: variantName
+                    });
+                    setCompareList(list);
+                }
+                renderCompareSlots();
+                openCompareModal();
+            });
+            // Khi mở modal, luôn render lại slot
+            compareModal?.addEventListener('show', renderCompareSlots);
+            // Khi load trang, render slot nếu modal đã mở
+            document.addEventListener('DOMContentLoaded', renderCompareSlots);
+
+            // Các hàm và logic hiện có (giữ nguyên)
             function getVariantKey() {
                 if (window.productType !== 'variable') {
                     console.log('Sản phẩm không có biến thể, getVariantKey trả về chuỗi rỗng');
                     return '';
                 }
-
                 const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
                 console.log('Sinh ra variant key:', key);
                 return key;
             }
 
-            /**
-             * Cập nhật đồng hồ đếm ngược cho Flash Sale.
-             * Nhận vào thời gian kết thúc, cập nhật số giờ, phút, giây còn lại.
-             */
             function updateCountdown(endTimeStr) {
                 const timer = document.getElementById('countdown-timer');
                 if (!timer || !endTimeStr) {
@@ -728,7 +919,6 @@
                     const endTime = new Date(endTimeStr).getTime();
                     const now = new Date().getTime();
                     const distance = endTime - now;
-
                     if (distance <= 0) {
                         timer.querySelector('#hours').textContent = '00';
                         timer.querySelector('#minutes').textContent = '00';
@@ -737,41 +927,30 @@
                         normalPriceBlock?.classList.remove('hidden');
                         return;
                     }
-
                     const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
                     const minutes = Math.floor((distance / (1000 * 60)) % 60);
                     const seconds = Math.floor((distance / 1000) % 60);
-
                     timer.querySelector('#hours').textContent = String(hours).padStart(2, '0');
                     timer.querySelector('#minutes').textContent = String(minutes).padStart(2, '0');
                     timer.querySelector('#seconds').textContent = String(seconds).padStart(2, '0');
                 }
-
                 update();
                 if (timer._interval) clearInterval(timer._interval);
                 timer._interval = setInterval(update, 1000);
             }
 
-            /**
-             * Cập nhật các lựa chọn thuộc tính khả dụng dựa trên lựa chọn hiện tại.
-             * Ẩn/hiện các option không hợp lệ, tự động chọn lại nếu giá trị hiện tại không còn hợp lệ.
-             */
             function updateAvailableOptions() {
                 if (window.productType !== 'variable') {
                     console.log('Sản phẩm không có biến thể, không cần updateAvailableOptions');
                     return;
                 }
-
                 if (!availableCombinations || !attributeOrder) {
                     console.error('availableCombinations or attributeOrder is missing');
                     return;
                 }
-
                 let newlyAvailableOptions = {};
-
                 attributeOrder.forEach((attrName, attrIndex) => {
                     newlyAvailableOptions[attrName] = new Set();
-
                     availableCombinations.forEach(combination => {
                         let isMatch = true;
                         for (let i = 0; i < attrIndex; i++) {
@@ -788,10 +967,8 @@
                             newlyAvailableOptions[attrName].add(combination[attrName]);
                         }
                     });
-
                     console.log(`Các lựa chọn khả dụng cho ${attrName}:`, Array.from(newlyAvailableOptions[
                         attrName]));
-
                     document.querySelectorAll(`.option-container[data-attr-name="${attrName}"]`).forEach(
                         container => {
                             const value = container.getAttribute('data-attr-value');
@@ -806,7 +983,6 @@
                                 }
                             }
                         });
-
                     if (
                         !newlyAvailableOptions[attrName].has(currentSelections[attrName]) &&
                         newlyAvailableOptions[attrName].size > 0
@@ -815,35 +991,93 @@
                         console.log(`Đặt lại ${attrName} về giá trị khả dụng đầu tiên: ${firstValue}`);
                         currentSelections[attrName] = firstValue;
                         const input = document.querySelector(
-                            `input[data-attr-name="${attrName}"][value="${firstValue}"]`
-                        );
+                            `input[data-attr-name="${attrName}"][value="${firstValue}"]`);
                         if (input) input.checked = true;
                     }
                 });
-
                 console.log('Cập nhật currentSelections:', currentSelections);
-
                 if (selectedColorName && currentSelections['Màu sắc']) {
                     selectedColorName.textContent = currentSelections['Màu sắc'];
                 } else if (selectedColorName) {
                     selectedColorName.textContent = 'N/A';
                 }
-
                 updateSelectedStyles();
-
-                // Cập nhật thông tin variant và sticky bar khi có thuộc tính bị reset
                 updateVariantInfo();
             }
 
-            /**
-             * Cập nhật thông tin biến thể (giá, trạng thái, ảnh, sticky bar) khi thay đổi lựa chọn.
-             */
+            function updateSpecifications(variantKey) {
+                const container = document.getElementById('specs-accordion');
+                if (!container) {
+                    console.error('Không tìm thấy container specs-accordion');
+                    return;
+                }
+                if (!window.variantSpecs[variantKey] && window.productType === 'variable') {
+                    console.warn('Không tìm thấy dữ liệu specs cho variantKey:', variantKey);
+                    container.innerHTML = '<p>Không có thông số kỹ thuật cho biến thể này.</p>';
+                    return;
+                }
+                if (!variantKey && window.productType !== 'variable') {
+                    if (window.variantSpecs['default']) {
+                        variantKey = 'default';
+                    } else {
+                        console.warn('Không có thông số kỹ thuật cho sản phẩm đơn giản');
+                        container.innerHTML = '<p>Không có thông số kỹ thuật.</p>';
+                        return;
+                    }
+                }
+                const specs = window.variantSpecs[variantKey];
+                let html = '';
+                for (const groupName in specs) {
+                    html += `
+                        <div>
+                            <button class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                <span class="font-semibold text-gray-800">${groupName}</span>
+                                <svg class="accordion-icon w-5 h-5 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="accordion-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease;">
+                                <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
+                                    <dl class="divide-y divide-gray-100">
+                    `;
+                    for (const specName in specs[groupName]) {
+                        html += `
+                            <div class="px-1 py-2 grid grid-cols-3 gap-4">
+                                <dt class="text-sm font-medium text-gray-600">${specName}</dt>
+                                <dd class="text-sm text-gray-800 col-span-2">${specs[groupName][specName]}</dd>
+                            </div>
+                        `;
+                    }
+                    html += `
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                container.innerHTML = html;
+                const accordionButtons = container.querySelectorAll('.accordion-button');
+                accordionButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        const content = button.nextElementSibling;
+                        const icon = button.querySelector('.accordion-icon');
+                        if (content.style.maxHeight && content.style.maxHeight !== '0px') {
+                            content.style.maxHeight = '0px';
+                            icon.classList.remove('rotate-180');
+                        } else {
+                            content.style.maxHeight = content.scrollHeight + 'px';
+                            icon.classList.add('rotate-180');
+                        }
+                    });
+                });
+                console.log('Đã cập nhật thông số kỹ thuật cho variantKey:', variantKey);
+            }
+
             function updateVariantInfo() {
                 if (window.productType !== 'variable') {
                     console.log('Sản phẩm không có biến thể, không cần updateVariantInfo');
                     return;
                 }
-
                 const key = getVariantKey();
                 const variant = variantData[key];
                 console.log('Biến thể cho key:', key, variant);
@@ -851,29 +1085,21 @@
                     console.error('Không tìm thấy biến thể cho key:', key);
                     return;
                 }
-
                 const now = new Date();
                 let isFlashSale = false;
                 let isSale = false;
                 let discountPercent = 0;
                 let salePrice = parseInt(variant.sale_price);
                 let originalPrice = parseInt(variant.price);
-
                 if (variant.sale_price_starts_at && variant.sale_price_ends_at) {
                     const start = new Date(variant.sale_price_starts_at);
                     const end = new Date(variant.sale_price_ends_at);
                     isFlashSale = salePrice && start <= now && now <= end;
                 }
-
                 isSale = !isFlashSale && salePrice && salePrice < originalPrice;
-                discountPercent = (isFlashSale || isSale) ?
-                    Math.round(100 - (salePrice / originalPrice) * 100) :
-                    0;
-
+                discountPercent = (isFlashSale || isSale) ? Math.round(100 - (salePrice / originalPrice) * 100) : 0;
                 const displayPrice = (isFlashSale || isSale) ? salePrice : originalPrice;
-
                 priceEls.forEach(el => el.textContent = displayPrice.toLocaleString('vi-VN') + '₫');
-
                 originalPriceEls.forEach(el => {
                     if (isFlashSale || isSale) {
                         el.textContent = originalPrice.toLocaleString('vi-VN') + '₫';
@@ -882,7 +1108,6 @@
                         el.classList.add('hidden');
                     }
                 });
-
                 discountPercentEls.forEach(el => {
                     if (discountPercent > 0) {
                         el.textContent = `(-${discountPercent}%)`;
@@ -891,9 +1116,7 @@
                         el.classList.add('hidden');
                     }
                 });
-
                 if (statusEl && variant.status) statusEl.textContent = variant.status;
-
                 if (isFlashSale) {
                     flashSaleBlock?.classList.remove('hidden');
                     normalPriceBlock?.classList.add('hidden');
@@ -902,7 +1125,6 @@
                     flashSaleBlock?.classList.add('hidden');
                     normalPriceBlock?.classList.remove('hidden');
                 }
-
                 const titleEl = document.getElementById('product-title');
                 if (titleEl) {
                     const dungLuong = currentSelections['Dung lượng lưu trữ'] || '';
@@ -911,44 +1133,30 @@
                     titleEl.textContent = `${@json($product->name)} ${selectedValues}`;
                     console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent);
                 }
-
                 window.updateGalleryFromSelection(key);
-
-                // Cập nhật sticky bar
+                updateSpecifications(key);
                 updateStickyBar(key);
+                // Lưu sản phẩm với biến thể mới vào lịch sử
+                saveRecentProduct();
             }
 
-            /**
-             * Khởi tạo lại gallery ảnh sản phẩm dựa trên biến thể hoặc sản phẩm đơn giản.
-             */
             function initializeGallery() {
                 if (!mainThumbnailsContainer) return;
-                // ✅ Loại ảnh placeholder (ảnh trắng rỗng)
                 galleryData = galleryData.filter(item => {
                     return item.main && !item.main.includes('placeholder.jpg');
                 });
                 mainThumbnailsContainer.innerHTML = '';
-
                 galleryData.forEach((item, index) => {
                     const thumbDiv = document.createElement('div');
                     thumbDiv.className =
                         `thumbnail-item relative cursor-pointer rounded-md border-2 flex-shrink-0 w-[120px] h-[120px] ${index === 0 ? 'border-blue-500 thumbnail-selected' : 'border-transparent'}`;
-
                     thumbDiv.onclick = () => window.changeImage(index);
-
                     const img = document.createElement('img');
-
-                    // ✅ Ưu tiên ảnh rõ nét hơn
                     img.src = item.main || item.thumb;
                     img.alt = `Thumbnail ${index + 1}`;
                     img.className = 'w-[120px] h-[120px] object-cover rounded mb-2';
-
-
-                    // ✅ Giảm mờ khi trình duyệt scale ảnh
                     img.style.imageRendering = 'crisp-edges';
-
                     thumbDiv.appendChild(img);
-
                     if (item.type !== 'image') {
                         const overlay = document.createElement('div');
                         overlay.className =
@@ -958,30 +1166,21 @@
                             `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992M2.985 19.644v-4.992h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.664 0l3.181-3.183m-11.664 0l4.992-4.993H2.985m0-4.993h4.992m-4.993 0l3.181-3.183a8.25 8.25 0 0111.664 0l3.181 3.183" /></svg>`;
                         thumbDiv.appendChild(overlay);
                     }
-
                     mainThumbnailsContainer.appendChild(thumbDiv);
                 });
-
                 window.changeImage(0);
                 updateThumbNavigation();
             }
 
-            /**
-             * Đổi ảnh chính khi click vào thumbnail.
-             * index: chỉ số ảnh được chọn.
-             */
             window.changeImage = function(index) {
                 currentImageIndex = index;
                 mainImage.src = galleryData[index].main;
-
                 const thumbnails = mainThumbnailsContainer.querySelectorAll('.thumbnail-item');
                 thumbnails.forEach((thumb, i) => {
                     thumb.classList.toggle('thumbnail-selected', i === index);
                     thumb.classList.toggle('border-blue-500', i === index);
                     thumb.classList.toggle('border-transparent', i !== index);
                 });
-
-                // Cuộn thumbnail vào giữa khi chọn
                 if (thumbnails[index]) {
                     thumbnails[index].scrollIntoView({
                         behavior: 'smooth',
@@ -991,9 +1190,6 @@
                 }
             };
 
-            /**
-             * Cập nhật giao diện lightbox khi xem ảnh lớn.
-             */
             function updateLightboxView() {
                 if (!lightboxMainImage || !lightboxDescription || !lightboxCounter) return;
                 const item = galleryData[currentImageIndex];
@@ -1002,7 +1198,6 @@
                 lightboxCounter.textContent = `${currentImageIndex + 1} / ${galleryData.length}`;
                 lightboxMainImage.classList.remove('zoomed');
                 resetZoomState();
-
                 const thumbs = lightboxThumbnailsContainer?.querySelectorAll('img') || [];
                 thumbs.forEach((thumb, i) => {
                     thumb.classList.toggle('ring-2', i === currentImageIndex);
@@ -1011,9 +1206,6 @@
                 });
             }
 
-            /**
-             * Mở lightbox xem ảnh lớn ở vị trí index.
-             */
             function openLightbox(index) {
                 if (!lightboxModal) return;
                 currentImageIndex = index;
@@ -1023,9 +1215,6 @@
                 lightboxModal.classList.add('flex');
             }
 
-            /**
-             * Đóng lightbox xem ảnh lớn.
-             */
             function closeLightbox() {
                 if (!lightboxModal) return;
                 lightboxModal.classList.add('hidden');
@@ -1034,23 +1223,16 @@
                 resetZoomState();
             }
 
-            /**
-             * Chuyển sang ảnh tiếp theo trong lightbox.
-             */
             function showNextImage() {
                 currentImageIndex = (currentImageIndex + 1) % galleryData.length;
                 updateLightboxView();
             }
 
-            /**
-             * Quay lại ảnh trước trong lightbox.
-             */
             function showPrevImage() {
                 currentImageIndex = (currentImageIndex - 1 + galleryData.length) % galleryData.length;
                 updateLightboxView();
             }
 
-            // Zoom and Pan Logic from Swiper
             let isZoomed = false;
             let isPanning = false;
             let startX, startY;
@@ -1067,9 +1249,6 @@
                 lightboxMainImage.style.cursor = 'zoom-in';
             }
 
-            /**
-             * Phóng to ảnh trong lightbox.
-             */
             function zoomIn() {
                 isZoomed = true;
                 lightboxMainImage.style.transition = 'transform 0.3s ease';
@@ -1077,16 +1256,10 @@
                 lightboxMainImage.style.cursor = 'grab';
             }
 
-            /**
-             * Thu nhỏ ảnh trong lightbox về trạng thái ban đầu.
-             */
             function zoomOut() {
                 resetZoomState();
             }
 
-            /**
-             * Bật/tắt chế độ zoom cho ảnh trong lightbox.
-             */
             function toggleZoom() {
                 if (!lightboxMainImage) return;
                 if (isZoomed) {
@@ -1096,7 +1269,7 @@
                 }
             }
 
-            lightboxMainImage.addEventListener('mousedown', (e) => {
+            lightboxMainImage?.addEventListener('mousedown', (e) => {
                 if (!isZoomed || isPanning) return;
                 e.preventDefault();
                 isPanning = true;
@@ -1106,7 +1279,7 @@
                 lightboxMainImage.style.transition = 'none';
             });
 
-            lightboxMainImage.addEventListener('mousemove', (e) => {
+            lightboxMainImage?.addEventListener('mousemove', (e) => {
                 if (!isPanning) return;
                 e.preventDefault();
                 currentTranslateX = e.clientX - startX;
@@ -1121,8 +1294,8 @@
                 lightboxMainImage.style.cursor = 'grab';
             };
 
-            lightboxMainImage.addEventListener('mouseup', endPan);
-            lightboxMainImage.addEventListener('mouseleave', endPan);
+            lightboxMainImage?.addEventListener('mouseup', endPan);
+            lightboxMainImage?.addEventListener('mouseleave', endPan);
 
             function populateLightboxThumbnails() {
                 if (!lightboxThumbnailsContainer || lightboxThumbnailsContainer.children.length > 0) return;
@@ -1139,17 +1312,10 @@
                 });
             }
 
-            /**
-             * Cập nhật gallery ảnh khi chọn biến thể mới.
-             * variantKey: key của biến thể.
-             */
             window.updateGalleryFromSelection = function(variantKey) {
                 const variant = variantData[variantKey];
                 console.log('Updating gallery for variant key:', variantKey, variant);
-
                 let images = [];
-
-                // Nếu biến thể có ảnh riêng, dùng ảnh của biến thể
                 if (variant && variant.images && variant.images.length > 0) {
                     if (variant.primary_image_id && variant.image) {
                         images = [variant.image, ...variant.images.filter(img => img !== variant.image)];
@@ -1157,12 +1323,9 @@
                         images = [...variant.images];
                     }
                 } else {
-                    // Ngược lại fallback dùng ảnh sản phẩm chính
                     images = [...window.initialImages];
                 }
-
                 images = Array.from(new Set(images.filter(Boolean)));
-
                 galleryData = images.map((img, index) => ({
                     thumb: img,
                     main: img,
@@ -1170,20 +1333,14 @@
                     description: `Hình ảnh ${index + 1}`,
                     type: 'image'
                 }));
-
                 initializeGallery();
             };
 
-
-            /**
-             * Cập nhật style cho các lựa chọn thuộc tính (option) khi được chọn/bỏ chọn.
-             */
             function updateSelectedStyles() {
                 attributeOrder.forEach(attrName => {
                     document.querySelectorAll(`input[data-attr-name="${attrName}"]`).forEach(input => {
                         const label = document.querySelector(`label[for="${input.id}"]`);
                         if (!label) return;
-
                         if (input.checked) {
                             label.classList.add('variant-selected');
                             label.classList.remove('border-gray-300', 'text-gray-700',
@@ -1193,7 +1350,6 @@
                             label.classList.add('border-gray-300', 'text-gray-700',
                                 'hover:border-blue-500');
                         }
-
                         if (attrName === 'Màu sắc') {
                             label.classList.toggle('ring-blue-500', input.checked);
                             label.classList.toggle('ring-transparent', !input.checked);
@@ -1202,9 +1358,6 @@
                 });
             }
 
-            /**
-             * Đảm bảo tất cả thuộc tính đều có lựa chọn (nếu chưa thì chọn mặc định).
-             */
             function ensureAllAttributesChecked() {
                 attributeOrder.forEach(attr => {
                     const checked = document.querySelector(`input[data-attr-name="${attr}"]:checked`);
@@ -1219,7 +1372,6 @@
                 });
             }
 
-            // Gắn sự kiện cho input radio
             attributeOrder.forEach(attr => {
                 document.querySelectorAll(`input[data-attr-name="${attr}"]`).forEach(input => {
                     input.addEventListener('change', function() {
@@ -1231,7 +1383,6 @@
                 });
             });
 
-            // Gắn sự kiện cho gallery
             if (mainImageContainer) {
                 mainImageContainer.addEventListener('click', (event) => {
                     if (event.target === mainImage) {
@@ -1240,7 +1391,6 @@
                 });
             }
 
-            // Gắn sự kiện cho nút prev và next với stopPropagation
             if (prevBtn) {
                 prevBtn.addEventListener('click', (event) => {
                     event.stopPropagation();
@@ -1257,20 +1407,18 @@
                 });
             }
 
-            // Gắn sự kiện cho thumbnail navigation
             if (thumbsPrevBtn && thumbsNextBtn) {
                 thumbsPrevBtn.addEventListener('click', () => {
                     mainThumbnailsContainer.scrollBy({
                         left: -88,
                         behavior: 'smooth'
-                    }); // 80px + 8px gap
+                    });
                 });
-
                 thumbsNextBtn.addEventListener('click', () => {
                     mainThumbnailsContainer.scrollBy({
                         left: 88,
                         behavior: 'smooth'
-                    }); // 80px + 8px gap
+                    });
                 });
             }
 
@@ -1309,21 +1457,17 @@
                 if (e.key === 'Escape') closeLightbox();
             });
 
-            // Tab switching event listeners
             if (tabDescBtn && tabSpecsBtn && tabDescContent && tabSpecsContent) {
-                // Set initial active tab
                 tabSpecsContent.style.display = 'block';
                 tabDescContent.style.display = 'none';
                 tabSpecsBtn.classList.add('tab-active');
                 tabDescBtn.classList.remove('tab-active');
-
                 tabDescBtn.addEventListener('click', () => {
                     tabDescContent.style.display = 'block';
                     tabSpecsContent.style.display = 'none';
                     tabDescBtn.classList.add('tab-active');
                     tabSpecsBtn.classList.remove('tab-active');
                 });
-
                 tabSpecsBtn.addEventListener('click', () => {
                     tabSpecsContent.style.display = 'block';
                     tabDescContent.style.display = 'none';
@@ -1332,7 +1476,6 @@
                 });
             }
 
-            // Read More button event listener
             if (descriptionWrapper && readMoreBtn) {
                 readMoreBtn.addEventListener('click', () => {
                     if (descriptionWrapper.classList.contains('collapsed')) {
@@ -1345,7 +1488,6 @@
                 });
             }
 
-            // Specs Accordion
             const accordionButtons = document.querySelectorAll('.accordion-button');
             if (accordionButtons.length > 0) {
                 accordionButtons.forEach(button => {
@@ -1362,7 +1504,7 @@
                     });
                 });
             }
-            // Đóng gói mã kéo ngang trong một hàm
+
             function initDragScroll() {
                 const mainThumbnailsContainer = document.getElementById('main-thumbnails');
                 if (!mainThumbnailsContainer) {
@@ -1371,7 +1513,6 @@
                 }
                 let isDragging = false;
                 let startX, scrollLeft;
-
                 mainThumbnailsContainer.addEventListener('mousedown', (e) => {
                     isDragging = true;
                     startX = e.pageX - mainThumbnailsContainer.offsetLeft;
@@ -1379,17 +1520,14 @@
                     mainThumbnailsContainer.style.cursor = 'grabbing';
                     e.preventDefault();
                 });
-
                 mainThumbnailsContainer.addEventListener('mouseleave', () => {
                     isDragging = false;
                     mainThumbnailsContainer.style.cursor = 'grab';
                 });
-
                 mainThumbnailsContainer.addEventListener('mouseup', () => {
                     isDragging = false;
                     mainThumbnailsContainer.style.cursor = 'grab';
                 });
-
                 mainThumbnailsContainer.addEventListener('mousemove', (e) => {
                     if (!isDragging) return;
                     e.preventDefault();
@@ -1397,19 +1535,15 @@
                     const walk = (x - startX) * 2;
                     mainThumbnailsContainer.scrollLeft = scrollLeft - walk;
                 });
-
-                // Hỗ trợ chạm trên thiết bị di động
                 mainThumbnailsContainer.addEventListener('touchstart', (e) => {
                     isDragging = true;
                     startX = e.touches[0].pageX - mainThumbnailsContainer.offsetLeft;
                     scrollLeft = mainThumbnailsContainer.scrollLeft;
                     e.preventDefault();
                 });
-
                 mainThumbnailsContainer.addEventListener('touchend', () => {
                     isDragging = false;
                 });
-
                 mainThumbnailsContainer.addEventListener('touchmove', (e) => {
                     if (!isDragging) return;
                     const x = e.touches[0].pageX - mainThumbnailsContainer.offsetLeft;
@@ -1419,97 +1553,40 @@
                 });
             }
 
-            window.addEventListener('load', () => {
-                if (window.productType === 'variable') {
-                    ensureAllAttributesChecked();
-                    console.log('Sau khi chạy ensureAllAttributesChecked, currentSelections:',
-                        currentSelections);
-
-                    updateAvailableOptions();
-
-                    const defaultKey = getVariantKey();
-                    console.log('Variant key khởi tạo:', defaultKey);
-
-                    if (defaultKey) {
-                        window.updateGalleryFromSelection(defaultKey);
-                    } else {
-                        initializeGallery(); // fallback nếu không có biến thể
-                    }
-
-                    updateVariantInfo();
-                    updateStickyBar(defaultKey);
-                } else {
-                    // Nếu là sản phẩm đơn giản
-                    console.log('Khởi tạo sản phẩm đơn giản');
-                    initializeGallery(); // dùng ảnh mặc định của sản phẩm
-                    updateStickyBar(); // hiển thị tên, giá sản phẩm đơn giản
-                }
-                initDragScroll(); // Khởi tạo kéo ngang cho thumbnail
-            });
-
-
-            const stickyBar = document.getElementById('sticky-bar');
-            const mainCtaButtons = document.getElementById('main-cta-buttons');
-
-            const scrollObserver = new IntersectionObserver((entries) => {
-                if (!entries[0].isIntersecting) {
-                    stickyBar.classList.remove('translate-y-full'); // => hiện ra
-                } else {
-                    stickyBar.classList.add('translate-y-full'); // => ẩn đi
-                }
-            }, {
-                threshold: 0
-            });
-
-            /**
-             * Cập nhật sticky bar (thanh mua nhanh dưới cùng) theo biến thể hiện tại.
-             * variantKey: key của biến thể.
-             */
             function updateStickyBar(variantKey) {
                 console.log('▶️ Gọi updateStickyBar với key:', variantKey);
-
-                if (!variantKey) {
+                if (!variantKey && window.productType === 'variable') {
                     console.error('⛔ Giá trị variantKey rỗng hoặc không xác định');
                     return;
                 }
-
                 if (!variantData) {
                     console.error('⛔ Không tìm thấy dữ liệu variantData');
                     return;
                 }
-
-                const variant = variantData[variantKey];
-                if (!variant) {
+                const variant = window.productType === 'variable' ? variantData[variantKey] : variantData[
+                    'default'];
+                if (!variant && window.productType === 'variable') {
                     console.error('⛔ Không tìm thấy biến thể với key:', variantKey);
                     return;
                 }
-
                 console.log('✅ Biến thể tìm được:', variant);
-
-                // Lấy phần tử DOM (nếu không có thì chỉ warning)
                 const stickyImage = document.getElementById('sticky-image');
                 const stickyName = document.getElementById('sticky-name');
                 const stickyVariant = document.getElementById('sticky-variant');
                 const stickyPrice = document.getElementById('sticky-price');
                 const stickyOriginalPrice = document.getElementById('sticky-original-price');
-
-                // Cập nhật hình ảnh
                 if (stickyImage) {
-                    if (variant.image) {
+                    if (variant?.image) {
                         stickyImage.src = variant.image;
                         console.log('🖼️ Ảnh chính được cập nhật từ variant.image:', variant.image);
-                    } else if (variant.images?.length > 0) {
+                    } else if (variant?.images?.length > 0) {
                         stickyImage.src = variant.images[0];
                         console.log('🖼️ Ảnh được lấy từ variant.images[0]:', variant.images[0]);
                     } else {
                         stickyImage.src = '/images/no-image.png';
                         console.warn('⚠️ Không có ảnh sản phẩm, dùng fallback /images/no-image.png');
                     }
-                } else {
-                    console.warn('⚠️ Không tìm thấy phần tử sticky-image');
                 }
-
-                // Cập nhật tên thuộc tính biến thể (VD: màu, dung lượng...)
                 if (stickyVariant) {
                     if (attributeOrder?.length > 0) {
                         const attrValues = attributeOrder.map(attr => {
@@ -1523,35 +1600,24 @@
                         stickyVariant.textContent = '';
                         console.log('ℹ️ Không có attributeOrder hoặc rỗng');
                     }
-                } else {
-                    console.warn('⚠️ Không tìm thấy phần tử sticky-variant');
                 }
-
-                // Cập nhật giá hiển thị
-                const salePrice = parseInt(variant.sale_price) || 0;
-                const originalPrice = parseInt(variant.price) || 0;
+                const salePrice = parseInt(variant?.sale_price) || 0;
+                const originalPrice = parseInt(variant?.price) || 0;
                 const displayPrice = salePrice && salePrice < originalPrice ? salePrice : originalPrice;
-                const formattedPrice = variant.formatted_price || displayPrice.toLocaleString('vi-VN') + '₫';
-
+                const formattedPrice = variant?.formatted_price || displayPrice.toLocaleString('vi-VN') + '₫';
                 if (stickyPrice) {
                     stickyPrice.textContent = formattedPrice;
                     console.log('💰 Giá hiển thị:', formattedPrice);
-                } else {
-                    console.warn('⚠️ Không tìm thấy phần tử sticky-price');
                 }
-
-                // Kiểm tra xem có sale không để hiển thị giá gốc gạch
                 let isFlashSale = false;
                 const now = new Date();
-
-                if (variant.sale_price_starts_at && variant.sale_price_ends_at) {
+                if (variant?.sale_price_starts_at && variant?.sale_price_ends_at) {
                     const start = new Date(variant.sale_price_starts_at);
                     const end = new Date(variant.sale_price_ends_at);
                     isFlashSale = salePrice && start <= now && now <= end;
                     console.log('⏰ Flash Sale?', isFlashSale,
                         `(Từ ${start.toLocaleString()} đến ${end.toLocaleString()})`);
                 }
-
                 const hasSale = salePrice && salePrice < originalPrice;
                 if (stickyOriginalPrice) {
                     if ((hasSale || isFlashSale) && originalPrice > 0) {
@@ -1562,52 +1628,58 @@
                         stickyOriginalPrice.classList.add('hidden');
                         console.log('📉 Không có giảm giá, ẩn giá gốc');
                     }
-                } else {
-                    console.warn('⚠️ Không tìm thấy phần tử sticky-original-price');
                 }
-
                 console.log('✅ Cập nhật sticky bar hoàn tất\n');
             }
 
-            // Kiểm tra nút và modal có tồn tại
-            const compareBtn = document.getElementById('compare-btn');
-            const compareModal = document.getElementById('compare-modal');
-            const closeModalBtn = document.getElementById('close-modal-btn');
-
-            if (!compareBtn) {
-                console.error('Nút compare-btn không tồn tại trong DOM');
-                return;
-            }
-            if (!compareModal) {
-                console.error('Modal compare-modal không tồn tại trong DOM');
-                return;
-            }
-
-            // Mở modal khi bấm nút "So sánh"
-            compareBtn.addEventListener('click', () => {
-                console.log('Nút So sánh được bấm');
-                compareModal.classList.remove('hidden');
+            const stickyBar = document.getElementById('sticky-bar');
+            const mainCtaButtons = document.getElementById('main-cta-buttons');
+            const scrollObserver = new IntersectionObserver((entries) => {
+                if (!entries[0].isIntersecting) {
+                    stickyBar.classList.remove('translate-y-full');
+                } else {
+                    stickyBar.classList.add('translate-y-full');
+                }
+            }, {
+                threshold: 0
             });
 
-            // Đóng modal khi bấm nút đóng
-            if (closeModalBtn) {
-                closeModalBtn.addEventListener('click', () => {
-                    console.log('Nút đóng modal được bấm');
-                    compareModal.classList.add('hidden');
-                });
-            }
-
-            scrollObserver.observe(mainCtaButtons);
-
-            // Cập nhật navigation thumbnail
-            /**
-             * Cập nhật navigation thumbnail (ẩn/hiện nút prev/next nếu số lượng thumbnail nhiều).
-             */
             function updateThumbNavigation() {
                 const thumbs = mainThumbnailsContainer.querySelectorAll('.thumbnail-item');
                 thumbsPrevBtn.classList.toggle('visible', thumbs.length > 5);
                 thumbsNextBtn.classList.toggle('visible', thumbs.length > 5);
             }
+
+            window.addEventListener('load', () => {
+                if (window.productType === 'variable') {
+                    ensureAllAttributesChecked();
+                    console.log('Sau khi chạy ensureAllAttributesChecked, currentSelections:',
+                        currentSelections);
+                    updateAvailableOptions();
+                    const defaultKey = getVariantKey();
+                    console.log('Variant key khởi tạo:', defaultKey);
+                    if (defaultKey) {
+                        window.updateGalleryFromSelection(defaultKey);
+                        updateSpecifications(defaultKey);
+                    } else {
+                        initializeGallery();
+                    }
+                    updateVariantInfo();
+                    updateStickyBar(defaultKey);
+                } else {
+                    console.log('Khởi tạo sản phẩm đơn giản');
+                    initializeGallery();
+                    updateStickyBar();
+                    updateSpecifications('');
+                }
+                initDragScroll();
+                scrollObserver.observe(mainCtaButtons);
+            });
+
+            // Gắn sự kiện đóng modal (nút X)
+            closeModalBtn?.addEventListener('click', () => {
+                closeCompareModal();
+            });
         });
     </script>
 @endpush

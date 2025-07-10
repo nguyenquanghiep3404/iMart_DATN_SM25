@@ -27,6 +27,8 @@ class NewUserRegistered extends Notification implements ShouldQueue
     {
         return [
             'message' => 'Người dùng mới đăng ký: ' . $this->user->name,
+            'icon' => 'check',
+            'color' => 'green',
             'user_id' => $this->user->id,
         ];
     }

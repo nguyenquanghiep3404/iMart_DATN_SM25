@@ -50,7 +50,7 @@ class Product extends Model
     {
         return $this->hasOne(ProductVariant::class)->where('is_default', true);
     }
-public function allUploadedFiles()
+    public function allUploadedFiles()
     {
         return $this->morphMany(UploadedFile::class, 'attachable');
     }
@@ -92,28 +92,40 @@ public function allUploadedFiles()
     }
     public function deletedBy()
     {
-    return $this->belongsTo(\App\Models\User::class, 'deleted_by');
+        return $this->belongsTo(\App\Models\User::class, 'deleted_by');
     }
     public function comments(): MorphMany
     {
         return $this->morphMany(\App\Models\Comment::class, 'commentable');
-
     }
+
+    public function homepageBlocks()
+    {
+        return $this->belongsToMany(
+            \App\Models\HomepageProductBlock::class,
+            'homepage_block_product',
+            'product_id',
+            'block_id'
+        )
+            ->withPivot('order')
+            ->withTimestamps();
+    }
+
     protected static function booted()
     {
-    static::forceDeleting(function ($product) {
-        // This event fires when forceDelete() is called.
-        
-        // 1. Delete all related variants
-        // This also helps if you don't have ON DELETE CASCADE in your database
-        $product->variants()->delete();
+        static::forceDeleting(function ($product) {
+            // This event fires when forceDelete() is called.
 
-        // 2. Delete all attached files from Polymorphic relationship
-        $product->allUploadedFiles()->each(function ($file) {
-            // Assuming you have a FileService to handle physical file deletion
-            $fileService = app(\App\Services\FileService::class);
-            $fileService->deleteFile($file); // This should delete file from storage and the DB record
+            // 1. Delete all related variants
+            // This also helps if you don't have ON DELETE CASCADE in your database
+            $product->variants()->delete();
+
+            // 2. Delete all attached files from Polymorphic relationship
+            $product->allUploadedFiles()->each(function ($file) {
+                // Assuming you have a FileService to handle physical file deletion
+                $fileService = app(\App\Services\FileService::class);
+                $fileService->deleteFile($file); // This should delete file from storage and the DB record
+            });
         });
-    });
     }
 }

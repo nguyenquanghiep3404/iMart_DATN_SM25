@@ -34,7 +34,7 @@ class UploadedFile extends Model
         'order' => 'integer',
         'deleted_at' => 'datetime', // Nên cast cả cột này
     ];
-    
+
     // Thêm $appends để Accessor luôn được thêm vào khi model chuyển thành array/JSON
     protected $appends = ['url', 'formatted_size', 'attachable_display'];
 
@@ -45,6 +45,7 @@ class UploadedFile extends Model
     {
         return $this->morphTo();
     }
+
 
     /**
      * Lấy người dùng đã upload file.
@@ -104,7 +105,7 @@ class UploadedFile extends Model
         // Trường hợp đặc biệt: Nếu là ProductVariant, hiển thị tên sản phẩm cha
         if ($this->attachable_type === 'App\\Models\\ProductVariant' && $this->attachable->product) {
             // Giả định ProductVariant có relationship 'product' và Product có 'name'
-return 'Sản phẩm: ' . $this->attachable->product->name;
+            return 'Sản phẩm: ' . $this->attachable->product->name;
         }
 
         // Các trường hợp khác, hiển thị tên của đối tượng nếu có
@@ -142,14 +143,12 @@ return 'Sản phẩm: ' . $this->attachable->product->name;
                     Log::error("Không thể xóa vĩnh viễn file vật lý {$file->path}: " . $e->getMessage());
                 }
             } else {
-                 // Ghi lại người xóa khi thực hiện soft delete
-                 if (Auth::check() && is_null($file->deleted_by)) {
+                // Ghi lại người xóa khi thực hiện soft delete
+                if (Auth::check() && is_null($file->deleted_by)) {
                     $file->deleted_by = Auth::id();
                     $file->saveQuietly(); // Lưu mà không kích hoạt lại event
                 }
             }
         });
     }
-
-    
 }

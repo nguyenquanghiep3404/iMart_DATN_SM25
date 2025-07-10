@@ -11,17 +11,20 @@ class CommentController extends Controller
 {
     public function store(Request $request)
     {
-        if (!Auth::check()) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Bạn cần đăng nhập để bình luận.',
-                ], 401);
-            }
-    
-            return redirect()->route('login')->with('warning', 'Bạn cần đăng nhập để bình luận.');
+        if (!$request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Gửi bình luận thành công',
+            ], 200);
         }
-    
+
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn cần đăng nhập để bình luận.',
+            ], 401);
+        }
+
         $validated = $request->validate([
             'commentable_type' => 'required|string',
             'commentable_id'   => 'required|integer',
@@ -44,30 +47,27 @@ class CommentController extends Controller
             'parent_id'        => $validated['parent_id'] ?? null,
             'content'          => $validated['content'],
             'image_paths'      => $imagePaths,
-            'status'           => 'approved', // hoặc 'pending' nếu cần duyệt
+            'status'           => 'approved',
         ]);
 
         $comment->load('user');
 
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $comment->parent_id ? 'Phản hồi đã được gửi.' : 'Bình luận đã được gửi.',
-                'comment' => [
-                    'id'      => $comment->id,
-                    'name'    => $comment->user->name,
-                    'avatar'  => $comment->user->avatar
-                        ?? 'https://placehold.co/32x32/7e22ce/ffffff?text=' . strtoupper(substr($comment->user->name, 0, 1)),
-                    'content' => $comment->content,
-                    'time'    => $comment->created_at->diffForHumans(),
-                    'images'  => $comment->image_urls,
-                    'parent_id' => $comment->parent_id,
-                ],
-            ]);
-        }
-
-        return back()->with('success', 'Bình luận đã được gửi thành công.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Bình luận đã được gửi.',
+            'comment' => [
+            'id'        => $comment->id,
+            'name'      => $comment->user->name ?? 'Khách',
+            'initial'   => strtoupper(substr($comment->user->name ?? 'K', 0, 1)),
+            'content'   => $comment->content,
+            'time'      => $comment->created_at->diffForHumans(),
+            'images'    => $comment->image_urls,
+            'parent_id' => $comment->parent_id,
+            'is_admin'  => $comment->user ? $comment->user->hasRole('admin') : false,
+        ],
+        ]);
     }
+
 
     public function fetch(Request $request)
     {

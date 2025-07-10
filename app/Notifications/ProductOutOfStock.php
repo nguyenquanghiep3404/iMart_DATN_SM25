@@ -27,7 +27,7 @@ class ProductOutOfStock extends Notification implements ShouldQueue
     {
         return [
             'message' => "Sản phẩm {$this->variant->product->name} - SKU: {$this->variant->sku} đã hết hàng.",
-            'icon' => '❗',
+            'icon' => 'warning',
             'color' => 'red',
             'variant_id' => $this->variant->id,
         ];

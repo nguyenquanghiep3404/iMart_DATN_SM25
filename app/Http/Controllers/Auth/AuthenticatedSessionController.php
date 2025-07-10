@@ -48,7 +48,6 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        // 5. Nếu không thuộc nhóm nào trên, dùng redirect mặc định
         return redirect()->intended(route('shipper.dashboard'));
     }
 

@@ -152,40 +152,6 @@
             document.getElementById('password').required = false;
         };
 
-        staffForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const status = document.getElementById('status').value;
-
-            if (currentEditingId !== null) {
-                const index = mockStaff.findIndex(s => s.id === currentEditingId);
-                if (index !== -1) {
-                    mockStaff[index] = {
-                        ...mockStaff[index],
-                        name,
-                        email,
-                        status
-                    };
-                }
-            } else {
-                const newId = Math.max(0, ...mockStaff.map(s => s.id)) + 1;
-                mockStaff.unshift({
-                    id: newId,
-                    name,
-                    email,
-                    status,
-                    avatar: `https://placehold.co/40x40/8B5CF6/FFFFFF?text=${name.charAt(0)}`,
-                    createdAt: new Date().toISOString(),
-                    stats: {
-                        orders_processed: 0
-                    }
-                });
-            }
-
-            applyFilters();
-            closeModal();
-        });
 
         // --- FILTERING LOGIC ---
         function applyFilters() {
