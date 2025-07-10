@@ -24,6 +24,11 @@
                     }, 0);
                     const totalQtySpan = document.getElementById('total-quantity');
                     if (totalQtySpan) totalQtySpan.textContent = totalQty;
+                    const cartBadge = document.getElementById('cart-badge');
+                    if (cartBadge) {
+                        cartBadge.textContent = totalQty;
+                        cartBadge.style.display = totalQty > 0 ? 'flex' : 'none';
+                    }
                 }
 
                 function updateQuantity(newQuantity, oldQuantity) {
@@ -58,9 +63,6 @@
                         .then(data => {
                             if (!data) return; // lỗi đã xử lý ở trên
                             if (data.success) {
-                                showSlideAlert('success', data.message ||
-                                    'Cập nhật số lượng thành công!');
-                                // Cập nhật tổng tiền
                                 const subtotalEl = document.getElementById('cart-subtotal');
                                 if (subtotalEl) subtotalEl.textContent = data.total;
                                 const totalHeader = document.querySelector('.h5.mb-0');
@@ -139,7 +141,6 @@
                         });
                 });
             });
-
             // Hàm hiển thị thông báo dạng trượt (có phân biệt màu theo type)
             function showSlideAlert(type = 'info', message = '', duration = 4000) {
                 const alertBox = document.getElementById('slide-alert');

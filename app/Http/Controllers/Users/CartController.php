@@ -165,7 +165,30 @@ public function add(Request $request)
         }
     }
 
-    return response()->json(['message' => 'Đã thêm sản phẩm vào giỏ hàng!']);
+    $successMsg = 'Đã thêm sản phẩm vào giỏ hàng!';
+
+    if ($request->has('buy_now')) {
+        // Nếu là AJAX → trả về JSON + redirect
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'message'  => $successMsg,
+                'redirect' => route('cart.index')
+            ]);
+        }
+    
+        // Nếu là form thường → redirect về giỏ hàng
+        return redirect()
+            ->route('cart.index')
+            ->with('success', $successMsg);
+    }
+    
+    // Nếu là thêm giỏ bình thường bằng AJAX
+    if ($request->expectsJson() || $request->ajax()) {
+        return response()->json(['message' => $successMsg]);
+    }
+    
+    // Nếu là submit thường
+    return back()->with('success', $successMsg);
 }
 
 

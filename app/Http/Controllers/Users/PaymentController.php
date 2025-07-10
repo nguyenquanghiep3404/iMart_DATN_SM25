@@ -17,6 +17,7 @@ use App\Models\Ward;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 
 class PaymentController extends Controller
 {
@@ -46,13 +47,101 @@ class PaymentController extends Controller
             'email' => 'required|email|max:255',
             'address' => 'required|string|min:5|max:500',
             'postcode' => 'nullable|string|max:10',
-            'payment_method' => 'required|string|in:cod,bank_transfer,vnpay',
+            'payment_method' => 'required|string|in:cod,bank_transfer,vnpay,bank_transfer_qr,momo',
             'notes' => 'nullable|string|max:1000',
         ]);
         // Kiểm tra giỏ hàng
         $cartData = $this->getCartData();
         if ($cartData['items']->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Giỏ hàng đang trống.'], 400);
+        }
+        // Nếu là thanh toán VNPay
+        if ($request->payment_method === 'vnpay') {
+            return $this->createVnpayPayment($request, $cartData);
+        }
+        // momo
+        if ($request->payment_method === 'momo') {
+            return $this->createMomoPayment($request, $cartData);
+        }
+
+        if ($request->payment_method === 'bank_transfer_qr') {
+    try {
+        DB::beginTransaction();
+
+        // Tạo mã đơn hàng
+        $orderCode = 'DH-' . strtoupper(Str::random(10));
+        // Tính toán shipping fee dựa vào phương thức
+        $shippingFee = $this->calculateShippingFee($request->shipping_method);
+        // Format delivery date/time
+        $deliveryInfo = $this->formatDeliveryDateTime(
+            $request->shipping_method,
+            $request->shipping_time
+        );
+
+        // Tạo đơn hàng ngay lập tức với trạng thái "Chờ thanh toán"
+        $order = Order::create([
+            'user_id' => Auth::id(),
+            'guest_id' => !Auth::check() ? session()->getId() : null,
+            'order_code' => $orderCode,
+            'customer_name' => $request->full_name,
+            'customer_email' => $request->email,
+            'customer_phone' => $request->phone,
+            'shipping_address_line1' => $request->address,
+            'shipping_province_code' => $request->province_code,
+            'shipping_ward_code' => $request->ward_code,
+            'shipping_zip_code' => $request->postcode,
+            'shipping_country' => 'Vietnam',
+            'sub_total' => $cartData['subtotal'],
+            'shipping_fee' => $shippingFee,
+            'discount_amount' => $cartData['discount'],
+            'grand_total' => $cartData['subtotal'] + $shippingFee - $cartData['discount'],
+            'payment_method' => 'bank_transfer_qr', // Đặt phương thức thanh toán
+            'payment_status' => Order::PAYMENT_PENDING, // Đặt trạng thái chờ thanh toán
+            'shipping_method' => $request->shipping_method,
+            'status' => Order::STATUS_PENDING_CONFIRMATION,
+            'notes_from_customer' => $request->notes,
+            'desired_delivery_date' => $deliveryInfo['date'],
+            'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        // Tạo order items
+        foreach ($cartData['items'] as $item) {
+            $variant = $item->productVariant ?? ProductVariant::find($item->productVariant->id);
+            if (!$variant) {
+                throw new \Exception("Không tìm thấy biến thể sản phẩm.");
+            }
+            $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
+                return [$attrValue->attribute->name => $attrValue->value];
+            })->toArray();
+
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_variant_id' => $variant->id,
+                'sku' => $variant->sku,
+                'product_name' => $variant->product->name,
+                'variant_attributes' => $variantAttributes,
+                'quantity' => $item->quantity,
+                'price' => $item->price,
+                'total_price' => $item->price * $item->quantity,
+            ]);
+        }
+
+        // Xóa giỏ hàng hoặc session "Mua Ngay"
+        $this->clearPurchaseSession();
+        DB::commit();
+
+        // Trả về một URL để frontend tự chuyển hướng
+        return response()->json([
+            'success' => true,
+            'redirect_url' => route('payments.bank_transfer_qr', ['order' => $order->id])
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
+    }
         }
         try {
             DB::beginTransaction();
@@ -118,6 +207,7 @@ class PaymentController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_variant_id' => $variant->id,
+                    'sku' => $variant->sku,
                     'product_name' => $variant->product->name,
                     'variant_attributes' => $variantAttributes,
                     'quantity' => $item->quantity,
@@ -165,6 +255,497 @@ class PaymentController extends Controller
             ], 500);
         }
     }
+    private function createVnpayPayment(Request $request, array $cartData)
+    {
+        DB::beginTransaction();
+        try {
+            $orderCode = 'DH-' . strtoupper(Str::random(10));
+            $shippingFee = $this->calculateShippingFee($request->shipping_method);
+            $grandTotal = $cartData['subtotal'] + $shippingFee - $cartData['discount'];
+
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'guest_id' => !Auth::check() ? session()->getId() : null,
+                'order_code' => $orderCode,
+                'customer_name' => $request->full_name,
+                'customer_email' => $request->email,
+                'customer_phone' => $request->phone,
+                'shipping_address_line1' => $request->address,
+                'shipping_province_code' => $request->province_code,
+                'shipping_ward_code' => $request->ward_code,
+                'sub_total' => $cartData['subtotal'],
+                'shipping_fee' => $shippingFee,
+                'discount_amount' => $cartData['discount'],
+                'grand_total' => $grandTotal,
+                'payment_method' => 'vnpay',
+                'payment_status' => Order::PAYMENT_PENDING,
+                'status' => Order::STATUS_PENDING_CONFIRMATION,
+                'notes_from_customer' => $request->notes,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            foreach ($cartData['items'] as $item) {
+                $variant = $item->productVariant ?? ProductVariant::find($item->productVariant->id);
+                if (!$variant) {
+                    throw new \Exception("Không tìm thấy biến thể sản phẩm cho một mục trong giỏ hàng.");
+                }
+
+                $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
+                    return [$attrValue->attribute->name => $attrValue->value];
+                })->toArray();
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_variant_id' => $variant->id,
+                    'sku' => $variant->sku,
+                    'product_name' => $variant->product->name,
+                    'variant_attributes' => $variantAttributes,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'total_price' => $item->price * $item->quantity,
+                ]);
+            }
+
+            $vnp_Url = config('vnpay.url');
+            $vnp_Returnurl = url(config('vnpay.return_url'));
+            $vnp_TmnCode = config('vnpay.tmn_code');
+            $vnp_HashSecret = config('vnpay.hash_secret');
+            $vnp_TxnRef = $order->order_code;
+            $vnp_OrderInfo = "Thanh toan don hang " . $order->order_code;
+            $vnp_OrderType = 'billpayment';
+            $vnp_Amount = $order->grand_total * 100;
+            $vnp_Locale = 'vn';
+            $vnp_BankCode = '';
+            $vnp_IpAddr = $request->ip();
+
+            $inputData = [
+                "vnp_Version" => "2.1.0",
+                "vnp_TmnCode" => $vnp_TmnCode,
+                "vnp_Amount" => $vnp_Amount,
+                "vnp_Command" => "pay",
+                "vnp_CreateDate" => date('YmdHis'),
+                "vnp_CurrCode" => "VND",
+                "vnp_IpAddr" => $vnp_IpAddr,
+                "vnp_Locale" => $vnp_Locale,
+                "vnp_OrderInfo" => $vnp_OrderInfo,
+                "vnp_OrderType" => $vnp_OrderType,
+                "vnp_ReturnUrl" => $vnp_Returnurl,
+                "vnp_TxnRef" => $vnp_TxnRef,
+            ];
+
+            if (isset($vnp_BankCode) && $vnp_BankCode != "") {
+                $inputData['vnp_BankCode'] = $vnp_BankCode;
+            }
+
+            ksort($inputData);
+            $query = "";
+            $i = 0;
+            $hashdata = "";
+            foreach ($inputData as $key => $value) {
+                if ($i == 1) {
+                    $hashdata .= '&' . urlencode($key) . "=" . urlencode($value);
+                } else {
+                    $hashdata .= urlencode($key) . "=" . urlencode($value);
+                    $i = 1;
+                }
+                $query .= urlencode($key) . "=" . urlencode($value) . '&';
+            }
+
+            $vnp_Url = $vnp_Url . "?" . $query;
+            if (isset($vnp_HashSecret)) {
+                $vnpSecureHash = hash_hmac('sha512', $hashdata, $vnp_HashSecret);
+                $vnp_Url .= 'vnp_SecureHash=' . $vnpSecureHash;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đang chuyển hướng đến VNPay...',
+                'payment_url' => $vnp_Url
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tạo thanh toán: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    /**
+     * Xử lý khi VNPay redirect người dùng về
+     */
+    public function vnpayReturn(Request $request)
+    {
+        $vnp_SecureHash = $request->vnp_SecureHash;
+        $inputData = $request->except('vnp_SecureHash');
+        $vnp_HashSecret = config('vnpay.hash_secret');
+
+        ksort($inputData);
+        $hashData = "";
+        $i = 0;
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+        if ($secureHash == $vnp_SecureHash) {
+            $order = Order::where('order_code', $request->vnp_TxnRef)->first();
+
+            if ($order) {
+                if ($request->vnp_ResponseCode == '00') {
+                    // Cập nhật trạng thái đơn hàng thành đã thanh toán
+                    // Chỉ cập nhật nếu trạng thái đang là "chờ thanh toán" để tránh xử lý lại
+                    if ($order->payment_status == Order::PAYMENT_PENDING) {
+                        $order->payment_status = Order::PAYMENT_PAID;
+                        $order->save();
+
+                        // Trừ tồn kho
+                        foreach ($order->items as $item) {
+                            $variant = ProductVariant::find($item->product_variant_id);
+                            if ($variant && $variant->manage_stock) {
+                                $variant->decrement('stock_quantity', $item->quantity);
+                            }
+                        }
+
+                        // Xóa giỏ hàng
+                        $this->clearCart();
+                    }
+                    // Chuyển hướng đến trang thành công
+                    return redirect()->route('payments.success', ['order_id' => $order->id])
+                        ->with('success', 'Thanh toán thành công!');
+                } else {
+                    // Thanh toán thất bại, có thể xóa đơn hàng hoặc cập nhật trạng thái thất bại
+                    $order->status = Order::STATUS_CANCELLED;
+                    $order->payment_status = Order::PAYMENT_FAILED;
+                    $order->cancellation_reason = 'Thanh toán VNPay thất bại.';
+                    $order->save();
+
+                    return redirect()->route('cart.index')->with('error', 'Thanh toán thất bại. Vui lòng thử lại.');
+                }
+            } else {
+                return redirect()->route('cart.index')->with('error', 'Không tìm thấy đơn hàng.');
+            }
+        } else {
+            return redirect()->route('cart.index')->with('error', 'Chữ ký không hợp lệ.');
+        }
+    }
+
+    /**
+     * Xử lý IPN từ VNPay (server-to-server)
+     */
+    public function vnpayIpn(Request $request)
+    {
+        $vnp_SecureHash = $request->vnp_SecureHash;
+        $inputData = $request->except('vnp_SecureHash');
+        $vnp_HashSecret = config('vnpay.hash_secret');
+
+        ksort($inputData);
+        $hashData = "";
+        $i = 0;
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
+
+        if ($secureHash == $vnp_SecureHash) {
+            $order = Order::where('order_code', $request->vnp_TxnRef)->first();
+            if ($order) {
+                if ($request->vnp_ResponseCode == '00' && $request->vnp_TransactionStatus == '00') {
+                    if ($order->payment_status == Order::PAYMENT_PENDING) {
+                        $order->payment_status = Order::PAYMENT_PAID;
+                        $order->save();
+
+                        foreach ($order->items as $item) {
+                            $variant = ProductVariant::find($item->product_variant_id);
+                            if ($variant && $variant->manage_stock) {
+                                $variant->decrement('stock_quantity', $item->quantity);
+                            }
+                        }
+                    }
+                } else {
+                    $order->status = Order::STATUS_CANCELLED;
+                    $order->payment_status = Order::PAYMENT_FAILED;
+                    $order->save();
+                }
+                return response()->json(['RspCode' => '00', 'Message' => 'Confirm Success']);
+            }
+            return response()->json(['RspCode' => '01', 'Message' => 'Order not found']);
+        }
+        return response()->json(['RspCode' => '97', 'Message' => 'Invalid Checksum']);
+    }
+    private function createMomoPayment(Request $request, array $cartData)
+    {
+        DB::beginTransaction();
+        try {
+            $orderCode = 'DH-' . strtoupper(Str::random(10));
+            $shippingFee = $this->calculateShippingFee($request->shipping_method);
+            $grandTotal = $cartData['subtotal'] + $shippingFee - $cartData['discount'];
+
+            $order = Order::create([
+                'user_id' => Auth::id(),
+                'guest_id' => !Auth::check() ? session()->getId() : null,
+                'order_code' => $orderCode,
+                'customer_name' => $request->full_name,
+                'customer_email' => $request->email,
+                'customer_phone' => $request->phone,
+                'shipping_address_line1' => $request->address,
+                'shipping_province_code' => $request->province_code,
+                'shipping_ward_code' => $request->ward_code,
+                'sub_total' => $cartData['subtotal'],
+                'shipping_fee' => $shippingFee,
+                'discount_amount' => $cartData['discount'],
+                'grand_total' => $grandTotal,
+                'payment_method' => 'momo',
+                'payment_status' => Order::PAYMENT_PENDING,
+                'status' => Order::STATUS_PENDING_CONFIRMATION,
+                'notes_from_customer' => $request->notes,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            foreach ($cartData['items'] as $item) {
+                $variant = $item->productVariant ?? ProductVariant::find($item->productVariant->id);
+                if (!$variant) {
+                    throw new \Exception("Không tìm thấy biến thể sản phẩm cho một mục trong giỏ hàng.");
+                }
+                $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
+                    return [$attrValue->attribute->name => $attrValue->value];
+                })->toArray();
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_variant_id' => $variant->id,
+                    'sku' => $variant->sku,
+                    'product_name' => $variant->product->name,
+                    'variant_attributes' => $variantAttributes,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'total_price' => $item->price * $item->quantity,
+                ]);
+            }
+
+            $endpoint = config('momo.endpoint');
+            $partnerCode = config('momo.partner_code');
+            $accessKey = config('momo.access_key');
+            $secretKey = config('momo.secret_key');
+            $orderInfo = "Thanh toan don hang " . $order->order_code; // <-- SỬA LẠI Ở ĐÂY
+            $amount = (string) (int) $order->grand_total;
+            $orderId = $order->order_code . "_" . time();
+            $requestId = (string) Str::uuid();
+            $redirectUrl = config('momo.redirect_url');
+            $ipnUrl = config('momo.ipn_url');
+            $requestType = "captureWallet";
+            $extraData = "";
+
+            $rawHash = "accessKey=$accessKey&amount=$amount&extraData=$extraData&ipnUrl=$ipnUrl&orderId=$orderId&orderInfo=$orderInfo&partnerCode=$partnerCode&redirectUrl=$redirectUrl&requestId=$requestId&requestType=$requestType";
+            $signature = hash_hmac("sha256", $rawHash, $secretKey);
+
+            $data = [
+                'partnerCode' => $partnerCode,
+                'requestId' => $requestId,
+                'amount' => $amount,
+                'orderId' => $orderId,
+                'orderInfo' => $orderInfo,
+                'redirectUrl' => $redirectUrl,
+                'ipnUrl' => $ipnUrl,
+                'lang' => 'vi',
+                'extraData' => $extraData,
+                'requestType' => $requestType,
+                'signature' => $signature,
+            ];
+
+            // Ghi log trước khi gửi để kiểm tra
+            \Illuminate\Support\Facades\Log::info('Final MoMo Request Data:', $data);
+
+            $response = Http::post($endpoint, $data);
+            $jsonResponse = $response->json();
+
+            if (isset($jsonResponse['resultCode']) && $jsonResponse['resultCode'] == 0) {
+                DB::commit();
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Đang chuyển hướng đến MoMo...',
+                    'payment_url' => $jsonResponse['payUrl']
+                ]);
+            } else {
+                \Illuminate\Support\Facades\Log::error('MoMo Creation Error: ', $jsonResponse ?? []);
+                throw new \Exception('Lỗi từ MoMo: ' . ($jsonResponse['message'] ?? 'Không xác định'));
+            }
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra khi tạo thanh toán: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    public function momoReturn(Request $request)
+    {
+        \Illuminate\Support\Facades\Log::info('MoMo Return Data:', $request->all());
+        $secretKey = config('momo.secret_key');
+        $momoSignature = $request->signature;
+
+        // Lấy accessKey từ file config
+        $accessKey = config('momo.access_key');
+
+        // Tạo chuỗi rawHash theo đúng các trường MoMo yêu cầu cho chữ ký trả về
+        $rawHash = "accessKey=" . $accessKey .
+            "&amount=" . $request->amount .
+            "&extraData=" . $request->extraData .
+            "&message=" . $request->message .
+            "&orderId=" . $request->orderId .
+            "&orderInfo=" . $request->orderInfo .
+            "&orderType=" . $request->orderType .
+            "&partnerCode=" . $request->partnerCode .
+            "&payType=" . $request->payType .
+            "&requestId=" . $request->requestId .
+            "&responseTime=" . $request->responseTime .
+            "&resultCode=" . $request->resultCode .
+            "&transId=" . $request->transId;
+
+        $expectedSignature = hash_hmac("sha256", $rawHash, $secretKey);
+
+        // Ghi log để so sánh
+        \Illuminate\Support\Facades\Log::info('MoMo Return Signature Check', [
+            'rawHash' => $rawHash,
+            'momo_signature' => $momoSignature,
+            'expected_signature' => $expectedSignature
+        ]);
+
+        if ($momoSignature !== $expectedSignature) {
+            return redirect()->route('cart.index')->with('error', 'Chữ ký không hợp lệ. Giao dịch không được xác nhận.');
+        }
+
+        $orderCode = explode("_", $request->orderId)[0];
+        $order = Order::where('order_code', $orderCode)->first();
+
+        if (!$order) {
+            return redirect()->route('cart.index')->with('error', 'Không tìm thấy đơn hàng.');
+        }
+
+        if ($request->resultCode == 0) { // Thành công
+            if ($order->payment_status == Order::PAYMENT_PENDING) {
+                $order->payment_status = Order::PAYMENT_PAID;
+                $order->save();
+                foreach ($order->items as $item) {
+                    $variant = ProductVariant::find($item->product_variant_id);
+                    if ($variant && $variant->manage_stock) {
+                        $variant->decrement('stock_quantity', $item->quantity);
+                    }
+                }
+                $this->clearPurchaseSession();
+            }
+            return redirect()->route('payments.success', ['order_id' => $order->id])->with('success', 'Thanh toán thành công!');
+        } else { // Thất bại
+            if ($order) {
+                $order->status = Order::STATUS_CANCELLED;
+                $order->payment_status = Order::PAYMENT_FAILED;
+                $order->cancellation_reason = $request->message;
+                $order->save();
+            }
+            return redirect()->route('cart.index')->with('error', 'Thanh toán thất bại: ' . $request->message);
+        }
+    }
+
+    public function momoIpn(Request $request)
+    {
+        $secretKey = config('momo.secret_key');
+        $momoSignature = $request->signature;
+        $accessKey = config('momo.access_key');
+
+        $rawHash = "accessKey=" . $accessKey .
+            "&amount=" . $request->amount .
+            "&extraData=" . $request->extraData .
+            "&message=" . $request->message .
+            "&orderId=" . $request->orderId .
+            "&orderInfo=" . $request->orderInfo .
+            "&orderType=" . $request->orderType .
+            "&partnerCode=" . $request->partnerCode .
+            "&payType=" . $request->payType .
+            "&requestId=" . $request->requestId .
+            "&responseTime=" . $request->responseTime .
+            "&resultCode=" . $request->resultCode .
+            "&transId=" . $request->transId;
+
+        $expectedSignature = hash_hmac("sha256", $rawHash, $secretKey);
+
+        if ($momoSignature !== $expectedSignature) {
+            return response()->json(['resultCode' => 99, 'message' => 'Invalid Signature'], 400);
+        }
+
+        $orderCode = explode("_", $request->orderId)[0];
+        $order = Order::where('order_code', $orderCode)->first();
+
+        if (!$order) {
+            return response()->json(['resultCode' => 98, 'message' => 'Order Not Found'], 404);
+        }
+
+        if ($request->resultCode == 0) {
+            if ($order->payment_status == Order::PAYMENT_PENDING) {
+                $order->payment_status = Order::PAYMENT_PAID;
+                $order->status = Order::STATUS_PROCESSING;
+                $order->save();
+                foreach ($order->items as $item) {
+                    $variant = ProductVariant::find($item->product_variant_id);
+                    if ($variant && $variant->manage_stock) {
+                        $variant->decrement('stock_quantity', $item->quantity);
+                    }
+                }
+            }
+        } else {
+            $order->status = Order::STATUS_CANCELLED;
+            $order->payment_status = Order::PAYMENT_FAILED;
+            $order->cancellation_reason = 'Thanh toán MoMo thất bại qua IPN.';
+            $order->save();
+        }
+
+        return response()->json([
+            "resultCode" => 0,
+            "message" => "Success",
+            "responseTime" => now()->timestamp . '000'
+        ]);
+    }
+
+    private function clearPurchaseSession()
+    {
+        if (session()->has('buy_now_item')) {
+            session()->forget('buy_now_item');
+        } else {
+            if (Auth::check() && Auth::user()->cart) {
+                Auth::user()->cart->items()->delete();
+            } else {
+                session()->forget('cart');
+            }
+        }
+        session()->forget(['applied_voucher', 'applied_coupon', 'discount']);
+    }
+public function showBankTransferQr(Order $order)
+{
+    // Kiểm tra để đảm bảo người dùng chỉ xem được đơn hàng của chính họ
+    $isOwner = (Auth::check() && $order->user_id === Auth::id()) || ($order->guest_id && $order->guest_id === session()->getId());
+
+    if (!$isOwner) {
+        abort(404);
+    }
+
+    return view('users.payments.bank_transfer_qr', compact('order'));
+}
+
     /**
      * Trang thành công
      */
@@ -212,7 +793,7 @@ class PaymentController extends Controller
             $sessionCart = session('cart', []);
             $items = collect($sessionCart)->map(function ($data) {
                 $variant = ProductVariant::with('product', 'attributeValues.attribute', 'primaryImage')->find($data['variant_id']);
-                return (object)[
+                return (object) [
                     'id' => $data['variant_id'],
                     'productVariant' => $variant,
                     'price' => $data['price'],
