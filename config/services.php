@@ -41,7 +41,7 @@ return [
         'api_key' => env('GOOGLE_API_KEY'),
     ],
     'casso' => [
-    'secret' => env('CASSO_SECURE_TOKEN'),
+    'webhook_secret' => env('CASSO_WEBHOOK_SECRET'),
     ],
 
 ];
