@@ -515,10 +515,23 @@
                 .then(data => {
                     if (data.success) {
                         toastr.success(data.success);
+
+                        // ✅ Cập nhật số lượng hiển thị trên giỏ hàng
+                        const cartBadge = document.getElementById('cart-badge');
+                        if (cartBadge) {
+                            if (data.cartItemCount > 0) {
+                                cartBadge.textContent = data.cartItemCount;
+                                cartBadge.style.display = 'flex';
+                            } else {
+                                cartBadge.style.display = 'none';
+                            }
+                        }
+
                     } else if (data.error) {
                         toastr.error(data.error);
                     }
                 })
+
                 .catch(err => {
                     toastr.error('Có lỗi xảy ra, vui lòng thử lại.');
                     console.error(err);

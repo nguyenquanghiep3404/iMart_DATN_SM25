@@ -11,17 +11,20 @@ class CommentController extends Controller
 {
     public function store(Request $request)
     {
-        if (!Auth::check()) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Bạn cần đăng nhập để bình luận.',
-                ], 401);
-            }
-    
-            return redirect()->route('login')->with('warning', 'Bạn cần đăng nhập để bình luận.');
+        if (!$request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Gửi bình luận thành công',
+            ], 200);
         }
-    
+
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn cần đăng nhập để bình luận.',
+            ], 401);
+        }
+
         $validated = $request->validate([
             'commentable_type' => 'required|string',
             'commentable_id'   => 'required|integer',
@@ -29,14 +32,14 @@ class CommentController extends Controller
             'images.*'         => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'parent_id'        => 'nullable|exists:comments,id',
         ]);
-    
+
         $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $imagePaths[] = $image->store('comments', 'public');
             }
         }
-    
+
         $comment = Comment::create([
             'commentable_type' => $validated['commentable_type'],
             'commentable_id'   => $validated['commentable_id'],
@@ -46,30 +49,25 @@ class CommentController extends Controller
             'image_paths'      => $imagePaths,
             'status'           => 'approved',
         ]);
-    
+
         $comment->load('user');
-    
-        if ($request->expectsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => $comment->parent_id ? 'Phản hồi đã được gửi.' : 'Bình luận đã được gửi.',
-                'comment' => [
-                    'id'        => $comment->id,
-                    'name'      => $comment->user->name ?? 'Khách',
-                    'initial'   => strtoupper(substr($comment->user->name ?? 'K', 0, 1)),
-                    'content'   => $comment->content,
-                    'time'      => $comment->created_at->diffForHumans(),
-                    'images'    => $comment->image_urls,
-                    'parent_id' => $comment->parent_id,
-                    'is_admin'  => (bool) $comment->user->is_admin,
-                ],
-            ]);
-        }
-    
-        // Nếu không phải AJAX => redirect về lại trang hiện tại
-        return redirect()->back()->with('success', 'Bình luận đã được gửi thành công.');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Bình luận đã được gửi.',
+            'comment' => [
+            'id'        => $comment->id,
+            'name'      => $comment->user->name ?? 'Khách',
+            'initial'   => strtoupper(substr($comment->user->name ?? 'K', 0, 1)),
+            'content'   => $comment->content,
+            'time'      => $comment->created_at->diffForHumans(),
+            'images'    => $comment->image_urls,
+            'parent_id' => $comment->parent_id,
+            'is_admin'  => $comment->user ? $comment->user->hasRole('admin') : false,
+        ],
+        ]);
     }
-    
+
 
     public function fetch(Request $request)
     {

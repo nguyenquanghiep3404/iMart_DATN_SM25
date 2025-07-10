@@ -11,7 +11,7 @@
             file:rounded-lg file:border-0 file:text-sm file:font-semibold
             file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 relative">
             <textarea id="comment-textarea" name="content" maxlength="3000" placeholder="Nhập nội dung bình luận..."
                 class="w-full px-4 py-3 pr-24 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"></textarea>
 
@@ -27,37 +27,10 @@
 
 <div id="comments-list">
     @foreach ($comments as $comment)
-        <div class="border-b border-gray-200 py-4">
-            <div class="flex items-start gap-3">
-                <img src="{{ $comment->user->avatar ?? 'https://placehold.co/40x40/7e22ce/ffffff?text=' . strtoupper(substr($comment->user->name ?? 'N', 0, 1)) }}"
-                    alt="Avatar" class="w-10 h-10 rounded-full object-cover">
-                <div>
-                    <p class="font-semibold text-gray-800">
-                        {{ $comment->user->name ?? 'Khách' }}
-                        @if (!empty($comment->user->is_admin))
-                            <span class="ml-2 px-2 py-0.5 text-xs font-semibold text-white bg-red-600 rounded">Quản trị
-                                viên</span>
-                        @endif
-                    </p>
-                    <p class="text-sm text-gray-600">{{ $comment->content }}</p>
-
-                    @if ($comment->image_urls)
-                        <div class="flex gap-2 mt-2">
-                            @foreach ($comment->image_urls as $url)
-                                <img src="{{ $url }}" alt="Review Image"
-                                    class="w-20 h-20 rounded-md object-cover">
-                            @endforeach
-                        </div>
-                    @endif
-
-                    <div class="text-xs text-gray-500 mt-2 flex items-center gap-4">
-                        <span>{{ $comment->created_at->diffForHumans() }}</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        @include('users.partials.show_product.recursive-comment', ['comment' => $comment])
     @endforeach
 </div>
+
 
 @push('scripts')
     <script>
@@ -67,16 +40,19 @@
         const textarea = document.getElementById('comment-textarea');
         const maxChars = 3000;
 
+        // Cập nhật số ký tự đã nhập
         textarea.addEventListener('input', function() {
             charCounter.textContent = `${this.value.length}/${maxChars}`;
         });
 
+        // Hàm escape HTML để chống XSS
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
+        // Xử lý gửi form bằng Ajax
         commentForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -100,23 +76,30 @@
                 }
 
                 const comment = data.comment;
-                const avatar = comment.avatar ||
-                    `https://placehold.co/40x40/7e22ce/ffffff?text=${comment.initial || 'K'}`;
+                const initial = comment.initial?.toUpperCase() || 'A';
+
+                const adminBadge = comment.is_admin ?
+                    `<span class="ml-2 px-2 py-0.5 text-xs font-bold text-white rounded" style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">Quản trị viên</span>` :
+                    '';
+
+                const imagesHtml = comment.images?.length ?
+                    `<div class="flex gap-2 mt-2 flex-wrap">${comment.images.map(url => `<img src="${url}" alt="Ảnh bình luận" class="w-20 h-20 rounded-md object-cover">`).join('')}</div>` :
+                    '';
 
                 const newCommentHTML = `
                 <div class="border-b border-gray-200 py-4">
                     <div class="flex items-start gap-3">
-                        <img src="${avatar}" alt="Avatar" class="w-10 h-10 rounded-full object-cover">
+                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white select-none"
+                            style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">
+                            ${initial}
+                        </div>
                         <div>
                             <p class="font-semibold text-gray-800">
                                 ${escapeHtml(comment.name)}
-                                ${comment.is_admin ? '<span class="ml-2 px-2 py-0.5 text-xs font-semibold text-white bg-red-600 rounded">Quản trị viên</span>' : ''}
+                                ${adminBadge}
                             </p>
-                            <p class="text-sm text-gray-600">${escapeHtml(comment.content)}</p>
-                            ${comment.images?.length ? `
-                                                                                            <div class="flex gap-2 mt-2">
-                                                                                                ${comment.images.map(url => `<img src="${url}" alt="Review Image" class="w-20 h-20 rounded-md object-cover">`).join('')}
-                                                                                            </div>` : ''}
+                            <p class="text-sm text-gray-600 whitespace-pre-wrap">${escapeHtml(comment.content)}</p>
+                            ${imagesHtml}
                             <div class="text-xs text-gray-500 mt-2 flex items-center gap-4">
                                 <span>${comment.time}</span>
                             </div>
@@ -129,7 +112,8 @@
                 commentForm.reset();
                 charCounter.textContent = `0/${maxChars}`;
                 commentForm.dataset.submitted = 'true'; // Đánh dấu đã gửi
-                // ✅ Cập nhật lại URL (loại bỏ query hoặc trạng thái gửi)
+
+                // Xóa query string hoặc trạng thái gửi để tránh gửi lại khi reload trang
                 window.history.replaceState({}, document.title, window.location.pathname);
             } catch (error) {
                 console.error('Lỗi khi gửi bình luận:', error);
@@ -137,7 +121,7 @@
             }
         });
 
-        // Giới hạn 5 ảnh upload
+        // Giới hạn upload tối đa 5 ảnh
         const commentImageInput = document.getElementById('comment-image');
         commentImageInput.addEventListener('change', function() {
             if (this.files.length > 5) {
@@ -146,7 +130,7 @@
             }
         });
 
-        // ✅ Ngăn reload gửi lại bình luận
+        // Ngăn reload gửi lại bình luận khi refresh trang
         window.onbeforeunload = function() {
             if (commentForm.dataset.submitted === 'true') {
                 return null;

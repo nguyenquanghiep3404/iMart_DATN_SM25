@@ -209,6 +209,7 @@
                 button.addEventListener('click', function() {
                     const variantId = this.dataset.variantId;
                     console.log("Click: ", variantId);
+
                     fetch("{{ route('cart.add') }}", {
                             method: "POST",
                             headers: {
@@ -221,14 +222,30 @@
                                 quantity: 1
                             })
                         })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.success) {
-                                toastr.success(data
-                                .success); // vì `data.success` hiện đang là nội dung thông báo
-                            }
-                            if (data.redirect) {
-                                window.location.href = data.redirect;
+                        .then(async res => {
+                            const data = await res.json();
+
+                            if (res.ok) {
+                                if (data.success) {
+                                    toastr.success(data.success);
+
+                                    // **Thêm đoạn cập nhật badge giỏ hàng ở đây**
+                                    const cartBadge = document.getElementById('cart-badge');
+                                    if (cartBadge) {
+                                        if (data.cartItemCount !== undefined && data.cartItemCount >
+                                            0) {
+                                            cartBadge.textContent = data.cartItemCount;
+                                            cartBadge.style.display = 'flex';
+                                        } else {
+                                            cartBadge.style.display = 'none';
+                                        }
+                                    }
+                                }
+                                if (data.redirect) {
+                                    window.location.href = data.redirect;
+                                }
+                            } else {
+                                toastr.error(data.message || "Đã vượt quá tồn kho");
                             }
                         })
                         .catch(err => {
@@ -237,6 +254,8 @@
                         });
                 });
             });
+
+
             toastr.options = {
                 closeButton: true,
                 progressBar: true,
@@ -281,18 +300,33 @@
                         })
                         .then(res => res.json())
                         .then(data => {
-                            data.results.forEach(item => {
-                                if (item.success) {
-                                    toastr.success(item.message);
+                            // Hiển thị thông báo từng sản phẩm
+                            if (data.results && Array.isArray(data.results)) {
+                                data.results.forEach(item => {
+                                    if (item.success) {
+                                        toastr.success(item.message);
+                                    } else {
+                                        toastr.error(item.message);
+                                    }
+                                });
+                            }
+
+                            // Cập nhật badge số lượng trên header
+                            const cartBadge = document.getElementById('cart-badge');
+                            if (cartBadge) {
+                                if (data.cartItemCount !== undefined && data.cartItemCount > 0) {
+                                    cartBadge.textContent = data.cartItemCount;
+                                    cartBadge.style.display = 'flex';
                                 } else {
-                                    toastr.error(item.message);
+                                    cartBadge.style.display = 'none';
                                 }
-                            });
+                            }
                         })
                         .catch(() => {
                             toastr.error('Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.');
                         });
                 });
+
             });
         </script>
     @endsection
