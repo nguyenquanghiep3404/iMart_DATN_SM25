@@ -16,7 +16,7 @@
                     <li class="d-flex justify-content-between">
                         Giảm giá:
                         <span id="cart-discount" class="text-danger fw-medium">
-                            {{ session('applied_voucher') ? '-' . number_format($discount ?? 0, 0, ',', '.') . '₫' : '0₫' }}
+                            {{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
                         </span>
                     </li>
                 </ul>
@@ -68,3 +68,56 @@
         </div>
     </div>
 </aside>
+<script>
+    $(document).ready(function() {
+        // Cấu hình toastr
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toast-top-right",
+            timeOut: "3000",
+            showDuration: "300",
+            hideDuration: "1000",
+            showMethod: "slideDown",
+            hideMethod: "slideUp"
+        };
+
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+
+        $('#voucher-form').on('submit', function(e) {
+            e.preventDefault();
+
+            const form = $(this);
+            const voucherCode = form.find('input[name="voucher_code"]').val();
+
+            $.ajax({
+                url: '{{ route('cart.applyVoucherAjax') }}',
+                method: 'POST',
+                data: {
+                    voucher_code: voucherCode
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+
+                        const formatMoney = (amount) => amount.toLocaleString('vi-VN') +
+                            '₫';
+
+                        $('#cart-discount').text('-' + formatMoney(response.discount));
+                        $('#cart-total').text(formatMoney(response.total_after_discount));
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Lỗi AJAX:', error);
+                    toastr.error('Đã có lỗi xảy ra. Vui lòng thử lại!');
+                }
+            });
+        });
+    });
+</script>
