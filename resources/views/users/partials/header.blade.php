@@ -94,7 +94,8 @@
         border-bottom-color: rgba(55, 65, 81, 0.6);
     }
 </style>
-<header id="page-header" class="bg-gray-900 text-white z-50 border-b border-transparent transition-all duration-300 @unless (Route::is('users.products.show')) sticky top-0 @endunless">
+<header id="page-header"
+    class="bg-gray-900 text-white z-50 border-b border-transparent transition-all duration-300 @unless (Route::is('users.products.show')) sticky top-0 @endunless">
     <div class="container mx-auto px-4 h-20">
         <div id="header-main" class="flex items-center justify-between h-full">
             <div class="flex justify-start">
@@ -104,24 +105,16 @@
             </div>
 
             <div class="flex-1 flex justify-center">
-                <nav class="hidden lg:flex items-center space-x-8">
-                    <a href="/"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Trang
-                        chủ</a>
-                    <a href="/danh-muc-san-pham"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Danh
-                        mục</a>
-                    <a href="/blog"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Tin
-                        Tức</a>
-                    <a href="#"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Về
-                        chúng tôi</a>
-                    <a href="#"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Liên
-                        hệ</a>
-                </nav>
-            </div>
+    <nav class="hidden lg:flex items-center space-x-8">
+        @foreach ($menuCategories ?? [] as $cat)
+            <a href="{{ route('products.byCategory', ['id' => $cat->id, 'slug' => $cat->slug]) }}"
+                class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">
+                {{ $cat->name }}
+            </a>
+        @endforeach
+    </nav>
+</div>
+
 
             <div class="flex justify-end">
                 <div class="flex items-center space-x-2 sm:space-x-4">
@@ -272,14 +265,21 @@
                             <div id="notification-detail-view" class="hidden">
                                 <div class="p-3 border-b border-gray-700">
                                     <div class="flex justify-between items-center">
-                                        <button id="back-to-menu-btn" class="p-1 -ml-1 text-gray-400 hover:text-white rounded-full transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                                                <line x1="19" y1="12" x2="5" y2="12"></line>
+                                        <button id="back-to-menu-btn"
+                                            class="p-1 -ml-1 text-gray-400 hover:text-white rounded-full transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                class="w-5 h-5">
+                                                <line x1="19" y1="12" x2="5" y2="12">
+                                                </line>
                                                 <polyline points="12 19 5 12 12 5"></polyline>
                                             </svg>
                                         </button>
                                         <h3 class="text-base font-semibold text-white">Thông báo</h3>
-                                        <a href="#" class="text-xs text-blue-400 hover:text-blue-300 transition-colors">Xem tất cả</a>
+                                        <a href="#"
+                                            class="text-xs text-blue-400 hover:text-blue-300 transition-colors">Xem tất
+                                            cả</a>
                                     </div>
                                 </div>
                                 <div class="max-h-96 overflow-y-auto">
@@ -312,38 +312,43 @@
                                         </div>
                                     </a>
                                     @empty
-                                    <div class="text-center text-gray-400 py-8 px-4">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                                        </svg>
-                                        <p class="mt-4 text-sm font-semibold">Không có thông báo mới</p>
-                                        <p class="mt-1 text-xs text-gray-500">Chúng tôi sẽ cho bạn biết khi có tin tức.</p>
-                                    </div>
+                                        <div class="text-center text-gray-400 py-8 px-4">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="mx-auto h-12 w-12 text-gray-500" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                                            </svg>
+                                            <p class="mt-4 text-sm font-semibold">Không có thông báo mới</p>
+                                            <p class="mt-1 text-xs text-gray-500">Chúng tôi sẽ cho bạn biết khi có tin
+                                                tức.</p>
+                                        </div>
                                     @endforelse
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <a href="{{ route('cart.index') }}"
-                        class="p-2 rounded-full text-gray-300 hover:text-white transition-colors relative">
+
+                    <div class="relative inline-block cursor-pointer" data-bs-toggle="offcanvas"
+                        data-bs-target="#shoppingCart" aria-controls="shoppingCart" aria-label="Shopping cart">
+
+                        <!-- SVG giỏ hàng -->
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                            stroke-linejoin="round" class="w-5 h-5">
+                            stroke-linejoin="round" class="w-6 h-6 text-gray-300 hover:text-white transition-colors">
                             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                             <line x1="3" y1="6" x2="21" y2="6"></line>
                             <path d="M16 10a4 4 0 0 1-8 0"></path>
                         </svg>
 
+                        <!-- Badge số lượng -->
                         <span id="cart-badge"
                             class="absolute top-0 right-0 flex justify-center items-center h-4 w-4 bg-red-500 text-white text-[10px] font-semibold rounded-full transform translate-x-1/3 -translate-y-1/3"
                             style="{{ $cartItemCount > 0 ? '' : 'display: none;' }}">
                             {{ $cartItemCount }}
                         </span>
-                    </a>
-
-
-
+                    </div>
                     <button id="mobile-menu-btn"
                         class="lg:hidden p-2 rounded-full text-gray-300 hover:text-white transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -494,7 +499,8 @@
                             }
                         }).then(res => {
                             if (res.ok) {
-                                const badge = document.querySelector('#notification-trigger span.ml-auto');
+                                const badge = document.querySelector(
+                                    '#notification-trigger span.ml-auto');
                                 if (badge) badge.remove();
                             }
                         }).catch(err => console.error('Error marking notifications as read:', err));
@@ -514,7 +520,8 @@
 
             // --- Close dropdown when clicking outside ---
             window.addEventListener('click', (event) => {
-                if (userDropdownMenu && userDropdownMenu.classList.contains('open') && !userMenuTrigger.contains(event.target) && !userDropdownMenu.contains(event.target)) {
+                if (userDropdownMenu && userDropdownMenu.classList.contains('open') && !userMenuTrigger
+                    .contains(event.target) && !userDropdownMenu.contains(event.target)) {
                     userDropdownMenu.classList.remove('open');
                 }
             });
@@ -603,4 +610,25 @@
             }
         });
     }
+    let cachedCartHtml = null;
+
+    document.querySelector('[data-bs-target="#shoppingCart"]').addEventListener('click', function() {
+        if (cachedCartHtml) {
+            document.getElementById('cart-content').innerHTML = cachedCartHtml;
+            return;
+        }
+        fetch('/cart/offcanvas', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.text())
+            .then(html => {
+                cachedCartHtml = html; // lưu cache
+                document.getElementById('cart-content').innerHTML = html;
+            })
+            .catch(() => {
+                document.getElementById('cart-content').innerHTML = '<p>Có lỗi xảy ra.</p>';
+            });
+    });
 </script>

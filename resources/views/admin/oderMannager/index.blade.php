@@ -62,7 +62,8 @@
                                             <i class="fas fa-edit mr-1"></i>Sửa
                                         </a>
 
-                                        <form action="" method="POST" class="inline"
+                                        <form action="{{ route('admin.order-manager.destroy', $user->id) }}" method="POST"
+                                            class="inline"
                                             onsubmit="return confirm('Bạn có chắc muốn xóa nhân viên này không?');">
                                             @csrf
                                             @method('DELETE')
@@ -71,7 +72,7 @@
                                                 <i class="fas fa-trash-alt mr-1"></i>Xoá
                                             </button>
                                         </form>
-                                        <a href="{{ route('admin.odermannager.show', $user->id) }}"
+                                        <a href="{{ route('admin.order-manager.show', $user->id) }}"
                                             class="text-gray-600 hover:underline text-sm font-medium mr-3"
                                             title="Xem chi tiết">
                                             <i class="fas fa-eye mr-1"></i>Xem
@@ -95,22 +96,16 @@
         {{-- Modal thêm/sửa nhân viên --}}
         <div id="staff-modal"
             class="modal hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <form id="staff-form" class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-2xl">
+            <a href="{{ route('admin.order-manager.create') }}"
+                class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-2xl block">
                 <div class="p-6 border-b border-gray-200 flex justify-between items-center">
                     <h2 id="modal-title" class="text-xl font-bold text-gray-800">Thêm nhân viên mới</h2>
-                    <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                    <span class="text-gray-400 hover:text-gray-600">
                         <i class="fas fa-times fa-lg"></i>
-                    </button>
+                    </span>
                 </div>
-                @include('admin.oderMannager.layouts.create')
-                <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3 rounded-b-2xl">
-                    <button type="button" onclick="closeModal()"
-                        class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Hủy</button>
-                    <button type="submit"
-                        class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">Lưu thông
-                        tin</button>
-                </div>
-            </form>
+                {{-- Bạn có thể hiển thị nội dung tóm tắt ở đây nếu muốn --}}
+            </a>
         </div>
     </div>
     {{ $users->links() }}

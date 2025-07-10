@@ -29,21 +29,20 @@
     <link rel="preload" href="{{ asset ('assets/users/css/theme.min.css') }}" as="style">
     <link rel="preload" href="{{ asset ('assets/users/css/theme.rtl.min.css') }}" as="style">
     <link rel="stylesheet" href="{{ asset ('assets/users/css/theme.min.css') }}" id="theme-styles">
-
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-
-
-
     {{-- THÊM DÒNG NÀY VÀO ĐÂY ĐỂ NHÚNG CSS CỦA CROPPER.JS --}}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <script src="{{ asset ('assets/users/js/customizer.min.js') }}"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @yield('styles')
 </head>
 
-
 <body>
+    <!-- Customizer offcanvas -->
+    @include('users.partials.ai_chatbot')
 
     @include('users.partials.cart_offcanvas')
 
@@ -78,7 +77,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 
     @stack('scripts') {{-- Cho phép các trang con thêm JS cụ thể --}}
-
 </body>
 
 </html>
