@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
+    public function up(): void
     {
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
@@ -19,14 +19,13 @@ return new class extends Migration
             $table->string('phone_number');
             $table->string('address_line1');
             $table->string('address_line2')->nullable();
-            $table->string('city');
-            $table->string('district');
-            $table->string('ward');
-            $table->string('zip_code')->nullable();
-            $table->string('country')->default('Vietnam');
+            $table->string('province_code', 20);
+            $table->string('ward_code', 20);
             $table->boolean('is_default_shipping')->default(false);
             $table->boolean('is_default_billing')->default(false);
             $table->timestamps();
+            $table->foreign('province_code')->references('code')->on('provinces')->onDelete('cascade');
+            $table->foreign('ward_code')->references('code')->on('wards')->onDelete('cascade');
         });
     }
 

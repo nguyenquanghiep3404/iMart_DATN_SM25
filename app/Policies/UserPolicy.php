@@ -22,23 +22,39 @@ class UserPolicy
     public function update(User $user, User $model) {
         return $user->hasPermissionTo('edit_users');
     }
-    public function delete(User $user, User $model) {
-        return $user->hasPermissionTo('delete_users');
-    }
+   /**
+     * Quyền xóa người dùng.
+     */
+    public function delete(User $currentUser, User $userToDelete): bool
+    {
+        // 1. Không cho phép người dùng tự xóa chính mình
+        if ($currentUser->id === $userToDelete->id) {
+            return false;
+        }
 
-    /**
-     * Determine whether the user can restore the model.
+        // 2. KHÔNG CHO PHÉP XÓA người dùng có vai trò 'admin'
+        if ($userToDelete->hasRole('admin')) {
+            return false;
+        }
+
+        // 3. Kiểm tra permission như bình thường
+        return $currentUser->hasPermissionTo('delete_users');
+    }
+/**
+     * Quyền khôi phục người dùng đã bị xóa mềm.
      */
     public function restore(User $user, User $model): bool
     {
-        return false;
+        // Thường người có quyền sửa sẽ có quyền khôi phục
+        return $user->hasPermissionTo('edit_users');
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Quyền xóa vĩnh viễn người dùng.
      */
     public function forceDelete(User $user, User $model): bool
     {
-        return false;
+        // Thường chỉ người có quyền xóa mới được xóa vĩnh viễn
+        return $user->hasPermissionTo('delete_users');
     }
 }

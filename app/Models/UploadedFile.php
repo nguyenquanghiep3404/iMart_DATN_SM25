@@ -34,7 +34,7 @@ class UploadedFile extends Model
         'order' => 'integer',
         'deleted_at' => 'datetime', // Nên cast cả cột này
     ];
-    
+
     // Thêm $appends để Accessor luôn được thêm vào khi model chuyển thành array/JSON
     protected $appends = ['url', 'formatted_size', 'attachable_display'];
 
@@ -45,6 +45,7 @@ class UploadedFile extends Model
     {
         return $this->morphTo();
     }
+
 
     /**
      * Lấy người dùng đã upload file.
@@ -94,11 +95,27 @@ class UploadedFile extends Model
      */
     public function getAttachableDisplayAttribute(): string
     {
-        if ($this->attachable) {
-            $modelName = class_basename($this->attachable_type);
-            return sprintf('%s (ID: %d)', $modelName, $this->attachable_id);
+        if (!$this->attachable) {
+            return 'Không đính kèm';
         }
-        return 'Không đính kèm';
+
+        // Tải trước relationship để tránh N+1 query
+        $this->loadMissing('attachable');
+
+        // Trường hợp đặc biệt: Nếu là ProductVariant, hiển thị tên sản phẩm cha
+        if ($this->attachable_type === 'App\\Models\\ProductVariant' && $this->attachable->product) {
+            // Giả định ProductVariant có relationship 'product' và Product có 'name'
+            return 'Sản phẩm: ' . $this->attachable->product->name;
+        }
+
+        // Các trường hợp khác, hiển thị tên của đối tượng nếu có
+        if (isset($this->attachable->name)) {
+            $modelName = class_basename($this->attachable_type);
+            return "{$modelName}: {$this->attachable->name}";
+        }
+
+        // Mặc định: Hiển thị tên class và ID
+        return class_basename($this->attachable_type) . ' (ID: ' . $this->attachable_id . ')';
     }
 
     /**
@@ -126,8 +143,8 @@ class UploadedFile extends Model
                     Log::error("Không thể xóa vĩnh viễn file vật lý {$file->path}: " . $e->getMessage());
                 }
             } else {
-                 // Ghi lại người xóa khi thực hiện soft delete
-                 if (Auth::check() && is_null($file->deleted_by)) {
+                // Ghi lại người xóa khi thực hiện soft delete
+                if (Auth::check() && is_null($file->deleted_by)) {
                     $file->deleted_by = Auth::id();
                     $file->saveQuietly(); // Lưu mà không kích hoạt lại event
                 }

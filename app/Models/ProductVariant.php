@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ProductVariant extends Model
 {
@@ -27,6 +28,10 @@ class ProductVariant extends Model
         'dimensions_height',
         'is_default',
         'status',
+        'sku',
+        'stock_quantity',
+        'stock_status',
+
     ];
 
     protected $casts = [
@@ -70,9 +75,32 @@ class ProductVariant extends Model
         return $this->morphMany(UploadedFile::class, 'attachable')->where('type', 'variant_image')->orderBy('order');
     }
     public function primaryImage()
-{
-    // Giả định bạn có cột `primary_image_id` trong bảng `product_variants`
-    // và nó liên kết với bảng `uploaded_files`.
-    return $this->belongsTo(UploadedFile::class, 'primary_image_id');
-}
+    {
+        // Giả định bạn có cột `primary_image_id` trong bảng `product_variants`
+        // và nó liên kết với bảng `uploaded_files`.
+        return $this->belongsTo(UploadedFile::class, 'primary_image_id');
+    }
+    public function getImageUrlAttribute()
+    {
+        if ($this->primaryImage && $this->primaryImage->path) {
+            return '/storage/' . ltrim($this->primaryImage->path, '/');
+        }
+
+        // fallback nếu không có ảnh
+        return '/images/no-image.png';
+    }
+    // public function specificationValues()
+    // {
+    //     return $this->hasMany(ProductSpecificationValue::class);
+    // }
+    public function specifications(): BelongsToMany
+    {
+        return $this->belongsToMany(Specification::class, 'product_specification_values')
+            ->withPivot('value') // Quan trọng: Lấy cột 'value' từ bảng trung gian
+            ->withTimestamps();
+    }
+    protected static function booted()
+    {
+        static::observe(\App\Observers\ProductVariantObserver::class);
+    }
 }

@@ -248,19 +248,44 @@ class UploadedFileController extends Controller
 
     /**
      * Lấy danh sách file cho modal chọn media.
+     * *** ĐÃ CẬP NHẬT ĐỂ HỖ TRỢ LỌC NÂNG CAO ***
      */
     public function fetchForModal(Request $request)
     {
         $query = UploadedFile::latest();
 
+        // Lọc theo trạng thái gán
+        if ($request->query('filter') === 'unattached') {
+            $query->whereNull('attachable_id');
+        }
+
+        // Lọc theo ngày
+        if ($request->filled('start_date')) {
+            try {
+                $startDate = Carbon::parse($request->input('start_date'))->startOfDay();
+                $query->where('created_at', '>=', $startDate);
+            } catch (\Exception $e) { /* Bỏ qua ngày không hợp lệ */ }
+        }
+        if ($request->filled('end_date')) {
+            try {
+                $endDate = Carbon::parse($request->input('end_date'))->endOfDay();
+                $query->where('created_at', '<=', $endDate);
+            } catch (\Exception $e) { /* Bỏ qua ngày không hợp lệ */ }
+        }
+
+        // Lọc theo từ khóa tìm kiếm
         if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('original_name', 'like', '%' . $request->input('search') . '%')
-                  ->orWhere('alt_text', 'like', '%' . $request->input('search') . '%');
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('original_name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('alt_text', 'like', '%' . $searchTerm . '%');
             });
         }
 
-        $files = $query->paginate(16); 
+        // Phân trang và giữ lại các tham số lọc
+        $files = $query->paginate(16)->appends($request->query()); 
+        
+        // Thêm các thuộc tính cần thiết cho frontend
         $files->through(fn ($file) => $file->append(['url', 'formatted_size', 'attachable_display']));
         
         return response()->json($files);

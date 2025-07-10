@@ -187,8 +187,8 @@
                                 <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}</td>
                                 <td>
                                     @php
-                                        $displayVariant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
-                                        $imageToShow = $displayVariant?->primaryImage ?? $product->coverImage;
+                                        $displayVariantForImage = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+                                        $imageToShow = $displayVariantForImage?->primaryImage ?? $product->coverImage;
                                         $imageUrl = $imageToShow ? Storage::url($imageToShow->path) : asset('assets/admin/img/placeholder-image.png');
                                         $altText = $imageToShow?->alt_text ?? $product->name;
                                     @endphp
@@ -196,20 +196,63 @@
                                 </td>
                                 <td>
                                     <a href="{{ route('admin.products.edit', $product) }}" class="font-semibold text-indigo-600 hover:text-indigo-800">{{ $product->name }}</a>
-                                    <small class="block text-gray-500">SKU: {{ $displayVariant->sku ?? 'N/A' }}</small>
+                                    <small class="block text-gray-500">SKU: {{ $displayVariantForImage->sku ?? 'N/A' }}</small>
                                 </td>
                                 <td>{{ $product->category->name ?? 'N/A' }}</td>
                                 <td>
-                                    @if($displayVariant)
-                                        @if($displayVariant->sale_price && $displayVariant->sale_price < $displayVariant->price)
-                                            <span class="font-semibold text-red-600">{{ number_format($displayVariant->sale_price, 0, ',', '.') }} ₫</span>
-                                            <small class="block text-gray-500 line-through">{{ number_format($displayVariant->price, 0, ',', '.') }} ₫</small>
+                                    {{-- START: UPDATED PRICE LOGIC --}}
+                                    @if($product->type == 'simple')
+                                        @php
+                                            $variant = $product->variants->first();
+                                        @endphp
+                                        @if($variant)
+                                            @if($variant->sale_price && $variant->sale_price > 0 && $variant->sale_price < $variant->price)
+                                                <span class="font-semibold text-red-600">{{ number_format($variant->sale_price, 0, ',', '.') }} ₫</span>
+                                                <small class="block text-gray-500 line-through">{{ number_format($variant->price, 0, ',', '.') }} ₫</small>
+                                            @else
+                                                <span class="font-semibold">{{ number_format($variant->price, 0, ',', '.') }} ₫</span>
+                                            @endif
                                         @else
-                                            <span class="font-semibold">{{ number_format($displayVariant->price, 0, ',', '.') }} ₫</span>
+                                            N/A
+                                        @endif
+                                    @elseif($product->type == 'variable')
+                                        @php
+                                            // Get variants with a valid sale price (greater than 0)
+                                            $variantsWithSalePrice = $product->variants->filter(function($variant) {
+                                                return $variant->sale_price && $variant->sale_price > 0;
+                                            });
+
+                                            if ($variantsWithSalePrice->isNotEmpty()) {
+                                                // If there are sale prices, find the variant with the lowest sale price
+                                                $minSaleVariant = $variantsWithSalePrice->sortBy('sale_price')->first();
+                                                $priceToShow = $minSaleVariant->sale_price;
+                                                $originalPrice = $minSaleVariant->price;
+                                            } else {
+                                                // If no sale prices, find the variant with the lowest regular price
+                                                $minPriceVariant = $product->variants->sortBy('price')->first();
+                                                $priceToShow = $minPriceVariant ? $minPriceVariant->price : null;
+                                                $originalPrice = null; // No original price to cross out
+                                            }
+                                        @endphp
+
+                                        @if($priceToShow !== null)
+                                            @if($originalPrice && $priceToShow < $originalPrice)
+                                                {{-- This is a sale price --}}
+                                                <span class="font-semibold text-red-600">{{ number_format($priceToShow, 0, ',', '.') }} ₫</span>
+                                                <small class="block text-gray-500 line-through">{{ number_format($originalPrice, 0, ',', '.') }} ₫</small>
+                                                <small class="text-gray-500 text-xs block">(Thấp nhất)</small>
+                                            @else
+                                                {{-- This is a regular price (the lowest one) --}}
+                                                <span class="font-semibold">{{ number_format($priceToShow, 0, ',', '.') }} ₫</span>
+                                                <small class="text-gray-500 text-xs block">(Thấp nhất)</small>
+                                            @endif
+                                        @else
+                                            N/A
                                         @endif
                                     @else
                                         N/A
                                     @endif
+                                    {{-- END: UPDATED PRICE LOGIC --}}
                                 </td>
                                 <td>
                                     {{ $product->variants->sum('stock_quantity') }}

@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>iMart Trang Quản Trị - @yield('title')</title>
-    <link rel="shortcut icon" href="{{ asset('assets/admin/img/logo/favicon.png') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('assets/users/app-icons/Bản sao của iMart.svg') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/perfect-scrollbar.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/choices.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/apexcharts.css') }}">
@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="{{ asset('assets/admin/css/rangeslider.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/custom.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/admin/css/main.css') }}">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -53,7 +52,6 @@
     <script src="{{ asset('assets/admin/js/main.js') }}"></script>
     <script src="{{ asset('assets/admin/js/media-library.js') }}"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-
     
     {{-- Nơi để các trang con chèn script riêng --}}
     @stack('scripts')

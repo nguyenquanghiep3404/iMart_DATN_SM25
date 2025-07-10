@@ -8,7 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-
+use Illuminate\Validation\ValidationException;
 class AuthenticatedSessionController extends Controller
 {
     /**
@@ -42,13 +42,13 @@ class AuthenticatedSessionController extends Controller
 
         if ($user->roles->contains('id', 1) ||
             $user->roles->contains('id', 4) ||
+            $user->roles->contains('id', 6) ||
             $user->roles->contains('id', 5)
         ) {
             return redirect()->intended(route('admin.dashboard'));
         }
 
-        // 5. Nếu không thuộc nhóm nào trên, dùng redirect mặc định
-        return redirect()->intended(route('users.home'));
+        return redirect()->intended(route('shipper.dashboard'));
     }
 
     /**
@@ -63,4 +63,22 @@ class AuthenticatedSessionController extends Controller
 
         return redirect('/');
     }
+    public function ajaxStore(LoginRequest $request)
+    {
+        try {
+            $request->authenticate();
+
+            $request->session()->regenerate();
+
+            return response()->json(['success' => true]);
+
+        } catch (ValidationException $e) {
+            
+            return response()->json([
+                'success' => false,
+                'message' => $e->validator->errors()->first() // Lấy thông báo lỗi đầu tiên
+            ], 422); // 422 Unprocessable Entity
+        }
+    }
+
 }

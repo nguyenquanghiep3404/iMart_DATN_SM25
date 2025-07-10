@@ -16,8 +16,20 @@ class Comment extends Model
         'parent_id',
         'content',
         'status',
+        'image_paths',
     ];
-
+    protected $casts = [
+        'image_paths' => 'array', 
+    ];
+    public function getImageUrlsAttribute()
+    {
+        if (empty($this->image_paths)) {
+            return [];
+        }
+        return collect($this->image_paths)
+            ->map(fn($path) => asset('storage/' . $path))
+            ->toArray();
+    }
     public function commentable()
     {
         return $this->morphTo();

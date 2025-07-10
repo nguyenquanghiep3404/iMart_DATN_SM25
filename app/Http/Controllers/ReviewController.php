@@ -37,7 +37,7 @@ class ReviewController extends Controller
             ];
         });
 
-        return view('profile.reviews', compact('itemsForReview'));
+        return view('users.profile.reviews', compact('itemsForReview'));
     }
     public function store(Request $request)
     {
@@ -93,6 +93,6 @@ class ReviewController extends Controller
         $variant = $review->variant;
         $product = $variant->product;
 
-        return view('profile.detail_reviews', compact('review', 'product', 'variant'));
+        return view('users.profile.detail_reviews', compact('review', 'product', 'variant'));
     }
 }

@@ -1,237 +1,592 @@
 @extends('admin.layouts.app')
 
-@section('content')
-<div class="body-content px-4 md:px-8 py-8 bg-slate-100 min-h-screen">
-    <div class="grid grid-cols-12">
-        <div class="col-span-12">
-            <div class="flex flex-col md:flex-row justify-between mb-6 md:mb-10 items-start md:items-end gap-4">
-                <div class="page-title">
-                    <h3 class="mb-2 md:mb-0 text-2xl md:text-[28px] font-semibold text-gray-800">Categories</h3>
-                    <ul class="text-sm font-medium flex items-center space-x-3 text-gray-500">
-                        <li class="breadcrumb-item">
-                            <a href="" class="text-blue-500 hover:text-blue-600 transition">Home</a>
-                        </li>
-                        <li class="breadcrumb-item flex items-center">
-                            <span class="inline-block bg-gray-400 w-1 h-1 rounded-full mx-2"></span>
-                        </li>
-                        <li class="breadcrumb-item text-gray-500">Category List</li>
-                    </ul>
-                </div>
-                
-                <div class="w-full flex justify-between items-center gap-4">
-                    <form action="{{ route('admin.categories.index') }}" method="GET" class="flex items-center">
-                        @if(request('sort'))
-                            <input type="hidden" name="sort" value="{{ request('sort') }}">
-                        @endif
-                        @if(request('direction'))
-                            <input type="hidden" name="direction" value="{{ request('direction') }}">
-                        @endif
-                        
-                        <div class="relative">
-                            <input type="text" 
-                                   name="search" 
-                                   value="{{ request('search') }}" 
-                                   placeholder="Tìm kiếm theo tên..." 
-                                   class="w-64 h-10 pl-4 pr-10 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                            <button type="submit" class="absolute right-0 top-0 h-full px-3 text-gray-600 hover:text-blue-500">
-                                🔍
-                            </button>
-                        </div>
-                        
-                        @if(request('search'))
-                            <a href="{{ route('admin.categories.index') }}" 
-                               class="ml-2 px-3 py-2 text-gray-500 hover:text-red-500" 
-                               title="Xóa tìm kiếm">
-                                ✕
-                            </a>
-                        @endif
-                    </form>
+@section('title', 'Quản lý Danh mục')
 
-                    <div class="w-full flex justify-end">
-                        <a href="{{ route('admin.categories.create') }}" class="tp-btn px-7 py-2">
-                            Add New Category
-                        </a>
+@push('styles')
+<style>
+    .card-custom { border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); background-color: #fff; }
+    .card-custom-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; }
+    .card-custom-title { font-size: 1.25rem; font-weight: 600; color: #1f2937; }
+    .card-custom-body { padding: 1.5rem; }
+    .card-custom-footer { background-color: #f9fafb; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
+    .btn { border-radius: 0.5rem; transition: all 0.2s ease-in-out; font-weight: 500; padding: 0.625rem 1.25rem; font-size: 0.875rem; display: inline-flex; align-items: center; justify-content: center; line-height: 1.25rem; }
+    .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.75rem; line-height: 1rem; }
+    .btn-primary { background-color: #4f46e5; color: white; } .btn-primary:hover { background-color: #4338ca; }
+    .btn-secondary { background-color: #e5e7eb; color: #374151; border: 1px solid #d1d5db; } .btn-secondary:hover { background-color: #d1d5db; }
+    .btn-danger { background-color: #ef4444; color: white; } .btn-danger:hover { background-color: #dc2626; }
+    .btn-outline-secondary { color: #4a5568; background-color: #fff; border: 1px solid #d1d5db; } .btn-outline-secondary:hover { background-color: #f9fafb; }
+    .btn-default { background-color: #e5e7eb; color: #374151; border: 1px solid #d1d5db; border-left: 0; } .btn-default:hover { background-color: #d1d5db; }
+    .form-input, .form-select { width: 100%; padding: 0.625rem 1rem; border-radius: 0.5rem; border: 1px solid #d1d5db; font-size: 0.875rem; background-color: white; }
+    .form-input:focus, .form-select:focus { border-color: #4f46e5; outline: 0; box-shadow: 0 0 0 0.2rem rgba(79,70,229,0.25); }
+    .input-group { display: flex; }
+    .input-group .form-input { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+    .input-group .btn { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+    .table-custom { width: 100%; color: #374151; }
+    .table-custom th, .table-custom td { padding: 0.5rem 0.75rem; vertical-align: middle !important; border-bottom-width: 1px; border-color: #e5e7eb; }
+    .table-custom th:last-child, .table-custom td:last-child { white-space: nowrap; }
+    
+    /* Tree structure styles */
+    .category-row[data-level="0"] {
+        background-color: #fefefe;
+        font-weight: 500;
+        border-left: 3px solid #4f46e5;
+    }
+    .category-row[data-level="1"] {
+        background-color: #f8fafc;
+        border-left: 3px solid #f59e0b;
+    }
+    .category-row[data-level="2"] {
+        background-color: #f1f5f9;
+        border-left: 3px solid #10b981;
+    }
+    .category-row[data-level="3"] {
+        background-color: #e2e8f0;
+        border-left: 3px solid #f43f5e;
+    }
+    .category-row:hover {
+        background-color: #e0f2fe !important;
+        transform: translateX(2px);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    /* Tree connection lines */
+    .tree-connector {
+        color: #cbd5e1;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1;
+        font-weight: normal;
+    }
+    
+
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .table-custom th, .table-custom td { padding: 0.5rem 0.5rem; font-size: 0.875rem; }
+        .category-row div[style*="padding-left"] {
+            padding-left: 8px !important;
+        }
+    }
+    
+
+    .table-custom thead th { font-weight: 600; color: #4b5563; background-color: #f9fafb; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; text-align: left; border-bottom-width: 2px; }
+    .table-striped tbody tr:nth-of-type(odd) { background-color: rgba(0,0,0,.03); }
+    .badge-custom { display: inline-block; padding: 0.35em 0.65em; font-size: .75em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.375rem; }
+    .badge-success-custom { background-color: #10b981; } .badge-warning-custom { background-color: #f59e0b; color: #1f2937; }
+    .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1100; display: flex; flex-direction: column; gap: 0.75rem; }
+    .toast { opacity: 1; transform: translateX(0); transition: all 0.3s ease-in-out; }
+    .toast.hide { opacity: 0; transform: translateX(100%); }
+    .category-modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); }
+    .category-modal.show { display: flex; align-items: center; justify-content: center; animation: fadeIn 0.3s ease; }
+    .category-modal-content { background-color: #fff; margin: auto; border: none; width: 90%; max-width: 500px; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04); }
+    .category-modal-body { position: relative; flex: 1 1 auto; padding: 1.5rem; color: #374151; }
+    .category-modal-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; background-color: #f9fafb; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .category-modal.show .animated-modal { animation: fadeInScale 0.3s ease-out forwards; }
+    @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+</style>
+@endpush
+
+@section('content')
+<div class="body-content px-4 sm:px-6 md:px-8 py-8">
+    <div class="w-full">
+        
+        {{-- TOAST NOTIFICATIONS CONTAINER --}}
+        <div id="toast-container" class="toast-container">
+            @if (session('success'))
+                <div id="toast-success" class="toast flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-lg" role="alert">
+                    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg"><i class="fas fa-check"></i></div>
+                    <div class="ml-3 text-sm font-normal">{{ session('success') }}</div>
+                    <button type="button" class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8" data-dismiss-target="#toast-success" aria-label="Close"><span class="sr-only">Close</span><i class="fas fa-times"></i></button>
+                </div>
+            @endif
+            @if (session('error'))
+                <div id="toast-error" class="toast flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-lg" role="alert">
+                    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="ml-3 text-sm font-normal">{{ session('error') }}</div>
+                    <button type="button" class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8" data-dismiss-target="#toast-error" aria-label="Close"><span class="sr-only">Close</span><i class="fas fa-times"></i></button>
+                </div>
+            @endif
+        </div>
+
+        {{-- PAGE HEADER --}}
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Quản lý Danh mục</h1>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="flex text-sm text-gray-500">
+                    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a></li>
+                    <li class="text-gray-400 mx-2">/</li>
+                    <li class="breadcrumb-item active text-gray-700 font-medium" aria-current="page">Danh mục</li>
+                </ol>
+            </nav>
+            @if(!request()->filled('search') && !request()->filled('status') && !request()->filled('parent_id'))
+            @elseif(isset($autoPaginatedFlag) && $autoPaginatedFlag)
+            <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle text-amber-500 mr-2"></i>
+                    <span class="text-sm text-amber-700">
+                        Tự động chuyển sang chế độ phân trang do có quá nhiều danh mục (>50)
+                    </span>
+                </div>
+            </div>
+            @endif
+        </div>
+
+        <div class="card-custom">
+            <div class="card-custom-header">
+                {{-- Responsive header layout --}}
+                <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center w-full">
+                    <h3 class="card-custom-title">
+                        @if(isset($isFiltered) && $isFiltered && method_exists($categories, 'total'))
+                            Danh sách danh mục ({{ $categories->total() }} kết quả)
+                        @elseif(isset($isTreeView) && $isTreeView)
+                            Cấu trúc danh mục ({{ $categories->count() }} danh mục)
+                        @else
+                            Danh sách danh mục ({{ $categories->count() }} danh mục)
+                        @endif
+                    </h3>
+                    <div class="flex items-center space-x-2">
+                        <a href="{{ route('admin.categories.trash') }}" class="btn btn-outline-secondary btn-sm" title="Thùng rác"><i class="fas fa-trash mr-2"></i>Thùng rác</a>
+                        <a href="{{ route('admin.categories.index') }}" id="refresh-categories-button" class="btn btn-outline-secondary btn-sm" title="Làm mới danh sách"><i class="fas fa-sync-alt"></i></a>
+                        <a href="{{ route('admin.categories.create') }}" class="btn btn-primary"><i class="fas fa-plus mr-2"></i>Thêm danh mục</a>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="grid grid-cols-12 gap-6">
-        <div class="col-span-12">
-            <div class="relative bg-white rounded-lg shadow-md w-full max-w-full p-4 md:p-6">
-                @if (session('success'))
-                    <div id="alert" class="relative mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4">
-                        {{ session('success') }}
-                        <div class="progress-bar bg-green-500"></div>
-                    </div>
-                @endif
-                @if (session('error'))
-                    <div id="alert" class="relative mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4">
-                        {{ session('error') }}
-                        <div class="progress-bar bg-red-500"></div>
-                    </div>
-                @endif
+            <div class="card-custom-body">
+                {{-- FILTERS --}}
+                <form action="{{ route('admin.categories.index') }}" method="GET">
+                    {{-- Filters grid --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4">
+                        {{-- Search Input --}}
+                        <div class="md:col-span-2 lg:col-span-2 xl:col-span-2">
+                            <label for="search_category" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                            <div class="input-group">
+                                <input type="text" id="search_category" name="search" class="form-input" placeholder="Tên danh mục..." value="{{ request('search') }}">
+                                <button type="submit" class="btn btn-default -ml-px" aria-label="Search"><i class="fas fa-search"></i></button>
+                            </div>
+                        </div>
 
-                @if(request('search'))
-                    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <span class="text-blue-800">
-                            Tìm kiếm: "<strong>{{ request('search') }}</strong>" 
-                            - Tìm thấy {{ $categories->total() }} kết quả
-                        </span>
-                    </div>
-                @endif
+                        {{-- Status Filter --}}
+                        <div>
+                            <label for="filter_status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                            <select id="filter_status" name="status" class="form-select">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Hoạt động</option>
+                                <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Không hoạt động</option>
+                            </select>
+                        </div>
 
-                <div class="w-full overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-600">
-                        <thead>
-                            <tr class="border-b border-gray-200 text-xs uppercase font-semibold text-gray-700">
-                                <th class="py-3 px-4 w-[3%]">
-                                    <div class="tp-checkbox">
-                                        <input id="selectAllProduct" type="checkbox" class="cursor-pointer">
-                                        <label for="selectAllProduct"></label>
-                                    </div>
-                                </th>
-                                @foreach([
-                                    'id' => 'ID',
-                                    'name' => 'Name',
-                                    'slug' => ['label' => 'Slug', 'sortable' => false],
-                                    'parent' => 'Parent',
-                                    'description' => 'Description',
-                                    'order' => 'Order',
-                                    'status' => 'Status'
-                                ] as $column => $config)
-                                    @php
-                                        $label = is_array($config) ? $config['label'] : $config;
-                                        $sortable = is_array($config) ? $config['sortable'] : true;
-                                    @endphp
-                                    <th class="py-3 px-4 text-sm">
-                                        @if($sortable)
-                                            <a href="{{ route('admin.categories.index', [
-                                                'sort' => $column,
-                                                'direction' => ($sortField === $column && $sortDirection === 'asc') ? 'desc' : 'asc'
-                                            ]) }}" 
-                                            class="inline-flex items-center gap-1 hover:text-blue-500">
-                                                {{ $label }}
-                                                @if($sortField === $column)
-                                                    @if($sortDirection === 'asc')
-                                                        <span class="text-blue-500">▲</span>
-                                                    @else
-                                                        <span class="text-blue-500">▼</span>
-                                                    @endif
-                                                @else
-                                                    <span class="text-gray-400">⇅</span>
-                                                @endif
-                                            </a>
-                                        @else
-                                            {{ $label }}
-                                        @endif
-                                    </th>
+                        {{-- Parent Filter --}}
+                        <div>
+                            <label for="filter_parent" class="block text-sm font-medium text-gray-700 mb-1">Danh mục cha</label>
+                            <select id="filter_parent" name="parent_id" class="form-select">
+                                <option value="">Tất cả danh mục</option>
+                                <option value="0" {{ request('parent_id') === '0' ? 'selected' : '' }}>Danh mục gốc</option>
+                                @foreach($parentCategories as $parentCategory)
+                                    <option value="{{ $parentCategory->id }}" {{ request('parent_id') == $parentCategory->id ? 'selected' : '' }}>
+                                        {{ $parentCategory->name }}
+                                    </option>
                                 @endforeach
-                                
-                                <th class="py-3 px-4 text-sm text-left">Action</th>
+                            </select>
+                        </div>
+
+                        {{-- Sort Filter --}}
+                        <div>
+                            <label for="filter_sort" class="block text-sm font-medium text-gray-700 mb-1">Sắp xếp</label>
+                            <select id="filter_sort" name="sort" class="form-select">
+                                <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Tên</option>
+                                <option value="id" {{ request('sort') == 'id' ? 'selected' : '' }}>ID</option>
+                                <option value="status" {{ request('sort') == 'status' ? 'selected' : '' }}>Trạng thái</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    {{-- Action buttons row --}}
+                    <div class="flex justify-end gap-x-3 pt-2 mb-6">
+                        <a href="{{ route('admin.categories.index') }}" class="btn btn-secondary">Xóa lọc</a>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-filter mr-2"></i>Lọc danh mục</button>
+                    </div>
+                </form>
+
+                {{-- CATEGORIES TABLE --}}
+                <div class="border border-gray-200 rounded-lg shadow-sm bg-white">
+                    <table class="table-custom table-striped">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">STT</th>
+                                <th style="width: 35%;">Tên danh mục</th>
+                                <th style="width: 30%;" class="hidden md:table-cell">Mô tả</th>
+                                <th style="width: 100px;" class="text-center">Trạng thái</th>
+                                {{-- <th style="width: 120px;" class="text-center">Trang chủ</th> --}}
+                                <th style="width: 140px;" class="text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($categories as $category)
-                                <tr class="bg-white border-b border-gray-200 last:border-0 hover:bg-gray-50 transition">
-                                    <td class="py-3 px-4 whitespace-nowrap">
-                                        <div class="tp-checkbox">
-                                            <input id="product-{{ $category->id }}" type="checkbox" class="cursor-pointer">
-                                            <label for="product-{{ $category->id }}"></label>
+                            <tr class="category-row" data-level="{{ $category->tree_level ?? 0 }}">
+                                <td>
+                                    @if(isset($isFiltered) && $isFiltered && method_exists($categories, 'currentPage'))
+                                        {{-- Paginated view: tính STT dựa trên pagination --}}
+                                        {{ (($categories->currentPage() - 1) * $categories->perPage()) + $loop->iteration }}
+                                    @else
+                                        {{-- Tree view: STT đơn giản --}}
+                                        {{ $loop->iteration }}
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="flex items-center" style="padding-left: {{ ($category->tree_level ?? 0) * 24 }}px;">
+                                        @if(isset($category->tree_level) && $category->tree_level > 0)
+                                            {{-- Child indicator --}}
+                                            <div class="flex items-center mr-2 tree-connector">
+                                                @for($i = 0; $i < $category->tree_level; $i++)
+                                                    @if($i == $category->tree_level - 1)
+                                                        <span>├─</span>
+                                                    @else
+                                                        <span class="mr-2">│</span>
+                                                    @endif
+                                                @endfor
+                                            </div>
+                                        @endif
+                                        
+                                        <div>
+                                            <a href="{{ route('admin.categories.show', $category->id) }}" 
+                                               class="font-semibold text-indigo-600 hover:text-indigo-800 
+                                                      {{ isset($category->tree_level) && $category->tree_level > 0 ? 'text-sm' : '' }}">
+                                                {{ $category->name }}
+                                            </a>
+                                            @if(isset($category->tree_level) && $category->tree_level > 0)
+                                                <div class="text-xs text-gray-400 italic">Danh mục con</div>
+                                            @endif
+                                            <div class="text-xs text-gray-500 md:hidden mt-1">{{ Str::limit($category->description ?? '', 30, '...') }}</div>
                                         </div>
-                                    </td>
-                                    <td class="py-3 px-4 text-base text-gray-700">{{ $category->id }}</td>
-                                    <td class="py-3 px-4">
-                                        <a href="" class="flex items-center space-x-3 group">
-                                            <span class="text-base text-gray-800 group-hover:text-blue-600 transition">{{ $category->name }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-sm text-gray-600 hidden md:table-cell" style="word-wrap: break-word; white-space: normal;">
+                                    {{ Str::limit($category->description ?? '', 80, '...') }}
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge-custom {{ $category->status === 'active' ? 'badge-success-custom' : 'badge-warning-custom' }}">
+                                        {{ $category->status === 'active' ? 'Hoạt động' : 'Tắt' }}
+                                    </span>
+                                </td>
+                                {{-- <td class="text-center">
+                                    <label class="switch">
+                                        <input type="checkbox" 
+                                               {{ $category->show_on_homepage ? 'checked' : '' }} 
+                                               onchange="toggleHomepage({{ $category->id }}, this)"
+                                               class="homepage-toggle">
+                                        <span class="slider round"></span>
+                                    </label>
+                                </td> --}}
+                                <td class="text-center">
+                                    <div class="flex justify-center items-center space-x-1" style="min-width: 120px;">
+                                        <a href="{{ route('admin.categories.show', $category->id) }}" class="btn btn-outline-secondary btn-sm" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
                                         </a>
-                                    </td>
-                                    <td class="py-3 px-4 text-left text-base text-gray-600">{{ $category->slug }}</td>
-                                    <td class="py-3 px-4 text-left text-base text-gray-600">{{ $category->parent?->name ?? 'None' }}</td>
-                                    <td class="py-3 px-4 text-left text-base text-gray-600">{{ Str::limit($category->description ?? '', 30, '...') }}</td>
-                                    <td class="py-3 px-4 text-left text-base text-gray-600">{{ $category->order ?? 0 }}</td>
-                                    <td class="py-3 px-4 text-left">
-                                        <span class="inline-block px-2 py-1 font-medium text-base rounded {{ $category->status === 'active' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600' }}">
-                                            {{ ucfirst($category->status) }}
-                                        </span>
-                                    </td>
-                                    <td class="py-3 px-4 text-left">
-                                        <div class="flex items-center justify-end space-x-2">
-                                            <a href="{{ route('admin.categories.show', $category->id) }}"
-                                                class="inline-flex items-center justify-center w-10 h-10 text-blue-500 bg-blue-50 rounded-lg hover:bg-blue-100 transition-all"
-                                                title="Show">
-                                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
-                                            </a>
-                                            <a href="{{ route('admin.categories.edit', $category->id) }}"
-                                                class="inline-flex items-center justify-center w-10 h-10 text-green-500 bg-green-50 rounded-lg hover:bg-green-100 transition-all"
-                                                title="Edit">
-                                                <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                            </a>
-                                            <form action="{{ route('admin.categories.destroy', $category->id) }}" 
-                                                method="POST" 
-                                                class="inline-block"
-                                                onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này ?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <input type="hidden" name="page" value="{{ $categories->currentPage() }}">
-                                                <button type="submit"
-                                                    class="inline-flex items-center justify-center w-10 h-10 text-red-500 bg-red-50 rounded-lg hover:bg-red-100 transition-all"
-                                                    title="Delete">
-                                                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        <a href="{{ route('admin.categories.edit', $category->id) }}" class="btn btn-primary btn-sm" title="Chỉnh sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-danger btn-sm" title="Xóa" onclick="confirmDelete({{ $category->id }}, '{{ $category->name }}')">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
                             @empty
-                                <tr>
-                                    <td colspan="9" class="text-center py-6">
-                                        <div class="flex flex-col items-center justify-center">
-                                            <img src="{{ asset('assets/img/empty.svg') }}" alt="Empty" class="w-32 h-32 mb-4">
-                                            <h5 class="text-lg font-medium text-gray-500 mb-2">No Categories</h5>
-                                            <p class="text-sm text-gray-400">Add Category button.</p>
-                                        </div>
-                                    </td>
-                                </tr>
+                            <tr>
+                                <td colspan="5" class="text-center py-8">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+                                        <h5 class="text-lg font-medium text-gray-500 mb-2">Chưa có danh mục nào</h5>
+                                        <p class="text-sm text-gray-400">Nhấn nút "Thêm danh mục" để bắt đầu</p>
+                                    </div>
+                                </td>
+                            </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-
-                <div class="flex justify-end mt-6 px-4">
-                    <div class="flex items-center gap-2">
-                        @if($categories->hasPages())
-                            @if($categories->onFirstPage())
-                                <span class="px-3 py-1 text-gray-400 bg-gray-100 rounded cursor-not-allowed">Previous</span>
-                            @else
-                                <a href="{{ $categories->previousPageUrl() }}" class="px-3 py-1 bg-white border rounded hover:bg-gray-50">Previous</a>
-                            @endif
-
-                            @foreach ($categories->getUrlRange(1, $categories->lastPage()) as $page => $url)
-                                @if ($page == $categories->currentPage())
-                                    <span class="px-3 py-1 text-white bg-blue-600 rounded">{{ $page }}</span>
-                                @else
-                                    <a href="{{ $url }}" class="px-3 py-1 bg-white border rounded hover:bg-gray-50">{{ $page }}</a>
-                                @endif
-                            @endforeach
-
-                            @if ($categories->hasMorePages())
-                                <a href="{{ $categories->nextPageUrl() }}" class="px-3 py-1 bg-white border rounded hover:bg-gray-50">Next</a>
-                            @else
-                                <span class="px-3 py-1 text-gray-400 bg-gray-100 rounded cursor-not-allowed">Next</span>
-                            @endif
+            </div>
+            
+            {{-- PAGINATION - hiển thị cho filtered view --}}
+            @if(isset($isFiltered) && $isFiltered && method_exists($categories, 'hasPages') && $categories->hasPages())
+            <div class="card-custom-footer">
+                <div class="flex justify-between items-center">
+                    <div class="text-sm text-gray-500">
+                        Hiển thị {{ $categories->firstItem() }} - {{ $categories->lastItem() }} trong tổng số {{ $categories->total() }} kết quả
+                    </div>
+                    <div>
+                        {{ $categories->appends(request()->query())->links() }}
+                    </div>
+                </div>
+            </div>
+            {{-- Footer cho tree view --}}
+            @elseif(isset($isTreeView) && $isTreeView)
+            <div class="card-custom-footer">
+                <div class="flex justify-center items-center">
+                    <div class="text-sm text-gray-500">
+                        <i class="fas fa-sitemap mr-2"></i>Hiển thị tất cả danh mục theo cấu trúc tree
+                    </div>
+                </div>
+            </div>
+            {{-- Footer cho auto pagination hoặc filtered view --}}
+            @else
+            <div class="card-custom-footer">
+                <div class="flex justify-center items-center">
+                    <div class="text-sm text-gray-500">
+                        @if(isset($autoPaginatedFlag) && $autoPaginatedFlag)
+                            <i class="fas fa-list mr-2"></i>Tự động phân trang do quá nhiều danh mục
+                        @else
+                            <i class="fas fa-filter mr-2"></i>Kết quả lọc với phân trang
                         @endif
                     </div>
                 </div>
             </div>
+            @endif
         </div>
     </div>
 </div>
+
+{{-- DELETE CONFIRMATION MODAL --}}
+<div id="deleteModal" class="category-modal">
+    <div class="category-modal-content animated-modal">
+        <div class="category-modal-body text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Xác nhận xóa</h3>
+            <p class="text-sm text-gray-500 mb-4">Bạn có chắc chắn muốn xóa danh mục <strong id="categoryNameToDelete"></strong>?</p>
+            <p class="text-xs text-gray-400">Danh mục sẽ được chuyển vào thùng rác và có thể khôi phục sau.</p>
+        </div>
+        <div class="category-modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Hủy</button>
+            <button type="button" class="btn btn-danger ml-2" id="confirmDeleteBtn" onclick="executeDelete()">
+                <i class="fas fa-trash-alt mr-2"></i>Xóa
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- HIDDEN DELETE FORM --}}
+<form id="deleteForm" method="POST" style="display: none;">
+    @csrf
+    @method('DELETE')
+    @if(isset($isFiltered) && $isFiltered && method_exists($categories, 'currentPage'))
+        <input type="hidden" name="page" value="{{ $categories->currentPage() }}">
+    @endif
+</form>
 @endsection
+
+@push('styles')
+<style>
+/* Toggle Switch Styles */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Loading state */
+.switch.loading .slider {
+    opacity: 0.6;
+    pointer-events: none;
+}
+</style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide toasts after 5 seconds
+    setTimeout(function() {
+        const toasts = document.querySelectorAll('.toast');
+        toasts.forEach(function(toast) {
+            toast.classList.add('hide');
+            setTimeout(function() {
+                toast.remove();
+            }, 300);
+        });
+    }, 5000);
+
+    // Toast close buttons
+    document.querySelectorAll('[data-dismiss-target]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const target = document.querySelector(this.getAttribute('data-dismiss-target'));
+            if (target) {
+                target.classList.add('hide');
+                setTimeout(function() {
+                    target.remove();
+                }, 300);
+            }
+        });
+    });
+});
+
+let categoryIdToDelete = null;
+
+function confirmDelete(categoryId, categoryName) {
+    categoryIdToDelete = categoryId;
+    document.getElementById('categoryNameToDelete').textContent = categoryName;
+    document.getElementById('deleteModal').classList.add('show');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+    categoryIdToDelete = null;
+}
+
+function executeDelete() {
+    if (categoryIdToDelete) {
+        const form = document.getElementById('deleteForm');
+        form.action = `/admin/categories/${categoryIdToDelete}`;
+        form.submit();
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeDeleteModal();
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeDeleteModal();
+    }
+});
+
+// Toggle homepage visibility function - DISABLED TEMPORARILY
+/*
+function toggleHomepage(categoryId, toggle) {
+    const switchElement = toggle.closest('.switch');
+    switchElement.classList.add('loading');
+    
+    // Disable toggle during request
+    toggle.disabled = true;
+    
+    fetch(`/admin/categories/${categoryId}/toggle-homepage`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update toggle state
+            toggle.checked = data.show_on_homepage;
+            
+            // Show success message
+            showToast(data.message, 'success');
+        } else {
+            // Revert toggle state
+            toggle.checked = !toggle.checked;
+            showToast('Có lỗi xảy ra khi cập nhật trạng thái!', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        // Revert toggle state
+        toggle.checked = !toggle.checked;
+        showToast('Có lỗi xảy ra khi cập nhật trạng thái!', 'error');
+    })
+    .finally(() => {
+        // Re-enable toggle and remove loading state
+        toggle.disabled = false;
+        switchElement.classList.remove('loading');
+    });
+}
+
+// Toast notification function
+function showToast(message, type = 'success') {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-4 py-2 rounded-lg shadow-lg`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+    `;
+    toast.textContent = message;
+    
+    // Add to page
+    document.body.appendChild(toast);
+    
+    // Show toast
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Hide and remove toast
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+*/
+</script>
+@endpush

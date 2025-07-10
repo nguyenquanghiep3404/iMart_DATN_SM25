@@ -4,6 +4,8 @@ namespace Database\Factories;
 
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Province;
+use App\Models\Ward;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -20,6 +22,52 @@ class OrderFactory extends Factory
         $grandTotal = $subTotal + $shippingFee - ($discountAmount ?? 0);
 
         $faker_vi = \Faker\Factory::create('vi_VN');
+        
+        // Lấy random province và ward cho shipping
+        $shippingProvince = Province::inRandomOrder()->first();
+        $shippingWard = null;
+        
+        if ($shippingProvince) {
+            $shippingWard = Ward::where('province_code', $shippingProvince->code)->inRandomOrder()->first();
+        }
+        
+        // Fallback nếu không có dữ liệu location
+        if (!$shippingProvince) {
+            $shippingProvince = Province::firstOrCreate([
+                'code' => '11'
+            ], [
+                'name' => 'Hà Nội',
+                'slug' => 'ha-noi', 
+                'type' => 'thanh-pho',
+                'name_with_type' => 'Thành phố Hà Nội'
+            ]);
+        }
+        
+        if (!$shippingWard) {
+            $shippingWard = Ward::firstOrCreate([
+                'code' => '267'
+            ], [
+                'name' => 'Minh Châu',
+                'slug' => 'minh-chau',
+                'type' => 'xa',
+                'name_with_type' => 'Xã Minh Châu',
+                'path' => 'Minh Châu, Hà Nội',
+                'path_with_type' => 'Xã Minh Châu, Thành phố Hà Nội',
+                'district_code' => '',
+                'province_code' => $shippingProvince->code,
+            ]);
+        }
+        
+        // Billing address (optional - 30% chance có khác shipping)
+        $billingProvince = null;
+        $billingWard = null;
+        
+        if ($this->faker->boolean(30)) {
+            $billingProvince = Province::inRandomOrder()->first();
+            if ($billingProvince) {
+                $billingWard = Ward::where('province_code', $billingProvince->code)->inRandomOrder()->first();
+            }
+        }
         
         // Chọn trạng thái ngẫu nhiên
         $status = $this->faker->randomElement([
@@ -40,12 +88,23 @@ class OrderFactory extends Factory
             'customer_name' => $customer->name,
             'customer_email' => $customer->email,
             'customer_phone' => $customer->phone_number ?? $faker_vi->phoneNumber,
+            
+            // Shipping address
             'shipping_address_line1' => $faker_vi->streetAddress,
             'shipping_address_line2' => $this->faker->optional(0.2)->secondaryAddress,
-            'shipping_city' => $faker_vi->city,
-            'shipping_district' => $faker_vi->districtName, // Sử dụng districtName
-            'shipping_ward' => $faker_vi->wardName,       // Sử dụng wardName
+            'shipping_province_code' => $shippingProvince->code,
+            'shipping_ward_code' => $shippingWard->code,
+            'shipping_zip_code' => $this->faker->optional(0.5)->postcode,
             'shipping_country' => 'Vietnam',
+            
+            // Billing address (optional)
+            'billing_address_line1' => $billingProvince ? $faker_vi->streetAddress : null,
+            'billing_address_line2' => $billingProvince ? $this->faker->optional(0.2)->secondaryAddress : null,
+            'billing_province_code' => $billingProvince?->code,
+            'billing_ward_code' => $billingWard?->code,
+            'billing_zip_code' => $billingProvince ? $this->faker->optional(0.5)->postcode : null,
+            'billing_country' => $billingProvince ? 'Vietnam' : null,
+            
             'sub_total' => $subTotal,
             'shipping_fee' => $shippingFee,
             'discount_amount' => $discountAmount ?? 0,
@@ -55,6 +114,8 @@ class OrderFactory extends Factory
             'shipping_method' => $this->faker->randomElement(['Giao Hàng Nhanh', 'Giao Hàng Tiết Kiệm', 'Viettel Post', 'GrabExpress']),
             'status' => $status,
             'notes_from_customer' => $this->faker->optional(0.3)->sentence,
+            'desired_delivery_date' => $this->faker->optional(0.4)->dateTimeBetween('now', '+7 days')?->format('Y-m-d'),
+            'desired_delivery_time_slot' => $this->faker->optional(0.4)->randomElement(['Sáng (8h-12h)', 'Chiều (13h-17h)', 'Tối (18h-21h)']),
             'ip_address' => $this->faker->ipv4,
             'user_agent' => $this->faker->userAgent,
             'processed_by' => User::query()->whereHas('roles', fn($q) => $q->where('name', 'order_manager'))->inRandomOrder()->first()?->id,

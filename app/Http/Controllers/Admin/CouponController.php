@@ -69,6 +69,18 @@ class CouponController extends Controller
      */
     public function update(CouponRequest $request, Coupon $coupon)
     {
+        // Kiểm tra xem mã đã hết hạn và có cố gắng chỉnh sửa end_date không
+        if ($coupon->end_date && $coupon->end_date->isPast()) {
+            $requestedEndDate = $request->input('end_date');
+            $currentEndDate = $coupon->end_date->format('Y-m-d\TH:i');
+            
+            if ($requestedEndDate !== $currentEndDate) {
+                return redirect()->back()
+                    ->withErrors(['end_date' => 'Không thể chỉnh sửa ngày kết thúc của mã giảm giá đã hết hạn.'])
+                    ->withInput();
+            }
+        }
+
         $coupon->update($request->validated());
 
         return redirect()->route('admin.coupons.index')
@@ -76,23 +88,81 @@ class CouponController extends Controller
     }
     public function destroy(Coupon $coupon)
     {
+        // Soft delete với thông tin người xóa
+        $coupon->update(['deleted_by' => auth()->id()]);
+        $coupon->delete();
+
+        return redirect()->route('admin.coupons.index')
+            ->with('success', 'Mã giảm giá đã được chuyển vào thùng rác.');
+    }
+
+    /**
+     * Hiển thị thùng rác
+     */
+    public function trash(Request $request)
+    {
+        $query = Coupon::onlyTrashed()->with(['createdBy', 'deletedBy']);
+
+        // Tìm kiếm theo tên
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'like', '%' . $search . '%')
+                  ->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Sắp xếp
+        $sortField = in_array($request->sort, ['code', 'deleted_at']) ? $request->sort : 'deleted_at';
+        
+        if ($sortField === 'code') {
+            $query->orderBy('code', 'asc');
+        } else {
+            $query->orderBy('deleted_at', 'desc');
+        }
+
+        $trashedCoupons = $query->paginate(15)->withQueryString();
+
+        return view('admin.coupons.trash', compact('trashedCoupons'));
+    }
+
+    /**
+     * Khôi phục mã giảm giá từ thùng rác
+     */
+    public function restore($id)
+    {
+        $coupon = Coupon::onlyTrashed()->findOrFail($id);
+        
+        $coupon->restore();
+        $coupon->update(['deleted_by' => null]);
+
+        return redirect()->route('admin.coupons.trash')
+            ->with('success', 'Mã giảm giá đã được khôi phục thành công.');
+    }
+
+    /**
+     * Xóa vĩnh viễn mã giảm giá
+     */
+    public function forceDelete($id)
+    {
+        $coupon = Coupon::onlyTrashed()->findOrFail($id);
+        
         try {
             DB::beginTransaction();
 
-            // xóa các bản ghi sử dụng liên quan
+            // Xóa các bản ghi sử dụng liên quan
             $coupon->usages()->delete();
 
-            // xóa phiếu giảm giá
-            $coupon->delete();
+            // Xóa vĩnh viễn mã giảm giá
+            $coupon->forceDelete();
 
             DB::commit();
 
-            return redirect()->route('admin.coupons.index')
-                ->with('success', 'Đã xóa phiếu giảm giá thành công.');
+            return redirect()->route('admin.coupons.trash')
+                ->with('success', 'Mã giảm giá đã được xóa vĩnh viễn.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->route('admin.coupons.index')
-                ->with('error', 'Error deleting coupon: ' . $e->getMessage());
+            return redirect()->route('admin.coupons.trash')
+                ->with('error', 'Lỗi khi xóa mã giảm giá: ' . $e->getMessage());
         }
     }
     public function show(Coupon $coupon)

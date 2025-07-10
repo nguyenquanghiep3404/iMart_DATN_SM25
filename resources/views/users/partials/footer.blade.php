@@ -12,13 +12,13 @@
               <p class="text-body fs-sm text-sm-end text-md-start mb-sm-0 mb-md-3 ms-0 ms-sm-auto ms-md-0 me-4">Got questions? Contact us 24/7</p>
               <div class="dropdown" style="max-width: 250px">
                 <button type="button" class="btn btn-secondary dropdown-toggle justify-content-between w-100" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Help and consultation
+                  Hỗ trợ và tư vấn
                 </button>
                 <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="#!">Help center &amp; FAQ</a></li>
-                  <li><a class="dropdown-item" href="#!">Support chat</a></li>
-                  <li><a class="dropdown-item" href="#!">Open support ticket</a></li>
-                  <li><a class="dropdown-item" href="#!">Call center</a></li>
+                  <li><a class="dropdown-item" href="{{ route('users.about') }}">Về chúng tôi</a></li>
+                  <li><a class="dropdown-item" href="{{ route('users.help') }}">Trung tâm trợ giúp &amp; FAQ</a></li>
+                  <li><a class="dropdown-item" href="{{ route('users.terms') }}">Điều khoản &amp; điều kiện</a></li>
+                  <li><a class="dropdown-item" href="#!">Liên hệ hỗ trợ</a></li>
                 </ul>
               </div>
             </div>
@@ -102,7 +102,7 @@
                         <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Shipping</a>
                       </li>
                       <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Terms &amp; conditions</a>
+                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="{{ route('users.terms') }}">Terms &amp; conditions</a>
                       </li>
                     </ul>
                   </div>
@@ -211,6 +211,10 @@
             <li class="px-1">/</li>
             <li class="animate-underline">
               <a class="nav-link fw-normal p-0 animate-target" href="#!">Accessories</a>
+            </li>
+            <li class="px-1">/</li>
+            <li class="animate-underline">
+              <a class="nav-link fw-normal p-0 animate-target" href="{{ route('users.terms') }}">Terms &amp; conditions</a>
             </li>
           </ul>
         </div>
