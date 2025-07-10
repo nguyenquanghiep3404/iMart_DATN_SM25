@@ -27,10 +27,10 @@
     @include('users.partials.back_to_top_button')
 
     <!-- Vendor scripts -->
-    <script src="{{ asset ('assets/users/vendor/swiper/swiper-bundle.min.js') }}"></script>
+    <script src="{{ asset('assets/users/vendor/swiper/swiper-bundle.min.js') }}"></script>
 
     <!-- Bootstrap + Theme scripts -->
-    <script src="{{ asset ('assets/users/js/theme.min.js') }}"></script>
+    <script src="{{ asset('assets/users/js/theme.min.js') }}"></script>
 
     @stack('scripts') {{-- Cho phép các trang con thêm JS cụ thể --}}
 </body>

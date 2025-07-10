@@ -47,8 +47,9 @@
     @yield('styles')
 </head>
 
-
 <body>
+    <!-- Customizer offcanvas -->
+    @include('users.partials.ai_chatbot')
 
     <!-- Shopping cart offcanvas -->
     @include('users.partials.cart_offcanvas')
@@ -80,16 +81,10 @@
     <!-- Vendor scripts -->
     <script src="{{ asset('assets/users/vendor/swiper/swiper-bundle.min.js') }}"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
     <!-- Bootstrap + Theme scripts -->
     <script src="{{ asset('assets/users/js/theme.min.js') }}"></script>
 
     @stack('scripts') {{-- Cho phép các trang con thêm JS cụ thể --}}
-
-
-
 </body>
 
 </html>

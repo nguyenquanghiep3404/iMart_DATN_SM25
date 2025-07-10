@@ -14,8 +14,12 @@ use Illuminate\Http\Request;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
+use App\Models\HomepageProductBlock;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Models\WishlistItem;
+
 
 
 class HomeController extends Controller
@@ -27,6 +31,29 @@ class HomeController extends Controller
             ->where('status', 'active')
             ->orderBy('order')
             ->get();
+
+        $blocks = HomepageProductBlock::where('is_visible', true)
+    ->orderBy('order')
+    ->with(['products' => function ($query) {
+        $query->where('products.status', 'published') // ✅ fix lỗi ambiguous
+            ->with([
+                'category',
+                'coverImage',
+                'galleryImages',
+                'variants.primaryImage',
+                'variants.images',
+                'reviews' => function ($query) {
+                    $query->where('reviews.status', 'approved'); // ✅ fix luôn
+                },
+            ])
+            ->withCount([
+                'reviews as approved_reviews_count' => function ($query) {
+                    $query->where('reviews.status', 'approved'); // ✅
+                },
+            ]);
+    }])
+    ->get();
+
 
         // Hàm xử lý đánh giá và phần trăm giảm giá
         $calculateAverageRating = function ($products) {
@@ -145,16 +172,16 @@ class HomeController extends Controller
 
         return view('users.home', compact(
             'featuredProducts',
+            'blocks',
             'latestProducts',
             'banners',
             'featuredPosts',
             'unreadNotificationsCount',
             'recentNotifications',
         ));
-
     }
 
-    public function show($slug)
+    public function show(Request $request,$slug)
     {
         $product = Product::with([
             'category',
@@ -271,22 +298,22 @@ class HomeController extends Controller
         }
 
         $variantSpecs = [];
-foreach ($product->variants as $variant) {
-    $variantKey = [];
-    foreach ($attributeOrder as $attrName) {
-        $attrValue = $variant->attributeValues->firstWhere('attribute.name', $attrName);
-        $variantKey[] = $attrValue?->value ?? '';
-    }
-    $variantKeyStr = implode('_', $variantKey);
+        foreach ($product->variants as $variant) {
+            $variantKey = [];
+            foreach ($attributeOrder as $attrName) {
+                $attrValue = $variant->attributeValues->firstWhere('attribute.name', $attrName);
+                $variantKey[] = $attrValue?->value ?? '';
+            }
+            $variantKeyStr = implode('_', $variantKey);
 
-    $groupedSpecs = [];
-    foreach ($variant->specifications as $spec) {
-        $groupName = $spec->group->name ?? 'Other';
-        $groupedSpecs[$groupName][$spec->name] = $spec->pivot->value;
-    }
+            $groupedSpecs = [];
+            foreach ($variant->specifications as $spec) {
+                $groupName = $spec->group->name ?? 'Other';
+                $groupedSpecs[$groupName][$spec->name] = $spec->pivot->value;
+            }
 
-    $variantSpecs[$variantKeyStr] = $groupedSpecs;
-}
+            $variantSpecs[$variantKeyStr] = $groupedSpecs;
+        }
 
 
         $relatedProducts = Product::with(['category', 'coverImage'])
@@ -320,8 +347,37 @@ foreach ($product->variants as $variant) {
                 $specGroupsData[$groupName][$spec->name] = $spec->pivot->value;
             }
         }
+        $userId = Auth::id();
+        $wishlistVariantIds = [];
 
-        return view('users.show', compact(
+        if ($userId) {
+            $wishlistVariantIds = WishlistItem::whereHas('wishlist', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })->pluck('product_variant_id')->toArray();
+        }
+        // lấy variant_id trong query param
+        $variantId = $request->query('variant_id');
+
+        // Lấy product, ... (giữ nguyên code load product và quan hệ như cũ)
+
+        // Lấy biến thể mặc định hoặc biến thể theo variant_id
+        $defaultVariant = null;
+        if ($variantId) {
+            $defaultVariant = $product->variants->firstWhere('id', $variantId);
+        }
+        if (!$defaultVariant) {
+            $defaultVariant = $product->variants->firstWhere('is_default', true);
+        }
+        // ... các phần khác giữ nguyên như bạn có
+
+        // Lấy initialVariantAttributes để view dùng hiển thị đúng biến thể
+        $initialVariantAttributes = [];
+        if ($defaultVariant) {
+            foreach ($defaultVariant->attributeValues as $attrValue) {
+                $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
+            }
+        }
+        return view('users.products.show', compact(
             'product',
             'relatedProducts',
             'ratingCounts',
@@ -337,7 +393,8 @@ foreach ($product->variants as $variant) {
             'variantCombinations',
             'attributesGrouped',
             'specGroupsData',
-            'variantSpecs' // 👈 Quan trọng
+            'variantSpecs',
+            'wishlistVariantIds' 
         ));
     }
 
@@ -564,35 +621,102 @@ foreach ($product->variants as $variant) {
     }
     public function compareSuggestions(Request $request)
     {
-        $variantId = $request->input('variant_id');
+        try {
+            $variantId = $request->input('variant_id');
+            $recentProductIds = $request->input('recent_product_ids', []);
 
-        $variant = ProductVariant::with(['product.category.parent', 'attributeValues.attribute'])->findOrFail($variantId);
-        $product = $variant->product;
+            \Log::info('📥 Nhận được danh sách sản phẩm đã xem:', [
+                'variant_id' => $variantId,
+                'recent_product_ids' => $recentProductIds,
+            ]);
 
-        // Lấy danh mục cha (ví dụ: "Điện thoại")
-        $parentCategoryId = $product->category->parent_id ?? $product->category->id;
+            if (empty($recentProductIds)) {
+                return response()->json([
+                    'suggested' => [],
+                    'count' => 0,
+                    'message' => 'Chưa có sản phẩm nào đã xem gần đây.'
+                ]);
+            }
 
-        $currentPrice = $variant->sale_price ?: $variant->price;
+            // Lấy variant hiện tại để loại trừ chính nó
+            $currentVariant = ProductVariant::find($variantId);
+            $currentProductId = $currentVariant?->product_id;
 
-        $suggestedProducts = Product::with(['variants', 'coverImage'])
-            ->whereHas('category', function ($query) use ($parentCategoryId) {
-                $query->where('parent_id', $parentCategoryId)
-                    ->orWhere('id', $parentCategoryId);
-            })
-            ->where('id', '!=', $product->id)
-            ->where('status', 'published')
-            ->get()
-            ->filter(function ($p) use ($currentPrice) {
-                return $p->variants->contains(function ($v) use ($currentPrice) {
-                    $price = $v->sale_price ?: $v->price;
-                    return abs($price - $currentPrice) <= 3000000; // Chênh lệch tối đa 3 triệu
+            // Lọc bỏ sản phẩm trùng (cùng id và variant_key)
+            $filtered = collect($recentProductIds)
+                ->filter(
+                    fn($item) =>
+                    isset($item['id']) &&
+                        ($item['id'] != $currentProductId || ($item['variant_key'] ?? '') !== $this->getVariantKey($currentVariant))
+                )
+                ->reverse() // Ưu tiên mới nhất
+                ->take(5);
+
+            $results = collect();
+
+            foreach ($filtered as $item) {
+                $product = Product::with([
+                    'variants.attributeValues.attribute',
+                    'coverImage',
+                    'variants.primaryImage',
+                ])
+                    ->where('id', $item['id'])
+                    ->where('status', 'published')
+                    ->first();
+
+                if (!$product) continue;
+
+                $variantKey = $item['variant_key'] ?? null;
+
+                $variant = $product->variants->first(function ($v) use ($variantKey) {
+                    $key = $v->attributeValues
+                        ->sortBy(fn($attr) => $attr->attribute->id)
+                        ->pluck('value')
+                        ->implode('_');
+                    return $key === $variantKey;
                 });
-            })
-            ->take(5)
-            ->values();
 
-        return response()->json([
-            'suggested' => $suggestedProducts,
-        ]);
+                $variantName = $variant
+                    ? $variant->attributeValues
+                    ->sortBy(fn($attr) => $attr->attribute->id)
+                    ->pluck('value')
+                    ->implode(' ')
+                    : '';
+
+                $imageUrl = $variant?->primaryImage?->path
+                    ?? $variant?->image?->path
+                    ?? $product->coverImage?->path;
+
+                $results->push([
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'variant_id' => $variant?->id,
+                    'variant_name' => $variantName,
+                    'cover_image' => $imageUrl ? Storage::url($imageUrl) : asset('/images/no-image.png'),
+                    'price' => $variant && $variant->price ? (int) $variant->price : (int) $product->price,
+                    'sale_price' => $variant && $variant->sale_price ? (int) $variant->sale_price : ($product->sale_price ?? null),
+
+                ]);
+            }
+
+            return response()->json([
+                'suggested' => $results,
+                'count' => $results->count(),
+                'message' => 'Hiển thị sản phẩm đã xem gần đây.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('❌ Lỗi compareSuggestions:', ['msg' => $e->getMessage()]);
+            return response()->json(['error' => 'Đã xảy ra lỗi khi xử lý.'], 500);
+        }
+    }
+
+    private function getVariantKey(?ProductVariant $variant): string
+    {
+        if (!$variant) return '';
+        return $variant->attributeValues
+            ->sortBy(fn($attr) => $attr->attribute->id)
+            ->pluck('value')
+            ->implode('_');
     }
 }

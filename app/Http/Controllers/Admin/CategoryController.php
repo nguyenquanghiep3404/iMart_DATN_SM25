@@ -210,27 +210,20 @@ class CategoryController extends Controller
             'specSearch' 
         ));
     }
-    public function update(CategoryRequest $request, Category $category)
+   public function update(CategoryRequest $request, Category $category)
     {
-    if ($request->has('specification_groups')) {
-            $category->specificationGroups()->sync($request->input('specification_groups'));
-        } else {
-            $category->specificationGroups()->sync([]);
-        }
+        // Gán nhóm thông số cho danh mục
+        // Sử dụng mảng rỗng làm giá trị mặc định nếu không có nhóm nào được chọn
+        $category->specificationGroups()->sync($request->input('specification_groups', []));
 
         // Validate và cập nhật dữ liệu danh mục
         $data = $request->validated();
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
         $category->update($data);
 
-        // Giữ lại tham số tìm kiếm khi chuyển hướng
-        $redirectUrl = route('admin.categories.index');
-        if ($request->has('spec_search')) {
-            $redirectUrl = route('admin.categories.edit', $category) . '?spec_search=' . urlencode($request->spec_search);
-        }
-
-        return redirect($redirectUrl)
-            ->with('success', 'Danh mục đã được cập nhật thành công.');
+        // !!! FIX: Luôn chuyển hướng về trang index sau khi cập nhật thành công
+        return redirect()->route('admin.categories.index')
+            ->with('success', "Danh mục '{$category->name}' đã được cập nhật thành công.");
     }
     public function destroy(Category $category)
     {

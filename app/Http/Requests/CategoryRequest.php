@@ -27,12 +27,14 @@ class CategoryRequest extends FormRequest
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|unique:categories,slug' . ($categoryId ? ',' . $categoryId : ''),
             'parent_id' => 'nullable|exists:categories,id|not_in:' . $categoryId,
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'order' => 'nullable|integer',
             'status' => 'required|in:active,inactive',
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string|max:255',
+            'specification_groups' => 'nullable|array',
+            'specification_groups.*' => 'exists:specification_groups,id',
         ];
     }
 

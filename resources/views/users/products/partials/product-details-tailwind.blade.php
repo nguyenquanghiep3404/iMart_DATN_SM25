@@ -1,3 +1,6 @@
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <div class="mt-10 md:mt-12 space-y-10 md:space-y-12">
     <!-- Mua Kèm Deal Sốc / Cheaper Together -->
     <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
@@ -84,41 +87,42 @@
                 </div>
             </div>
 
-
             <!-- Content for Specs Tab -->
             <div id="tab-specs-content" class="tab-content">
-                @if (!empty($specGroupsData))
-    <div class="space-y-3" id="specs-accordion">
-        @foreach ($specGroupsData as $groupName => $specs)
-            <div>
-                <button
-                    class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                    onclick="this.nextElementSibling.classList.toggle('hidden')">
-                    <span class="font-semibold text-gray-800">{{ $groupName }}</span>
-                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div class="accordion-content hidden">
-                    <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                        <dl class="divide-y divide-gray-100">
-                            @foreach ($specs as $specName => $value)
-                                <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                    <dt class="text-sm font-medium text-gray-600">{{ $specName }}</dt>
-                                    <dd class="text-sm text-gray-800 col-span-2">{{ $value }}</dd>
+                <div class="space-y-3" id="specs-accordion">
+                    @if (!empty($specGroupsData))
+                        <div class="space-y-3" id="specs-accordion">
+                            @foreach ($specGroupsData as $groupName => $specs)
+                                <div>
+                                    <button
+                                        class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                        <span class="font-semibold text-gray-800">{{ $groupName }}</span>
+                                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-content hidden">
+                                        <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
+                                            <dl class="divide-y divide-gray-100">
+                                                @foreach ($specs as $specName => $value)
+                                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
+                                                        <dt class="text-sm font-medium text-gray-600">
+                                                            {{ $specName }}</dt>
+                                                        <dd class="text-sm text-gray-800 col-span-2">{{ $value }}
+                                                        </dd>
+                                                    </div>
+                                                @endforeach
+                                            </dl>
+                                        </div>
+                                    </div>
                                 </div>
                             @endforeach
-                        </dl>
-                    </div>
+                        </div>
+                    @endif
                 </div>
-            </div>
-        @endforeach
-    </div>
-@endif
-
-
             </div>
         </div>
     </section>
@@ -215,41 +219,10 @@
                 </div>
             </div>
             <!-- New Comment Form -->
-            <div class="my-6">
-                <div class="flex items-center gap-2 relative">
-                    <textarea id="comment-textarea" maxlength="3000" placeholder="Nhập nội dung bình luận..."
-                        class="w-full px-4 py-3 pr-24 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"></textarea>
-                    <span id="char-counter" class="absolute right-32 bottom-3 text-sm text-gray-400">0/3000</span>
-                    <button id="comment-submit-btn"
-                        class="absolute right-2 bottom-1.5 bg-gray-800 text-white font-semibold py-2 px-5 rounded-lg hover:bg-gray-900 transition-colors">Gửi
-                        bình luận</button>
-                </div>
-            </div>
+            @include('users.products.partials.product-comments')
+            
 
-            <div class="border-b border-gray-200 py-4">
-                <div class="flex items-start gap-3">
-                    <img src="https://placehold.co/40x40/7e22ce/ffffff?text=N" alt="Avatar"
-                        class="w-10 h-10 rounded-full">
-                    <div>
-                        <p class="font-semibold text-gray-800">Nguyễn V. An</p>
-                        <div class="flex text-yellow-400 text-sm my-1">★★★★★</div>
-                        <p class="text-sm text-gray-600">Sản phẩm tuyệt vời, đúng hàng chính hãng. Giao hàng nhanh,
-                            đóng gói cẩn thận. Máy mượt, pin trâu, chụp ảnh siêu nét. Rất đáng tiền!</p>
-                        <div class="flex gap-2 mt-2"><img src="https://placehold.co/80x80/d0d0d0/333?text=Ảnh+thật"
-                                alt="Review Image" class="w-20 h-20 rounded-md object-cover"><img
-                                src="https://placehold.co/80x80/c0c0c0/333?text=Ảnh+thật" alt="Review Image"
-                                class="w-20 h-20 rounded-md object-cover"></div>
-                        <div class="text-xs text-gray-500 mt-2 flex items-center gap-4"><span>2 ngày
-                                trước</span><button class="flex items-center gap-1 text-blue-600 hover:underline"><svg
-                                    xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20"
-                                    fill="currentColor">
-                                    <path
-                                        d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.56 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.8 2.4L6.8 7.933a4 4 0 00-.8 2.4z">
-                                    </path>
-                                </svg>Hữu ích</button></div>
-                    </div>
-                </div>
-            </div>
+
         </div>
     </section>
 
@@ -320,56 +293,120 @@
 </div>
 
 <script>
-    <script>
-    const variantSpecs = @json($variantSpecs);
+    document.addEventListener('DOMContentLoaded', () => {
+        // Gửi bình luận chính
+        const mainForm = document.getElementById('comment-form');
+        if (mainForm) {
+            mainForm.addEventListener('submit', function(e) {
+                e.preventDefault();
 
-    function updateSpecifications(variantKey) {
-        const container = document.getElementById('specs-accordion');
-        if (!container || !variantSpecs[variantKey]) return;
+                const formData = new FormData(this);
+                const submitBtn = document.getElementById('comment-submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Đang gửi...';
 
-        const specs = variantSpecs[variantKey];
-        let html = '';
+                fetch(this.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                .content,
+                            'Accept': 'application/json',
+                        },
+                        body: formData
+                    })
+                    .then(async res => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = 'Gửi bình luận';
 
-        for (const groupName in specs) {
-            html += `
-                <div>
-                    <button onclick="this.nextElementSibling.classList.toggle('hidden')"
-                        class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                        <span class="font-semibold text-gray-800">${groupName}</span>
-                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div class="accordion-content hidden">
-                        <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                            <dl class="divide-y divide-gray-100">
-            `;
+                        if (!res.ok) {
+                            const contentType = res.headers.get("content-type");
+                            if (contentType && contentType.includes("application/json")) {
+                                const data = await res.json();
+                                throw new Error(data.message || 'Lỗi không xác định');
+                            } else {
+                                throw new Error('Server trả về HTML thay vì JSON');
+                            }
+                        }
 
-            for (const specName in specs[groupName]) {
-                html += `
-                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                        <dt class="text-sm font-medium text-gray-600">${specName}</dt>
-                        <dd class="text-sm text-gray-800 col-span-2">${specs[groupName][specName]}</dd>
-                    </div>
-                `;
-            }
-
-            html += `
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            `;
+                        return res.json();
+                    })
+                    .then(data => {
+                        toastr.success(data.message || 'Bình luận đã được gửi thành công!');
+                        this.reset();
+                    })
+                    .catch(err => {
+                        toastr.error(err.message || 'Đã xảy ra lỗi khi gửi bình luận.');
+                    });
+            });
         }
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: 'toast-top-right', // góc trên bên phải
+            timeOut: 3000,
+            showMethod: 'slideDown',
+            hideMethod: 'slideUp'
+        };
 
-        container.innerHTML = html;
+        // Gửi phản hồi bằng event delegation (áp dụng cả với form tạo động)
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (!form.classList.contains('reply-form')) return;
+
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const wrapper = form.closest('.border-b'); // vùng comment cha
+
+            fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const div = document.createElement('div');
+                        div.classList.add('flex', 'items-start', 'gap-3', 'mb-3');
+                        div.innerHTML = `
+                        <img src="${data.comment.avatar}" class="w-8 h-8 rounded-full object-cover">
+                        <div>
+                            <p class="font-semibold text-sm">${data.comment.name}</p>
+                            <p class="text-sm text-gray-700">${data.comment.content}</p>
+                            <div class="text-xs text-gray-500 mt-1">${data.comment.time}</div>
+                        </div>
+                    `;
+                        const replyList = wrapper.querySelector('.reply-list');
+                        if (replyList) replyList.appendChild(div);
+
+                        form.reset();
+                        form.classList.add('hidden');
+                    } else {
+                        alert(data.message || 'Đã có lỗi xảy ra khi gửi phản hồi');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Lỗi khi gửi phản hồi');
+                });
+        });
+    });
+
+    // Toggle hiển thị form phản hồi
+    function toggleReplyForm(commentId) {
+        const form = document.getElementById('reply-form-' + commentId);
+        form?.classList.toggle('hidden');
     }
-
-    // Gọi updateSpecifications() khi người dùng chọn biến thể mới
-    // Ví dụ: khi biến thể được chọn thì gọi:
-    // updateSpecifications('Đen_128GB')  // tương ứng với variantKeyStr
 </script>
 
-</script>
+
+
+
+</div>
+</div>
+</section>
+
+</div>
