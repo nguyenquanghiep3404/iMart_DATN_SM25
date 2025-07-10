@@ -353,7 +353,7 @@ foreach ($product->variants as $variant) {
                 $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
             }
         }
-        return view('users.show', compact(
+        return view('users.products.show', compact(
             'product',
             'relatedProducts',
             'ratingCounts',
