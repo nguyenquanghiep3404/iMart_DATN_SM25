@@ -49,16 +49,22 @@ class UserOrderController extends Controller
      * Hiển thị chi tiết đơn hàng
      */
     public function show($id)
-    {
-        $user = Auth::user();
-        $order = Order::where('user_id', $user->id)
-            ->with(['items' => function($query) {
+{
+    $user = Auth::user();
+    $order = Order::where('user_id', $user->id)
+        ->with([
+            'items' => function($query) {
                 $query->with('productVariant');
-            }])
-            ->findOrFail($id);
+            },
+            'shippingProvince',
+            'shippingWard',
+            'billingProvince',
+            'billingWard'
+        ])
+        ->findOrFail($id);
 
-        return view('users.orders.show', compact('order'));
-    }
+    return view('users.orders.show', compact('order'));
+}
 
     /**
      * Hiển thị hóa đơn

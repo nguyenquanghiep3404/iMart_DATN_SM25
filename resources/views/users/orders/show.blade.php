@@ -79,8 +79,20 @@
                             @if($order->shipping_address_line2)
                                 <p>{{ $order->shipping_address_line2 }}</p>
                             @endif
-                            <p>{{ $order->shipping_ward_code }}, {{ $order->shipping_province_code }}</p>
+                            <p>
+                                @if($order->shippingWard)
+                                    {{ $order->shippingWard->name }},
+                                @else
+                                    {{ $order->shipping_ward_code }},
+                                @endif
+                                @if($order->shippingProvince)
+                                    {{ $order->shippingProvince->name }}
+                                @else
+                                    {{ $order->shipping_province_code }}
+                                @endif
+                            </p>
                         </div>
+
                         @if($order->billing_address_line1)
                         <div class="col-md-6">
                             <h6>Địa chỉ thanh toán</h6>
@@ -89,7 +101,18 @@
                             @if($order->billing_address_line2)
                                 <p>{{ $order->billing_address_line2 }}</p>
                             @endif
-                            <p>{{ $order->billing_ward_code }}, {{ $order->billing_province_code }}</p>
+                            <p>
+                                @if($order->billingWard)
+                                    {{ $order->billingWard->name }},
+                                @else
+                                    {{ $order->billing_ward_code }},
+                                @endif
+                                @if($order->billingProvince)
+                                    {{ $order->billingProvince->name }}
+                                @else
+                                    {{ $order->billing_province_code }}
+                                @endif
+                            </p>
                         </div>
                         @endif
                     </div>
