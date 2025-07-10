@@ -12,7 +12,9 @@ class GoogleController extends Controller
 {
     public function redirectToGoogle()
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')
+            ->with(['prompt' => 'select_account'])
+            ->redirect();
     }
 
     public function handleGoogleCallback()
@@ -31,13 +33,13 @@ class GoogleController extends Controller
             $user->markEmailAsVerified();
             event(new Verified($user));
         }
-                $admin = User::find(1); // hoặc lấy theo vai trò
+        $admin = User::find(1); // hoặc lấy theo vai trò
 
         $admin->notify(new NewUserRegistered($user));
 
         Auth::login($user);
 
 
-        return redirect()->route('users.home'); 
+        return redirect()->route('users.home');
     }
 }

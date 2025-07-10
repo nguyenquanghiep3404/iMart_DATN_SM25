@@ -37,8 +37,8 @@ class LowStockAlert extends Notification implements ShouldQueue
     return [
         'title' => '⚠️ Cảnh báo tồn kho thấp',
         'message' => "Tồn kho thấp: {$this->variant->product->name} - SKU: {$this->variant->sku} chỉ còn {$this->variant->stock_quantity}",
-        'icon' => '⚠️',
-        'color' => 'yellow',
+        'icon' => 'warning',
+        'color' => 'red',
         'product_id' => $this->variant->product_id,
     ];
 }

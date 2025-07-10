@@ -1,4 +1,3 @@
-
 @php
 
 // Giả lập thông tin user để hiển thị
@@ -132,31 +131,46 @@ $user = auth()->user() ?? (object)[
             x-transition:leave="transition ease-in duration-150 origin-top"
             x-transition:leave-start="opacity-100 scale-y-100"
             x-transition:leave-end="opacity-0 scale-y-90"
-            class="absolute right-0 sm:-right-10 mt-2 w-80 sm:w-96 max-h-[80vh] overflow-y-auto shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 z-50">
+            class="absolute right-0 sm:-right-10 mt-2 w-80 sm:w-96 max-h-96 overflow-y-auto shadow-lg rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 z-50">
             <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-600">
                 <h4 class="font-semibold text-slate-800 dark:text-slate-100">Thông báo</h4>
             </div>
             <ul class="divide-y divide-slate-200 dark:divide-slate-600">
-                @forelse($recentNotifications as $notification)
-                <li class="hover:bg-slate-50 dark:hover:bg-slate-600">
-                    <a class="block p-4" href="#">
-                        <div class="flex items-start space-x-3">
-                            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-500 flex items-center justify-center">
-                                {{ $notification['icon'] ?? '🔔' }}
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-sm text-slate-700 dark:text-slate-200 leading-tight break-words font-semibold">
-                                    {{ $notification['message'] }}
-                                </p>
-                                <span class="text-xs text-slate-500 dark:text-slate-400">{{ $notification['time'] }}</span>
-                            </div>
-                        </div>
-                    </a>
-                </li>
+                @forelse($recentNotifications ?? [] as $notification)
+                <a href="#" class="flex items-start p-3 hover:bg-gray-700/50 transition-colors">
+                    <div class="flex-shrink-0 w-10 h-10 bg-{{ $notification['color'] ?? 'gray' }}-500/20 text-{{ $notification['color'] ?? 'gray' }}-400 rounded-full flex items-center justify-center">
+                        @if (isset($notification['icon']) && $notification['icon'] === "check")
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        @elseif (isset($notification['icon']) && $notification['icon'] === "warning")
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+                            <line x1="12" x2="12" y1="9" y2="13"></line>
+                            <line x1="12" x2="12.01" y1="17" y2="17"></line>
+                        </svg>
+                        @else
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <line x1="12" x2="12" y1="2" y2="22" />
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                        @endif
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm font-medium text-black-200">{{ $notification['title'] ?? 'Không có tiêu đề' }}</p>
+                        <p class="text-sm font-medium text-black-200">{{ $notification['message'] ?? 'Không có tiêu đề' }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ $notification['time'] ?? '' }}</p>
+                    </div>
+                </a>
                 @empty
-                <li class="p-4 text-center text-sm text-slate-500 dark:text-slate-400">
-                    Không có thông báo mới.
-                </li>
+                <div class="text-center text-gray-400 py-8 px-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                    </svg>
+                    <p class="mt-4 text-sm font-semibold">Không có thông báo mới</p>
+                    <p class="mt-1 text-xs text-gray-500">Chúng tôi sẽ cho bạn biết khi có tin tức.</p>
+                </div>
                 @endforelse
             </ul>
             <div class="px-4 py-2 border-t border-slate-200 dark:border-slate-600 text-center">

@@ -18,6 +18,8 @@
         "vite": "^6.2.4"
     },
     "dependencies": {
+        "@cropper/element-canvas": "^2.0.0",
+        "cropperjs": "^2.0.0",
         "laravel-echo": "^2.1.6",
         "pusher-js": "^8.4.0"
     }
