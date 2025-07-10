@@ -34,6 +34,7 @@ use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\SpecificationController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
+use App\Http\Controllers\Users\UserOrderController;
 use App\Http\Controllers\Users\CarOffController;
 
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
@@ -103,6 +104,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
+    //Routes đơn hàng của user
+    Route::prefix('my-orders')->group(function () {
+            Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
+            Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
+            Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
+            Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
+    });
 });
 
 // Hiển thị trang wishlist cho khách vãng lai và user
@@ -373,10 +381,10 @@ Route::prefix('admin')
         // ✅ Lấy danh sách danh mục từ DB (dùng cho fetch)
         Route::get('/homepage/categories/list', [HomepageController::class, 'getCategories'])->name('admin.homepage.categories.list');
 
-        // ✅ Thêm khối sản phẩm 
+        // ✅ Thêm khối sản phẩm
         Route::post('/homepage/product-blocks', [HomepageController::class, 'storeProductBlock'])->name('homepage.blocks.store');
 
-        // ✅ Xoá khối sản phẩm 
+        // ✅ Xoá khối sản phẩm
         Route::delete('/homepage/product-blocks/{id}', [HomepageController::class, 'destroyProductBlock'])->name('homepage.blocks.destroy');
 
         Route::get('/homepage/products/search', [HomepageController::class, 'searchProducts'])->name('homepage.products.search');
