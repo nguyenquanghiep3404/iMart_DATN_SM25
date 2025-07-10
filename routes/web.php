@@ -32,6 +32,7 @@ use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Users\PaymentController;
+use App\Http\Controllers\Users\UserOrderController;
 use App\Http\Controllers\LocationController;
 
 
@@ -77,6 +78,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
+    //Routes đơn hàng của user
+    Route::prefix('my-orders')->group(function () {
+            Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
+            Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
+            Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
+            Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
+    });
 });
 
 // Hiển thị trang wishlist cho khách vãng lai và user

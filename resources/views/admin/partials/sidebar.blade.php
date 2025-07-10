@@ -303,7 +303,6 @@ style="width: 40px;">
                         <li>
 
 
-<<<<<<< HEAD
                             <!-- <a href=""
                                 class="block w-full py-1.5
                             <a href="{{ route('admin.roles.index') }}" {{-- Giả sử route --}}
@@ -313,9 +312,7 @@ style="width: 40px;">
                                 Vai trò của người dùng
                             </a> -->
                         </li>
-=======
                             </li>
->>>>>>> 39222e361a52975195f3b53dc079d61e47f5a70d
                         <li>
 
                             <a href="{{ route('admin.users.create') }}"

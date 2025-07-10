@@ -121,6 +121,7 @@ class PaymentController extends Controller
                     'product_name' => $variant->product->name,
                     'variant_attributes' => $variantAttributes,
                     'quantity' => $item->quantity,
+                    'sku' => $variant->sku,
                     'price' => $item->price,
                     'total_price' => $item->price * $item->quantity,
                 ]);

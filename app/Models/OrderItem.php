@@ -57,4 +57,19 @@ class OrderItem extends Model
         }
         return $value;
     }
+    // public function getVariantAttributesAttribute($value)
+    // {
+    //     if (is_array($value)) {
+    //         return $value;
+    //     }
+
+    //     return json_decode($value, true) ?: [];
+    // }
+
+    public function setVariantAttributesAttribute($value)
+    {
+        $this->attributes['variant_attributes'] = is_string($value)
+            ? $value
+            : json_encode($value);
+    }
 }
