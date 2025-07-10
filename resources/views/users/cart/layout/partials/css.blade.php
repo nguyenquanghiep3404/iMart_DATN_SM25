@@ -106,4 +106,57 @@
         font-size: 16px;
         background-color: transparent;
     }
+
+    @keyframes slideInRightCustom {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    .toast {
+        animation: slideInRightCustom 0.5s ease forwards !important;
+    }
+
+    .count-input {
+        display: flex;
+        align-items: center;
+        border: 1px solid #d1d5db;
+        /* border-gray-300 */
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    .count-input button {
+        width: 40px;
+        height: 40px;
+        background: white;
+        border: none;
+        font-size: 1.5rem;
+        color: #374151;
+        /* text-gray-700 */
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .count-input button:hover {
+        background: #f3f4f6;
+        /* hover:bg-gray-100 */
+    }
+
+    .count-input input {
+        width: 60px;
+        height: 40px;
+        text-align: center;
+        border: none;
+        font-size: 1.2rem;
+        pointer-events: none;
+        /* readonly nên khóa luôn */
+        background: transparent;
+    }
 </style>

@@ -17,6 +17,9 @@ use App\Http\Controllers\Controller;
 use App\Models\HomepageProductBlock;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use App\Models\WishlistItem;
+
 
 
 class HomeController extends Controller
@@ -178,7 +181,7 @@ class HomeController extends Controller
         ));
     }
 
-    public function show($slug)
+    public function show(Request $request,$slug)
     {
         $product = Product::with([
             'category',
@@ -344,8 +347,37 @@ class HomeController extends Controller
                 $specGroupsData[$groupName][$spec->name] = $spec->pivot->value;
             }
         }
+        $userId = Auth::id();
+        $wishlistVariantIds = [];
 
-        return view('users.show', compact(
+        if ($userId) {
+            $wishlistVariantIds = WishlistItem::whereHas('wishlist', function ($query) use ($userId) {
+                $query->where('user_id', $userId);
+            })->pluck('product_variant_id')->toArray();
+        }
+        // lấy variant_id trong query param
+        $variantId = $request->query('variant_id');
+
+        // Lấy product, ... (giữ nguyên code load product và quan hệ như cũ)
+
+        // Lấy biến thể mặc định hoặc biến thể theo variant_id
+        $defaultVariant = null;
+        if ($variantId) {
+            $defaultVariant = $product->variants->firstWhere('id', $variantId);
+        }
+        if (!$defaultVariant) {
+            $defaultVariant = $product->variants->firstWhere('is_default', true);
+        }
+        // ... các phần khác giữ nguyên như bạn có
+
+        // Lấy initialVariantAttributes để view dùng hiển thị đúng biến thể
+        $initialVariantAttributes = [];
+        if ($defaultVariant) {
+            foreach ($defaultVariant->attributeValues as $attrValue) {
+                $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
+            }
+        }
+        return view('users.products.show', compact(
             'product',
             'relatedProducts',
             'ratingCounts',
@@ -361,7 +393,8 @@ class HomeController extends Controller
             'variantCombinations',
             'attributesGrouped',
             'specGroupsData',
-            'variantSpecs' // 👈 Quan trọng
+            'variantSpecs',
+            'wishlistVariantIds' 
         ));
     }
 

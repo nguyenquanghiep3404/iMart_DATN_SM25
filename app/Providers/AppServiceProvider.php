@@ -21,7 +21,7 @@ use App\Models\Product;
 use App\Policies\ProductPolicy;
 use App\Models\Category;
 use App\Policies\CategoryPolicy;
-use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\View; 
 use App\Models\ProductVariant;
 use App\Observers\ProductVariantObserver;
 
@@ -153,6 +153,19 @@ class AppServiceProvider extends ServiceProvider
         //     // Bỏ qua lỗi khi migrate
         //     return;
         // }
-        // App\Providers\AppServiceProvider.php
+    View::composer('*', function ($view) {
+        $totalQuantity = 0;
+
+        if (auth()->check() && auth()->user()->cart) {
+            // Người dùng đã đăng nhập -> lấy từ DB
+            $totalQuantity = auth()->user()->cart->items()->sum('quantity');
+        } else {
+            // Khách vãng lai -> lấy từ session
+            $cart = session()->get('cart', []);
+            $totalQuantity = array_sum(array_column($cart, 'quantity'));
+        }
+
+        $view->with('cartItemCount', $totalQuantity);
+    });
     }
 }

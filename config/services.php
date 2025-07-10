@@ -40,6 +40,8 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'),
         'api_key' => env('GOOGLE_API_KEY'),
     ],
-
+    'casso' => [
+    'secret' => env('CASSO_SECURE_TOKEN'),
+    ],
 
 ];

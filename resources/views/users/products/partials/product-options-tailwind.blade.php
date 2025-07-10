@@ -8,14 +8,10 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-
-
-
     @include('users.cart.layout.partials.css')
     <h1 id="product-title" class="text-2xl md:text-3xl font-bold text-gray-900">
         {{ $productName }} {{ $dungLuong }} {{ $mauSac }}
     </h1>
-
     <div class="flex items-center flex-wrap gap-4 mt-2">
         <span
             class="inline-flex items-center bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full w-fit">
@@ -35,17 +31,28 @@
             </svg>
             So sánh
         </button>
-        <button id="favorite-btn"
-            class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors">
-            <span id="favorite-icon-container">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" />
-                </svg>
-            </span>
-            <span>Yêu thích</span>
-        </button>
+        <form action="{{ route('wishlist.add') }}" method="POST" id="wishlist-form">
+            @csrf
+            <input type="hidden" name="product_variant_id" id="wishlist-variant-id">
+            <input type="hidden" name="image" id="wishlist-variant-image">
+            <input type="hidden" name="product_id" value="{{ $product->id }}">
+            <input type="hidden" name="variant_key" id="wishlist-variant-key">
+            <!-- Nút yêu thích -->
+            <button type="submit" id="wishlist-submit-btn"
+                class="flex items-center gap-1.5 text-sm font-semibold transition-colors
+    {{ $wishlistVariantIds ? 'text-red-500' : 'text-gray-500 hover:text-red-500' }}">
+                <span id="wishlist-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" />
+                    </svg>
+                </span>
+                <span>Yêu thích</span>
+            </button>
+        </form>
+
+
         <div class="relative">
             <button id="share-btn"
                 class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-blue-600">
@@ -112,7 +119,7 @@
 
         <div class="h-4 w-px bg-gray-300"></div><span><span class="font-semibold">4.6k</span> đã bán</span>
     </div>
-    <div class="variants mt-6 space-y-4">
+    <div class="variants mt-6 space-y-4" tabindex="-1">
         {{-- Thuộc tính KHÔNG phải "Màu sắc" --}}
         @foreach ($attributes as $attrName => $attrValues)
             @continue(strtolower($attrName) === 'màu sắc')
@@ -363,10 +370,10 @@
     </div>
     <form action="{{ route('cart.add') }}" method="POST" id="add-to-cart-form">
         @csrf
-        <input type="hidden" name="product_variant_id" id="product_variant_id_input">
-        <input type="hidden" name="image" id="variant-image">
+        <input type="hidden" name="product_variant_id" id="wishlist-variant-id">
+        <input type="hidden" name="image" id="wishlist-variant-image">
         <input type="hidden" name="product_id" value="{{ $product->id }}">
-        <input type="hidden" name="variant_key" id="variant_key_input">
+        <input type="hidden" name="variant_key" id="wishlist-variant-key">
 
 
         <div class="mt-6">
@@ -393,7 +400,7 @@
                     </svg>
                     THÊM VÀO GIỎ HÀNG
                 </button>
-                <button
+                <button type="submit" name="buy_now" value="1"
                     class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
                     MUA NGAY
                 </button>
@@ -432,206 +439,297 @@
     </script>
 @endif
 
-
-
 @include('users.cart.layout.partials.script')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const variantData = @json($variantData);
-        const attributeOrder = @json($attributeOrder);
-        const initialVariantAttributes = @json($initialVariantAttributes);
-
-        const variantKeyInput = document.getElementById('variant_key_input');
-        const variantImageInput = document.getElementById('variant-image');
+        const inputVariantId = document.getElementById('wishlist-variant-id'); // id đồng nhất với form
+        const inputVariantKey = document.getElementById('wishlist-variant-key');
+        const inputImage = document.getElementById('wishlist-variant-image');
         const quantityInput = document.getElementById('quantity_input');
 
-        let currentSelections = {
-            ...initialVariantAttributes
-        };
+        const variantData = window.variantData || {};
+        const attributeOrder = window.attributeOrder || [];
 
-        function updateVariantKeyAndImage() {
+        let currentSelections = {}; // khởi tạo rỗng, hoặc từ biến global nếu có
+
+        // Hàm cập nhật variant fields
+        function updateVariantFields() {
             const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
-            variantKeyInput.value = key;
+            inputVariantKey.value = key;
 
             if (variantData[key]) {
-                variantImageInput.value = variantData[key].image || '';
+                inputVariantId.value = variantData[key].id || '';
+                inputImage.value = variantData[key].image || '';
             } else {
-                variantImageInput.value = '';
+                inputVariantId.value = '';
+                inputImage.value = '';
             }
+            console.log('Variant Key:', key);
+            console.log('Variant ID:', inputVariantId.value);
+            console.log('Image:', inputImage.value);
         }
 
-        // Gắn event khi chọn thuộc tính bằng radio
+        // Bắt sự kiện radio chọn thuộc tính
         document.querySelectorAll('input[type="radio"][data-attr-name]').forEach(input => {
             input.addEventListener('change', function() {
                 const attrName = this.dataset.attrName;
                 const attrValue = this.value;
                 currentSelections[attrName] = attrValue;
-                updateVariantKeyAndImage();
+                updateVariantFields();
             });
         });
 
-        // Gắn event khi click button chọn (nếu có dùng nút thay radio)
-        document.querySelectorAll('[data-attribute-name][data-attribute-value]').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const attr = this.dataset.attributeName;
-                const value = this.dataset.attributeValue;
-                currentSelections[attr] = value;
-                updateVariantKeyAndImage();
-            });
-        });
-
-        // Tăng/giảm số lượng
+        // Sự kiện tăng/giảm số lượng
         document.querySelector('[data-increment]').addEventListener('click', () => {
-            let val = parseInt(quantityInput.value);
-            if (val < 5) {
-                quantityInput.value = val + 1;
-            }
+            let val = parseInt(quantityInput.value) || 1;
+            if (val < 5) quantityInput.value = val + 1;
         });
         document.querySelector('[data-decrement]').addEventListener('click', () => {
-            let val = parseInt(quantityInput.value);
-            if (val > 1) {
-                quantityInput.value = val - 1;
-            }
+            let val = parseInt(quantityInput.value) || 1;
+            if (val > 1) quantityInput.value = val - 1;
         });
 
-        // Khởi tạo ban đầu
-        updateVariantKeyAndImage();
-    });
-    window.addEventListener('beforeunload', function() {
-        sessionStorage.removeItem('toast_success_shown');
-        sessionStorage.removeItem('toast_error_shown');
-    });
-    window.addEventListener('pageshow', function(event) {
-        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
-            // Xóa sessionStorage để ngăn toastr hiện lại
-            sessionStorage.removeItem('toast_success_shown');
-            sessionStorage.removeItem('toast_error_shown');
-
-            // Reload trang nhẹ để tránh cache
-            location.reload();
-        }
-    });
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('add-to-cart-form');
-        if (!form) return;
-
-        form.addEventListener('submit', function(e) {
+        // Gửi form bằng fetch (POST) đúng route cart.add
+        document.getElementById('add-to-cart-form').addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const formData = new FormData(form);
-            const submitBtn = form.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = 'Đang thêm...';
+            const postData = {
+                product_variant_id: inputVariantId.value,
+                variant_key: inputVariantKey.value,
+                image: inputImage.value,
+                product_id: this.querySelector('input[name="product_id"]').value,
+                quantity: quantityInput.value,
+                _token: this.querySelector('input[name="_token"]').value,
+            };
 
-            fetch(form.action, {
-                    method: 'POST',
+            fetch("{{ route('cart.add') }}", { // đổi đúng route cart.add
+                    method: "POST",
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "X-CSRF-TOKEN": postData._token
                     },
-                    body: formData
+                    body: JSON.stringify(postData)
                 })
-                .then(async res => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = 'THÊM VÀO GIỎ HÀNG';
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        toastr.success(data.success);
 
-                    if (!res.ok) {
-                        const data = await res.json();
-                        throw new Error(data.message || 'Lỗi khi thêm sản phẩm vào giỏ hàng.');
+                        // ✅ Cập nhật số lượng hiển thị trên giỏ hàng
+                        const cartBadge = document.getElementById('cart-badge');
+                        if (cartBadge) {
+                            if (data.cartItemCount > 0) {
+                                cartBadge.textContent = data.cartItemCount;
+                                cartBadge.style.display = 'flex';
+                            } else {
+                                cartBadge.style.display = 'none';
+                            }
+                        }
+
+                    } else if (data.error) {
+                        toastr.error(data.error);
                     }
+                })
 
-                    return res.text(); // Nếu controller redirect, dùng .text()
-                })
-                .then(() => {
-                    showSlideAlert('success', 'Đã thêm sản phẩm vào giỏ hàng!');
-                    // TODO: cập nhật giỏ hàng ở header nếu có
-                })
-                .catch(error => {
-                    showSlideAlert('error', error.message || 'Đã xảy ra lỗi.');
+                .catch(err => {
+                    toastr.error('Có lỗi xảy ra, vui lòng thử lại.');
+                    console.error(err);
                 });
         });
 
-        // Hàm thông báo toastr
-        window.showSlideAlert = window.showSlideAlert || function(type = 'info', message = '', duration =
-        4000) {
-            if (typeof toastr !== 'undefined') {
-                toastr.options = {
-                    closeButton: true,
-                    progressBar: true,
-                    timeOut: duration,
-                    positionClass: 'toast-top-right'
-                };
-                toastr[type](message);
-            } else {
-                alert(`[${type.toUpperCase()}] ${message}`);
-            }
-        };
+        // Khởi tạo cập nhật lần đầu
+        updateVariantFields();
     });
 </script>
+<script>
+    window.variantData = @json($variantData);
+    window.attributeOrder = @json($attributeOrder);
+</script>
 
-
-
-{{-- <script>
+<script>
     document.addEventListener('DOMContentLoaded', function() {
-        // XỬ LÝ ĐẾM NGƯỢC FLASH SALE
-        const timer = document.getElementById('countdown-timer');
-        if (timer) {
-            const endTimeStr = timer.dataset.endTime;
-            if (endTimeStr) {
-                const endTime = new Date(endTimeStr).getTime();
+        const variantData = window.variantData;
+        const attributeOrder = window.attributeOrder;
 
-                function updateCountdown() {
-                    const now = new Date().getTime();
-                    const distance = endTime - now;
+        const inputVariantId = document.getElementById('wishlist-variant-id');
+        const inputVariantKey = document.getElementById('wishlist-variant-key');
+        const inputImage = document.getElementById('wishlist-variant-image');
 
-                    if (distance <= 0) {
-                        // Hết thời gian flash sale
-                        document.getElementById('hours').textContent = '00';
-                        document.getElementById('minutes').textContent = '00';
-                        document.getElementById('seconds').textContent = '00';
+        // Lấy tất cả input radio
+        const radios = document.querySelectorAll('.variants input[type="radio"]');
 
-                        // Ẩn khối flash sale
-                        const flashBlock = timer.closest('.bg-orange-500');
-                        if (flashBlock) flashBlock.remove();
-
-                        // Hiện khối giá thường nếu có
-                        const normalBlock = document.getElementById('normal-price-block');
-                        if (normalBlock) normalBlock.classList.remove('hidden');
-
-                        return;
-                    }
-
-                    const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
-                    const minutes = Math.floor((distance / (1000 * 60)) % 60);
-                    const seconds = Math.floor((distance / 1000) % 60);
-
-                    document.getElementById('hours').textContent = String(hours).padStart(2, '0');
-                    document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
-                    document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+        // Lấy selection hiện tại
+        function getCurrentSelection() {
+            const selection = {};
+            radios.forEach(radio => {
+                if (radio.checked) {
+                    const attrName = radio.getAttribute('data-attr-name');
+                    const value = radio.value;
+                    selection[attrName] = value;
                 }
+            });
+            console.log('🔍 Current selection:', selection);
+            return selection;
+        }
 
-                updateCountdown();
-                setInterval(updateCountdown, 1000);
+        // Xây dựng variantKey theo thứ tự
+        function buildVariantKey(selection) {
+            const key = attributeOrder.map(attr => selection[attr] || '').join('_');
+            console.log('🔑 Built variant key:', key);
+            return key;
+        }
+
+        // Cập nhật các input ẩn trong form
+        function updateWishlistForm(variantKey, variantInfo) {
+            if (!variantInfo) {
+                console.warn('❌ Không tìm thấy variantInfo với key:', variantKey);
+                return;
+            }
+
+            inputVariantId.value = variantInfo.variant_id;
+            inputVariantKey.value = variantKey;
+            inputImage.value = variantInfo.image;
+
+            console.log('✅ Updated hidden inputs:', {
+                variant_id: inputVariantId.value,
+                variant_key: inputVariantKey.value,
+                image: inputImage.value
+            });
+        }
+
+        // Xử lý khi người dùng chọn biến thể
+        function handleVariantChange() {
+            const selection = getCurrentSelection();
+            const variantKey = buildVariantKey(selection);
+            const variantInfo = variantData[variantKey];
+            updateWishlistForm(variantKey, variantInfo);
+        }
+
+        // Gán sự kiện change cho từng radio
+        radios.forEach(radio => {
+            radio.addEventListener('change', handleVariantChange);
+        });
+
+        // Gán sự kiện click cho label để đảm bảo cập nhật kịp trước submit
+        document.querySelectorAll('.option-container').forEach(label => {
+            label.addEventListener('click', () => {
+                // Đợi radio cập nhật xong mới xử lý (không preventDefault)
+                setTimeout(() => {
+                    handleVariantChange();
+                }, 10); // delay rất nhỏ giúp smooth, không lag
+            });
+        });
+
+
+        // Gọi lần đầu khi trang load
+        handleVariantChange();
+
+        // Debug khi form submit
+        document.getElementById('wishlist-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const variantId = inputVariantId.value;
+            const variantKey = inputVariantKey.value;
+            const image = inputImage.value;
+            const productId = this.querySelector('input[name="product_id"]').value;
+            const token = this.querySelector('input[name="_token"]').value;
+
+            const postData = {
+                product_variant_id: variantId,
+                variant_key: variantKey,
+                image: image,
+                product_id: productId,
+                _token: token
+            };
+
+            fetch("{{ route('wishlist.add') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "X-CSRF-TOKEN": token
+                    },
+                    body: JSON.stringify(postData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(errData => Promise.reject(errData));
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    toastr.options = {
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: "toast-top-right",
+                        timeOut: "3000",
+                        showDuration: "300",
+                        hideDuration: "1000",
+                        showMethod: "slideDown",
+                        hideMethod: "slideUp"
+                    };
+
+                    if (data.success) {
+                        toastr.success(data.success);
+                    } else if (data.info) {
+                        toastr.info(data.info);
+                    } else if (data.error) {
+                        toastr.error(data.error);
+                    }
+                })
+                .catch(err => {
+                    toastr.options = {
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: "toast-top-right",
+                        timeOut: "3000",
+                        showDuration: "300",
+                        hideDuration: "1000",
+                        showMethod: "slideDown",
+                        hideMethod: "slideUp"
+                    };
+
+                    if (err && err.error) {
+                        toastr.error(err.error);
+                    } else {
+                        toastr.error('Có lỗi xảy ra, vui lòng thử lại.');
+                    }
+                    console.error('Lỗi AJAX:', err);
+                });
+        });
+
+    });
+</script>
+<script>
+    const wishlistVariantIds = @json($wishlistVariantIds);
+    document.addEventListener('DOMContentLoaded', function() {
+        const wishlistVariantIds = @json($wishlistVariantIds ?? []);
+
+        const wishlistBtn = document.getElementById('wishlist-submit-btn');
+        const variantRadios = document.querySelectorAll('.variant-radio'); // class radio biến thể bạn dùng
+
+        function updateWishlistButton(variantId) {
+            if (wishlistVariantIds.includes(variantId)) {
+                wishlistBtn.classList.add('text-red-500');
+                wishlistBtn.classList.remove('text-gray-500');
+                wishlistBtn.classList.add('hover:text-red-600');
+            } else {
+                wishlistBtn.classList.remove('text-red-500');
+                wishlistBtn.classList.add('text-gray-500');
+                wishlistBtn.classList.remove('hover:text-red-600');
             }
         }
 
-        // XỬ LÝ TĂNG GIẢM SỐ LƯỢNG
-        const minusBtn = document.getElementById('minusBtn');
-        const plusBtn = document.getElementById('plusBtn');
-        const quantityInput = document.getElementById('quantityInput');
+        // Gọi lần đầu với biến thể mặc định
+        updateWishlistButton(@json($defaultVariant->id ?? null));
 
-        if (minusBtn && plusBtn && quantityInput) {
-            plusBtn.addEventListener('click', () => {
-                let current = parseInt(quantityInput.value) || 1;
-                quantityInput.value = current + 1;
+        // Lắng nghe sự kiện thay đổi biến thể
+        variantRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                const selectedVariantId = parseInt(this.value);
+                updateWishlistButton(selectedVariantId);
             });
-
-            minusBtn.addEventListener('click', () => {
-                let current = parseInt(quantityInput.value) || 1;
-                if (current > 1) {
-                    quantityInput.value = current - 1;
-                }
-            });
-        }
+        });
     });
-</script> --}}
+</script>
