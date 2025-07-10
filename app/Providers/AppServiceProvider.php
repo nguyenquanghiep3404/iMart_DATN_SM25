@@ -144,11 +144,19 @@ class AppServiceProvider extends ServiceProvider
         //     // Bỏ qua lỗi khi migrate
         //     return;
         // }
+    View::composer('*', function ($view) {
+        $totalQuantity = 0;
 
-        View::composer('*', function ($view) {
+        if (auth()->check() && auth()->user()->cart) {
+            // Người dùng đã đăng nhập -> lấy từ DB
+            $totalQuantity = auth()->user()->cart->items()->sum('quantity');
+        } else {
+            // Khách vãng lai -> lấy từ session
             $cart = session()->get('cart', []);
             $totalQuantity = array_sum(array_column($cart, 'quantity'));
-            $view->with('cartItemCount', $totalQuantity);
-        });
+        }
+
+        $view->with('cartItemCount', $totalQuantity);
+    });
     }
 }

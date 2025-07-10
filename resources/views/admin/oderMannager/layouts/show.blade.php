@@ -9,7 +9,7 @@
             </h1>
 
             <div class="flex items-center gap-3">
-                <a href="{{ route('admin.odermannager.index') }}"
+                <a href="{{ route('admin.order-manager.index') }}"
                     class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
                     <i class="fas fa-arrow-left mr-1"></i> Quay lại
                 </a>

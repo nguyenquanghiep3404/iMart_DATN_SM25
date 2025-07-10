@@ -33,14 +33,23 @@ use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Users\PaymentController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\Admin\VNPayController;
-
+use App\Http\Controllers\Users\CarOffController;
 
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
 
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
+// Route::post('cart/remove', [CarOffController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name('cart.addMultiple');
+Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
+
+// cart_offcanvas
+Route::get('/cart/offcanvas', [CarOffController::class, 'index']);
+// Route::post('/vnpay/payment', [VNPayController::class, 'createPayment'])->name('vnpay.payment');
+// Route::get('/vnpay/return', [VNPayController::class, 'handleReturn'])->name('vnpay.return');
+
 
 Route::prefix('payments')->name('payments.')->group(function () {
     Route::get('/', [PaymentController::class, 'index'])->name('index');
@@ -303,12 +312,17 @@ Route::prefix('admin')
         Route::delete('/banners/{banner}', [BannerController::class, 'destroy'])->name('banners.destroy');
 
         // quản lý nhân viên quản lý đơn hàng
-        Route::get('/odermannager', [OrderManagerController::class, 'index'])->name('odermannager.index');
-        Route::get('admin/order-manager/{user}/edit', [OrderManagerController::class, 'edit'])->name('order-manager.edit');
-        Route::put('order-manager/{user}', [OrderManagerController::class, 'update'])->name('order-manager.update');
-        Route::get('/odermannager/create', [OrderManagerController::class, 'create'])->name('order-manager.create');
-        Route::post('/order-manager', [OrderManagerController::class, 'store'])->name('order-manager.store');
-        Route::get('/odermannager/{user}', [OrderManagerController::class, 'show'])->name('odermannager.show');
+        Route::get('/order-manager', [OrderManagerController::class, 'index'])->name('order-manager.index');
+        Route::get('/order-manager/create', [OrderManagerController::class, 'create'])->name('order-manager.create');
+        Route::get('/order-manager/{user}', [OrderManagerController::class, 'show'])->name('order-manager.show');
+        Route::get('/order-manager/{user}/edit', [OrderManagerController::class, 'edit'])->name('order-manager.edit');
+        Route::put('/order-manager/{user}', [OrderManagerController::class, 'update'])->name('order-manager.update');
+        Route::post('/order-manager/store', [OrderManagerController::class, 'store'])->name('order-manager.store');
+        Route::delete('/order-manager/{user}', [OrderManagerController::class, 'destroy'])->name('order-manager.destroy');
+
+
+        // Route khác nếu cần
+        Route::get('/staff', [OrderManagerController::class, 'staffIndex'])->name('staff.index');
 
 
         // Quản lý comment
