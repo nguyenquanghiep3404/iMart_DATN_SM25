@@ -59,69 +59,37 @@
     </section>
 
     <!-- PHẦN 2 & 3: TABS - BÀI VIẾT & THÔNG SỐ -->
-    <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
-        <!-- Tab Buttons -->
-        <div class="flex justify-center border-2 border-gray-200 rounded-xl p-1 mb-6 max-w-md mx-auto">
-            <button id="tab-desc-btn"
-                class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-600">Bài viết đánh
-                giá</button>
-            <button id="tab-specs-btn"
-                class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold tab-active">Thông số kỹ
-                thuật</button>
-        </div>
-
-        <!-- Tab Content -->
-        <div>
-            <!-- Content for Description Tab -->
-            <div id="tab-desc-content" class="tab-content hidden">
-                <div id="description-wrapper" class="description-content collapsed">
-                    {!! $product->description !!}
-                </div>
-                <div class="text-center mt-4">
-                    <button id="read-more-btn" class="font-semibold text-blue-600 hover:text-blue-800">
-                        Xem thêm
-                    </button>
-                </div>
-            </div>
-
-
-            <!-- Content for Specs Tab -->
-            <div id="tab-specs-content" class="tab-content">
-                @if (!empty($specGroupsData))
-    <div class="space-y-3" id="specs-accordion">
-        @foreach ($specGroupsData as $groupName => $specs)
-            <div>
-                <button
-                    class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                    onclick="this.nextElementSibling.classList.toggle('hidden')">
-                    <span class="font-semibold text-gray-800">{{ $groupName }}</span>
-                    <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div class="accordion-content hidden">
-                    <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                        <dl class="divide-y divide-gray-100">
-                            @foreach ($specs as $specName => $value)
-                                <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                    <dt class="text-sm font-medium text-gray-600">{{ $specName }}</dt>
-                                    <dd class="text-sm text-gray-800 col-span-2">{{ $value }}</dd>
-                                </div>
-                            @endforeach
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        @endforeach
+<section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
+    <!-- Tab Buttons -->
+    <div class="flex justify-center border-2 border-gray-200 rounded-xl p-1 mb-6 max-w-md mx-auto">
+        <button id="tab-desc-btn"
+            class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-600">Bài viết đánh giá</button>
+        <button id="tab-specs-btn"
+            class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold tab-active">Thông số kỹ thuật</button>
     </div>
-@endif
 
-
+    <!-- Tab Content -->
+    <div>
+        <!-- Content for Description Tab -->
+        <div id="tab-desc-content" class="tab-content hidden">
+            <div id="description-wrapper" class="description-content collapsed">
+                {!! $product->description !!}
+            </div>
+            <div class="text-center mt-4">
+                <button id="read-more-btn" class="font-semibold text-blue-600 hover:text-blue-800">
+                    Xem thêm
+                </button>
             </div>
         </div>
-    </section>
+
+        <!-- Content for Specs Tab -->
+        <div id="tab-specs-content" class="tab-content">
+            <div class="space-y-3" id="specs-accordion">
+                <!-- Nội dung sẽ được render bởi JavaScript -->
+            </div>
+        </div>
+    </div>
+</section>
 
     <!-- PHẦN 4: ĐÁNH GIÁ & NHẬN XÉT -->
     <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
@@ -318,58 +286,3 @@
         </div>
     </section>
 </div>
-
-<script>
-    <script>
-    const variantSpecs = @json($variantSpecs);
-
-    function updateSpecifications(variantKey) {
-        const container = document.getElementById('specs-accordion');
-        if (!container || !variantSpecs[variantKey]) return;
-
-        const specs = variantSpecs[variantKey];
-        let html = '';
-
-        for (const groupName in specs) {
-            html += `
-                <div>
-                    <button onclick="this.nextElementSibling.classList.toggle('hidden')"
-                        class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
-                        <span class="font-semibold text-gray-800">${groupName}</span>
-                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none" stroke="currentColor"
-                            viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div class="accordion-content hidden">
-                        <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                            <dl class="divide-y divide-gray-100">
-            `;
-
-            for (const specName in specs[groupName]) {
-                html += `
-                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                        <dt class="text-sm font-medium text-gray-600">${specName}</dt>
-                        <dd class="text-sm text-gray-800 col-span-2">${specs[groupName][specName]}</dd>
-                    </div>
-                `;
-            }
-
-            html += `
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        container.innerHTML = html;
-    }
-
-    // Gọi updateSpecifications() khi người dùng chọn biến thể mới
-    // Ví dụ: khi biến thể được chọn thì gọi:
-    // updateSpecifications('Đen_128GB')  // tương ứng với variantKeyStr
-</script>
-
-</script>

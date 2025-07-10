@@ -104,24 +104,16 @@
             </div>
 
             <div class="flex-1 flex justify-center">
-                <nav class="hidden lg:flex items-center space-x-8">
-                    <a href="/"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Trang
-                        chủ</a>
-                    <a href="/danh-muc-san-pham"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Danh
-                        mục</a>
-                    <a href="/blog"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Tin
-                        Tức</a>
-                    <a href="#"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Về
-                        chúng tôi</a>
-                    <a href="#"
-                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">Liên
-                        hệ</a>
-                </nav>
-            </div>
+    <nav class="hidden lg:flex items-center space-x-8">
+        @foreach ($menuCategories ?? [] as $cat)
+            <a href="{{ route('products.byCategory', ['id' => $cat->id, 'slug' => $cat->slug]) }}"
+                class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">
+                {{ $cat->name }}
+            </a>
+        @endforeach
+    </nav>
+</div>
+
 
             <div class="flex justify-end">
                 <div class="flex items-center space-x-2 sm:space-x-4">
