@@ -72,10 +72,18 @@
                                                 <!-- Nếu có thuộc tính, hiển thị ở đây -->
                                                 <ul class="list-unstyled gap-1 fs-xs mb-0">
                                                     <!-- ví dụ: -->
-                                                    <li><span class="text-body-secondary">Price:</span>
-                                                        <span
-                                                            class="text-dark-emphasis fw-medium">{{ number_format($item['price'], 0, ',', '.') }}đ</span>
-                                                    </li>
+                                                    @if (!empty($item['variant_attributes']))
+                                                        <ul class="list-unstyled gap-1 fs-xs mb-0">
+                                                            @foreach ($item['variant_attributes'] as $attrName => $attrValue)
+                                                                <li>
+                                                                    <span
+                                                                        class="text-body-secondary">{{ $attrName }}:</span>
+                                                                    <span
+                                                                        class="text-dark-emphasis fw-medium">{{ $attrValue }}</span>
+                                                                </li>
+                                                            @endforeach
+                                                        </ul>
+                                                    @endif
                                                 </ul>
                                                 <div class="count-input rounded-2 d-md-none mt-3">
                                                     <!-- Số lượng -->
@@ -134,8 +142,6 @@
                     </div>
                 </div>
             </div>
-
-
             <!-- Order summary (sticky sidebar) -->
             @include('users.cart.layout.partials.summary_oder')
         </div>

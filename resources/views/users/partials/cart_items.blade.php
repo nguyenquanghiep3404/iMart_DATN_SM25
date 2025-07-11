@@ -1,16 +1,17 @@
-{{-- @if (isset($items) && $items->isNotEmpty())
+@if (isset($items) && $items->isNotEmpty())
     <div id="cart-items-wrapper">
         @foreach ($items as $item)
             <div class="d-flex align-items-center mb-3 border-bottom pb-2 cart-item" data-item-id="{{ $item['id'] }}"
                 data-price="{{ $item['price'] }}" data-stock="{{ $item['stock_quantity'] ?? 0 }}">
-                <a class="flex-shrink-0" href="{{ route('users.products.show', ['slug' => $item['slug']]) }}">
+                <a class="flex-shrink-0"
+                    href="{{ !empty($item['slug']) ? route('users.products.show', ['slug' => $item['slug']]) : '#' }}">
                     <img src="{{ asset($item['image'] ?: 'assets/users/img/shop/electronics/thumbs/08.png') }}"
                         width="80" alt="{{ $item['name'] }}">
                 </a>
                 <div class="w-100 min-w-0 ps-2 ps-sm-3">
                     <h5 class="d-flex animate-underline mb-2">
                         <a class="d-block fs-sm fw-medium text-truncate animate-target"
-                            href="{{ route('users.products.show', ['slug' => $item['slug']]) }}">
+                            href="{{ !empty($item['slug']) ? route('users.products.show', ['slug' => $item['slug']]) : '#' }}">
                             {{ $item['name'] }}
                         </a>
                     </h5>
@@ -182,4 +183,4 @@
             });
         });
     });
-</script> --}}
+</script>

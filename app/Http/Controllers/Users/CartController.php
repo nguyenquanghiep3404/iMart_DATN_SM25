@@ -22,6 +22,7 @@ class CartController extends Controller
         $items = collect();
 
         if ($user && $user->cart) {
+            // User đã đăng nhập, load từ DB
             $items = $user->cart->items()
                 ->with('productVariant.product', 'productVariant.attributeValues.attribute')
                 ->get()
@@ -29,6 +30,12 @@ class CartController extends Controller
                     $item->productVariant && $item->productVariant->product
                 )
                 ->map(function ($item) {
+                    $attributes = $item->productVariant->attributeValues->mapWithKeys(function ($attrVal) {
+                        return [
+                            $attrVal->attribute->name => $attrVal->value
+                        ];
+                    });
+
                     return [
                         'id' => $item->id,
                         'name' => $item->productVariant->product->name,
@@ -37,38 +44,50 @@ class CartController extends Controller
                         'quantity' => $item->quantity,
                         'stock_quantity' => $item->productVariant->stock_quantity ?? 0,
                         'image' => $item->productVariant->image_url ?? '',
+                        'variant_attributes' => $attributes,
                     ];
                 });
         } else {
+            // Chưa đăng nhập, lấy giỏ hàng từ session
             $sessionCart = session('cart', []);
 
             $items = collect($sessionCart)->map(function ($data) {
-                $variant = ProductVariant::with('product')->find($data['variant_id']);
+                $variant = \App\Models\ProductVariant::with(['product', 'attributeValues.attribute'])
+                    ->find($data['variant_id']);
+
+                if (!$variant || !$variant->product) {
+                    return null;
+                }
+
+                $attributes = $variant->attributeValues->mapWithKeys(function ($attrVal) {
+                    return [
+                        $attrVal->attribute->name => $attrVal->value
+                    ];
+                });
+
                 return [
                     'id' => $data['variant_id'],
-                    'name' => $variant?->product->name ?? 'Không xác định',
-                    'slug' => $variant?->product->slug ?? '',
+                    'name' => $variant->product->name,
+                    'slug' => $variant->product->slug ?? '',
                     'price' => (float)$data['price'],
                     'quantity' => (int)$data['quantity'],
-                    'stock_quantity' => $variant?->stock_quantity ?? 0,
-                    'image' => $data['image'] ?? '',
+                    'stock_quantity' => $variant->stock_quantity ?? 0,
+                    'image' => $data['image'] ?? $variant->image_url ?? '',
+                    'variant_attributes' => $attributes,
                 ];
-            })->filter(fn($item) => $item['name'] !== 'Không xác định');
+            })->filter(); // Loại bỏ null
         }
 
+        // Tính tổng tiền
         $subtotal = $items->sum(fn($item) => $item['price'] * $item['quantity']);
 
+        // Giảm giá (nếu có)
         $appliedCoupon = session('applied_coupon');
-        $discount = 0;
-        $voucherCode = null;
-
-        if ($appliedCoupon) {
-            $discount = $appliedCoupon['discount'] ?? 0;
-            $voucherCode = $appliedCoupon['code'] ?? null;
-        }
+        $discount = $appliedCoupon['discount'] ?? 0;
+        $voucherCode = $appliedCoupon['code'] ?? null;
 
         $total = max(0, $subtotal - $discount);
-
+        // dd($items);
         return view('users.cart.layout.main', compact(
             'items', 'subtotal', 'discount', 'total', 'voucherCode'
         ));
