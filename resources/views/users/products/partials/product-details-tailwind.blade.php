@@ -173,7 +173,8 @@
         </div>
         <div class="mt-6 border-t border-gray-200 pt-6">
             <div class="flex justify-between items-center mb-4 flex-wrap gap-y-4">
-                <h3 class="text-lg font-bold text-gray-800">1,258 Bình luận</h3>
+                <h3 class="text-lg font-bold text-gray-800" id="comments-count">
+                    {{ $commentsCount ?? $comments->count() }} Bình luận</h3>
                 <div class="flex gap-2 flex-wrap">
                     <button
                         class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full border-2 border-transparent hover:border-gray-400">Tất
@@ -220,7 +221,7 @@
             </div>
             <!-- New Comment Form -->
             @include('users.products.partials.product-comments')
-            
+
 
 
         </div>

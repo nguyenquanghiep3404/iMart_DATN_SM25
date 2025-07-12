@@ -377,6 +377,10 @@ class HomeController extends Controller
                 $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
             }
         }
+        $commentsCount = $product->comments()
+            ->where('status', 'approved')
+            ->whereNull('parent_id')
+            ->count();
         return view('users.products.show', compact(
             'product',
             'relatedProducts',
@@ -394,7 +398,8 @@ class HomeController extends Controller
             'attributesGrouped',
             'specGroupsData',
             'variantSpecs',
-            'wishlistVariantIds' 
+            'wishlistVariantIds',
+            'commentsCount'
         ));
     }
 

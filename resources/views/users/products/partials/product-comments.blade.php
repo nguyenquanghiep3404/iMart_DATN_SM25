@@ -87,28 +87,38 @@
                     '';
 
                 const newCommentHTML = `
-                <div class="border-b border-gray-200 py-4">
-                    <div class="flex items-start gap-3">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white select-none"
-                            style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">
-                            ${initial}
-                        </div>
-                        <div>
-                            <p class="font-semibold text-gray-800">
-                                ${escapeHtml(comment.name)}
-                                ${adminBadge}
-                            </p>
-                            <p class="text-sm text-gray-600 whitespace-pre-wrap">${escapeHtml(comment.content)}</p>
-                            ${imagesHtml}
-                            <div class="text-xs text-gray-500 mt-2 flex items-center gap-4">
-                                <span>${comment.time}</span>
-                            </div>
+            <div class="border-b border-gray-200 py-4">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white select-none"
+                        style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">
+                        ${initial}
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800">
+                            ${escapeHtml(comment.name)}
+                            ${adminBadge}
+                        </p>
+                        <p class="text-sm text-gray-600 whitespace-pre-wrap">${escapeHtml(comment.content)}</p>
+                        ${imagesHtml}
+                        <div class="text-xs text-gray-500 mt-2 flex items-center gap-4">
+                            <span>${comment.time}</span>
                         </div>
                     </div>
                 </div>
-            `;
+            </div>
+        `;
 
+                // Thêm comment mới vào đầu danh sách
                 commentsList.insertAdjacentHTML('afterbegin', newCommentHTML);
+
+                // Cập nhật số lượng bình luận
+                const countElem = document.getElementById('comments-count');
+                if (countElem) {
+                    let currentCount = parseInt(countElem.textContent) || 0;
+                    currentCount++;
+                    countElem.textContent = `${currentCount} Bình luận`;
+                }
+
                 commentForm.reset();
                 charCounter.textContent = `0/${maxChars}`;
                 commentForm.dataset.submitted = 'true'; // Đánh dấu đã gửi
