@@ -71,7 +71,9 @@ class OrderController extends Controller
             'items.productVariant.product.coverImage',
             'items.productVariant.primaryImage',
             'processor:id,name',
-            'shipper:id,name'
+            'shipper:id,name,email,phone_number',
+            'shippingProvince:code,name,name_with_type',
+            'shippingWard:code,name,name_with_type,path_with_type',
         ]);
 
         return response()->json([

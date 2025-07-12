@@ -366,13 +366,29 @@
                     <div class="lg:col-span-1 space-y-6">
                         <div>
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Thông tin khách hàng</h3>
-                            <p><strong>Tên:</strong> <span id="modal-customer-name"></span></p>
-                            <p><strong>Email:</strong> <span id="modal-customer-email"></span></p>
-                            <p><strong>SĐT:</strong> <span id="modal-customer-phone"></span></p>
+                            <div class="space-y-2">
+                                <p><strong>Tên:</strong> <span id="modal-customer-name"></span></p>
+                                <p><strong>Email:</strong> <span id="modal-customer-email"></span></p>
+                                <p><strong>SĐT:</strong> <span id="modal-customer-phone"></span></p>
+                            </div>
                         </div>
                         <div>
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Địa chỉ giao hàng</h3>
-                            <address class="not-italic" id="modal-shipping-address"></address>
+                            <address class="not-italic text-gray-700 leading-relaxed" id="modal-shipping-address"></address>
+                        </div>
+                        <div id="modal-shipper-info" class="hidden">
+                            <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Thông tin shipper</h3>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-shipping-fast text-blue-600"></i>
+                                    <span class="font-medium text-blue-800">Shipper được gán:</span>
+                                </div>
+                                <div class="space-y-1 text-sm">
+                                    <p><strong>Tên:</strong> <span id="modal-shipper-name"></span></p>
+                                    <p><strong>Email:</strong> <span id="modal-shipper-email"></span></p>
+                                    <p><strong>SĐT:</strong> <span id="modal-shipper-phone"></span></p>
+                                </div>
+                            </div>
                         </div>
                          <div>
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Ghi chú</h3>
@@ -870,13 +886,56 @@
         document.getElementById('modal-customer-name').textContent = order.customer_name || 'N/A';
         document.getElementById('modal-customer-email').textContent = order.customer_email || 'N/A';
         document.getElementById('modal-customer-phone').textContent = order.customer_phone || 'N/A';
-        
-        document.getElementById('modal-shipping-address').innerHTML = `
-            ${order.shipping_address_line1 || 'N/A'}<br>
-            ${order.shipping_ward || 'N/A'}, ${order.shipping_district || 'N/A'},<br>
-            ${order.shipping_city || 'N/A'}
-        `;
 
+        // Hiển thị địa chỉ chi tiết
+        let addressParts = [];
+        // Hiển thị thông tin đầy đủ từ Ward (bao gồm cả District thông qua path_with_type)
+        // Hiển thị gộp thông tin
+        // if (order.shipping_ward && order.shipping_ward.path_with_type) {
+        //     const wardPath = order.shipping_ward.path_with_type;
+        //     // path_with_type thường có format: "Tỉnh/Thành phố, Quận/Huyện, Phường/Xã"
+        //     addressParts.push(`<strong>Vị trí:</strong> ${wardPath}`);
+        // } else {
+        //     // Fallback nếu không có path_with_type
+        //     if (order.shipping_ward && order.shipping_ward.name_with_type) {
+        //         addressParts.push(`<strong>Phường/Xã:</strong> ${order.shipping_ward.name_with_type}`);
+        //     }
+        //     if (order.shipping_province && order.shipping_province.name_with_type) {
+        //         addressParts.push(`<strong>Tỉnh/Thành phố:</strong> ${order.shipping_province.name_with_type}`);
+        //     }
+        // }
+
+        // Hiển thị riêng 
+        if (order.shipping_province && order.shipping_province.name_with_type) {
+            addressParts.push(`<strong>Tỉnh/Thành phố:</strong> ${order.shipping_province.name_with_type}`);
+        }
+        if (order.shipping_ward && order.shipping_ward.name_with_type) {
+            addressParts.push(`<strong>Phường/Xã:</strong> ${order.shipping_ward.name_with_type}`);
+        }
+        if (order.shipping_address_line1) {
+            addressParts.push(`<strong>Địa chỉ chi tiết :</strong> ${order.shipping_address_line1}`);
+        }
+        if (order.shipping_address_line2) {
+            addressParts.push(`<strong>Địa chỉ 2:</strong> ${order.shipping_address_line2}`);
+        }
+        
+
+        
+        document.getElementById('modal-shipping-address').innerHTML = 
+            addressParts.length > 0 ? addressParts.join('<br>') : 'Không có thông tin địa chỉ';
+
+        // Hiển thị thông tin shipper nếu có
+        const shipperInfo = document.getElementById('modal-shipper-info');
+        if (order.shipper && order.shipper.name) {
+            document.getElementById('modal-shipper-name').textContent = order.shipper.name;
+            document.getElementById('modal-shipper-email').textContent = order.shipper.email || 'N/A';
+            document.getElementById('modal-shipper-phone').textContent = order.shipper.phone_number || 'N/A';
+            shipperInfo.classList.remove('hidden');
+        } else {
+            shipperInfo.classList.add('hidden');
+        }
+
+        // Hiển thị tổng tiền và các khoản
         document.getElementById('modal-customer-notes').textContent = order.notes_from_customer || "Không có ghi chú.";
         document.getElementById('modal-order-date').textContent = order.created_at ? formatDate(order.created_at) : 'N/A';
         
