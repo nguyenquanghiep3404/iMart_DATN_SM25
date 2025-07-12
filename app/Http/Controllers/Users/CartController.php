@@ -98,7 +98,7 @@ class CartController extends Controller
     {
         // Validate dữ liệu đầu vào, yêu cầu ít nhất product_variant_id hoặc product_id phải có
         $validated = $request->validate([
-            'quantity' => 'required|integer|min:1|max:5',
+            'quantity' => 'required|integer|min:1|max:10000',
             'product_variant_id' => 'required_without:product_id|integer|exists:product_variants,id',
             'product_id' => 'required_without:product_variant_id|integer|exists:products,id',
             'variant_key' => 'nullable|string',
@@ -290,8 +290,6 @@ class CartController extends Controller
         ]);
     }
     
-
-
     public function updateQuantity(Request $request)
     {
         $itemId = $request->input('item_id');
@@ -361,25 +359,64 @@ class CartController extends Controller
 
             $userId = auth()->id();
             $voucherCode = $request->input('voucher_code');
+            $appliedCoupon = session('applied_coupon.code') ?? null;
 
+            if ($appliedCoupon === $voucherCode) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Mã giảm giá này đã được áp dụng thành công rồi.',
+                    'discount' => session('applied_coupon.discount') ?? 0,
+                ]);
+            }
             \Log::info("User ID $userId áp dụng mã giảm giá: $voucherCode");
 
             // Tìm coupon hợp lệ đang active và trong thời gian hiệu lực
-            $coupon = Coupon::where('code', $voucherCode)
-                ->where('start_date', '<=', now())
-                ->where('end_date', '>=', now())
-                ->where('status', 'active')
-                ->first();
+            $coupon = Coupon::where('code', $voucherCode)->first();
 
             if (!$coupon) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn.',
+                    'message' => 'Mã giảm giá không tồn tại.',
+                ]);
+            }
+
+            // Kiểm tra ngày bắt đầu
+            if ($coupon->start_date && $coupon->start_date->isFuture()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã giảm giá chưa đến thời gian bắt đầu.',
+                ]);
+            }
+
+            // Kiểm tra ngày kết thúc
+            if ($coupon->end_date && $coupon->end_date->isPast()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã giảm giá đã hết hạn.',
+                ]);
+            }
+
+            // Kiểm tra trạng thái
+            if ($coupon->status !== 'active') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mã giảm giá không hợp lệ.',
+                ]);
+            }
+
+            $hasUsedThisCoupon = $coupon->usages()
+                ->where('user_id', $userId)
+                ->exists();
+
+            if ($hasUsedThisCoupon) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn đã sử dụng mã giảm giá này rồi. Vui lòng thử mã khác.',
                 ]);
             }
 
             // Lấy giỏ hàng của user
-            $cart = auth()->user()?->cart;
+            $cart = auth()->user()?->cart()->with('items')->first();
 
             if (!$cart) {
                 return response()->json([
@@ -457,7 +494,6 @@ class CartController extends Controller
         }
     }
 
-
     private function calculateTotal()
     {
         $cart = auth()->user()->cart;
@@ -466,9 +502,6 @@ class CartController extends Controller
         return CartItem::where('cart_id', $cart->id)
             ->sum(DB::raw('price * quantity'));
     }
-
-
-
     private function getCartSubtotal()
     {
         $cart = auth()->user()->cart;
@@ -511,8 +544,7 @@ class CartController extends Controller
     {
         return number_format($amount, 0, ',', '.') . '₫';
     }
-
-
+    // add nhiều sản phẩm cùng lúc
     public function addMultiple(Request $request)
     {
         // Validate request
@@ -642,7 +674,7 @@ class CartController extends Controller
             'cartItemCount' => $totalQuantity,
         ]);
     }
-    
+    // xóa toàn bộ giỏ hàng
     public function clearCart(Request $request)
     {
         if (auth()->check()) {

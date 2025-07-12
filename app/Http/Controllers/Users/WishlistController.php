@@ -14,55 +14,55 @@ use Illuminate\Support\Facades\Log;
 class WishlistController extends Controller
 {
     public function index(Request $request)
-{
-    $sort = $request->query('sort', 'date');
-    $user = Auth::user();
-    $products = collect();
+    {
+        $sort = $request->query('sort', 'date');
+        $user = Auth::user();
+        $products = collect();
 
-    if ($user) {
-        $wishlist = Wishlist::where('user_id', $user->id)
-            ->with(['items.productVariant.product'])
-            ->first();
+        if ($user) {
+            $wishlist = Wishlist::where('user_id', $user->id)
+                ->with(['items.productVariant.product'])
+                ->first();
 
-        if ($wishlist) {
-            $items = $wishlist->items;
+            if ($wishlist) {
+                $items = $wishlist->items;
 
-            $items = match ($sort) {
-                'price-ascend' => $items->sortBy(fn($item) => $item->productVariant->price),
-                'price-descend' => $items->sortByDesc(fn($item) => $item->productVariant->price),
-                'rating' => $items->sortByDesc(fn($item) => $item->productVariant->product->average_rating ?? 0),
-                default => $items->sortByDesc('added_at'),
-            };
+                $items = match ($sort) {
+                    'price-ascend' => $items->sortBy(fn($item) => $item->productVariant->price),
+                    'price-descend' => $items->sortByDesc(fn($item) => $item->productVariant->price),
+                    'rating' => $items->sortByDesc(fn($item) => $item->productVariant->product->average_rating ?? 0),
+                    default => $items->sortByDesc('added_at'),
+                };
 
-            $products = $items->values();
+                $products = $items->values();
+            }
+        } else {
+            $wishlistIds = session('wishlist', []);
+            if (!empty($wishlistIds)) {
+                $productVariants = ProductVariant::with(['product', 'primaryImage'])
+                    ->whereIn('id', $wishlistIds)
+                    ->get();
+
+                $productVariants = match ($sort) {
+                    'price-ascend' => $productVariants->sortBy('price'),
+                    'price-descend' => $productVariants->sortByDesc('price'),
+                    'rating' => $productVariants->sortByDesc(fn($v) => $v->product->average_rating ?? 0),
+                    default => $productVariants->sortBy(function ($v) use ($wishlistIds) {
+                        return array_search($v->id, array_reverse($wishlistIds));
+                    }),
+                };
+
+                $products = $productVariants->values()->map(function ($variant) {
+                    return (object)[
+                        'product_variant_id' => $variant->id,
+                        'productVariant' => $variant,
+                    ];
+                });
+            }
         }
-    } else {
-        $wishlistIds = session('wishlist', []);
-        if (!empty($wishlistIds)) {
-            $productVariants = ProductVariant::with(['product', 'primaryImage'])
-                ->whereIn('id', $wishlistIds)
-                ->get();
 
-            $productVariants = match ($sort) {
-                'price-ascend' => $productVariants->sortBy('price'),
-                'price-descend' => $productVariants->sortByDesc('price'),
-                'rating' => $productVariants->sortByDesc(fn($v) => $v->product->average_rating ?? 0),
-                default => $productVariants->sortBy(function ($v) use ($wishlistIds) {
-                    return array_search($v->id, array_reverse($wishlistIds));
-                }),
-            };
-
-            $products = $productVariants->values()->map(function ($variant) {
-                return (object)[
-                    'product_variant_id' => $variant->id,
-                    'productVariant' => $variant,
-                ];
-            });
-        }
+        return view('users.wishlist.index', compact('products', 'sort'));
     }
-
-    return view('users.wishlist.index', compact('products', 'sort'));
-}
 
 
     public function removeSelected(Request $request)

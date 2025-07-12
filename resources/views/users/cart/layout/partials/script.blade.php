@@ -105,57 +105,6 @@
                     }
                 });
 
-                // row.querySelector('.btn-close')?.addEventListener('click', function() {
-                //     if (!confirm('Bạn có chắc muốn xoá sản phẩm này khỏi giỏ hàng?')) return;
-
-                //     fetch('{{ route('cart.removeItem') }}', {
-                //             method: 'POST',
-                //             headers: {
-                //                 'Content-Type': 'application/json',
-                //                 'X-CSRF-TOKEN': document.querySelector(
-                //                     'meta[name="csrf-token"]').content
-                //             },
-                //             body: JSON.stringify({
-                //                 item_id: itemId
-                //             })
-                //         })
-                //         .then(res => res.json())
-                //         .then(data => {
-                //             if (data.success) {
-                //                 // Xóa sản phẩm khỏi DOM
-                //                 row.remove();
-
-                //                 // Cập nhật lại tổng tiền và tổng số lượng
-                //                 const cartTotalEl = document.getElementById('cart-total');
-                //                 const cartSubtotalEl = document.getElementById('cart-subtotal');
-                //                 const totalQuantityEl = document.getElementById(
-                //                     'total-quantity');
-
-                //                 // Cập nhật tổng tiền (nếu data.total không tồn tại thì gán '0₫')
-                //                 if (cartTotalEl) cartTotalEl.textContent = data.total ? data
-                //                     .total : '0₫';
-                //                 if (cartSubtotalEl) cartSubtotalEl.textContent = data.total ?
-                //                     data.total : '0₫';
-
-                //                 // Cập nhật tổng số lượng (nếu undefined thì gán 0)
-                //                 if (totalQuantityEl) totalQuantityEl.textContent = (data
-                //                     .totalQuantity !== undefined) ? data.totalQuantity : 0;
-
-                //                 // Nếu giỏ hàng trống thì reload trang hoặc bạn có thể cập nhật UI theo ý muốn
-                //                 if (data.totalQuantity === 0) {
-                //                     location.reload();
-                //                 }
-
-                //                 toastr.success('Xóa sản phẩm thành công.');
-                //             } else {
-                //                 toastr.error(data.message || 'Xoá sản phẩm thất bại.');
-                //             }
-                //         })
-                //         .catch(error => {
-                //             console.error('Lỗi khi xoá sản phẩm:', error);
-                //             showSlideAlert('error', 'Lỗi khi xoá sản phẩm.');
-                //         });
-                // });
                 row.querySelector('.btn-close')?.addEventListener('click', function() {
                     if (!confirm('Bạn có chắc muốn xoá sản phẩm này khỏi giỏ hàng?')) return;
 
@@ -217,48 +166,6 @@
                 });
             });
 
-
-            // Xử lý form voucher
-            // const voucherForm = document.querySelector('#voucher-form');
-            // if (voucherForm) {
-            //     voucherForm.addEventListener('submit', function(e) {
-            //         e.preventDefault();
-
-            //         const formData = new FormData(voucherForm);
-
-            //         fetch("{{ route('cart.applyVoucherAjax') }}", {
-            //                 method: 'POST',
-            //                 headers: {
-            //                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            //                     'Accept': 'application/json',
-            //                 },
-            //                 body: formData
-            //             })
-            //             .then(async res => {
-            //                 const data = await res.json();
-
-            //                 if (!res.ok) {
-            //                     showSlideAlert('error', data.message ||
-            //                         'Mã giảm giá không hợp lệ!');
-            //                     return;
-            //                 }
-
-            //                 if (data.success) {
-            //                     showSlideAlert('success', data.message ||
-            //                         'Áp dụng mã giảm giá thành công!');
-            //                     // cập nhật giao diện
-            //                 } else {
-            //                     showSlideAlert('error', data.message ||
-            //                         'Không thể áp dụng mã giảm giá.');
-            //                 }
-            //             })
-            //             .catch(error => {
-            //                 console.error(error);
-            //                 showSlideAlert('error', 'Đã có lỗi xảy ra khi áp dụng mã giảm giá.');
-            //             });
-            //     });
-            // }
-
         });
 
         // clear giỏ hàng
@@ -286,15 +193,15 @@
                                 const tbody = document.querySelector('table tbody');
                                 if (tbody) tbody.innerHTML = '';
 
-                                // ✅ Cập nhật phần tổng tiền thanh toán
+                                // Cập nhật tổng tiền thanh toán
                                 const cartTotal = document.getElementById('cart-total');
                                 if (cartTotal) cartTotal.textContent = data.total || '0₫';
 
-                                // ✅ Cập nhật phần tổng tiền bên dưới danh sách sản phẩm
+                                // Cập nhật tổng tiền bên dưới danh sách sản phẩm
                                 const cartSubtotal = document.getElementById('cart-subtotal');
                                 if (cartSubtotal) cartSubtotal.textContent = data.total || '0₫';
 
-                                // ✅ Cập nhật số lượng (ở header, subtotal, badge)
+                                // Cập nhật số lượng (ở header, subtotal, badge)
                                 const totalQtyElem = document.querySelector('.total-quantity');
                                 if (totalQtyElem) totalQtyElem.textContent = data.totalQuantity || '0';
 
@@ -309,7 +216,11 @@
                                         'none';
                                 }
 
-                                // Nếu có phần hiển thị giỏ hàng rỗng thì show ra
+                                // Cập nhật giảm giá về 0₫
+                                const cartDiscount = document.getElementById('cart-discount');
+                                if (cartDiscount) cartDiscount.textContent = '0₫';
+
+                                // Hiển thị giỏ hàng trống nếu có
                                 const emptyMsg = document.getElementById('empty-cart-message');
                                 if (emptyMsg) emptyMsg.style.display = 'block';
                             } else {
