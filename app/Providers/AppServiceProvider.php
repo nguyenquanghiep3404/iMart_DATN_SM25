@@ -155,7 +155,7 @@ class AppServiceProvider extends ServiceProvider
         // }
     View::composer('*', function ($view) {
         $totalQuantity = 0;
-
+        // dd(session('cart'));
         if (auth()->check() && auth()->user()->cart) {
             // Người dùng đã đăng nhập -> lấy từ DB
             $totalQuantity = auth()->user()->cart->items()->sum('quantity');
