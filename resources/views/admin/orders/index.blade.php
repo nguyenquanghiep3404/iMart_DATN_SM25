@@ -235,13 +235,13 @@
             border: 1px solid #f1f5f9;
             margin-bottom: 40px;
         }
-        /* .order-progress-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 32px;
-            text-align: center;
-        } */
+                 .order-progress-title {
+             font-size: 20px;
+             font-weight: 700;
+             color: #1e293b;
+             margin-bottom: 32px;
+             text-align: center;
+         }
         .progress-container {
             display: flex;
             align-items: center;
@@ -311,10 +311,10 @@
             box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
         }
         .progress-step.failed .progress-icon {
-            background: #f59e0b;
-            border-color: #f59e0b;
+            background: #ef4444;
+            border-color: #ef4444;
             color: white;
-            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
         }
         .progress-label {
             font-size: 13px;
@@ -340,7 +340,7 @@
             font-weight: 700;
         }
         .progress-step.failed .progress-label {
-            color: #f59e0b;
+            color: #ef4444;
             font-weight: 700;
         }
         /* Responsive design cho progress bar */
@@ -387,8 +387,8 @@
                 border-color: #ef4444;
             }
             .progress-step.failed {
-                background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-                border-color: #f59e0b;
+                background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+                border-color: #ef4444;
             }
             .progress-icon {
                 margin-right: 16px;
@@ -838,9 +838,8 @@
             }
         }
                 // Tạo HTML cho progress bar
-                // <div class="order-progress-title">${progressTitle}</div>
-        const progressBarHTML = `
-        <div class="order-progress-title"></div>
+                        const progressBarHTML = `
+            <div class="order-progress-title">${progressTitle}</div>
             <div class="progress-container">
                 <div class="progress-line">
                     <div class="progress-line-filled" style="width: ${progressPercentage}%"></div>
@@ -849,8 +848,16 @@
                     let stepClass = 'progress-step';
                     // Xác định trạng thái của từng bước
                     if (step.status === currentStatus) {
-                        // Bước hiện tại
-                        stepClass += ' current';
+                        // Bước hiện tại - kiểm tra loại trạng thái để gán màu đúng
+                        if (currentStatus === 'cancelled') {
+                            stepClass += ' cancelled';
+                        } else if (currentStatus === 'failed_delivery') {
+                            stepClass += ' failed';
+                        } else if (currentStatus === 'returned') {
+                            stepClass += ' cancelled';
+                        } else {
+                            stepClass += ' current';
+                        }
                     } else if (step.status === 'cancelled') {
                         // Bước hủy
                         stepClass += ' cancelled';
