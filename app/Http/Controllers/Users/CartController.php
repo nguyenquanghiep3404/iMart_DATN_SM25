@@ -240,6 +240,7 @@ class CartController extends Controller
         return back()->with('success', $successMsg);
     }
 
+    // xóa sản phẩm
     public function removeItem(Request $request)
     {
         $request->validate([
@@ -249,9 +250,8 @@ class CartController extends Controller
 
         $itemId = $request->input('item_id');
         $forceRemove = $request->boolean('force_remove', false);
-        $userId = auth()->id();
-        $appliedCoupon = session('applied_coupon');
-        $code = $appliedCoupon['code'] ?? null;
+        $code = session('applied_coupon.code') ?? null;
+        $discount = session('applied_coupon.discount') ?? 0;
         $voucherRemoved = false;
 
         try {
@@ -264,42 +264,33 @@ class CartController extends Controller
                 $cartId = $item->cart_id;
                 $remainingItems = CartItem::where('cart_id', $cartId)
                     ->where('id', '!=', $itemId)
-                    ->get(); // Lấy danh sách sau khi xoá (giả lập)
+                    ->get();
 
+                $subtotal = $remainingItems->sum(fn($i) => $i->price * $i->quantity);
                 $totalQuantity = $remainingItems->sum('quantity');
-                $total = $remainingItems->sum(fn($i) => $i->price * $i->quantity);
 
-                // Kiểm tra voucher trước khi xoá
                 if ($code) {
                     $coupon = Coupon::where('code', $code)->first();
-                    if ($coupon && $coupon->min_order_amount && $total < $coupon->min_order_amount) {
+                    if ($coupon && $coupon->min_order_amount && $subtotal < $coupon->min_order_amount) {
                         if (!$forceRemove) {
                             return response()->json([
                                 'success' => false,
                                 'shortfall' => true,
                                 'code' => $coupon->code,
                                 'required_min' => $coupon->min_order_amount,
-                                'current_total' => $total,
-                                'message' => "Bạn cần giữ đơn hàng tối thiểu " . number_format($coupon->min_order_amount, 0, ',', '.') . "₫ để tiếp tục sử dụng mã “{$coupon->code}”. Hiện tại đơn hàng còn lại là " . number_format($total, 0, ',', '.') . "₫."
+                                'current_total' => $subtotal,
+                                'message' => "Bạn cần giữ đơn hàng tối thiểu " . number_format($coupon->min_order_amount, 0, ',', '.') . "₫ để tiếp tục sử dụng mã “{$coupon->code}”. Hiện tại đơn hàng còn lại là " . number_format($subtotal, 0, ',', '.') . "₫."
                             ]);
                         } else {
                             session()->forget('applied_coupon');
                             $voucherRemoved = true;
+                            $discount = 0;
                         }
                     }
                 }
 
-                // Đến đây mới thật sự xoá
                 $item->delete();
-
-                return response()->json([
-                    'success' => true,
-                    'totalQuantity' => $totalQuantity,
-                    'total' => number_format($total, 0, ',', '.') . '₫',
-                    'voucher_removed' => $voucherRemoved,
-                ]);
             } else {
-                // Guest (session)
                 $cart = session('cart', []);
                 if (!isset($cart[$itemId])) {
                     return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.'], 404);
@@ -308,46 +299,50 @@ class CartController extends Controller
                 $tempCart = $cart;
                 unset($tempCart[$itemId]);
 
+                $subtotal = collect($tempCart)->sum(fn($i) => $i['price'] * $i['quantity']);
                 $totalQuantity = collect($tempCart)->sum('quantity');
-                $total = collect($tempCart)->sum(fn($i) => $i['price'] * $i['quantity']);
 
                 if ($code) {
                     $coupon = Coupon::where('code', $code)->first();
-                    if ($coupon && $coupon->min_order_amount && $total < $coupon->min_order_amount) {
+                    if ($coupon && $coupon->min_order_amount && $subtotal < $coupon->min_order_amount) {
                         if (!$forceRemove) {
                             return response()->json([
                                 'success' => false,
                                 'shortfall' => true,
                                 'code' => $coupon->code,
                                 'required_min' => $coupon->min_order_amount,
-                                'current_total' => $total,
-                                'message' => "Bạn cần giữ đơn hàng tối thiểu " . number_format($coupon->min_order_amount, 0, ',', '.') . "₫ để tiếp tục sử dụng mã “{$coupon->code}”. Hiện tại đơn hàng còn lại là " . number_format($total, 0, ',', '.') . "₫."
+                                'current_total' => $subtotal,
+                                'message' => "Bạn cần giữ đơn hàng tối thiểu " . number_format($coupon->min_order_amount, 0, ',', '.') . "₫ để tiếp tục sử dụng mã “{$coupon->code}”. Hiện tại đơn hàng còn lại là " . number_format($subtotal, 0, ',', '.') . "₫."
                             ]);
                         } else {
                             session()->forget('applied_coupon');
                             $voucherRemoved = true;
+                            $discount = 0;
                         }
                     }
                 }
 
-                // Tới đây mới cập nhật session
                 unset($cart[$itemId]);
                 if (empty($cart)) {
                     session()->forget(['cart', 'applied_coupon']);
+                    $subtotal = 0;
                     $totalQuantity = 0;
-                    $total = 0;
+                    $discount = 0;
                 } else {
                     session()->put('cart', $cart);
                 }
-
-                return response()->json([
-                    'success' => true,
-                    'totalQuantity' => $totalQuantity,
-                    'total' => number_format($total, 0, ',', '.') . '₫',
-                    'voucher_removed' => $voucherRemoved,
-                ]);
             }
 
+            $totalAfterDiscount = max(0, $subtotal - $discount);
+
+            return response()->json([
+                'success' => true,
+                'totalQuantity' => $totalQuantity,
+                'total_before_discount' => number_format($subtotal, 0, ',', '.') . '₫',
+                'discount' => number_format($discount, 0, ',', '.') . '₫',
+                'total_after_discount' => number_format($totalAfterDiscount, 0, ',', '.') . '₫',
+                'voucher_removed' => $voucherRemoved,
+            ]);
         } catch (\Throwable $e) {
             \Log::error("Lỗi khi xoá sản phẩm: " . $e->getMessage());
             return response()->json([
@@ -361,205 +356,136 @@ class CartController extends Controller
     {
         $itemId = $request->input('item_id');
         $quantity = $request->input('quantity');
-
+    
         if ($quantity < 1) {
             return response()->json([
                 'success' => false,
                 'message' => 'Số lượng không hợp lệ.'
             ], 422);
         }
-
+    
+        $newPrice = 0;
+        $totalBeforeDiscount = 0;
+        $discount = 0;
+        $totalAfterDiscount = 0;
+        $voucherRemoved = false;
+        $forceUpdate = $request->boolean('force_update', false);
+    
         if (auth()->check()) {
-            // ✅ Người dùng đăng nhập → DB
             $item = CartItem::with('productVariant')->findOrFail($itemId);
             $variant = $item->productVariant;
-
+    
             $now = now();
             $isOnSale = $variant->sale_price &&
                 (!$variant->sale_price_starts_at || $variant->sale_price_starts_at <= $now) &&
                 (!$variant->sale_price_ends_at || $variant->sale_price_ends_at >= $now);
-
+    
             $newPrice = $isOnSale ? $variant->sale_price : $variant->price;
-
+    
+            $cart = auth()->user()?->cart()->with('items')->first();
+            $items = $cart->items->map(function ($i) use ($itemId, $quantity, $newPrice) {
+                if ($i->id == $itemId) {
+                    return (object)[
+                        'price' => $newPrice,
+                        'quantity' => $quantity
+                    ];
+                }
+                return $i;
+            });
+    
+            $totalBeforeDiscount = $items->sum(fn($i) => $i->price * $i->quantity);
+    
+            $appliedCoupon = session('applied_coupon');
+            if ($appliedCoupon && isset($appliedCoupon['code'])) {
+                $coupon = Coupon::where('code', $appliedCoupon['code'])->first();
+    
+                if ($coupon) {
+                    if ($coupon->min_order_amount && $totalBeforeDiscount < $coupon->min_order_amount) {
+                        if (!$forceUpdate) {
+                            return response()->json([
+                                'success' => false,
+                                'need_rollback_quantity' => true,
+                                'message' => 'Giá trị đơn hàng không đủ điều kiện sử dụng mã giảm giá (tối thiểu ' .
+                                            number_format($coupon->min_order_amount, 0, ',', '.') . '₫).',
+                            ]);
+                        } else {
+                            session()->forget('applied_coupon');
+                            $voucherRemoved = true;
+                        }
+                    } else {
+                        $discount = round($coupon->calculateDiscount($totalBeforeDiscount));
+                    }
+                }
+            }
+    
+            $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
+    
+            // Cập nhật
             $item->quantity = $quantity;
             $item->price = $newPrice;
             $item->save();
-
-            $total = $this->calculateTotal();
-
+    
         } else {
-            // ⚠️ Người dùng vãng lai → Session
+            // Guest
             $cart = session()->get('cart', []);
             if (!isset($cart[$itemId])) {
-                return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.'], 404);
+                return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại.'], 404);
             }
-
-            // Cập nhật lại giá
+    
             $variant = ProductVariant::find($cart[$itemId]['variant_id']);
+            if (!$variant) {
+                return response()->json(['success' => false, 'message' => 'Sản phẩm không hợp lệ.'], 404);
+            }
+    
             $now = now();
             $isOnSale = $variant->sale_price &&
                 (!$variant->sale_price_starts_at || $variant->sale_price_starts_at <= $now) &&
                 (!$variant->sale_price_ends_at || $variant->sale_price_ends_at >= $now);
-
+    
             $newPrice = $isOnSale ? $variant->sale_price : $variant->price;
-
+    
             $cart[$itemId]['quantity'] = $quantity;
             $cart[$itemId]['price'] = $newPrice;
+    
+            $totalBeforeDiscount = collect($cart)->sum(fn($i) => $i['price'] * $i['quantity']);
+    
+            $appliedCoupon = session('applied_coupon');
+            if ($appliedCoupon && isset($appliedCoupon['code'])) {
+                $coupon = Coupon::where('code', $appliedCoupon['code'])->first();
+    
+                if ($coupon) {
+                    if ($coupon->min_order_amount && $totalBeforeDiscount < $coupon->min_order_amount) {
+                        if (!$forceUpdate) {
+                            return response()->json([
+                                'success' => false,
+                                'need_rollback_quantity' => true,
+                                'message' => 'Giá trị đơn hàng không đủ điều kiện sử dụng mã giảm giá (tối thiểu ' .
+                                            number_format($coupon->min_order_amount, 0, ',', '.') . '₫).',
+                            ]);
+                        } else {
+                            session()->forget('applied_coupon');
+                            $voucherRemoved = true;
+                        }
+                    } else {
+                        $discount = round($coupon->calculateDiscount($totalBeforeDiscount));
+                    }
+                }
+            }
+    
+            $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
             session()->put('cart', $cart);
-
-            $total = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
         }
-
+    
         return response()->json([
             'success' => true,
-            'subtotal' => number_format($newPrice * $quantity, 0, ',', '.') . '₫',
-            'total' => number_format($total, 0, ',', '.') . '₫',
+            'subtotal_before_dc' => number_format($totalBeforeDiscount, 0, ',', '.') . '₫',
+            'discount' => $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫',
+            'total_after_dc' => number_format($totalAfterDiscount, 0, ',', '.') . '₫',
+            'voucher_removed' => $voucherRemoved,
         ]);
     }
+    
     // add mã voucher
-    // public function applyVoucherAjax(Request $request)
-    // {
-    //     try {
-    //         $request->validate([
-    //             'voucher_code' => 'required|string',
-    //         ]);
-
-    //         $userId = auth()->id();
-    //         $voucherCode = $request->input('voucher_code');
-    //         $appliedCoupon = session('applied_coupon.code') ?? null;
-
-    //         if ($appliedCoupon === $voucherCode) {
-    //             return response()->json([
-    //                 'success' => true,
-    //                 'message' => 'Mã giảm giá này đã được áp dụng thành công rồi.',
-    //                 'discount' => session('applied_coupon.discount') ?? 0,
-    //             ]);
-    //         }
-    //         \Log::info("User ID $userId áp dụng mã giảm giá: $voucherCode");
-
-    //         // Tìm coupon hợp lệ đang active và trong thời gian hiệu lực
-    //         $coupon = Coupon::where('code', $voucherCode)->first();
-
-    //         if (!$coupon) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Mã giảm giá không tồn tại.',
-    //             ]);
-    //         }
-
-    //         // Kiểm tra ngày bắt đầu
-    //         if ($coupon->start_date && $coupon->start_date->isFuture()) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Mã giảm giá chưa đến thời gian bắt đầu.',
-    //             ]);
-    //         }
-
-    //         // Kiểm tra ngày kết thúc
-    //         if ($coupon->end_date && $coupon->end_date->isPast()) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Mã giảm giá đã hết hạn.',
-    //             ]);
-    //         }
-
-    //         // Kiểm tra trạng thái
-    //         if ($coupon->status !== 'active') {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Mã giảm giá không hợp lệ.',
-    //             ]);
-    //         }
-
-    //         $hasUsedThisCoupon = $coupon->usages()
-    //             ->where('user_id', $userId)
-    //             ->exists();
-
-    //         if ($hasUsedThisCoupon) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Bạn đã sử dụng mã giảm giá này rồi. Vui lòng thử mã khác.',
-    //             ]);
-    //         }
-
-    //         // Lấy giỏ hàng của user
-    //         $cart = auth()->user()?->cart()->with('items')->first();
-
-    //         if (!$cart) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Không tìm thấy giỏ hàng của bạn.',
-    //             ]);
-    //         }
-
-    //         // Kiểm tra giỏ hàng có sản phẩm hay không
-    //         if ($cart->items->isEmpty()) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Giỏ hàng của bạn đang trống. Vui lòng thêm sản phẩm trước khi áp dụng mã giảm giá.',
-    //             ]);
-    //         }
-
-    //         // Tính tổng tiền giỏ hàng
-    //         $subtotal = $cart->items->sum(fn($item) => $item->price * $item->quantity);
-
-    //         // Kiểm tra điều kiện tổng tiền tối thiểu
-    //         if ($coupon->min_order_amount && $subtotal < $coupon->min_order_amount) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => "Đơn hàng phải đạt tối thiểu " . number_format($coupon->min_order_amount, 0, ',', '.') . "₫ để áp dụng mã này.",
-    //             ]);
-    //         }
-
-    //         // Kiểm tra số lần dùng tối đa toàn hệ thống
-    //         $totalUsageCount = $coupon->usages()->count();
-    //         if ($coupon->max_uses && $totalUsageCount >= $coupon->max_uses) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Mã giảm giá đã được sử dụng hết lượt.',
-    //             ]);
-    //         }
-
-    //         // Kiểm tra số lần dùng tối đa của user
-    //         $userUsageCount = $coupon->usages()->where('user_id', $userId)->count();
-    //         if ($coupon->max_uses_per_user && $userUsageCount >= $coupon->max_uses_per_user) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Bạn đã sử dụng mã này tối đa số lần cho phép.',
-    //             ]);
-    //         }
-
-    //         // Tính giảm giá
-    //         $discount = $coupon->calculateDiscount($subtotal);
-    //         $totalAfterDiscount = max($subtotal - $discount, 0);
-
-    //         // Lưu thông tin coupon vào session
-    //         session()->put('applied_coupon', [
-    //             'code' => $coupon->code,
-    //             'discount' => round($discount),
-    //         ]);
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'discount' => round($discount),
-    //             'total_after_discount' => round($totalAfterDiscount),
-    //             'message' => 'Mã giảm giá đã được áp dụng.',
-    //         ]);
-
-    //     } catch (\Illuminate\Validation\ValidationException $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Vui lòng nhập mã giảm giá.',
-    //             'errors' => $e->errors(),
-    //         ]);
-    //     } catch (\Throwable $e) {
-    //         \Log::error('Lỗi khi áp mã giảm giá: ' . $e->getMessage());
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Đã có lỗi xảy ra phía máy chủ.',
-    //         ], 500);
-    //     }
-    // }
     public function applyVoucherAjax(Request $request)
     {
         try {
