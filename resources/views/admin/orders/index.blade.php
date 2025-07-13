@@ -54,7 +54,6 @@
             transform: translateY(-1px);
             shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
         /* Kiểu thông báo (toast) */
         #toast-container {
             position: fixed;
@@ -63,7 +62,6 @@
             z-index: 9999;
             max-width: 400px;
         }
-        
         .toast {
             background: white;
             border-radius: 12px;
@@ -221,16 +219,217 @@
             letter-spacing: 0.5px;
             box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
         }
-
-
-
         /* Làm chữ đơn hàng mới đậm hơn */
         .new-order-row .font-bold {
             font-weight: 800;
         }
-        
         .new-order-row .font-semibold {
             font-weight: 700;
+        }
+        /* Progress Bar Styles - Beautiful Design */
+        .order-progress-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f1f5f9;
+            margin-bottom: 40px;
+        }
+        /* .order-progress-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 32px;
+            text-align: center;
+        } */
+        .progress-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            padding: 0;
+        }
+        .progress-line {
+            position: absolute;
+            top: 50%;
+            left: 24px;
+            right: 24px;
+            height: 3px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+        .progress-line-filled {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+            border-radius: 2px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            min-width: 0;
+        }
+        .progress-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 3px solid #e2e8f0;
+            background: #ffffff;
+            color: #9ca3af;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .progress-step.completed .progress-icon {
+            background: #22c55e;
+            border-color: #22c55e;
+            color: white;
+            box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+        }
+        .progress-step.current .progress-icon {
+            background: #6366f1;
+            border-color: #6366f1;
+            color: white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            transform: scale(1.05);
+        }
+        .progress-step.cancelled .progress-icon {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: white;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+        }
+        .progress-step.failed .progress-icon {
+            background: #f59e0b;
+            border-color: #f59e0b;
+            color: white;
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+        }
+        .progress-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            color: #9ca3af;
+            max-width: 120px;
+            line-height: 1.3;
+            margin-top: 4px;
+            word-wrap: break-word;
+            hyphens: auto;
+        }
+        .progress-step.completed .progress-label {
+            color: #22c55e;
+            font-weight: 700;
+        }
+        .progress-step.current .progress-label {
+            color: #6366f1;
+            font-weight: 700;
+        }
+        .progress-step.cancelled .progress-label {
+            color: #ef4444;
+            font-weight: 700;
+        }
+        .progress-step.failed .progress-label {
+            color: #f59e0b;
+            font-weight: 700;
+        }
+        /* Responsive design cho progress bar */
+        @media (max-width: 768px) {
+            .order-progress-section {
+                padding: 24px 16px;
+                margin-bottom: 24px;
+            }
+            .order-progress-title {
+                font-size: 18px;
+                margin-bottom: 24px;
+            }
+            .progress-container {
+                flex-direction: column;
+                gap: 16px;
+                padding: 0;
+            }
+            
+            .progress-line {
+                display: none;
+            }
+            .progress-step {
+                flex-direction: row;
+                justify-content: flex-start;
+                width: 100%;
+                align-items: center;
+                padding: 16px;
+                border-radius: 12px;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                transition: all 0.3s ease;
+            }
+            .progress-step.completed {
+                background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+                border-color: #22c55e;
+            }
+            .progress-step.current {
+                background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+                border-color: #6366f1;
+                box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+            }
+            .progress-step.cancelled {
+                background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+                border-color: #ef4444;
+            }
+            .progress-step.failed {
+                background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+                border-color: #f59e0b;
+            }
+            .progress-icon {
+                margin-right: 16px;
+                margin-bottom: 0;
+                width: 44px;
+                height: 44px;
+                font-size: 16px;
+                flex-shrink: 0;
+            }
+            .progress-step.current .progress-icon {
+                transform: scale(1.0);
+            }
+            .progress-label {
+                max-width: none;
+                text-align: left;
+                flex: 1;
+                margin-top: 0;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+        }
+        /* Cải thiện hiển thị trên màn hình nhỏ hơn */
+        @media (max-width: 480px) {
+            .order-progress-section {
+                padding: 20px 12px;
+            }
+            
+            .progress-step {
+                padding: 12px;
+            }
+            
+            .progress-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+                margin-right: 12px;
+            }
+            
+            .progress-label {
+                font-size: 13px;
+            }
         }
 </style>
     <div class="max-w-screen-2xl mx-auto">
@@ -361,8 +560,13 @@
                 </button>
             </div>
             <div class="p-8 flex-grow overflow-y-auto modal-content">
+                <!-- Progress Bar Trạng thái đơn hàng -->
+                <div id="order-progress-bar" class="order-progress-section">
+                    <!--Nội dung được chèn -->
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- Left Column: Customer & Address -->
+                    <!--  Khách hàng & Địa chỉ -->
                     <div class="lg:col-span-1 space-y-6">
                         <div>
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Thông tin khách hàng</h3>
@@ -582,6 +786,114 @@
 
     // --- HÀM TIỆN ÍCH ---
     const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    
+    // --- HÀM TẠO PROGRESS BAR ---
+    function createOrderProgressBar(currentStatus) {
+        // Định nghĩa các bước tiến trình chính
+        const progressSteps = [
+            { status: 'pending_confirmation', label: 'Chờ xác nhận', icon: '<i class="fas fa-clipboard-check"></i>' },
+            { status: 'processing', label: 'Đang xử lý', icon: '<i class="fas fa-cogs"></i>' },
+            { status: 'awaiting_shipment', label: 'Chờ giao hàng', icon: '<i class="fas fa-box"></i>' },
+            { status: 'shipped', label: 'Đã xuất kho', icon: '<i class="fas fa-shipping-fast"></i>' },
+            { status: 'out_for_delivery', label: 'Đang giao', icon: '<i class="fas fa-truck"></i>' },
+            { status: 'delivered', label: 'Giao thành công', icon: '<i class="fas fa-check-circle"></i>' }
+        ];
+        // Xác định vị trí của trạng thái hiện tại trong mảng
+        const currentStepIndex = progressSteps.findIndex(step => step.status === currentStatus);
+        // Xử lý trạng thái "đã hủy hoặc giao hàng thất bại"
+        let stepsToShow = [...progressSteps]; // luôn hiển thị đủ trạng thái
+        let progressTitle = 'Tiến trình đơn hàng';
+        let progressPercentage = 0;
+        if (currentStatus === 'cancelled') {
+            // Trạng thái bị hủy - thay thế bước thích hợp bằng "Đã hủy"
+            let cancelledStepIndex = Math.max(0, currentStepIndex >= 0 ? currentStepIndex : 1); // Nếu không tìm thấy, mặc định là bước 2
+            // Thay thế bước tại vị trí hiện tại bằng "Đã hủy"
+            stepsToShow[cancelledStepIndex] = { status: 'cancelled', label: 'Đã hủy', icon: '<i class="fas fa-times-circle"></i>' };
+            progressTitle = 'Đơn hàng đã bị hủy';
+            progressPercentage = (cancelledStepIndex / (stepsToShow.length - 1)) * 100;
+        } else if (currentStatus === 'failed_delivery') {
+            // Trạng thái giao hàng thất bại - thay thế bước "Giao thành công" bằng "Giao hàng thất bại"
+            stepsToShow[5] = { status: 'failed_delivery', label: 'Giao hàng thất bại', icon: '<i class="fas fa-exclamation-triangle"></i>' };
+            progressTitle = 'Giao hàng thất bại';
+            progressPercentage = (5 / (stepsToShow.length - 1)) * 100;
+        } else if (currentStatus === 'returned') {
+            // Trạng thái trả hàng - thay thế bước "Giao thành công" bằng "Đã trả hàng"
+            stepsToShow[5] = { status: 'returned', label: 'Đã trả hàng', icon: '<i class="fas fa-undo-alt"></i>' };
+            progressTitle = 'Đơn hàng đã được trả lại';
+            progressPercentage = (5 / (stepsToShow.length - 1)) * 100;
+        } else {
+            // Trạng thái bình thường - tính toán phần trăm tiến trình
+            if (currentStepIndex >= 0) {
+                progressPercentage = (currentStepIndex / (stepsToShow.length - 1)) * 100;
+            }
+            // Tùy chỉnh tiêu đề theo trạng thái
+            if (currentStatus === 'delivered') {
+                progressTitle = 'Đơn hàng đã được giao thành công';
+            } else if (currentStatus === 'out_for_delivery') {
+                progressTitle = 'Đơn hàng đang được giao';
+            } else if (currentStatus === 'shipped') {
+                progressTitle = 'Đơn hàng đã xuất kho';
+            } else if (currentStatus === 'awaiting_shipment') {
+                progressTitle = 'Đơn hàng đang chờ giao';
+            }
+        }
+                // Tạo HTML cho progress bar
+                // <div class="order-progress-title">${progressTitle}</div>
+        const progressBarHTML = `
+        <div class="order-progress-title"></div>
+            <div class="progress-container">
+                <div class="progress-line">
+                    <div class="progress-line-filled" style="width: ${progressPercentage}%"></div>
+                </div>
+                ${stepsToShow.map((step, index) => {
+                    let stepClass = 'progress-step';
+                    // Xác định trạng thái của từng bước
+                    if (step.status === currentStatus) {
+                        // Bước hiện tại
+                        stepClass += ' current';
+                    } else if (step.status === 'cancelled') {
+                        // Bước hủy
+                        stepClass += ' cancelled';
+                    } else if (step.status === 'failed_delivery') {
+                        // Bước thất bại
+                        stepClass += ' failed';
+                    } else if (step.status === 'returned') {
+                        // Bước trả hàng
+                        stepClass += ' cancelled'; // Sử dụng style tương tự cancelled
+                    } else {
+                        // Kiểm tra xem bước này đã hoàn thành chưa
+                        const stepIndex = progressSteps.findIndex(s => s.status === step.status);
+                        
+                        // Đối với trạng thái bình thường
+                        if (currentStepIndex >= 0 && stepIndex >= 0 && stepIndex < currentStepIndex) {
+                            stepClass += ' completed';
+                        }
+                        
+                        // Đối với trạng thái đặc biệt (cancelled, failed_delivery, returned)
+                        if (currentStatus === 'cancelled' || currentStatus === 'failed_delivery' || currentStatus === 'returned') {
+                            const currentSpecialIndex = stepsToShow.findIndex(s => s.status === currentStatus);
+                            
+                            // Nếu bước này xuất hiện trước bước hiện tại trong danh sách hiển thị
+                            if (index < currentSpecialIndex) {
+                                stepClass += ' completed';
+                            }
+                        }
+                    }
+                    return `
+                        <div class="${stepClass}">
+                            <div class="progress-icon">
+                                ${step.icon}
+                            </div>
+                            <div class="progress-label">
+                                ${step.label}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+        return progressBarHTML;
+	}
     
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -950,6 +1262,10 @@
         modalPaymentStatusEl.className = `status-badge ${paymentStatus.class}`;
 
         document.getElementById('modal-payment-method').textContent = order.payment_method || 'N/A';
+
+        // Hiển thị progress bar trạng thái đơn hàng
+        const progressBarContainer = document.getElementById('order-progress-bar');
+        progressBarContainer.innerHTML = createOrderProgressBar(order.status);
 
         // Hiển thị sản phẩm
         const itemsTbody = document.getElementById('modal-order-items');
@@ -1339,13 +1655,23 @@
     function toggleCancellationField(status) {
         const cancellationField = document.getElementById('cancellation-reason-field');
         const cancellationTextarea = document.getElementById('cancellation-reason');
+        const fieldLabel = cancellationField.querySelector('label');
         
         if (status === 'cancelled') {
             cancellationField.style.display = 'block';
             cancellationTextarea.setAttribute('required', 'required');
+            fieldLabel.innerHTML = 'Lý do hủy đơn <span class="text-red-500">*</span>';
+            cancellationTextarea.setAttribute('placeholder', 'Nhập lý do hủy đơn hàng...');
+        } else if (status === 'failed_delivery') {
+            cancellationField.style.display = 'block';
+            cancellationTextarea.setAttribute('required', 'required');
+            fieldLabel.innerHTML = 'Lý do giao hàng thất bại <span class="text-red-500">*</span>';
+            cancellationTextarea.setAttribute('placeholder', 'Nhập lý do giao hàng thất bại...');
         } else {
             cancellationField.style.display = 'none';
             cancellationTextarea.removeAttribute('required');
+            fieldLabel.innerHTML = 'Lý do hủy đơn <span class="text-red-500">*</span>';
+            cancellationTextarea.setAttribute('placeholder', 'Nhập lý do hủy đơn hàng...');
         }
     }
 
