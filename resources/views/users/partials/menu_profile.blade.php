@@ -27,7 +27,7 @@
         <!-- Body (Navigation) -->
         <div class="offcanvas-body d-block pt-2 pt-lg-4 pb-lg-0">
             <nav class="list-group list-group-borderless">
-                <a class="list-group-item list-group-item-action d-flex align-items-center" href="account-orders.html">
+                <a class="list-group-item list-group-item-action d-flex align-items-center" href="{{ route('orders.index') }}">
                     <i class="ci-shopping-bag fs-base opacity-75 me-2"></i>
                     Đơn hàng của tôi
                     <span class="badge bg-primary rounded-pill ms-auto">1</span>

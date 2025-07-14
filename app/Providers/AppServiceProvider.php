@@ -21,7 +21,7 @@ use App\Models\Product;
 use App\Policies\ProductPolicy;
 use App\Models\Category;
 use App\Policies\CategoryPolicy;
-use Illuminate\Support\Facades\View; 
+use Illuminate\Support\Facades\View;
 use App\Models\ProductVariant;
 use App\Observers\ProductVariantObserver;
 
@@ -51,6 +51,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useTailwind();
+        $layout = (auth()->check() && auth()->user()->role === 'admin')
+            ? 'admin.layouts.app'
+            : 'users.layouts.app';
+
+        View::share('layout', $layout);
 
         // Đăng ký listener cho sự kiện Verified
         Event::listen(
@@ -167,5 +172,6 @@ class AppServiceProvider extends ServiceProvider
 
         $view->with('cartItemCount', $totalQuantity);
     });
+
     }
 }
