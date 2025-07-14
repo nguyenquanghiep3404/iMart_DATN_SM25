@@ -9,52 +9,54 @@ class CommentController extends Controller
 {
     public function index(Request $request)
     {
-        $filterStatus = $request->input('status', 'all');
+        // Lấy các tham số lọc từ request
+        $filterStatus = $request->input('status');
         $search = $request->input('search');
         $filterDate = $request->input('date');
-    
+
+        // Tạo query lấy bình luận cha (parent_id null), kèm quan hệ cần thiết
         $parentCommentsQuery = Comment::with(['user', 'commentable', 'replies.user'])
             ->whereNull('parent_id');
-    
-        // Lọc theo status
-        if ($filterStatus !== 'all') {
+
+        // Lọc theo status nếu có và không phải 'all' hoặc rỗng
+        if ($filterStatus && $filterStatus !== 'all') {
             $parentCommentsQuery->where('status', $filterStatus);
         }
-    
-        // Lọc theo từ khóa tìm kiếm
+
+        // Lọc theo từ khóa tìm kiếm trên content hoặc tên user
         if ($search) {
             $parentCommentsQuery->where(function ($query) use ($search) {
                 $query->where('content', 'like', "%{$search}%")
-                      ->orWhereHas('user', function ($q) use ($search) {
-                          $q->where('name', 'like', "%{$search}%");
-                      });
+                    ->orWhereHas('user', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
             });
         }
-    
-        // Lọc theo ngày gửi
+
+        // Lọc theo ngày gửi bình luận
         if ($filterDate) {
             $parentCommentsQuery->whereDate('created_at', $filterDate);
         }
-    
-        // Lấy các bình luận cha
+
+        // Lấy bình luận cha theo thứ tự mới nhất, phân trang 10 bản ghi, giữ query string
         $parentComments = $parentCommentsQuery->latest()->paginate(10)->withQueryString();
-    
-        // Gộp cha + reply
+
+        // Tạo collection tổng hợp bình luận cha + reply thỏa mãn lọc
         $comments = collect();
-    
+
         foreach ($parentComments as $parent) {
-            // Apply filter cho từng cha
             $comments->push($parent);
-    
+
+            // Lấy các reply đã load sẵn
             $replies = $parent->replies->sortBy('created_at');
-    
+
             foreach ($replies as $reply) {
-                // Lọc status
-                if ($filterStatus !== 'all' && $reply->status !== $filterStatus) {
+                // Lọc status reply
+                if ($filterStatus && $filterStatus !== 'all' && $reply->status !== $filterStatus) {
                     continue;
                 }
-    
-                // Lọc search
+
+                // Lọc search reply
                 if ($search) {
                     $matchContent = str_contains(strtolower($reply->content), strtolower($search));
                     $matchUser = str_contains(strtolower(optional($reply->user)->name), strtolower($search));
@@ -62,26 +64,26 @@ class CommentController extends Controller
                         continue;
                     }
                 }
-    
-                // Lọc ngày gửi
+
+                // Lọc ngày gửi reply
                 if ($filterDate && $reply->created_at->toDateString() !== $filterDate) {
                     continue;
                 }
-    
+
                 $comments->push($reply);
             }
         }
-    
+
+        // Trả về view kèm dữ liệu
         return view('admin.comments.index', [
             'comments' => $comments,
-            'filterStatus' => $filterStatus,
-            'parentComments' => $parentComments, // dùng cho phân trang
+            'filterStatus' => $filterStatus ?? 'all',
+            'parentComments' => $parentComments, // dùng để phân trang
             'search' => $search,
             'filterDate' => $filterDate,
         ]);
     }
-    
-    
+
     public function show(Comment $comment)
     {
         $commentable = $comment->commentable; 

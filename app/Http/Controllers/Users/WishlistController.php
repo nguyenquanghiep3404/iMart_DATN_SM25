@@ -95,48 +95,83 @@ class WishlistController extends Controller
     }
 
 
+    // public function add(Request $request)
+    // {
+    //     $request->validate([
+    //         'product_variant_id' => 'required|exists:product_variants,id',
+    //         'product_id' => 'required|exists:products,id',
+    //         'variant_key' => 'nullable|string',
+    //         'image' => 'nullable|string',
+    //     ]);
+
+    //     $user = Auth::user();
+
+    //     if ($user) {
+    //         // Người dùng đã đăng nhập, xử lý như hiện tại
+    //         $wishlist = Wishlist::firstOrCreate(['user_id' => $user->id]);
+
+    //         $exists = WishlistItem::where('wishlist_id', $wishlist->id)
+    //             ->where('product_variant_id', $request->product_variant_id)
+    //             ->exists();
+
+    //         if ($exists) {
+    //             return response()->json(['info' => 'Sản phẩm này đã có trong danh sách yêu thích.']);
+    //         }
+
+    //         WishlistItem::create([
+    //             'wishlist_id' => $wishlist->id,
+    //             'product_variant_id' => $request->product_variant_id,
+    //             'added_at' => now(),
+    //         ]);
+
+    //         return response()->json(['success' => 'Đã thêm vào danh sách yêu thích!']);
+    //     } else {
+    //         // Khách vãng lai: dùng session để lưu danh sách yêu thích
+    //         $wishlist = session()->get('wishlist', []);
+
+    //         if (in_array($request->product_variant_id, $wishlist)) {
+    //             return response()->json(['info' => 'Sản phẩm này đã có trong danh sách yêu thích.']);
+    //         }
+
+    //         $wishlist[] = $request->product_variant_id;
+    //         session(['wishlist' => $wishlist]);
+
+    //         return response()->json(['success' => 'Đã thêm vào danh sách yêu thích!']);
+    //     }
+    // }
     public function add(Request $request)
     {
-        $request->validate([
-            'product_variant_id' => 'required|exists:product_variants,id',
-            'product_id' => 'required|exists:products,id',
-            'variant_key' => 'nullable|string',
-            'image' => 'nullable|string',
-        ]);
+        $variantId = $request->input('product_variant_id');
 
-        $user = Auth::user();
-
-        if ($user) {
-            // Người dùng đã đăng nhập, xử lý như hiện tại
+        if (Auth::check()) {
+            // Người dùng đã đăng nhập
+            $user = Auth::user();
             $wishlist = Wishlist::firstOrCreate(['user_id' => $user->id]);
 
-            $exists = WishlistItem::where('wishlist_id', $wishlist->id)
-                ->where('product_variant_id', $request->product_variant_id)
-                ->exists();
+            $exists = $wishlist->items()->where('product_variant_id', $variantId)->exists();
 
             if ($exists) {
-                return response()->json(['info' => 'Sản phẩm này đã có trong danh sách yêu thích.']);
+                $wishlist->items()->where('product_variant_id', $variantId)->delete();
+                return response()->json(['success' => 'Đã xóa sản phẩm khỏi danh sách yêu thích']);
+            } else {
+                $wishlist->items()->create(['product_variant_id' => $variantId]);
+                return response()->json(['success' => 'Đã thêm sản phẩm vào danh sách yêu thích']);
             }
-
-            WishlistItem::create([
-                'wishlist_id' => $wishlist->id,
-                'product_variant_id' => $request->product_variant_id,
-                'added_at' => now(),
-            ]);
-
-            return response()->json(['success' => 'Đã thêm vào danh sách yêu thích!']);
         } else {
-            // Khách vãng lai: dùng session để lưu danh sách yêu thích
+            // Khách vãng lai lưu wishlist trong session
             $wishlist = session()->get('wishlist', []);
 
-            if (in_array($request->product_variant_id, $wishlist)) {
-                return response()->json(['info' => 'Sản phẩm này đã có trong danh sách yêu thích.']);
+            if (in_array($variantId, $wishlist)) {
+                // Nếu đã có thì xóa
+                $wishlist = array_filter($wishlist, fn($id) => $id != $variantId);
+                session(['wishlist' => $wishlist]);
+                return response()->json(['success' => 'Đã xóa sản phẩm khỏi danh sách yêu thích']);
+            } else {
+                // Nếu chưa có thì thêm
+                $wishlist[] = $variantId;
+                session(['wishlist' => $wishlist]);
+                return response()->json(['success' => 'Đã thêm sản phẩm vào danh sách yêu thích']);
             }
-
-            $wishlist[] = $request->product_variant_id;
-            session(['wishlist' => $wishlist]);
-
-            return response()->json(['success' => 'Đã thêm vào danh sách yêu thích!']);
         }
     }
 }

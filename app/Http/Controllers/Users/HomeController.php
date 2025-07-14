@@ -323,12 +323,27 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-        $comments = $product->comments()
-            ->where('status', 'approved')
+            $comments = $product->comments()
             ->whereNull('parent_id')
+            ->where(function ($query) {
+                $query->where('status', 'approved');
+        
+                if (Auth::check()) {
+                    $query->orWhere(function ($q) {
+                        $q->where('user_id', Auth::id())
+                          ->whereIn('status', ['pending', 'rejected','spam']); 
+                    });
+        
+                    if (Auth::user()->hasRole('admin')) {
+                        $query->orWhereIn('status', ['pending', 'rejected','spam']); 
+                    }
+                }
+            })
             ->with(['user', 'replies.user'])
             ->orderByDesc('created_at')
             ->get();
+        
+        
 
         $initialVariantAttributes = [];
         if ($defaultVariant) {

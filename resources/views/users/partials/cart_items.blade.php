@@ -53,7 +53,7 @@
     <div class="offcanvas-header flex-column align-items-start" id="cart-summary">
         <div class="d-flex align-items-center justify-content-between w-100 mb-3 mb-md-4">
             <span class="text-light-emphasis">Tổng tiền:</span>
-            <span class="h6 mb-0">{{ number_format($subtotal ?? 0, 0, ',', '.') }} đ</span>
+            <span class="h6 mb-0">{{ number_format($total ?? 0, 0, ',', '.') }} đ</span>
         </div>
         <div class="d-flex w-100 gap-3">
             <a class="btn btn-lg btn-secondary w-100" href="/cart">Xem giỏ hàng</a>

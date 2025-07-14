@@ -7,19 +7,11 @@
             <h4 class="offcanvas-title" id="shoppingCartLabel">Giỏ hàng</h4>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-        <p class="fs-sm">Buy <span class="text-dark-emphasis fw-semibold">$183</span> more to get <span
-                class="text-dark-emphasis fw-semibold">Free Shipping</span></p>
-        <div class="progress w-100" role="progressbar" aria-label="Free shipping progress" aria-valuenow="75"
-            aria-valuemin="0" aria-valuemax="100" style="height: 4px">
-            <div class="progress-bar bg-warning rounded-pill" style="width: 75%"></div>
-        </div>
     </div>
-
     <!-- Body: Items list -->
     <div class="offcanvas-body d-flex flex-column gap-4 pt-2" id="cart-content">
         @include('users.partials.cart_items')
     </div>
-
     <!-- Footer -->
 
 </div>

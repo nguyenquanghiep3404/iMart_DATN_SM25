@@ -17,19 +17,6 @@
             <!-- Items list -->
             <div class="col-lg-8">
                 <div class="pe-lg-2 pe-xl-3 me-xl-3">
-                    {{-- <p class="fs-sm">Buy <span class="text-dark-emphasis fw-semibold">$183</span> more to get <span
-                            class="text-dark-emphasis fw-semibold">Free Shipping</span></p> --}}
-                    <div class="progress w-100 overflow-visible mb-4" role="progressbar" aria-label="Free shipping progress"
-                        aria-valuenow="75" aria-valuemin="0" aria-valuemax="100" style="height: 4px">
-                        <div class="progress-bar bg-warning rounded-pill position-relative overflow-visible"
-                            style="width: 75%; height: 4px">
-                            <div class="position-absolute top-50 end-0 d-flex align-items-center justify-content-center translate-middle-y bg-body border border-warning rounded-circle me-n1"
-                                style="width: 1.5rem; height: 1.5rem">
-                                <i class="ci-star-filled text-warning"></i>
-                            </div>
-                        </div>
-                    </div>
-
                     <!-- Table of items -->
                     <table class="table position-relative z-2 mb-4">
                         <thead>

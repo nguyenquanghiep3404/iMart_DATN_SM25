@@ -22,7 +22,6 @@
                 @endif
             </p>
             <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ $comment->content }}</p>
-
             @if ($comment->image_urls && count($comment->image_urls) > 0)
                 <div class="flex gap-2 mt-2 flex-wrap">
                     @foreach ($comment->image_urls as $url)
@@ -30,12 +29,31 @@
                     @endforeach
                 </div>
             @endif
+            @php
+                $isAdmin = auth()->user() && auth()->user()->hasRole('admin');
+            @endphp
+
+            @if ($comment->user_id === $currentUserId || $isAdmin)
+                @if ($comment->status === 'pending')
+                    <div class="text-sm text-yellow-600 mt-1">
+                        {{ $isAdmin ? 'Bình luận đang chờ phê duyệt' : 'Bình luận của bạn đang chờ duyệt' }}
+                    </div>
+                @elseif ($comment->status === 'rejected')
+                    <div class="text-sm text-red-600 mt-1">
+                        {{ $isAdmin ? 'Bị từ chối' : 'Bình luận của bạn bị từ chối' }}
+                    </div>
+                @elseif ($comment->status === 'spam' && ($comment->user_id === $currentUserId || $isAdmin))
+                    <div class="text-sm text-red-600 mt-1">
+                        {{ $isAdmin ? 'Bình luận này đã bị đánh dấu là spam' : 'Bình luận của bạn đã bị đánh dấu là spam' }}
+                    </div>
+                @endif
+            @endif
 
             <div class="text-xs text-gray-500 mt-2 flex items-center gap-4">
                 <span>{{ $comment->created_at->diffForHumans() }}</span>
 
                 {{-- Nút trả lời (nếu không phải bình luận của mình) --}}
-                @if ($comment->user_id !== $currentUserId)
+                @if ($comment->user_id !== $currentUserId && !in_array($comment->status, ['rejected', 'spam', 'pending']))
                     <button class="text-blue-600 hover:underline reply-btn" data-comment-id="{{ $comment->id }}">
                         Trả lời
                     </button>
