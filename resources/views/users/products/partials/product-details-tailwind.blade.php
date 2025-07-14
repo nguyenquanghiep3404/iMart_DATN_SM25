@@ -1,6 +1,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <div class="mt-10 md:mt-12 space-y-10 md:space-y-12">
     <!-- Mua Kèm Deal Sốc / Cheaper Together -->
     <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
@@ -110,7 +111,8 @@
                                                 @foreach ($specs as $specName => $value)
                                                     <div class="px-1 py-2 grid grid-cols-3 gap-4">
                                                         <dt class="text-sm font-medium text-gray-600">
-                                                            {{ $specName }}</dt>
+                                                            {{ $specName }}
+                                                        </dt>
                                                         <dd class="text-sm text-gray-800 col-span-2">{{ $value }}
                                                         </dd>
                                                     </div>
@@ -131,43 +133,68 @@
     <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-900">Đánh giá & Nhận xét từ khách hàng</h2>
-            <button id="write-review-btn"
-                class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Viết
-                đánh giá</button>
+
+            {{-- Logic hiển thị nút "Viết đánh giá" hoặc thông báo --}}
+            @auth
+                @if (isset($orderItemId) && $orderItemId)
+                    @if (!isset($hasReviewed) || !$hasReviewed)
+                        {{-- Chưa đánh giá, được phép viết --}}
+                        <button id="write-review-btn"
+                            class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                            Viết đánh giá
+                        </button>
+                    @else
+                        {{-- Đã đánh giá --}}
+                        <p class="text-sm text-green-600">Bạn đã đánh giá sản phẩm này.</p>
+                    @endif
+                @else
+                    {{-- Đã đăng nhập nhưng chưa mua hoặc đơn chưa giao --}}
+                    <p class="text-sm text-gray-600">Bạn cần mua sản phẩm này và đơn hàng phải được giao để viết đánh giá.
+                    </p>
+                @endif
+            @else
+                {{-- Chưa đăng nhập --}}
+                <p class="text-sm text-gray-600">Đăng nhập để viết đánh giá.</p>
+            @endauth
+
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="flex flex-col items-center justify-center md:border-r md:border-gray-200 md:pr-8">
-                <p class="text-4xl font-bold text-gray-800">4.9 / 5</p>
-                <div class="flex text-yellow-400 my-2">★★★★☆</div>
-                <p class="text-sm text-gray-600">(1,258 đánh giá)</p>
+                {{-- Giả sử $averageRating và $totalReviews được truyền từ controller --}}
+                <p class="text-4xl font-bold text-gray-800">{{ number_format($averageRating, 1) }} / 5</p>
+                <div class="flex text-yellow-400 my-2">
+                    {{-- Logic hiển thị sao dựa trên $averageRating --}}
+                    @for ($i = 1; $i <= 5; $i++)
+                        @if ($i <= round($averageRating))
+                            ★
+                        @else
+                            <span class="text-gray-300">★</span>
+                        @endif
+                    @endfor
+                </div>
+                <p class="text-sm text-gray-600">({{ number_format($totalReviews) }} đánh giá)</p>
             </div>
             <div class="col-span-2">
                 <div class="space-y-1">
-                    <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">5 ★</span>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 85%"></div>
-                        </div><span class="text-gray-600 w-12 text-right">1000</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">4 ★</span>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 12%"></div>
-                        </div><span class="text-gray-600 w-12 text-right">250</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">3 ★</span>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 2%"></div>
-                        </div><span class="text-gray-600 w-12 text-right">8</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">2 ★</span>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 0%"></div>
-                        </div><span class="text-gray-600 w-12 text-right">0</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-sm"><span class="text-yellow-400">1 ★</span>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 1%"></div>
-                        </div><span class="text-gray-600 w-12 text-right">2</span>
-                    </div>
+                    @php
+                        // Giả sử $starRatingsCount là một mảng như: ['5' => 1000, '4' => 250, ...]
+                        // Và $totalReviews là tổng số đánh giá
+                        $starLevels = [5, 4, 3, 2, 1];
+                    @endphp
+
+                    @foreach ($starLevels as $star)
+                        @php
+                            $count = $starRatingsCount[$star] ?? 0;
+                            $percentage = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
+                        @endphp
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="text-yellow-400">{{ $star }} ★</span>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                                <div class="bg-yellow-400 h-2.5 rounded-full" style="width: {{ $percentage }}%"></div>
+                            </div>
+                            <span class="text-gray-600 w-12 text-right">{{ number_format($count) }}</span>
+                        </div>
+                    @endforeach
                 </div>
             </div>
         </div>
@@ -221,10 +248,124 @@
             </div>
             <!-- New Comment Form -->
             @include('users.products.partials.product-comments')
+            <!-- New Comment Form -->
+            {{-- @include('users.products.partials.product-comments') --}}
+            <div id="review-modal"
+                class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4 transition-opacity duration-300 ">
+                <div
+                    class="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-transform duration-300 scale-95">
+                    <div class="flex justify-between items-center p-4 border-b border-gray-200">
+                        <h3 class="text-xl font-bold text-gray-900">Viết đánh giá</h3><button
+                            id="close-review-modal-btn"
+                            class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
+                    </div>
+                    <div class="p-6 space-y-4 ">
+                        <div>
+                            <label class="font-semibold text-gray-700">Đánh giá của bạn</label>
+                            <div id="review-stars-container" class="flex items-center gap-1 text-4xl mt-1">
+                                <!-- Stars will be generated by JS -->
+                            </div>
+                        </div>
+                        <div>
+                            <label for="review-text" class="font-semibold text-gray-700">Bình luận</label>
+                            <textarea id="review-text" placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm..."
+                                class="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                                rows="4"></textarea>
+                        </div>
+                        <div>
+                            <label class="font-semibold text-gray-700">Thêm hình ảnh/video</label>
+                            <div
+                                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                <div class="space-y-1 text-center">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
+                                        viewBox="0 0 48 48" aria-hidden="true">
+                                        <path
+                                            d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <div class="flex text-sm text-gray-600"><label for="file-upload"
+                                            class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"><span>Tải
+                                                lên một file</span><input id="file-upload" name="file-upload"
+                                                type="file" class="sr-only" multiple></label>
+                                        <p class="pl-1">hoặc kéo và thả</p>
+                                    </div>
+                                    <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <button id="submit-review-btn"
+                                class="bg-blue-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-700 transition-colors">Gửi
+                                đánh giá</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <div class="reviews-section mt-8">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">Đánh giá sản phẩm</h3>
 
+                @forelse ($reviews as $review)
+                    <div class="border-b border-gray-200 py-4">
+                        <div class="flex items-start gap-4">
+                            {{-- Avatar người dùng --}}
+                            @if ($review->user->avatar_url)
+                                <img src="{{ $review->user->avatar_url }}" alt="{{ $review->user->name }}"
+                                    class="w-10 h-10 rounded-full object-cover">
+                            @else
+                                <div
+                                    class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
+                                    {{ strtoupper(mb_substr($review->user->name, 0, 1)) }}
+                                </div>
+                            @endif
 
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <p class="font-semibold text-gray-800">{{ $review->user->name }}</p>
+                                </div>
+
+                                {{-- Sao đánh giá --}}
+                                <div class="flex text-yellow-400 text-sm my-1">
+                                    @for ($i = 1; $i <= 5; $i++)
+                                        @if ($i <= $review->rating)
+                                            ★
+                                        @else
+                                            <span class="text-gray-300">★</span>
+                                        @endif
+                                    @endfor
+                                </div>
+
+                                {{-- Tiêu đề --}}
+                                @if ($review->title)
+                                    <p class="text-sm text-gray-600 review-text">{{ $review->title }}</p>
+                                @endif
+
+                                {{-- Nội dung bình luận --}}
+                                <p class="text-sm text-gray-600 review-text">{{ $review->comment }}</p>
+
+                                {{-- Ảnh hoặc video --}}
+                                @if ($review->images->count())
+                                    <div class="flex gap-2 mt-2 flex-wrap">
+                                        @foreach ($review->images as $image)
+                                            <a href="{{ Storage::url($image->path) }}" target="_blank"
+                                                class="block">
+                                                <img src="{{ Storage::url($image->path) }}" alt="Ảnh đánh giá"
+                                                    class="w-20 h-20 rounded-md object-cover border border-gray-200">
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                @endif
+                                <span
+                                    class="text-xs text-gray-500 mt-2 flex items-center gap-4">{{ $review->created_at->diffForHumans() }}</span>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <p class="text-sm text-gray-500 mt-4">Chưa có đánh giá nào cho sản phẩm này.</p>
+                @endforelse
+            </div>
         </div>
+
     </section>
 
     <!-- PHẦN 5: HỎI & ĐÁP VỚI TRỢ LÝ AI -->
@@ -295,69 +436,85 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Gửi bình luận chính
+        initCommentForm();
+        initReplyForm();
+        initReviewModal();
+        initTermsCheckboxToggle();
+        initUserInfoModal();
+    });
+    const ORDER_ITEM_ID = {{ isset($orderItemId) ? json_encode($orderItemId) : 'null' }};
+    const PRODUCT_VARIANT_ID = {{ json_encode($product->defaultVariant->id ?? null) }};
+    const reviewPostUrl = "{{ route('reviews.store') }}";
+
+    // ------------------------
+    // Gửi bình luận chính
+    function initCommentForm() {
         const mainForm = document.getElementById('comment-form');
-        if (mainForm) {
-            mainForm.addEventListener('submit', function(e) {
-                e.preventDefault();
+        if (!mainForm) return;
 
-                const formData = new FormData(this);
-                const submitBtn = document.getElementById('comment-submit-btn');
-                submitBtn.disabled = true;
-                submitBtn.innerText = 'Đang gửi...';
+        const submitBtn = document.getElementById('comment-submit-btn');
+        mainForm.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-                fetch(this.action, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .content,
-                            'Accept': 'application/json',
-                        },
-                        body: formData
-                    })
-                    .then(async res => {
-                        submitBtn.disabled = false;
-                        submitBtn.innerText = 'Gửi bình luận';
+            const formData = new FormData(this);
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Đang gửi...';
 
-                        if (!res.ok) {
-                            const contentType = res.headers.get("content-type");
-                            if (contentType && contentType.includes("application/json")) {
-                                const data = await res.json();
-                                throw new Error(data.message || 'Lỗi không xác định');
-                            } else {
-                                throw new Error('Server trả về HTML thay vì JSON');
-                            }
+            fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(async res => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'Gửi bình luận';
+
+                    if (!res.ok) {
+                        const contentType = res.headers.get("content-type");
+                        if (contentType && contentType.includes("application/json")) {
+                            const data = await res.json();
+                            throw new Error(data.message || 'Lỗi không xác định');
+                        } else {
+                            throw new Error('Server trả về HTML thay vì JSON');
                         }
+                    }
 
-                        return res.json();
-                    })
-                    .then(data => {
-                        toastr.success(data.message || 'Bình luận đã được gửi thành công!');
-                        this.reset();
-                    })
-                    .catch(err => {
-                        toastr.error(err.message || 'Đã xảy ra lỗi khi gửi bình luận.');
-                    });
-            });
-        }
+                    return res.json();
+                })
+                .then(data => {
+                    toastr.success(data.message || 'Bình luận đã được gửi thành công!');
+                    this.reset();
+                })
+                .catch(err => {
+                    toastr.error(err.message || 'Đã xảy ra lỗi khi gửi bình luận.');
+                });
+        });
+
+        // Toastr config
         toastr.options = {
             closeButton: true,
             progressBar: true,
-            positionClass: 'toast-top-right', // góc trên bên phải
+            positionClass: 'toast-top-right',
             timeOut: 3000,
             showMethod: 'slideDown',
             hideMethod: 'slideUp'
         };
+    }
 
-        // Gửi phản hồi bằng event delegation (áp dụng cả với form tạo động)
+    // ------------------------
+    // Gửi phản hồi (trả lời bình luận)
+    function initReplyForm() {
         document.addEventListener('submit', function(e) {
             const form = e.target;
             if (!form.classList.contains('reply-form')) return;
 
             e.preventDefault();
-
             const formData = new FormData(form);
-            const wrapper = form.closest('.border-b'); // vùng comment cha
+            const wrapper = form.closest('.border-b');
 
             fetch(form.action, {
                     method: 'POST',
@@ -373,13 +530,13 @@
                         const div = document.createElement('div');
                         div.classList.add('flex', 'items-start', 'gap-3', 'mb-3');
                         div.innerHTML = `
-                        <img src="${data.comment.avatar}" class="w-8 h-8 rounded-full object-cover">
-                        <div>
-                            <p class="font-semibold text-sm">${data.comment.name}</p>
-                            <p class="text-sm text-gray-700">${data.comment.content}</p>
-                            <div class="text-xs text-gray-500 mt-1">${data.comment.time}</div>
-                        </div>
-                    `;
+                    <img src="${data.comment.avatar}" class="w-8 h-8 rounded-full object-cover">
+                    <div>
+                        <p class="font-semibold text-sm">${data.comment.name}</p>
+                        <p class="text-sm text-gray-700">${data.comment.content}</p>
+                        <div class="text-xs text-gray-500 mt-1">${data.comment.time}</div>
+                    </div>
+                `;
                         const replyList = wrapper.querySelector('.reply-list');
                         if (replyList) replyList.appendChild(div);
 
@@ -394,20 +551,177 @@
                     alert('Lỗi khi gửi phản hồi');
                 });
         });
-    });
+    }
 
-    // Toggle hiển thị form phản hồi
+    // ------------------------
+    // Toggle form phản hồi theo ID
     function toggleReplyForm(commentId) {
         const form = document.getElementById('reply-form-' + commentId);
-        form?.classList.toggle('hidden');
+        if (form) form.classList.toggle('hidden');
+    }
+
+    // ------------------------
+    // Đánh giá sản phẩm (sao + comment + modal)
+    function initReviewModal() {
+        const writeBtn = document.getElementById('write-review-btn');
+        const modal = document.getElementById('review-modal');
+        const closeBtn = document.getElementById('close-review-modal-btn');
+        const starsContainer = document.getElementById('review-stars-container');
+        const submitBtn = document.getElementById('submit-review-btn');
+        const reviewText = document.getElementById('review-text');
+        const fileInput = document.getElementById('file-upload');
+        let selectedRating = 0;
+
+        if (!writeBtn || !modal || !closeBtn || !starsContainer) return;
+
+        // Render sao đánh giá
+        starsContainer.innerHTML = ''; // Xoá nếu có cũ
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            star.setAttribute('class', 'review-star w-8 h-8 text-gray-300 cursor-pointer transition-colors');
+            star.setAttribute('fill', 'currentColor');
+            star.setAttribute('viewBox', '0 0 20 20');
+            star.dataset.rating = i;
+            star.innerHTML =
+                `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
+            starsContainer.appendChild(star);
+        }
+
+        const stars = starsContainer.querySelectorAll('.review-star');
+        stars.forEach(star => {
+            star.addEventListener('mouseover', () => {
+                stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star
+                    .dataset.rating));
+            });
+            star.addEventListener('mouseout', () => {
+                stars.forEach(s => {
+                    s.classList.remove('text-yellow-400');
+                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
+                        'text-gray-300');
+                });
+            });
+            star.addEventListener('click', () => {
+                selectedRating = parseInt(star.dataset.rating);
+                stars.forEach(s => {
+                    s.classList.remove('text-yellow-400', 'text-gray-300');
+                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
+                        'text-gray-300');
+                });
+            });
+        });
+
+        // Bắt sự kiện click vào nút "Viết đánh giá"
+        // Chỉ mở modal nếu nút tồn tại (được hiển thị do người dùng đã mua hàng)
+        if (writeBtn) {
+            writeBtn.addEventListener('click', () => {
+                // Kiểm tra lại orderItemId trong JS để đảm bảo
+                if (ORDER_ITEM_ID !== null) {
+                    showModal(modal);
+                } else {
+                    // Mặc dù nút sẽ không hiển thị nếu chưa đủ điều kiện,
+                    // đây là lớp bảo vệ bổ sung hoặc nếu bạn có logic JS phức tạp hơn
+                    toastr.warning('Bạn cần mua sản phẩm này và đơn hàng phải được giao để viết đánh giá.');
+                }
+            });
+        }
+        closeBtn.addEventListener('click', () => hideModal(modal));
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideModal(modal);
+        });
+
+        submitBtn.addEventListener('click', () => {
+            if (!selectedRating) return toastr.warning('Vui lòng chọn số sao');
+            const comment = reviewText?.value.trim();
+            const files = fileInput?.files;
+
+            const formData = new FormData();
+            formData.append('rating', selectedRating);
+            formData.append('comment', comment);
+            formData.append('product_variant_id', PRODUCT_VARIANT_ID);
+            if (ORDER_ITEM_ID !== null) {
+                formData.append('order_item_id', ORDER_ITEM_ID);
+            }
+
+
+            for (let i = 0; i < files.length && i < 3; i++) {
+                formData.append('media[]', files[i]);
+            }
+
+            fetch(reviewPostUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: formData
+                })
+                // A more robust way to handle the response
+                .then(async res => {
+                    const contentType = res.headers.get("content-type");
+                    if (res.ok && contentType?.includes("application/json")) {
+                        return res.json();
+                    }
+                    const text = await res.text();
+                    throw new Error('Phản hồi không hợp lệ: ' + text);
+                })
+                .then(data => {
+                    if (data.success) {
+                        toastr.success(data.message || 'Đánh giá thành công!');
+                        hideModal(modal);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(data.message || 'Đánh giá thất bại');
+                    }
+                })
+                .catch(err => {
+                    toastr.error(err.message || 'Lỗi kết nối server');
+                });
+
+        });
+    }
+
+
+    // ------------------------
+    // Checkbox điều kiện hoàn thành QnA
+    function initTermsCheckboxToggle() {
+        const checkbox = document.getElementById('terms-checkbox');
+        const button = document.getElementById('qna-complete-btn');
+        if (!checkbox || !button) return;
+
+        checkbox.addEventListener('change', () => {
+            const isChecked = checkbox.checked;
+            button.disabled = !isChecked;
+            button.classList.toggle('bg-gray-300', !isChecked);
+            button.classList.toggle('text-gray-500', !isChecked);
+            button.classList.toggle('cursor-not-allowed', !isChecked);
+
+            button.classList.toggle('bg-blue-600', isChecked);
+            button.classList.toggle('text-white', isChecked);
+            button.classList.toggle('hover:bg-blue-700', isChecked);
+        });
+    }
+
+    // ------------------------
+    // Modal hiển thị thông tin người dùng
+    function initUserInfoModal() {
+        const modal = document.getElementById('user-info-modal');
+        const closeBtn = document.getElementById('close-user-info-modal-btn');
+        if (!modal || !closeBtn) return;
+
+        closeBtn.addEventListener('click', () => hideModal(modal));
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) hideModal(modal);
+        });
+    }
+
+    // ------------------------
+    // Hàm chung mở/đóng modal
+    function showModal(modal) {
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.add('opacity-100', 'scale-100'), 10);
+    }
+
+    function hideModal(modal) {
+        modal.classList.remove('opacity-100', 'scale-100');
+        setTimeout(() => modal.classList.add('hidden'), 300);
     }
 </script>
-
-
-
-
-</div>
-</div>
-</section>
-
-</div>

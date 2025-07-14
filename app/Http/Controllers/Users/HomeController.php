@@ -19,8 +19,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use App\Models\WishlistItem;
-
-
+use App\Models\Review;
+use App\Models\OrderItem;
+use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
@@ -33,34 +34,31 @@ class HomeController extends Controller
             ->get();
 
         $blocks = HomepageProductBlock::where('is_visible', true)
-    ->orderBy('order')
-    ->with(['products' => function ($query) {
-        $query->where('products.status', 'published') // ✅ fix lỗi ambiguous
-            ->with([
-                'category',
-                'coverImage',
-                'galleryImages',
-                'variants.primaryImage',
-                'variants.images',
-                'reviews' => function ($query) {
-                    $query->where('reviews.status', 'approved'); // ✅ fix luôn
-                },
-            ])
-            ->withCount([
-                'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved'); // ✅
-                },
-            ]);
-    }])
-    ->get();
+            ->orderBy('order')
+            ->with(['products' => function ($query) {
+                $query->where('products.status', 'published')
+                    ->with([
+                        'category',
+                        'coverImage',
+                        'galleryImages',
+                        'variants.primaryImage',
+                        'variants.images',
+                        'reviews' => function ($query) {
+                            $query->where('reviews.status', 'approved');
+                        },
+                    ])
+                    ->withCount([
+                        'reviews as approved_reviews_count' => function ($query) {
+                            $query->where('reviews.status', 'approved');
+                        },
+                    ]);
+            }])
+            ->get();
 
 
         // Hàm xử lý đánh giá và phần trăm giảm giá
         $calculateAverageRating = function ($products) {
             foreach ($products as $product) {
-                $averageRating = $product->reviews->avg('rating') ?? 0;
-                $product->average_rating = round($averageRating, 1);
-
                 $now = now();
                 $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
 
@@ -83,8 +81,8 @@ class HomeController extends Controller
             'category',
             'coverImage',
             'galleryImages',
-            'variants.primaryImage', // 👈 Load primaryImage
-            'variants.images',        // 👈 Load images của variant nếu có
+            'variants.primaryImage',
+            'variants.images',
             'reviews' => function ($query) {
                 $query->where('reviews.status', 'approved');
             }
@@ -162,7 +160,6 @@ class HomeController extends Controller
         }
 
 
-
         $featuredPosts = Post::with('coverImage')
             ->where('status', 'published')
             ->where('is_featured', true)
@@ -181,7 +178,7 @@ class HomeController extends Controller
         ));
     }
 
-    public function show(Request $request,$slug)
+    public function show(Request $request, $slug)
     {
         $product = Product::with([
             'category',
@@ -204,6 +201,15 @@ class HomeController extends Controller
             ->where('slug', $slug)
             ->where('status', 'published')
             ->firstOrFail();
+
+        $variantIds = $product->variants->pluck('id');
+
+        $reviews = Review::with(['user', 'images'])
+            ->whereIn('product_variant_id', $variantIds)
+            ->where('status', 'approved')
+            ->latest()
+            ->get();
+
 
         $product->increment('view_count');
 
@@ -396,6 +402,78 @@ class HomeController extends Controller
             ->where('status', 'approved')
             ->whereNull('parent_id')
             ->count();
+
+        // --- Bắt đầu đoạn code ĐÃ THÊM để lấy order_item_id ---
+        $orderItemId = null; // Khởi tạo biến này là null
+
+        $totalReviews = $product->reviews_count ?? 0;
+        $averageRating = round($product->reviews->avg('rating') ?? 0, 1);
+        $reviewsData = []; // ✅ khai báo để tránh undefined
+        $starRatingsCount = [];
+        for ($i = 5; $i >= 1; $i--) {
+            $starRatingsCount[$i] = $product->reviews->where('rating', $i)->count();
+        }
+        $hasReviewed = false; // ✅ Khởi tạo mặc định trước
+
+        // Chỉ tìm kiếm order_item_id nếu người dùng đã đăng nhập
+        if (Auth::check()) {
+            $userId = Auth::id(); // Lấy ID của người dùng hiện tại
+            $productVariantIdToFind = null;
+
+            // Ưu tiên variant_id từ query parameter
+            if ($request->has('variant_id') && $product->variants->contains('id', $request->query('variant_id'))) {
+                $productVariantIdToFind = $request->query('variant_id');
+            } elseif ($defaultVariant) {
+                $productVariantIdToFind = $defaultVariant->id;
+            }
+
+            if ($productVariantIdToFind) { // Đảm bảo có product_variant_id để tìm kiếm
+                // Tìm OrderItem mà người dùng hiện tại đã mua của biến thể sản phẩm này.
+                // Điều kiện:
+                // 1. Phải thuộc về người dùng hiện tại (qua mối quan hệ order.user_id)
+                // 2. Phải có product_variant_id tương ứng
+                // 3. Đơn hàng phải ở trạng thái "completed" (hoặc trạng thái bạn cho phép đánh giá)
+                $orderItem = OrderItem::where('product_variant_id', $productVariantIdToFind)
+                    ->whereHas('order', function ($query) use ($userId) {
+                        $query->where('user_id', $userId)
+                            ->where('status', 'delivered'); // Ví dụ: chỉ cho phép đánh giá khi đơn hàng đã hoàn thành
+                    })
+                    ->latest() // Lấy order item gần nhất nếu có nhiều
+                    ->first();
+
+                if ($orderItem) {
+                    $orderItemId = $orderItem->id;
+                }
+            }
+            // Lấy dữ liệu đánh giá
+            $variantIds = $product->variants->pluck('id');
+
+            $reviewsData = Review::whereIn('product_variant_id', $variantIds) // <-- CHANGE THIS LINE
+                ->where('status', 'approved') // Assuming you only want approved reviews
+                ->select('rating', DB::raw('count(*) as count'))
+                ->groupBy('rating')
+                ->pluck('count', 'rating')
+                ->toArray();
+            $totalReviews = array_sum($reviewsData); // Tính tổng số đánh giá
+            if ($totalReviews > 0) {
+                $sumRatings = 0;
+                foreach ($reviewsData as $rating => $count) {
+                    $sumRatings += ($rating * $count);
+                }
+                $averageRating = $sumRatings / $totalReviews;
+            }
+
+            for ($i = 5; $i >= 1; $i--) {
+                $starRatingsCount[$i] = $reviewsData[$i] ?? 0;
+            }
+            $hasReviewed = false;
+
+            if ($orderItemId) {
+                $hasReviewed = Review::where('order_item_id', $orderItemId)->exists();
+            }
+        }
+        // --- Kết thúc đoạn code ĐÃ THÊM ---
+
         return view('users.products.show', compact(
             'product',
             'relatedProducts',
@@ -414,10 +492,15 @@ class HomeController extends Controller
             'specGroupsData',
             'variantSpecs',
             'wishlistVariantIds',
-            'commentsCount'
+            'commentsCount',
+            'reviews',
+            'orderItemId',
+            'averageRating',
+            'totalReviews',
+            'starRatingsCount',
+            'hasReviewed'
         ));
     }
-
 
 
     public function allProducts(Request $request, $id = null, $slug = null)
@@ -738,5 +821,21 @@ class HomeController extends Controller
             ->sortBy(fn($attr) => $attr->attribute->id)
             ->pluck('value')
             ->implode('_');
+    }
+    public function search(Request $request)
+    {
+        $query = $request->input('q');
+
+        $products = Product::with('category')
+            ->where('name', 'like', "%{$query}%")
+            ->orWhere('description', 'like', "%{$query}%")
+            ->paginate(12);
+
+        return view('users.shop', [
+            'products' => $products,
+            'categories' => Category::all(), // để sidebar hoạt động
+            'searchQuery' => $query,
+            'currentCategory' => null, // để tránh breadcrumb danh mục
+        ]);
     }
 }
