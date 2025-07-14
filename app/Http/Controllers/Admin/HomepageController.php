@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -39,9 +40,13 @@ class HomepageController extends Controller
         })->toArray();
 
         // Lấy các khối sản phẩm từ DB
-        $productBlocks = HomepageProductBlock::with(['products' => function ($query) {
-            $query->orderBy('pivot_order');
-        }])->orderBy('order')->get();
+        $productBlocks = HomepageProductBlock::with([
+            'products' => function ($query) {
+                $query->with(['variants' => function ($q) {
+                    $q->where('is_default', true)->with('primaryImage');
+                }])->orderBy('pivot_order');
+            }
+        ])->orderBy('order')->get();
 
         // Dữ liệu cho JS
         $productBlocksForJs = $productBlocks->map(function ($block) {
@@ -51,11 +56,19 @@ class HomepageController extends Controller
                 'order' => $block->order,
                 'is_visible' => $block->is_visible,
                 'products' => $block->products->map(function ($product) {
+                    $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+                    $image = $variant && $variant->primaryImage
+                        ? asset('storage/' . $variant->primaryImage->path)
+                        : '/images/no-image.png';
                     return [
                         'id' => $product->id,
                         'name' => $product->name,
-                        'thumbnail' => $product->thumbnail, // tuỳ theo cột tên ảnh của bạn
-                        'price' => $product->price
+                        'image' => $image, // Đồng bộ với searchProducts và addProductsToBlock
+                        'price' => $variant?->price ? (string) $variant->price : null,
+                        'sale_price' => $variant?->sale_price ? (string) $variant->sale_price : null,
+                        'discount_percent' => ($variant && $variant->price > 0 && $variant->sale_price)
+                            ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                            : 0,
                     ];
                 })->toArray()
             ];
@@ -165,117 +178,138 @@ class HomepageController extends Controller
     {
         try {
             $query = $request->query('q');
+            $filter = $request->query('filter');
 
-            $products = Product::with(['variants.primaryImage'])
-    ->where('status', 'published') // ✅ chỉ lấy sản phẩm đã được xuất bản
-    ->where('name', 'like', '%' . $query . '%')
-    ->take(10)
-    ->get()
-    ->map(function ($product) {
-        $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
-        $image = $variant && $variant->primaryImage
-            ? asset('storage/' . $variant->primaryImage->path)
-            : 'https://via.placeholder.com/300x300?text=No+Image';
+            $productsQuery = Product::with(['variants.primaryImage'])
+                ->where('status', 'published');
 
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'price' => $variant?->price ?? 0,
-            'sale_price' => $variant?->sale_price ?? null,
-            'discount_percent' => $variant && $variant->price > 0 && $variant->sale_price
-                ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                : 0,
-            'image' => $image,
-        ];
-    });
-
-
-            return response()->json($products);
-        } catch (\Throwable $e) {
-            \Log::error('Lỗi khi tìm sản phẩm: ' . $e->getMessage());
-            return response()->json(['error' => 'Lỗi khi tìm sản phẩm.'], 500);
-        }
-    }
-
-    public function addProductsToBlock(Request $request, HomepageProductBlock $block)
-{
-    try {
-        $productIds = $request->input('product_ids', []);
-
-        if (empty($productIds)) {
-            return response()->json(['error' => 'Không có sản phẩm nào được chọn'], 422);
-        }
-
-        // Lấy order lớn nhất hiện tại
-        $maxOrder = $block->products()->max('homepage_block_product.order') ?? 0;
-
-        foreach ($productIds as $i => $productId) {
-            // Tránh thêm trùng
-            if (!$block->products->contains($productId)) {
-                $block->products()->attach($productId, [
-                    'order' => $maxOrder + $i + 1,
-                ]);
+            // Nếu có từ khóa tìm kiếm thì thêm điều kiện LIKE
+            if ($query) {
+                $productsQuery->where('name', 'like', '%' . $query . '%');
             }
-        }
 
-        // Tải lại sản phẩm với ảnh và thông tin cần thiết
-        $products = $block->products()
-            ->with([
-                'variants' => function ($q) {
-                    $q->where('is_default', true)->with('primaryImage');
-                }
-            ])
-            ->orderBy('homepage_block_product.order')
-            ->get()
-            ->map(function ($product) {
-                $variant = $product->variants->first();
+            // Áp dụng bộ lọc nếu có
+            if ($filter === 'top_selling') {
+                $products = Product::with([
+                    'variants' => function ($q) {
+                        $q->where('is_default', true)->with('primaryImage');
+                    }
+                ])
+                    ->where('status', 'published')
+                    ->withSum(['variants as sold_quantity' => function ($q) {
+                        $q->where('is_default', true)
+                            ->join('order_items', 'product_variants.id', '=', 'order_items.product_variant_id');
+                    }], 'order_items.quantity')
+                    ->orderByDesc('sold_quantity')
+                    ->take(10)
+                    ->get();
+            } elseif ($filter === 'featured') {
+                // Top sản phẩm nổi bật
+                $products = $productsQuery->where('is_featured', true)
+                    ->latest()
+                    ->take(10)
+                    ->get();
+            } elseif ($filter === 'latest_10') {
+                // Top 10 sản phẩm mới nhất
+                $products = $productsQuery->latest()->take(10)->get();
+            } else {
+                // Không có filter: lấy tối đa 20 sản phẩm phù hợp
+                $products = $productsQuery->take(20)->get();
+            }
+
+            // Map dữ liệu sang định dạng chuẩn cho frontend
+            $result = $products->map(function ($product) {
+                $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+
+                $image = $variant && $variant->primaryImage
+                    ? asset('storage/' . $variant->primaryImage->path)
+                    : 'https://via.placeholder.com/300x300?text=No+Image';
+
+                // Ưu tiên dùng sold_quantity từ withSum nếu có
+                $totalSold = $product->sold_quantity ?? DB::table('order_items')
+                    ->where('product_variant_id', $variant?->id)
+                    ->sum('quantity');
 
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
                     'price' => $variant?->price ?? 0,
                     'sale_price' => $variant?->sale_price ?? null,
-                    'discount_percent' => ($variant?->sale_price && $variant?->price > 0)
+                    'discount_percent' => ($variant && $variant->price > 0 && $variant->sale_price)
                         ? round(100 - ($variant->sale_price / $variant->price) * 100)
                         : 0,
-                    'image' => $variant?->image_url ?? '/images/no-image.png',
+                    'image' => $image,
+                    'stock_quantity' => $variant?->stock_quantity ?? 0,
+                    'is_featured' => $product->is_featured,
+                    'release_date' => $product->created_at->toDateString(),
+                    'sold_quantity' => $totalSold,
                 ];
             });
 
-        return response()->json([
-            'success' => true,
-            'products' => $products
-        ]);
-    } catch (\Throwable $e) {
-        \Log::error('Lỗi khi thêm sản phẩm vào khối: ' . $e->getMessage());
-        return response()->json(['error' => 'Thêm sản phẩm thất bại'], 500);
+            return response()->json($result);
+        } catch (\Throwable $e) {
+            \Log::error('Lỗi khi tìm sản phẩm: ' . $e->getMessage());
+            return response()->json(['error' => 'Lỗi khi tìm sản phẩm.'], 500);
+        }
     }
-}
 
 
 
 
-
-
-
-
-
-
-    public function sortBanners(Request $request)
+    public function addProductsToBlock(Request $request, HomepageProductBlock $block)
     {
-        return response()->json(['message' => 'Đã sắp xếp banner (fake)']);
-    }
+        try {
+            $productIds = $request->input('product_ids', []);
 
-    public function saveCategories(Request $request)
-    {
-        return response()->json(['message' => 'Đã lưu danh mục hiển thị (fake)']);
-    }
+            if (empty($productIds)) {
+                return response()->json(['error' => 'Không có sản phẩm nào được chọn'], 422);
+            }
 
-    public function sortCategories(Request $request)
-    {
-        return response()->json(['message' => 'Đã sắp xếp danh mục (fake)']);
-    }
+            // Lấy order lớn nhất hiện tại
+            $maxOrder = $block->products()->max('homepage_block_product.order') ?? 0;
 
+            foreach ($productIds as $i => $productId) {
+                // Tránh thêm trùng
+                if (!$block->products->contains($productId)) {
+                    $block->products()->attach($productId, [
+                        'order' => $maxOrder + $i + 1,
+                    ]);
+                }
+            }
+
+            // Tải lại sản phẩm với ảnh và thông tin cần thiết
+            $products = $block->products()
+                ->with([
+                    'variants' => function ($q) {
+                        $q->where('is_default', true)->with('primaryImage');
+                    }
+                ])
+                ->orderBy('homepage_block_product.order')
+                ->get()
+                ->map(function ($product) {
+                    $variant = $product->variants->first();
+
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'price' => $variant?->price ?? 0,
+                        'sale_price' => $variant?->sale_price ?? null,
+                        'discount_percent' => ($variant?->sale_price && $variant?->price > 0)
+                            ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                            : 0,
+                        'image' => $variant?->image_url ?? '/images/no-image.png',
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'products' => $products
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Lỗi khi thêm sản phẩm vào khối: ' . $e->getMessage());
+            return response()->json(['error' => 'Thêm sản phẩm thất bại'], 500);
+        }
+    }
 
     public function destroyProductBlock($id)
     {
@@ -297,19 +331,22 @@ class HomepageController extends Controller
         }
     }
 
+    public function toggleBlockVisibility($id)
+{
+    try {
+        $block = HomepageProductBlock::findOrFail($id);
+        $block->is_visible = !$block->is_visible;
+        $block->save();
 
-    public function sortProductBlocks(Request $request)
-    {
-        return response()->json(['message' => 'Đã sắp xếp khối sản phẩm (fake)']);
+        return response()->json([
+            'success' => true,
+            'is_visible' => $block->is_visible,
+            'message' => $block->is_visible ? 'Khối đã được hiển thị' : 'Khối đã bị ẩn',
+        ]);
+    } catch (\Throwable $e) {
+        \Log::error('Toggle visibility error: ' . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'Không thể cập nhật trạng thái hiển thị'], 500);
     }
+}
 
-    public function saveFeaturedPosts(Request $request)
-    {
-        return response()->json(['message' => 'Đã lưu bài viết nổi bật (fake)']);
-    }
-
-    public function sortFeaturedPosts(Request $request)
-    {
-        return response()->json(['message' => 'Đã sắp xếp bài viết nổi bật (fake)']);
-    }
 }

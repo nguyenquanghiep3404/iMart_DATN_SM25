@@ -35,6 +35,8 @@
         $activeParentNav = 15; // Index của "quản lý comment"
     } elseif (str_starts_with($currentRouteName, 'admin.odermannager.')) {
         $activeParentNav = 15; // Index của "quản lý comment"
+    } elseif (str_starts_with($currentRouteName, 'admin.homepage.')) {
+        $activeParentNav = 16; // Index của "quản lý trang chủ"
     }
     // Thêm các điều kiện khác nếu cần
 @endphp
@@ -628,7 +630,7 @@
                     </li>
                 </ul>
             </li>
-            {{-- 10. Quản lý banner --}}
+            {{-- 10. Quản lý comment --}}
             <li>
                 @php $isCommentsActive = request()->routeIs('admin.comment.*'); @endphp
                 <a href="{{ route('admin.comment.index') }}"
@@ -648,6 +650,25 @@
                     Quản lý comment
                 </a>
             </li>
+
+            {{-- 10. Quản lý trang chủ --}}
+<li>
+    @php $isHomepagesActive = request()->routeIs('admin.homepage.*'); @endphp
+    <a href="{{ route('admin.homepage.index') }}"
+        class="group flex items-center px-4 py-2.5
+            text-base rounded-md transition-all duration-200 ease-in-out
+            {{ $isHomepagesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+        <span
+            class="mr-3 text-lg {{ $isHomepagesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+            {{-- Icon mới: hình ngôi nhà --}}
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 9.857L12 3l9 6.857v9.286A1.857 1.857 0 0 1 19.143 21H4.857A1.857 1.857 0 0 1 3 19.143V9.857Zm9-4.714L5.571 10.5v8.643h12.858V10.5L12 5.143Zm-2.571 7.786h5.143v5.143H9.429v-5.143Z" />
+            </svg>
+        </span>
+        Quản lý trang chủ
+    </a>
+</li>
+
             </ul>
 
             {{-- Phần Cài đặt & Trang phụ (Giữ nguyên) --}}

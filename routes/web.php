@@ -367,7 +367,7 @@ Route::prefix('admin')
         // Route quản lí trang chủ (client)
 
         // ✅ Hiển thị trang quản lý trang chủ (dùng index vì là quản lý tổng thể)
-        Route::get('/homepage', [HomepageController::class, 'index'])->name('admin.homepage.index');
+        Route::get('/homepage', [HomepageController::class, 'index'])->name('homepage.index');
 
         // ✅ Lưu toàn bộ thay đổi
         Route::post('/homepage/update', [HomepageController::class, 'update'])->name('homepage.update');
@@ -391,6 +391,10 @@ Route::prefix('admin')
         Route::delete('/homepage/product-blocks/{id}', [HomepageController::class, 'destroyProductBlock'])->name('homepage.blocks.destroy');
 
         Route::get('/homepage/products/search', [HomepageController::class, 'searchProducts'])->name('homepage.products.search');
+
+        Route::patch('/homepage/blocks/{id}/toggle-visibility', [HomepageController::class, 'toggleBlockVisibility'])
+    ->name('homepage.blocks.toggleVisibility');
+
 
 
         // ✅ Cập nhật thứ tự khối sản phẩm
