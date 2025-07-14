@@ -34,7 +34,7 @@
     } elseif (str_starts_with($currentRouteName, 'admin.comments.')) {
         $activeParentNav = 15; // Index của "quản lý comment"
     } elseif (str_starts_with($currentRouteName, 'admin.odermannager.')) {
-        $activeParentNav = 15; // Index của "quản lý comment"
+        $activeParentNav = 16; // Index của "quản lý comment"
     }
     // Thêm các điều kiện khác nếu cần
 @endphp
@@ -88,7 +88,52 @@
                         Trang chủ
                     </a>
                 </li>
-
+                {{-- 4. Danh mục sản phẩm --}}
+                <li>
+                    @php $isCategoriesActive = request()->routeIs('admin.categories.*'); @endphp
+                    <button @click="openNav !== 2 ? openNav = 2 : openNav = null"
+                        :class="openNav === 2 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                        <span
+                            class="mr-3 text-lg {{ $isCategoriesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
+                                fill="currentColor">
+                                <path
+                                    d="M19,4H9A1,1,0,0,0,8,5V19a1,1,0,0,0,1,1H19a1,1,0,0,0,1-1V5A1,1,0,0,0,19,4ZM18,18H10V6H18ZM6,18H4V6H6ZM14,2H6A3,3,0,0,0,3,5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V14.45A2.83,2.83,0,0,1,14,14a3,3,0,0,1-3-3,3,3,0,0,1,3-3,2.83,2.83,0,0,1,.45,0V5A3,3,0,0,0,14,2Z" />
+                            </svg>
+                        </span>
+                        Danh mục sản phẩm
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 2 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
+                                fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 2" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.categories.index') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách danh mục
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.categories.create') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thêm mới danh mục
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.categories.trash') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
+                    </ul>
+                </li>
                 {{-- 2. Sản Phẩm --}}
                 <li>
                     @php $isProductSectionActive = request()->routeIs('admin.products.*'); @endphp
@@ -183,25 +228,28 @@
                         </li>
                     </ul>
                 </li>
-
-                {{-- 4. Danh mục sản phẩm --}}
+                {{-- 14. thông số sản phẩm --}}
                 <li>
-                    @php $isCategoriesActive = request()->routeIs('admin.categories.*'); @endphp
-                    <button @click="openNav !== 2 ? openNav = 2 : openNav = null"
-                        :class="openNav === 2 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                    @php $isSpecificationsSectionActive = request()->routeIs('admin.specifications.*') || request()->routeIs('admin.specification-groups.*'); @endphp
+                    <button @click="openNav !== 13 ? openNav = 13 : openNav = null"
+                        :class="openNav === 13 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
                             'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
                         class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
                         <span
-                            class="mr-3 text-lg {{ $isCategoriesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            class="mr-3 text-lg {{ $isSpecificationsSectionActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            {{-- Icon mới cho thông số --}}
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
                                 fill="currentColor">
                                 <path
-                                    d="M19,4H9A1,1,0,0,0,8,5V19a1,1,0,0,0,1,1H19a1,1,0,0,0,1-1V5A1,1,0,0,0,19,4ZM18,18H10V6H18ZM6,18H4V6H6ZM14,2H6A3,3,0,0,0,3,5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V14.45A2.83,2.83,0,0,1,14,14a3,3,0,0,1-3-3,3,3,0,0,1,3-3,2.83,2.83,0,0,1,.45,0V5A3,3,0,0,0,14,2Z" />
+                                    d="M21.92,7.62A1,1,0,0,0,21,7H3a1,1,0,0,0,0,2H21a1,1,0,0,0,.92-1.38ZM21.92,15.62A1,1,0,0,0,21,15H3a1,1,0,0,0,0,2H21a1,1,0,0,0,.92-1.38Z" />
+                                <path d="M7,11H3a1,1,0,0,0,0,2H7a1,1,0,0,0,0-2Z" />
+                                <path d="M7,19H3a1,1,0,0,0,0,2H7a1,1,0,0,0,0-2Z" />
+                                <path d="M21,3H3A1,1,0,0,0,3,5H21a1,1,0,0,0,0-2Z" />
                             </svg>
                         </span>
-                        Danh mục sản phẩm
+                        Thông số sản phẩm
                         <span class="ml-auto transition-transform duration-200 ease-in-out"
-                            :class="openNav === 2 ? 'rotate-90' : ''">
+                            :class="openNav === 13 ? 'rotate-90' : ''">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
                                 fill="currentColor">
                                 <path
@@ -209,28 +257,21 @@
                             </svg>
                         </span>
                     </button>
-                    <ul x-show="openNav === 2" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                    <ul x-show="openNav === 13" class="pl-8 pr-2 py-1 space-y-1 mt-1">
                         <li>
-                            <a href="{{ route('admin.categories.index') }}"
-                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Danh sách danh mục
+                            <a href="{{ route('admin.specification-groups.index') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.specification-groups.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Nhóm thông số
                             </a>
                         </li>
                         <li>
-                            <a href="{{ route('admin.categories.create') }}"
-                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Thêm mới danh mục
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('admin.categories.trash') }}"
-                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                Thùng rác
+                            <a href="{{ route('admin.specifications.index') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.specifications.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thông số kỹ thuật
                             </a>
                         </li>
                     </ul>
                 </li>
-
                 {{-- 5. Đơn hàng --}}
                 <li>
                     @php $isOrdersActive = request()->routeIs('admin.orders.index'); @endphp
@@ -240,8 +281,8 @@
                         class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
                         <span
                             class="mr-3 text-lg {{ $isOrdersActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                                fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
                                 <path
                                     d="m11.349,24H0V3C0,1.346,1.346,0,3,0h12c1.654,0,3,1.346,3,3v5.059c-.329-.036-.662-.059-1-.059s-.671.022-1,.059V3c0-.552-.448-1-1-1H3c-.552,0-1,.448-1,1v19h7.518c.506.756,1.125,1.429,1.831,2Zm0-14h-7.349v2h5.518c.506-.756,1.125-1.429,1.831-2Zm-7.349,7h4c0-.688.084-1.356.231-2h-4.231v2Zm20,0c0,3.859-3.141,7-7,7s-7-3.141-7-7,3.141-7,7-7,7,3.141,7,7Zm-2,0c0-2.757-2.243-5-5-5s-5,2.243-5,5,2.243,5,5,5,5-2.243,5-5ZM14,5H4v2h10v-2Zm5.589,9.692l-3.228,3.175-1.63-1.58-1.393,1.436,1.845,1.788c.314.315.733.489,1.179.489s.865-.174,1.173-.482l3.456-3.399-1.402-1.426Z" />
                             </svg>
@@ -249,8 +290,8 @@
                         Đơn hàng
                         <span class="ml-auto transition-transform duration-200 ease-in-out"
                             :class="openNav === 3 ? 'rotate-90' : ''">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
-                                fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
                                 <path
                                     d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
                             </svg>
@@ -268,6 +309,221 @@
                     </ul>
                 </li>
 
+
+
+
+                {{-- 7. Quản lý đánh giá --}}
+                <li>
+                    @php $isReviewsActive = request()->routeIs('admin.reviews.*'); @endphp
+                    <a href="{{ route('admin.reviews.index') }}"
+                        class="group flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out {{ $isReviewsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                        <span
+                            class="mr-3 text-lg {{ $isReviewsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M20.61,4.12a2,2,0,0,0-1.79-1H5.18a2,2,0,0,0-1.79,1L2,8.47V18a2,2,0,0,0,2,2H20a2,2,0,0,0,2-2V8.47ZM5.18,5H18.82l1.2,3H4ZM20,18H4V13H20Zm-8-3.5a.5.5,0,0,1-.5.5h-3a.5.5,0,0,1,0-1h3A.5.5,0,0,1,12,14.5Zm3.9-1.45L14.62,15,13.5,13.1a.5.5,0,0,1,.84-.52l.66.8.92-1.22a.5.5,0,1,1,.88.64Z" />
+                            </svg>
+                        </span>
+                        Quản lý đánh giá
+                    </a>
+                </li>
+
+
+                {{-- 8. Quản lý mã giảm giá --}}
+                <li>
+                    @php $isCouponsActive = request()->routeIs('admin.coupons.*'); @endphp
+                    <button @click="openNav !== 6 ? openNav = 6 : openNav = null"
+                        :class="openNav === 6 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                        <span
+                            class="mr-3 text-lg {{ $isCouponsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M19.41,10H14a1,1,0,0,0,0,2h5.41a1,1,0,0,1,0,2H14a3,3,0,0,1,0-6h5.41a3,3,0,0,0,0,6H14a5,5,0,0,0,0,10h6V20H10a1,1,0,0,0,0,2h10a1,1,0,0,0,1-1V11A5,5,0,0,0,15,6H10V8h5.41A1,1,0,0,1,14,10H10V4h6a3,3,0,0,1,3,3V9A1,1,0,0,1,19.41,10ZM4,2A2,2,0,0,0,2,4V20a2,2,0,0,0,2,2H8V2Z" />
+                            </svg>
+                        </span>
+                        Quản lý mã giảm giá
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 6 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 6" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.coupons.index') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md
+                                    {{ request()->routeIs('admin.coupons.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách mã giảm giá
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.coupons.create') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md
+                                    {{ request()->routeIs('admin.coupons.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thêm mã mới
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.coupons.trash') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md
+                                    {{ request()->routeIs('admin.coupons.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                
+
+                {{-- 10. Quản lý banner --}}
+                <li>
+                    @php $isBannersActive = request()->routeIs('admin.banners.*'); @endphp
+                    <a href="{{ route('admin.banners.index') }}"
+                        class="group flex items-center px-4 py-2.5
+        text-base rounded-md transition-all duration-200 ease-in-out
+        {{ $isBannersActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                        <span
+                            class="mr-3 text-lg {{ $isBannersActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M21,2H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V3A1,1,0,0,0,21,2ZM4,4H20V16H4ZM4,20V18H20v2Z" />
+                                <path d="M12.5,11.5a1,1,0,1,0-1-1A.999.999,0,0,0,12.5,11.5Z" />
+                                <path d="M6,6H8V8H6Z" />
+                            </svg>
+                        </span>
+                        Quản lý banner
+                    </a>
+                </li>
+
+                {{-- 11. Quản lý danh mục bài viết --}}
+                <li>
+                    @php $isPostCategoriesActive = request()->routeIs('admin.post-categories.*'); @endphp
+                    <button @click="openNav !== 9 ? openNav = 9 : openNav = null"
+                        :class="openNav === 9 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                        <span
+                            class="mr-3 text-lg {{ $isPostCategoriesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M19,2H5A3,3,0,0,0,2,5V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V5A3,3,0,0,0,19,2Zm1,17a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V5A1,1,0,0,1,5,4H19a1,1,0,0,1,1,1Z" />
+                                <path d="M7,7h4a1,1,0,0,0,0-2H7A1,1,0,0,0,7,7Z" />
+                                <path d="M17,11H7a1,1,0,0,0,0,2H17a1,1,0,0,0,0-2Z" />
+                                <path d="M17,15H7a1,1,0,0,0,0,2H17a1,1,0,0,0,0-2Z" />
+                            </svg>
+                        </span>
+                        Quản lý bài viết
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 9 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 9" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+
+                        <li>
+                            <a href="{{ route('admin.categories_post.index') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.categories_post.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh mục bài viết
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.post-tags.index') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.post-tags.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách thẻ bài viết
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.posts.index') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.posts.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách bài viết
+                            </a>
+                        </li>
+
+                    </ul>
+                </li>
+                {{-- 13. Quản lý thư viện ảnh --}}
+                <li>
+                    @php $isMediaActive = request()->routeIs('admin.media.*'); @endphp
+                    <button @click="openNav !== 11 ? openNav = 11 : openNav = null"
+                        :class="openNav === 11 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                        <span
+                            class="mr-3 text-lg {{ $isMediaActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
+                            </svg>
+                        </span>
+                        Thư viện ảnh
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 11 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 11" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.media.index') }}"
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.media.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách thư viện ảnh
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.media.trash') }}"
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.media.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                {{-- 10. Quản lý banner --}}
+                <li>
+                    @php $isCommentsActive = request()->routeIs('admin.comment.*'); @endphp
+                    <a href="{{ route('admin.comment.index') }}"
+                        class="group flex items-center px-4 py-2.5
+                        text-base rounded-md transition-all duration-200 ease-in-out
+                        {{ $isCommentsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                        <span
+                            class="mr-3 text-lg {{ $isCommentsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M21,2H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V3A1,1,0,0,0,21,2ZM4,4H20V16H4ZM4,20V18H20v2Z" />
+                                <path d="M12.5,11.5a1,1,0,1,0-1-1A.999.999,0,0,0,12.5,11.5Z" />
+                                <path d="M6,6H8V8H6Z" />
+                            </svg>
+                        </span>
+                        Quản lý comment
+                    </a>
+                </li>
                 {{-- 6. Quản lý người dùng --}}
                 <li>
                     @php $isUsersActive = request()->routeIs('admin.users.*'); @endphp
@@ -317,337 +573,80 @@
                         </li>
                     </ul>
                 </li>
-
-
-            {{-- 7. Quản lý đánh giá --}}
-            <li>
-                @php $isReviewsActive = request()->routeIs('admin.reviews.*'); @endphp
-                <a href="{{ route('admin.reviews.index') }}"
-                    class="group flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out {{ $isReviewsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-                    <span
-                        class="mr-3 text-lg {{ $isReviewsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M20.61,4.12a2,2,0,0,0-1.79-1H5.18a2,2,0,0,0-1.79,1L2,8.47V18a2,2,0,0,0,2,2H20a2,2,0,0,0,2-2V8.47ZM5.18,5H18.82l1.2,3H4ZM20,18H4V13H20Zm-8-3.5a.5.5,0,0,1-.5.5h-3a.5.5,0,0,1,0-1h3A.5.5,0,0,1,12,14.5Zm3.9-1.45L14.62,15,13.5,13.1a.5.5,0,0,1,.84-.52l.66.8.92-1.22a.5.5,0,1,1,.88.64Z" />
-                        </svg>
-                    </span>
-                    Quản lý đánh giá
-                </a>
-            </li>
-
-
-            {{-- 8. Quản lý mã giảm giá --}}
-            <li>
-                @php $isCouponsActive = request()->routeIs('admin.coupons.*'); @endphp
-                <button @click="openNav !== 6 ? openNav = 6 : openNav = null"
-                    :class="openNav === 6 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
-                        'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
-                    class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
-                    <span
-                        class="mr-3 text-lg {{ $isCouponsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M19.41,10H14a1,1,0,0,0,0,2h5.41a1,1,0,0,1,0,2H14a3,3,0,0,1,0-6h5.41a3,3,0,0,0,0,6H14a5,5,0,0,0,0,10h6V20H10a1,1,0,0,0,0,2h10a1,1,0,0,0,1-1V11A5,5,0,0,0,15,6H10V8h5.41A1,1,0,0,1,14,10H10V4h6a3,3,0,0,1,3,3V9A1,1,0,0,1,19.41,10ZM4,2A2,2,0,0,0,2,4V20a2,2,0,0,0,2,2H8V2Z" />
-                        </svg>
-                    </span>
-                    Quản lý mã giảm giá
-                    <span class="ml-auto transition-transform duration-200 ease-in-out"
-                        :class="openNav === 6 ? 'rotate-90' : ''">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
-                            fill="currentColor">
-                            <path
-                                d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
-                        </svg>
-                    </span>
-                </button>
-                <ul x-show="openNav === 6" class="pl-8 pr-2 py-1 space-y-1 mt-1">
-                    <li>
-                        <a href="{{ route('admin.coupons.index') }}"
-                            class="block w-full py-1.5 px-3 text-sm rounded-md
-                                    {{ request()->routeIs('admin.coupons.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Danh sách mã giảm giá
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.coupons.create') }}"
-                            class="block w-full py-1.5 px-3 text-sm rounded-md
-                                    {{ request()->routeIs('admin.coupons.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Thêm mã mới
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.coupons.trash') }}"
-                            class="block w-full py-1.5 px-3 text-sm rounded-md
-                                    {{ request()->routeIs('admin.coupons.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Thùng rác
-                        </a>
-                    </li>
-                </ul>
-            </li>
-
-            {{-- 9. Quản lý phân quyền --}}
-            <li>
-                @php $isRolesActive = request()->routeIs('admin.roles.*'); @endphp
-                <a href="{{ route('admin.roles.index') }}"
-                    class="group flex items-center px-4 py-2.5
+                {{-- 9. Quản lý phân quyền --}}
+                <li>
+                    @php $isRolesActive = request()->routeIs('admin.roles.*'); @endphp
+                    <a href="{{ route('admin.roles.index') }}"
+                        class="group flex items-center px-4 py-2.5
                         text-base rounded-md transition-all duration-200 ease-in-out
                         {{ $isRolesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-                    <span
-                        class="mr-3 text-lg {{ $isRolesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M20.78,6.82,14.22,2.22A6.87,6.87,0,0,0,10,2,6.87,6.87,0,0,0,3.18,7.82,6.87,6.87,0,0,0,2,12a6.87,6.87,0,0,0,8,6.82V22a1,1,0,0,0,2,0V18.82A6.87,6.87,0,0,0,20.78,13,5.1,5.1,0,0,0,22,10.6,4.42,4.42,0,0,0,20.78,6.82ZM11,17.82A5.87,5.87,0,0,1,4,12a5.87,5.87,0,0,1,2.18-4.82A5.87,5.87,0,0,1,10,4a5.87,5.87,0,0,1,4.82,2.18,5.87,5.87,0,0,1,2,4.42,3.1,3.1,0,0,1-1.22.4A4.87,4.87,0,0,0,11,17.82Z" />
-                        </svg>
-                    </span>
-                    Quản lý phân quyền
-                </a>
-            </li>
-
-            {{-- 10. Quản lý banner --}}
-            <li>
-                @php $isBannersActive = request()->routeIs('admin.banners.*'); @endphp
-                <a href="{{ route('admin.banners.index') }}"
-                    class="group flex items-center px-4 py-2.5
-        text-base rounded-md transition-all duration-200 ease-in-out
-        {{ $isBannersActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-                    <span
-                        class="mr-3 text-lg {{ $isBannersActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M21,2H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V3A1,1,0,0,0,21,2ZM4,4H20V16H4ZM4,20V18H20v2Z" />
-                            <path d="M12.5,11.5a1,1,0,1,0-1-1A.999.999,0,0,0,12.5,11.5Z" />
-                            <path d="M6,6H8V8H6Z" />
-                        </svg>
-                    </span>
-                    Quản lý banner
-                </a>
-            </li>
-
-            {{-- 11. Quản lý danh mục bài viết --}}
-            <li>
-                @php $isPostCategoriesActive = request()->routeIs('admin.post-categories.*'); @endphp
-                <button @click="openNav !== 9 ? openNav = 9 : openNav = null"
-                    :class="openNav === 9 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
-                        'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
-                    class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
-                    <span
-                        class="mr-3 text-lg {{ $isPostCategoriesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M19,2H5A3,3,0,0,0,2,5V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V5A3,3,0,0,0,19,2Zm1,17a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V5A1,1,0,0,1,5,4H19a1,1,0,0,1,1,1Z" />
-                            <path d="M7,7h4a1,1,0,0,0,0-2H7A1,1,0,0,0,7,7Z" />
-                            <path d="M17,11H7a1,1,0,0,0,0,2H17a1,1,0,0,0,0-2Z" />
-                            <path d="M17,15H7a1,1,0,0,0,0,2H17a1,1,0,0,0,0-2Z" />
-                        </svg>
-                    </span>
-                    Quản lý bài viết
-                    <span class="ml-auto transition-transform duration-200 ease-in-out"
-                        :class="openNav === 9 ? 'rotate-90' : ''">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
-                            fill="currentColor">
-                            <path
-                                d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
-                        </svg>
-                    </span>
-                </button>
-                <ul x-show="openNav === 9" class="pl-8 pr-2 py-1 space-y-1 mt-1">
-
-                    <li>
-                        <a href="{{ route('admin.categories_post.index') }}" {{-- Giả sử route --}}
-                            class="block w-full py-1.5
-                                px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.categories_post.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Danh mục bài viết
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.post-tags.index') }}" {{-- Giả sử route --}}
-                            class="block w-full py-1.5
-                                px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.post-tags.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Danh sách thẻ bài viết
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.posts.index') }}" {{-- Giả sử route --}}
-                            class="block w-full py-1.5
-                                px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.posts.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Danh sách bài viết
-                        </a>
-                    </li>
-
-                </ul>
-            </li>
-
-            {{-- 12. Quản lý nhân viên giao hàng --}}
-            <li>
-                @php $isShippersActive = request()->routeIs('admin.shippers.*'); @endphp
-                <a href="{{ route('admin.shippers.index') }}"
-                    class="group flex items-center px-4 py-2.5
+                        <span
+                            class="mr-3 text-lg {{ $isRolesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M20.78,6.82,14.22,2.22A6.87,6.87,0,0,0,10,2,6.87,6.87,0,0,0,3.18,7.82,6.87,6.87,0,0,0,2,12a6.87,6.87,0,0,0,8,6.82V22a1,1,0,0,0,2,0V18.82A6.87,6.87,0,0,0,20.78,13,5.1,5.1,0,0,0,22,10.6,4.42,4.42,0,0,0,20.78,6.82ZM11,17.82A5.87,5.87,0,0,1,4,12a5.87,5.87,0,0,1,2.18-4.82A5.87,5.87,0,0,1,10,4a5.87,5.87,0,0,1,4.82,2.18,5.87,5.87,0,0,1,2,4.42,3.1,3.1,0,0,1-1.22.4A4.87,4.87,0,0,0,11,17.82Z" />
+                            </svg>
+                        </span>
+                        Quản lý phân quyền
+                    </a>
+                </li>
+                {{-- 12. Quản lý nhân viên giao hàng --}}
+                <li>
+                    @php $isShippersActive = request()->routeIs('admin.shippers.*'); @endphp
+                    <a href="{{ route('admin.shippers.index') }}"
+                        class="group flex items-center px-4 py-2.5
                         text-base rounded-md transition-all duration-200 ease-in-out
                         {{ $isShippersActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-                    <span
-                        class="mr-3 text-lg {{ $isShippersActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M19.7,11.83,18.23,5.9a3,3,0,0,0-2.81-2H8.58a3,3,0,0,0-2.81,2L4.3,11.83A2.32,2.32,0,0,0,4,12.5a1.5,1.5,0,0,0,1.5,1.5h.5a1,1,0,0,0,1-1,1.5,1.5,0,0,1,3,0,1,1,0,0,0,1,1h4a1,1,0,0,0,1-1,1.5,1.5,0,0,1,3,0,1,1,0,0,0,1,1h.5a1.5,1.5,0,0,0,1.5-1.5A2.32,2.32,0,0,0,19.7,11.83ZM9.5,11A1.5,1.5,0,1,1,11,9.5,1.5,1.5,0,0,1,9.5,11Zm8,0A1.5,1.5,0,1,1,19,9.5,1.5,1.5,0,0,1,17.5,11Z" />
-                        </svg>
-                    </span>
-                    Quản lý nhân viên giao hàng
-                </a>
-            </li>
-            {{-- 14. Quản lý nhân viên content --}}
-            <li>
-                @php $isContentStaffActive = request()->routeIs('admin.content-staffs.*') || request()->routeIs('admin.content_staffs.*'); @endphp
-                <a href="{{ route('admin.content-staffs.index') }}"
-                    class="group flex items-center px-4 py-2.5
+                        <span
+                            class="mr-3 text-lg {{ $isShippersActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M19.7,11.83,18.23,5.9a3,3,0,0,0-2.81-2H8.58a3,3,0,0,0-2.81,2L4.3,11.83A2.32,2.32,0,0,0,4,12.5a1.5,1.5,0,0,0,1.5,1.5h.5a1,1,0,0,0,1-1,1.5,1.5,0,0,1,3,0,1,1,0,0,0,1,1h4a1,1,0,0,0,1-1,1.5,1.5,0,0,1,3,0,1,1,0,0,0,1,1h.5a1.5,1.5,0,0,0,1.5-1.5A2.32,2.32,0,0,0,19.7,11.83ZM9.5,11A1.5,1.5,0,1,1,11,9.5,1.5,1.5,0,0,1,9.5,11Zm8,0A1.5,1.5,0,1,1,19,9.5,1.5,1.5,0,0,1,17.5,11Z" />
+                            </svg>
+                        </span>
+                        Quản lý nhân viên giao hàng
+                    </a>
+                </li>
+                {{-- 14. Quản lý nhân viên content --}}
+                <li>
+                    @php $isContentStaffActive = request()->routeIs('admin.content-staffs.*') || request()->routeIs('admin.content_staffs.*'); @endphp
+                    <a href="{{ route('admin.content-staffs.index') }}"
+                        class="group flex items-center px-4 py-2.5
         text-base rounded-md transition-all duration-200 ease-in-out
         {{ $isContentStaffActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-                    <span
-                        class="mr-3 text-lg {{ $isContentStaffActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M12 2a5 5 0 1 1-5 5 5 5 0 0 1 5-5Zm0 14c-4.42 0-8 1.79-8 4v2H20V20c0-2.21-3.58-4-8-4Z" />
-                        </svg>
-                    </span>
-                    Quản lý nhân viên content
-                </a>
-            </li>
-            {{-- 14. Quản lý nhân viên quản lý đơn hàng --}}
-            <li>
-                @php $isodermannagertaffActive = request()->routeIs('admin.odermannager.*') || request()->routeIs('admin.content_staffs.*'); @endphp
-                <a href="{{ route('admin.order-manager.index') }}"
-                    class="group flex items-center px-4 py-2.5
+                        <span
+                            class="mr-3 text-lg {{ $isContentStaffActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M12 2a5 5 0 1 1-5 5 5 5 0 0 1 5-5Zm0 14c-4.42 0-8 1.79-8 4v2H20V20c0-2.21-3.58-4-8-4Z" />
+                            </svg>
+                        </span>
+                        Quản lý nhân viên content
+                    </a>
+                </li>
+                {{-- 14. Quản lý nhân viên quản lý đơn hàng --}}
+                <li>
+                    @php $isodermannagertaffActive = request()->routeIs('admin.odermannager.*') || request()->routeIs('admin.content_staffs.*'); @endphp
+                    <a href="{{ route('admin.order-manager.index') }}"
+                        class="group flex items-center px-4 py-2.5
         text-base rounded-md transition-all duration-200 ease-in-out
         {{ $isodermannagertaffActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-                    <span
-                        class="mr-3 text-lg {{ $isodermannagertaffActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M12 2a5 5 0 1 1-5 5 5 5 0 0 1 5-5Zm0 14c-4.42 0-8 1.79-8 4v2H20V20c0-2.21-3.58-4-8-4Z" />
-                        </svg>
-                    </span>
-                    Quản lý nhân viên quản lý đơn hàng
-                </a>
-            </li>
+                        <span
+                            class="mr-3 text-lg {{ $isodermannagertaffActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M12 2a5 5 0 1 1-5 5 5 5 0 0 1 5-5Zm0 14c-4.42 0-8 1.79-8 4v2H20V20c0-2.21-3.58-4-8-4Z" />
+                            </svg>
+                        </span>
+                        Quản lý nhân viên quản lý đơn hàng
+                    </a>
+                </li>
 
-            {{-- 13. Quản lý thư viện ảnh --}}
-            <li>
-                @php $isMediaActive = request()->routeIs('admin.media.*'); @endphp
-                <button @click="openNav !== 11 ? openNav = 11 : openNav = null"
-                    :class="openNav === 11 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
-                        'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
-                    class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
-                    <span
-                        class="mr-3 text-lg {{ $isMediaActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
-                        </svg>
-                    </span>
-                    Thư viện ảnh
-                    <span class="ml-auto transition-transform duration-200 ease-in-out"
-                        :class="openNav === 11 ? 'rotate-90' : ''">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
-                            fill="currentColor">
-                            <path
-                                d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
-                        </svg>
-                    </span>
-                </button>
-                <ul x-show="openNav === 11" class="pl-8 pr-2 py-1 space-y-1 mt-1">
-                    <li>
-                        <a href="{{ route('admin.media.index') }}"
-                            class="block w-full py-1.5
-                                px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.media.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Danh sách thư viện ảnh
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.media.trash') }}"
-                            class="block w-full py-1.5
-                                px-3 text-sm rounded-md
-                                {{ request()->routeIs('admin.media.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Thùng rác
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            {{-- 14. thông số sản phẩm --}}
-            <li>
-                @php $isSpecificationsSectionActive = request()->routeIs('admin.specifications.*') || request()->routeIs('admin.specification-groups.*'); @endphp
-                <button @click="openNav !== 13 ? openNav = 13 : openNav = null"
-                    :class="openNav === 13 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
-                        'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
-                    class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
-                    <span
-                        class="mr-3 text-lg {{ $isSpecificationsSectionActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        {{-- Icon mới cho thông số --}}
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M21.92,7.62A1,1,0,0,0,21,7H3a1,1,0,0,0,0,2H21a1,1,0,0,0,.92-1.38ZM21.92,15.62A1,1,0,0,0,21,15H3a1,1,0,0,0,0,2H21a1,1,0,0,0,.92-1.38Z" />
-                            <path d="M7,11H3a1,1,0,0,0,0,2H7a1,1,0,0,0,0-2Z" />
-                            <path d="M7,19H3a1,1,0,0,0,0,2H7a1,1,0,0,0,0-2Z" />
-                            <path d="M21,3H3A1,1,0,0,0,3,5H21a1,1,0,0,0,0-2Z" />
-                        </svg>
-                    </span>
-                    Thông số sản phẩm
-                    <span class="ml-auto transition-transform duration-200 ease-in-out"
-                        :class="openNav === 13 ? 'rotate-90' : ''">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
-                            fill="currentColor">
-                            <path
-                                d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
-                        </svg>
-                    </span>
-                </button>
-                <ul x-show="openNav === 13" class="pl-8 pr-2 py-1 space-y-1 mt-1">
-                    <li>
-                        <a href="{{ route('admin.specification-groups.index') }}"
-                            class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.specification-groups.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Nhóm thông số
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.specifications.index') }}"
-                            class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.specifications.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Thông số kỹ thuật
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            {{-- 10. Quản lý banner --}}
-            <li>
-                @php $isCommentsActive = request()->routeIs('admin.comment.*'); @endphp
-                <a href="{{ route('admin.comment.index') }}"
-                    class="group flex items-center px-4 py-2.5
-                        text-base rounded-md transition-all duration-200 ease-in-out
-                        {{ $isCommentsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-                    <span
-                        class="mr-3 text-lg {{ $isCommentsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M21,2H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V3A1,1,0,0,0,21,2ZM4,4H20V16H4ZM4,20V18H20v2Z" />
-                            <path d="M12.5,11.5a1,1,0,1,0-1-1A.999.999,0,0,0,12.5,11.5Z" />
-                            <path d="M6,6H8V8H6Z" />
-                        </svg>
-                    </span>
-                    Quản lý comment
-                </a>
-            </li>
+                
             </ul>
 
             {{-- Phần Cài đặt & Trang phụ (Giữ nguyên) --}}
