@@ -105,15 +105,15 @@
             </div>
 
             <div class="flex-1 flex justify-center">
-    <nav class="hidden lg:flex items-center space-x-8">
-        @foreach ($menuCategories ?? [] as $cat)
-            <a href="{{ route('products.byCategory', ['id' => $cat->id, 'slug' => $cat->slug]) }}"
-                class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">
-                {{ $cat->name }}
-            </a>
-        @endforeach
-    </nav>
-</div>
+                <nav class="hidden lg:flex items-center space-x-8">
+                    @foreach ($menuCategories ?? [] as $cat)
+                    <a href="{{ route('products.byCategory', ['id' => $cat->id, 'slug' => $cat->slug]) }}"
+                        class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">
+                        {{ $cat->name }}
+                    </a>
+                    @endforeach
+                </nav>
+            </div>
 
 
             <div class="flex justify-end">
@@ -140,21 +140,30 @@
                     <!-- User Menu Container -->
                     <div class="relative">
                         <button id="user-menu-trigger"
-                            class="w-9 h-9 rounded-full flex items-center justify-center text-gray-300 hover:bg-white/10 transition-colors">
+                            class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:bg-white/10 transition-colors overflow-hidden">
+
                             @guest
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
+                            {{-- Icon user mặc định cho khách chưa đăng nhập --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
                             </svg>
                             @else
-                            <div id="user-avatar" class="w-7 h-7 rounded-full flex items-center justify-center">
-                                <span
-                                    class="text-sm font-semibold text-white uppercase">{{ strtoupper(Auth::user()->name[0]) }}</span>
-                            </div>
+                            {{-- Avatar người dùng hoặc chữ cái đầu --}}
+                            @if(Auth::user()->avatar_url)
+                            <img src="{{ Auth::user()->avatar_url }}"
+                                alt="Avatar"
+                                class="w-full h-full object-cover rounded-full">
+                            @else
+                            <span class="text-sm font-semibold text-white uppercase">
+                                {{ strtoupper(Auth::user()->name[0]) }}
+                            </span>
+                            @endif
                             @endguest
+
                         </button>
+
 
                         <!-- Dropdown Container -->
                         <div id="user-dropdown-menu"
@@ -312,17 +321,17 @@
                                         </div>
                                     </a>
                                     @empty
-                                        <div class="text-center text-gray-400 py-8 px-4">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                class="mx-auto h-12 w-12 text-gray-500" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                                            </svg>
-                                            <p class="mt-4 text-sm font-semibold">Không có thông báo mới</p>
-                                            <p class="mt-1 text-xs text-gray-500">Chúng tôi sẽ cho bạn biết khi có tin
-                                                tức.</p>
-                                        </div>
+                                    <div class="text-center text-gray-400 py-8 px-4">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="mx-auto h-12 w-12 text-gray-500" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                                        </svg>
+                                        <p class="mt-4 text-sm font-semibold">Không có thông báo mới</p>
+                                        <p class="mt-1 text-xs text-gray-500">Chúng tôi sẽ cho bạn biết khi có tin
+                                            tức.</p>
+                                    </div>
                                     @endforelse
                                 </div>
                             </div>
@@ -366,19 +375,22 @@
         <div id="header-search" class="hidden items-center justify-center h-full">
             <div class="w-full max-w-2xl flex items-center space-x-4">
                 <div class="search-wrapper w-full rounded-full p-1 bg-white/10">
-                    <div class="relative bg-transparent rounded-full">
-                        <input type="search" placeholder="Tìm kiếm sản phẩm..."
-                            class="search-input w-full bg-transparent text-gray-300 rounded-full py-2.5 pl-6 pr-16 text-base placeholder-gray-400 focus:outline-none">
-                        <button type="submit"
-                            class="search-submit-btn absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-110 focus:outline-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                            </svg>
-                        </button>
-                    </div>
+                    <form action="{{ route('users.products.search') }}" method="GET">
+                        <div class="relative bg-transparent rounded-full">
+                            <input type="search" name="q" placeholder="Tìm kiếm sản phẩm..."
+                                class="search-input w-full bg-transparent text-gray-300 rounded-full py-2.5 pl-6 pr-16 text-base placeholder-gray-400 focus:outline-none" />
+
+                            <button type="submit"
+                                class="search-submit-btn absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-110 focus:outline-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
                 </div>
                 <button id="search-close-btn" class="text-gray-400 hover:text-white transition-colors flex-shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
