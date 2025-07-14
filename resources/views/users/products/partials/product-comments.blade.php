@@ -12,7 +12,7 @@
             file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
 
         <div class="flex items-center gap-2 relative">
-            <textarea id="comment-textarea" name="content" maxlength="3000" placeholder="Nhập nội dung bình luận..."
+            <textarea id="comment-textarea" name="content" maxlength="3000" required placeholder="Nhập nội dung bình luận..."
                 class="w-full px-4 py-3 pr-24 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"></textarea>
 
             <span id="char-counter" class="absolute right-32 bottom-3 text-sm text-gray-400">0/3000</span>
@@ -76,6 +76,9 @@
                 }
 
                 const comment = data.comment;
+                if (comment.status !== 'approved' && !comment.is_owner && !comment.is_admin) {
+                    return;
+                }
                 const initial = comment.initial?.toUpperCase() || 'A';
 
                 const adminBadge = comment.is_admin ?
@@ -87,28 +90,40 @@
                     '';
 
                 const newCommentHTML = `
-                <div class="border-b border-gray-200 py-4">
-                    <div class="flex items-start gap-3">
-                        <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white select-none"
-                            style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">
-                            ${initial}
-                        </div>
-                        <div>
-                            <p class="font-semibold text-gray-800">
-                                ${escapeHtml(comment.name)}
-                                ${adminBadge}
-                            </p>
-                            <p class="text-sm text-gray-600 whitespace-pre-wrap">${escapeHtml(comment.content)}</p>
-                            ${imagesHtml}
-                            <div class="text-xs text-gray-500 mt-2 flex items-center gap-4">
-                                <span>${comment.time}</span>
+                    <div class="border-b border-gray-200 py-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white select-none"
+                                style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">
+                                ${initial}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">
+                                    ${escapeHtml(comment.name)}
+                                    ${adminBadge}
+                                </p>
+                                <p class="text-sm text-gray-600 whitespace-pre-wrap">${escapeHtml(comment.content)}</p>
+                                ${comment.status === 'pending' && comment.is_owner ? `<div class="text-sm text-yellow-600 mt-1">Bình luận của bạn đang chờ duyệt</div>` : ''}
+                                ${imagesHtml}
+                                <div class="text-xs text-gray-500 mt-2 flex items-center gap-4">
+                                    <span>${comment.time}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
 
+
+                // Thêm comment mới vào đầu danh sách
                 commentsList.insertAdjacentHTML('afterbegin', newCommentHTML);
+
+                // Cập nhật số lượng bình luận
+                const countElem = document.getElementById('comments-count');
+                if (countElem) {
+                    let currentCount = parseInt(countElem.textContent) || 0;
+                    currentCount++;
+                    countElem.textContent = `${currentCount} Bình luận`;
+                }
+
                 commentForm.reset();
                 charCounter.textContent = `0/${maxChars}`;
                 commentForm.dataset.submitted = 'true'; // Đánh dấu đã gửi

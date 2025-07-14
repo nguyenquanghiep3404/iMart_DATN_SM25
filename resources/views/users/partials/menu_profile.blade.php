@@ -5,21 +5,19 @@
             <div class="position-relative">
                 <div role="button" data-bs-toggle="modal" data-bs-target="#chooseAvatarModal">
                     @if (Auth::user()->avatar)
-                    <img src="{{ Auth::user()->avatar_url }}"
-                        alt="Avatar"
-                        class="rounded-circle flex-shrink-0"
-                        style="width: 3rem; height: 3rem; object-fit: cover;">
+                        <img src="{{ Auth::user()->avatar_url }}" alt="Avatar" class="rounded-circle flex-shrink-0"
+                            style="width: 3rem; height: 3rem; object-fit: cover;">
                     @else
-                    <div class="h5 d-flex justify-content-center align-items-center flex-shrink-0 text-primary bg-primary-subtle lh-1 rounded-circle mb-0"
-                        style="width: 3rem; height: 3rem;">
-                        {{ strtoupper(Auth::user()->name[0]) }}
-                    </div>
+                        <div class="h5 d-flex justify-content-center align-items-center flex-shrink-0 text-primary bg-primary-subtle lh-1 rounded-circle mb-0"
+                            style="width: 3rem; height: 3rem;">
+                            {{ strtoupper(Auth::user()->name[0]) }}
+                        </div>
                     @endif
                 </div>
 
                 <div class="position-absolute bottom-0 end-0 bg-white rounded-circle p-0 border"
-                    style="transform: translate(30%, 30%); cursor: pointer;"
-                    data-bs-toggle="modal" data-bs-target="#chooseAvatarModal">
+                    style="transform: translate(30%, 30%); cursor: pointer;" data-bs-toggle="modal"
+                    data-bs-target="#chooseAvatarModal">
                     <i class="bi bi-camera-fill text-muted fs-10 "></i>
                 </div>
             </div>
@@ -39,15 +37,14 @@
                     <div class="modal-body">
                         <p>Ảnh hồ sơ giúp người khác nhận ra bạn.</p>
                         @if (Auth::user()->avatar)
-                        <img src="{{ Auth::user()->avatar_url }}"
-                            alt="Avatar"
-                            class="rounded-circle flex-shrink-0 d-block mx-auto"
-                            style="width: 15rem; height: 15rem; object-fit: cover;">
+                            <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
+                                class="rounded-circle flex-shrink-0 d-block mx-auto"
+                                style="width: 15rem; height: 15rem; object-fit: cover;">
                         @else
-                        <div class="h5 d-flex justify-content-center align-items-center flex-shrink-0 text-primary bg-primary-subtle lh-1 rounded-circle mb-0"
-                            style="width: 15rem; height: 15rem;">
-                            {{ strtoupper(Auth::user()->name[0]) }}
-                        </div>
+                            <div class="h5 d-flex justify-content-center align-items-center flex-shrink-0 text-primary bg-primary-subtle lh-1 rounded-circle mb-0"
+                                style="width: 15rem; height: 15rem;">
+                                {{ strtoupper(Auth::user()->name[0]) }}
+                            </div>
                         @endif
                         <input type="file" id="chooseAvatarInput" accept="image/*" class="form-control">
                     </div>
@@ -76,14 +73,16 @@
                 <i class="ci-credit-card fs-base opacity-75 me-2"></i>
                 Phương thức thanh toán
             </a>
-            <a class="list-group-item list-group-item-action d-flex align-items-center" href="{{ route('reviews.index') }}">
+            <a class="list-group-item list-group-item-action d-flex align-items-center"
+                href="{{ route('reviews.index') }}">
                 <i class="ci-star fs-base opacity-75 me-2"></i>
                 Đánh giá của tôi
             </a>
         </nav>
         <h6 class="pt-4 ps-2 ms-1">Manage account</h6>
         <nav class="list-group list-group-borderless">
-            <a class="list-group-item list-group-item-action d-flex align-items-center" href="{{ route('profile.edit') }}">
+            <a class="list-group-item list-group-item-action d-flex align-items-center"
+                href="{{ route('profile.edit') }}">
                 <i class="ci-user fs-base opacity-75 me-2"></i>
                 Thông tin cá nhân
             </a>
@@ -91,7 +90,8 @@
                 <i class="ci-map-pin fs-base opacity-75 me-2"></i>
                 Địa chỉ
             </a>
-            <a class="list-group-item list-group-item-action d-flex align-items-center" href="account-notifications.html">
+            <a class="list-group-item list-group-item-action d-flex align-items-center"
+                href="account-notifications.html">
                 <i class="ci-bell fs-base opacity-75 mt-1 me-2"></i>
                 Thông báo
             </a>
@@ -102,7 +102,8 @@
                 <i class="ci-help-circle fs-base opacity-75 me-2"></i>
                 Trung tâm trợ giúp
             </a>
-            <a class="list-group-item list-group-item-action d-flex align-items-center" href="terms-and-conditions.html">
+            <a class="list-group-item list-group-item-action d-flex align-items-center"
+                href="terms-and-conditions.html">
                 <i class="ci-info fs-base opacity-75 me-2"></i>
                 Điều khoản và điều kiện
             </a>
@@ -129,7 +130,8 @@
             </div>
             <div class="modal-body text-center">
                 <img id="avatarCropImage2" style="width: 600px; height: 600px; display: block; margin: auto;" />
-                <div class="preview-circle mt-4 mx-auto" style="width: 150px; height: 150px; border-radius: 50%; overflow: hidden; display: none;">
+                <div class="preview-circle mt-4 mx-auto"
+                    style="width: 150px; height: 150px; border-radius: 50%; overflow: hidden; display: none;">
                     <canvas id="avatarCroppedCanvas2" width="150" height="150"></canvas>
                 </div>
             </div>

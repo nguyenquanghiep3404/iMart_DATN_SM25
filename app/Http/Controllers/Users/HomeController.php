@@ -329,12 +329,27 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-        $comments = $product->comments()
-            ->where('status', 'approved')
+            $comments = $product->comments()
             ->whereNull('parent_id')
+            ->where(function ($query) {
+                $query->where('status', 'approved');
+        
+                if (Auth::check()) {
+                    $query->orWhere(function ($q) {
+                        $q->where('user_id', Auth::id())
+                          ->whereIn('status', ['pending', 'rejected','spam']); 
+                    });
+        
+                    if (Auth::user()->hasRole('admin')) {
+                        $query->orWhereIn('status', ['pending', 'rejected','spam']); 
+                    }
+                }
+            })
             ->with(['user', 'replies.user'])
             ->orderByDesc('created_at')
             ->get();
+        
+        
 
         $initialVariantAttributes = [];
         if ($defaultVariant) {
@@ -383,6 +398,10 @@ class HomeController extends Controller
                 $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
             }
         }
+        $commentsCount = $product->comments()
+            ->where('status', 'approved')
+            ->whereNull('parent_id')
+            ->count();
 
         // --- Bắt đầu đoạn code ĐÃ THÊM để lấy order_item_id ---
         $orderItemId = null; // Khởi tạo biến này là null
@@ -473,6 +492,7 @@ class HomeController extends Controller
             'specGroupsData',
             'variantSpecs',
             'wishlistVariantIds',
+            'commentsCount',
             'reviews',
             'orderItemId',
             'averageRating',
