@@ -177,7 +177,7 @@
 
                 <div class="nav ps-md-4 ps-lg-0">
                     <a class="btn nav-link animate-underline text-decoration-none px-0"
-                        href="">
+                        href="/blog">
                         <span class="animate-target">Xem tất cả</span>
                         <i class="ci-chevron-right fs-base ms-1"></i>
                     </a>
