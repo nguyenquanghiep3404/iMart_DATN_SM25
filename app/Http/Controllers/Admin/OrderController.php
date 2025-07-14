@@ -81,6 +81,19 @@ class OrderController extends Controller
             'data' => $order
         ]);
     }
+    public function view(Order $order)
+    {
+        $order->load([
+            'user:id,name,email,phone_number',
+            'items.productVariant.product:id,name,slug',
+            'items.productVariant.product.coverImage',
+            'items.productVariant.primaryImage',
+            'processor:id,name',
+            'shipper:id,name'
+        ]);
+
+        return view('admin.orders.show', compact('order'));
+    }
 
     public function updateStatus(OrderRequest $request, Order $order)
     {
@@ -96,18 +109,18 @@ class OrderController extends Controller
         try {
             // BƯỚC 2: Lưu trạng thái cũ để ghi log
             $oldStatus = $order->status;
-            
+
             // BƯỚC 3: Chuẩn bị dữ liệu cập nhật cơ bản
             $updateData = [
                 'status' => $request->status,
                 'processed_by' => auth()->id(), // Ai cập nhật
             ];
-            
+
             // Thêm ghi chú admin nếu có
             if ($request->filled('admin_note')) {
                 $updateData['admin_note'] = $request->admin_note;
             }
-            
+
             // BƯỚC 4: Xử lý logic đặc biệt theo từng trạng thái
             switch ($request->status) {
                 case Order::STATUS_SHIPPED: // Xuất kho
@@ -116,7 +129,7 @@ class OrderController extends Controller
                         $updateData['shipped_by'] = $request->shipped_by;
                     }
                     break;
-                    
+
                 case Order::STATUS_DELIVERED: // Giao thành công
                     $updateData['delivered_at'] = now();
                     // TỰ ĐỘNG: COD + chưa thanh toán → đánh dấu đã thanh toán
@@ -124,7 +137,7 @@ class OrderController extends Controller
                         $updateData['payment_status'] = Order::PAYMENT_PAID;
                     }
                     break;
-                    
+
                 case Order::STATUS_CANCELLED: // Hủy đơn
                     $updateData['cancelled_at'] = now();
                     $updateData['cancellation_reason'] = $request->cancellation_reason;
@@ -133,11 +146,11 @@ class OrderController extends Controller
                         $updateData['payment_status'] = Order::PAYMENT_REFUNDED;
                     }
                     break;
-                    
+
                 case Order::STATUS_FAILED_DELIVERY: // Giao thất bại
                     $updateData['failed_delivery_reason'] = $request->failed_delivery_reason;
                     break;
-                    
+
                 case Order::STATUS_RETURNED: // Trả hàng
                     $updateData['cancelled_at'] = now();
                     $updateData['cancellation_reason'] = 'Returned by customer';
@@ -147,10 +160,10 @@ class OrderController extends Controller
                     }
                     break;
             }
-            
+
             // BƯỚC 5: Cập nhật database một lần duy nhất
             $order->update($updateData);
-            
+
             // BƯỚC 6: Ghi log để theo dõi
             \Log::info('Order status updated', [
                 'order_id' => $order->id,
@@ -160,7 +173,7 @@ class OrderController extends Controller
                 'updated_by' => auth()->id(),
                 'admin_note' => $request->admin_note
             ]);
-            
+
             // BƯỚC 7: Trả về kết quả
             return response()->json([
                 'success' => true,
@@ -175,7 +188,6 @@ class OrderController extends Controller
                     'cancelled_at' => $order->cancelled_at?->format('d/m/Y H:i')
                 ]
             ]);
-            
         } catch (\Exception $e) {
             // Ghi log lỗi
             \Log::error('Error updating order status:', [
@@ -183,7 +195,7 @@ class OrderController extends Controller
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Không thể cập nhật trạng thái đơn hàng. Vui lòng thử lại sau.',
@@ -195,12 +207,12 @@ class OrderController extends Controller
     public function getShippers()
     {
         try {
-            $shippers = User::whereHas('roles', function($query) {
+            $shippers = User::whereHas('roles', function ($query) {
                 $query->where('name', 'shipper');
             })->select('id', 'name', 'email', 'phone_number')
-              ->where('status', 'active')
-              ->orderBy('name')
-              ->get();
+                ->where('status', 'active')
+                ->orderBy('name')
+                ->get();
 
             return response()->json([
                 'success' => true,
@@ -211,7 +223,7 @@ class OrderController extends Controller
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Không thể tải danh sách shipper.',
@@ -228,7 +240,7 @@ class OrderController extends Controller
 
         try {
             // Kiểm tra xem user có phải là shipper không
-            $shipper = User::whereHas('roles', function($query) {
+            $shipper = User::whereHas('roles', function ($query) {
                 $query->where('name', 'shipper');
             })->find($request->shipper_id);
 
@@ -273,7 +285,6 @@ class OrderController extends Controller
                     'shipper' => $order->shipper
                 ]
             ]);
-
         } catch (\Exception $e) {
             \Log::error('Lỗi khi chỉ định người gửi hàng:', [
                 'order_id' => $order->id,
@@ -281,7 +292,7 @@ class OrderController extends Controller
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Không thể gán shipper. Vui lòng thử lại sau.',

@@ -11,8 +11,19 @@ class Post extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'title', 'slug', 'content', 'excerpt', 'user_id', 'post_category_id',
-        'status', 'is_featured', 'view_count', 'meta_title', 'meta_description', 'meta_keywords', 'published_at',
+        'title',
+        'slug',
+        'content',
+        'excerpt',
+        'user_id',
+        'post_category_id',
+        'status',
+        'is_featured',
+        'view_count',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
+        'published_at',
     ];
 
     protected $casts = [
@@ -59,4 +70,5 @@ class Post extends Model
         }
         return 'https://via.placeholder.com/800x400?text=No+Cover';
     }
+    // Post.php
 }

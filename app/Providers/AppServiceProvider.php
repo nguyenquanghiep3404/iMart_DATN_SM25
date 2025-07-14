@@ -21,9 +21,12 @@ use App\Models\Product;
 use App\Policies\ProductPolicy;
 use App\Models\Category;
 use App\Policies\CategoryPolicy;
-use Illuminate\Support\Facades\View; 
+use Illuminate\Support\Facades\View;
+use App\Models\Order;
+use App\Observers\OrderObserver;
 use App\Models\ProductVariant;
 use App\Observers\ProductVariantObserver;
+
 
 
 
@@ -50,6 +53,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ProductVariant::observe(ProductVariantObserver::class);
+        Order::observe(OrderObserver::class);
         Paginator::useTailwind();
 
         // Đăng ký listener cho sự kiện Verified
@@ -111,61 +116,19 @@ class AppServiceProvider extends ServiceProvider
             $view->with('menuCategories', $menuCategories);
         });
 
-        // try {
-        // // --- LOGIC PHÂN QUYỀN MỚI DỰA TRÊN PERMISSION ---
+        View::composer('*', function ($view) {
+            $totalQuantity = 0;
 
-        // // Quy tắc "bất khả xâm phạm" cho admin: admin có tất cả các quyền.
-        // // Gate::before sẽ chạy trước tất cả các Gate khác.
-        // Gate::before(function (User $user, $ability) {
-        //     if ($user->hasRole('admin')) {
-        //         return true;
-        //     }
-        // });
+            if (auth()->check() && auth()->user()->cart) {
+                // Người dùng đã đăng nhập -> lấy từ DB
+                $totalQuantity = auth()->user()->cart->items()->sum('quantity');
+            } else {
+                // Khách vãng lai -> lấy từ session
+                $cart = session()->get('cart', []);
+                $totalQuantity = array_sum(array_column($cart, 'quantity'));
+            }
 
-        // // Định nghĩa Gate dựa trên Permission
-        // Gate::define('manage-users', function (User $user) {
-        //     return $user->hasPermissionTo('manage-users');
-        // });
-
-        // Gate::define('manage-content', function (User $user) {
-        //     return $user->hasPermissionTo('manage-content');
-        // });
-
-        // Gate::define('manage-orders', function (User $user) {
-        //     return $user->hasPermissionTo('manage-orders');
-        // });
-        // Gate::define('manage-attributes', function (User $user) {
-        // // Cho phép truy cập nếu người dùng có ÍT NHẤT MỘT trong các quyền sau
-        //     return $user->hasPermissionTo([
-        //         'browse_attributes',
-        //         'add_attributes',
-        //         'edit_attributes',
-        //         'delete_attributes'
-        //     ]);
-        // });
-
-        // // Bạn có thể định nghĩa các quyền chi tiết hơn nữa
-        // Gate::define('delete-posts', function(User $user) {
-        //     return $user->hasPermissionTo('delete-posts');
-        // });
-
-        // } catch (\Exception $e) {
-        //     // Bỏ qua lỗi khi migrate
-        //     return;
-        // }
-    View::composer('*', function ($view) {
-        $totalQuantity = 0;
-
-        if (auth()->check() && auth()->user()->cart) {
-            // Người dùng đã đăng nhập -> lấy từ DB
-            $totalQuantity = auth()->user()->cart->items()->sum('quantity');
-        } else {
-            // Khách vãng lai -> lấy từ session
-            $cart = session()->get('cart', []);
-            $totalQuantity = array_sum(array_column($cart, 'quantity'));
-        }
-
-        $view->with('cartItemCount', $totalQuantity);
-    });
+            $view->with('cartItemCount', $totalQuantity);
+        });
     }
 }

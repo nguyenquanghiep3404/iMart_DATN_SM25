@@ -31,12 +31,12 @@
                         Tiến hành thanh toán
                         <i class="ci-chevron-right fs-lg ms-1 me-n1"></i>
                     </a>
-                    <div class="nav justify-content-center fs-sm mt-3">
+                    {{-- <div class="nav justify-content-center fs-sm mt-3">
                         <a class="nav-link text-decoration-underline p-0 me-1" href="#authForm"
                             data-bs-toggle="offcanvas" role="button">Create an account</a>
                         and get
                         <span class="text-dark-emphasis fw-medium ms-1">239 bonuses</span>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>
