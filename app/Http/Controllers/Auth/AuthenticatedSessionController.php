@@ -22,35 +22,107 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
+    // public function store(LoginRequest $request): RedirectResponse
+    // {
+    //     // 1. Xác thực email + password
+    //     $request->authenticate();
+
+    //     // 2. Regenerate session
+    //     $request->session()->regenerate();
+
+    //     // 3. Lấy user vừa đăng nhập
+    //     $user = Auth::user();
+
+    //     // 4. Chuyển hướng theo role:
+    //     //    - Nếu user có role_id = 2 (customer) → chuyển đến /dashboard (user dashboard)
+    //     //    - Nếu user có role_id thuộc [1,4,5] (admin roles) → chuyển đến /admin/dashboard
+    //     if ($user->roles->contains('id', 2)) {
+    //         return redirect()->intended(route('users.home'));
+    //     }
+
+    //     if ($user->roles->contains('id', 1) ||
+    //         $user->roles->contains('id', 4) ||
+    //         $user->roles->contains('id', 6) ||
+    //         $user->roles->contains('id', 5)
+    //     ) {
+    //         return redirect()->intended(route('admin.dashboard'));
+    //     }
+
+    //     return redirect()->intended(route('shipper.dashboard'));
+    // }
     public function store(LoginRequest $request): RedirectResponse
-    {
-        // 1. Xác thực email + password
-        $request->authenticate();
+{
+    // 1. Xác thực email + password
+    $request->authenticate();
 
-        // 2. Regenerate session
-        $request->session()->regenerate();
+    // 2. Regenerate session
+    $request->session()->regenerate();
 
-        // 3. Lấy user vừa đăng nhập
-        $user = Auth::user();
+    // 3. Lấy user vừa đăng nhập
+    $user = Auth::user();
 
-        // 4. Chuyển hướng theo role:
-        //    - Nếu user có role_id = 2 (customer) → chuyển đến /dashboard (user dashboard)
-        //    - Nếu user có role_id thuộc [1,4,5] (admin roles) → chuyển đến /admin/dashboard
-        if ($user->roles->contains('id', 2)) {
-            return redirect()->intended(route('users.home'));
+    // 4. Nếu có giỏ hàng trong session thì chuyển vào database
+    if (session()->has('cart')) {
+        $sessionCart = session('cart');
+        $cart = \App\Models\Cart::firstOrCreate(['user_id' => $user->id]);
+
+        foreach ($sessionCart as $item) {
+            $variantId = $item['variant_id'] ?? null;
+            $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
+            $price = isset($item['price']) ? (float)$item['price'] : 0;
+
+            if (!$variantId) {
+                continue;
+            }
+
+            // ✅ Kiểm tra tồn kho
+            $variant = \App\Models\ProductVariant::find($variantId);
+            if (!$variant || $variant->stock_quantity < 1) {
+                continue; // Không thêm nếu không có tồn kho
+            }
+
+            // Giới hạn số lượng không vượt quá tồn kho
+            $quantity = min($quantity, $variant->stock_quantity);
+
+            $existingItem = \App\Models\CartItem::where('cart_id', $cart->id)
+                ->where('product_variant_id', $variantId)
+                ->first();
+
+            if ($existingItem) {
+                $newQuantity = $existingItem->quantity + $quantity;
+                $existingItem->quantity = min($newQuantity, $variant->stock_quantity);
+                $existingItem->save();
+            } else {
+                \App\Models\CartItem::create([
+                    'cart_id' => $cart->id,
+                    'product_variant_id' => $variantId,
+                    'quantity' => $quantity,
+                    'price' => $price,
+                ]);
+            }
         }
 
-        if ($user->roles->contains('id', 1) ||
-            $user->roles->contains('id', 4) ||
-            $user->roles->contains('id', 6) ||
-            $user->roles->contains('id', 5)
-        ) {
-            return redirect()->intended(route('admin.dashboard'));
-        }
-
-        return redirect()->intended(route('shipper.dashboard'));
+        // Xoá giỏ hàng khỏi session sau khi chuyển thành công
+        session()->forget('cart');
     }
 
+    // 5. Chuyển hướng theo role:
+    if ($user->roles->contains('id', 2)) {
+        return redirect()->intended(route('users.home'));
+    }
+
+    if ($user->roles->contains('id', 1) ||
+        $user->roles->contains('id', 4) ||
+        $user->roles->contains('id', 5) ||
+        $user->roles->contains('id', 6)
+    ) {
+        return redirect()->intended(route('admin.dashboard'));
+    }
+
+    return redirect()->intended(route('shipper.dashboard'));
+}
+
+    
     /**
      * Destroy an authenticated session.
      */

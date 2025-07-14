@@ -45,6 +45,27 @@
             border-color: #28a745;
             box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
         }
+
+        .step-transition {
+            transition: all 0.3s ease-in-out;
+        }
+
+        .step-content {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        }
+
+        .step-content.hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+
+        /* Đảm bảo các step bị ẩn */
+        .step-hidden {
+            display: none !important;
+        }
     </style>
 
     <!-- Page content -->
@@ -530,7 +551,7 @@
                         </div>
 
                         <!-- Tóm tắt Bước 1 (khi hoàn thành) -->
-                        <div class="d-flex align-items-start" id="step-1-summary" style="display: none !important;">
+                        <div class="d-flex align-items-start step-hidden" id="step-1-summary">
                             <div class="d-flex align-items-center justify-content-center bg-success text-white rounded-circle flex-shrink-0"
                                 style="width: 2rem; height: 2rem; margin-top: -.125rem">
                                 <i class="ci-check fs-base"></i>
@@ -561,7 +582,7 @@
                         </div>
 
                         <!-- Step 2: Shipping Address -->
-                        <div class="d-flex align-items-start" id="step-2" style="display: none !important;">
+                        <div class="d-flex align-items-start step-hidden" id="step-2">
                             <div class="d-flex align-items-center justify-content-center bg-danger text-white rounded-circle fs-sm fw-semibold lh-1 flex-shrink-0"
                                 style="width: 2rem; height: 2rem; margin-top: -.125rem">2</div>
                             <div class="w-100 ps-3 ps-md-4">
@@ -640,7 +661,7 @@
                         </div>
 
                         <!-- Tóm tắt Bước 2 (khi hoàn thành) -->
-                        <div class="d-flex align-items-start" id="step-2-summary" style="display: none !important;">
+                        <div class="d-flex align-items-start step-hidden" id="step-2-summary">
                             <div class="d-flex align-items-center justify-content-center bg-success text-white rounded-circle flex-shrink-0"
                                 style="width: 2rem; height: 2rem; margin-top: -.125rem">
                                 <i class="ci-check fs-base"></i>
@@ -669,7 +690,7 @@
                         </div>
 
                         <!-- Step 3: Thanh toán  -->
-                        <div class="d-flex align-items-start" id="step-3" style="display: none !important;">
+                        <div class="d-flex align-items-start step-hidden" id="step-3">
                             <div class="d-flex align-items-center justify-content-center bg-danger text-white rounded-circle fs-sm fw-semibold lh-1 flex-shrink-0"
                                 style="width: 2rem; height: 2rem; margin-top: -.125rem">3</div>
                             <div class="w-100 ps-3 ps-md-4">
@@ -729,15 +750,15 @@
                         </div>
 
                         <!-- Inactive Steps (default state) -->
-                        {{-- <div class="d-flex align-items-start" id="step-2-inactive">
-                <div class="d-flex align-items-center justify-content-center bg-body-secondary text-body-secondary rounded-circle fs-sm fw-semibold lh-1 flex-shrink-0" style="width: 2rem; height: 2rem; margin-top: -.125rem">2</div>
-                <h2 class="h5 text-body-secondary ps-3 ps-md-4 mb-0">Địa chỉ giao hàng</h2>
-              </div>
+                        <div class="d-flex align-items-start step-hidden" id="step-2-inactive">
+                            <div class="d-flex align-items-center justify-content-center bg-body-secondary text-body-secondary rounded-circle fs-sm fw-semibold lh-1 flex-shrink-0" style="width: 2rem; height: 2rem; margin-top: -.125rem">2</div>
+                            <h2 class="h5 text-body-secondary ps-3 ps-md-4 mb-0">Địa chỉ giao hàng</h2>
+                        </div>
 
-              <div class="d-flex align-items-start" id="step-3-inactive">
-                <div class="d-flex align-items-center justify-content-center bg-body-secondary text-body-secondary rounded-circle fs-sm fw-semibold lh-1 flex-shrink-0" style="width: 2rem; height: 2rem; margin-top: -.125rem">3</div>
-                <h2 class="h5 text-body-secondary ps-3 ps-md-4 mb-0">Thanh toán</h2>
-              </div> --}}
+                        <div class="d-flex align-items-start step-hidden" id="step-3-inactive">
+                            <div class="d-flex align-items-center justify-content-center bg-body-secondary text-body-secondary rounded-circle fs-sm fw-semibold lh-1 flex-shrink-0" style="width: 2rem; height: 2rem; margin-top: -.125rem">3</div>
+                            <h2 class="h5 text-body-secondary ps-3 ps-md-4 mb-0">Thanh toán</h2>
+                        </div>
                     </div>
                 </div>
 
@@ -1110,28 +1131,36 @@
 
             // Chức năng để hiển thị chỉ các bước liên quan
             function showStep(activeStep) {
-                // Ẩn tất cả các bước trước
-                [step1, step1Summary, step2, step2Summary, step3, step2Inactive, step3Inactive].forEach(el => {
-                    if (el) el.style.display = 'none';
+                // Ẩn tất cả các bước
+                const allSteps = [step1, step1Summary, step2, step2Summary, step3];
+                allSteps.forEach(el => {
+                    if (el) {
+                        el.classList.add('step-hidden');
+                    }
                 });
 
-                // Hiển thị các bước phù hợp dựa trên bước hoạt động
+                // Ẩn các bước inactive
+                const step2Inactive = document.getElementById('step-2-inactive');
+                const step3Inactive = document.getElementById('step-3-inactive');
+                if (step2Inactive) step2Inactive.classList.add('step-hidden');
+                if (step3Inactive) step3Inactive.classList.add('step-hidden');
+
+                // Hiển thị các bước phù hợp
                 if (activeStep === 1) {
-                    // Bước 1: Hiển thị bước hiện tại + các bước không hoạt động cho 2 & 3
-                    step1.style.display = 'flex';
-                    step2Inactive.style.display = 'flex';
-                    step3Inactive.style.display = 'flex';
+                    // Bước 1: Chỉ hiển thị step 1 và các bước inactive
+                    if (step1) step1.classList.remove('step-hidden');
+                    if (step2Inactive) step2Inactive.classList.remove('step-hidden');
+                    if (step3Inactive) step3Inactive.classList.remove('step-hidden');
                 } else if (activeStep === 2) {
-                    // Bước 2: Hiển thị tóm tắt bước 1 + bước hiện tại + bước không hoạt động 3
-                    step1Summary.style.display = 'flex';
-                    step2.style.display = 'flex';
-                    step3Inactive.style.display = 'flex';
+                    // Bước 2: Hiển thị tóm tắt bước 1 + step 2 + step 3 inactive
+                    if (step1Summary) step1Summary.classList.remove('step-hidden');
+                    if (step2) step2.classList.remove('step-hidden');
+                    if (step3Inactive) step3Inactive.classList.remove('step-hidden');
                 } else if (activeStep === 3) {
-                    // Bước 3: Hiển thị chỉ các tóm tắt đã hoàn thành + bước hiện tại (không có bước không hoạt động)
-                    step1Summary.style.display = 'flex';
-                    step2Summary.style.display = 'flex';
-                    step3.style.display = 'flex';
-                    // KHÔNG có bước không hoạt động nào được hiển thị ở bước 3
+                    // Bước 3: Hiển thị tóm tắt bước 1 + tóm tắt bước 2 + step 3
+                    if (step1Summary) step1Summary.classList.remove('step-hidden');
+                    if (step2Summary) step2Summary.classList.remove('step-hidden');
+                    if (step3) step3.classList.remove('step-hidden');
                 }
             }
 
@@ -1341,8 +1370,15 @@
             // Cập nhật tóm tắt giao hàng khi địa chỉ thay đổi 
             // Lưu ý: người nghe thay đổi tỉnh và phường đã được thêm vào ở trên
 
+            // Khởi tạo giao diện - hiển thị step 1
+            function initializeInterface() {
+                // Đảm bảo trang bắt đầu với step 1
+                showStep(1);
+            }
+
             // Cập nhật ban đầu
             updateDeliverySummary();
+            initializeInterface();
 
             // Đặt hàng
             placeOrderBtn.addEventListener('click', function() {

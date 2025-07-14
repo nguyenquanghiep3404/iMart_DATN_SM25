@@ -99,8 +99,4 @@ class ProductVariant extends Model
             ->withPivot('value') // Quan trọng: Lấy cột 'value' từ bảng trung gian
             ->withTimestamps();
     }
-    protected static function booted()
-    {
-        static::observe(\App\Observers\ProductVariantObserver::class);
-    }
 }
