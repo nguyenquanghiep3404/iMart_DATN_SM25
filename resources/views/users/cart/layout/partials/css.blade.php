@@ -148,15 +148,4 @@
         background: #f3f4f6;
         /* hover:bg-gray-100 */
     }
-
-    .count-input input {
-        width: 60px;
-        height: 40px;
-        text-align: center;
-        border: none;
-        font-size: 1.2rem;
-        pointer-events: none;
-        /* readonly nên khóa luôn */
-        background: transparent;
-    }
 </style>

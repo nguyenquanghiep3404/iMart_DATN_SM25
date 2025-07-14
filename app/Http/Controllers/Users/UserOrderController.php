@@ -21,7 +21,7 @@ class UserOrderController extends Controller
         $user = Auth::user();
 
         $ordersQuery = Order::where('user_id', $user->id)
-            ->with(['items' => function($query) {
+            ->with(['items' => function ($query) {
                 $query->with('productVariant');
             }]);
 
@@ -32,9 +32,9 @@ class UserOrderController extends Controller
         // Thêm tìm kiếm nếu có
         if ($request->has('search')) {
             $search = $request->input('search');
-            $ordersQuery->where(function($query) use ($search) {
+            $ordersQuery->where(function ($query) use ($search) {
                 $query->where('order_code', 'like', "%$search%")
-                    ->orWhereHas('items', function($q) use ($search) {
+                    ->orWhereHas('items', function ($q) use ($search) {
                         $q->where('product_name', 'like', "%$search%");
                     });
             });
@@ -49,22 +49,27 @@ class UserOrderController extends Controller
      * Hiển thị chi tiết đơn hàng
      */
     public function show($id)
-{
-    $user = Auth::user();
-    $order = Order::where('user_id', $user->id)
-        ->with([
-            'items' => function($query) {
-                $query->with('productVariant');
-            },
-            'shippingProvince',
-            'shippingWard',
-            'billingProvince',
-            'billingWard'
-        ])
-        ->findOrFail($id);
+    {
+        $user = Auth::user();
 
-    return view('users.orders.show', compact('order'));
-}
+        $order = Order::where('user_id', $user->id)
+            ->with([
+                'items.productVariant',
+                'shippingProvince',
+                'shippingWard',
+                'billingProvince',
+                'billingWard'
+            ])
+            ->findOrFail($id);
+
+        // Gán thuộc tính has_reviewed cho từng item
+        foreach ($order->items as $item) {
+            $item->has_reviewed = $item->review()->exists(); // true/false
+        }
+
+        return view('users.orders.show', compact('order'));
+    }
+
 
     /**
      * Hiển thị hóa đơn
@@ -73,7 +78,7 @@ class UserOrderController extends Controller
     {
         $user = Auth::user();
         $order = Order::where('user_id', $user->id)
-            ->with(['items' => function($query) {
+            ->with(['items' => function ($query) {
                 $query->with('productVariant');
             }])
             ->findOrFail($id);
