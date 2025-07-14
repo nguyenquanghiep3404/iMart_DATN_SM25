@@ -37,9 +37,11 @@ use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Users\UserOrderController;
 use App\Http\Controllers\Users\CarOffController;
 
+
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
+Route::post('/cart/remove-coupon', [CartController::class, 'removeCoupon'])->name('cart.removeCoupon');
 // Route::post('cart/remove', [CarOffController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
@@ -79,6 +81,8 @@ Route::post('/api/compare-suggestions', [HomeController::class, 'compareSuggesti
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
+Route::get('/tim-kiem', [HomeController::class, 'search'])->name('users.products.search');
+
 // BLOG ROUTES (PUBLIC)
 Route::prefix('blog')->group(function () {
     Route::get('/', [BlogController::class, 'home'])->name('users.blogs.home');
@@ -311,6 +315,7 @@ Route::prefix('admin')
         Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
         Route::get('/orders/shippers/list', [OrderController::class, 'getShippers'])->name('orders.shippers');
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
+         Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
 
 
 
@@ -367,7 +372,7 @@ Route::prefix('admin')
         // Route quản lí trang chủ (client)
 
         // ✅ Hiển thị trang quản lý trang chủ (dùng index vì là quản lý tổng thể)
-        Route::get('/homepage', [HomepageController::class, 'index'])->name('admin.homepage.index');
+        Route::get('/homepage', [HomepageController::class, 'index'])->name('homepage.index');
 
         // ✅ Lưu toàn bộ thay đổi
         Route::post('/homepage/update', [HomepageController::class, 'update'])->name('homepage.update');
@@ -391,6 +396,10 @@ Route::prefix('admin')
         Route::delete('/homepage/product-blocks/{id}', [HomepageController::class, 'destroyProductBlock'])->name('homepage.blocks.destroy');
 
         Route::get('/homepage/products/search', [HomepageController::class, 'searchProducts'])->name('homepage.products.search');
+
+        Route::patch('/homepage/blocks/{id}/toggle-visibility', [HomepageController::class, 'toggleBlockVisibility'])
+    ->name('homepage.blocks.toggleVisibility');
+
 
 
         // ✅ Cập nhật thứ tự khối sản phẩm

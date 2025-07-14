@@ -177,7 +177,7 @@
 
                 <div class="nav ps-md-4 ps-lg-0">
                     <a class="btn nav-link animate-underline text-decoration-none px-0"
-                        href="">
+                        href="/blog">
                         <span class="animate-target">Xem tất cả</span>
                         <i class="ci-chevron-right fs-base ms-1"></i>
                     </a>
@@ -186,12 +186,6 @@
         </div>
     </div>
 </section>
-
-
-@endsection
-
-
-@push('styles')
 <style>
     .hero-banner {
         margin-top: -16px;
@@ -254,10 +248,23 @@
     .product-card .ratio {
         --cz-aspect-ratio: calc(200 / 260 * 100%);
     }
+
+    .swiper-button-next,
+    .swiper-button-prev {
+        color: #fff;
+        width: 80px;
+        height: 80px;
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 50%;
+        transition: all 0.3s;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
 </style>
-@endpush
-
-
+@endsection
 @push('scripts')
 <script>
     // Additional scripts for homepage if needed
