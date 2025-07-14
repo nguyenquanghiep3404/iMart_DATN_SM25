@@ -26,7 +26,7 @@
 </div>
 
 <div id="comments-list">
-    @foreach ($comments as $comment)
+    @foreach ($allComments as $comment)
         @include('users.products.partials.recursive-comment', ['comment' => $comment])
     @endforeach
 </div>
