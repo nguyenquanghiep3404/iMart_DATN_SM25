@@ -484,6 +484,9 @@
                             style="{{ old('type', $product->type) === 'simple' ? '' : 'display:none;' }}">
                             @php
                                 $simpleVariant = $product->type === 'simple' ? $product->variants->first() : null;
+                                $simpleInventories = $simpleVariant
+                                    ? $simpleVariant->inventories->pluck('quantity', 'inventory_type')
+                                    : collect();
                             @endphp
                             <h3 class="text-lg font-semibold text-gray-700">Thông tin sản phẩm đơn giản</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -505,10 +508,36 @@
                                         class="input-field"
                                         value="{{ old('simple_sale_price', $simpleVariant?->sale_price ?? '') }}">
                                 </div>
-                                <div class="input-group"><label for="simple_stock_quantity">Số lượng tồn kho <span
-                                            class="required-star">*</span></label><input type="number"
-                                        id="simple_stock_quantity" name="simple_stock_quantity" class="input-field"
-                                        value="{{ old('simple_stock_quantity', $simpleVariant?->stock_quantity ?? '') }}">
+                                <div class="input-group">
+                                    <label class="form-section-heading">Quản lý tồn kho</label>
+                                    <div
+                                        class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 p-3 border rounded-md bg-gray-50/50">
+                                        <div class="input-group !mb-0">
+                                            <label for="simple_inventories_new"
+                                                class="!text-xs !font-normal !text-gray-500">Hàng mới <span
+                                                    class="required-star">*</span></label>
+                                            <input type="number" id="simple_inventories_new"
+                                                name="simple_inventories[new]" class="input-field !py-2 !text-sm"
+                                                min="0"
+                                                value="{{ old('simple_inventories.new', $simpleInventories->get('new', 0)) }}">
+                                        </div>
+                                        <div class="input-group !mb-0">
+                                            <label for="simple_inventories_open_box"
+                                                class="!text-xs !font-normal !text-gray-500">Hàng mở hộp</label>
+                                            <input type="number" id="simple_inventories_open_box"
+                                                name="simple_inventories[open_box]" class="input-field !py-2 !text-sm"
+                                                min="0"
+                                                value="{{ old('simple_inventories.open_box', $simpleInventories->get('open_box', 0)) }}">
+                                        </div>
+                                        <div class="input-group !mb-0">
+                                            <label for="simple_inventories_used"
+                                                class="!text-xs !font-normal !text-gray-500">Hàng cũ</label>
+                                            <input type="number" id="simple_inventories_used"
+                                                name="simple_inventories[used]" class="input-field !py-2 !text-sm"
+                                                min="0"
+                                                value="{{ old('simple_inventories.used', $simpleInventories->get('used', 0)) }}">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div
@@ -772,7 +801,8 @@
                 </h3>
                 <p class="mt-3 text-gray-600">Bạn có chắc chắn muốn chuyển sang sản phẩm "Đơn giản" không? <br>Hành động
                     này sẽ <strong class="text-red-700 font-semibold">xóa vĩnh viễn tất cả các biến thể hiện có</strong>.
-                    <br><br>Thông tin từ biến thể mặc định sẽ được sao chép qua. Hành động này không thể hoàn tác.</p>
+                    <br><br>Thông tin từ biến thể mặc định sẽ được sao chép qua. Hành động này không thể hoàn tác.
+                </p>
                 <div class="mt-6 flex justify-end space-x-4">
                     <button id="cancelTypeSwitch" class="btn btn-secondary">Hủy bỏ</button>
                     <button id="confirmTypeSwitch" class="btn btn-danger">Xác nhận & Chuyển đổi</button>
@@ -946,7 +976,7 @@
             }
             const categorySelect = document.getElementById('category_id');
             const categoryName = categorySelect?.options[categorySelect.selectedIndex]?.text.replace(/--/g, '').trim() ||
-            "";
+                "";
             return `Sản phẩm: ${productName}, thuộc danh mục: ${categoryName}.`;
         }
 
@@ -1083,7 +1113,7 @@
                 // Render for simple product if it's visible
                 if (simpleSpecContainer && document.getElementById('simpleProductFields').style.display !== 'none') {
                     const simpleVariant = productBeingEdited.variants.length > 0 ? productBeingEdited.variants[0] :
-                    null;
+                        null;
                     const existingSimpleSpecs = simpleVariant ? mapSpecsToObject(simpleVariant.specifications) : {};
                     renderSpecifications(simpleSpecContainer, 'specifications', existingSimpleSpecs);
                 }
@@ -1350,7 +1380,11 @@
             const variantCard = document.createElement('div');
             variantCard.className = 'variant-card';
             variantCard.dataset.variantIndex = currentVariantIndex;
-
+            const getInventoryValue = (inventories, type) => {
+                if (!Array.isArray(inventories)) return '';
+                const inventory = inventories.find(inv => inv.inventory_type === type);
+                return inventory ? inventory.quantity : '';
+            };
             let attributesHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4">';
             selectedProductAttributes.forEach(attr => {
                 const selectedValue = variantData.attribute_values ? (variantData.attribute_values.find(v => v
@@ -1361,7 +1395,7 @@
             attributesHTML += '</div>';
 
             const startsAtValue = variantData.sale_price_starts_at ? new Date(variantData.sale_price_starts_at)
-            .toISOString().slice(0, 16) : '';
+                .toISOString().slice(0, 16) : '';
             const endsAtValue = variantData.sale_price_ends_at ? new Date(variantData.sale_price_ends_at).toISOString()
                 .slice(0, 16) : '';
 
@@ -1382,7 +1416,23 @@
         ${attributesHTML}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div class="input-group"><label class="text-sm font-medium">SKU <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" value="${variantData.sku || ''}"></div></div>
-            <div class="input-group"><label class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" class="input-field text-sm" min="0" value="${variantData.stock_quantity || ''}"></div></div>
+            <div class="input-group mt-4">
+                    <label class="text-sm font-medium">Quản lý tồn kho biến thể</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 p-3 border rounded-md bg-white">
+                        <div class="input-group !mb-0">
+                            <label class="!text-xs !font-normal !text-gray-500">Hàng mới <span class="required-star">*</span></label>
+                            <input type="number" name="variants[${currentVariantIndex}][inventories][new]" class="input-field !py-2 !text-sm" min="0" value="${getInventoryValue(variantData.inventories, 'new')}">
+                        </div>
+                        <div class="input-group !mb-0">
+                            <label class="!text-xs !font-normal !text-gray-500">Hàng mở hộp</label>
+                            <input type="number" name="variants[${currentVariantIndex}][inventories][open_box]" class="input-field !py-2 !text-sm" min="0" value="${getInventoryValue(variantData.inventories, 'open_box')}">
+                        </div>
+                        <div class="input-group !mb-0">
+                            <label class="!text-xs !font-normal !text-gray-500">Hàng cũ</label>
+                            <input type="number" name="variants[${currentVariantIndex}][inventories][used]" class="input-field !py-2 !text-sm" min="0" value="${getInventoryValue(variantData.inventories, 'used')}">
+                        </div>
+                    </div>
+                </div>
             <div class="input-group"><label class="text-sm font-medium">Giá <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" value="${variantData.price || ''}"></div></div>
             <div class="input-group">
                 <div class="label-with-action"><label class="text-sm font-medium">Giá KM (VNĐ)</label><a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium">Lên lịch</a></div>
@@ -1460,13 +1510,21 @@
 
                 if (sourceVariantCard) {
                     const sourceIndex = sourceVariantCard.dataset.variantIndex;
+                    const sourceInventories = {};
+                    sourceVariantCard.querySelectorAll('[name^="variants[${sourceIndex}][inventories]"]').forEach(input => {
+                        const type = input.name.match(/\[(new|open_box|used)\]/)[1];
+                        if (input.value) {
+                            sourceInventories[type] = input.value;
+                        }
+                    });
                     // Sao chép đầy đủ dữ liệu
                     document.getElementById('simple_sku').value = sourceVariantCard.querySelector(
                         `input[name="variants[${sourceIndex}][sku]"]`)?.value || '';
                     document.getElementById('simple_price').value = sourceVariantCard.querySelector(
                         `input[name="variants[${sourceIndex}][price]"]`)?.value || '';
-                    document.getElementById('simple_stock_quantity').value = sourceVariantCard.querySelector(
-                        `input[name="variants[${sourceIndex}][stock_quantity]"]`)?.value || '';
+                    document.getElementById('simple_inventories_new').value = sourceInventories.new || 0;
+                    document.getElementById('simple_inventories_open_box').value = sourceInventories.open_box || 0;
+                    document.getElementById('simple_inventories_used').value = sourceInventories.used || 0;
                     document.querySelector('input[name="simple_sale_price"]').value = sourceVariantCard.querySelector(
                         `input[name="variants[${sourceIndex}][sale_price]"]`)?.value || '';
                     document.querySelector('input[name="simple_sale_price_starts_at"]').value = sourceVariantCard
@@ -1513,7 +1571,11 @@
                 const firstVariantData = {
                     sku: document.getElementById('simple_sku').value,
                     price: document.getElementById('simple_price').value,
-                    stock_quantity: document.getElementById('simple_stock_quantity').value,
+                    inventories: [
+                         { inventory_type: 'new', quantity: document.getElementById('simple_inventories_new').value || 0 },
+                         { inventory_type: 'open_box', quantity: document.getElementById('simple_inventories_open_box').value || 0 },
+                         { inventory_type: 'used', quantity: document.getElementById('simple_inventories_used').value || 0 },
+                    ],
                     sale_price: document.querySelector('input[name="simple_sale_price"]').value,
                     sale_price_starts_at: document.querySelector('input[name="simple_sale_price_starts_at"]').value,
                     sale_price_ends_at: document.querySelector('input[name="simple_sale_price_ends_at"]').value,

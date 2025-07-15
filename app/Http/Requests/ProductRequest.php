@@ -42,11 +42,17 @@ class ProductRequest extends FormRequest
             'variants.*.sale_price' => 'nullable|numeric|min:0|lte:variants.*.price',
             'variants.*.sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
             'variants.*.sale_price_ends_at' => ['nullable', 'date', 'after:variants.*.sale_price_starts_at'],
-
-            'variants.*.stock_quantity' => 'required_if:type,variable|nullable|integer|min:0',
             'variants.*.attributes' => 'required_if:type,variable|array|min:1',
             'variants.*.attributes.*' => 'required|integer|exists:attribute_values,id',
             'variants.*.sku' => ['required_if:type,variable', 'nullable', 'string', 'max:255', 'distinct:ignore_case'],
+
+            // SỬA ĐỔI: Validation cho tồn kho chi tiết của sản phẩm có biến thể
+            'variants.*.inventories' => ['required_if:type,variable', 'array'],
+            'variants.*.inventories.new' => ['required_if:type,variable', 'nullable', 'integer', 'min:0'],
+            'variants.*.inventories.open_box' => ['nullable', 'integer', 'min:0'],
+            'variants.*.inventories.used' => ['nullable', 'integer', 'min:0'],
+            'variants.*.inventories.refurbished' => ['nullable', 'integer', 'min:0'],
+            // Thêm các loại kho khác nếu có...
         ];
 
         // --- Simple Product Rules ---
@@ -55,9 +61,14 @@ class ProductRequest extends FormRequest
             $rules['simple_sale_price'] = 'nullable|numeric|min:0|lte:simple_price';
             $rules['simple_sale_price_starts_at'] = ['nullable', 'date', 'after_or_equal:now'];
             $rules['simple_sale_price_ends_at'] = ['nullable', 'date', 'after:simple_sale_price_starts_at'];
-
-            $rules['simple_stock_quantity'] = 'required|integer|min:0';
             $rules['simple_sku'] = ['required', 'string', 'max:255'];
+
+            // SỬA ĐỔI: Validation cho tồn kho chi tiết của sản phẩm đơn giản
+            $rules['simple_inventories'] = ['required', 'array'];
+            $rules['simple_inventories.new'] = ['required', 'integer', 'min:0'];
+            $rules['simple_inventories.open_box'] = ['nullable', 'integer', 'min:0'];
+            $rules['simple_inventories.used'] = ['nullable', 'integer', 'min:0'];
+            $rules['simple_inventories.refurbished'] = ['nullable', 'integer', 'min:0'];
         }
 
         return $rules;
@@ -65,11 +76,10 @@ class ProductRequest extends FormRequest
 
     /**
      * Configure the validator instance.
-     * @param  \Illuminate\Validation\Validator  $validator
-     * @return void
      */
     public function withValidator($validator)
     {
+        // Hàm này không cần thay đổi vì nó chỉ kiểm tra SKU và thuộc tính
         $validator->after(function ($validator) {
             if ($this->input('type') === 'variable') {
                 $variants = $this->input('variants', []);
@@ -77,18 +87,14 @@ class ProductRequest extends FormRequest
                 $variantSkus = [];
 
                 foreach ($variants as $index => $variant) {
-                    // 1. Kiểm tra SKU có tồn tại trong database không, bỏ qua chính nó khi cập nhật
+                    // 1. Kiểm tra SKU
                     $sku = $variant['sku'] ?? null;
                     $id = $variant['id'] ?? null;
-
                     if ($sku) {
-                        // Check for uniqueness within the submitted form data
                         if (in_array(strtoupper($sku), array_map('strtoupper', $variantSkus))) {
-                             $validator->errors()->add("variants.{$index}.sku", "SKU '{$sku}' bị trùng lặp trong form.");
+                           $validator->errors()->add("variants.{$index}.sku", "SKU '{$sku}' bị trùng lặp trong form.");
                         }
                         $variantSkus[] = $sku;
-
-                        // Check for uniqueness in the database
                         $query = DB::table('product_variants')->where('sku', $sku);
                         if ($id) {
                             $query->where('id', '!=', $id);
@@ -98,7 +104,7 @@ class ProductRequest extends FormRequest
                         }
                     }
 
-                    // 2. Kiểm tra xem có sự trùng lặp về tổ hợp thuộc tính không
+                    // 2. Kiểm tra tổ hợp thuộc tính
                     $attributes = $variant['attributes'] ?? [];
                     if (!empty($attributes)) {
                         sort($attributes);
@@ -131,6 +137,10 @@ class ProductRequest extends FormRequest
             'simple_sale_price.lte' => 'Giá khuyến mãi phải nhỏ hơn hoặc bằng giá gốc.',
             'simple_sale_price_starts_at.after_or_equal' => 'Thời gian bắt đầu khuyến mãi không được là ngày trong quá khứ.',
             'simple_sale_price_ends_at.after' => 'Thời gian kết thúc khuyến mãi phải sau thời gian bắt đầu.',
+            // SỬA ĐỔI: Thông báo lỗi cho tồn kho mới
+            'simple_inventories.new.required' => 'Tồn kho "Hàng mới" không được để trống.',
+            'simple_inventories.new.min' => 'Tồn kho "Hàng mới" phải là số không âm.',
+
 
             // Variants Messages
             'variants.required_if' => 'Sản phẩm có biến thể phải có ít nhất một biến thể.',
@@ -139,7 +149,9 @@ class ProductRequest extends FormRequest
             'variants.*.sku.distinct' => 'SKU của các biến thể trong form không được trùng nhau.',
             'variants.*.price.required_if' => 'Giá của biến thể không được để trống.',
             'variants.*.sale_price.lte' => 'Giá khuyến mãi của biến thể phải nhỏ hơn hoặc bằng giá gốc.',
-            'variants.*.stock_quantity.required_if' => 'Tồn kho của biến thể không được để trống.',
+            // SỬA ĐỔI: Thông báo lỗi cho tồn kho mới của biến thể
+            'variants.*.inventories.new.required_if' => 'Tồn kho "Hàng mới" của biến thể không được để trống.',
+            'variants.*.inventories.new.min' => 'Tồn kho "Hàng mới" của biến thể phải là số không âm.',
             'variants.*.attributes.required_if' => 'Mỗi biến thể phải có ít nhất một thuộc tính.',
             'variants.*.attributes.min' => 'Mỗi biến thể phải có ít nhất một thuộc tính.',
             'variants.*.sale_price_starts_at.after_or_equal' => 'Thời gian bắt đầu khuyến mãi của biến thể không được là ngày trong quá khứ.',
