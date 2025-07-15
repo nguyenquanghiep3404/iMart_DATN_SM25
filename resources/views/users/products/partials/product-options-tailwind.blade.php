@@ -23,7 +23,7 @@
             Chính hãng
         </span>
         <button id="compare-btn"
-            class="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800"
+            class="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-black hover:bg-gray-100 rounded-md"
             data-default-variant-id="{{ $defaultVariant->id }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path
@@ -412,8 +412,6 @@
         <span id="slide-alert-message">Thông báo</span>
         <button id="slide-alert-close" class="ml-2 font-bold focus:outline-none">&times;</button>
     </div>
-    <div class="text-sm text-gray-500 mt-4 text-center sm:text-left"><span class="font-semibold">Giao hàng dự
-            kiến:</span> Thứ Ba, 28/06 - Thứ Tư, 29/06.</div>
 </div>
 @if (session('success'))
     <script>

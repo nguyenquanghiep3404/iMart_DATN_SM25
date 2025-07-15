@@ -1,9 +1,3 @@
-{{--
-    File: product-details-tailwind.blade.php
-    Description: Đã sửa lỗi và tích hợp hiển thị chung cho cả Đánh giá (Reviews) và Bình luận (Comments)
-    sử dụng một danh sách duy nhất đã được phân trang ($paginatedItems).
---}}
-
 <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
