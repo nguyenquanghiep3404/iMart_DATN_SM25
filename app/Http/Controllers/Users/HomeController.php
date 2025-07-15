@@ -22,6 +22,7 @@ use App\Models\WishlistItem;
 use App\Models\Review;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class HomeController extends Controller
 {
@@ -203,16 +204,72 @@ class HomeController extends Controller
             ->firstOrFail();
 
         $variantIds = $product->variants->pluck('id');
-
-        $reviews = Review::with(['user', 'images'])
+        $allReviews = Review::with(['user', 'images'])
             ->whereIn('product_variant_id', $variantIds)
             ->where('status', 'approved')
-            ->latest()
+            ->get();
+        // 2. Lấy TẤT CẢ bình luận (comments) gốc đã được duyệt
+        // (Giữ nguyên logic query comment phức tạp của bạn)
+        $allComments = $product->comments()
+            ->whereNull('parent_id')
+            ->where(function ($query) {
+                $query->where('status', 'approved');
+
+                if (Auth::check()) {
+                    $query->orWhere(function ($q) {
+                        $q->where('user_id', Auth::id())
+                            ->whereIn('status', ['pending', 'rejected', 'spam']);
+                    });
+
+                    if (Auth::user()->hasRole('admin')) {
+                        $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+                    }
+                }
+            })
+            ->with(['user', 'replies.user'])
             ->get();
 
+        // 3. Gộp 2 danh sách lại và chuẩn hóa cấu trúc để sắp xếp
+        $combinedList = collect();
+
+        foreach ($allReviews as $review) {
+            $combinedList->push((object)[
+                'type' => 'review',        // Thêm trường 'type' để phân biệt trong view
+                'data' => $review,         // Dữ liệu gốc
+                'sort_date' => $review->created_at // Dùng để sắp xếp chung
+            ]);
+        }
+
+        foreach ($allComments as $comment) {
+            $combinedList->push((object)[
+                'type' => 'comment',
+                'data' => $comment,
+                'sort_date' => $comment->created_at
+            ]);
+        }
+
+        // 4. Sắp xếp danh sách đã gộp theo ngày tạo mới nhất
+        $sortedList = $combinedList->sortByDesc('sort_date');
+
+        // 5. Tự tạo phân trang bằng tay
+        $perPage = 5; // Số mục trên mỗi trang (ví dụ: 3 bình luận + 2 đánh giá)
+        $currentPage = request()->get('page', 1);
+        $currentPageItems = $sortedList->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedItems = new LengthAwarePaginator(
+            $currentPageItems,
+            $sortedList->count(),
+            $perPage,
+            $currentPage,
+            // Giữ lại các query string khác trên URL khi chuyển trang
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        // Gán lại biến $totalReviews và $commentsCount để hiển thị số lượng đúng
+        $totalReviews = $allReviews->count();
+        $commentsCount = $allComments->where('status', 'approved')->count();
 
         $product->increment('view_count');
-
 
         $averageRating = $product->reviews->avg('rating') ?? 0;
         $product->average_rating = round($averageRating, 1);
@@ -329,27 +386,27 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-            $comments = $product->comments()
-            ->whereNull('parent_id')
-            ->where(function ($query) {
-                $query->where('status', 'approved');
-        
-                if (Auth::check()) {
-                    $query->orWhere(function ($q) {
-                        $q->where('user_id', Auth::id())
-                          ->whereIn('status', ['pending', 'rejected','spam']); 
-                    });
-        
-                    if (Auth::user()->hasRole('admin')) {
-                        $query->orWhereIn('status', ['pending', 'rejected','spam']); 
-                    }
-                }
-            })
-            ->with(['user', 'replies.user'])
-            ->orderByDesc('created_at')
-            ->get();
-        
-        
+        // // $comments = $product->comments()
+        // //     ->whereNull('parent_id')
+        // //     ->where(function ($query) {
+        // //         $query->where('status', 'approved');
+
+        //         if (Auth::check()) {
+        //             $query->orWhere(function ($q) {
+        //                 $q->where('user_id', Auth::id())
+        //                     ->whereIn('status', ['pending', 'rejected', 'spam']);
+        //             });
+
+        //             if (Auth::user()->hasRole('admin')) {
+        //                 $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+        //             }
+        //         }
+        //     })
+        //     ->with(['user', 'replies.user'])
+        //     ->orderByDesc('created_at')
+        //     ->get();
+
+
 
         $initialVariantAttributes = [];
         if ($defaultVariant) {
@@ -479,12 +536,10 @@ class HomeController extends Controller
             'relatedProducts',
             'ratingCounts',
             'ratingPercentages',
-            'totalReviews',
             'attributes',
             'variantData',
             'availableCombinations',
             'defaultVariant',
-            'comments',
             'attributeOrder',
             'initialVariantAttributes',
             'variantCombinations',
@@ -493,12 +548,15 @@ class HomeController extends Controller
             'variantSpecs',
             'wishlistVariantIds',
             'commentsCount',
-            'reviews',
             'orderItemId',
             'averageRating',
             'totalReviews',
             'starRatingsCount',
-            'hasReviewed'
+            'hasReviewed',
+            'paginatedItems',
+            'allComments',
+            'allReviews',
+            
         ));
     }
 
@@ -722,118 +780,118 @@ class HomeController extends Controller
         }
         return view('users.terms', compact('termsPost'));
     }
-   public function compareSuggestions(Request $request)
-{
-    try {
-        $variantId = $request->input('variant_id');
-        $recentProductIds = $request->input('recent_product_ids', []);
+    public function compareSuggestions(Request $request)
+    {
+        try {
+            $variantId = $request->input('variant_id');
+            $recentProductIds = $request->input('recent_product_ids', []);
 
-        \Log::info('📥 Nhận được danh sách sản phẩm đã xem:', [
-            'variant_id' => $variantId,
-            'recent_product_ids' => $recentProductIds,
-        ]);
+            \Log::info('📥 Nhận được danh sách sản phẩm đã xem:', [
+                'variant_id' => $variantId,
+                'recent_product_ids' => $recentProductIds,
+            ]);
 
-        if (empty($recentProductIds)) {
+            if (empty($recentProductIds)) {
+                return response()->json([
+                    'suggested' => [],
+                    'count' => 0,
+                    'message' => 'Chưa có sản phẩm nào đã xem gần đây.'
+                ]);
+            }
+
+            $currentVariant = ProductVariant::find($variantId);
+            $currentProductId = $currentVariant?->product_id;
+
+            $filtered = collect($recentProductIds)
+                ->filter(fn($item) => isset($item['id']))
+                ->unique(fn($item) => $item['id'] . '_' . $item['variant_key']) // tránh trùng
+                ->take(5); // không đảo ngược thứ tự
+
+            $results = collect();
+
+            foreach ($filtered as $item) {
+                $product = Product::with([
+                    'variants.attributeValues.attribute',
+                    'coverImage',
+                    'variants.primaryImage',
+                    'variants.specifications' // Tải thông số kỹ thuật của biến thể
+                ])
+                    ->where('id', $item['id'])
+                    ->where('status', 'published')
+                    ->first();
+
+                if (!$product) continue;
+
+                $variantKey = $item['variant_key'] ?? null;
+                $variant = null;
+
+                // 1. Nếu có variant_key → tìm đúng biến thể
+                if (!empty($variantKey)) {
+                    $variant = $product->variants->first(function ($v) use ($variantKey) {
+                        $key = $v->attributeValues
+                            ->sortBy(fn($attr) => $attr->attribute->id)
+                            ->pluck('value')
+                            ->implode('_');
+                        return $key === $variantKey;
+                    });
+                }
+
+                // 2. Nếu không có variant_key và là sản phẩm đơn giản → lấy biến thể duy nhất
+                if (!$variant && $product->type === 'simple' && $product->variants->count() === 1) {
+                    $variant = $product->variants->first();
+                }
+
+                if (!$variant) continue; // Bỏ qua nếu không có biến thể nào phù hợp
+
+                $variantName = $variant->attributeValues
+                    ->sortBy(fn($attr) => $attr->attribute->id)
+                    ->pluck('value')
+                    ->implode(' ');
+
+                $imageUrl = $variant->primaryImage?->path
+                    ?? $variant->image?->path
+                    ?? $product->coverImage?->path;
+
+                // Định dạng specs theo cấu trúc mong muốn
+                $specs = $variant->specifications ? $this->formatSpecs($variant->specifications) : [];
+
+                $results->push([
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'variant_id' => $variant->id,
+                    'variant_name' => $variantName,
+                    'variant_key' => $variantKey,
+                    'cover_image' => $imageUrl ? Storage::url($imageUrl) : asset('/images/no-image.png'),
+                    'price' => (int) $variant->price,
+                    'sale_price' => $variant->sale_price !== null ? (int) $variant->sale_price : null,
+                    'specs' => $specs // Thêm specs vào phản hồi
+                ]);
+            }
+
             return response()->json([
-                'suggested' => [],
-                'count' => 0,
-                'message' => 'Chưa có sản phẩm nào đã xem gần đây.'
+                'suggested' => $results,
+                'count' => $results->count(),
+                'message' => 'Hiển thị sản phẩm đã xem gần đây.'
             ]);
+        } catch (\Exception $e) {
+            \Log::error('❌ Lỗi compareSuggestions:', ['msg' => $e->getMessage()]);
+            return response()->json(['error' => 'Đã xảy ra lỗi khi xử lý.'], 500);
         }
-
-        $currentVariant = ProductVariant::find($variantId);
-        $currentProductId = $currentVariant?->product_id;
-
-        $filtered = collect($recentProductIds)
-            ->filter(fn($item) => isset($item['id']))
-            ->unique(fn($item) => $item['id'] . '_' . $item['variant_key']) // tránh trùng
-            ->take(5); // không đảo ngược thứ tự
-
-        $results = collect();
-
-        foreach ($filtered as $item) {
-            $product = Product::with([
-                'variants.attributeValues.attribute',
-                'coverImage',
-                'variants.primaryImage',
-                'variants.specifications' // Tải thông số kỹ thuật của biến thể
-            ])
-                ->where('id', $item['id'])
-                ->where('status', 'published')
-                ->first();
-
-            if (!$product) continue;
-
-            $variantKey = $item['variant_key'] ?? null;
-            $variant = null;
-
-            // 1. Nếu có variant_key → tìm đúng biến thể
-            if (!empty($variantKey)) {
-                $variant = $product->variants->first(function ($v) use ($variantKey) {
-                    $key = $v->attributeValues
-                        ->sortBy(fn($attr) => $attr->attribute->id)
-                        ->pluck('value')
-                        ->implode('_');
-                    return $key === $variantKey;
-                });
-            }
-
-            // 2. Nếu không có variant_key và là sản phẩm đơn giản → lấy biến thể duy nhất
-            if (!$variant && $product->type === 'simple' && $product->variants->count() === 1) {
-                $variant = $product->variants->first();
-            }
-
-            if (!$variant) continue; // Bỏ qua nếu không có biến thể nào phù hợp
-
-            $variantName = $variant->attributeValues
-                ->sortBy(fn($attr) => $attr->attribute->id)
-                ->pluck('value')
-                ->implode(' ');
-
-            $imageUrl = $variant->primaryImage?->path
-                ?? $variant->image?->path
-                ?? $product->coverImage?->path;
-
-            // Định dạng specs theo cấu trúc mong muốn
-            $specs = $variant->specifications ? $this->formatSpecs($variant->specifications) : [];
-
-            $results->push([
-                'id' => $product->id,
-                'name' => $product->name,
-                'slug' => $product->slug,
-                'variant_id' => $variant->id,
-                'variant_name' => $variantName,
-                'variant_key' => $variantKey,
-                'cover_image' => $imageUrl ? Storage::url($imageUrl) : asset('/images/no-image.png'),
-                'price' => (int) $variant->price,
-                'sale_price' => $variant->sale_price !== null ? (int) $variant->sale_price : null,
-                'specs' => $specs // Thêm specs vào phản hồi
-            ]);
-        }
-
-        return response()->json([
-            'suggested' => $results,
-            'count' => $results->count(),
-            'message' => 'Hiển thị sản phẩm đã xem gần đây.'
-        ]);
-    } catch (\Exception $e) {
-        \Log::error('❌ Lỗi compareSuggestions:', ['msg' => $e->getMessage()]);
-        return response()->json(['error' => 'Đã xảy ra lỗi khi xử lý.'], 500);
     }
-}
 
-private function formatSpecs($specs)
-{
-    $formatted = [];
-    foreach ($specs as $spec) {
-        $groupName = $spec->group_name ?? 'Thông số chung';
-        if (!isset($formatted[$groupName])) {
-            $formatted[$groupName] = [];
+    private function formatSpecs($specs)
+    {
+        $formatted = [];
+        foreach ($specs as $spec) {
+            $groupName = $spec->group_name ?? 'Thông số chung';
+            if (!isset($formatted[$groupName])) {
+                $formatted[$groupName] = [];
+            }
+            $formatted[$groupName][$spec->name] = $spec->value;
         }
-        $formatted[$groupName][$spec->name] = $spec->value;
+        return $formatted;
     }
-    return $formatted;
-}
 
 
     private function getVariantKey(?ProductVariant $variant): string

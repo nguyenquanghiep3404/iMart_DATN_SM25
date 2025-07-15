@@ -26,14 +26,20 @@
 </div>
 
 <div id="comments-list">
-    @foreach ($comments as $comment)
-        @include('users.products.partials.recursive-comment', ['comment' => $comment])
+    @foreach ($allComments as $comment)
+        {{-- @include('users.products.partials.recursive-comment', ['comment' => $comment]) --}}
     @endforeach
 </div>
 
 
 @push('scripts')
     <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            if (sessionStorage.getItem('commentSubmitted') === 'true') {
+                sessionStorage.removeItem('commentSubmitted');
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        });
         const commentForm = document.getElementById('comment-form');
         const commentsList = document.getElementById('comments-list');
         const charCounter = document.getElementById('char-counter');
@@ -127,6 +133,7 @@
                 commentForm.reset();
                 charCounter.textContent = `0/${maxChars}`;
                 commentForm.dataset.submitted = 'true'; // Đánh dấu đã gửi
+                sessionStorage.setItem('commentSubmitted', 'true');
 
                 // Xóa query string hoặc trạng thái gửi để tránh gửi lại khi reload trang
                 window.history.replaceState({}, document.title, window.location.pathname);
