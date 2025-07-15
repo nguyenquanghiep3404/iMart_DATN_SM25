@@ -174,20 +174,12 @@ class ProductController extends Controller
     {
         DB::beginTransaction();
         try {
+            // Dữ liệu cho bảng 'products'
             $productData = $request->except([
-                'cover_image_id',
-                'gallery_images',
-                'variants',
-                'simple_sku',
-                'simple_price',
-                'simple_sale_price',
-                'simple_inventories',
-                'simple_sale_price_starts_at',
-                'simple_sale_price_ends_at',
-                'simple_weight',
-                'simple_dimensions_length',
-                'simple_dimensions_width',
-                'simple_dimensions_height',
+                '_token', 'cover_image_id', 'gallery_images', 'variants',
+                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_inventories',
+                'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight',
+                'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height',
                 'specifications'
             ]);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
@@ -196,15 +188,14 @@ class ProductController extends Controller
 
             $product = Product::create($productData);
 
-            // Helper function to save specifications for a variant
+            // Helper function để lưu thông số kỹ thuật
             $saveSpecifications = function (ProductVariant $variant, ?array $specData) {
                 if (empty($specData)) {
-                    $variant->specifications()->detach(); // Clear old relations if no new data
+                    $variant->specifications()->detach();
                     return;
                 }
                 $syncData = [];
                 foreach ($specData as $specId => $specValue) {
-                    // Only save if the value is not empty
                     if (trim($specValue) !== '') {
                         $syncData[$specId] = ['value' => trim($specValue)];
                     }
@@ -212,7 +203,7 @@ class ProductController extends Controller
                 $variant->specifications()->sync($syncData);
             };
 
-            // Handle simple product logic
+            // Xử lý sản phẩm đơn giản
             if ($request->input('type') === 'simple') {
                 if ($request->has('gallery_images') && is_array($request->input('gallery_images'))) {
                     $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images'));
@@ -237,7 +228,7 @@ class ProductController extends Controller
                 $this->syncVariantInventory($variant, $request->input('simple_inventories', []));
                 $saveSpecifications($variant, $request->input('specifications', []));
             }
-            // Handle variable product logic
+            // Xử lý sản phẩm có biến thể
             elseif ($request->input('type') === 'variable' && $request->has('variants')) {
                 $defaultVariantKey = $request->input('variant_is_default_radio_group');
 
@@ -269,9 +260,14 @@ class ProductController extends Controller
                             'type' => 'variant_image',
                         ]);
                     }
-                    // Đồng bộ tồn kho chi tiết
-                    $this->syncVariantInventory($variant, $request->input('simple_inventories', []));
-                    $saveSpecifications($variant, $request->input('specifications', []));
+
+                    // SỬA ĐỔI 1: Lấy đúng dữ liệu tồn kho của biến thể hiện tại
+                    $inventoriesData = $variantData['inventories'] ?? [];
+                    $this->syncVariantInventory($variant, $inventoriesData);
+
+                    // SỬA ĐỔI 2: Lấy đúng dữ liệu thông số của biến thể hiện tại
+                    $specificationsData = $variantData['specifications'] ?? [];
+                    $saveSpecifications($variant, $specificationsData);
                 }
             }
 
@@ -329,14 +325,12 @@ class ProductController extends Controller
     {
         DB::beginTransaction();
         try {
-            // Helper function to save specifications for a variant
             $saveSpecifications = function (ProductVariant $variant, ?array $specData) {
                 if (is_null($specData)) {
-                    return; // Do nothing if spec data is not provided
+                    return;
                 }
                 $syncData = [];
                 foreach ($specData as $specId => $specValue) {
-                    // Only save if the value is not empty or null
                     if (trim((string) $specValue) !== '') {
                         $syncData[$specId] = ['value' => trim($specValue)];
                     }
@@ -347,8 +341,12 @@ class ProductController extends Controller
             $originalType = $product->type;
             $newType = $request->input('type');
 
-            // 1. Update basic product info
-            $productData = $request->except(['_token', '_method', 'cover_image_id', 'gallery_images', 'variants', 'simple_sku', 'simple_price', 'simple_sale_price', 'simple_inventories', 'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height', 'specifications']);
+            $productData = $request->except([
+                '_token', '_method', 'cover_image_id', 'gallery_images', 'specifications',
+                'simple_sku', 'simple_price', 'simple_sale_price', 
+                'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight', 
+                'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height',
+            ]);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
             $productData['updated_by'] = Auth::id();
@@ -357,7 +355,6 @@ class ProductController extends Controller
             $typeChanged = ($originalType !== $newType);
 
             if ($typeChanged) {
-                // Clean up old state completely when switching types
                 UploadedFile::where('attachable_id', $product->id)
                     ->where('attachable_type', Product::class)
                     ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
@@ -368,14 +365,12 @@ class ProductController extends Controller
                         ->whereIn('attachable_id', $variantIds)
                         ->update(['attachable_id' => null, 'attachable_type' => null]);
                 }
-                // Detach specifications before deleting variants
                 foreach ($product->variants as $variant) {
                     $variant->specifications()->detach();
                 }
                 $product->variants()->delete();
             }
 
-            // 3. Create/Update variants based on the NEW type
             if ($newType === 'simple') {
                 $variantData = [
                     'sku' => $request->input('simple_sku'),
@@ -391,16 +386,16 @@ class ProductController extends Controller
                     'status' => 'active',
                 ];
                 $variant = $product->variants()->updateOrCreate(['product_id' => $product->id], $variantData);
+                
+                $this->syncVariantInventory($variant, $request->input('simple_inventories', []));
+                
                 $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images', []));
-
-                // Save specifications for the simple product's variant
                 $saveSpecifications($variant, $request->input('specifications', []));
 
             } elseif ($newType === 'variable') {
                 if (!$request->has('variants') || empty($request->input('variants'))) {
                     return back()->withInput()->with('error', 'Sản phẩm có biến thể phải có ít nhất một biến thể.');
                 }
-                // Pass the helper function to syncProductVariants
                 $this->syncProductVariants($product, $request->input('variants'), $request, $saveSpecifications);
             }
 
