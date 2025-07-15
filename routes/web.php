@@ -42,7 +42,6 @@ Route::post('/comments/store', [CommentController::class, 'store'])->name('comme
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/remove-coupon', [CartController::class, 'removeCoupon'])->name('cart.removeCoupon');
-// Route::post('cart/remove', [CarOffController::class, 'removeItem'])->name('cart.removeItem');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name('cart.addMultiple');
@@ -74,6 +73,7 @@ Route::prefix('payments')->name('payments.')->group(function () {
 //==========================================================================
 Route::get('/', [HomeController::class, 'index'])->name('users.home');  // Trang chủ, không cần đăng nhập
 Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.products.show');
+Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/danh-muc-san-pham/{id}-{slug}', [HomeController::class, 'allProducts'])->name('products.byCategory');
 Route::get('/danh-muc-san-pham', [HomeController::class, 'allProducts'])->name('users.products.all');
 Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestions'])->name('products.compare_suggestions');
