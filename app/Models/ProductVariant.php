@@ -109,9 +109,7 @@ class ProductVariant extends Model
  */
 public function getSellableStockAttribute(): int
 {
-    // Thêm 'used' vào danh sách các loại kho có thể bán
-    $sellableTypes = ['new', 'open_box', 'used']; 
-
+    $sellableTypes = ['new']; 
     return $this->inventories()
                 ->whereIn('inventory_type', $sellableTypes)
                 ->sum('quantity');

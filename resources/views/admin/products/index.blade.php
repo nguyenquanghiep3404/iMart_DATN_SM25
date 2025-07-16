@@ -348,7 +348,8 @@
                         role="alert">
                         <div
                             class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg">
-                            <i class="fas fa-check"></i></div>
+                            <i class="fas fa-check"></i>
+                        </div>
                         <div class="ml-3 text-sm font-normal">{{ session('success') }}</div>
                         <button type="button"
                             class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8"
@@ -362,7 +363,8 @@
                         role="alert">
                         <div
                             class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg">
-                            <i class="fas fa-exclamation-triangle"></i></div>
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
                         <div class="ml-3 text-sm font-normal">{{ session('error') }}</div>
                         <button type="button"
                             class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8"
@@ -536,7 +538,6 @@
                                         </td>
                                         <td>{{ $product->category->name ?? 'N/A' }}</td>
                                         <td>
-                                            {{-- START: UPDATED PRICE LOGIC --}}
                                             @if ($product->type == 'simple')
                                                 @php
                                                     $variant = $product->variants->first();
@@ -574,18 +575,16 @@
                                                         $priceToShow = $minSaleVariant->sale_price;
                                                         $originalPrice = $minSaleVariant->price;
                                                     } else {
-                                                        // If no sale prices, find the variant with the lowest regular price
                                                         $minPriceVariant = $product->variants->sortBy('price')->first();
                                                         $priceToShow = $minPriceVariant
                                                             ? $minPriceVariant->price
                                                             : null;
-                                                        $originalPrice = null; // No original price to cross out
+                                                        $originalPrice = null;
                                                     }
                                                 @endphp
 
                                                 @if ($priceToShow !== null)
                                                     @if ($originalPrice && $priceToShow < $originalPrice)
-                                                        {{-- This is a sale price --}}
                                                         <span
                                                             class="font-semibold text-red-600">{{ number_format($priceToShow, 0, ',', '.') }}
                                                             ₫</span>
@@ -594,7 +593,6 @@
                                                             ₫</small>
                                                         <small class="text-gray-500 text-xs block">(Thấp nhất)</small>
                                                     @else
-                                                        {{-- This is a regular price (the lowest one) --}}
                                                         <span
                                                             class="font-semibold">{{ number_format($priceToShow, 0, ',', '.') }}
                                                             ₫</span>
@@ -606,40 +604,40 @@
                                             @else
                                                 N/A
                                             @endif
-                                            {{-- END: UPDATED PRICE LOGIC --}}
+
                                         </td>
                                         <td>
-    @php
-        // Lấy tất cả các bản ghi inventories từ tất cả các biến thể của sản phẩm này
-        $allInventories = $product->variants->pluck('inventories')->flatten();
+                                            @php
+                                                // Lấy tất cả các bản ghi inventories từ tất cả các biến thể của sản phẩm này
+                                                $allInventories = $product->variants->pluck('inventories')->flatten();
 
-        // Tính tổng cho từng loại
-        $newStock = $allInventories->where('inventory_type', 'new')->sum('quantity');
-        $openBoxStock = $allInventories->where('inventory_type', 'open_box')->sum('quantity');
-        $usedStock = $allInventories->where('inventory_type', 'used')->sum('quantity');
-        // Thêm các loại khác nếu cần...
-        // $refurbishedStock = $allInventories->where('inventory_type', 'refurbished')->sum('quantity');
+                                                // Tính tổng cho từng loại mới: 'new' và 'defective'
+                                                $newStock = $allInventories
+                                                    ->where('inventory_type', 'new')
+                                                    ->sum('quantity');
+                                                $defectiveStock = $allInventories
+                                                    ->where('inventory_type', 'defective')
+                                                    ->sum('quantity');
 
-        // Tính tổng số lượng có thể bán
-        $totalSellableStock = $newStock + $openBoxStock + $usedStock; // + $refurbishedStock;
-        
-        // Tạo một mảng chứa các chi tiết tồn kho > 0
-        $stockDetails = [];
-        if ($newStock > 0) $stockDetails[] = 'mới: ' . $newStock;
-        if ($openBoxStock > 0) $stockDetails[] = 'mở hộp: ' . $openBoxStock;
-        if ($usedStock > 0) $stockDetails[] = 'cũ: ' . $usedStock;
-        // if ($refurbishedStock > 0) $stockDetails[] = 'tân trang: ' . $refurbishedStock;
-    @endphp
+                                                $totalStock = $newStock + $defectiveStock;
 
-    {{-- Hiển thị kết quả --}}
-    <span class="font-semibold text-gray-800">{{ $totalSellableStock }}</span>
+                                                $stockDetails = [];
+                                                if ($newStock > 0) {
+                                                    $stockDetails[] = 'mới: ' . $newStock;
+                                                }
+                                                if ($defectiveStock > 0) {
+                                                    $stockDetails[] = 'lỗi: ' . $defectiveStock;
+                                                }
+                                            @endphp
 
-    @if (!empty($stockDetails))
-        <small class="block text-gray-500 text-xs">
-            ({{ implode(', ', $stockDetails) }})
-        </small>
-    @endif
-</td>
+                                            <span class="font-semibold text-gray-800">{{ $totalStock }}</span>
+
+                                            @if (!empty($stockDetails))
+                                                <small class="block text-gray-500 text-xs">
+                                                    ({{ implode(', ', $stockDetails) }})
+                                                </small>
+                                            @endif
+                                        </td>
                                         <td>
                                             @if ($product->type == 'simple')
                                                 <span class="badge-custom badge-info-custom">Đơn giản</span>
@@ -672,7 +670,6 @@
                                         </td>
                                     </tr>
 
-                                    {{-- DELETE CONFIRMATION MODAL --}}
                                     <div id="deleteProductModal{{ $product->id }}" class="product-modal"
                                         tabindex="-1">
                                         <div class="product-modal-content animated-modal">
@@ -722,7 +719,6 @@
                 </div>
                 @if ($products->hasPages())
                     <div class="card-custom-footer">
-                        {{-- Responsive pagination layout --}}
                         <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center w-full">
                             <p class="text-sm text-gray-700 leading-5">
                                 Hiển thị từ <span class="font-medium">{{ $products->firstItem() }}</span> đến <span
@@ -760,13 +756,11 @@
                 setTimeout(() => {
                     modal.style.display = 'none';
                     document.body.style.overflow = 'auto';
-                }, 300); // Match animation duration
+                }, 300);
             }
         }
 
-        // GENERAL DOCUMENT EVENT LISTENERS
         document.addEventListener('DOMContentLoaded', function() {
-            // Close modal on outside click
             window.addEventListener('click', function(event) {
                 const openModal = document.querySelector('.product-modal.show');
                 if (openModal && event.target == openModal) {
@@ -774,7 +768,6 @@
                 }
             });
 
-            // Close modal on Escape key press
             window.addEventListener('keydown', function(event) {
                 if (event.key === 'Escape') {
                     const openModal = document.querySelector('.product-modal.show');
@@ -784,7 +777,6 @@
                 }
             });
 
-            // TOAST NOTIFICATION SCRIPT
             const toasts = document.querySelectorAll('.toast');
             const hideToast = (toastElement) => {
                 if (toastElement) {
@@ -804,14 +796,12 @@
                 }
             });
 
-            // REFRESH BUTTON SPIN EFFECT
             const refreshButton = document.getElementById('refresh-products-button');
             if (refreshButton) {
                 refreshButton.addEventListener('click', function(event) {
                     const icon = this.querySelector('i');
                     if (icon) {
                         icon.classList.add('icon-spin');
-                        // No need to remove it, page reload will handle it
                     }
                 });
             }

@@ -837,45 +837,43 @@
                                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
+
                                 <div class="input-group">
                                     <label class="form-section-heading">Quản lý tồn kho </label>
-                                    {{-- <label for="simple_stock_quantity">Số lượng tồn kho <span class="required-star">*</span></label> --}}
-                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 p-3 border rounded-md bg-white">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 p-3 border rounded-md bg-gray-50">
                                         {{-- Tồn kho Hàng Mới --}}
                                         <div class="input-group !mb-0">
                                             <label for="simple_inventories_new"
-                                                class="!text-xs !font-normal !text-gray-500">Hàng mới <span
-                                                    class="required-star">*</span></label>
+                                                class="!text-xs !font-normal !text-gray-500">
+                                                Hàng mới <span class="required-star">*</span>
+                                            </label>
                                             <input type="number" id="simple_inventories_new"
                                                 name="simple_inventories[new]"
                                                 class="input-field !py-2 !text-sm @error('simple_inventories.new') border-red-500 @enderror"
-                                                min="0" value="{{ old('simple_inventories.new', 0) }}">
+                                                min="0" value="{{ old('simple_inventories.new', 0) }}"
+                                                placeholder="Số lượng hàng mới">
                                             @error('simple_inventories.new')
                                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                             @enderror
                                         </div>
-                                        {{-- Tồn kho Hàng Mở Hộp --}}
+                                        {{-- Tồn kho Nội bộ (Hàng lỗi, trưng bày, v.v.) --}}
                                         <div class="input-group !mb-0">
-                                            <label for="simple_inventories_open_box"
-                                                class="!text-xs !font-normal !text-gray-500">Hàng mở hộp </label>
-                                            <input type="number" id="simple_inventories_open_box"
-                                                name="simple_inventories[open_box]"
-                                                class="input-field !py-2 !text-sm @error('simple_inventories.open_box') border-red-500 @enderror"
-                                                min="0" value="{{ old('simple_inventories.open_box', 0) }}">
-                                            @error('simple_inventories.open_box')
+                                            <label for="simple_inventories_defective"
+                                                class="!text-xs !font-normal !text-gray-500">
+                                                Hàng lỗi / Kho nội bộ
+                                            </label>
+                                            <input type="number" id="simple_inventories_defective"
+                                                name="simple_inventories[defective]"
+                                                class="input-field !py-2 !text-sm @error('simple_inventories.defective') border-red-500 @enderror"
+                                                min="0" value="{{ old('simple_inventories.defective', 0) }}"
+                                                placeholder="Hàng lỗi, trưng bày...">
+                                            @error('simple_inventories.defective')
                                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                             @enderror
                                         </div>
-                                        {{-- THÊM MỚI: Tồn kho Hàng Cũ --}}
-                                        <div class="input-group !mb-0">
-                                            <label for="simple_inventories_used"
-                                                class="!text-xs !font-normal !text-gray-500">Hàng cũ</label>
-                                            <input type="number" id="simple_inventories_used"
-                                                name="simple_inventories[used]" class="input-field !py-2 !text-sm"
-                                                min="0" value="{{ old('simple_inventories.used', 0) }}">
-                                        </div>
                                     </div>
                                 </div>
+                                
                             </div>
 
                             <!-- Schedule Container -->
@@ -2012,7 +2010,8 @@
             const tagsInput = document.getElementById('tags');
             if (tagsInput) {
                 tagify = new Tagify(tagsInput, {
-                    /* ... options ... */ });
+                    /* ... options ... */
+                });
             }
 
             // --- GẮN SỰ KIỆN CHO CÁC NÚT AI ---
@@ -2197,21 +2196,38 @@
                     let variantFieldsHTML = `
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                             <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
-                            <div class="input-group">
+                            <div class="input-group mt-4">
     <label class="text-sm font-medium">Quản lý tồn kho biến thể</label>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 p-3 border rounded-md bg-white">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 p-3 border rounded-md bg-white">
+        
+        {{-- Tồn kho Hàng Mới --}}
         <div class="input-group !mb-0">
-            <label for="variants_${currentVariantIndex}_inventories_new" class="!text-xs !font-normal !text-gray-500">Hàng mới</label>
-            <input type="number" id="variants_${currentVariantIndex}_inventories_new" name="variants[${currentVariantIndex}][inventories][new]" class="input-field !py-2 !text-sm" min="0" value="0">
+            <label for="variants_${currentVariantIndex}_inventories_new" class="!text-xs !font-normal !text-gray-500">
+                Hàng mới <span class="required-star">*</span>
+            </label>
+            <input 
+                type="number" 
+                id="variants_${currentVariantIndex}_inventories_new" 
+                name="variants[${currentVariantIndex}][inventories][new]" 
+                class="input-field !py-2 !text-sm" 
+                min="0" 
+                value="0"
+                placeholder="Số lượng hàng mới">
         </div>
+
+        {{-- Tồn kho Nội bộ (Hàng lỗi, trưng bày, v.v.) --}}
         <div class="input-group !mb-0">
-            <label for="variants_${currentVariantIndex}_inventories_open_box" class="!text-xs !font-normal !text-gray-500">Hàng mở hộp</label>
-            <input type="number" id="variants_${currentVariantIndex}_inventories_open_box" name="variants[${currentVariantIndex}][inventories][open_box]" class="input-field !py-2 !text-sm" min="0" value="0">
-        </div>
-        {{-- THÊM MỚI: Tồn kho Hàng Cũ --}}
-        <div class="input-group !mb-0">
-            <label for="variants_${currentVariantIndex}_inventories_used" class="!text-xs !font-normal !text-gray-500">Hàng cũ</label>
-            <input type="number" id="variants_${currentVariantIndex}_inventories_used" name="variants[${currentVariantIndex}][inventories][used]" class="input-field !py-2 !text-sm" min="0" value="0">
+            <label for="variants_${currentVariantIndex}_inventories_defective" class="!text-xs !font-normal !text-gray-500">
+                Hàng lỗi / Kho nội bộ
+            </label>
+            <input 
+                type="number" 
+                id="variants_${currentVariantIndex}_inventories_defective" 
+                name="variants[${currentVariantIndex}][inventories][defective]" 
+                class="input-field !py-2 !text-sm" 
+                min="0" 
+                value="0"
+                placeholder="Hàng lỗi, trưng bày...">
         </div>
     </div>
 </div>
@@ -2341,7 +2357,7 @@
                                 const specId = match[1];
                                 const targetInput = targetSpecContainer.querySelector(
                                     `input[name="variants[${targetIndex}][specifications][${specId}]"], select[name="variants[${targetIndex}][specifications][${specId}]"], textarea[name="variants[${targetIndex}][specifications][${specId}]"]`
-                                    );
+                                );
                                 if (targetInput) {
                                     targetInput.value = sourceInput.value;
                                 }
@@ -2350,7 +2366,7 @@
 
                         showMessageModal('Thành công',
                             `Đã sao chép thông số từ Biến thể #${parseInt(sourceIndex) + 1}.`, 'success'
-                            );
+                        );
                     }
                 });
             }
