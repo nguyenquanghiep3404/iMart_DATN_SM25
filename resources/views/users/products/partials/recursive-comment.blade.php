@@ -166,35 +166,34 @@
                 '';
             if (result.success) {
                 const newCommentHTML = `
-    <div class="ml-4 border-b border-gray-200 py-4">
-        <div class="flex items-start gap-3">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white select-none"
-                style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">
-                ${result.comment.initial}
-            </div>
-            <div>
-                <p class="font-semibold text-gray-800">
-                    ${result.comment.name}
-                    ${result.comment.is_admin ? `<span class="ml-2 px-2 py-0.5 text-xs font-bold text-white rounded"
-                    style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">Quản trị viên</span>` : ''}
-                </p>
-                <p class="text-sm text-gray-600 whitespace-pre-wrap">${result.comment.content}</p>
-                ${imagesHTML}
+                    <div class="ml-4 border-b border-gray-200 py-4">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white select-none"
+                                style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">
+                                ${result.comment.initial}
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800">
+                                    ${result.comment.name}
+                                    ${result.comment.is_admin ? `<span class="ml-2 px-2 py-0.5 text-xs font-bold text-white rounded"
+                                    style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">Quản trị viên</span>` : ''}
+                                </p>
+                                <p class="text-sm text-gray-600 whitespace-pre-wrap">${result.comment.content}</p>
+                                ${imagesHTML}
 
-                ${result.comment.status === 'pending' ? `
-                    <div class="text-sm text-yellow-600 mt-1">
-                        ${result.comment.is_admin ? 'Bình luận đang chờ phê duyệt' : 'Bình luận của bạn đang chờ duyệt'}
+                                ${result.comment.status === 'pending' ? `
+                                    <div class="text-sm text-yellow-600 mt-1">
+                                        ${result.comment.is_admin ? 'Bình luận đang chờ phê duyệt' : 'Bình luận của bạn đang chờ duyệt'}
+                                    </div>
+                                ` : ''}
+
+                                <div class="text-xs text-gray-500 mt-2">
+                                    <span>${result.comment.time}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                ` : ''}
-
-                <div class="text-xs text-gray-500 mt-2">
-                    <span>${result.comment.time}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-`;
-
+                `;
                 form.closest('.reply-form-container').insertAdjacentHTML('beforebegin', newCommentHTML);
 
                 // Xóa form trả lời

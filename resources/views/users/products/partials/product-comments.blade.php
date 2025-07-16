@@ -71,6 +71,9 @@
 </div>
 <script>
     window.isGuest = {{ auth()->guest() ? 'true' : 'false' }};
+    if (!window.isGuest) {
+        localStorage.removeItem('guestComments');
+    }
 
     const commentForm = document.getElementById('comment-form');
     const commentsList = document.getElementById('comments-list');

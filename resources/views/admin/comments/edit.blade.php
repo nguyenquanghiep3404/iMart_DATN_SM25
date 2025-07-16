@@ -12,14 +12,35 @@
                     <tbody class="text-gray-800">
 
                         <tr class="border-b">
-                            <th class="py-4 px-6 font-semibold bg-gray-50 w-1/3">👤 Người bình luận</th>
-                            <td class="py-4 px-6">{{ $comment->user->name ?? 'Ẩn danh' }}</td>
+                            <th class="py-4 px-6 bg-gray-50 w-1/3 font-semibold">👤 Người bình luận</th>
+                            <td class="py-4 px-6">
+                                @if ($comment->user)
+                                    {{ $comment->user->name }}
+                                @else
+                                    {{ $comment->guest_name ?? 'Ẩn danh' }}
+                                    <span class="ml-2 px-2 py-0.5 text-xs text-gray-600 bg-gray-200 rounded-full">
+                                        (Khách vãng lai)
+                                    </span>
+                                @endif
+                            </td>
                         </tr>
 
                         <tr class="border-b">
                             <th class="py-4 px-6 font-semibold bg-gray-50">📧 Email</th>
-                            <td class="py-4 px-6">{{ $comment->user->email ?? 'N/A' }}</td>
+                            <td class="py-4 px-6">
+                                @if ($comment->user)
+                                    {{ $comment->user->email }}
+                                @else
+                                    {{ $comment->guest_email ?? 'Không có' }}
+                                @endif
+                            </td>
                         </tr>
+                        @if (!$comment->user)
+                            <tr class="border-b">
+                                <th class="py-4 px-6 bg-gray-50 font-semibold">📞 Số điện thoại</th>
+                                <td class="py-4 px-6">{{ $comment->guest_phone ?? 'N/A' }}</td>
+                            </tr>
+                        @endif
 
                         <tr class="border-b">
                             <th class="py-4 px-6 font-semibold bg-gray-50">🔁 Bình luận cha</th>
@@ -54,10 +75,11 @@
                                             {{ $title }}
                                         </a>
                                     @elseif ($type === 'post')
+                                        {{-- Có thể mở khi có route posts.show --}}
                                         {{-- <a href="{{ route('posts.show', ['slug' => $slug]) }}"
-                                       class="text-blue-600 font-medium hover:underline" target="_blank">
-                                        {{ $title }}
-                                    </a> --}}
+                                           class="text-blue-600 font-medium hover:underline" target="_blank">
+                                            {{ $title }}
+                                        </a> --}}
                                     @else
                                         <span class="text-red-500 font-semibold">Không xác định loại</span>
                                     @endif
@@ -111,12 +133,14 @@
                                 </form>
                             </td>
                         </tr>
+
                         <tr>
                             <th class="py-4 px-6 font-semibold bg-gray-50 align-top">💬 Nội dung</th>
                             <td class="py-4 px-6 leading-relaxed bg-gray-50">
                                 {{ $comment->content }}
                             </td>
                         </tr>
+
                         <tr class="border-b">
                             <th class="py-4 px-6 font-semibold bg-gray-50">🖼 Ảnh đính kèm</th>
                             <td class="py-4 px-6">
