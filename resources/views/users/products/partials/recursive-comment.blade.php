@@ -53,7 +53,9 @@
                 <span>{{ $comment->created_at->diffForHumans() }}</span>
 
                 {{-- Nút trả lời (nếu không phải bình luận của mình) --}}
-                @if ($comment->user_id !== $currentUserId && !in_array($comment->status, ['rejected', 'spam', 'pending']))
+                @if (auth()->check() &&
+                        $comment->user_id !== $currentUserId &&
+                        !in_array($comment->status, ['rejected', 'spam', 'pending']))
                     <button class="text-blue-600 hover:underline reply-btn" data-comment-id="{{ $comment->id }}">
                         Trả lời
                     </button>
@@ -66,14 +68,31 @@
     </div>
 
     {{-- Đệ quy hiển thị các câu trả lời --}}
-    @if ($comment->replies && $comment->replies->count())
-        @foreach ($comment->replies as $reply)
+    @php
+        $currentUserId = auth()->id();
+        $isAdmin = auth()->user() && auth()->user()->hasRole('admin');
+
+        $filteredReplies = $comment->replies->filter(function ($reply) use ($isAdmin, $currentUserId) {
+            if ($isAdmin) {
+                return true; // Admin xem tất cả
+            }
+            // Chủ comment hoặc chủ reply mới xem được reply chưa duyệt
+            if ($reply->status !== 'approved' && $reply->user_id !== $currentUserId) {
+                return false;
+            }
+            return true; // Các reply đã approved hoặc của chính user
+        });
+    @endphp
+
+    @if ($filteredReplies->count())
+        @foreach ($filteredReplies as $reply)
             @include('users.products.partials.recursive-comment', [
                 'comment' => $reply,
                 'level' => ($level ?? 0) + 4,
             ])
         @endforeach
     @endif
+
 </div>
 <script>
     const csrfToken = '{{ csrf_token() }}';
@@ -139,6 +158,7 @@
             });
 
             const result = await response.json();
+
             const imagesHTML = (result.comment.images && result.comment.images.length > 0) ?
                 `<div class="flex gap-2 mt-2 flex-wrap">
                 ${result.comment.images.map(url => `<img src="${url}" alt="Ảnh bình luận" class="w-20 h-20 rounded-md object-cover">`).join('')}
@@ -146,27 +166,35 @@
                 '';
             if (result.success) {
                 const newCommentHTML = `
-                    <div class="ml-4 border-b border-gray-200 py-4">
-                        <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white select-none"
-                                style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">
-                                ${result.comment.initial}
-                            </div>
-                            <div>
-                                <p class="font-semibold text-gray-800">
-                                    ${result.comment.name}
-                                    ${result.comment.is_admin ? `<span class="ml-2 px-2 py-0.5 text-xs font-bold text-white rounded"
-                                    style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">Quản trị viên</span>` : ''}
-                                </p>
-                                <p class="text-sm text-gray-600 whitespace-pre-wrap">${result.comment.content}</p>
-                                ${imagesHTML}
-                                <div class="text-xs text-gray-500 mt-2">
-                                    <span>${result.comment.time}</span>
-                                </div>
-                            </div>
-                        </div>
+    <div class="ml-4 border-b border-gray-200 py-4">
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white select-none"
+                style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">
+                ${result.comment.initial}
+            </div>
+            <div>
+                <p class="font-semibold text-gray-800">
+                    ${result.comment.name}
+                    ${result.comment.is_admin ? `<span class="ml-2 px-2 py-0.5 text-xs font-bold text-white rounded"
+                    style="background: linear-gradient(45deg, #7b2ff7, #f107a3);">Quản trị viên</span>` : ''}
+                </p>
+                <p class="text-sm text-gray-600 whitespace-pre-wrap">${result.comment.content}</p>
+                ${imagesHTML}
+
+                ${result.comment.status === 'pending' ? `
+                    <div class="text-sm text-yellow-600 mt-1">
+                        ${result.comment.is_admin ? 'Bình luận đang chờ phê duyệt' : 'Bình luận của bạn đang chờ duyệt'}
                     </div>
-                `;
+                ` : ''}
+
+                <div class="text-xs text-gray-500 mt-2">
+                    <span>${result.comment.time}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+`;
+
                 form.closest('.reply-form-container').insertAdjacentHTML('beforebegin', newCommentHTML);
 
                 // Xóa form trả lời
