@@ -114,8 +114,8 @@
                             <div class="alert alert-custom mt-4 d-flex align-items-center">
                                 <i class="bi bi-exclamation-octagon-fill fs-4 me-3"></i>
                                 <div>
-                                    <strong>😊:</strong>
-                                    <span class="d-block mt-1">Đừng sửa nội dung chuyển khoản bạn nhé. Chờ 1 chút nhé bạn iuuuu.</span>
+                                    <strong>Lưu ý:</strong>
+                                    <span class="d-block mt-1">Đừng sửa nội dung chuyển khoản bạn nhé</span>
                                 </div>
                             </div>
                         </div>

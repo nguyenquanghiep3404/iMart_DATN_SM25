@@ -19,8 +19,7 @@ return new class extends Migration
                   ->constrained('product_variants')
                   ->onDelete('cascade'); // Nếu xóa biến thể, các record kho cũng sẽ bị xóa
 
-            $table->string('inventory_type')->index(); // Ví dụ: 'new', 'open_box', 'defective'
-
+            $table->string('inventory_type')->index(); 
             $table->integer('quantity')->default(0); // Số lượng tồn kho
 
             $table->timestamps(); // created_at và updated_at

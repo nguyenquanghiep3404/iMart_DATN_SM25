@@ -511,7 +511,7 @@
                                 <div class="input-group">
                                     <label class="form-section-heading">Quản lý tồn kho</label>
                                     <div
-                                        class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 p-3 border rounded-md bg-gray-50/50">
+                                        class="grid grid-cols-1 md:grid-cols-2 gap-x-4 p-3 border rounded-md bg-gray-50/50">
                                         <div class="input-group !mb-0">
                                             <label for="simple_inventories_new"
                                                 class="!text-xs !font-normal !text-gray-500">Hàng mới <span
@@ -522,20 +522,13 @@
                                                 value="{{ old('simple_inventories.new', $simpleInventories->get('new', 0)) }}">
                                         </div>
                                         <div class="input-group !mb-0">
-                                            <label for="simple_inventories_open_box"
-                                                class="!text-xs !font-normal !text-gray-500">Hàng mở hộp</label>
-                                            <input type="number" id="simple_inventories_open_box"
-                                                name="simple_inventories[open_box]" class="input-field !py-2 !text-sm"
+                                            <label for="simple_inventories_defective"
+                                                class="!text-xs !font-normal !text-gray-500">Hàng lỗi / Kho nội bộ</label>
+                                            <input type="number" id="simple_inventories_defective"
+                                                name="simple_inventories[defective]" class="input-field !py-2 !text-sm"
                                                 min="0"
-                                                value="{{ old('simple_inventories.open_box', $simpleInventories->get('open_box', 0)) }}">
-                                        </div>
-                                        <div class="input-group !mb-0">
-                                            <label for="simple_inventories_used"
-                                                class="!text-xs !font-normal !text-gray-500">Hàng cũ</label>
-                                            <input type="number" id="simple_inventories_used"
-                                                name="simple_inventories[used]" class="input-field !py-2 !text-sm"
-                                                min="0"
-                                                value="{{ old('simple_inventories.used', $simpleInventories->get('used', 0)) }}">
+                                                value="{{ old('simple_inventories.defective', $simpleInventories->get('defective', 0)) }}"
+                                                placeholder="Hàng lỗi, trưng bày...">
                                         </div>
                                     </div>
                                 </div>
@@ -889,6 +882,7 @@
 
         const allAttributesFromPHP = @json($jsAttributes, JSON_UNESCAPED_UNICODE);
         const productBeingEdited = @json($jsProduct, JSON_UNESCAPED_UNICODE);
+        const oldImagesData = @json($old_images_data ?? [], JSON_UNESCAPED_UNICODE);
         const oldData = @json($oldInput, JSON_UNESCAPED_UNICODE);
         let currentProductType = productBeingEdited.type;
         const originalProductTypeFromServer = productBeingEdited.type;
@@ -1416,23 +1410,19 @@
         ${attributesHTML}
         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
             <div class="input-group"><label class="text-sm font-medium">SKU <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" value="${variantData.sku || ''}"></div></div>
-            <div class="input-group mt-4">
-                    <label class="text-sm font-medium">Quản lý tồn kho biến thể</label>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-4 p-3 border rounded-md bg-white">
-                        <div class="input-group !mb-0">
-                            <label class="!text-xs !font-normal !text-gray-500">Hàng mới <span class="required-star">*</span></label>
-                            <input type="number" name="variants[${currentVariantIndex}][inventories][new]" class="input-field !py-2 !text-sm" min="0" value="${getInventoryValue(variantData.inventories, 'new')}">
-                        </div>
-                        <div class="input-group !mb-0">
-                            <label class="!text-xs !font-normal !text-gray-500">Hàng mở hộp</label>
-                            <input type="number" name="variants[${currentVariantIndex}][inventories][open_box]" class="input-field !py-2 !text-sm" min="0" value="${getInventoryValue(variantData.inventories, 'open_box')}">
-                        </div>
-                        <div class="input-group !mb-0">
-                            <label class="!text-xs !font-normal !text-gray-500">Hàng cũ</label>
-                            <input type="number" name="variants[${currentVariantIndex}][inventories][used]" class="input-field !py-2 !text-sm" min="0" value="${getInventoryValue(variantData.inventories, 'used')}">
-                        </div>
-                    </div>
-                </div>
+           <div class="input-group mt-4">
+    <label class="text-sm font-medium">Quản lý tồn kho biến thể</label>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 p-3 border rounded-md bg-white">
+        <div class="input-group !mb-0">
+            <label class="!text-xs !font-normal !text-gray-500">Hàng mới <span class="required-star">*</span></label>
+            <input type="number" name="variants[${currentVariantIndex}][inventories][new]" class="input-field !py-2 !text-sm" min="0" value="${getInventoryValue(variantData.inventories, 'new') || 0}">
+        </div>
+        <div class="input-group !mb-0">
+            <label class="!text-xs !font-normal !text-gray-500">Hàng lỗi / Kho nội bộ</label>
+            <input type="number" name="variants[${currentVariantIndex}][inventories][defective]" class="input-field !py-2 !text-sm" min="0" value="${getInventoryValue(variantData.inventories, 'defective') || 0}" placeholder="Hàng lỗi, trưng bày...">
+        </div>
+    </div>
+</div>
             <div class="input-group"><label class="text-sm font-medium">Giá <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" value="${variantData.price || ''}"></div></div>
             <div class="input-group">
                 <div class="label-with-action"><label class="text-sm font-medium">Giá KM (VNĐ)</label><a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium">Lên lịch</a></div>
@@ -1511,20 +1501,22 @@
                 if (sourceVariantCard) {
                     const sourceIndex = sourceVariantCard.dataset.variantIndex;
                     const sourceInventories = {};
-                    sourceVariantCard.querySelectorAll('[name^="variants[${sourceIndex}][inventories]"]').forEach(input => {
-                        const type = input.name.match(/\[(new|open_box|used)\]/)[1];
-                        if (input.value) {
-                            sourceInventories[type] = input.value;
-                        }
-                    });
+// START OF CHANGES
+sourceVariantCard.querySelectorAll(`[name^="variants[${sourceIndex}][inventories]"]`).forEach(input => {
+    const typeMatch = input.name.match(/\[(new|defective)\]/); // CHANGED: Regex updated
+    if (typeMatch && typeMatch[1] && input.value) {
+        const type = typeMatch[1];
+        sourceInventories[type] = input.value;
+    }
+});
+
                     // Sao chép đầy đủ dữ liệu
                     document.getElementById('simple_sku').value = sourceVariantCard.querySelector(
                         `input[name="variants[${sourceIndex}][sku]"]`)?.value || '';
                     document.getElementById('simple_price').value = sourceVariantCard.querySelector(
                         `input[name="variants[${sourceIndex}][price]"]`)?.value || '';
                     document.getElementById('simple_inventories_new').value = sourceInventories.new || 0;
-                    document.getElementById('simple_inventories_open_box').value = sourceInventories.open_box || 0;
-                    document.getElementById('simple_inventories_used').value = sourceInventories.used || 0;
+                    document.getElementById('simple_inventories_defective').value = sourceInventories.defective || 0;
                     document.querySelector('input[name="simple_sale_price"]').value = sourceVariantCard.querySelector(
                         `input[name="variants[${sourceIndex}][sale_price]"]`)?.value || '';
                     document.querySelector('input[name="simple_sale_price_starts_at"]').value = sourceVariantCard
@@ -1572,10 +1564,9 @@
                     sku: document.getElementById('simple_sku').value,
                     price: document.getElementById('simple_price').value,
                     inventories: [
-                         { inventory_type: 'new', quantity: document.getElementById('simple_inventories_new').value || 0 },
-                         { inventory_type: 'open_box', quantity: document.getElementById('simple_inventories_open_box').value || 0 },
-                         { inventory_type: 'used', quantity: document.getElementById('simple_inventories_used').value || 0 },
-                    ],
+        { inventory_type: 'new', quantity: document.getElementById('simple_inventories_new').value || 0 },
+        { inventory_type: 'defective', quantity: document.getElementById('simple_inventories_defective').value || 0 }, 
+    ],
                     sale_price: document.querySelector('input[name="simple_sale_price"]').value,
                     sale_price_starts_at: document.querySelector('input[name="simple_sale_price_starts_at"]').value,
                     sale_price_ends_at: document.querySelector('input[name="simple_sale_price_ends_at"]').value,
@@ -1614,48 +1605,101 @@
         // HÀM KHỞI TẠO VÀ KHÔI PHỤC FORM
         // =================================================================
         function initializeFormWithProductData() {
-            if (!productBeingEdited) return;
+    // Ưu tiên khôi phục từ oldData nếu có lỗi validation
+    const hasOldData = oldData && Object.keys(oldData).length > 0;
 
-            if (productBeingEdited.type === 'variable') {
-                const usedAttributeIds = new Set(productBeingEdited.variants.flatMap(v => v.attribute_values.map(av => av
-                    .attribute_id)));
-                document.querySelectorAll('.product-attribute-checkbox').forEach(cb => {
-                    if (usedAttributeIds.has(parseInt(cb.value))) cb.checked = true;
-                });
-                updateSelectedAttributesForVariants();
+    // --- XỬ LÝ SẢN PHẨM CÓ BIẾN THỂ ---
+    if ((hasOldData && oldData.type === 'variable') || (!hasOldData && productBeingEdited.type === 'variable')) {
+        const variantsToRender = hasOldData ? (oldData.variants || []) : productBeingEdited.variants;
+        
+        // Đánh dấu các thuộc tính đã được chọn
+        const usedAttributeIds = new Set();
+        variantsToRender.forEach(variant => {
+            if (variant.attributes) {
+                Object.keys(variant.attributes).forEach(attrId => usedAttributeIds.add(parseInt(attrId)));
+            } else if (variant.attribute_values) { // Dành cho dữ liệu từ productBeingEdited
+                variant.attribute_values.forEach(av => usedAttributeIds.add(av.attribute_id));
+            }
+        });
+        document.querySelectorAll('.product-attribute-checkbox').forEach(cb => {
+            if (usedAttributeIds.has(parseInt(cb.value))) {
+                cb.checked = true;
+            }
+        });
+        updateSelectedAttributesForVariants();
 
-                productBeingEdited.variants.forEach(variant => {
-                    addVariantCard(variant);
-                    const card = document.querySelector(
-                        `.variant-card[data-variant-index="${variantIndexGlobal-1}"]`);
-                    if (card && variant.images && variant.images.length > 0) {
-                        const previewCont = card.querySelector('.image-preview-container');
-                        const idsCont = card.querySelector(`#variant_${variantIndexGlobal-1}_image_ids_container`);
-                        addImagesToProductForm(variant.images, previewCont, idsCont, 'variant', variantIndexGlobal -
-                            1);
-                        if (variant.primary_image_id) setVariantPrimaryImage(variantIndexGlobal - 1, variant
-                            .primary_image_id);
+        // Render các card biến thể
+        variantsToRender.forEach(variant => {
+            addVariantCard(variant);
+            const newCardIndex = variantIndexGlobal - 1;
+            const card = document.querySelector(`.variant-card[data-variant-index="${newCardIndex}"]`);
+            if (!card) return;
+
+            // Khôi phục ảnh cho biến thể
+            const imageIds = variant.image_ids || [];
+            const primaryId = variant.primary_image_id || null;
+            const allIds = primaryId ? [...imageIds, primaryId] : imageIds;
+            const imagesForVariant = [];
+
+            [...new Set(allIds)].forEach(id => {
+                const imageData = hasOldData ? oldImagesData[id] : (productBeingEdited.variants
+                    .flatMap(v => v.images).find(img => img.id == id) || productBeingEdited.variants.flatMap(v => v.images).find(img => img.id == id));
+                if (imageData) {
+                     // Đảm bảo URL đúng định dạng
+                    if (imageData.path && !imageData.url) {
+                        imageData.url = `{{ url('storage') }}/${imageData.path}`;
                     }
-                });
-                updateDefaultVariantRadioAndHiddenFields();
-
-            } else if (productBeingEdited.type === 'simple') {
-                const previewCont = document.getElementById('simple_product_image_preview_container');
-                const idsCont = document.getElementById('image_ids_container');
-                let allImages = (productBeingEdited.cover_image ? [productBeingEdited.cover_image] : []).concat(
-                    productBeingEdited.gallery_images || []);
-                const uniqueImages = allImages.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
-                if (uniqueImages.length > 0) {
-                    addImagesToProductForm(uniqueImages, previewCont, idsCont, 'simple');
-                    if (productBeingEdited.cover_image) setSimpleProductPrimaryImage(productBeingEdited.cover_image.id);
+                    imagesForVariant.push(imageData);
+                }
+            });
+            
+            if (imagesForVariant.length > 0) {
+                const previewCont = card.querySelector('.image-preview-container');
+                const idsCont = card.querySelector(`#variant_${newCardIndex}_image_ids_container`);
+                addImagesToProductForm(imagesForVariant, previewCont, idsCont, 'variant', newCardIndex);
+                if (primaryId) {
+                    setVariantPrimaryImage(newCardIndex, parseInt(primaryId));
                 }
             }
+        });
+        updateDefaultVariantRadioAndHiddenFields();
+    } 
+    // --- XỬ LÝ SẢN PHẨM ĐƠN GIẢN ---
+    else if ((hasOldData && oldData.type === 'simple') || (!hasOldData && productBeingEdited.type === 'simple')) {
+        const galleryIds = hasOldData ? (oldData.gallery_images || []) : (productBeingEdited.gallery_images.map(img => img.id));
+        const coverId = hasOldData ? oldData.cover_image_id : (productBeingEdited.cover_image?.id || null);
 
-            // Fetch and render specifications for the current category on page load
-            if (productBeingEdited.category_id) {
-                handleCategoryChange();
+        const allIds = coverId ? [...galleryIds, coverId] : galleryIds;
+        const imagesForSimple = [];
+
+        [...new Set(allIds)].forEach(id => {
+            const imageData = hasOldData ? oldImagesData[id] : ([...(productBeingEdited.gallery_images || []), productBeingEdited.cover_image]).find(img => img && img.id == id);
+            if (imageData) {
+                if (imageData.path && !imageData.url) {
+                    imageData.url = `{{ url('storage') }}/${imageData.path}`;
+                }
+                imagesForSimple.push(imageData);
+            }
+        });
+
+        if (imagesForSimple.length > 0) {
+            const previewCont = document.getElementById('simple_product_image_preview_container');
+            const idsCont = document.getElementById('image_ids_container');
+            addImagesToProductForm(imagesForSimple, previewCont, idsCont, 'simple');
+            if (coverId) {
+                setSimpleProductPrimaryImage(parseInt(coverId));
             }
         }
+    }
+
+    // Tải thông số kỹ thuật dựa trên danh mục đã chọn (từ old() hoặc từ DB)
+    const categoryId = oldData.category_id || productBeingEdited.category_id;
+    if (categoryId) {
+        document.getElementById('category_id').value = categoryId; // Đảm bảo dropdown được chọn đúng
+        handleCategoryChange();
+    }
+}
+
 
         // =================================================================
         // KHỞI TẠO VÀ GẮN SỰ KIỆN KHI TRANG TẢI XONG
@@ -1890,16 +1934,8 @@
             // Listen for category changes to load specs
             document.getElementById('category_id').addEventListener('change', handleCategoryChange);
 
-            // Final Form Initialization
-            if (oldData && Object.keys(oldData).length > 0) {
-                console.warn("Validation failed. Repopulating form state from old input.");
-                // The form is already repopulated by Laravel's old() helper, 
-                // we just need to re-initialize JS-dependent parts.
-                initializeFormWithProductData();
-            } else if (productBeingEdited) {
-                console.log("Initializing form with existing product data.");
-                initializeFormWithProductData();
-            }
+            console.log("Initializing form...");
+            initializeFormWithProductData();
 
             document.getElementById('editProductForm')?.addEventListener('submit', function(event) {
                 tinymce.get('description')?.save();
