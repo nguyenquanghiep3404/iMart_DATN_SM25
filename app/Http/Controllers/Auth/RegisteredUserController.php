@@ -79,33 +79,41 @@ class RegisteredUserController extends Controller
         if (session()->has('cart')) {
             $sessionCart = session('cart');
             $cart = \App\Models\Cart::firstOrCreate(['user_id' => $user->id]);
-    
+        
             foreach ($sessionCart as $item) {
                 $variantId = $item['variant_id'] ?? null;
                 $quantity = isset($item['quantity']) ? (int)$item['quantity'] : 1;
                 $price = isset($item['price']) ? (float)$item['price'] : 0;
-    
+        
                 if (!$variantId) {
                     continue;
                 }
-    
+        
+                // Kiểm tra biến thể còn tồn tại
+                $variantExists = \App\Models\ProductVariant::where('id', $variantId)->exists();
+                if (!$variantExists) {
+                    continue;
+                }
+        
                 $existingItem = \App\Models\CartItem::where('cart_id', $cart->id)
-                    ->where('product_variant_id', $variantId)
+                    ->where('cartable_id', $variantId)
+                    ->where('cartable_type', \App\Models\ProductVariant::class)
                     ->first();
-    
+        
                 if ($existingItem) {
                     $existingItem->quantity += $quantity;
                     $existingItem->save();
                 } else {
                     \App\Models\CartItem::create([
                         'cart_id' => $cart->id,
-                        'product_variant_id' => $variantId,
+                        'cartable_id' => $variantId,
+                        'cartable_type' => \App\Models\ProductVariant::class,
                         'quantity' => $quantity,
                         'price' => $price,
                     ]);
                 }
             }
-    
+        
             session()->forget('cart');
         }
         return redirect(route('users.home', absolute: false));

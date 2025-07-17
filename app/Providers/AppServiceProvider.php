@@ -132,40 +132,6 @@ class AppServiceProvider extends ServiceProvider
                 $cart = session()->get('cart', []);
                 $totalQuantity = array_sum(array_column($cart, 'quantity'));
             }
-
-
-        // // Định nghĩa Gate dựa trên Permission
-        // Gate::define('manage-users', function (User $user) {
-        //     return $user->hasPermissionTo('manage-users');
-        // });
-
-        // Gate::define('manage-content', function (User $user) {
-        //     return $user->hasPermissionTo('manage-content');
-        // });
-
-        // Gate::define('manage-orders', function (User $user) {
-        //     return $user->hasPermissionTo('manage-orders');
-        // });
-        // Gate::define('manage-attributes', function (User $user) {
-        // // Cho phép truy cập nếu người dùng có ÍT NHẤT MỘT trong các quyền sau
-        //     return $user->hasPermissionTo([
-        //         'browse_attributes',
-        //         'add_attributes',
-        //         'edit_attributes',
-        //         'delete_attributes'
-        //     ]);
-        // });
-
-        // // Bạn có thể định nghĩa các quyền chi tiết hơn nữa
-        // Gate::define('delete-posts', function(User $user) {
-        //     return $user->hasPermissionTo('delete-posts');
-        // });
-
-        // } catch (\Exception $e) {
-        //     // Bỏ qua lỗi khi migrate
-        //     return;
-        // }
-
             $view->with('cartItemCount', $totalQuantity);
         });
     }
