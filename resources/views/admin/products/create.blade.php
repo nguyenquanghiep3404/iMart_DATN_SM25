@@ -557,13 +557,13 @@
             right: 0;
             background-color: #ffffff;
             min-width: 220px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+            box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.1);
             z-index: 100;
             border-radius: 0.5rem;
             padding: 0.5rem 0;
             border: 1px solid #e2e8f0;
         }
-        
+
         .action-dropdown-content .dropdown-header {
             padding: 0.5rem 1rem;
             font-size: 0.75rem;
@@ -585,7 +585,7 @@
         .action-dropdown-content a:hover {
             background-color: #f1f5f9;
         }
-        
+
         .action-dropdown-content a.disabled {
             color: #94a3b8;
             cursor: not-allowed;
@@ -837,25 +837,43 @@
                                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                     @enderror
                                 </div>
+
                                 <div class="input-group">
-                                    <label for="simple_stock_quantity">Số lượng tồn kho <span
-                                            class="required-star">*</span></label>
-                                    <div class="input-with-icon">
-                                        <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
-                                            <path
-                                                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-                                            </path>
-                                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                                        </svg>
-                                        <input type="number" id="simple_stock_quantity" name="simple_stock_quantity"
-                                            class="input-field @error('simple_stock_quantity') border-red-500 @enderror"
-                                            min="0" value="{{ old('simple_stock_quantity') }}">
+                                    <label class="form-section-heading">Quản lý tồn kho </label>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 p-3 border rounded-md bg-gray-50">
+                                        {{-- Tồn kho Hàng Mới --}}
+                                        <div class="input-group !mb-0">
+                                            <label for="simple_inventories_new"
+                                                class="!text-xs !font-normal !text-gray-500">
+                                                Hàng mới <span class="required-star">*</span>
+                                            </label>
+                                            <input type="number" id="simple_inventories_new"
+                                                name="simple_inventories[new]"
+                                                class="input-field !py-2 !text-sm @error('simple_inventories.new') border-red-500 @enderror"
+                                                min="0" value="{{ old('simple_inventories.new', 0) }}"
+                                                placeholder="Số lượng hàng mới">
+                                            @error('simple_inventories.new')
+                                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+                                        {{-- Tồn kho Nội bộ (Hàng lỗi, trưng bày, v.v.) --}}
+                                        <div class="input-group !mb-0">
+                                            <label for="simple_inventories_defective"
+                                                class="!text-xs !font-normal !text-gray-500">
+                                                Hàng lỗi / Kho nội bộ
+                                            </label>
+                                            <input type="number" id="simple_inventories_defective"
+                                                name="simple_inventories[defective]"
+                                                class="input-field !py-2 !text-sm @error('simple_inventories.defective') border-red-500 @enderror"
+                                                min="0" value="{{ old('simple_inventories.defective', 0) }}"
+                                                placeholder="Hàng lỗi, trưng bày...">
+                                            @error('simple_inventories.defective')
+                                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                            @enderror
+                                        </div>
                                     </div>
-                                    @error('simple_stock_quantity')
-                                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                                    @enderror
                                 </div>
+                                
                             </div>
 
                             <!-- Schedule Container -->
@@ -944,7 +962,7 @@
                                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
-                            
+
                             {{-- NEW: Specifications container for simple product --}}
                             <div class="pt-4 mt-4 border-t border-gray-200">
                                 <h4 class="text-md font-semibold text-gray-700 mb-2">Thông số kỹ thuật</h4>
@@ -952,7 +970,7 @@
                                     <p class="text-gray-500 text-sm">Vui lòng chọn danh mục để tải thông số.</p>
                                 </div>
                                 @error('specifications.*')
-                                     <p class="text-red-500 text-xs mt-1">Có lỗi với dữ liệu thông số kỹ thuật.</p>
+                                    <p class="text-red-500 text-xs mt-1">Có lỗi với dữ liệu thông số kỹ thuật.</p>
                                 @enderror
                             </div>
                         </div>
@@ -1331,7 +1349,11 @@
 
         function addImagesToProductForm(images, previewContainer, idsContainer, type = 'simple', variantIndex = null) {
             if (!images || images.length === 0 || !previewContainer || !idsContainer) {
-                console.error("Thiếu thông tin để thêm ảnh vào form", { images, previewContainer, idsContainer });
+                console.error("Thiếu thông tin để thêm ảnh vào form", {
+                    images,
+                    previewContainer,
+                    idsContainer
+                });
                 return;
             }
 
@@ -1527,7 +1549,8 @@
             container.innerHTML = ''; // Clear previous content
 
             if (!fetchedSpecifications || fetchedSpecifications.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-sm">Danh mục này không có thông số kỹ thuật được định nghĩa.</p>';
+                container.innerHTML =
+                    '<p class="text-gray-500 text-sm">Danh mục này không có thông số kỹ thuật được định nghĩa.</p>';
                 return;
             }
 
@@ -1590,8 +1613,10 @@
                 // Repopulate specs for all existing variant cards
                 document.querySelectorAll('.variant-specifications-container').forEach(container => {
                     const variantIndex = container.closest('.variant-card').dataset.variantIndex;
-                    const oldVariantSpecData = (oldVariantsData[variantIndex] && oldVariantsData[variantIndex].specifications) ? oldVariantsData[variantIndex].specifications : {};
-                    renderSpecifications(container, `variants[${variantIndex}][specifications]`, oldVariantSpecData);
+                    const oldVariantSpecData = (oldVariantsData[variantIndex] && oldVariantsData[variantIndex]
+                        .specifications) ? oldVariantsData[variantIndex].specifications : {};
+                    renderSpecifications(container, `variants[${variantIndex}][specifications]`,
+                        oldVariantSpecData);
                 });
 
             } catch (error) {
@@ -1599,13 +1624,13 @@
                 fetchedSpecifications = [];
                 // Clear spec fields on error
                 if (simpleSpecContainer) renderSpecifications(simpleSpecContainer, 'specifications');
-                 document.querySelectorAll('.variant-specifications-container').forEach(container => {
+                document.querySelectorAll('.variant-specifications-container').forEach(container => {
                     const variantIndex = container.closest('.variant-card').dataset.variantIndex;
                     renderSpecifications(container, `variants[${variantIndex}][specifications]`);
                 });
             }
         }
-        
+
         // **NEW**: Updates all "Copy Spec" dropdowns
         function updateAllCopySpecButtons() {
             const allVariantCards = document.querySelectorAll('#variantsContainer .variant-card');
@@ -1689,7 +1714,7 @@
             }
             button.disabled = isLoading;
         }
-        
+
         async function callGeminiAPI(prompt, isStructured = false, schema = null) {
             const backendApiUrl = "{{ route('admin.products.ai.generate') }}";
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
@@ -1788,7 +1813,7 @@
                 }
             });
         }
-        
+
         function handleDefaultVariantChange(event) {
             document.querySelectorAll('.variant-default-radio').forEach(radio => {
                 const card = radio.closest('.variant-card');
@@ -1880,9 +1905,23 @@
                         currentVariantCard.querySelector(
                                 `input[name="variants[${currentVariantIndex}][sale_price]"]`).value = oldVariant
                             .sale_price || '';
-                        currentVariantCard.querySelector(
-                                `input[name="variants[${currentVariantIndex}][stock_quantity]"]`).value = oldVariant
-                            .stock_quantity || '';
+                        if (oldVariant.inventories && typeof oldVariant.inventories === 'object') {
+                            if (oldVariant.inventories.new) {
+                                currentVariantCard.querySelector(
+                                        `input[name="variants[${currentVariantIndex}][inventories][new]"]`).value =
+                                    oldVariant.inventories.new;
+                            }
+                            if (oldVariant.inventories.open_box) {
+                                currentVariantCard.querySelector(
+                                        `input[name="variants[${currentVariantIndex}][inventories][open_box]"]`)
+                                    .value = oldVariant.inventories.open_box;
+                            }
+                            if (oldVariant.inventories.used) {
+                                currentVariantCard.querySelector(
+                                        `input[name="variants[${currentVariantIndex}][inventories][used]"]`).value =
+                                    oldVariant.inventories.used;
+                            }
+                        }
                         currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][weight]"]`)
                             .value = oldVariant.weight || '';
                         currentVariantCard.querySelector(
@@ -1900,7 +1939,7 @@
                             Object.entries(oldVariant.attributes).forEach(([attrId, attrValueId]) => {
                                 const attrSelect = currentVariantCard.querySelector(
                                     `select[name="variants[${currentVariantIndex}][attributes][${attrId}]"]`
-                                    );
+                                );
                                 if (attrSelect) attrSelect.value = attrValueId;
                             });
                         }
@@ -1970,7 +2009,9 @@
 
             const tagsInput = document.getElementById('tags');
             if (tagsInput) {
-                tagify = new Tagify(tagsInput, { /* ... options ... */ });
+                tagify = new Tagify(tagsInput, {
+                    /* ... options ... */
+                });
             }
 
             // --- GẮN SỰ KIỆN CHO CÁC NÚT AI ---
@@ -1986,94 +2027,94 @@
                         const result = await callGeminiAPI(prompt);
                         if (result) {
                             shortDescriptionTextarea.value = result.replace(/[\*#`]/g, '').trim();
-                        }
-                    } catch (error) {
-                        showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`,
-                            'error');
-                    } finally {
-                        toggleButtonLoading(generateShortDescBtn, false);
                     }
-                });
-            }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`,
+                        'error');
+                } finally {
+                    toggleButtonLoading(generateShortDescBtn, false);
+                }
+            });
+        }
 
-            const generateLongDescBtn = document.getElementById('generateLongDescAI');
-            if (generateLongDescBtn) {
-                generateLongDescBtn.addEventListener('click', async () => {
-                    const context = getProductContext();
-                    if (!context) return;
-                    toggleButtonLoading(generateLongDescBtn, true);
-                    try {
-                        const prompt =
-                            `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm. Yêu cầu: - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng. - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp). - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo. - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
-                        const result = await callGeminiAPI(prompt);
-                        if (result && typeof tinymce !== 'undefined' && tinymce.get('description')) {
-                            tinymce.get('description').setContent(result);
-                        }
-                    } catch (error) {
-                        showMessageModal('Lỗi AI', `Không thể tạo mô tả chi tiết: ${error.message}`,
-                            'error');
-                    } finally {
-                        toggleButtonLoading(generateLongDescBtn, false);
+        const generateLongDescBtn = document.getElementById('generateLongDescAI');
+        if (generateLongDescBtn) {
+            generateLongDescBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+                toggleButtonLoading(generateLongDescBtn, true);
+                try {
+                    const prompt =
+                        `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm. Yêu cầu: - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng. - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp). - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo. - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result && typeof tinymce !== 'undefined' && tinymce.get('description')) {
+                        tinymce.get('description').setContent(result);
                     }
-                });
-            }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo mô tả chi tiết: ${error.message}`,
+                        'error');
+                } finally {
+                    toggleButtonLoading(generateLongDescBtn, false);
+                }
+            });
+        }
 
-            const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
-            if (generateAllSeoBtn) {
-                generateAllSeoBtn.addEventListener('click', async () => {
-                    const context = getProductContext();
-                    if (!context) return;
-                    toggleButtonLoading(generateAllSeoBtn, true);
-                    try {
-                        const schema = {
-                            type: "OBJECT",
-                            properties: {
-                                meta_title: {
-                                    type: "STRING",
-                                    description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính."
-                                },
-                                meta_description: {
-                                    type: "STRING",
-                                    description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động."
-                                },
-                                meta_keywords: {
-                                    type: "STRING",
-                                    description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy."
-                                }
+        const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
+        if (generateAllSeoBtn) {
+            generateAllSeoBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+                toggleButtonLoading(generateAllSeoBtn, true);
+                try {
+                    const schema = {
+                        type: "OBJECT",
+                        properties: {
+                            meta_title: {
+                                type: "STRING",
+                                description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính."
                             },
-                            required: ["meta_title", "meta_description", "meta_keywords"]
-                        };
-                        const prompt =
-                            `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO. Yêu cầu: - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu. - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay"). - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan. - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
+                            meta_description: {
+                                type: "STRING",
+                                description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động."
+                            },
+                            meta_keywords: {
+                                type: "STRING",
+                                description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy."
+                            }
+                        },
+                        required: ["meta_title", "meta_description", "meta_keywords"]
+                    };
+                    const prompt =
+                        `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO. Yêu cầu: - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu. - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay"). - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan. - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
 
-                        const result = await callGeminiAPI(prompt, true, schema);
-                        if (result) {
-                            document.getElementById('meta_title').value = result.meta_title || '';
-                            document.getElementById('meta_description').value = result
-                                .meta_description || '';
-                            document.getElementById('meta_keywords').value = result.meta_keywords || '';
-                        }
-                    } catch (error) {
-                        showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`,
-                            'error');
-                    } finally {
-                        toggleButtonLoading(generateAllSeoBtn, false);
+                    const result = await callGeminiAPI(prompt, true, schema);
+                    if (result) {
+                        document.getElementById('meta_title').value = result.meta_title || '';
+                        document.getElementById('meta_description').value = result
+                            .meta_description || '';
+                        document.getElementById('meta_keywords').value = result.meta_keywords || '';
                     }
-                });
-            }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`,
+                        'error');
+                } finally {
+                    toggleButtonLoading(generateAllSeoBtn, false);
+                }
+            });
+        }
 
-            const generateTagsBtn = document.getElementById('generateTagsAI');
-            if (generateTagsBtn) {
-                generateTagsBtn.addEventListener('click', async () => {
-                    const context = getProductContext();
-                    if (!context) return;
-                    toggleButtonLoading(generateTagsBtn, true);
-                    try {
-                        const prompt =
-                            `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm. Yêu cầu: - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật. - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy. - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
-                        const result = await callGeminiAPI(prompt);
-                        if (result && tagify) {
-                            const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g,
+        const generateTagsBtn = document.getElementById('generateTagsAI');
+        if (generateTagsBtn) {
+            generateTagsBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+                toggleButtonLoading(generateTagsBtn, true);
+                try {
+                    const prompt =
+                        `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm. Yêu cầu: - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật. - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy. - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result && tagify) {
+                        const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g,
                                     '')
                                 .trim();
                             tagify.loadOriginalValues(cleanedResult);
@@ -2118,7 +2159,7 @@
                     const variantCard = document.createElement('div');
                     variantCard.className = 'variant-card';
                     variantCard.dataset.variantIndex = currentVariantIndex;
-                    
+
                     // **MODIFIED**: Added action dropdown to the header
                     let variantHeaderHTML = `
                         <div class="variant-header">
@@ -2133,7 +2174,7 @@
                                 <button type="button" class="remove-variant-btn btn btn-danger btn-sm">Xóa</button>
                             </div>
                         </div>`;
-                        
+
                     let attributesHTML =
                         '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4">';
                     selectedProductAttributes.forEach(attr => {
@@ -2142,7 +2183,7 @@
                             `<div class="input-group"><label for="variants_${currentVariantIndex}_attr_${attr.id}" class="text-sm font-medium">${attr.name} <span class="required-star">*</span></label><div><select name="variants[${currentVariantIndex}][attributes][${attr.id}]" id="variants_${currentVariantIndex}_attr_${attr.id}" class="select-field text-sm" ><option value="">Chọn ${attr.name}</option>${attr.attributeValues.map(val => `<option value="${val.id}">${val.value}</option>`).join('')}</select></div></div>`;
                     });
                     attributesHTML += '</div>';
-                    
+
                     let variantSpecificationsHTML = `
                         <div class="pt-4 mt-4 border-t border-gray-200">
                            <h4 class="text-md font-semibold text-gray-700 mb-2">Thông số kỹ thuật biến thể</h4>
@@ -2155,7 +2196,41 @@
                     let variantFieldsHTML = `
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                             <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
-                            <div class="input-group"><label for="variants_${currentVariantIndex}_stock_quantity" class="text-sm font-medium">Tồn Kho <span class="required-star">*</span></label><div><input type="number" name="variants[${currentVariantIndex}][stock_quantity]" class="input-field text-sm" min="0" ></div></div>
+                            <div class="input-group mt-4">
+    <label class="text-sm font-medium">Quản lý tồn kho biến thể</label>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 p-3 border rounded-md bg-white">
+        
+        {{-- Tồn kho Hàng Mới --}}
+        <div class="input-group !mb-0">
+            <label for="variants_${currentVariantIndex}_inventories_new" class="!text-xs !font-normal !text-gray-500">
+                Hàng mới <span class="required-star">*</span>
+            </label>
+            <input 
+                type="number" 
+                id="variants_${currentVariantIndex}_inventories_new" 
+                name="variants[${currentVariantIndex}][inventories][new]" 
+                class="input-field !py-2 !text-sm" 
+                min="0" 
+                value="0"
+                placeholder="Số lượng hàng mới">
+        </div>
+
+        {{-- Tồn kho Nội bộ (Hàng lỗi, trưng bày, v.v.) --}}
+        <div class="input-group !mb-0">
+            <label for="variants_${currentVariantIndex}_inventories_defective" class="!text-xs !font-normal !text-gray-500">
+                Hàng lỗi / Kho nội bộ
+            </label>
+            <input 
+                type="number" 
+                id="variants_${currentVariantIndex}_inventories_defective" 
+                name="variants[${currentVariantIndex}][inventories][defective]" 
+                class="input-field !py-2 !text-sm" 
+                min="0" 
+                value="0"
+                placeholder="Hàng lỗi, trưng bày...">
+        </div>
+    </div>
+</div>
                             <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" ></div></div>
                             <div class="input-group">
                                 <div class="label-with-action">
@@ -2196,12 +2271,15 @@
                             <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio"><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input"> Đặt làm biến thể mặc định</label>
                         </div>
                     `;
-                    variantCard.innerHTML = variantHeaderHTML + attributesHTML + variantFieldsHTML + variantSpecificationsHTML;
+                    variantCard.innerHTML = variantHeaderHTML + attributesHTML + variantFieldsHTML +
+                        variantSpecificationsHTML;
                     if (variantsContainer) variantsContainer.appendChild(variantCard);
-                    
+
                     // Render specs for the newly added variant
-                    const newSpecContainer = document.getElementById(`variant_${currentVariantIndex}_specifications_container`);
-                    renderSpecifications(newSpecContainer, `variants[${currentVariantIndex}][specifications]`);
+                    const newSpecContainer = document.getElementById(
+                        `variant_${currentVariantIndex}_specifications_container`);
+                    renderSpecifications(newSpecContainer,
+                        `variants[${currentVariantIndex}][specifications]`);
 
                     variantCard.querySelector('.remove-variant-btn').addEventListener('click', function() {
                         this.closest('.variant-card').remove();
@@ -2251,37 +2329,44 @@
                     }
                 }
             });
-            
+
             // **NEW**: Event listener for copying specs using event delegation
-            if(variantsContainer) {
+            if (variantsContainer) {
                 variantsContainer.addEventListener('click', function(e) {
                     if (e.target && e.target.classList.contains('copy-spec-link')) {
                         e.preventDefault();
                         const sourceIndex = e.target.dataset.sourceIndex;
                         const targetIndex = e.target.dataset.targetIndex;
 
-                        const sourceSpecContainer = document.getElementById(`variant_${sourceIndex}_specifications_container`);
-                        const targetSpecContainer = document.getElementById(`variant_${targetIndex}_specifications_container`);
+                        const sourceSpecContainer = document.getElementById(
+                            `variant_${sourceIndex}_specifications_container`);
+                        const targetSpecContainer = document.getElementById(
+                            `variant_${targetIndex}_specifications_container`);
 
                         if (!sourceSpecContainer || !targetSpecContainer) {
                             showMessageModal('Lỗi', 'Không tìm thấy vùng chứa thông số.', 'error');
                             return;
                         }
 
-                        const sourceInputs = sourceSpecContainer.querySelectorAll('input[type="text"], select, textarea');
+                        const sourceInputs = sourceSpecContainer.querySelectorAll(
+                            'input[type="text"], select, textarea');
                         sourceInputs.forEach(sourceInput => {
                             // Extract spec ID from the name: variants[0][specifications][12] -> 12
                             const match = sourceInput.name.match(/\[specifications\]\[(\d+)\]/);
                             if (match && match[1]) {
                                 const specId = match[1];
-                                const targetInput = targetSpecContainer.querySelector(`input[name="variants[${targetIndex}][specifications][${specId}]"], select[name="variants[${targetIndex}][specifications][${specId}]"], textarea[name="variants[${targetIndex}][specifications][${specId}]"]`);
+                                const targetInput = targetSpecContainer.querySelector(
+                                    `input[name="variants[${targetIndex}][specifications][${specId}]"], select[name="variants[${targetIndex}][specifications][${specId}]"], textarea[name="variants[${targetIndex}][specifications][${specId}]"]`
+                                );
                                 if (targetInput) {
                                     targetInput.value = sourceInput.value;
                                 }
                             }
                         });
-                        
-                        showMessageModal('Thành công', `Đã sao chép thông số từ Biến thể #${parseInt(sourceIndex) + 1}.`, 'success');
+
+                        showMessageModal('Thành công',
+                            `Đã sao chép thông số từ Biến thể #${parseInt(sourceIndex) + 1}.`, 'success'
+                        );
                     }
                 });
             }

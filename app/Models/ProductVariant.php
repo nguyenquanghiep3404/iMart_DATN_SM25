@@ -99,4 +99,21 @@ class ProductVariant extends Model
             ->withPivot('value') // Quan trọng: Lấy cột 'value' từ bảng trung gian
             ->withTimestamps();
     }
+    public function inventories()
+{
+    return $this->hasMany(ProductInventory::class);
+}
+
+/**
+ * Lấy tổng số lượng tồn kho có thể bán được (ví dụ: new + open_box).
+ */
+public function getSellableStockAttribute(): int
+{
+    $sellableTypes = ['new']; 
+    return $this->inventories()
+                ->whereIn('inventory_type', $sellableTypes)
+                ->sum('quantity');
+}
+
+
 }

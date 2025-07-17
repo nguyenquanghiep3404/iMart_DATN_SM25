@@ -67,11 +67,12 @@ class CartSeeder extends Seeder
                         CartItem::firstOrCreate(
                             [
                                 'cart_id' => $cart->id,
-                                'product_variant_id' => $variant->id,
+                                'cartable_id' => $variant->id,
+                                'cartable_type' => \App\Models\ProductVariant::class,
                             ],
-                            [ // Dữ liệu sẽ được dùng để tạo nếu bản ghi chưa tồn tại
+                            [
                                 'quantity' => rand(1, 3),
-                                'price' => $variant->sale_price ?? $variant->price, // Lấy giá tại thời điểm này
+                                'price' => $variant->sale_price ?? $variant->price,
                             ]
                         );
                     }
