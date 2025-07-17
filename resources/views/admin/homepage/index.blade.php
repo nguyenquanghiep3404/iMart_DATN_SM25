@@ -178,13 +178,30 @@
             <!-- Left Column -->
             <div class="space-y-8">
                 <!-- Banner Section -->
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h2 class="text-xl font-bold text-gray-800 mb-4">Sắp xếp Banner Slider</h2>
-                    <p class="text-sm text-gray-500 mb-4">Kéo thả để thay đổi thứ tự hiển thị của banner trên trang chủ.</p>
-                    <ul id="banner-list" class="space-y-3">
-                        <!-- Banner items injected by JS -->
-                    </ul>
-                </div>
+                <!-- Banner Section -->
+<div class="bg-white p-6 rounded-xl shadow-sm">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">Danh sách Banner Slider</h2>
+    <p class="text-sm text-gray-500 mb-4">Danh sách các banner hiển thị trên trang chủ, sắp xếp theo thứ tự.</p>
+    <ul id="banner-list" class="space-y-3">
+        @forelse ($banners as $banner)
+            <li data-id="{{ $banner->id }}" draggable="true"
+                class="draggable-item flex items-center space-x-4 p-3 border rounded-lg {{ $banner->status !== 'active' ? 'opacity-50' : '' }}">
+                <i class="fas fa-grip-vertical text-gray-400 cursor-grab"></i>
+                <img src="{{ $banner->desktopImage ? asset('storage/' . $banner->desktopImage->path) : '/images/no-image.png' }}"
+                    class="w-24 h-10 object-cover rounded-md bg-gray-200"
+                    onerror="this.src='/images/no-image.png'">
+                <span class="font-semibold flex-grow">
+                    {{ $banner->title }}
+                    @if ($banner->status !== 'active')
+                        <span class="text-red-500 text-xs">(Không hoạt động)</span>
+                    @endif
+                </span>
+            </li>
+        @empty
+            <li class="text-center text-gray-400 text-sm py-4">Chưa có banner nào.</li>
+        @endforelse
+    </ul>
+</div>
 
                 <!-- Category Section -->
                 <div class="bg-white p-6 rounded-xl shadow-sm">
@@ -428,22 +445,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             // --- MOCK DATA ---
             let mockData = {
-                banners: [{
-                        id: 1,
-                        title: 'Đại tiệc Sale Hè',
-                        image_path: 'https://placehold.co/1200x400/3B82F6/FFFFFF?text=Sale+He+2025'
-                    },
-                    {
-                        id: 4,
-                        title: 'Back to School 2025',
-                        image_path: 'https://placehold.co/1200x400/EC4899/FFFFFF?text=Back+to+School'
-                    },
-                    {
-                        id: 2,
-                        title: 'Laptop Gaming Giảm Sốc',
-                        image_path: 'https://placehold.co/1200x400/10B981/FFFFFF?text=Laptop+Gaming'
+                banners: (() => {
+                    try {
+                        return @json($bannersForJs) || [];
+                    } catch (e) {
+                        console.error('Error parsing bannersForJs:', e);
+                        return [];
                     }
-                ],
+                })(),
                 categories: (() => {
                     try {
                         return @json($categoriesForJs) || [];
@@ -501,17 +510,17 @@
             };
 
             // --- RENDER FUNCTIONS ---
-            const renderBannerList = () => {
-                if (!bannerList) return;
-                bannerList.innerHTML = mockData.banners.map(banner => `
-                <li data-id="${banner.id}" draggable="true" class="draggable-item flex items-center space-x-4 p-3 border rounded-lg">
-                    <iKinetic class="fas fa-grip-vertical text-gray-400 cursor-grab"></i>
-                    <img src="${banner.image_path}" class="w-24 h-10 object-cover rounded-md bg-gray-200">
-                    <span class="font-semibold flex-grow">${banner.title}</span>
-                    <button class="text-red-500 hover:text-red-700 text-sm"><i class="fas fa-times-circle"></i></button>
-                </li>
-            `).join('');
-            };
+            // const renderBannerList = () => {
+            //     if (!bannerList) return;
+            //     bannerList.innerHTML = mockData.banners.map(banner => `
+            //     <li data-id="${banner.id}" draggable="true" class="draggable-item flex items-center space-x-4 p-3 border rounded-lg">
+            //         <iKinetic class="fas fa-grip-vertical text-gray-400 cursor-grab"></i>
+            //         <img src="${banner.image_path}" class="w-24 h-10 object-cover rounded-md bg-gray-200">
+            //         <span class="font-semibold flex-grow">${banner.title}</span>
+            //         <button class="text-red-500 hover:text-red-700 text-sm"><i class="fas fa-times-circle"></i></button>
+            //     </li>
+            // `).join('');
+            // };
 
             const renderCategorySelectionList = () => {
                 if (!categorySelectionList) return;
@@ -576,58 +585,62 @@
 
             const renderProductBlocks = () => {
                 if (!productBlocksContainer) return;
+                console.log('Trước khi render:', mockData.product_blocks.map(b => ({
+                    id: b.id,
+                    order: b.order
+                })));
                 productBlocksContainer.innerHTML = mockData.product_blocks
                     .sort((a, b) => a.order - b.order)
                     .map(block => `
-                    <div data-id="${block.id}" draggable="true" class="draggable-item border rounded-xl bg-white">
-                        <div class="flex justify-between items-center p-4 border-b">
-                            <div class="flex items-center space-x-3">
-                                <i class="fas fa-grip-vertical text-gray-400 cursor-grab"></i>
-                                <h3 class="font-bold text-gray-800">${block.title}</h3>
-                            </div>
-                            <div class="flex items-center space-x-4">
-                                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                                    <input type="checkbox" name="toggle" id="toggle-${block.id}" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" ${block.is_visible ? 'checked' : ''}/>
-                                    <label for="toggle-${block.id}" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
-                                </div>
-                                <button class="delete-block-btn text-gray-400 hover:text-red-500" data-id="${block.id}"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <div class="p-4">
-                            <ul data-block-id="${block.id}" class="product-list space-y-3">
-                                ${block.products.map(prod => `
-                                            <li data-id="${prod.id}" draggable="true" class="draggable-item flex items-center space-x-4 p-2 border rounded-lg">
-                                                <i class="fas fa-grip-vertical text-gray-400 cursor-grab"></i>
-                                                <img src="${prod.image}" class="w-10 h-10 object-cover rounded-md bg-gray-200">
-                                                <span class="font-semibold flex-grow text-sm">${prod.name}</span>
-                                                <button class="text-red-500 hover:text-red-700 text-xs"><i class="fas fa-times-circle"></i></button>
-                                            </li>
-                                        `).join('')}
-                                ${block.products.length === 0 ? `<li class="text-center text-gray-400 text-sm py-4">Chưa có sản phẩm nào.</li>` : ''}
-                            </ul>
-                            <div class="mt-4 pt-4 border-t">
-                                <button class="text-indigo-600 font-semibold text-sm w-full text-left flex items-center space-x-1 add-product-btn" data-block-id="${block.id}">
-                                    <i class="fas fa-search"></i><span>Tìm & Thêm sản phẩm...</span>
-                                </button>
-                            </div>
-                        </div>
+            <div data-id="${block.id}" draggable="true" class="draggable-item border rounded-xl bg-white">
+                <div class="flex justify-between items-center p-4 border-b">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-grip-vertical text-gray-400 cursor-grab"></i>
+                        <h3 class="font-bold text-gray-800">${block.title}</h3>
                     </div>
-                `).join('');
+                    <div class="flex items-center space-x-4">
+                        <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="toggle-${block.id}" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer" ${block.is_visible ? 'checked' : ''}/>
+                            <label for="toggle-${block.id}" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                        </div>
+                        <button class="delete-block-btn text-gray-400 hover:text-red-500" data-id="${block.id}"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <ul data-block-id="${block.id}" class="product-list space-y-3">
+                        ${block.products.sort((a, b) => a.order - b.order).map(prod => `
+                                    <li data-id="${prod.id}" draggable="true" class="draggable-item flex items-center space-x-4 p-2 border rounded-lg">
+                                        <i class="fas fa-grip-vertical text-gray-400 cursor-grab"></i>
+                                        <img src="${prod.image}" class="w-10 h-10 object-cover rounded-md bg-gray-200">
+                                        <span class="font-semibold flex-grow text-sm">${prod.name}</span>
+                                        <button class="text-red-500 hover:text-red-700 text-xs remove-product-btn" data-id="${prod.id}"><i class="fas fa-times-circle"></i></button>
+                                    </li>
+                                `).join('')}
+                        ${block.products.length === 0 ? `<li class="text-center text-gray-400 text-sm py-4">Chưa có sản phẩm nào.</li>` : ''}
+                    </ul>
+                    <div class="mt-4 pt-4 border-t">
+                        <button class="text-indigo-600 font-semibold text-sm w-full text-left flex items-center space-x-1 add-product-btn" data-block-id="${block.id}">
+                            <i class="fas fa-search"></i><span>Tìm & Thêm sản phẩm...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+                // Gắn lại sự kiện kéo thả
                 document.querySelectorAll('.product-list').forEach(list => {
                     const blockId = parseInt(list.dataset.blockId);
                     const block = mockData.product_blocks.find(b => b.id === blockId);
                     if (block) {
-                        setupDragAndDrop(list, block.products);
+                        setupDragAndDrop(list, block.products, () => renderProductBlocks());
                     }
                 });
-                // GÁN SỰ KIỆN XOÁ BLOCK
+                setupDragAndDrop(productBlocksContainer, mockData.product_blocks, () => renderProductBlocks());
+                // Gắn lại sự kiện xóa và bật/tắt
                 document.querySelectorAll('.delete-block-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
                         const blockId = btn.dataset.id;
                         if (!blockId) return;
-
-                        if (!confirm('Bạn có chắc chắn muốn xoá khối này?')) return;
-
+                        if (!confirm('Bạn có chắc chắn muốn xóa khối này?')) return;
                         fetch(`/admin/homepage/product-blocks/${blockId}`, {
                                 method: 'DELETE',
                                 headers: {
@@ -643,20 +656,17 @@
                                 mockData.product_blocks = mockData.product_blocks.filter(
                                     b => b.id != blockId);
                                 renderProductBlocks();
-                                showNotification('✅ Đã xoá khối sản phẩm', 'success');
+                                showNotification('✅ Đã xóa khối sản phẩm', 'success');
                             })
                             .catch(err => {
                                 console.error(err);
-                                showNotification('❌ Xoá thất bại', 'error');
+                                showNotification('❌ Xóa thất bại', 'error');
                             });
                     });
                 });
-
-                // GÁN SỰ KIỆN BẬT/TẮT KHỐI HIỂN THỊ
                 document.querySelectorAll('.toggle-checkbox').forEach(checkbox => {
                     checkbox.addEventListener('change', () => {
                         const blockId = checkbox.id.replace('toggle-', '');
-
                         fetch(`/admin/homepage/blocks/${blockId}/toggle-visibility`, {
                                 method: 'PATCH',
                                 headers: {
@@ -677,6 +687,7 @@
                                     const block = mockData.product_blocks.find(b => b.id ==
                                         blockId);
                                     if (block) block.is_visible = data.is_visible;
+                                    renderProductBlocks();
                                 } else {
                                     checkbox.checked = !checkbox.checked;
                                     showNotification(
@@ -730,7 +741,7 @@
                     <td class="px-4 py-2 text-center">
                         ${p.sale_price && p.sale_price < p.price
                             ? `<span class="text-red-600 font-semibold">${formatCurrency(p.sale_price)}</span><br>
-                                       <span class="line-through text-gray-400 text-xs">${formatCurrency(p.price)}</span>`
+                                               <span class="line-through text-gray-400 text-xs">${formatCurrency(p.price)}</span>`
                             : `<span>${formatCurrency(p.price)}</span>`}
                     </td>
                     <td class="px-4 py-2 text-center">${p.sold_quantity ?? 0}</td>
@@ -757,6 +768,7 @@
                     loadProducts(); // Tải danh sách sản phẩm mặc định
                 }
             });
+
 
             // Sự kiện tìm kiếm sản phẩm
             productSearchInput.addEventListener('input', () => {
@@ -913,47 +925,123 @@
 
             // --- DRAG & DROP LOGIC ---
             function setupDragAndDrop(listElement, dataArray, onDropCallback) {
-                if (!listElement) return;
+                if (!listElement) {
+                    console.error('Container không tồn tại:', listElement);
+                    return;
+                }
                 let draggedItem = null;
                 listElement.addEventListener('dragstart', e => {
-                    if (e.target.closest('.draggable-item')) {
-                        draggedItem = e.target.closest('.draggable-item');
+                    draggedItem = e.target.closest('.draggable-item');
+                    if (draggedItem && listElement.contains(draggedItem)) {
+                        console.log('Bắt đầu kéo:', draggedItem.dataset.id);
                         setTimeout(() => draggedItem.classList.add('dragging'), 0);
                     }
                 });
+
                 listElement.addEventListener('dragend', () => {
                     if (draggedItem) {
                         draggedItem.classList.remove('dragging');
                         draggedItem = null;
                     }
                 });
+
                 listElement.addEventListener('dragover', e => {
                     e.preventDefault();
+                    e.stopPropagation(); // Ngăn lan truyền sự kiện
                     const afterElement = getDragAfterElement(listElement, e.clientY);
                     const currentDragged = document.querySelector('.dragging');
-                    if (currentDragged) {
+                    if (currentDragged && listElement.contains(currentDragged)) {
+                        console.log('Dragging over, afterElement:', afterElement ? afterElement.dataset.id :
+                            'null');
                         if (afterElement == null) {
                             listElement.appendChild(currentDragged);
-                        } else {
+                        } else if (listElement.contains(afterElement)) {
                             listElement.insertBefore(currentDragged, afterElement);
                         }
                     }
                 });
+
                 listElement.addEventListener('drop', e => {
                     e.preventDefault();
+                    e.stopPropagation();
                     if (!draggedItem) return;
+                    console.log('Thả item:', draggedItem.dataset.id);
                     const newOrderIds = [...listElement.querySelectorAll('.draggable-item')].map(item =>
                         parseInt(item.dataset.id));
+                    console.log('Thứ tự mới:', newOrderIds);
                     dataArray.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
-                    if (onDropCallback) {
-                        onDropCallback(dataArray);
+                    dataArray.forEach((item, index) => {
+                        item.order = index + 1; // Cập nhật order
+                    });
+                    if (listElement.id === 'product-blocks-container') {
+                        mockData.product_blocks = dataArray; // Đồng bộ mockData
+                        fetch("{{ route('admin.homepage.blocks.update-order') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                        .content
+                                },
+                                body: JSON.stringify({
+                                    block_ids: newOrderIds
+                                })
+                            })
+                            .then(res => {
+                                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                                return res.json();
+                            })
+                            .then(data => {
+                                showNotification('✅ Cập nhật thứ tự khối sản phẩm thành công',
+                                    'success');
+                                renderProductBlocks(); // Gọi lại để cập nhật giao diện
+                            })
+                            .catch(err => {
+                                console.error('Lỗi cập nhật thứ tự khối:', err);
+                                showNotification('❌ Cập nhật thứ tự khối thất bại', 'error');
+                            });
+                    } else if (listElement.classList.contains('product-list')) {
+                        const blockId = listElement.dataset.blockId;
+                        const block = mockData.product_blocks.find(b => b.id == blockId);
+                        if (block) {
+                            block.products = dataArray; // Cập nhật danh sách sản phẩm
+                            block.products.forEach((prod, index) => {
+                                prod.order = index + 1; // Cập nhật order cho sản phẩm
+                            });
+                            fetch(`{{ route('admin.homepage.blocks.products.update-order', ['blockId' => ':blockId']) }}`
+                                    .replace(':blockId', blockId), {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': document.querySelector(
+                                                'meta[name="csrf-token"]').content
+                                        },
+                                        body: JSON.stringify({
+                                            product_ids: newOrderIds
+                                        })
+                                    })
+                                .then(res => {
+                                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                                    return res.json();
+                                })
+                                .then(data => {
+                                    showNotification('✅ Cập nhật thứ tự sản phẩm thành công',
+                                        'success');
+                                    renderProductBlocks(); // Gọi lại để cập nhật giao diện
+                                })
+                                .catch(err => {
+                                    console.error('Lỗi cập nhật thứ tự sản phẩm:', err);
+                                    showNotification('❌ Cập nhật thứ tự sản phẩm thất bại', 'error');
+                                });
+                        }
                     }
                 });
             }
 
             function getDragAfterElement(container, y) {
                 if (!container) return null;
-                const draggableElements = [...container.querySelectorAll('.draggable-item:not(.dragging)')];
+                const draggableElements = [...container.children].filter(child =>
+                    child.classList.contains('draggable-item') && !child.classList.contains('dragging')
+                );
                 return draggableElements.reduce((closest, child) => {
                     const box = child.getBoundingClientRect();
                     const offset = y - box.top - box.height / 2;
@@ -986,14 +1074,70 @@
                 renderCategoryList();
             };
 
+            function setupBannerDragAndDrop() {
+    if (!bannerList) return;
+    let draggedItem = null;
+    bannerList.addEventListener('dragstart', e => {
+        draggedItem = e.target.closest('.draggable-item');
+        if (draggedItem && bannerList.contains(draggedItem)) {
+            setTimeout(() => draggedItem.classList.add('dragging'), 0);
+        }
+    });
+    bannerList.addEventListener('dragend', () => {
+        if (draggedItem) {
+            draggedItem.classList.remove('dragging');
+            draggedItem = null;
+        }
+    });
+    bannerList.addEventListener('dragover', e => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(bannerList, e.clientY);
+        const currentDragged = document.querySelector('.dragging');
+        if (currentDragged && bannerList.contains(currentDragged)) {
+            if (afterElement == null) {
+                bannerList.appendChild(currentDragged);
+            } else if (bannerList.contains(afterElement)) {
+                bannerList.insertBefore(currentDragged, afterElement);
+            }
+        }
+    });
+    bannerList.addEventListener('drop', e => {
+        e.preventDefault();
+        if (!draggedItem) return;
+        const newOrderIds = [...bannerList.querySelectorAll('.draggable-item')].map(item => parseInt(item.dataset.id));
+        mockData.banners.sort((a, b) => newOrderIds.indexOf(a.id) - newOrderIds.indexOf(b.id));
+        mockData.banners.forEach((banner, index) => {
+            banner.order = index + 1;
+        });
+        fetch('/admin/homepage/banners/update-order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ banner_ids: newOrderIds })
+        })
+        .then(res => {
+            if (!res.ok) throw new Error(`Lỗi HTTP: ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            showNotification('✅ Cập nhật thứ tự banner thành công', 'success');
+        })
+        .catch(err => {
+            console.error('Lỗi cập nhật thứ tự banner:', err);
+            showNotification('❌ Cập nhật thứ tự banner thất bại', 'error');
+        });
+    });
+}
+
             // --- INITIALIZATION ---
             console.log('mockData:', mockData);
-            renderBannerList();
             renderCategorySelectionList();
             renderCategoryList();
             renderProductBlocks();
 
-            setupDragAndDrop(bannerList, mockData.banners);
+            setupBannerDragAndDrop();
             const getVisibleCategories = () => {
                 const list = [];
                 mockData.categories.forEach(cat => {

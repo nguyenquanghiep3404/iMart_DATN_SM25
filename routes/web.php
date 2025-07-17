@@ -113,10 +113,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
     //Routes đơn hàng của user
     Route::prefix('my-orders')->group(function () {
-            Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
-            Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
-            Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
-            Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
+        Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
+        Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
+        Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
+        Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
     });
 });
 
@@ -315,7 +315,7 @@ Route::prefix('admin')
         Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
         Route::get('/orders/shippers/list', [OrderController::class, 'getShippers'])->name('orders.shippers');
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
-         Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
+        Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
 
 
 
@@ -398,15 +398,21 @@ Route::prefix('admin')
         Route::get('/homepage/products/search', [HomepageController::class, 'searchProducts'])->name('homepage.products.search');
 
         Route::patch('/homepage/blocks/{id}/toggle-visibility', [HomepageController::class, 'toggleBlockVisibility'])
-    ->name('homepage.blocks.toggleVisibility');
+            ->name('homepage.blocks.toggleVisibility');
 
+        // Cập nhật thứ tự khối sản phẩm
+        Route::post('/homepage/product-blocks/update-order', [HomepageController::class, 'updateBlockOrder'])->name('homepage.blocks.update-order');
 
+        // Cập nhật thứ tự sản phẩm trong khối
+        Route::post('/homepage/product-blocks/{blockId}/update-order', [HomepageController::class, 'updateProductOrder'])->name('homepage.blocks.products.update-order');
+
+        Route::post('/homepage/banners/update-order', [HomepageController::class, 'updateBannerOrder'])->name('homepage.banners.update-order');
 
         // ✅ Cập nhật thứ tự khối sản phẩm
         Route::post('/homepage/product-blocks/sort', [HomepageController::class, 'sortProductBlocks'])->name('admin.homepage.blocks.sort');
         Route::post('/homepage/block/{block}/add-products', [HomepageController::class, 'addProductsToBlock'])->name('homepage.blocks.add-products');
         Route::post('/homepage/product-blocks/{block}/products', [HomepageController::class, 'addProductsToBlock'])
-    ->name('homepage.blocks.add-products');
+            ->name('homepage.blocks.add-products');
 
 
 
