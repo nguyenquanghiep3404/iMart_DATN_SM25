@@ -650,6 +650,7 @@
             document.getElementById('cart-content').innerHTML = cachedCartHtml;
             return;
         }
+
         fetch('/cart/offcanvas', {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -657,7 +658,7 @@
             })
             .then(res => res.text())
             .then(html => {
-                cachedCartHtml = html; // lưu cache
+                cachedCartHtml = html; // Lưu cache
                 document.getElementById('cart-content').innerHTML = html;
             })
             .catch(() => {

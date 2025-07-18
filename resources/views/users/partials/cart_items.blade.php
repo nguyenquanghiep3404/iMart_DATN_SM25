@@ -139,6 +139,7 @@
                 _token: '{{ csrf_token() }}'
             }).done((res) => {
                 if (res.success) {
+                    cachedCartHtml = null;
                     $btn.closest('.cart-item').remove();
 
                     const subtotal = calculateSubtotal();
