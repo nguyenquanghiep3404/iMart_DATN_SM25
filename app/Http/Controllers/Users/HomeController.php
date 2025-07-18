@@ -204,10 +204,31 @@ class HomeController extends Controller
             ->firstOrFail();
 
         $variantIds = $product->variants->pluck('id');
+
+        $ratingFilter = $request->query('rating');
+
         $allReviews = Review::with(['user', 'images'])
             ->whereIn('product_variant_id', $variantIds)
-            ->where('status', 'approved')
-            ->get();
+            ->where(function ($query) {
+                $query->where('status', 'approved');
+
+                if (Auth::check()) {
+                    $query->orWhere(function ($q) {
+                        $q->where('user_id', Auth::id())
+                            ->whereIn('status', ['pending', 'rejected', 'spam']);
+                    });
+
+                    if (Auth::user()->hasRole('admin')) {
+                        $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+                    }
+                }
+            });
+
+        if ($ratingFilter && in_array((int)$ratingFilter, [1, 2, 3, 4, 5])) {
+            $allReviews = $allReviews->where('rating', (int)$ratingFilter);
+        }
+        $allReviews  = $allReviews->get();
+
         // 2. Lấy TẤT CẢ bình luận (comments) gốc đã được duyệt
         // (Giữ nguyên logic query comment phức tạp của bạn)
         $allComments = $product->comments()
@@ -528,6 +549,9 @@ class HomeController extends Controller
             if ($orderItemId) {
                 $hasReviewed = Review::where('order_item_id', $orderItemId)->exists();
             }
+            $totalReviewsCount = $allReviews->count();
+
+            $totalCommentsCount = $allComments->count();
         }
         // --- Kết thúc đoạn code ĐÃ THÊM ---
 
@@ -556,7 +580,10 @@ class HomeController extends Controller
             'paginatedItems',
             'allComments',
             'allReviews',
-            
+            'totalReviewsCount',
+            'totalCommentsCount',
+            'ratingFilter',
+
         ));
     }
 
