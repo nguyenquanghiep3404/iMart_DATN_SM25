@@ -75,7 +75,7 @@
                         <th class="px-4 py-3 font-semibold">Phản hồi cho</th>
                         <th class="px-4 py-3 font-semibold">Ngày gửi</th>
                         <th class="px-4 py-3 font-semibold">Trạng thái</th>
-                        <th class="px-4 py-3 font-semibold">Hành động</th>
+                        <th class="px-4 py-3 font-semibold text-center">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -96,15 +96,16 @@
             </table>
         </div>
         <div class="mb-4 mt-6">
-            <button type="button" onclick="window.history.back()"
+            <a href="{{ route('admin.comment.index') }}"
                 class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 font-semibold inline-flex items-center space-x-2">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
                 <span>Quay lại</span>
-            </button>
+            </a>
         </div>
+
         <!-- Phân trang -->
         <div class="mt-6 flex items-center justify-between">
             <div class="text-sm text-gray-600">
