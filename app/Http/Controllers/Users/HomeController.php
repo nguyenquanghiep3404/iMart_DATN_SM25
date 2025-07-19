@@ -5,23 +5,24 @@ namespace App\Http\Controllers\Users;
 use Carbon\Carbon;
 use App\Models\Post;
 use App\Models\Banner;
+use App\Models\Review;
 use App\Models\Comment;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\FlashSale;
+use App\Models\OrderItem;
 use Illuminate\Support\Str;
 use App\Models\PostCategory;
+use App\Models\WishlistItem;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\HomepageProductBlock;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
-use App\Models\WishlistItem;
-use App\Models\Review;
-use App\Models\OrderItem;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class HomeController extends Controller
@@ -168,6 +169,84 @@ class HomeController extends Controller
             ->take(3)
             ->get();
 
+        // === Lấy danh sách Flash Sale (theo logic quản lý) ===
+
+        $flashSales = FlashSale::with([
+            'flashSaleTimeSlots' => function ($q) {
+                $q->orderBy('start_time');
+            },
+            'flashSaleTimeSlots.products.productVariant.attributeValues.attribute',
+            'flashSaleTimeSlots.products.productVariant.product.coverImage',
+        ])->orderBy('start_time')->get();
+
+        // Xử lý format thời gian + tên biến thể đầy đủ và xác định slot đang active
+        $now = now();
+        $flashSales->each(function ($sale) use ($now) {
+            $activeSlotId = null;
+            $upcomingSlotId = null;
+            $minUpcomingTime = null;
+            foreach ($sale->flashSaleTimeSlots as $slot) {
+                $slot->start_time = \Carbon\Carbon::parse($slot->start_time)->toIso8601String();
+                $slot->end_time = \Carbon\Carbon::parse($slot->end_time)->toIso8601String();
+
+                $start = \Carbon\Carbon::parse($slot->start_time);
+                $end = \Carbon\Carbon::parse($slot->end_time);
+                $isActive = $now->between($start, $end);
+                $isUpcoming = $now->lt($start);
+                $isPast = $now->gt($end);
+                
+                \Log::info('DEBUG_FLASH_SLOT', [
+                    'slot_id' => $slot->id,
+                    'start_time' => $slot->start_time,
+                    'end_time' => $slot->end_time,
+                    'now' => $now->toIso8601String(),
+                    'isActive' => $isActive,
+                    'isUpcoming' => $isUpcoming,
+                    'isPast' => $isPast,
+                    'activeSlotId' => $activeSlotId,
+                ]);
+
+                if ($isActive && $activeSlotId === null) {
+                    $activeSlotId = $slot->id;
+                }
+                if ($isUpcoming && ($minUpcomingTime === null || $start->lt($minUpcomingTime))) {
+                    $minUpcomingTime = $start;
+                    $upcomingSlotId = $slot->id;
+                }
+
+                $slot->products->each(function ($product) {
+                    $variant = $product->productVariant;
+                    $productName = $variant->product->name ?? '';
+
+                    $attributes = $variant->attributeValues ?? collect();
+
+                    $nonColor = $attributes
+                        ->filter(fn($v) => $v->attribute->name !== 'Màu sắc')
+                        ->pluck('value')
+                        ->join(' ');
+
+                    $color = $attributes
+                        ->firstWhere(fn($v) => $v->attribute->name === 'Màu sắc')?->value;
+
+                    $variantName = trim($productName . ' ' . $nonColor . ' ' . $color);
+
+                    $product->variant_name = $variantName;
+                });
+            }
+            if ($activeSlotId) {
+                $sale->active_slot_id = $activeSlotId;
+            } elseif ($upcomingSlotId) {
+                $sale->active_slot_id = $upcomingSlotId;
+            } else {
+                $sale->active_slot_id = $sale->flashSaleTimeSlots->last()->id ?? null;
+            }
+            \Log::info('DEBUG_FLASH_SALE_ACTIVE_SLOT', [
+                'sale_id' => $sale->id,
+                'active_slot_id' => $sale->active_slot_id,
+            ]);
+        });
+
+
         return view('users.home', compact(
             'featuredProducts',
             'blocks',
@@ -176,6 +255,7 @@ class HomeController extends Controller
             'featuredPosts',
             'unreadNotificationsCount',
             'recentNotifications',
+            'flashSales'
         ));
     }
 
@@ -556,7 +636,7 @@ class HomeController extends Controller
             'paginatedItems',
             'allComments',
             'allReviews',
-            
+
         ));
     }
 

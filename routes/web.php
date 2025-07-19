@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\HomepageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
@@ -11,31 +10,33 @@ use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Users\BlogController;
+use App\Http\Controllers\Users\CartController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\CommentController as AdminCommentController;
-use App\Http\Controllers\Admin\ShipperManagementController;
+use App\Http\Controllers\Users\CarOffController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Users\CommentController;
 use App\Http\Controllers\Users\PaymentController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\HomepageController;
 use App\Http\Controllers\Users\WishlistController;
-use App\Http\Controllers\Users\CommentController;
 use App\Http\Controllers\Admin\AttributeController;
+use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Shipper\ShipperController;
+use App\Http\Controllers\Users\UserOrderController;
+use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
-use App\Http\Controllers\Admin\DashboardAdminController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Users\CartController;
-use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\SpecificationController;
+use App\Http\Controllers\Admin\DashboardAdminController;
+use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
-use App\Http\Controllers\Users\UserOrderController;
-use App\Http\Controllers\Users\CarOffController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 
 
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
@@ -371,50 +372,39 @@ Route::prefix('admin')
             ->names('categories_post');
 
         // Route quản lí trang chủ (client)
-
-        // ✅ Hiển thị trang quản lý trang chủ (dùng index vì là quản lý tổng thể)
         Route::get('/homepage', [HomepageController::class, 'index'])->name('homepage.index');
-
-        // ✅ Lưu toàn bộ thay đổi
         Route::post('/homepage/update', [HomepageController::class, 'update'])->name('homepage.update');
-
-        // ✅ Sắp xếp banner (drag & drop)
         Route::post('/homepage/banners/sort', [HomepageController::class, 'sortBanners'])->name('admin.homepage.banners.sort');
-
-        // ✅ Lưu danh mục hiển thị
         Route::post('/homepage/categories', [HomepageController::class, 'saveCategories'])->name('admin.homepage.categories.save');
-
-        // ✅ Sắp xếp danh mục
         Route::post('/homepage/categories/sort', [HomepageController::class, 'sortCategories'])->name('admin.homepage.categories.sort');
-
-        // ✅ Lấy danh sách danh mục từ DB (dùng cho fetch)
         Route::get('/homepage/categories/list', [HomepageController::class, 'getCategories'])->name('admin.homepage.categories.list');
-
-        // ✅ Thêm khối sản phẩm
         Route::post('/homepage/product-blocks', [HomepageController::class, 'storeProductBlock'])->name('homepage.blocks.store');
-
-        // ✅ Xoá khối sản phẩm
         Route::delete('/homepage/product-blocks/{id}', [HomepageController::class, 'destroyProductBlock'])->name('homepage.blocks.destroy');
-
         Route::get('/homepage/products/search', [HomepageController::class, 'searchProducts'])->name('homepage.products.search');
-
         Route::patch('/homepage/blocks/{id}/toggle-visibility', [HomepageController::class, 'toggleBlockVisibility'])
             ->name('homepage.blocks.toggleVisibility');
-
-        // Cập nhật thứ tự khối sản phẩm
         Route::post('/homepage/product-blocks/update-order', [HomepageController::class, 'updateBlockOrder'])->name('homepage.blocks.update-order');
-
-        // Cập nhật thứ tự sản phẩm trong khối
-        Route::post('/homepage/product-blocks/{blockId}/update-order', [HomepageController::class, 'updateProductOrder'])->name('homepage.blocks.products.update-order');
-
+        Route::post('/homepage/product-blocks/{blockId}/update-order', [HomepageController::class, 'updateProductOrder'])
+            ->name('homepage.blocks.products.update-order');
         Route::post('/homepage/banners/update-order', [HomepageController::class, 'updateBannerOrder'])->name('homepage.banners.update-order');
-
-        // ✅ Cập nhật thứ tự khối sản phẩm
-        Route::post('/homepage/product-blocks/sort', [HomepageController::class, 'sortProductBlocks'])->name('admin.homepage.blocks.sort');
+        Route::post('/homepage/product-blocks/sort', [HomepageController::class, 'sortProductBlocks'])->name('homepage.blocks.sort');
         Route::post('/homepage/block/{block}/add-products', [HomepageController::class, 'addProductsToBlock'])->name('homepage.blocks.add-products');
         Route::post('/homepage/product-blocks/{block}/products', [HomepageController::class, 'addProductsToBlock'])
             ->name('homepage.blocks.add-products');
+        Route::patch('/homepage/categories/{categoryId}/toggle', [HomepageController::class, 'toggleCategory'])->name('homepage.categories.toggle');
+        Route::post('/homepage/categories/update-order', [HomepageController::class, 'updateCategoryOrder'])->name('homepage.categories.update-order');
 
+        // Route Quản lí Flash Sale
+        Route::resource('flash-sales', \App\Http\Controllers\Admin\FlashSaleController::class);
+        Route::post('flash-sales/{flash_sale}/attach-product', [FlashSaleController::class, 'attachProduct'])
+            ->name('flash-sales.attachProduct');
+        Route::delete('flash-sales/{flash_sale}/detach-product/{product}', [FlashSaleController::class, 'detachProduct'])
+            ->name('flash-sales.detachProduct');
+        Route::post('flash-sales/{flashSale}/time-slots', [FlashSaleController::class, 'addTimeSlot'])
+            ->name('admin.flash-sales.time-slots.store');
+        // Route cập nhật sản phẩm trong Flash Sale
+        Route::put('flash-sales/{flash_sale}/update-product/{flash_product}', [FlashSaleController::class, 'updateProduct'])
+            ->name('flash-sales.updateProduct');
 
 
 
