@@ -262,7 +262,7 @@ class HomeController extends Controller
             'featuredPosts',
             'unreadNotificationsCount',
             'recentNotifications',
-            'flashSales'
+            'flashSales',
             'suggestedProducts' // 👈 THÊM BIẾN NÀY
         ));
     }
