@@ -4,11 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     // Status constants
     public const STATUS_PENDING_CONFIRMATION = 'pending_confirmation';
@@ -30,8 +29,12 @@ class Order extends Model
 
     protected $fillable = [
         'user_id', 'guest_id', 'order_code', 'customer_name', 'customer_email', 'customer_phone',
-        'shipping_address_line1', 'shipping_address_line2', 'shipping_province_code', 'shipping_ward_code', 'shipping_zip_code', 'shipping_country',
-        'billing_address_line1', 'billing_address_line2', 'billing_province_code', 'billing_ward_code', 'billing_zip_code', 'billing_country',
+        'shipping_address_line1', 'shipping_address_line2', 'shipping_zip_code', 'shipping_country',
+        'shipping_address_system', 'shipping_new_province_code', 'shipping_new_ward_code',
+        'shipping_old_province_code', 'shipping_old_district_code', 'shipping_old_ward_code',
+        'billing_address_line1', 'billing_address_line2', 'billing_zip_code', 'billing_country',
+        'billing_address_system', 'billing_new_province_code', 'billing_new_ward_code',
+        'billing_old_province_code', 'billing_old_district_code', 'billing_old_ward_code',
         'sub_total', 'shipping_fee', 'discount_amount', 'tax_amount', 'grand_total',
         'payment_method', 'payment_status', 'shipping_method', 'status',
         'notes_from_customer', 'notes_for_shipper', 'admin_note',
@@ -117,25 +120,112 @@ class Order extends Model
         return $this->hasMany(CouponUsage::class);
     }
 
-    // Location relationships
+    // Địa chỉ mới - Shipping
+    public function shippingNewProvince()
+    {
+        return $this->belongsTo(Province::class, 'shipping_new_province_code', 'code');
+    }
+
+    public function shippingNewWard()
+    {
+        return $this->belongsTo(Ward::class, 'shipping_new_ward_code', 'code');
+    }
+
+    // Hệ thống CŨ - Shipping
+    public function shippingOldProvince()
+    {
+        return $this->belongsTo(ProvinceOld::class, 'shipping_old_province_code', 'code');
+    }
+
+    public function shippingOldDistrict()
+    {
+        return $this->belongsTo(DistrictOld::class, 'shipping_old_district_code', 'code');
+    }
+
+    public function shippingOldWard()
+    {
+        return $this->belongsTo(WardOld::class, 'shipping_old_ward_code', 'code');
+    }
+
+    // Hệ thống MỚI - Billing
+    public function billingNewProvince()
+    {
+        return $this->belongsTo(Province::class, 'billing_new_province_code', 'code');
+    }
+
+    public function billingNewWard()
+    {
+        return $this->belongsTo(Ward::class, 'billing_new_ward_code', 'code');
+    }
+
+    // Địa chỉ cũ - Billing
+    public function billingOldProvince()
+    {
+        return $this->belongsTo(ProvinceOld::class, 'billing_old_province_code', 'code');
+    }
+
+    public function billingOldDistrict()
+    {
+        return $this->belongsTo(DistrictOld::class, 'billing_old_district_code', 'code');
+    }
+
+    public function billingOldWard()
+    {
+        return $this->belongsTo(WardOld::class, 'billing_old_ward_code', 'code');
+    }
+
+    // Quan hệ động dựa trên địa chỉ mới - Shipping
     public function shippingProvince()
     {
-        return $this->belongsTo(Province::class, 'shipping_province_code', 'code');
+        if ($this->shipping_address_system === 'new') {
+            return $this->shippingNewProvince();
+        } else {
+            return $this->shippingOldProvince();
+        }
     }
 
     public function shippingWard()
     {
-        return $this->belongsTo(Ward::class, 'shipping_ward_code', 'code');
+        if ($this->shipping_address_system === 'new') {
+            return $this->shippingNewWard();
+        } else {
+            return $this->shippingOldWard();
+        }
     }
 
+    public function shippingDistrict()
+    {
+        if ($this->shipping_address_system === 'old') {
+            return $this->shippingOldDistrict();
+        }
+        return null;
+    }
+
+    // Quan hệ động dựa trên địa chỉ mới - Billing
     public function billingProvince()
     {
-        return $this->belongsTo(Province::class, 'billing_province_code', 'code');
+        if ($this->billing_address_system === 'new') {
+            return $this->billingNewProvince();
+        } else {
+            return $this->billingOldProvince();
+        }
     }
 
     public function billingWard()
     {
-        return $this->belongsTo(Ward::class, 'billing_ward_code', 'code');
+        if ($this->billing_address_system === 'new') {
+            return $this->billingNewWard();
+        } else {
+            return $this->billingOldWard();
+        }
+    }
+
+    public function billingDistrict()
+    {
+        if ($this->billing_address_system === 'old') {
+            return $this->billingOldDistrict();
+        }
+        return null;
     }
 
     // Accessors để lấy địa chỉ đầy đủ
@@ -145,6 +235,7 @@ class Order extends Model
             $this->shipping_address_line1,
             $this->shipping_address_line2,
             $this->shippingWard?->name,
+            $this->shippingDistrict?->name,
             $this->shippingProvince?->name,
             $this->shipping_country,
         ]);
@@ -158,6 +249,7 @@ class Order extends Model
             $this->shipping_address_line1,
             $this->shipping_address_line2,
             $this->shippingWard?->name_with_type,
+            $this->shippingDistrict?->name_with_type,
             $this->shippingProvince?->name_with_type,
             $this->shipping_country,
         ]);
@@ -175,6 +267,7 @@ class Order extends Model
             $this->billing_address_line1,
             $this->billing_address_line2,
             $this->billingWard?->name,
+            $this->billingDistrict?->name,
             $this->billingProvince?->name,
             $this->billing_country,
         ]);
@@ -192,6 +285,7 @@ class Order extends Model
             $this->billing_address_line1,
             $this->billing_address_line2,
             $this->billingWard?->name_with_type,
+            $this->billingDistrict?->name_with_type,
             $this->billingProvince?->name_with_type,
             $this->billing_country,
         ]);
@@ -216,11 +310,28 @@ class Order extends Model
 
     public function scopeByProvince($query, $provinceCode)
     {
-        return $query->where('shipping_province_code', $provinceCode);
+        return $query->where(function($q) use ($provinceCode) {
+            $q->where('shipping_new_province_code', $provinceCode)
+              ->orWhere('shipping_old_province_code', $provinceCode);
+        });
     }
 
     public function scopeByWard($query, $wardCode)
     {
-        return $query->where('shipping_ward_code', $wardCode);
+        return $query->where(function($q) use ($wardCode) {
+            $q->where('shipping_new_ward_code', $wardCode)
+              ->orWhere('shipping_old_ward_code', $wardCode);
+        });
+    }
+
+    // Scope để lọc theo hệ thống
+    public function scopeNewSystem($query)
+    {
+        return $query->where('shipping_address_system', 'new');
+    }
+
+    public function scopeOldSystem($query)
+    {
+        return $query->where('shipping_address_system', 'old');
     }
 }

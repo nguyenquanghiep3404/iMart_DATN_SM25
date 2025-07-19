@@ -16,8 +16,12 @@ class Address extends Model
         'phone_number', 
         'address_line1', 
         'address_line2',
-        'province_code', 
-        'ward_code', 
+        'address_system',
+        'new_province_code',
+        'new_ward_code',
+        'old_province_code',
+        'old_district_code',
+        'old_ward_code',
         'is_default_shipping', 
         'is_default_billing',
     ];
@@ -32,14 +36,58 @@ class Address extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Địa chỉ mới
+    public function newProvince()
+    {
+        return $this->belongsTo(Province::class, 'new_province_code', 'code');
+    }
+
+    public function newWard()
+    {
+        return $this->belongsTo(Ward::class, 'new_ward_code', 'code');
+    }
+
+    // Hệ thống CŨ
+    public function oldProvince()
+    {
+        return $this->belongsTo(ProvinceOld::class, 'old_province_code', 'code');
+    }
+
+    public function oldDistrict()
+    {
+        return $this->belongsTo(DistrictOld::class, 'old_district_code', 'code');
+    }
+
+    public function oldWard()
+    {
+        return $this->belongsTo(WardOld::class, 'old_ward_code', 'code');
+    }
+
+    // Quan hệ động dựa trên hệ thống
     public function province()
     {
-        return $this->belongsTo(Province::class, 'province_code', 'code');
+        if ($this->address_system === 'new') {
+            return $this->newProvince();
+        } else {
+            return $this->oldProvince();
+        }
     }
 
     public function ward()
     {
-        return $this->belongsTo(Ward::class, 'ward_code', 'code');
+        if ($this->address_system === 'new') {
+            return $this->newWard();
+        } else {
+            return $this->oldWard();
+        }
+    }
+
+    public function district()
+    {
+        if ($this->address_system === 'old') {
+            return $this->oldDistrict();
+        }
+        return null;
     }
 
     // Accessor để lấy địa chỉ đầy đủ
@@ -49,6 +97,7 @@ class Address extends Model
             $this->address_line1,
             $this->address_line2,
             $this->ward?->name,
+            $this->district?->name,
             $this->province?->name,
         ]);
         
@@ -62,9 +111,21 @@ class Address extends Model
             $this->address_line1,
             $this->address_line2,
             $this->ward?->name_with_type,
+            $this->district?->name_with_type,
             $this->province?->name_with_type,
         ]);
         
         return implode(', ', $parts);
+    }
+
+    // Scope để lọc theo hệ thống
+    public function scopeNewSystem($query)
+    {
+        return $query->where('address_system', 'new');
+    }
+
+    public function scopeOldSystem($query)
+    {
+        return $query->where('address_system', 'old');
     }
 }

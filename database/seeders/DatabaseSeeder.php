@@ -30,6 +30,10 @@ class DatabaseSeeder extends Seeder
             ContactFormSeeder::class,
             SpecificationSeeder::class,
             // ActivityLogSeeder::class, // Nếu có
+            
+            // Thêm các seeder cho hệ thống địa chỉ kép
+            NewAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ MỚI
+            OldAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ CŨ
         ]);
         $this->command->info('All seeders ran successfully!');
     }

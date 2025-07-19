@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('slug');
             $table->string('type');
             $table->string('name_with_type');
+            $table->timestamps();
         });
 
         Schema::create('districts_old', function (Blueprint $table) {
@@ -27,6 +28,7 @@ return new class extends Migration
             $table->string('path_with_type');
             $table->string('parent_code');
             $table->foreign('parent_code')->references('code')->on('provinces_old')->onDelete('cascade');
+            $table->timestamps();
         });
 
         Schema::create('wards_old', function (Blueprint $table) {
@@ -37,6 +39,7 @@ return new class extends Migration
             $table->string('path_with_type');
             $table->string('parent_code');
             $table->foreign('parent_code')->references('code')->on('districts_old')->onDelete('cascade');
+            $table->timestamps();
         });
     }
 
