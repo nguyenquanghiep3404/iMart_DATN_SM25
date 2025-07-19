@@ -34,7 +34,7 @@ class LocationSeeder extends Seeder
     {
         $this->command->info('Seeding provinces...');
         
-        $provincesPath = database_path('locations/province.json');
+        $provincesPath = database_path('locations/new_province.json');
         
         if (!File::exists($provincesPath)) {
             $this->command->error('Province JSON file not found!');
@@ -76,7 +76,7 @@ class LocationSeeder extends Seeder
     {
         $this->command->info('Seeding wards...');
         
-        $wardsPath = database_path('locations/ward.json');
+        $wardsPath = database_path('locations/new_ward.json');
         
         if (!File::exists($wardsPath)) {
             $this->command->error('Ward JSON file not found!');
