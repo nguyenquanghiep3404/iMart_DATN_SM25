@@ -73,46 +73,60 @@
                     <div class="row">
                         <div class="col-md-6">
                             <h6>Địa chỉ nhận hàng</h6>
-                            <p>{{ $order->customer_name }}</p>
-                            <p>{{ $order->customer_phone }}</p>
-                            <p>{{ $order->shipping_address_line1 }}</p>
+                            <p><strong>Tên người nhận:</strong> {{ $order->customer_name }}</p>
+                            <p><strong>SĐT của người nhận:</strong> {{ $order->customer_phone }}</p>
+                            <p><strong>Địa chỉ chi tiết:</strong> {{ $order->shipping_address_line1 }}</p>
                             @if($order->shipping_address_line2)
-                            <p>{{ $order->shipping_address_line2 }}</p>
+                                <p>{{ $order->shipping_address_line2 }}</p>
                             @endif
+
                             <p>
+                                <strong>Phường/Xã:</strong>
                                 @if($order->shippingWard)
-                                {{ $order->shippingWard->name }},
+                                    {{ $order->shippingWard->name }}
                                 @else
-                                {{ $order->shipping_ward_code }},
-                                @endif
-                                @if($order->shippingProvince)
-                                {{ $order->shippingProvince->name }}
-                                @else
-                                {{ $order->shipping_province_code }}
+                                    {{ $order->shipping_ward_code }}
                                 @endif
                             </p>
+
+                            <p>
+                                <strong>Tỉnh/Thành:</strong>
+                                @if($order->shippingProvince)
+                                    {{ $order->shippingProvince->name }}
+                                @else
+                                    {{ $order->shipping_province_code }}
+                                @endif
+                            </p>
+
                         </div>
 
                         @if($order->billing_address_line1)
                         <div class="col-md-6">
                             <h6>Địa chỉ thanh toán</h6>
-                            <p>{{ $order->customer_name }}</p>
-                            <p>{{ $order->billing_address_line1 }}</p>
+                            <p><strong>Tên người thanh toán:</strong> {{ $order->customer_name }}</p>
+                            <p><strong>Địa chỉ chi tiết:</strong> {{ $order->billing_address_line1 }}</p>
                             @if($order->billing_address_line2)
-                            <p>{{ $order->billing_address_line2 }}</p>
+                            <p><strong>Địa chỉ:</strong> {{ $order->billing_address_line2 }}</p>
+                        @endif
+
+                        <p>
+                            <strong>Phường/Xã:</strong>
+                            @if($order->billingWard)
+                                {{ $order->billingWard->name }}
+                            @else
+                                {{ $order->billing_ward_code }}
                             @endif
-                            <p>
-                                @if($order->billingWard)
-                                {{ $order->billingWard->name }},
-                                @else
-                                {{ $order->billing_ward_code }},
-                                @endif
-                                @if($order->billingProvince)
+                        </p>
+
+                        <p>
+                            <strong>Tỉnh/Thành:</strong>
+                            @if($order->billingProvince)
                                 {{ $order->billingProvince->name }}
-                                @else
+                            @else
                                 {{ $order->billing_province_code }}
-                                @endif
-                            </p>
+                            @endif
+                        </p>
+
                         </div>
                         @endif
                     </div>
@@ -143,6 +157,7 @@
                                             @if($item->image_url)
                                             <img src="{{ $item->image_url }}" alt="{{ $item->product_name }}" class="img-thumbnail me-3" style="width: 60px;">
                                             @else
+                                            
                                             <div class="bg-light d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
                                                 <i class="fas fa-box-open text-muted"></i>
                                             </div>
