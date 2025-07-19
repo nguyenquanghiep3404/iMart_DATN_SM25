@@ -103,7 +103,7 @@
                                 fill="url(#half-grad)" />
                         </svg>
                     @else
-                        <svg class="w-4 h-4 fill-current text-gray-300" viewBox="0 0 20 20">
+                        <svg class="w-4 h-4 fill-current text-gray-200" viewBox="0 0 20 20">
                             <path
                                 d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276 5.212 6.084.878-4.18 4.09 1.698 5.91z" />
                         </svg>

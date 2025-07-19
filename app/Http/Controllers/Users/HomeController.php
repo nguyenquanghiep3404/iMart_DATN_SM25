@@ -5,23 +5,24 @@ namespace App\Http\Controllers\Users;
 use Carbon\Carbon;
 use App\Models\Post;
 use App\Models\Banner;
+use App\Models\Review;
 use App\Models\Comment;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\FlashSale;
+use App\Models\OrderItem;
 use Illuminate\Support\Str;
 use App\Models\PostCategory;
+use App\Models\WishlistItem;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\HomepageProductBlock;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
-use App\Models\WishlistItem;
-use App\Models\Review;
-use App\Models\OrderItem;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class HomeController extends Controller
@@ -135,6 +136,13 @@ class HomeController extends Controller
             ->take(8)
             ->get();
 
+        $suggestedProducts = Product::with('coverImage')
+            ->where('status', 'published')
+            ->inRandomOrder()
+            ->take(5)
+            ->get();
+
+
         // Tính rating & discount
         $calculateAverageRating($latestProducts);
 
@@ -168,6 +176,84 @@ class HomeController extends Controller
             ->take(3)
             ->get();
 
+        // === Lấy danh sách Flash Sale (theo logic quản lý) ===
+
+        $flashSales = FlashSale::with([
+            'flashSaleTimeSlots' => function ($q) {
+                $q->orderBy('start_time');
+            },
+            'flashSaleTimeSlots.products.productVariant.attributeValues.attribute',
+            'flashSaleTimeSlots.products.productVariant.product.coverImage',
+        ])->orderBy('start_time')->get();
+
+        // Xử lý format thời gian + tên biến thể đầy đủ và xác định slot đang active
+        $now = now();
+        $flashSales->each(function ($sale) use ($now) {
+            $activeSlotId = null;
+            $upcomingSlotId = null;
+            $minUpcomingTime = null;
+            foreach ($sale->flashSaleTimeSlots as $slot) {
+                $slot->start_time = \Carbon\Carbon::parse($slot->start_time)->toIso8601String();
+                $slot->end_time = \Carbon\Carbon::parse($slot->end_time)->toIso8601String();
+
+                $start = \Carbon\Carbon::parse($slot->start_time);
+                $end = \Carbon\Carbon::parse($slot->end_time);
+                $isActive = $now->between($start, $end);
+                $isUpcoming = $now->lt($start);
+                $isPast = $now->gt($end);
+                
+                \Log::info('DEBUG_FLASH_SLOT', [
+                    'slot_id' => $slot->id,
+                    'start_time' => $slot->start_time,
+                    'end_time' => $slot->end_time,
+                    'now' => $now->toIso8601String(),
+                    'isActive' => $isActive,
+                    'isUpcoming' => $isUpcoming,
+                    'isPast' => $isPast,
+                    'activeSlotId' => $activeSlotId,
+                ]);
+
+                if ($isActive && $activeSlotId === null) {
+                    $activeSlotId = $slot->id;
+                }
+                if ($isUpcoming && ($minUpcomingTime === null || $start->lt($minUpcomingTime))) {
+                    $minUpcomingTime = $start;
+                    $upcomingSlotId = $slot->id;
+                }
+
+                $slot->products->each(function ($product) {
+                    $variant = $product->productVariant;
+                    $productName = $variant->product->name ?? '';
+
+                    $attributes = $variant->attributeValues ?? collect();
+
+                    $nonColor = $attributes
+                        ->filter(fn($v) => $v->attribute->name !== 'Màu sắc')
+                        ->pluck('value')
+                        ->join(' ');
+
+                    $color = $attributes
+                        ->firstWhere(fn($v) => $v->attribute->name === 'Màu sắc')?->value;
+
+                    $variantName = trim($productName . ' ' . $nonColor . ' ' . $color);
+
+                    $product->variant_name = $variantName;
+                });
+            }
+            if ($activeSlotId) {
+                $sale->active_slot_id = $activeSlotId;
+            } elseif ($upcomingSlotId) {
+                $sale->active_slot_id = $upcomingSlotId;
+            } else {
+                $sale->active_slot_id = $sale->flashSaleTimeSlots->last()->id ?? null;
+            }
+            \Log::info('DEBUG_FLASH_SALE_ACTIVE_SLOT', [
+                'sale_id' => $sale->id,
+                'active_slot_id' => $sale->active_slot_id,
+            ]);
+        });
+
+
         return view('users.home', compact(
             'featuredProducts',
             'blocks',
@@ -176,6 +262,8 @@ class HomeController extends Controller
             'featuredPosts',
             'unreadNotificationsCount',
             'recentNotifications',
+            'flashSales'
+            'suggestedProducts' // 👈 THÊM BIẾN NÀY
         ));
     }
 
@@ -204,10 +292,31 @@ class HomeController extends Controller
             ->firstOrFail();
 
         $variantIds = $product->variants->pluck('id');
+
+        $ratingFilter = $request->query('rating');
+
         $allReviews = Review::with(['user', 'images'])
             ->whereIn('product_variant_id', $variantIds)
-            ->where('status', 'approved')
-            ->get();
+            ->where(function ($query) {
+                $query->where('status', 'approved');
+
+                if (Auth::check()) {
+                    $query->orWhere(function ($q) {
+                        $q->where('user_id', Auth::id())
+                            ->whereIn('status', ['pending', 'rejected', 'spam']);
+                    });
+
+                    if (Auth::user()->hasRole('admin')) {
+                        $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+                    }
+                }
+            });
+
+        if ($ratingFilter && in_array((int)$ratingFilter, [1, 2, 3, 4, 5])) {
+            $allReviews = $allReviews->where('rating', (int)$ratingFilter);
+        }
+        $allReviews  = $allReviews->get();
+
         // 2. Lấy TẤT CẢ bình luận (comments) gốc đã được duyệt
         // (Giữ nguyên logic query comment phức tạp của bạn)
         $allComments = $product->comments()
@@ -471,7 +580,9 @@ class HomeController extends Controller
             $starRatingsCount[$i] = $product->reviews->where('rating', $i)->count();
         }
         $hasReviewed = false; // ✅ Khởi tạo mặc định trước
+        $totalReviewsCount = $allReviews->count();
 
+        $totalCommentsCount = $allComments->count();
         // Chỉ tìm kiếm order_item_id nếu người dùng đã đăng nhập
         if (Auth::check()) {
             $userId = Auth::id(); // Lấy ID của người dùng hiện tại
@@ -556,7 +667,9 @@ class HomeController extends Controller
             'paginatedItems',
             'allComments',
             'allReviews',
-            
+            'totalReviewsCount',
+            'totalCommentsCount',
+            'ratingFilter',
         ));
     }
 
@@ -905,17 +1018,74 @@ class HomeController extends Controller
     public function search(Request $request)
     {
         $query = $request->input('q');
+        $tab = $request->input('tab', 'san-pham'); // mặc định là 'san-pham'
 
-        $products = Product::with('category')
-            ->where('name', 'like', "%{$query}%")
-            ->orWhere('description', 'like', "%{$query}%")
+        if ($tab === 'bai-viet') {
+            $posts = Post::with('coverImage')
+                ->where('status', 'published')
+                ->where(function ($q) use ($query) {
+                    $q->where('slug', 'like', "%{$query}%")
+                        ->orWhere('title', 'like', "%{$query}%");
+                })
+                ->paginate(10);
+
+            return view('users.blogs.index', [
+                'posts' => $posts,
+                'parentCategories' => PostCategory::withCount('posts')->whereNull('parent_id')->get(),
+                'featuredPosts' => Post::where('is_featured', true)->where('status', 'published')->latest()->take(5)->get(),
+                'currentCategory' => null,
+            ]);
+        }
+
+        // Tab mặc định: Sản phẩm
+        // Tab mặc định: Sản phẩm
+        $products = Product::with(['category', 'variants', 'coverImage'])
+            ->where('status', 'published')
+            ->where(function ($q) use ($query) {
+                $q->where('slug', 'like', "%{$query}%")
+                    ->orWhere('name', 'like', "%{$query}%");
+            })
             ->paginate(12);
+
+        // ✅ Thêm dòng này để truyền danh mục vào view
+        $categories = Category::all();
+        $parentCategories = $categories->whereNull('parent_id');
 
         return view('users.shop', [
             'products' => $products,
-            'categories' => Category::all(), // để sidebar hoạt động
             'searchQuery' => $query,
-            'currentCategory' => null, // để tránh breadcrumb danh mục
+            'tab' => $tab,
+            'categories' => $categories,
+            'parentCategories' => $parentCategories,
+            'currentCategory' => null, // vì không phải xem theo danh mục
         ]);
+    }
+
+    public function searchSuggestions(Request $request)
+    {
+        $query = $request->input('q');
+
+        $products = Product::with(['coverImage', 'variants'])
+            ->where('status', 'published')
+            ->where('name', 'like', "%{$query}%")
+            ->take(5)
+            ->get()
+            ->map(function ($product) {
+                $variants = $product->variants;
+
+                // Lấy giá sale thấp nhất (nếu có), nếu không thì lấy giá gốc
+                $minSalePrice = $variants->whereNotNull('sale_price')->min('sale_price');
+                $minPrice = $variants->min('price');
+
+                return [
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'price' => $minPrice ? number_format($minPrice) . ' ₫' : null,
+                    'sale_price' => $minSalePrice ? number_format($minSalePrice) . ' ₫' : null,
+                    'image_url' => $product->coverImage->url ?? asset('images/no-image.png'),
+                ];
+            });
+
+        return response()->json($products);
     }
 }

@@ -88,37 +88,37 @@
             <div id="tab-specs-content" class="tab-content">
                 <div class="space-y-3" id="specs-accordion">
                     @if (!empty($specGroupsData))
-                        <div class="space-y-3">
-                            @foreach ($specGroupsData as $groupName => $specs)
-                                <div>
-                                    <button
-                                        class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
-                                        <span class="font-semibold text-gray-800">{{ $groupName }}</span>
-                                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none"
-                                            stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 9l-7 7-7-7" />
-                                        </svg>
-                                    </button>
-                                    <div class="accordion-content hidden">
-                                        <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                                            <dl class="divide-y divide-gray-100">
-                                                @foreach ($specs as $specName => $value)
-                                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                                        <dt class="text-sm font-medium text-gray-600">
-                                                            {{ $specName }}
-                                                        </dt>
-                                                        <dd class="text-sm text-gray-800 col-span-2">{{ $value }}
-                                                        </dd>
-                                                    </div>
-                                                @endforeach
-                                            </dl>
+                    <div class="space-y-3">
+                        @foreach ($specGroupsData as $groupName => $specs)
+                        <div>
+                            <button
+                                class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                <span class="font-semibold text-gray-800">{{ $groupName }}</span>
+                                <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none"
+                                    stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div class="accordion-content hidden">
+                                <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
+                                    <dl class="divide-y divide-gray-100">
+                                        @foreach ($specs as $specName => $value)
+                                        <div class="px-1 py-2 grid grid-cols-3 gap-4">
+                                            <dt class="text-sm font-medium text-gray-600">
+                                                {{ $specName }}
+                                            </dt>
+                                            <dd class="text-sm text-gray-800 col-span-2">{{ $value }}
+                                            </dd>
                                         </div>
-                                    </div>
+                                        @endforeach
+                                    </dl>
                                 </div>
-                            @endforeach
+                            </div>
                         </div>
+                        @endforeach
+                    </div>
                     @endif
                 </div>
             </div>
@@ -144,58 +144,110 @@
                     <p class="text-sm text-gray-600">Bạn cần mua và nhận hàng để viết đánh giá.</p>
                 @endif
             @else
-                <p class="text-sm text-gray-600">Đăng nhập để viết đánh giá.</p>
+            <p class="text-sm text-green-600">Bạn đã đánh giá sản phẩm này.</p>
+            @endif
+            @else
+            <p class="text-sm text-gray-600">Bạn cần mua và nhận hàng để viết đánh giá.</p>
+            @endif
+            @else
+            <p class="text-sm text-gray-600">Đăng nhập để viết đánh giá.</p>
             @endauth
         </div>
 
         {{-- Thống kê sao --}}
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div class="flex flex-col items-center justify-center md:border-r md:border-gray-200 md:pr-8">
-                <p class="text-4xl font-bold text-gray-800">{{ number_format($averageRating, 1) }} / 5</p>
-                <div class="flex text-yellow-400 my-2">
-                    @for ($i = 1; $i <= 5; $i++)
-                        @if ($i <= round($averageRating))
-                            ★
-                        @else
-                            <span class="text-gray-300">★</span>
-                        @endif
-                    @endfor
-                </div>
-                <p class="text-sm text-gray-600">({{ number_format($totalReviews) }} đánh giá)</p>
-            </div>
-            <div class="col-span-2">
-                <div class="space-y-1">
-                    @foreach ([5, 4, 3, 2, 1] as $star)
-                        @php
-                            $count = $starRatingsCount[$star] ?? 0;
-                            $percentage = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
-                        @endphp
-                        <div class="flex items-center gap-2 text-sm">
-                            <span class="text-yellow-400">{{ $star }} ★</span>
-                            <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                <div class="bg-yellow-400 h-2.5 rounded-full" style="width: {{ $percentage }}%"></div>
-                            </div>
-                            <span class="text-gray-600 w-12 text-right">{{ number_format($count) }}</span>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
+    <!-- Cột trái: Trung bình đánh giá -->
+    <div class="flex flex-col items-center justify-center md:border-r md:border-gray-200 md:pr-8">
+        <p class="text-4xl font-bold text-gray-800">
+            {{ number_format($averageRating, 1) }} / 5
+        </p>
+
+        <!-- Hiển thị sao trung bình -->
+        <div class="flex my-2">
+            @for ($i = 1; $i <= 5; $i++)
+                @if ($averageRating >= $i)
+                    <!-- Sao đầy -->
+                    <svg class="w-5 h-5 fill-current text-yellow-400" viewBox="0 0 20 20">
+                        <path d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276 
+                        5.212 6.084.878-4.18 4.09 1.698 5.91z" />
+                    </svg>
+                @elseif ($averageRating >= $i - 0.5)
+                    <!-- Sao nửa -->
+                    <svg class="w-5 h-5 fill-current text-yellow-400" viewBox="0 0 20 20">
+                        <defs>
+                            <linearGradient id="half-grad-{{ $i }}" x1="0" x2="1" y1="0" y2="0">
+                                <stop offset="50%" stop-color="currentColor" />
+                                <stop offset="50%" stop-color="#e5e7eb" />
+                            </linearGradient>
+                        </defs>
+                        <path fill="url(#half-grad-{{ $i }})"
+                            d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276 
+                            5.212 6.084.878-4.18 4.09 1.698 5.91z" />
+                    </svg>
+                @else
+                    <!-- Sao rỗng -->
+                    <svg class="w-5 h-5 fill-current text-gray-200" viewBox="0 0 20 20">
+                        <path d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276 
+                        5.212 6.084.878-4.18 4.09 1.698 5.91z" />
+                    </svg>
+                @endif
+            @endfor
         </div>
+
+        <p class="text-sm text-gray-600">
+            ({{ number_format($totalReviews) }} đánh giá)
+        </p>
+    </div>
+
+    <!-- Cột phải: Thống kê theo từng sao -->
+    <div class="col-span-2">
+        <div class="space-y-2">
+            @foreach ([5, 4, 3, 2, 1] as $star)
+                @php
+                    $count = $starRatingsCount[$star] ?? 0;
+                    $percentage = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
+                @endphp
+                <div class="flex items-center gap-2 text-sm">
+                    <span class="text-yellow-400 w-10">{{ $star }} ★</span>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                        <div class="bg-yellow-400 h-2.5 rounded-full transition-all duration-300"
+                             style="width: {{ $percentage }}%"></div>
+                    </div>
+                    <span class="text-gray-600 w-12 text-right">{{ number_format($count) }}</span>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</div>
+
 
         {{-- Khu vực bình luận và danh sách tổng hợp --}}
         <div class="mt-6 border-t border-gray-200 pt-6">
             <div class="flex justify-between items-center mb-4 flex-wrap gap-y-4">
-                <h3 class="text-lg font-bold text-gray-800">
-                    Tất cả nhận xét ({{ $totalReviews + $commentsCount }})
-                </h3>
-                {{-- Các nút filter --}}
-                <div class="flex gap-2 flex-wrap">
-                    <button
-                        class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full border-2 border-transparent hover:border-gray-400">Tất
-                        cả</button>
-                    {{-- Các nút filter theo sao khác --}}
-                </div>
-            </div>
+    <h3 class="text-lg font-bold text-gray-800">
+        Tất cả nhận xét ({{ $totalReviewsCount + $totalCommentsCount }})
+    </h3>
+
+    {{-- Các nút filter --}}
+    <div class="flex gap-2 flex-wrap">
+        {{-- Nút "Tất cả" --}}
+        <a href="{{ request()->url() }}"
+           class="px-3 py-1 text-sm font-medium rounded-full border
+           {{ request()->has('rating') ? 'bg-gray-200 text-gray-800 hover:border-gray-400' : 'bg-gray-800 text-white border-gray-700' }}">
+            Tất cả
+        </a>
+
+        {{-- Các nút filter theo sao --}}
+        @for ($i = 5; $i >= 1; $i--)
+            <a href="{{ request()->fullUrlWithQuery(['rating' => $i, 'page' => 1]) }}"
+               class="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:bg-gray-200
+               {{ request('rating') == $i ? 'bg-gray-800 text-white border-gray-700' : 'bg-gray-200 text-gray-800 hover:border-gray-400' }}">
+                {{ $i }} <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+            </a>
+        @endfor
+    </div>
+</div>
+
 
             <!-- Form để lại bình luận (nếu có) -->
             @include('users.products.partials.product-comments')
@@ -203,52 +255,47 @@
             <!-- DANH SÁCH GỘP (BÌNH LUẬN & ĐÁNH GIÁ) -->
             <div id="combined-list" class="mt-6">
                 @forelse ($paginatedItems as $item)
-                    {{-- MỤC NÀY LÀ MỘT ĐÁNH GIÁ (REVIEW) --}}
-                    @if ($item->type === 'review')
-                        @php $review = $item->data; @endphp
-                        <div class="border-b border-gray-200 py-4">
-                            <div class="flex items-start gap-4">
-                                {{-- Avatar --}}
-                                @if ($review->user->avatar_url)
-                                    <img src="{{ $review->user->avatar_url }}" alt="{{ $review->user->name }}"
-                                        class="w-10 h-10 rounded-full object-cover">
-                                @else
-                                    <div
-                                        class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
-                                        {{ strtoupper(mb_substr($review->user->name, 0, 1)) }}
-                                    </div>
-                                @endif
+                {{-- MỤC NÀY LÀ MỘT ĐÁNH GIÁ (REVIEW) --}}
+                @if ($item->type === 'review')
+                @php $review = $item->data; @endphp
+                <div class="border-b border-gray-200 py-4">
+                    <div class="flex items-start gap-4">
+                        {{-- Avatar --}}
+                        @if ($review->user->avatar_url)
+                        <img src="{{ $review->user->avatar_url }}" alt="{{ $review->user->name }}" class="w-10 h-10 rounded-full object-cover">
+                        @else
+                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
+                            {{ strtoupper(mb_substr($review->user->name, 0, 1)) }}
+                        </div>
+                        @endif
 
-                                <div class="flex-1">
-                                    <p class="font-semibold text-gray-800">{{ $review->user->name }}</p>
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">{{ $review->user->name }}</p>
 
-                                    {{-- Sao đánh giá --}}
-                                    <div class="flex text-yellow-400 text-sm my-1">
-                                        @for ($i = 1; $i <= 5; $i++)
-                                            @if ($i <= $review->rating)
-                                                ★
-                                            @else
-                                                <span class="text-gray-300">★</span>
-                                            @endif
-                                        @endfor
-                                    </div>
-
-                                    {{-- Ảnh review --}}
-                                    @if ($review->images->count())
-                                        <div class="flex gap-2 mt-2 flex-wrap">
-                                            @foreach ($review->images as $image)
-                                                <a href="{{ Storage::url($image->path) }}" target="_blank"
-                                                    class="block">
-                                                    <img src="{{ Storage::url($image->path) }}" alt="Ảnh đánh giá"
-                                                        class="w-20 h-20 rounded-md object-cover border border-gray-200">
-                                                </a>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                    <span
-                                        class="text-xs text-gray-500 mt-2 flex items-center gap-4">{{ $review->created_at->diffForHumans() }}</span>
-                                </div>
+                            {{-- Sao đánh giá --}}
+                            <div class="flex text-yellow-400 text-sm my-1">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    @if ($i <=$review->rating) ★ @else <span class="text-gray-300">★</span> @endif
+                                    @endfor
                             </div>
+                            <p class="text-sm text-gray-600 review-text">{{ $review->comment }}</p>
+                            {{-- Ảnh review --}}
+                            @if ($review->images->count())
+                            <div class="flex gap-2 mt-2 flex-wrap">
+                                @foreach ($review->images as $image)
+                                <a href="{{ Storage::url($image->path) }}" target="_blank" class="block">
+                                    <img src="{{ Storage::url($image->path) }}" alt="Ảnh đánh giá" class="w-20 h-20 rounded-md object-cover border border-gray-200">
+                                </a>
+                                @endforeach
+                            </div>
+                            @endif
+
+                            <span class="text-xs text-gray-500 mt-2 flex items-center gap-4">{{ $review->created_at->diffForHumans() }}</span>
+
+                            {{-- THÔNG BÁO TRẠNG THÁI --}}
+                          @if ($review->status !== 'approved' && Auth::check() && ($review->user_id === Auth::id() || Auth::user()->hasRole('admin')))
+                            <p class="text-yellow-600 text-sm italic mt-1">Bình luận của bạn đang chờ duyệt</p>
+                            @endif
                         </div>
                         {{-- MỤC NÀY LÀ MỘT BÌNH LUẬN (COMMENT) --}}
                     @elseif ($item->type === 'comment')
@@ -256,7 +303,7 @@
                     @endif
 
                 @empty
-                    <p class="text-sm text-gray-500 mt-4">Chưa có đánh giá hoặc bình luận nào.</p>
+                <p class="text-sm text-gray-500 mt-4">Chưa có đánh giá hoặc bình luận nào.</p>
                 @endforelse
 
                 <!-- NÚT PHÂN TRANG -->
@@ -355,10 +402,12 @@
                             </div>
                         </a>
                     </div>
-                @endforeach
+                </a>
             </div>
+            @endforeach
+        </div>
         @else
-            <p class="text-center text-gray-500">Không có sản phẩm tương tự.</p>
+        <p class="text-center text-gray-500">Không có sản phẩm tương tự.</p>
         @endif
     </section>
 </div>
@@ -425,6 +474,7 @@
     const ORDER_ITEM_ID = {{ isset($orderItemId) ? json_encode($orderItemId) : 'null' }};
     const PRODUCT_VARIANT_ID = {{ json_encode($defaultVariant->id ?? null) }};
     const reviewPostUrl = "{{ route('reviews.store') }}";
+
 
     // Gửi phản hồi (trả lời bình luận)
     function initReplyForm() {
@@ -532,6 +582,24 @@
                 `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
             starsContainer.appendChild(star);
         }
+        function showModal(modal) {
+        modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+        setTimeout(() => {
+            modal.classList.add('opacity-100');
+            modal.querySelector('div[class*="transform"]').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function hideModal(modal) {
+        document.body.classList.remove('overflow-hidden');
+        modal.classList.remove('opacity-100');
+        modal.querySelector('div[class*="transform"]').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
 
         const stars = starsContainer.querySelectorAll('.review-star');
         stars.forEach(star => {
