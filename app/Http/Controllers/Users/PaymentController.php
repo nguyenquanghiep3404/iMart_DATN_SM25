@@ -8,6 +8,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\ProductInventory;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Coupon;
@@ -38,8 +39,8 @@ class PaymentController extends Controller
     {
         // Validate dữ liệu
         $request->validate([
-            'province_code' => 'required|string|exists:provinces,code',
-            'ward_code' => 'required|string|exists:wards,code',
+            'province_code' => 'required|string|exists:provinces_new,code',
+            'ward_code' => 'required|string|exists:wards_new,code',
             'shipping_method' => 'required|string',
             'shipping_time' => 'nullable|string',
             'full_name' => 'required|string|max:255',
@@ -195,30 +196,47 @@ class PaymentController extends Controller
             ]);
             // Tạo order items
             foreach ($cartData['items'] as $item) {
-                $variant = $item->productVariant ?? ProductVariant::find($item->productVariant->id);
-                // Kiểm tra tồn kho
-                if ($variant->manage_stock && $variant->stock_quantity < $item->quantity) {
-                    throw new \Exception("Sản phẩm {$variant->product->name} không đủ hàng.");
-                }
-                // Lấy thông tin thuộc tính của variant
-                $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
-                    return [$attrValue->attribute->name => $attrValue->value];
-                })->toArray();
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_variant_id' => $variant->id,
-                    'sku' => $variant->sku,
-                    'product_name' => $variant->product->name,
-                    'variant_attributes' => $variantAttributes,
-                    'quantity' => $item->quantity,
-                    'sku' => $variant->sku,
-                    'price' => $item->price,
-                    'total_price' => $item->price * $item->quantity,
-                ]);
+                $cartable = $item->productVariant ?? $item->cartable;
+                $cartableType = $item->cartable_type ?? ProductVariant::class;
+                
+                // Chỉ kiểm tra và trừ tồn kho cho sản phẩm mới (ProductVariant)
+                if ($cartableType === ProductVariant::class) {
+                    // Kiểm tra tồn kho
+                    if (!$this->checkStockAvailability($cartable, $item->quantity)) {
+                        $availableStock = $this->getSellableStock($cartable);
+                        throw new \Exception("Sản phẩm {$cartable->product->name} không đủ hàng. Hiện chỉ còn {$availableStock} sản phẩm.");
+                    }
+                    
+                    // Lấy thông tin thuộc tính của variant
+                    $variantAttributes = $cartable->attributeValues->mapWithKeys(function ($attrValue) {
+                        return [$attrValue->attribute->name => $attrValue->value];
+                    })->toArray();
+                    
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_variant_id' => $cartable->id,
+                        'sku' => $cartable->sku,
+                        'product_name' => $cartable->product->name,
+                        'variant_attributes' => $variantAttributes,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'total_price' => $item->price * $item->quantity,
+                    ]);
 
-                // Trừ tồn kho nếu có quản lý kho
-                if ($variant->manage_stock) {
-                    $variant->decrement('stock_quantity', $item->quantity);
+                    // Trừ tồn kho cho sản phẩm mới
+                    $this->decrementInventoryStock($cartable, $item->quantity);
+                } else {
+                    // Sản phẩm cũ hoặc loại khác - không trừ tồn kho
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_variant_id' => null, // Hoặc logic khác tùy theo loại sản phẩm
+                        'sku' => $cartable->sku ?? 'OLD-' . $cartable->id,
+                        'product_name' => $cartable->product->name,
+                        'variant_attributes' => [], // Hoặc logic khác
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'total_price' => $item->price * $item->quantity,
+                    ]);
                 }
             }
             // Lưu thông tin sử dụng coupon nếu có
@@ -287,25 +305,43 @@ class PaymentController extends Controller
             ]);
 
             foreach ($cartData['items'] as $item) {
-                $variant = $item->productVariant ?? ProductVariant::find($item->productVariant->id);
-                if (!$variant) {
-                    throw new \Exception("Không tìm thấy biến thể sản phẩm cho một mục trong giỏ hàng.");
+                $cartable = $item->productVariant ?? $item->cartable;
+                $cartableType = $item->cartable_type ?? ProductVariant::class;
+                
+                if (!$cartable) {
+                    throw new \Exception("Không tìm thấy sản phẩm cho một mục trong giỏ hàng.");
                 }
 
-                $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
-                    return [$attrValue->attribute->name => $attrValue->value];
-                })->toArray();
+                // Xử lý dựa trên loại sản phẩm
+                if ($cartableType === ProductVariant::class) {
+                    // Sản phẩm mới
+                    $variantAttributes = $cartable->attributeValues->mapWithKeys(function ($attrValue) {
+                        return [$attrValue->attribute->name => $attrValue->value];
+                    })->toArray();
 
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_variant_id' => $variant->id,
-                    'sku' => $variant->sku,
-                    'product_name' => $variant->product->name,
-                    'variant_attributes' => $variantAttributes,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                    'total_price' => $item->price * $item->quantity,
-                ]);
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_variant_id' => $cartable->id,
+                        'sku' => $cartable->sku,
+                        'product_name' => $cartable->product->name,
+                        'variant_attributes' => $variantAttributes,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'total_price' => $item->price * $item->quantity,
+                    ]);
+                } else {
+                    // Sản phẩm cũ hoặc loại khác
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_variant_id' => null,
+                        'sku' => $cartable->sku ?? 'OLD-' . $cartable->id,
+                        'product_name' => $cartable->product->name,
+                        'variant_attributes' => [],
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'total_price' => $item->price * $item->quantity,
+                    ]);
+                }
             }
 
             $vnp_Url = config('vnpay.url');
@@ -409,12 +445,15 @@ class PaymentController extends Controller
                         $order->payment_status = Order::PAYMENT_PAID;
                         $order->save();
 
-                        // Trừ tồn kho
+                        // Trừ tồn kho chỉ cho sản phẩm mới
                         foreach ($order->items as $item) {
-                            $variant = ProductVariant::find($item->product_variant_id);
-                            if ($variant && $variant->manage_stock) {
-                                $variant->decrement('stock_quantity', $item->quantity);
+                            if ($item->product_variant_id) {
+                                $variant = ProductVariant::find($item->product_variant_id);
+                                if ($variant) {
+                                    $this->decrementInventoryStock($variant, $item->quantity);
+                                }
                             }
+                            // Sản phẩm cũ không cần trừ tồn kho
                         }
 
                         // Xóa giỏ hàng
@@ -472,10 +511,13 @@ class PaymentController extends Controller
                         $order->save();
 
                         foreach ($order->items as $item) {
-                            $variant = ProductVariant::find($item->product_variant_id);
-                            if ($variant && $variant->manage_stock) {
-                                $variant->decrement('stock_quantity', $item->quantity);
+                            if ($item->product_variant_id) {
+                                $variant = ProductVariant::find($item->product_variant_id);
+                                if ($variant) {
+                                    $this->decrementInventoryStock($variant, $item->quantity);
+                                }
                             }
+                            // Sản phẩm cũ không cần trừ tồn kho
                         }
                     }
                 } else {
@@ -520,23 +562,43 @@ class PaymentController extends Controller
             ]);
 
             foreach ($cartData['items'] as $item) {
-                $variant = $item->productVariant ?? ProductVariant::find($item->productVariant->id);
-                if (!$variant) {
-                    throw new \Exception("Không tìm thấy biến thể sản phẩm cho một mục trong giỏ hàng.");
+                $cartable = $item->productVariant ?? $item->cartable;
+                $cartableType = $item->cartable_type ?? ProductVariant::class;
+                
+                if (!$cartable) {
+                    throw new \Exception("Không tìm thấy sản phẩm cho một mục trong giỏ hàng.");
                 }
-                $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
-                    return [$attrValue->attribute->name => $attrValue->value];
-                })->toArray();
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_variant_id' => $variant->id,
-                    'sku' => $variant->sku,
-                    'product_name' => $variant->product->name,
-                    'variant_attributes' => $variantAttributes,
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                    'total_price' => $item->price * $item->quantity,
-                ]);
+
+                // Xử lý dựa trên loại sản phẩm
+                if ($cartableType === ProductVariant::class) {
+                    // Sản phẩm mới
+                    $variantAttributes = $cartable->attributeValues->mapWithKeys(function ($attrValue) {
+                        return [$attrValue->attribute->name => $attrValue->value];
+                    })->toArray();
+
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_variant_id' => $cartable->id,
+                        'sku' => $cartable->sku,
+                        'product_name' => $cartable->product->name,
+                        'variant_attributes' => $variantAttributes,
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'total_price' => $item->price * $item->quantity,
+                    ]);
+                } else {
+                    // Sản phẩm cũ hoặc loại khác
+                    OrderItem::create([
+                        'order_id' => $order->id,
+                        'product_variant_id' => null,
+                        'sku' => $cartable->sku ?? 'OLD-' . $cartable->id,
+                        'product_name' => $cartable->product->name,
+                        'variant_attributes' => [],
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'total_price' => $item->price * $item->quantity,
+                    ]);
+                }
             }
 
             $endpoint = config('momo.endpoint');
@@ -644,10 +706,13 @@ class PaymentController extends Controller
                 $order->payment_status = Order::PAYMENT_PAID;
                 $order->save();
                 foreach ($order->items as $item) {
-                    $variant = ProductVariant::find($item->product_variant_id);
-                    if ($variant && $variant->manage_stock) {
-                        $variant->decrement('stock_quantity', $item->quantity);
+                    if ($item->product_variant_id) {
+                        $variant = ProductVariant::find($item->product_variant_id);
+                        if ($variant) {
+                            $this->decrementInventoryStock($variant, $item->quantity);
+                        }
                     }
+                    // Sản phẩm cũ không cần trừ tồn kho
                 }
                 $this->clearPurchaseSession();
             }
@@ -702,10 +767,13 @@ class PaymentController extends Controller
                 $order->status = Order::STATUS_PROCESSING;
                 $order->save();
                 foreach ($order->items as $item) {
-                    $variant = ProductVariant::find($item->product_variant_id);
-                    if ($variant && $variant->manage_stock) {
-                        $variant->decrement('stock_quantity', $item->quantity);
+                    if ($item->product_variant_id) {
+                        $variant = ProductVariant::find($item->product_variant_id);
+                        if ($variant) {
+                            $this->decrementInventoryStock($variant, $item->quantity);
+                        }
                     }
+                    // Sản phẩm cũ không cần trừ tồn kho
                 }
             }
         } else {
@@ -779,31 +847,76 @@ public function showBankTransferQr(Order $order)
         $subtotal = 0;
         $voucher = session('applied_voucher');
         $discount = 0;
+        
         if ($user && $user->cart) {
-            // User đã đăng nhập - lấy từ database
+            // User đã đăng nhập - lấy từ database với polymorphic relationship
             $items = $user->cart->items()
-                ->with('productVariant.product', 'productVariant.attributeValues.attribute', 'productVariant.primaryImage')
+                ->with('cartable.product', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
                 ->get()
-                ->filter(fn($item) => $item->productVariant && $item->productVariant->product)
+                ->filter(fn($item) => $item->cartable && $item->cartable->product)
                 ->map(function ($item) {
-                    $item->stock_quantity = $item->productVariant?->stock_quantity ?? 0;
+                    // Xử lý dựa trên loại sản phẩm
+                    if ($item->cartable_type === ProductVariant::class) {
+                        // Sản phẩm mới - có thể trừ tồn kho
+                        $item->stock_quantity = $this->getSellableStock($item->cartable) ?? 0;
+                        $item->productVariant = $item->cartable; // Để tương thích với code cũ
+                    } else {
+                        // Sản phẩm cũ hoặc loại khác - không trừ tồn kho
+                        $item->stock_quantity = 999; // Hoặc logic khác tùy theo loại sản phẩm
+                        $item->productVariant = $item->cartable; // Để tương thích với code cũ
+                    }
                     return $item;
                 });
         } else {
             // Khách vãng lai - lấy từ session
             $sessionCart = session('cart', []);
             $items = collect($sessionCart)->map(function ($data) {
-                $variant = ProductVariant::with('product', 'attributeValues.attribute', 'primaryImage')->find($data['variant_id']);
+                // Kiểm tra loại sản phẩm từ session
+                $cartableType = $data['cartable_type'] ?? ProductVariant::class;
+                $cartableId = $data['cartable_id'] ?? $data['variant_id'] ?? null;
+                
+                if (!$cartableId) {
+                    return null;
+                }
+                
+                $cartable = null;
+                
+                switch ($cartableType) {
+                    case ProductVariant::class:
+                        $cartable = ProductVariant::with('product', 'attributeValues.attribute', 'primaryImage')->find($cartableId);
+                        break;
+                    // Có thể thêm các case khác cho sản phẩm cũ
+                    // case TradeInItem::class:
+                    //     $cartable = TradeInItem::with('product')->find($cartableId);
+                    //     break;
+                    default:
+                        return null;
+                }
+                
+                if (!$cartable || !$cartable->product) {
+                    return null;
+                }
+                
+                $stockQuantity = 0;
+                if ($cartableType === ProductVariant::class) {
+                    $stockQuantity = $this->getSellableStock($cartable);
+                } else {
+                    $stockQuantity = 999; // Hoặc logic khác cho sản phẩm cũ
+                }
+                
                 return (object) [
-                    'id' => $data['variant_id'],
-                    'productVariant' => $variant,
+                    'id' => $cartableId,
+                    'productVariant' => $cartable,
                     'price' => $data['price'],
                     'quantity' => $data['quantity'],
-                    'stock_quantity' => $variant?->stock_quantity ?? 0,
+                    'stock_quantity' => $stockQuantity,
+                    'cartable_type' => $cartableType,
                 ];
-            })->filter(fn($item) => $item->productVariant && $item->productVariant->product);
+            })->filter(fn($item) => $item && $item->productVariant && $item->productVariant->product);
         }
+        
         $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+        
         // Tính giảm giá từ voucher
         if ($voucher) {
             $discount = $voucher['type'] === 'percentage'
@@ -920,10 +1033,11 @@ public function showBankTransferQr(Order $order)
             ], 422);
         }
         // Kiểm tra tồn kho
-        if ($variant->manage_stock && $variant->stock_quantity < $request->quantity) {
+        if (!$this->checkStockAvailability($variant, $request->quantity)) {
+            $availableStock = $this->getSellableStock($variant);
             return response()->json([
                 'success' => false,
-                'message' => 'Số lượng vượt quá tồn kho. Hiện chỉ còn ' . $variant->stock_quantity . ' sản phẩm.'
+                'message' => 'Số lượng vượt quá tồn kho. Hiện chỉ còn ' . $availableStock . ' sản phẩm.'
             ], 422);
         }
         // Tính giá hiện tại sale price hoặc regular price
@@ -974,8 +1088,8 @@ public function showBankTransferQr(Order $order)
     {
         // Validate dữ liệu (giống như processOrder)
         $request->validate([
-            'province_code' => 'required|string|exists:provinces,code',
-            'ward_code' => 'required|string|exists:wards,code',
+            'province_code' => 'required|string|exists:provinces_new,code',
+            'ward_code' => 'required|string|exists:wards_new,code',
             'shipping_method' => 'required|string',
             'shipping_time' => 'nullable|string',
             'full_name' => 'required|string|max:255',
@@ -1048,8 +1162,9 @@ public function showBankTransferQr(Order $order)
             $item = $buyNowData['items']->first();
             $variant = $item->productVariant;
             // Kiểm tra tồn kho lần cuối
-            if ($variant->manage_stock && $variant->stock_quantity < $item->quantity) {
-                throw new \Exception("Sản phẩm {$variant->product->name} không đủ hàng.");
+            if (!$this->checkStockAvailability($variant, $item->quantity)) {
+                $availableStock = $this->getSellableStock($variant);
+                throw new \Exception("Sản phẩm {$variant->product->name} không đủ hàng. Hiện chỉ còn {$availableStock} sản phẩm.");
             }
             // Lấy thông tin thuộc tính của variant
             $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
@@ -1066,9 +1181,7 @@ public function showBankTransferQr(Order $order)
                 'total_price' => $item->price * $item->quantity,
             ]);
             // Trừ tồn kho nếu có quản lý kho
-            if ($variant->manage_stock) {
-                $variant->decrement('stock_quantity', $item->quantity);
-            }
+            $this->decrementInventoryStock($variant, $item->quantity);
             // Xóa session Buy Now
             $this->clearBuyNowSession();
             DB::commit();
@@ -1110,9 +1223,11 @@ public function showBankTransferQr(Order $order)
             (object)[
                 'id' => $variant->id,
                 'productVariant' => $variant,
+                'cartable' => $variant, // Để tương thích với logic đa hình
+                'cartable_type' => ProductVariant::class, // Để tương thích với logic đa hình
                 'price' => $buyNowSession['price'],
                 'quantity' => $buyNowSession['quantity'],
-                'stock_quantity' => $variant->stock_quantity,
+                'stock_quantity' => $this->getSellableStock($variant),
             ]
         ]);
         $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
@@ -1134,5 +1249,54 @@ public function showBankTransferQr(Order $order)
     private function clearBuyNowSession()
     {
         session()->forget('buy_now_session');
+    }
+
+    /**
+     * Helper method để kiểm tra tồn kho từ bảng product_inventories
+     */
+    private function checkStockAvailability(ProductVariant $variant, int $quantity): bool
+    {
+        if (!$variant->manage_stock) {
+            return true;
+        }
+
+        $availableStock = $variant->inventories()
+            ->where('inventory_type', 'new')
+            ->sum('quantity');
+
+        return $availableStock >= $quantity;
+    }
+
+    /**
+     * Helper method để trừ tồn kho từ bảng product_inventories
+     */
+    private function decrementInventoryStock(ProductVariant $variant, int $quantity): void
+    {
+        if (!$variant->manage_stock) {
+            return;
+        }
+
+        // Lấy tồn kho hàng mới
+        $newInventory = $variant->inventories()
+            ->where('inventory_type', 'new')
+            ->first();
+
+        if ($newInventory && $newInventory->quantity >= $quantity) {
+            $newInventory->decrement('quantity', $quantity);
+        } else {
+            // Nếu không đủ hàng mới, có thể xử lý logic khác ở đây
+            // Ví dụ: lấy từ hàng open_box hoặc báo lỗi
+            throw new \Exception("Không đủ tồn kho cho sản phẩm {$variant->product->name}");
+        }
+    }
+
+    /**
+     * Helper method để lấy tồn kho có thể bán
+     */
+    private function getSellableStock(ProductVariant $variant): int
+    {
+        return $variant->inventories()
+            ->where('inventory_type', 'new')
+            ->sum('quantity');
     }
 }

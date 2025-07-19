@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Users;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\Cart;
-use App\Models\CartItem;
 use App\Models\Coupon;
+use App\Models\Product;
+use App\Models\CartItem;
 use App\Models\CouponUsage;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use App\Models\ProductVariant;
+use App\Models\ProductInventory;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 
 class CartController extends Controller
@@ -174,8 +175,8 @@ class CartController extends Controller
                 $cartableId = $data['cartable_id'];
 
                 switch ($cartableType) {
-                    case \App\Models\ProductVariant::class:
-                        $cartable = \App\Models\ProductVariant::with(['product', 'attributeValues.attribute'])
+                    case ProductVariant::class:
+                        $cartable = ProductVariant::with(['product', 'attributeValues.attribute'])
                             ->find($cartableId);
                         break;
                     default:
@@ -1008,9 +1009,13 @@ class CartController extends Controller
             $totalRequested = $quantityInCart + $item['quantity'];
 
             // Kiểm kho nếu quản lý kho
-            if ($variant->manage_stock && $variant->stock_quantity !== null) {
-                if ($totalRequested > $variant->stock_quantity) {
-                    $remaining = max(0, $variant->stock_quantity - $quantityInCart);
+            if ($variant->manage_stock) {
+                $availableStock = ProductInventory::where('product_variant_id', $variant->id)
+                    ->where('inventory_type', 'new')
+                    ->sum('quantity');
+                
+                if ($totalRequested > $availableStock) {
+                    $remaining = max(0, $availableStock - $quantityInCart);
 
                     $results[] = [
                         'variant_id' => $variant->id,

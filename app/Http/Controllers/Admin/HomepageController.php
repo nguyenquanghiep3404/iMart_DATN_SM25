@@ -239,7 +239,7 @@ class HomepageController extends Controller
                         ? round(100 - ($variant->sale_price / $variant->price) * 100)
                         : 0,
                     'image' => $image,
-                    'stock_quantity' => $variant?->stock_quantity ?? 0,
+                    'stock_quantity' => $variant ? $variant->getSellableStockAttribute() : 0,
                     'is_featured' => $product->is_featured,
                     'release_date' => $product->created_at->toDateString(),
                     'sold_quantity' => $totalSold,
