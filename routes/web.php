@@ -47,6 +47,7 @@ Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name('cart.addMultiple');
 Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
 
+
 // cart_offcanvas
 Route::get('/cart/offcanvas', [CarOffController::class, 'index']);
 // Route::post('/vnpay/payment', [VNPayController::class, 'createPayment'])->name('vnpay.payment');
