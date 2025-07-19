@@ -131,12 +131,18 @@
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-900">Đánh giá & Nhận xét từ khách hàng</h2>
             @auth
-            @if (isset($orderItemId) && $orderItemId)
-            @if (!isset($hasReviewed) || !$hasReviewed)
-            <button id="write-review-btn"
-                class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                Viết đánh giá
-            </button>
+                @if (isset($orderItemId) && $orderItemId)
+                    @if (!isset($hasReviewed) || !$hasReviewed)
+                        <button id="write-review-btn"
+                            class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                            Viết đánh giá
+                        </button>
+                    @else
+                        <p class="text-sm text-green-600">Bạn đã đánh giá sản phẩm này.</p>
+                    @endif
+                @else
+                    <p class="text-sm text-gray-600">Bạn cần mua và nhận hàng để viết đánh giá.</p>
+                @endif
             @else
             <p class="text-sm text-green-600">Bạn đã đánh giá sản phẩm này.</p>
             @endif
@@ -291,10 +297,10 @@
                             <p class="text-yellow-600 text-sm italic mt-1">Bình luận của bạn đang chờ duyệt</p>
                             @endif
                         </div>
-                    </div>
-                </div>
-                @endif
-
+                        {{-- MỤC NÀY LÀ MỘT BÌNH LUẬN (COMMENT) --}}
+                    @elseif ($item->type === 'comment')
+                        @include('users.products.partials.recursive-comment', ['comment' => $item->data])
+                    @endif
 
                 @empty
                 <p class="text-sm text-gray-500 mt-4">Chưa có đánh giá hoặc bình luận nào.</p>
@@ -332,26 +338,35 @@
         <div id="qna-list" class="space-y-4">
             <!-- Example Q&A Item 1 -->
             <div class="border-b border-gray-200 pb-4">
-                <button class="w-full flex justify-between items-center text-left" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('svg').classList.toggle('rotate-180')">
+                <button class="w-full flex justify-between items-center text-left"
+                    onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('svg').classList.toggle('rotate-180')">
                     <span class="font-semibold text-gray-800">Sản phẩm này có hỗ trợ trả góp không?</span>
-                    <svg class="w-5 h-5 text-gray-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    <svg class="w-5 h-5 text-gray-600 transition-transform" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                        </path>
                     </svg>
                 </button>
                 <div class="text-gray-600 mt-2 hidden">
-                    <p>Chào bạn, hiện tại chúng tôi có hỗ trợ trả góp 0% qua thẻ tín dụng của các ngân hàng lớn. Bạn có thể xem chi tiết chính sách trả góp tại trang thanh toán hoặc liên hệ hotline để được tư vấn thêm.</p>
+                    <p>Chào bạn, hiện tại chúng tôi có hỗ trợ trả góp 0% qua thẻ tín dụng của các ngân hàng lớn. Bạn có
+                        thể xem chi tiết chính sách trả góp tại trang thanh toán hoặc liên hệ hotline để được tư vấn
+                        thêm.</p>
                 </div>
             </div>
             <!-- Example Q&A Item 2 -->
             <div class="border-b border-gray-200 pb-4">
-                <button class="w-full flex justify-between items-center text-left" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('svg').classList.toggle('rotate-180')">
+                <button class="w-full flex justify-between items-center text-left"
+                    onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('svg').classList.toggle('rotate-180')">
                     <span class="font-semibold text-gray-800">Thời gian bảo hành của sản phẩm là bao lâu?</span>
-                    <svg class="w-5 h-5 text-gray-600 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    <svg class="w-5 h-5 text-gray-600 transition-transform" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                        </path>
                     </svg>
                 </button>
                 <div class="text-gray-600 mt-2 hidden">
-                    <p>Sản phẩm được bảo hành chính hãng 12 tháng tại các trung tâm bảo hành ủy quyền trên toàn quốc. Mọi lỗi từ nhà sản xuất sẽ được đổi mới trong 30 ngày đầu tiên.</p>
+                    <p>Sản phẩm được bảo hành chính hãng 12 tháng tại các trung tâm bảo hành ủy quyền trên toàn quốc.
+                        Mọi lỗi từ nhà sản xuất sẽ được đổi mới trong 30 ngày đầu tiên.</p>
                 </div>
             </div>
         </div>
@@ -360,26 +375,32 @@
     <!-- PHẦN 6: SẢN PHẨM TƯƠNG TỰ -->
     <section>
         <h2 class="text-2xl font-bold text-gray-900 mb-6">Sản phẩm tương tự</h2>
-        @if($relatedProducts->isNotEmpty())
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @foreach($relatedProducts as $relatedProduct)
-            <div class="product-card bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
-                <a href="{{ route('products.show', $relatedProduct->slug) }}" class="block">
-                    <img src="{{ $relatedProduct->coverImage ? Storage::url($relatedProduct->coverImage->path) : 'https://placehold.co/300x300/e2e8f0/e2e8f0' }}"
-                        alt="{{ $relatedProduct->name }}"
-                        class="w-full h-40 object-cover">
-                    <div class="p-3">
-                        <h4 class="font-semibold text-sm text-gray-800 truncate">{{ $relatedProduct->name }}</h4>
-                        @if($relatedProduct->defaultVariant)
-                        <p class="font-bold text-red-600 mt-1">{{ number_format($relatedProduct->defaultVariant->display_price) }}₫</p>
-                        @endif
-                        <div class="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                            <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                            </svg>
-                            <span>{{ round($relatedProduct->average_rating, 1) }}</span>
-                            <span class="ml-1">({{ $relatedProduct->reviews_count }} đánh giá)</span>
-                        </div>
+        @if ($relatedProducts->isNotEmpty())
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @foreach ($relatedProducts as $relatedProduct)
+                    <div
+                        class="product-card bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
+                        <a href="{{ route('products.show', $relatedProduct->slug) }}" class="block">
+                            <img src="{{ $relatedProduct->coverImage ? Storage::url($relatedProduct->coverImage->path) : 'https://placehold.co/300x300/e2e8f0/e2e8f0' }}"
+                                alt="{{ $relatedProduct->name }}" class="w-full h-40 object-cover">
+                            <div class="p-3">
+                                <h4 class="font-semibold text-sm text-gray-800 truncate">{{ $relatedProduct->name }}
+                                </h4>
+                                @if ($relatedProduct->defaultVariant)
+                                    <p class="font-bold text-red-600 mt-1">
+                                        {{ number_format($relatedProduct->defaultVariant->display_price) }}₫</p>
+                                @endif
+                                <div class="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                    <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path
+                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                        </path>
+                                    </svg>
+                                    <span>{{ round($relatedProduct->average_rating, 1) }}</span>
+                                    <span class="ml-1">({{ $relatedProduct->reviews_count }} đánh giá)</span>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                 </a>
             </div>
@@ -392,11 +413,11 @@
 </div>
 
 <!-- MODAL ĐÁNH GIÁ -->
-<div id="review-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+<div id="review-modal"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4 transition-opacity duration-300 opacity-0">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-transform duration-300 scale-95">
         <div class="flex justify-between items-center p-4 border-b border-gray-200">
-            <h3 class="text-xl font-bold text-gray-900">Viết đánh giá</h3><button
-                id="close-review-modal-btn"
+            <h3 class="text-xl font-bold text-gray-900">Viết đánh giá</h3><button id="close-review-modal-btn"
                 class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
         </div>
         <div class="p-6 space-y-4 ">
@@ -424,8 +445,8 @@
                         </svg>
                         <div class="flex text-sm text-gray-600"><label for="file-upload"
                                 class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"><span>Tải
-                                    lên một file</span><input id="file-upload" name="file-upload"
-                                    type="file" class="sr-only" multiple></label>
+                                    lên một file</span><input id="file-upload" name="file-upload" type="file"
+                                    class="sr-only" multiple></label>
                             <p class="pl-1">hoặc kéo và thả</p>
                         </div>
                         <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
@@ -494,7 +515,7 @@
                         const newReplyHtml = `
                         <div class="flex items-start gap-3 mt-4 ml-10">
                             <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
-                                ${data.comment.user_name.charAt(0)}
+                               ${data.comment.initial ?? 'A'}
                             </div>
                             <div class="flex-1">
                                 <p class="font-semibold text-sm text-gray-800">${data.comment.user_name}</p>
@@ -557,7 +578,8 @@
             star.setAttribute('fill', 'currentColor');
             star.setAttribute('viewBox', '0 0 20 20');
             star.dataset.rating = i;
-            star.innerHTML = `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
+            star.innerHTML =
+                `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
             starsContainer.appendChild(star);
         }
         function showModal(modal) {
@@ -582,19 +604,22 @@
         const stars = starsContainer.querySelectorAll('.review-star');
         stars.forEach(star => {
             star.addEventListener('mouseover', () => {
-                stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star.dataset.rating));
+                stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star
+                    .dataset.rating));
             });
             star.addEventListener('mouseout', () => {
                 stars.forEach(s => {
                     s.classList.remove('text-yellow-400');
-                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
+                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
+                        'text-gray-300');
                 });
             });
             star.addEventListener('click', () => {
                 selectedRating = parseInt(star.dataset.rating);
                 stars.forEach(s => {
                     s.classList.remove('text-yellow-400', 'text-gray-300');
-                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
+                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
+                        'text-gray-300');
                 });
             });
         });
@@ -664,4 +689,22 @@
 
     function initUserInfoModal() {
         /* ... */ }
+
+    function showModal(modal) {
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+        setTimeout(() => {
+            modal.classList.add('opacity-100');
+            modal.querySelector('div[class*="transform"]').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function hideModal(modal) {
+        document.body.classList.remove('overflow-hidden');
+        modal.classList.remove('opacity-100');
+        modal.querySelector('div[class*="transform"]').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
 </script>

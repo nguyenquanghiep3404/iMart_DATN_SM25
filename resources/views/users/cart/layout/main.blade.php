@@ -123,15 +123,17 @@
                                                 aria-label="Decrement quantity">
                                                 <i class="ci-minus"></i>
                                             </button>
-                                            <input type="number" class="form-control quantity-input text-center"
-                                                value="{{ $item['quantity'] }}" min="1"
-                                                max="{{ $item['stock_quantity'] }}">
+                                            <input type="number"
+                                                class="form-control quantity-input text-center full-cart-input"
+                                                data-item-id="{{ $item['id'] }}" value="{{ $item['quantity'] }}"
+                                                min="1" max="{{ $item['stock_quantity'] }}">
                                             <button type="button" class="btn btn-icon btn-increment"
                                                 aria-label="Increment quantity">
                                                 <i class="ci-plus"></i>
                                             </button>
                                         </div>
                                     </td>
+
 
                                     <td class="h6 py-3 d-none d-xl-table-cell item-subtotal"
                                         data-price="{{ $item['price'] }}">
