@@ -471,6 +471,60 @@
         window.headerScriptLoaded = true;
 
         document.addEventListener('DOMContentLoaded', () => {
+            const offcanvasEl = document.getElementById('shoppingCart');
+            if (!offcanvasEl) return;
+
+            const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl) || new bootstrap.Offcanvas(
+                offcanvasEl);
+
+            const cartToggle = document.querySelector('[data-bs-target="#shoppingCart"]');
+
+            if (cartToggle) {
+                // Bỏ attribute để Bootstrap không tự xử lý mở offcanvas
+                cartToggle.removeAttribute('data-bs-toggle');
+                cartToggle.removeAttribute('data-bs-target');
+
+                cartToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    // Mở offcanvas ngay lập tức, trước khi fetch
+                    bsOffcanvas.show();
+
+                    // Fetch nội dung giỏ hàng và cập nhật khi có dữ liệu
+                    fetch('/cart/offcanvas', {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(res => res.text())
+                        .then(html => {
+                            document.getElementById('cart-content').innerHTML = html;
+                        })
+                        .catch(() => {
+                            document.getElementById('cart-content').innerHTML =
+                                '<p>Có lỗi xảy ra.</p>';
+                        });
+                });
+            }
+
+            // Click ngoài offcanvas để đóng
+            document.addEventListener('click', (event) => {
+                if (offcanvasEl.classList.contains('show')) {
+                    if (!offcanvasEl.contains(event.target) && !event.target.closest(
+                            '[data-bs-target="#shoppingCart"]')) {
+                        bsOffcanvas.hide();
+                    }
+                }
+            });
+
+            // Ẩn backdrop khi đóng offcanvas
+            offcanvasEl.addEventListener('hidden.bs.offcanvas', () => {
+                const backdrop = document.querySelector('.offcanvas-backdrop');
+                if (backdrop) {
+                    backdrop.parentNode.removeChild(backdrop);
+                }
+            });
+
             // --- Elements ---
             const pageHeader = document.getElementById('page-header');
             const headerMain = document.getElementById('header-main');

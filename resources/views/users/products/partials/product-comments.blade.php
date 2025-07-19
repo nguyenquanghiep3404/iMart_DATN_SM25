@@ -406,8 +406,8 @@
     });
 
     // Khi load trang, hiển thị comment khách vãng lai đã lưu
-    // window.addEventListener('DOMContentLoaded', () => {
-    //     loadGuestCommentsFromLocalStorage();
-    //     updateAddInfoText(); // cập nhật text ban đầu
-    // });
+    window.addEventListener('DOMContentLoaded', () => {
+        loadGuestCommentsFromLocalStorage();
+        updateAddInfoText(); // cập nhật text ban đầu
+    });
 </script>
