@@ -230,7 +230,7 @@
                                                             @else
                                                                 {{ number_format($fsProduct->flash_price, 0, ',', '.') }}đ
                                                             @endif
-                                                            <small>Debug: {{ $price }}</small>
+                                                            
 
 
                                                         </div>
