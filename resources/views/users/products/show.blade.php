@@ -18,7 +18,6 @@
                 <span class="font-medium text-gray-700">{{ $product->name }}
                 </span>
             </nav>
-
             {{-- Gallery + Options --}}
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
                 {{-- Cột trái: Thư viện ảnh --}}
@@ -113,8 +112,7 @@
     @endphp
 
     <!-- Sticky Add to Cart Bar -->
-    <div id="sticky-bar"
-        class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm p-3 shadow-[0_-2px_10px_rgba(0,0,0,0.1)] transform translate-y-full transition-transform duration-300 z-40">
+    <div id="sticky-bar" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-5xl bg-white/80 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-2xl transform translate-y-full z-40">
         <div class="container mx-auto flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <img id="sticky-image" src="{{ $imageUrl }}" alt="Ảnh sản phẩm"

@@ -135,6 +135,13 @@ class HomeController extends Controller
             ->take(8)
             ->get();
 
+        $suggestedProducts = Product::with('coverImage')
+            ->where('status', 'published')
+            ->inRandomOrder()
+            ->take(5)
+            ->get();
+
+
         // Tính rating & discount
         $calculateAverageRating($latestProducts);
 
@@ -176,6 +183,7 @@ class HomeController extends Controller
             'featuredPosts',
             'unreadNotificationsCount',
             'recentNotifications',
+            'suggestedProducts' // 👈 THÊM BIẾN NÀY
         ));
     }
 
@@ -492,7 +500,9 @@ class HomeController extends Controller
             $starRatingsCount[$i] = $product->reviews->where('rating', $i)->count();
         }
         $hasReviewed = false; // ✅ Khởi tạo mặc định trước
+        $totalReviewsCount = $allReviews->count();
 
+        $totalCommentsCount = $allComments->count();
         // Chỉ tìm kiếm order_item_id nếu người dùng đã đăng nhập
         if (Auth::check()) {
             $userId = Auth::id(); // Lấy ID của người dùng hiện tại
@@ -549,9 +559,6 @@ class HomeController extends Controller
             if ($orderItemId) {
                 $hasReviewed = Review::where('order_item_id', $orderItemId)->exists();
             }
-            $totalReviewsCount = $allReviews->count();
-
-            $totalCommentsCount = $allComments->count();
         }
         // --- Kết thúc đoạn code ĐÃ THÊM ---
 
@@ -932,17 +939,74 @@ class HomeController extends Controller
     public function search(Request $request)
     {
         $query = $request->input('q');
+        $tab = $request->input('tab', 'san-pham'); // mặc định là 'san-pham'
 
-        $products = Product::with('category')
-            ->where('name', 'like', "%{$query}%")
-            ->orWhere('description', 'like', "%{$query}%")
+        if ($tab === 'bai-viet') {
+            $posts = Post::with('coverImage')
+                ->where('status', 'published')
+                ->where(function ($q) use ($query) {
+                    $q->where('slug', 'like', "%{$query}%")
+                        ->orWhere('title', 'like', "%{$query}%");
+                })
+                ->paginate(10);
+
+            return view('users.blogs.index', [
+                'posts' => $posts,
+                'parentCategories' => PostCategory::withCount('posts')->whereNull('parent_id')->get(),
+                'featuredPosts' => Post::where('is_featured', true)->where('status', 'published')->latest()->take(5)->get(),
+                'currentCategory' => null,
+            ]);
+        }
+
+        // Tab mặc định: Sản phẩm
+        // Tab mặc định: Sản phẩm
+        $products = Product::with(['category', 'variants', 'coverImage'])
+            ->where('status', 'published')
+            ->where(function ($q) use ($query) {
+                $q->where('slug', 'like', "%{$query}%")
+                    ->orWhere('name', 'like', "%{$query}%");
+            })
             ->paginate(12);
+
+        // ✅ Thêm dòng này để truyền danh mục vào view
+        $categories = Category::all();
+        $parentCategories = $categories->whereNull('parent_id');
 
         return view('users.shop', [
             'products' => $products,
-            'categories' => Category::all(), // để sidebar hoạt động
             'searchQuery' => $query,
-            'currentCategory' => null, // để tránh breadcrumb danh mục
+            'tab' => $tab,
+            'categories' => $categories,
+            'parentCategories' => $parentCategories,
+            'currentCategory' => null, // vì không phải xem theo danh mục
         ]);
+    }
+
+    public function searchSuggestions(Request $request)
+    {
+        $query = $request->input('q');
+
+        $products = Product::with(['coverImage', 'variants'])
+            ->where('status', 'published')
+            ->where('name', 'like', "%{$query}%")
+            ->take(5)
+            ->get()
+            ->map(function ($product) {
+                $variants = $product->variants;
+
+                // Lấy giá sale thấp nhất (nếu có), nếu không thì lấy giá gốc
+                $minSalePrice = $variants->whereNotNull('sale_price')->min('sale_price');
+                $minPrice = $variants->min('price');
+
+                return [
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'price' => $minPrice ? number_format($minPrice) . ' ₫' : null,
+                    'sale_price' => $minSalePrice ? number_format($minSalePrice) . ' ₫' : null,
+                    'image_url' => $product->coverImage->url ?? asset('images/no-image.png'),
+                ];
+            });
+
+        return response()->json($products);
     }
 }
