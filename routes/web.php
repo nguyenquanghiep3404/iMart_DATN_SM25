@@ -83,6 +83,8 @@ Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name(
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
 Route::get('/tim-kiem', [HomeController::class, 'search'])->name('users.products.search');
+Route::get('/api/search-suggestions', [HomeController::class, 'searchSuggestions'])->name('search.suggestions');
+
 
 // BLOG ROUTES (PUBLIC)
 Route::prefix('blog')->group(function () {
