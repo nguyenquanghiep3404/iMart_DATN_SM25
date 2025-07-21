@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Thêm cột is_guest khi migrate
-            $table->boolean('is_guest')->default(false)->after('status');
+            // Thêm cột 'is_guest' kiểu TINYINT với giá trị mặc định là 0 (false)
+            // và đặt nó sau cột 'status'
+            $table->tinyInteger('is_guest')->default(0)->after('status'); 
         });
     }
 
@@ -23,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Xóa cột is_guest khi rollback
+            // Khi rollback, xóa cột 'is_guest'
             $table->dropColumn('is_guest');
         });
     }

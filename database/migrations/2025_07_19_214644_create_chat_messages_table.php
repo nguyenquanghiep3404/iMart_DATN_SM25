@@ -13,8 +13,10 @@ return new class extends Migration
     {
         Schema::create('chat_messages', function (Blueprint $table) {
             $table->id();
+            // Đảm bảo bảng 'chat_conversations' đã tồn tại trước khi chạy migration này
             $table->foreignId('conversation_id')->constrained('chat_conversations')->onDelete('cascade');
-            $table->foreignId('sender_id')->comment('ID người gửi')->constrained('users')->onDelete('cascade');
+            // Đảm bảo bảng 'users' đã tồn tại trước khi chạy migration này
+            $table->foreignId('sender_id')->constrained('users')->onDelete('cascade')->comment('ID người gửi (luôn là một user_id)');
             $table->text('content');
             $table->enum('type', ['text', 'image', 'file', 'system'])->default('text');
             $table->timestamp('read_at')->nullable();
@@ -27,7 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Xóa bảng khi rollback
         Schema::dropIfExists('chat_messages');
     }
 };

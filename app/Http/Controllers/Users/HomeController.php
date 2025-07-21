@@ -5,23 +5,25 @@ namespace App\Http\Controllers\Users;
 use Carbon\Carbon;
 use App\Models\Post;
 use App\Models\Banner;
+use App\Models\Review;
 use App\Models\Comment;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\FlashSale;
+use App\Models\OrderItem;
 use Illuminate\Support\Str;
 use App\Models\PostCategory;
+use App\Models\WishlistItem;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\HomepageProductBlock;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
-use App\Models\WishlistItem;
-use App\Models\Review;
-use App\Models\OrderItem;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class HomeController extends Controller
 {
@@ -36,7 +38,7 @@ class HomeController extends Controller
         $blocks = HomepageProductBlock::where('is_visible', true)
             ->orderBy('order')
             ->with(['products' => function ($query) {
-                $query->where('products.status', 'published')
+                $query->where('products.status', 'published') // ✅ fix lỗi ambiguous
                     ->with([
                         'category',
                         'coverImage',
@@ -44,12 +46,12 @@ class HomeController extends Controller
                         'variants.primaryImage',
                         'variants.images',
                         'reviews' => function ($query) {
-                            $query->where('reviews.status', 'approved');
+                            $query->where('reviews.status', 'approved'); // ✅ fix luôn
                         },
                     ])
                     ->withCount([
                         'reviews as approved_reviews_count' => function ($query) {
-                            $query->where('reviews.status', 'approved');
+                            $query->where('reviews.status', 'approved'); // ✅
                         },
                     ]);
             }])
@@ -134,6 +136,13 @@ class HomeController extends Controller
             ->take(8)
             ->get();
 
+        $suggestedProducts = Product::with('coverImage')
+            ->where('status', 'published')
+            ->inRandomOrder()
+            ->take(5)
+            ->get();
+
+
         // Tính rating & discount
         $calculateAverageRating($latestProducts);
 
@@ -167,6 +176,84 @@ class HomeController extends Controller
             ->take(3)
             ->get();
 
+        // === Lấy danh sách Flash Sale (theo logic quản lý) ===
+
+        $flashSales = FlashSale::with([
+            'flashSaleTimeSlots' => function ($q) {
+                $q->orderBy('start_time');
+            },
+            'flashSaleTimeSlots.products.productVariant.attributeValues.attribute',
+            'flashSaleTimeSlots.products.productVariant.product.coverImage',
+        ])->orderBy('start_time')->get();
+
+        // Xử lý format thời gian + tên biến thể đầy đủ và xác định slot đang active
+        $now = now();
+        $flashSales->each(function ($sale) use ($now) {
+            $activeSlotId = null;
+            $upcomingSlotId = null;
+            $minUpcomingTime = null;
+            foreach ($sale->flashSaleTimeSlots as $slot) {
+                $slot->start_time = \Carbon\Carbon::parse($slot->start_time)->toIso8601String();
+                $slot->end_time = \Carbon\Carbon::parse($slot->end_time)->toIso8601String();
+
+                $start = \Carbon\Carbon::parse($slot->start_time);
+                $end = \Carbon\Carbon::parse($slot->end_time);
+                $isActive = $now->between($start, $end);
+                $isUpcoming = $now->lt($start);
+                $isPast = $now->gt($end);
+                
+                \Log::info('DEBUG_FLASH_SLOT', [
+                    'slot_id' => $slot->id,
+                    'start_time' => $slot->start_time,
+                    'end_time' => $slot->end_time,
+                    'now' => $now->toIso8601String(),
+                    'isActive' => $isActive,
+                    'isUpcoming' => $isUpcoming,
+                    'isPast' => $isPast,
+                    'activeSlotId' => $activeSlotId,
+                ]);
+
+                if ($isActive && $activeSlotId === null) {
+                    $activeSlotId = $slot->id;
+                }
+                if ($isUpcoming && ($minUpcomingTime === null || $start->lt($minUpcomingTime))) {
+                    $minUpcomingTime = $start;
+                    $upcomingSlotId = $slot->id;
+                }
+
+                $slot->products->each(function ($product) {
+                    $variant = $product->productVariant;
+                    $productName = $variant->product->name ?? '';
+
+                    $attributes = $variant->attributeValues ?? collect();
+
+                    $nonColor = $attributes
+                        ->filter(fn($v) => $v->attribute->name !== 'Màu sắc')
+                        ->pluck('value')
+                        ->join(' ');
+
+                    $color = $attributes
+                        ->firstWhere(fn($v) => $v->attribute->name === 'Màu sắc')?->value;
+
+                    $variantName = trim($productName . ' ' . $nonColor . ' ' . $color);
+
+                    $product->variant_name = $variantName;
+                });
+            }
+            if ($activeSlotId) {
+                $sale->active_slot_id = $activeSlotId;
+            } elseif ($upcomingSlotId) {
+                $sale->active_slot_id = $upcomingSlotId;
+            } else {
+                $sale->active_slot_id = $sale->flashSaleTimeSlots->last()->id ?? null;
+            }
+            \Log::info('DEBUG_FLASH_SALE_ACTIVE_SLOT', [
+                'sale_id' => $sale->id,
+                'active_slot_id' => $sale->active_slot_id,
+            ]);
+        });
+
+
         return view('users.home', compact(
             'featuredProducts',
             'blocks',
@@ -175,6 +262,8 @@ class HomeController extends Controller
             'featuredPosts',
             'unreadNotificationsCount',
             'recentNotifications',
+            'flashSales',
+            'suggestedProducts' // 👈 THÊM BIẾN NÀY
         ));
     }
 
@@ -204,15 +293,92 @@ class HomeController extends Controller
 
         $variantIds = $product->variants->pluck('id');
 
-        $reviews = Review::with(['user', 'images'])
+        $ratingFilter = $request->query('rating');
+
+        $allReviews = Review::with(['user', 'images'])
             ->whereIn('product_variant_id', $variantIds)
-            ->where('status', 'approved')
-            ->latest()
+            ->where(function ($query) {
+                $query->where('status', 'approved');
+
+                if (Auth::check()) {
+                    $query->orWhere(function ($q) {
+                        $q->where('user_id', Auth::id())
+                            ->whereIn('status', ['pending', 'rejected', 'spam']);
+                    });
+
+                    if (Auth::user()->hasRole('admin')) {
+                        $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+                    }
+                }
+            });
+
+        if ($ratingFilter && in_array((int)$ratingFilter, [1, 2, 3, 4, 5])) {
+            $allReviews = $allReviews->where('rating', (int)$ratingFilter);
+        }
+        $allReviews  = $allReviews->get();
+
+        // 2. Lấy TẤT CẢ bình luận (comments) gốc đã được duyệt
+        // (Giữ nguyên logic query comment phức tạp của bạn)
+        $allComments = $product->comments()
+            ->whereNull('parent_id')
+            ->where(function ($query) {
+                $query->where('status', 'approved');
+
+                if (Auth::check()) {
+                    $query->orWhere(function ($q) {
+                        $q->where('user_id', Auth::id())
+                            ->whereIn('status', ['pending', 'rejected', 'spam']);
+                    });
+
+                    if (Auth::user()->hasRole('admin')) {
+                        $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+                    }
+                }
+            })
+            ->with(['user', 'replies.user'])
             ->get();
 
+        // 3. Gộp 2 danh sách lại và chuẩn hóa cấu trúc để sắp xếp
+        $combinedList = collect();
+
+        foreach ($allReviews as $review) {
+            $combinedList->push((object)[
+                'type' => 'review',        // Thêm trường 'type' để phân biệt trong view
+                'data' => $review,         // Dữ liệu gốc
+                'sort_date' => $review->created_at // Dùng để sắp xếp chung
+            ]);
+        }
+
+        foreach ($allComments as $comment) {
+            $combinedList->push((object)[
+                'type' => 'comment',
+                'data' => $comment,
+                'sort_date' => $comment->created_at
+            ]);
+        }
+
+        // 4. Sắp xếp danh sách đã gộp theo ngày tạo mới nhất
+        $sortedList = $combinedList->sortByDesc('sort_date');
+
+        // 5. Tự tạo phân trang bằng tay
+        $perPage = 5; // Số mục trên mỗi trang (ví dụ: 3 bình luận + 2 đánh giá)
+        $currentPage = request()->get('page', 1);
+        $currentPageItems = $sortedList->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedItems = new LengthAwarePaginator(
+            $currentPageItems,
+            $sortedList->count(),
+            $perPage,
+            $currentPage,
+            // Giữ lại các query string khác trên URL khi chuyển trang
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        // Gán lại biến $totalReviews và $commentsCount để hiển thị số lượng đúng
+        $totalReviews = $allReviews->count();
+        $commentsCount = $allComments->where('status', 'approved')->count();
 
         $product->increment('view_count');
-
 
         $averageRating = $product->reviews->avg('rating') ?? 0;
         $product->average_rating = round($averageRating, 1);
@@ -329,27 +495,27 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-            $comments = $product->comments()
-            ->whereNull('parent_id')
-            ->where(function ($query) {
-                $query->where('status', 'approved');
-        
-                if (Auth::check()) {
-                    $query->orWhere(function ($q) {
-                        $q->where('user_id', Auth::id())
-                          ->whereIn('status', ['pending', 'rejected','spam']); 
-                    });
-        
-                    if (Auth::user()->hasRole('admin')) {
-                        $query->orWhereIn('status', ['pending', 'rejected','spam']); 
-                    }
-                }
-            })
-            ->with(['user', 'replies.user'])
-            ->orderByDesc('created_at')
-            ->get();
-        
-        
+        // // $comments = $product->comments()
+        // //     ->whereNull('parent_id')
+        // //     ->where(function ($query) {
+        // //         $query->where('status', 'approved');
+
+        //         if (Auth::check()) {
+        //             $query->orWhere(function ($q) {
+        //                 $q->where('user_id', Auth::id())
+        //                     ->whereIn('status', ['pending', 'rejected', 'spam']);
+        //             });
+
+        //             if (Auth::user()->hasRole('admin')) {
+        //                 $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+        //             }
+        //         }
+        //     })
+        //     ->with(['user', 'replies.user'])
+        //     ->orderByDesc('created_at')
+        //     ->get();
+
+
 
         $initialVariantAttributes = [];
         if ($defaultVariant) {
@@ -414,7 +580,9 @@ class HomeController extends Controller
             $starRatingsCount[$i] = $product->reviews->where('rating', $i)->count();
         }
         $hasReviewed = false; // ✅ Khởi tạo mặc định trước
+        $totalReviewsCount = $allReviews->count();
 
+        $totalCommentsCount = $allComments->count();
         // Chỉ tìm kiếm order_item_id nếu người dùng đã đăng nhập
         if (Auth::check()) {
             $userId = Auth::id(); // Lấy ID của người dùng hiện tại
@@ -479,12 +647,10 @@ class HomeController extends Controller
             'relatedProducts',
             'ratingCounts',
             'ratingPercentages',
-            'totalReviews',
             'attributes',
             'variantData',
             'availableCombinations',
             'defaultVariant',
-            'comments',
             'attributeOrder',
             'initialVariantAttributes',
             'variantCombinations',
@@ -493,12 +659,17 @@ class HomeController extends Controller
             'variantSpecs',
             'wishlistVariantIds',
             'commentsCount',
-            'reviews',
             'orderItemId',
             'averageRating',
             'totalReviews',
             'starRatingsCount',
-            'hasReviewed'
+            'hasReviewed',
+            'paginatedItems',
+            'allComments',
+            'allReviews',
+            'totalReviewsCount',
+            'totalCommentsCount',
+            'ratingFilter',
         ));
     }
 
@@ -741,19 +912,13 @@ class HomeController extends Controller
                 ]);
             }
 
-            // Lấy variant hiện tại để loại trừ chính nó
             $currentVariant = ProductVariant::find($variantId);
             $currentProductId = $currentVariant?->product_id;
 
-            // Lọc bỏ sản phẩm trùng (cùng id và variant_key)
             $filtered = collect($recentProductIds)
-                ->filter(
-                    fn($item) =>
-                    isset($item['id']) &&
-                        ($item['id'] != $currentProductId || ($item['variant_key'] ?? '') !== $this->getVariantKey($currentVariant))
-                )
-                ->reverse() // Ưu tiên mới nhất
-                ->take(5);
+                ->filter(fn($item) => isset($item['id']))
+                ->unique(fn($item) => $item['id'] . '_' . $item['variant_key']) // tránh trùng
+                ->take(5); // không đảo ngược thứ tự
 
             $results = collect();
 
@@ -762,6 +927,7 @@ class HomeController extends Controller
                     'variants.attributeValues.attribute',
                     'coverImage',
                     'variants.primaryImage',
+                    'variants.specifications' // Tải thông số kỹ thuật của biến thể
                 ])
                     ->where('id', $item['id'])
                     ->where('status', 'published')
@@ -770,36 +936,49 @@ class HomeController extends Controller
                 if (!$product) continue;
 
                 $variantKey = $item['variant_key'] ?? null;
+                $variant = null;
 
-                $variant = $product->variants->first(function ($v) use ($variantKey) {
-                    $key = $v->attributeValues
-                        ->sortBy(fn($attr) => $attr->attribute->id)
-                        ->pluck('value')
-                        ->implode('_');
-                    return $key === $variantKey;
-                });
+                // 1. Nếu có variant_key → tìm đúng biến thể
+                if (!empty($variantKey)) {
+                    $variant = $product->variants->first(function ($v) use ($variantKey) {
+                        $key = $v->attributeValues
+                            ->sortBy(fn($attr) => $attr->attribute->id)
+                            ->pluck('value')
+                            ->implode('_');
+                        return $key === $variantKey;
+                    });
+                }
 
-                $variantName = $variant
-                    ? $variant->attributeValues
+                // 2. Nếu không có variant_key và là sản phẩm đơn giản → lấy biến thể duy nhất
+                if (!$variant && $product->type === 'simple' && $product->variants->count() === 1) {
+                    $variant = $product->variants->first();
+                }
+
+                if (!$variant) continue; // Bỏ qua nếu không có biến thể nào phù hợp
+
+                $variantName = $variant->attributeValues
                     ->sortBy(fn($attr) => $attr->attribute->id)
                     ->pluck('value')
-                    ->implode(' ')
-                    : '';
+                    ->implode(' ');
 
-                $imageUrl = $variant?->primaryImage?->path
-                    ?? $variant?->image?->path
+                $imageUrl = $variant->primaryImage?->path
+                    ?? $variant->image?->path
                     ?? $product->coverImage?->path;
+
+                // Định dạng specs theo cấu trúc mong muốn
+                $specs = $variant->specifications ? $this->formatSpecs($variant->specifications) : [];
 
                 $results->push([
                     'id' => $product->id,
                     'name' => $product->name,
                     'slug' => $product->slug,
-                    'variant_id' => $variant?->id,
+                    'variant_id' => $variant->id,
                     'variant_name' => $variantName,
+                    'variant_key' => $variantKey,
                     'cover_image' => $imageUrl ? Storage::url($imageUrl) : asset('/images/no-image.png'),
-                    'price' => $variant && $variant->price ? (int) $variant->price : (int) $product->price,
-                    'sale_price' => $variant && $variant->sale_price ? (int) $variant->sale_price : ($product->sale_price ?? null),
-
+                    'price' => (int) $variant->price,
+                    'sale_price' => $variant->sale_price !== null ? (int) $variant->sale_price : null,
+                    'specs' => $specs // Thêm specs vào phản hồi
                 ]);
             }
 
@@ -814,6 +993,20 @@ class HomeController extends Controller
         }
     }
 
+    private function formatSpecs($specs)
+    {
+        $formatted = [];
+        foreach ($specs as $spec) {
+            $groupName = $spec->group_name ?? 'Thông số chung';
+            if (!isset($formatted[$groupName])) {
+                $formatted[$groupName] = [];
+            }
+            $formatted[$groupName][$spec->name] = $spec->value;
+        }
+        return $formatted;
+    }
+
+
     private function getVariantKey(?ProductVariant $variant): string
     {
         if (!$variant) return '';
@@ -825,17 +1018,74 @@ class HomeController extends Controller
     public function search(Request $request)
     {
         $query = $request->input('q');
+        $tab = $request->input('tab', 'san-pham'); // mặc định là 'san-pham'
 
-        $products = Product::with('category')
-            ->where('name', 'like', "%{$query}%")
-            ->orWhere('description', 'like', "%{$query}%")
+        if ($tab === 'bai-viet') {
+            $posts = Post::with('coverImage')
+                ->where('status', 'published')
+                ->where(function ($q) use ($query) {
+                    $q->where('slug', 'like', "%{$query}%")
+                        ->orWhere('title', 'like', "%{$query}%");
+                })
+                ->paginate(10);
+
+            return view('users.blogs.index', [
+                'posts' => $posts,
+                'parentCategories' => PostCategory::withCount('posts')->whereNull('parent_id')->get(),
+                'featuredPosts' => Post::where('is_featured', true)->where('status', 'published')->latest()->take(5)->get(),
+                'currentCategory' => null,
+            ]);
+        }
+
+        // Tab mặc định: Sản phẩm
+        // Tab mặc định: Sản phẩm
+        $products = Product::with(['category', 'variants', 'coverImage'])
+            ->where('status', 'published')
+            ->where(function ($q) use ($query) {
+                $q->where('slug', 'like', "%{$query}%")
+                    ->orWhere('name', 'like', "%{$query}%");
+            })
             ->paginate(12);
+
+        // ✅ Thêm dòng này để truyền danh mục vào view
+        $categories = Category::all();
+        $parentCategories = $categories->whereNull('parent_id');
 
         return view('users.shop', [
             'products' => $products,
-            'categories' => Category::all(), // để sidebar hoạt động
             'searchQuery' => $query,
-            'currentCategory' => null, // để tránh breadcrumb danh mục
+            'tab' => $tab,
+            'categories' => $categories,
+            'parentCategories' => $parentCategories,
+            'currentCategory' => null, // vì không phải xem theo danh mục
         ]);
+    }
+
+    public function searchSuggestions(Request $request)
+    {
+        $query = $request->input('q');
+
+        $products = Product::with(['coverImage', 'variants'])
+            ->where('status', 'published')
+            ->where('name', 'like', "%{$query}%")
+            ->take(5)
+            ->get()
+            ->map(function ($product) {
+                $variants = $product->variants;
+
+                // Lấy giá sale thấp nhất (nếu có), nếu không thì lấy giá gốc
+                $minSalePrice = $variants->whereNotNull('sale_price')->min('sale_price');
+                $minPrice = $variants->min('price');
+
+                return [
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'price' => $minPrice ? number_format($minPrice) . ' ₫' : null,
+                    'sale_price' => $minSalePrice ? number_format($minSalePrice) . ' ₫' : null,
+                    'image_url' => $product->coverImage->url ?? asset('images/no-image.png'),
+                ];
+            });
+
+        return response()->json($products);
     }
 }

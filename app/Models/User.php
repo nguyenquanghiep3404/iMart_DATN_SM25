@@ -20,6 +20,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_number',
         'status',
         'last_login_at',
+        'is_guest',
         'password',
         'avatar_path',
     ];
@@ -33,6 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
         'password' => 'hashed',
+        'is_guest' => 'boolean',
     ];
 
     public function roles()
@@ -147,10 +149,23 @@ class User extends Authenticatable implements MustVerifyEmail
         // Quan hệ: Một user (shipper) có thể có nhiều đơn hàng
         return $this->hasMany(Order::class, 'shipped_by');
     }
-    public function conversations() {
-    return $this->hasMany(ChatConversation::class);
+    public function conversations()
+    {
+        return $this->hasMany(ChatConversation::class, 'user_id');
     }
-    public function messages() {
+
+    public function assignedConversations()
+    {
+        return $this->hasMany(ChatConversation::class, 'assigned_to');
+    }
+
+    public function messages()
+    {
         return $this->hasMany(ChatMessage::class, 'sender_id');
+    }
+
+    public function chatParticipants()
+    {
+        return $this->hasMany(ChatParticipant::class, 'user_id');
     }
 }

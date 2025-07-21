@@ -23,7 +23,7 @@
             Chính hãng
         </span>
         <button id="compare-btn"
-            class="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800"
+            class="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-black hover:bg-gray-100 rounded-md"
             data-default-variant-id="{{ $defaultVariant->id }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path
@@ -103,7 +103,7 @@
                                 fill="url(#half-grad)" />
                         </svg>
                     @else
-                        <svg class="w-4 h-4 fill-current text-gray-300" viewBox="0 0 20 20">
+                        <svg class="w-4 h-4 fill-current text-gray-200" viewBox="0 0 20 20">
                             <path
                                 d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276 5.212 6.084.878-4.18 4.09 1.698 5.91z" />
                         </svg>
@@ -412,8 +412,6 @@
         <span id="slide-alert-message">Thông báo</span>
         <button id="slide-alert-close" class="ml-2 font-bold focus:outline-none">&times;</button>
     </div>
-    <div class="text-sm text-gray-500 mt-4 text-center sm:text-left"><span class="font-semibold">Giao hàng dự
-            kiến:</span> Thứ Ba, 28/06 - Thứ Tư, 29/06.</div>
 </div>
 @if (session('success'))
     <script>

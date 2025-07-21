@@ -16,7 +16,7 @@
             <div class="row">
                 <!-- Post content -->
                 <div class="col-lg-8 position-relative z-2">
-                    <h1 class="display-6 fw-bold mb-4 text-primary">{{ $post->title }}</h1>
+                    <h1 class="display-6 fw-bold mb-4 text-black">{{ $post->title }}</h1>
 
                     <div class="nav align-items-center gap-2 border-bottom pb-4 mt-n1 mb-4">
                         @if ($post->category)
@@ -142,9 +142,9 @@
                 </div>
 
                 <!-- Sidebar -->
-                <aside class="col-lg-4 col-xl-3 offset-xl-1" style="margin-top: -100px">
+                <aside class="col-lg-4 col-xl-3 offset-xl-1" style="margin-top: -115px">
                     <div class="offcanvas-lg offcanvas-end sticky-lg-top ps-lg-5 ps-xl-0" id="blogSidebar">
-                        <div id="header-spacer" class="d-none d-lg-block" style="height: 60px;"></div>
+                        <div id="header-spacer" class="d-none d-lg-block" style="height: 115px;"></div>
                         <div class="offcanvas-header py-3">
                             <h5 class="offcanvas-title">Sidebar</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="offcanvas"
@@ -377,5 +377,9 @@
             color: #0d6efd;
             text-decoration: underline;
         }
+
+        #blogSidebar {
+    z-index: 10;
+}
     </style>
 @endpush

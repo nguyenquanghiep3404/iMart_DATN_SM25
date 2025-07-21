@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('chat_participants', function (Blueprint $table) {
             $table->id();
+            // Đảm bảo bảng 'chat_conversations' đã tồn tại trước khi chạy migration này
             $table->foreignId('conversation_id')->constrained('chat_conversations')->onDelete('cascade');
+            // Đảm bảo bảng 'users' đã tồn tại trước khi chạy migration này
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamp('joined_at')->useCurrent();
-            $table->unique(['conversation_id', 'user_id']);
+            $table->timestamps();
+            // Đảm bảo sự kết hợp conversation_id và user_id là duy nhất
+            $table->unique(['conversation_id', 'user_id'], 'conversation_user_unique');
         });
     }
 
@@ -25,7 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Xóa bảng khi rollback
         Schema::dropIfExists('chat_participants');
     }
 };

@@ -7,6 +7,8 @@ use App\Models\PostTag;
 use App\Models\PostCategory;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\Category;
 
 class BlogController extends Controller
 {
@@ -52,53 +54,53 @@ class BlogController extends Controller
         ));
     }
     public function index(Request $request)
-{
-    // 🟦 Lấy danh sách danh mục cha (parent_id = null)
-    $parentCategories = PostCategory::withCount('posts')
-        ->whereNull('parent_id')
-        ->orderBy('name')
-        ->get();
+    {
+        // 🟦 Lấy danh sách danh mục cha (parent_id = null)
+        $parentCategories = PostCategory::withCount('posts')
+            ->whereNull('parent_id')
+            ->orderBy('name')
+            ->get();
 
-    // Lấy bài viết nổi bật (cho sidebar)
-    $featuredPosts = Post::where('is_featured', true)
-        ->where('status', 'published')
-        ->latest()
-        ->take(5)
-        ->get();
+        // Lấy bài viết nổi bật (cho sidebar)
+        $featuredPosts = Post::where('is_featured', true)
+            ->where('status', 'published')
+            ->latest()
+            ->take(5)
+            ->get();
 
-    // Lấy danh sách bài viết chính
-    $query = Post::with(['coverImage', 'category', 'user'])
-        ->where('status', 'published');
+        // Lấy danh sách bài viết chính
+        $query = Post::with(['coverImage', 'category', 'user'])
+            ->where('status', 'published');
 
-    // Biến để truyền tên danh mục (nếu có) ra view
-    $currentCategory = null;
+        // Biến để truyền tên danh mục (nếu có) ra view
+        $currentCategory = null;
 
-    // Nếu có lọc theo category
-    if ($request->has('category')) {
-        $currentCategory = PostCategory::where('slug', $request->category)->first();
+        // Nếu có lọc theo category
+        if ($request->has('category')) {
+            $currentCategory = PostCategory::where('slug', $request->category)->first();
 
-        if ($currentCategory) {
-            // Lọc bài viết theo danh mục
-            $query->where('post_category_id', $currentCategory->id);
-        } else {
-            // Nếu không có danh mục hợp lệ, trả về danh sách rỗng
-            $posts = collect();
-            return view('users.blogs.index', compact('posts', 'parentCategories', 'featuredPosts', 'currentCategory'));
+            if ($currentCategory) {
+                // Lọc bài viết theo danh mục
+                $query->where('post_category_id', $currentCategory->id);
+            } else {
+                // Nếu không có danh mục hợp lệ, trả về danh sách rỗng
+                $posts = collect();
+                return view('users.blogs.index', compact('posts', 'parentCategories', 'featuredPosts', 'currentCategory'));
+            }
         }
+
+        // Nếu có lọc theo tag
+        if ($request->has('tag')) {
+            $query->whereHas('tags', function ($q) use ($request) {
+                $q->where('slug', $request->tag);
+            });
+        }
+
+        // Lấy danh sách phân trang
+        $posts = $query->latest()->paginate(10);
+
+        return view('users.blogs.index', compact('posts', 'parentCategories', 'featuredPosts', 'currentCategory'));
     }
-
-    // Nếu có lọc theo tag
-    if ($request->has('tag')) {
-        $query->whereHas('tags', function ($q) use ($request) {
-            $q->where('slug', $request->tag);
-        });
-    }
-
-    // Lấy danh sách phân trang
-    $posts = $query->latest()->paginate(10);
-
-    return view('users.blogs.index', compact('posts', 'parentCategories', 'featuredPosts', 'currentCategory'));
-}
 
 
 
@@ -158,5 +160,39 @@ class BlogController extends Controller
             ->paginate(6);
 
         return view('users.blogs.tag', compact('tag', 'posts'));
+    }
+    public function search(Request $request)
+    {
+        $query = $request->input('q');
+
+        // ======= Tìm sản phẩm =======
+        $products = Product::with('category')
+            ->where(function ($q2) use ($query) {
+                $q2->where('name', 'like', "%{$query}%")
+                    ->orWhere('description', 'like', "%{$query}%");
+            })
+            ->where('status', 'published')
+            ->paginate(12);
+
+        // ======= Tìm bài viết liên quan =======
+        $posts = Post::with('coverImage')
+            ->where('status', 'published')
+            ->where(function ($q2) use ($query) {
+                $q2->where('title', 'like', "%{$query}%")
+                    ->orWhere('excerpt', 'like', "%{$query}%")
+                    ->orWhere('content', 'like', "%{$query}%");
+            })
+            ->orderByDesc('published_at')
+            ->take(6)
+            ->get();
+
+        return view('users.shop', [
+            'products' => $products,
+            'posts' => $posts, // truyền bài viết ra view
+            'categories' => Category::all(),
+            'searchQuery' => $query,
+            'suggestedProducts' => [],
+            'currentCategory' => null,
+        ]);
     }
 }

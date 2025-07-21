@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('chat_conversations', function (Blueprint $table) {
             $table->id();
-            $table->enum('type', ['support', 'internal'])->default('support');
-            $table->foreignId('user_id')->nullable()->comment('ID khách hàng')->constrained('users')->onDelete('cascade');
-            $table->foreignId('assigned_to')->nullable()->comment('Admin chịu trách nhiệm')->constrained('users')->onDelete('set null');
+            $table->enum('type', ['support', 'internal'])->default('support')->comment('Loại cuộc hội thoại: hỗ trợ khách hàng hay nội bộ');
+            // Đảm bảo bảng 'users' đã tồn tại trước khi chạy migration này
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade')->comment('ID khách hàng (có thể NULL nếu là chat nội bộ)');
+            $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null')->comment('Admin chịu trách nhiệm chính');
             $table->string('subject')->nullable();
             $table->enum('status', ['open', 'closed'])->default('open');
             $table->timestamp('last_message_at')->nullable();
@@ -28,7 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Xóa bảng khi rollback
         Schema::dropIfExists('chat_conversations');
     }
 };

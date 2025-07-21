@@ -377,5 +377,38 @@
             showMethod: "slideDown",
             hideMethod: "slideUp"
         };
+        window.addEventListener('cartQuantityUpdated', function(e) {
+            const {
+                itemId,
+                quantity
+            } = e.detail;
+
+            // Ở giỏ hàng chính (có <tr> với item-subtotal)
+            const $cartRow = $(`tr[data-item-id="${itemId}"]`);
+            if ($cartRow.length) {
+                const price = parseFloat($cartRow.find('.item-subtotal').data('price')) || 0;
+                const newSubtotal = price * quantity;
+                $cartRow.find('.item-subtotal').text(newSubtotal.toLocaleString('vi-VN') + 'đ');
+            }
+
+            // Ở modal hoặc sidebar (ví dụ có input .full-cart-input)
+            const $input = $(`.full-cart-input[data-item-id="${itemId}"]`);
+            if ($input.length) {
+                $input.val(quantity);
+
+                // Cập nhật subtotal nếu có phần tử tương ứng trong modal
+                const $modalSubtotal = $input.closest('.cart-item-modal').find('.modal-item-subtotal');
+                if ($modalSubtotal.length) {
+                    const price = parseFloat($modalSubtotal.data('price')) || 0;
+                    const newSubtotal = price * quantity;
+                    $modalSubtotal.text(newSubtotal.toLocaleString('vi-VN') + 'đ');
+                }
+            }
+            // Cập nhật nút, tổng tiền nếu có
+            updateButtonState($input.closest('tr, .cart-item-modal'));
+            if (typeof recalculateCartSummary === 'function') {
+                recalculateCartSummary();
+            }
+        });
     </script>
 @endpush

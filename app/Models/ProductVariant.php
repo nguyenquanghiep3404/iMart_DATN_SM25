@@ -99,4 +99,28 @@ class ProductVariant extends Model
             ->withPivot('value') // Quan trọng: Lấy cột 'value' từ bảng trung gian
             ->withTimestamps();
     }
+    public function inventories()
+{
+    return $this->hasMany(ProductInventory::class);
+}
+
+/**
+ * Lấy tổng số lượng tồn kho có thể bán được (ví dụ: new + open_box).
+ */
+public function getSellableStockAttribute(): int
+{
+    $sellableTypes = ['new']; 
+    return $this->inventories()
+                ->whereIn('inventory_type', $sellableTypes)
+                ->sum('quantity');
+}
+
+// Một biến thể sản phẩm (ProductVariant) có thể nằm trong nhiều chương trình flash sale khác nhau.
+// Thiết lập quan hệ 1-n với bảng trung gian flash_sale_products.
+public function flashSaleProducts()
+{
+    return $this->hasMany(FlashSaleProduct::class);
+}
+
+
 }
