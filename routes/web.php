@@ -156,8 +156,15 @@ Route::post('/buy-now/process', [PaymentController::class, 'processBuyNowOrder']
 // LOCATION API ROUTES
 //==========================================================================
 Route::prefix('api/locations')->name('api.locations.')->group(function () {
+    // Hệ thống địa chỉ mới
     Route::get('/provinces', [LocationController::class, 'getProvinces'])->name('provinces');
     Route::get('/wards/{provinceCode}', [LocationController::class, 'getWardsByProvince'])->name('wards');
+    // Hệ thống địa chỉ cũ
+    Route::get('/old/provinces', [LocationController::class, 'getOldProvinces'])->name('old.provinces');
+    Route::get('/old/districts/{provinceCode}', [LocationController::class, 'getOldDistrictsByProvince'])->name('old.districts');
+    Route::get('/old/wards/{districtCode}', [LocationController::class, 'getOldWardsByDistrict'])->name('old.wards');
+    // Kiểm tra hỗ trợ hệ thống mới
+    Route::get('/check-support/{provinceCode}', [LocationController::class, 'checkNewSystemSupport'])->name('check.support');
 });
 
 //==========================================================================

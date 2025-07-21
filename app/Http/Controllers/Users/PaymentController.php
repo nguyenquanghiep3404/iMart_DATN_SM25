@@ -39,8 +39,10 @@ class PaymentController extends Controller
     {
         // Validate dữ liệu
         $request->validate([
-            'province_code' => 'required|string|exists:provinces_new,code',
-            'ward_code' => 'required|string|exists:wards_new,code',
+            'address_system' => 'required|string|in:new,old',
+            'province_code' => 'required|string',
+            'ward_code' => 'required|string',
+            'district_code' => 'nullable|string', // Chỉ cần cho hệ thống cũ
             'shipping_method' => 'required|string',
             'shipping_time' => 'nullable|string',
             'full_name' => 'required|string|max:255',
@@ -51,6 +53,20 @@ class PaymentController extends Controller
             'payment_method' => 'required|string|in:cod,bank_transfer,vnpay,bank_transfer_qr,momo',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        // Validate địa chỉ dựa trên hệ thống
+        if ($request->address_system === 'new') {
+            $request->validate([
+                'province_code' => 'exists:provinces_new,code',
+                'ward_code' => 'exists:wards_new,code',
+            ]);
+        } else {
+            $request->validate([
+                'province_code' => 'exists:provinces_old,code',
+                'district_code' => 'required|exists:districts_old,code',
+                'ward_code' => 'exists:wards_old,code',
+            ]);
+        }
         // Kiểm tra giỏ hàng
         $cartData = $this->getCartData();
         if ($cartData['items']->isEmpty()) {
@@ -79,6 +95,9 @@ class PaymentController extends Controller
             $request->shipping_time
         );
 
+        // Chuẩn bị dữ liệu địa chỉ
+        $addressData = $this->prepareAddressData($request);
+
         // Tạo đơn hàng ngay lập tức với trạng thái "Chờ thanh toán"
         $order = Order::create([
             'user_id' => Auth::id(),
@@ -88,10 +107,25 @@ class PaymentController extends Controller
             'customer_email' => $request->email,
             'customer_phone' => $request->phone,
             'shipping_address_line1' => $request->address,
-            'shipping_province_code' => $request->province_code,
-            'shipping_ward_code' => $request->ward_code,
             'shipping_zip_code' => $request->postcode,
             'shipping_country' => 'Vietnam',
+            // Địa chỉ giao hàng
+            'shipping_address_system' => $request->address_system,
+            'shipping_new_province_code' => $addressData['shipping_new_province_code'],
+            'shipping_new_ward_code' => $addressData['shipping_new_ward_code'],
+            'shipping_old_province_code' => $addressData['shipping_old_province_code'],
+            'shipping_old_district_code' => $addressData['shipping_old_district_code'],
+            'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
+            // Địa chỉ thanh toán (mặc định giống địa chỉ giao hàng)
+            'billing_address_line1' => $request->address,
+            'billing_zip_code' => $request->postcode,
+            'billing_country' => 'Vietnam',
+            'billing_address_system' => $request->address_system,
+            'billing_new_province_code' => $addressData['shipping_new_province_code'],
+            'billing_new_ward_code' => $addressData['shipping_new_ward_code'],
+            'billing_old_province_code' => $addressData['shipping_old_province_code'],
+            'billing_old_district_code' => $addressData['shipping_old_district_code'],
+            'billing_old_ward_code' => $addressData['shipping_old_ward_code'],
             'sub_total' => $cartData['subtotal'],
             'shipping_fee' => $shippingFee,
             'discount_amount' => $cartData['discount'],
@@ -155,6 +189,9 @@ class PaymentController extends Controller
                 $request->shipping_method,
                 $request->shipping_time
             );
+            // Chuẩn bị dữ liệu địa chỉ
+            $addressData = $this->prepareAddressData($request);
+
             // Tạo đơn hàng
             $order = Order::create([
                 'user_id' => Auth::id(),
@@ -166,16 +203,24 @@ class PaymentController extends Controller
                 // Địa chỉ giao hàng
                 'shipping_address_line1' => $request->address,
                 'shipping_address_line2' => null,
-                'shipping_province_code' => $request->province_code,
-                'shipping_ward_code' => $request->ward_code,
                 'shipping_zip_code' => $request->postcode,
                 'shipping_country' => 'Vietnam',
+                'shipping_address_system' => $request->address_system,
+                'shipping_new_province_code' => $addressData['shipping_new_province_code'],
+                'shipping_new_ward_code' => $addressData['shipping_new_ward_code'],
+                'shipping_old_province_code' => $addressData['shipping_old_province_code'],
+                'shipping_old_district_code' => $addressData['shipping_old_district_code'],
+                'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
                 // Địa chỉ thanh toán (mặc định giống địa chỉ giao hàng)
                 'billing_address_line1' => $request->address,
-                'billing_province_code' => $request->province_code,
-                'billing_ward_code' => $request->ward_code,
                 'billing_zip_code' => $request->postcode,
                 'billing_country' => 'Vietnam',
+                'billing_address_system' => $request->address_system,
+                'billing_new_province_code' => $addressData['shipping_new_province_code'],
+                'billing_new_ward_code' => $addressData['shipping_new_ward_code'],
+                'billing_old_province_code' => $addressData['shipping_old_province_code'],
+                'billing_old_district_code' => $addressData['shipping_old_district_code'],
+                'billing_old_ward_code' => $addressData['shipping_old_ward_code'],
                 // Thông tin tài chính
                 'sub_total' => $cartData['subtotal'],
                 'shipping_fee' => $shippingFee,
@@ -282,6 +327,9 @@ class PaymentController extends Controller
             $shippingFee = $this->calculateShippingFee($request->shipping_method);
             $grandTotal = $cartData['subtotal'] + $shippingFee - $cartData['discount'];
 
+            // Chuẩn bị dữ liệu địa chỉ
+            $addressData = $this->prepareAddressData($request);
+
             $order = Order::create([
                 'user_id' => Auth::id(),
                 'guest_id' => !Auth::check() ? session()->getId() : null,
@@ -290,8 +338,14 @@ class PaymentController extends Controller
                 'customer_email' => $request->email,
                 'customer_phone' => $request->phone,
                 'shipping_address_line1' => $request->address,
-                'shipping_province_code' => $request->province_code,
-                'shipping_ward_code' => $request->ward_code,
+                'shipping_zip_code' => $request->postcode,
+                'shipping_country' => 'Vietnam',
+                'shipping_address_system' => $request->address_system,
+                'shipping_new_province_code' => $addressData['shipping_new_province_code'],
+                'shipping_new_ward_code' => $addressData['shipping_new_ward_code'],
+                'shipping_old_province_code' => $addressData['shipping_old_province_code'],
+                'shipping_old_district_code' => $addressData['shipping_old_district_code'],
+                'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
                 'sub_total' => $cartData['subtotal'],
                 'shipping_fee' => $shippingFee,
                 'discount_amount' => $cartData['discount'],
@@ -539,6 +593,9 @@ class PaymentController extends Controller
             $shippingFee = $this->calculateShippingFee($request->shipping_method);
             $grandTotal = $cartData['subtotal'] + $shippingFee - $cartData['discount'];
 
+            // Chuẩn bị dữ liệu địa chỉ
+            $addressData = $this->prepareAddressData($request);
+
             $order = Order::create([
                 'user_id' => Auth::id(),
                 'guest_id' => !Auth::check() ? session()->getId() : null,
@@ -547,8 +604,14 @@ class PaymentController extends Controller
                 'customer_email' => $request->email,
                 'customer_phone' => $request->phone,
                 'shipping_address_line1' => $request->address,
-                'shipping_province_code' => $request->province_code,
-                'shipping_ward_code' => $request->ward_code,
+                'shipping_zip_code' => $request->postcode,
+                'shipping_country' => 'Vietnam',
+                'shipping_address_system' => $request->address_system,
+                'shipping_new_province_code' => $addressData['shipping_new_province_code'],
+                'shipping_new_ward_code' => $addressData['shipping_new_ward_code'],
+                'shipping_old_province_code' => $addressData['shipping_old_province_code'],
+                'shipping_old_district_code' => $addressData['shipping_old_district_code'],
+                'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
                 'sub_total' => $cartData['subtotal'],
                 'shipping_fee' => $shippingFee,
                 'discount_amount' => $cartData['discount'],
@@ -1088,8 +1151,10 @@ public function showBankTransferQr(Order $order)
     {
         // Validate dữ liệu (giống như processOrder)
         $request->validate([
-            'province_code' => 'required|string|exists:provinces_new,code',
-            'ward_code' => 'required|string|exists:wards_new,code',
+            'address_system' => 'required|string|in:new,old',
+            'province_code' => 'required|string',
+            'ward_code' => 'required|string',
+            'district_code' => 'nullable|string', // Chỉ cần cho hệ thống cũ
             'shipping_method' => 'required|string',
             'shipping_time' => 'nullable|string',
             'full_name' => 'required|string|max:255',
@@ -1100,6 +1165,20 @@ public function showBankTransferQr(Order $order)
             'payment_method' => 'required|string|in:cod,bank_transfer,vnpay',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        // Validate địa chỉ dựa trên hệ thống
+        if ($request->address_system === 'new') {
+            $request->validate([
+                'province_code' => 'exists:provinces_new,code',
+                'ward_code' => 'exists:wards_new,code',
+            ]);
+        } else {
+            $request->validate([
+                'province_code' => 'exists:provinces_old,code',
+                'district_code' => 'required|exists:districts_old,code',
+                'ward_code' => 'exists:wards_old,code',
+            ]);
+        }
         // Kiểm tra session Buy Now
         if (!session()->has('buy_now_session')) {
             return response()->json(['success' => false, 'message' => 'Phiên mua hàng đã hết hạn.'], 400);
@@ -1119,6 +1198,9 @@ public function showBankTransferQr(Order $order)
                 $request->shipping_method,
                 $request->shipping_time
             );
+            // Chuẩn bị dữ liệu địa chỉ
+            $addressData = $this->prepareAddressData($request);
+
             // Tạo đơn hàng
             $order = Order::create([
                 'user_id' => Auth::id(),
@@ -1130,16 +1212,24 @@ public function showBankTransferQr(Order $order)
                 // Địa chỉ giao hàng
                 'shipping_address_line1' => $request->address,
                 'shipping_address_line2' => null,
-                'shipping_province_code' => $request->province_code,
-                'shipping_ward_code' => $request->ward_code,
                 'shipping_zip_code' => $request->postcode,
                 'shipping_country' => 'Vietnam',
+                'shipping_address_system' => $request->address_system,
+                'shipping_new_province_code' => $addressData['shipping_new_province_code'],
+                'shipping_new_ward_code' => $addressData['shipping_new_ward_code'],
+                'shipping_old_province_code' => $addressData['shipping_old_province_code'],
+                'shipping_old_district_code' => $addressData['shipping_old_district_code'],
+                'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
                 // Địa chỉ thanh toán (mặc định giống địa chỉ giao hàng)
                 'billing_address_line1' => $request->address,
-                'billing_province_code' => $request->province_code,
-                'billing_ward_code' => $request->ward_code,
                 'billing_zip_code' => $request->postcode,
                 'billing_country' => 'Vietnam',
+                'billing_address_system' => $request->address_system,
+                'billing_new_province_code' => $addressData['shipping_new_province_code'],
+                'billing_new_ward_code' => $addressData['shipping_new_ward_code'],
+                'billing_old_province_code' => $addressData['shipping_old_province_code'],
+                'billing_old_district_code' => $addressData['shipping_old_district_code'],
+                'billing_old_ward_code' => $addressData['shipping_old_ward_code'],
                 // Thông tin tài chính
                 'sub_total' => $buyNowData['subtotal'],
                 'shipping_fee' => $shippingFee,
@@ -1249,6 +1339,31 @@ public function showBankTransferQr(Order $order)
     private function clearBuyNowSession()
     {
         session()->forget('buy_now_session');
+    }
+
+    /**
+     * Helper method để chuẩn bị dữ liệu địa chỉ cho cả hệ thống mới và cũ
+     */
+    private function prepareAddressData(Request $request): array
+    {
+        $addressData = [
+            'shipping_new_province_code' => null,
+            'shipping_new_ward_code' => null,
+            'shipping_old_province_code' => null,
+            'shipping_old_district_code' => null,
+            'shipping_old_ward_code' => null,
+        ];
+
+        if ($request->address_system === 'new') {
+            $addressData['shipping_new_province_code'] = $request->province_code;
+            $addressData['shipping_new_ward_code'] = $request->ward_code;
+        } else {
+            $addressData['shipping_old_province_code'] = $request->province_code;
+            $addressData['shipping_old_district_code'] = $request->district_code;
+            $addressData['shipping_old_ward_code'] = $request->ward_code;
+        }
+
+        return $addressData;
     }
 
     /**
