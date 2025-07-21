@@ -18,7 +18,6 @@
                 <span class="font-medium text-gray-700">{{ $product->name }}
                 </span>
             </nav>
-
             {{-- Gallery + Options --}}
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 items-start">
                 {{-- Cột trái: Thư viện ảnh --}}

@@ -10,91 +10,6 @@ use Illuminate\Support\Carbon;
 
 class CommentController extends Controller
 {
-    
-    // public function store(Request $request)
-    // {
-    //     if (!$request->ajax()) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Yêu cầu không hợp lệ.',
-    //         ], 400);
-    //     }
-
-    //     $isGuest = !Auth::check();
-
-    //     $rules = [
-    //         'commentable_type' => 'required|string',
-    //         'commentable_id'   => 'required|integer',
-    //         'content'          => 'required|string|max:3000',
-    //         'images.*'         => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-    //         'parent_id'        => 'nullable|exists:comments,id',
-    //     ];
-
-    //     if ($isGuest) {
-    //         $rules = array_merge($rules, [
-    //             'guest_name'  => 'required|string|max:255',
-    //             'guest_email' => 'required|email|max:255',
-    //             'guest_phone' => 'required|string|max:20',
-    //             'gender'      => 'required|string|in:Anh,Chị',
-    //         ]);
-    //     }
-
-    //     $validated = $request->validate($rules);
-
-    //     $imagePaths = [];
-    //     if ($request->hasFile('images')) {
-    //         foreach ($request->file('images') as $image) {
-    //             $imagePaths[] = $image->store('comments', 'public');
-    //         }
-    //     }
-
-    //     $comment = new Comment();
-    //     $comment->commentable_type = $validated['commentable_type'];
-    //     $comment->commentable_id   = $validated['commentable_id'];
-    //     $comment->user_id          = Auth::id(); // null nếu guest
-    //     $comment->parent_id        = $validated['parent_id'] ?? null;
-    //     $comment->content          = $validated['content'];
-    //     $comment->image_paths      = $imagePaths;
-    //     if (!$isGuest && Auth::user()->hasRole('admin')) {
-    //         $comment->status = 'approved';
-    //     } else {
-    //         $comment->status = 'pending';
-    //     }
-
-    //     if ($isGuest) {
-    //         $comment->guest_name  = $validated['guest_name'];
-    //         $comment->guest_email = $validated['guest_email'];
-    //         $comment->guest_phone = $validated['guest_phone'];
-    //         $comment->gender      = $validated['gender'];
-    //     }
-
-    //     $comment->save();
-    //     $comment->load('user');
-
-    //     // Convert ảnh sang URL
-    //     $images = [];
-    //     foreach ($imagePaths as $path) {
-    //         $images[] = asset('storage/' . $path);
-    //     }
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => 'Bình luận đã được gửi.',
-    //         'is_guest' => $isGuest,
-    //         'comment' => [
-    //             'id'        => $comment->id,
-    //             'name'      => $isGuest ? $comment->guest_name : ($comment->user->name ?? 'Khách'),
-    //             'initial'   => strtoupper(mb_substr($isGuest ? $comment->guest_name : ($comment->user->name ?? 'K'), 0, 1)),
-    //             'content'   => $comment->content,
-    //             'time'      => $comment->created_at->diffForHumans(),
-    //             'images'    => $images,
-    //             'parent_id' => $comment->parent_id,
-    //             'status'    => $comment->status,
-    //             'is_owner'  => $isGuest ? true : (Auth::id() === $comment->user_id),
-    //             'is_admin'  => !$isGuest && $comment->user ? $comment->user->hasRole('admin') : false,
-    //         ],
-    //     ]);
-    // }
     public function store(Request $request)
     {
         if (!$request->ajax()) {
@@ -170,7 +85,7 @@ class CommentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Bình luận đã tồn tại.',
+                // 'message' => 'Bình luận đã tồn tại.',
                 'is_guest' => $isGuest,
                 'comment' => [
                     'id'        => $existingComment->id,

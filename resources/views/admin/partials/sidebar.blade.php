@@ -37,6 +37,8 @@
         $activeParentNav = 15; // Index của "quản lý comment"
     } elseif (str_starts_with($currentRouteName, 'admin.homepage.')) {
         $activeParentNav = 16; // Index của "quản lý trang chủ"
+    } elseif (str_starts_with($currentRouteName, 'admin.flash-sales.')) {
+        $activeParentNav = 17; // Index của "quản lý trang chủ"
     }
     // Thêm các điều kiện khác nếu cần
 @endphp
@@ -585,6 +587,24 @@
             </svg>
         </span>
         Quản lý trang chủ
+    </a>
+</li>
+
+   {{-- 10. Quản lý Flash-Sales --}}
+<li>
+    @php $isSalesActive = request()->routeIs('admin.flash-sales.*'); @endphp
+    <a href="{{ route('admin.flash-sales.index') }}"
+        class="group flex items-center px-4 py-2.5
+            text-base rounded-md transition-all duration-200 ease-in-out
+            {{ $isSalesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+        <span
+            class="mr-3 text-lg {{ $isSalesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+            {{-- Icon mới: hình ngôi nhà --}}
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7 2v11h3v9l7-12h-4l3-8z"/>
+            </svg>
+        </span>
+        Quản lý Flash Sales
     </a>
 </li>
 

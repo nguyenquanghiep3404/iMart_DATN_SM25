@@ -11,7 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::table('product_inventories')->whereIn('inventory_type', ['open_box', 'used'])->delete();
+        Schema::create('store_locations', function (Blueprint $table) {
+    $table->id();
+    $table->string('name');
+    $table->string('address');
+    $table->string('phone')->nullable();
+    $table->boolean('is_active')->default(true);
+    $table->timestamps();
+});
     }
 
     /**
@@ -19,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('store_locations');
     }
 };

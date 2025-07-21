@@ -15,19 +15,29 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')->constrained()->onDelete('cascade');
             $table->string('sku')->unique();
+            
+            // Nhóm các trường về giá
             $table->decimal('price', 15, 2);
+            $table->decimal('cost_price', 15, 2)->default(0)->comment('Giá vốn sản phẩm');
             $table->decimal('sale_price', 15, 2)->nullable();
             $table->timestamp('sale_price_starts_at')->nullable();
             $table->timestamp('sale_price_ends_at')->nullable();
-            $table->integer('stock_quantity')->default(0); // Tồn kho tổng cho biến thể này
+            
+            // Nhóm các trường về kho
             $table->boolean('manage_stock')->default(true);
             $table->enum('stock_status', ['in_stock', 'out_of_stock', 'on_backorder'])->default('in_stock');
+            $table->integer('low_stock_threshold')->unsigned()->default(10)->comment('Ngưỡng cảnh báo tồn kho thấp');
+            
+            // Nhóm các trường về vận chuyển
             $table->decimal('weight', 8, 2)->nullable();
             $table->decimal('dimensions_length', 8, 2)->nullable();
             $table->decimal('dimensions_width', 8, 2)->nullable();
             $table->decimal('dimensions_height', 8, 2)->nullable();
+            
+            // Các trường khác
             $table->boolean('is_default')->default(false);
             $table->enum('status', ['active', 'inactive'])->default('active');
+
             $table->softDeletes();
             $table->timestamps();
         });
