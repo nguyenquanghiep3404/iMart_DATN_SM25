@@ -23,52 +23,56 @@ class ProductRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
      */
     public function rules(): array
-    {
-        /** @var Product|null $product */
-        $product = $this->route('product');
-        $productId = $product ? $product->id : null;
+{
+    /** @var Product|null $product */
+    $product = $this->route('product');
+    $productId = $product ? $product->id : null;
 
-        $rules = [
-            // --- General Rules ---
-            'name' => ['required', 'string', 'max:255', Rule::unique('products')->ignore($productId)],
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('products')->ignore($productId)],
-            'category_id' => 'required|exists:categories,id',
-            'status' => 'required|in:published,draft,pending_review,trashed',
-            'type' => 'required|in:simple,variable',
-        ];
+    $rules = [
+        // --- General Rules ---
+        'name' => ['required', 'string', 'max:255', Rule::unique('products')->ignore($productId)],
+        'slug' => ['nullable', 'string', 'max:255', Rule::unique('products')->ignore($productId)],
+        'category_id' => 'required|exists:categories,id',
+        'status' => 'required|in:published,draft,pending_review,trashed',
+        'type' => 'required|in:simple,variable',
+    ];
 
-        // --- Rules based on Product Type ---
-        if ($this->input('type') === 'simple') {
-            // Khi cập nhật, cần tìm ID của biến thể duy nhất để bỏ qua khi kiểm tra SKU
-            $variantIdToIgnore = null;
-            if ($product && $product->type === 'simple' && $product->variants->first()) {
-                $variantIdToIgnore = $product->variants->first()->id;
-            }
-
-            $rules = array_merge($rules, [
-                'cover_image_id' => 'required|integer|exists:uploaded_files,id',
-                'simple_price' => 'required|numeric|min:0',
-                'simple_sale_price' => 'nullable|numeric|min:0|lte:simple_price',
-                'simple_sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
-                'simple_sale_price_ends_at' => ['nullable', 'date', 'after:simple_sale_price_starts_at'],
-                'simple_sku' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    Rule::unique('product_variants', 'sku')->ignore($variantIdToIgnore)
-                ],
-                // SỬA ĐỔI: Validation cho tồn kho chi tiết của sản phẩm đơn giản để khớp với view
-                'simple_inventories' => ['required', 'array'],
-                'simple_inventories.new' => ['required', 'integer', 'min:0'],
-                'simple_inventories.defective' => ['nullable', 'integer', 'min:0'],
-            ]);
+    // --- Rules based on Product Type ---
+    if ($this->input('type') === 'simple') {
+        $variantIdToIgnore = null;
+        if ($product && $product->type === 'simple' && $product->variants->first()) {
+            $variantIdToIgnore = $product->variants->first()->id;
         }
 
-        if ($this->input('type') === 'variable') {
+        $rules = array_merge($rules, [
+            'cover_image_id' => 'required|integer|exists:uploaded_files,id',
+            'simple_price' => 'required|numeric|min:0',
+            'simple_sale_price' => 'nullable|numeric|min:0|lte:simple_price',
+            'simple_sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
+            'simple_sale_price_ends_at' => ['nullable', 'date', 'after:simple_sale_price_starts_at'],
+            'simple_sku' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('product_variants', 'sku')->ignore($variantIdToIgnore)
+            ],
+            'simple_inventories' => ['required', 'array'],
+            'simple_inventories.new' => ['required', 'integer', 'min:0'],
+            'simple_inventories.defective' => ['nullable', 'integer', 'min:0'],
+        ]);
+    }
+
+    if ($this->input('type') === 'variable') {
+        // BẮT ĐẦU SỬA ĐỔI
+        // Kiểm tra xem người dùng đã thực sự thêm biến thể chưa
+        if (!$this->has('variants') || !is_array($this->input('variants')) || count($this->input('variants')) === 0) {
+            // Nếu chưa, chỉ cần yêu cầu phải có ít nhất một biến thể
+            $rules['variants'] = 'required|array|min:1';
+        } else {
+            // Nếu đã thêm biến thể, áp dụng các quy tắc chi tiết cho từng biến thể
             $rules = array_merge($rules, [
-                'variants' => 'required|array|min:1',
                 'variants.*.id' => 'nullable|integer|exists:product_variants,id',
-                'variants.*.price' => 'required|nullable|numeric|min:0',
+                'variants.*.price' => 'required|numeric|min:0',
                 'variants.*.sale_price' => 'nullable|numeric|min:0|lte:variants.*.price',
                 'variants.*.sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
                 'variants.*.sale_price_ends_at' => ['nullable', 'date', 'after:variants.*.sale_price_starts_at'],
@@ -78,17 +82,19 @@ class ProductRequest extends FormRequest
                     'required',
                     'string',
                     'max:255',
-                    'distinct:ignore_case', // Kiểm tra trùng lặp SKU trong chính request
+                    'distinct:ignore_case',
                 ],
-                // SỬA ĐỔI: Validation cho tồn kho chi tiết của biến thể để khớp với view
                 'variants.*.inventories' => ['required', 'array'],
                 'variants.*.inventories.new' => ['required', 'integer', 'min:0'],
                 'variants.*.inventories.defective' => ['nullable', 'integer', 'min:0'],
             ]);
         }
-
-        return $rules;
+        // KẾT THÚC SỬA ĐỔI
     }
+
+    return $rules;
+}
+
 
     /**
      * Configure the validator instance.

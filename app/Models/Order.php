@@ -223,4 +223,8 @@ class Order extends Model
     {
         return $query->where('shipping_ward_code', $wardCode);
     }
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }

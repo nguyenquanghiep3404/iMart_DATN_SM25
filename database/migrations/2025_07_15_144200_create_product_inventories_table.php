@@ -8,33 +8,43 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
     public function up(): void
     {
         Schema::create('product_inventories', function (Blueprint $table) {
-            $table->id(); // Primary Key, BigInt, Auto Increment
+            $table->id();
 
             // Foreign key liên kết đến bảng product_variants
             $table->foreignId('product_variant_id')
                   ->constrained('product_variants')
-                  ->onDelete('cascade'); // Nếu xóa biến thể, các record kho cũng sẽ bị xóa
+                  ->onDelete('cascade');
 
-            $table->string('inventory_type')->index(); 
-            $table->integer('quantity')->default(0); // Số lượng tồn kho
+            // THÊM MỚI: Foreign key liên kết đến bảng store_locations
+            // Bảng 'store_locations' phải được tạo trước file này
+            $table->foreignId('store_location_id')
+                  ->constrained('store_locations')
+                  ->onDelete('cascade');
 
-            $table->timestamps(); // created_at và updated_at
+            $table->string('inventory_type')->index()->comment("Loại tồn kho: new, defective...");
+            $table->integer('quantity')->default(0);
 
-            // Tạo một khóa UNIQUE kết hợp để đảm bảo mỗi biến thể
-            // chỉ có một hàng cho mỗi loại tồn kho.
-            $table->unique(['product_variant_id', 'inventory_type']);
+            $table->timestamps();
+
+            // SỬA ĐỔI: Tạo khóa UNIQUE kết hợp cho cả 3 cột ngay từ đầu
+            // để đảm bảo mỗi biến thể tại mỗi cửa hàng chỉ có một hàng cho mỗi loại tồn kho.
+            $table->unique(['product_variant_id', 'store_location_id', 'inventory_type'], 'inventory_unique_key');
         });
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_inventories');
+        
     }
 };
