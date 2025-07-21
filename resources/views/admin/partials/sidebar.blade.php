@@ -40,6 +40,9 @@
     } elseif (str_starts_with($currentRouteName, 'admin.flash-sales.')) {
         $activeParentNav = 17; // Index của "quản lý trang chủ"
     }
+    elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
+        $activeParentNav = 18; // Index của "quản lý trang chủ"
+    }
     // Thêm các điều kiện khác nếu cần
 @endphp
 
