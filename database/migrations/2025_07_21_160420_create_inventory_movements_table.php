@@ -15,6 +15,7 @@ return new class extends Migration
     $table->id();
     $table->foreignId('product_variant_id')->constrained('product_variants');
     $table->foreignId('store_location_id')->constrained('store_locations');
+    $table->unsignedBigInteger('lot_id')->nullable();
     $table->string('inventory_type');
     $table->integer('quantity_change');
     $table->integer('quantity_after_change');

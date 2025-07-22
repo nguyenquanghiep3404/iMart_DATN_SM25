@@ -27,6 +27,9 @@ class ProductVariant extends Model
         'dimensions_height',
         'is_default',
         'status',
+        'cost_price', 
+        'points_awarded_on_purchase'
+
     ];
 
     protected $casts = [
