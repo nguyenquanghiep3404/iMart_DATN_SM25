@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\Banner;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\HomepageProductBlock;
 
@@ -74,9 +75,30 @@ class HomepageController extends Controller
             ];
         })->toArray();
 
+        // Lấy banner theo order
+        $banners = Banner::with(['desktopImage', 'mobileImage'])
+            ->orderBy('order')
+            ->get();
+
+        // ✅ CHUYỂN DỮ LIỆU banner sang dạng JS-friendly
+        $bannerForJs = $banners->map(function ($b) {
+            return [
+                'id' => $b->id,
+                'title' => $b->title,
+                'status' => $b->status,
+                'order' => $b->order,
+                'start_date' => $b->start_date,
+                'end_date' => $b->end_date,
+                'desktop_image' => $b->desktopImage ? asset('storage/' . $b->desktopImage->path) : '/images/no-image.png',
+                'mobile_image' => $b->mobileImage ? asset('storage/' . $b->mobileImage->path) : null,
+            ];
+        })->toArray();
+
+
         return view('admin.homepage.index', [
-            'banners' => [], // chưa làm
+            'banners' => $banners, // chưa làm
             'categories' => $categories,
+            'bannersForJs' => $bannerForJs,
             'categoriesForJs' => $categoriesForJs,
             'productBlocks' => $productBlocks, // cho Blade nếu cần
             'productBlocksForJs' => $productBlocksForJs, // cho JavaScript render
@@ -148,6 +170,61 @@ class HomepageController extends Controller
         }
 
         return response()->json(['message' => '✅ Đã lưu toàn bộ thay đổi']);
+    }
+
+    /**
+     * Cập nhật trạng thái hiển thị của danh mục
+     */
+    public function toggleCategory(Request $request, $categoryId)
+    {
+        try {
+            $category = Category::findOrFail($categoryId);
+            $isActive = $request->input('show_on_homepage', false);
+
+            // Kiểm tra số lượng danh mục được chọn
+            $selectedCount = Category::where('show_on_homepage', true)->count();
+            if ($isActive && $selectedCount >= 7 && !$category->show_on_homepage) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn chỉ được chọn tối đa 7 danh mục hiển thị trên trang chủ.'
+                ], 422);
+            }
+
+            $category->show_on_homepage = $isActive;
+            $category->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => $isActive ? 'Đã bật hiển thị danh mục trên trang chủ' : 'Đã tắt hiển thị danh mục trên trang chủ',
+                'show_on_homepage' => $category->show_on_homepage
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Lỗi khi cập nhật trạng thái danh mục: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Không thể cập nhật trạng thái danh mục'
+            ], 500);
+        }
+    }
+
+    /**
+     * Cập nhật thứ tự danh mục
+     */
+    public function updateCategoryOrder(Request $request)
+    {
+        $categoryIds = $request->input('category_ids', []);
+        DB::beginTransaction();
+        try {
+            foreach ($categoryIds as $index => $categoryId) {
+                Category::where('id', $categoryId)->update(['order' => $index + 1]);
+            }
+            DB::commit();
+            return response()->json(['message' => 'Cập nhật thứ tự danh mục thành công']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Lỗi cập nhật thứ tự danh mục: ' . $e->getMessage());
+            return response()->json(['message' => 'Lỗi cập nhật thứ tự danh mục'], 500);
+        }
     }
 
     public function storeProductBlock(Request $request)
@@ -254,8 +331,6 @@ class HomepageController extends Controller
     }
 
 
-
-
     public function addProductsToBlock(Request $request, HomepageProductBlock $block)
     {
         try {
@@ -332,21 +407,68 @@ class HomepageController extends Controller
     }
 
     public function toggleBlockVisibility($id)
-{
-    try {
-        $block = HomepageProductBlock::findOrFail($id);
-        $block->is_visible = !$block->is_visible;
-        $block->save();
+    {
+        try {
+            $block = HomepageProductBlock::findOrFail($id);
+            $block->is_visible = !$block->is_visible;
+            $block->save();
 
-        return response()->json([
-            'success' => true,
-            'is_visible' => $block->is_visible,
-            'message' => $block->is_visible ? 'Khối đã được hiển thị' : 'Khối đã bị ẩn',
-        ]);
-    } catch (\Throwable $e) {
-        \Log::error('Toggle visibility error: ' . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'Không thể cập nhật trạng thái hiển thị'], 500);
+            return response()->json([
+                'success' => true,
+                'is_visible' => $block->is_visible,
+                'message' => $block->is_visible ? 'Khối đã được hiển thị' : 'Khối đã bị ẩn',
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Toggle visibility error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Không thể cập nhật trạng thái hiển thị'], 500);
+        }
     }
-}
 
+    // HomepageController.php
+    // HomepageController.php
+    public function updateBlockOrder(Request $request)
+    {
+        $blockIds = $request->input('block_ids', []);
+        DB::beginTransaction();
+        try {
+            foreach ($blockIds as $index => $blockId) {
+                DB::table('homepage_product_blocks')
+                    ->where('id', $blockId)
+                    ->update(['order' => $index + 1]);
+            }
+            DB::commit();
+            return response()->json(['message' => 'Cập nhật thứ tự khối sản phẩm thành công']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Lỗi cập nhật thứ tự khối sản phẩm'], 500);
+        }
+    }
+
+    public function updateProductOrder(Request $request, $blockId)
+    {
+        $productIds = $request->input('product_ids', []);
+        DB::beginTransaction();
+        try {
+            foreach ($productIds as $index => $productId) {
+                DB::table('homepage_block_product')
+                    ->where('block_id', $blockId)
+                    ->where('product_id', $productId)
+                    ->update(['order' => $index + 1]);
+            }
+            DB::commit();
+            return response()->json(['message' => 'Cập nhật thứ tự sản phẩm thành công']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Lỗi cập nhật thứ tự sản phẩm'], 500);
+        }
+    }
+
+    public function updateBannerOrder(Request $request)
+    {
+        $bannerIds = $request->input('banner_ids', []);
+        foreach ($bannerIds as $index => $id) {
+            Banner::where('id', $id)->update(['order' => $index + 1]);
+        }
+        return response()->json(['message' => 'Cập nhật thứ tự banner thành công']);
+    }
 }

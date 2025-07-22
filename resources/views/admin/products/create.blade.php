@@ -873,7 +873,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                             </div>
 
                             <!-- Schedule Container -->
@@ -1847,133 +1847,194 @@
         // HÀM KHÔI PHỤC DỮ LIỆU "OLD" TỪ BIẾN CÓ SẴN
         // =================================================================
         function repopulateFormFromOldData() {
-            // --- Xử lý sản phẩm đơn giản ---
-            const simpleGalleryIds = @json(old('gallery_images', []), JSON_UNESCAPED_UNICODE);
-            if (simpleGalleryIds.length > 0 || oldCoverImageId) {
-                const imagesForSimpleProduct = [];
-                let allSimpleIds = [...simpleGalleryIds];
-                if (oldCoverImageId) allSimpleIds.push(oldCoverImageId);
+    // --- Khôi phục sản phẩm đơn giản (giữ nguyên) ---
+    const simpleGalleryIds = @json(old('gallery_images', []), JSON_UNESCAPED_UNICODE);
+    if (simpleGalleryIds.length > 0 || oldCoverImageId) {
+        const imagesForSimpleProduct = [];
+        let allSimpleIds = [...new Set([...simpleGalleryIds, oldCoverImageId].filter(id => id))];
+        allSimpleIds.forEach(id => {
+            if (oldImagesData[id]) imagesForSimpleProduct.push(oldImagesData[id]);
+        });
 
-                [...new Set(allSimpleIds)].forEach(id => {
-                    if (oldImagesData[id]) {
-                        imagesForSimpleProduct.push(oldImagesData[id]);
-                    }
-                });
+        if (imagesForSimpleProduct.length > 0) {
+            const previewContainer = document.getElementById('simple_product_image_preview_container');
+            const idsContainer = document.getElementById('image_ids_container');
+            addImagesToProductForm(imagesForSimpleProduct, previewContainer, idsContainer, 'simple');
+            if (oldCoverImageId) setSimpleProductPrimaryImage(parseInt(oldCoverImageId));
+        }
+    }
 
-                if (imagesForSimpleProduct.length > 0) {
-                    const previewContainer = document.getElementById('simple_product_image_preview_container');
-                    const idsContainer = document.getElementById('image_ids_container');
-                    addImagesToProductForm(imagesForSimpleProduct, previewContainer, idsContainer, 'simple');
-                    if (oldCoverImageId) {
-                        setSimpleProductPrimaryImage(parseInt(oldCoverImageId));
-                    }
+    // --- Khôi phục sản phẩm có biến thể ---
+    const productTypeRadio = document.querySelector('input[name="type"]:checked');
+    if (productTypeRadio && productTypeRadio.value === 'variable' && Array.isArray(oldVariantsData) && oldVariantsData.length > 0) {
+        if (variantsContainer) variantsContainer.innerHTML = '';
+        variantIndexGlobal = 0;
+
+        // BƯỚC 1: Tick lại các thuộc tính đã được sử dụng
+        let usedAttributeIdsInOld = new Set();
+        oldVariantsData.forEach(oldVar => {
+            if (oldVar.attributes && typeof oldVar.attributes === 'object') {
+                Object.keys(oldVar.attributes).forEach(attrId => usedAttributeIdsInOld.add(parseInt(attrId)));
+            }
+        });
+        document.querySelectorAll('.product-attribute-checkbox').forEach(cb => {
+            if (usedAttributeIdsInOld.has(parseInt(cb.value))) {
+                cb.checked = true;
+            }
+        });
+
+        // BƯỚC 2: Cập nhật biến toàn cục
+        updateSelectedAttributesForVariants();
+
+        // BƯỚC 3: Tái tạo trực tiếp các card biến thể từ dữ liệu old()
+        oldVariantsData.forEach(oldVariantData => {
+            // Hàm `addVariantCard` mới sẽ tạo và điền dữ liệu luôn
+            addVariantCard(oldVariantData); 
+        });
+
+        updateDefaultVariantRadioAndHiddenFields();
+        updateAllCopySpecButtons();
+    }
+}
+
+// =================================================================
+// HÀM TẠO MỚI MỘT CARD BIẾN THỂ (CÓ THỂ CÓ DỮ LIỆU HOẶC KHÔNG)
+// =================================================================
+function addVariantCard(initialData = null) {
+    const currentVariantIndex = variantIndexGlobal;
+
+    if (selectedProductAttributes.length === 0) {
+        showMessageModal('Thông báo', 'Vui lòng chọn ít nhất một thuộc tính để tạo biến thể.', 'info');
+        return;
+    }
+
+    const variantCard = document.createElement('div');
+    variantCard.className = 'variant-card';
+    variantCard.dataset.variantIndex = currentVariantIndex;
+    
+    // -- Xây dựng HTML cho các lựa chọn thuộc tính --
+    let attributesHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4">';
+    selectedProductAttributes.forEach(attr => {
+        if (!attr || !Array.isArray(attr.attributeValues)) return;
+        const selectedValue = initialData?.attributes?.[attr.id] || '';
+        attributesHTML += `
+            <div class="input-group">
+                <label for="variants_${currentVariantIndex}_attr_${attr.id}" class="text-sm font-medium">${attr.name} <span class="required-star">*</span></label>
+                <div>
+                    <select name="variants[${currentVariantIndex}][attributes][${attr.id}]" class="select-field text-sm">
+                        <option value="">Chọn ${attr.name}</option>
+                        ${attr.attributeValues.map(val => `<option value="${val.id}" ${selectedValue == val.id ? 'selected' : ''}>${val.value}</option>`).join('')}
+                    </select>
+                </div>
+            </div>`;
+    });
+    attributesHTML += '</div>';
+
+    // -- Xây dựng HTML cho toàn bộ card --
+    const cardHTML = `
+        <div class="variant-header">
+            <h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4>
+            <div class="flex items-center space-x-2">
+                <div class="action-dropdown">
+                    <button type="button" class="btn btn-secondary btn-sm !uppercase">Tùy chọn</button>
+                    <div class="action-dropdown-content"></div>
+                </div>
+                <button type="button" class="remove-variant-btn btn btn-danger btn-sm" data-variant-index="${currentVariantIndex}">Xóa</button>
+            </div>
+        </div>
+        ${attributesHTML}
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            <div class="input-group"><label class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" value="${initialData?.sku || ''}"></div></div>
+            <div class="input-group"><label class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" value="${initialData?.price || ''}"></div></div>
+            <div class="input-group">
+                <div class="label-with-action"><label class="text-sm font-medium">Giá KM (VNĐ)</label><a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium hover:underline">Lên lịch</a></div>
+                <div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0" value="${initialData?.sale_price || ''}"></div>
+            </div>
+            <div class="input-group">
+                <label class="form-section-heading">Quản lý tồn kho</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 p-3 border rounded-md bg-gray-50">
+                    <div class="input-group !mb-0"><label class="!text-xs !font-normal !text-gray-500">Hàng mới <span class="required-star">*</span></label><input type="number" name="variants[${currentVariantIndex}][inventories][new]" class="input-field !py-2 !text-sm" min="0" value="${initialData?.inventories?.new || 0}"></div>
+                    <div class="input-group !mb-0"><label class="!text-xs !font-normal !text-gray-500">Hàng lỗi / Kho nội bộ</label><input type="number" name="variants[${currentVariantIndex}][inventories][defective]" class="input-field !py-2 !text-sm" min="0" value="${initialData?.inventories?.defective || 0}"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="schedule-container ${ (initialData?.sale_price_starts_at || initialData?.sale_price_ends_at) ? '' : 'hidden' } mt-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div class="input-group"><label class="text-xs font-medium">Thời gian bắt đầu</label><input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_starts_at]" class="input-field" value="${initialData?.sale_price_starts_at || ''}"></div>
+                <div class="input-group"><label class="text-xs font-medium">Thời gian kết thúc</label><input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_ends_at]" class="input-field" value="${initialData?.sale_price_ends_at || ''}"></div>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4 pt-4 border-t border-gray-200">
+            <div class="input-group"><label class="text-sm font-medium">Cân nặng (kg)</label><input type="number" step="0.01" min="0" name="variants[${currentVariantIndex}][weight]" class="input-field text-sm" value="${initialData?.weight || ''}"></div>
+            <div class="input-group"><label class="text-sm font-medium">Kích thước (D x R x C) (cm)</label><div class="grid grid-cols-3 gap-x-2"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_length]" placeholder="Dài" class="input-field text-sm" value="${initialData?.dimensions_length || ''}"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_width]" placeholder="Rộng" class="input-field text-sm" value="${initialData?.dimensions_width || ''}"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_height]" placeholder="Cao" class="input-field text-sm" value="${initialData?.dimensions_height || ''}"></div></div>
+        </div>
+        
+        <div class="input-group md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+            <label class="text-sm font-medium">Ảnh Biến Thể</label>
+            <div class="flex space-x-2 mb-3">
+                <label for="variant_${currentVariantIndex}_image_input" class="form-section-heading btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
+                <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
+                <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg> Thêm từ thư viện</button>
+            </div>
+            <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
+            <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
+        </div>
+
+        <div class="pt-4 mt-4 border-t border-gray-200">
+            <h4 class="text-md font-semibold text-gray-700 mb-2">Thông số kỹ thuật biến thể</h4>
+            <div class="variant-specifications-container space-y-4" id="variant_${currentVariantIndex}_specifications_container">
+                <p class="text-gray-500 text-sm">Vui lòng chọn danh mục để tải thông số.</p>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <label class="flex items-center text-sm cursor-pointer">
+                <input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio" ${initialData?.is_default ? 'checked' : ''}>
+                <input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="${initialData?.is_default ? 'true' : 'false'}" class="is-default-hidden-input"> Đặt làm biến thể mặc định
+            </label>
+        </div>
+    `;
+
+    variantCard.innerHTML = cardHTML;
+    if (variantsContainer) variantsContainer.appendChild(variantCard);
+    
+    // Tự động render thông số kỹ thuật cho card mới
+    const newSpecContainer = document.getElementById(`variant_${currentVariantIndex}_specifications_container`);
+    const oldSpecData = initialData?.specifications || {};
+    renderSpecifications(newSpecContainer, `variants[${currentVariantIndex}][specifications]`, oldSpecData);
+
+    // **** BẮT ĐẦU PHẦN BỔ SUNG ĐỂ SỬA LỖI MẤT ẢNH ****
+    if (initialData) {
+        // Khôi phục ảnh của biến thể từ dữ liệu old()
+        const variantImageIds = initialData.image_ids || [];
+        const variantPrimaryId = initialData.primary_image_id || null;
+        const imagesForThisVariant = [];
+        let allVariantImageIds = [...new Set([...variantImageIds, variantPrimaryId].filter(id => id))];
+
+        allVariantImageIds.forEach(id => {
+            if (oldImagesData[id]) {
+                imagesForThisVariant.push(oldImagesData[id]);
+            }
+        });
+
+        if (imagesForThisVariant.length > 0) {
+            const previewContainer = document.getElementById(`variant_${currentVariantIndex}_image_preview_container`);
+            const idsContainer = document.getElementById(`variant_${currentVariantIndex}_image_ids_container`);
+            if (previewContainer && idsContainer) {
+                addImagesToProductForm(imagesForThisVariant, previewContainer, idsContainer, 'variant', currentVariantIndex);
+                if (variantPrimaryId) {
+                    setVariantPrimaryImage(currentVariantIndex, parseInt(variantPrimaryId));
                 }
             }
-
-            // --- Xử lý sản phẩm có biến thể ---
-            const productTypeRadio = document.querySelector('input[name="type"]:checked');
-            if (productTypeRadio && productTypeRadio.value === 'variable' && Array.isArray(oldVariantsData) &&
-                oldVariantsData.length > 0) {
-
-                if (variantsContainer) variantsContainer.innerHTML = '';
-                variantIndexGlobal = 0;
-
-                let usedAttributeIdsInOld = new Set();
-                oldVariantsData.forEach(oldVar => {
-                    if (oldVar.attributes && typeof oldVar.attributes === 'object') {
-                        Object.keys(oldVar.attributes).forEach(attrId => usedAttributeIdsInOld.add(parseInt(
-                            attrId)));
-                    }
-                });
-                document.querySelectorAll('.product-attribute-checkbox').forEach(cb => {
-                    if (usedAttributeIdsInOld.has(parseInt(cb.value))) cb.checked = true;
-                });
-                updateSelectedAttributesForVariants();
-
-                oldVariantsData.forEach(oldVariant => {
-                    if (addVariantButton) addVariantButton.click(); // This now also renders spec container
-                    const currentVariantIndex = variantIndexGlobal - 1;
-                    const currentVariantCard = variantsContainer ? variantsContainer.querySelector(
-                        `.variant-card[data-variant-index="${currentVariantIndex}"]`) : null;
-
-                    if (currentVariantCard) {
-                        // Populate standard fields
-                        currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][sku]"]`)
-                            .value = oldVariant.sku || '';
-                        currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][price]"]`)
-                            .value = oldVariant.price || '';
-                        currentVariantCard.querySelector(
-                                `input[name="variants[${currentVariantIndex}][sale_price]"]`).value = oldVariant
-                            .sale_price || '';
-                        if (oldVariant.inventories && typeof oldVariant.inventories === 'object') {
-                            if (oldVariant.inventories.new) {
-                                currentVariantCard.querySelector(
-                                        `input[name="variants[${currentVariantIndex}][inventories][new]"]`).value =
-                                    oldVariant.inventories.new;
-                            }
-                            if (oldVariant.inventories.open_box) {
-                                currentVariantCard.querySelector(
-                                        `input[name="variants[${currentVariantIndex}][inventories][open_box]"]`)
-                                    .value = oldVariant.inventories.open_box;
-                            }
-                            if (oldVariant.inventories.used) {
-                                currentVariantCard.querySelector(
-                                        `input[name="variants[${currentVariantIndex}][inventories][used]"]`).value =
-                                    oldVariant.inventories.used;
-                            }
-                        }
-                        currentVariantCard.querySelector(`input[name="variants[${currentVariantIndex}][weight]"]`)
-                            .value = oldVariant.weight || '';
-                        currentVariantCard.querySelector(
-                                `input[name="variants[${currentVariantIndex}][dimensions_length]"]`).value =
-                            oldVariant.dimensions_length || '';
-                        currentVariantCard.querySelector(
-                                `input[name="variants[${currentVariantIndex}][dimensions_width]"]`).value =
-                            oldVariant.dimensions_width || '';
-                        currentVariantCard.querySelector(
-                                `input[name="variants[${currentVariantIndex}][dimensions_height]"]`).value =
-                            oldVariant.dimensions_height || '';
-
-                        // Populate attributes
-                        if (oldVariant.attributes && typeof oldVariant.attributes === 'object') {
-                            Object.entries(oldVariant.attributes).forEach(([attrId, attrValueId]) => {
-                                const attrSelect = currentVariantCard.querySelector(
-                                    `select[name="variants[${currentVariantIndex}][attributes][${attrId}]"]`
-                                );
-                                if (attrSelect) attrSelect.value = attrValueId;
-                            });
-                        }
-
-                        // Repopulate images
-                        const variantImageIds = oldVariant.image_ids || [];
-                        const variantPrimaryId = oldVariant.primary_image_id || null;
-                        const imagesForThisVariant = [];
-                        let allVariantImageIds = [...variantImageIds];
-                        if (variantPrimaryId) allVariantImageIds.push(variantPrimaryId);
-
-                        [...new Set(allVariantImageIds)].forEach(id => {
-                            if (oldImagesData[id]) {
-                                imagesForThisVariant.push(oldImagesData[id]);
-                            }
-                        });
-
-                        if (imagesForThisVariant.length > 0) {
-                            const previewContainer = document.getElementById(
-                                `variant_${currentVariantIndex}_image_preview_container`);
-                            const idsContainer = document.getElementById(
-                                `variant_${currentVariantIndex}_image_ids_container`);
-                            addImagesToProductForm(imagesForThisVariant, previewContainer, idsContainer, 'variant',
-                                currentVariantIndex);
-
-                            if (variantPrimaryId) {
-                                setVariantPrimaryImage(currentVariantIndex, parseInt(variantPrimaryId));
-                            }
-                        }
-                    }
-                });
-                updateDefaultVariantRadioAndHiddenFields();
-            }
         }
+    }
+    // **** KẾT THÚC PHẦN BỔ SUNG ****
+
+    variantIndexGlobal++;
+}
 
 
         // =================================================================
@@ -2129,264 +2190,97 @@
 
             // --- LOGIC CHO BIẾN THỂ ---
             const productAttributesContainer = document.getElementById('productAttributesContainer');
-            if (productAttributesContainer && Array.isArray(allAttributesFromPHP)) {
-                allAttributesFromPHP.forEach(attr => {
-                    if (!attr || typeof attr.id === 'undefined' || typeof attr.name === 'undefined') return;
-                    const labelEl = document.createElement('label');
-                    labelEl.className =
-                        'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.id = `attr_${attr.id}`;
-                    checkbox.value = attr.id;
-                    checkbox.className = 'product-attribute-checkbox form-check-input mr-2';
-                    checkbox.onchange = updateSelectedAttributesForVariants;
-                    labelEl.append(checkbox, attr.name);
-                    productAttributesContainer.appendChild(labelEl);
-                });
-                updateSelectedAttributesForVariants();
-            }
+    if (productAttributesContainer && Array.isArray(allAttributesFromPHP)) {
+        allAttributesFromPHP.forEach(attr => {
+            if (!attr || typeof attr.id === 'undefined' || typeof attr.name === 'undefined') return;
+            const labelEl = document.createElement('label');
+            labelEl.className = 'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `attr_${attr.id}`;
+            checkbox.value = attr.id;
+            checkbox.className = 'product-attribute-checkbox form-check-input mr-2';
+            checkbox.onchange = updateSelectedAttributesForVariants;
+            labelEl.append(checkbox, attr.name);
+            productAttributesContainer.appendChild(labelEl);
+        });
+    }
 
-            if (addVariantButton) {
-                addVariantButton.addEventListener('click', () => {
-                    const currentVariantIndex = variantIndexGlobal;
-                    if (selectedProductAttributes.length === 0) {
-                        showMessageModal('Thông báo',
-                            'Vui lòng chọn ít nhất một thuộc tính cho sản phẩm trước khi thêm biến thể.',
-                            'info');
-                        return;
-                    }
-                    const variantCard = document.createElement('div');
-                    variantCard.className = 'variant-card';
-                    variantCard.dataset.variantIndex = currentVariantIndex;
+    if (addVariantButton) {
+        addVariantButton.addEventListener('click', () => {
+            addVariantCard(); // Tạo card trống
+            updateDefaultVariantRadioAndHiddenFields();
+            updateAllCopySpecButtons();
+        });
+    }
 
-                    // **MODIFIED**: Added action dropdown to the header
-                    let variantHeaderHTML = `
-                        <div class="variant-header">
-                            <h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4>
-                            <div class="flex items-center space-x-2">
-                                <div class="action-dropdown">
-                                    <button type="button" class="btn btn-secondary btn-sm !uppercase">Tùy chọn</button>
-                                    <div class="action-dropdown-content">
-                                        <!-- Populated by JS -->
-                                    </div>
-                                </div>
-                                <button type="button" class="remove-variant-btn btn btn-danger btn-sm">Xóa</button>
-                            </div>
-                        </div>`;
-
-                    let attributesHTML =
-                        '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4">';
-                    selectedProductAttributes.forEach(attr => {
-                        if (!attr || !Array.isArray(attr.attributeValues)) return;
-                        attributesHTML +=
-                            `<div class="input-group"><label for="variants_${currentVariantIndex}_attr_${attr.id}" class="text-sm font-medium">${attr.name} <span class="required-star">*</span></label><div><select name="variants[${currentVariantIndex}][attributes][${attr.id}]" id="variants_${currentVariantIndex}_attr_${attr.id}" class="select-field text-sm" ><option value="">Chọn ${attr.name}</option>${attr.attributeValues.map(val => `<option value="${val.id}">${val.value}</option>`).join('')}</select></div></div>`;
-                    });
-                    attributesHTML += '</div>';
-
-                    let variantSpecificationsHTML = `
-                        <div class="pt-4 mt-4 border-t border-gray-200">
-                           <h4 class="text-md font-semibold text-gray-700 mb-2">Thông số kỹ thuật biến thể</h4>
-                           <div class="variant-specifications-container space-y-4" id="variant_${currentVariantIndex}_specifications_container">
-                                <p class="text-gray-500 text-sm">Vui lòng chọn danh mục để tải thông số.</p>
-                           </div>
-                        </div>
-                    `;
-
-                    let variantFieldsHTML = `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            <div class="input-group"><label for="variants_${currentVariantIndex}_sku" class="text-sm font-medium">SKU Biến Thể <span class="required-star">*</span></label><div><input type="text" name="variants[${currentVariantIndex}][sku]" class="input-field text-sm" ></div></div>
-                            <div class="input-group mt-4">
-    <label class="text-sm font-medium">Quản lý tồn kho biến thể</label>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 p-3 border rounded-md bg-white">
-        
-        {{-- Tồn kho Hàng Mới --}}
-        <div class="input-group !mb-0">
-            <label for="variants_${currentVariantIndex}_inventories_new" class="!text-xs !font-normal !text-gray-500">
-                Hàng mới <span class="required-star">*</span>
-            </label>
-            <input 
-                type="number" 
-                id="variants_${currentVariantIndex}_inventories_new" 
-                name="variants[${currentVariantIndex}][inventories][new]" 
-                class="input-field !py-2 !text-sm" 
-                min="0" 
-                value="0"
-                placeholder="Số lượng hàng mới">
-        </div>
-
-        {{-- Tồn kho Nội bộ (Hàng lỗi, trưng bày, v.v.) --}}
-        <div class="input-group !mb-0">
-            <label for="variants_${currentVariantIndex}_inventories_defective" class="!text-xs !font-normal !text-gray-500">
-                Hàng lỗi / Kho nội bộ
-            </label>
-            <input 
-                type="number" 
-                id="variants_${currentVariantIndex}_inventories_defective" 
-                name="variants[${currentVariantIndex}][inventories][defective]" 
-                class="input-field !py-2 !text-sm" 
-                min="0" 
-                value="0"
-                placeholder="Hàng lỗi, trưng bày...">
-        </div>
-    </div>
-</div>
-                            <div class="input-group"><label for="variants_${currentVariantIndex}_price" class="text-sm font-medium">Giá Biến Thể <span class="required-star">*</span> (VNĐ)</label><div><input type="number" name="variants[${currentVariantIndex}][price]" class="input-field text-sm" step="1000" min="0" ></div></div>
-                            <div class="input-group">
-                                <div class="label-with-action">
-                                    <label for="variants_${currentVariantIndex}_sale_price" class="text-sm font-medium">Giá KM (VNĐ)</label>
-                                    <a href="javascript:void(0);" onclick="toggleSchedule(this)" class="text-blue-600 text-sm font-medium hover:underline">Lên lịch</a>
-                                </div>
-                                <div><input type="number" name="variants[${currentVariantIndex}][sale_price]" class="input-field text-sm" step="1000" min="0"></div>
-                            </div>
-                        </div>
-                        <div class="schedule-container hidden mt-2">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                                <div class="input-group">
-                                    <label for="variants_${currentVariantIndex}_sale_price_starts_at" class="text-xs font-medium">Thời gian bắt đầu</label>
-                                    <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_starts_at]" class="input-field">
-                                </div>
-                                <div class="input-group">
-                                    <label for="variants_${currentVariantIndex}_sale_price_ends_at" class="text-xs font-medium">Thời gian kết thúc</label>
-                                    <input type="datetime-local" name="variants[${currentVariantIndex}][sale_price_ends_at]" class="input-field">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4 pt-4 border-t border-gray-200">
-                                <div class="input-group"><label for="variants_${currentVariantIndex}_weight" class="text-sm font-medium">Cân nặng (kg)</label><input type="number" step="0.01" min="0" name="variants[${currentVariantIndex}][weight]" class="input-field text-sm"></div>
-                            <div class="input-group"><label class="text-sm font-medium">Kích thước (D x R x C) (cm)</label><div class="grid grid-cols-3 gap-x-2"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_length]" placeholder="Dài" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_width]" placeholder="Rộng" class="input-field text-sm"><input type="number" step="0.1" min="0" name="variants[${currentVariantIndex}][dimensions_height]" placeholder="Cao" class="input-field text-sm"></div></div>
-                        </div>
-                        <div class="input-group md:col-span-2 mt-4 pt-4 border-t border-gray-200">
-                            <label class="text-sm font-medium">Ảnh Biến Thể</label>
-                            <div class="flex space-x-2 mb-3">
-                                <label for="variant_${currentVariantIndex}_image_input" class="form-section-heading btn btn-secondary btn-sm cursor-pointer"><i class="fas fa-upload mr-2"></i> Tải ảnh lên</label>
-                                <input type="file" id="variant_${currentVariantIndex}_image_input" class="hidden" accept="image/*" multiple onchange="handleVariantImages(event, ${currentVariantIndex})">
-                                <button type="button" class="btn btn-secondary btn-sm open-library-btn-variant" data-variant-index="${currentVariantIndex}"><svg class="svg-icon mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg> Thêm từ thư viện</button>
-                            </div>
-                            <div id="variant_${currentVariantIndex}_image_preview_container" class="image-preview-container mt-2"></div>
-                            <div id="variant_${currentVariantIndex}_image_ids_container" class="hidden"></div>
-                        </div>
-                        <div class="mt-4">
-                            <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio"><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="false" class="is-default-hidden-input"> Đặt làm biến thể mặc định</label>
-                        </div>
-                    `;
-                    variantCard.innerHTML = variantHeaderHTML + attributesHTML + variantFieldsHTML +
-                        variantSpecificationsHTML;
-                    if (variantsContainer) variantsContainer.appendChild(variantCard);
-
-                    // Render specs for the newly added variant
-                    const newSpecContainer = document.getElementById(
-                        `variant_${currentVariantIndex}_specifications_container`);
-                    renderSpecifications(newSpecContainer,
-                        `variants[${currentVariantIndex}][specifications]`);
-
-                    variantCard.querySelector('.remove-variant-btn').addEventListener('click', function() {
-                        this.closest('.variant-card').remove();
-                        updateDefaultVariantRadioAndHiddenFields();
-                        updateAllCopySpecButtons(); // **NEW**: Update dropdowns on remove
-                    });
-                    variantCard.querySelector('.variant-default-radio').addEventListener('change',
-                        handleDefaultVariantChange);
-                    variantIndexGlobal++;
+    if (variantsContainer) {
+        variantsContainer.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('remove-variant-btn')) {
+                const cardToRemove = e.target.closest('.variant-card');
+                if (cardToRemove) {
+                    cardToRemove.remove();
                     updateDefaultVariantRadioAndHiddenFields();
-                    updateAllCopySpecButtons(); // **NEW**: Update dropdowns on add
-                });
-            }
-
-            // --- GẮN SỰ KIỆN CHO CÁC NÚT "THÊM TỪ THƯ VIỆN" ---
-            const openLibraryBtnSimple = document.getElementById('open-library-btn-simple');
-            if (openLibraryBtnSimple) {
-                openLibraryBtnSimple.addEventListener('click', () => {
-                    window.mediaLibraryTarget = {
-                        type: 'simple',
-                        previewContainer: document.getElementById(
-                            'simple_product_image_preview_container'),
-                        idsContainer: document.getElementById('image_ids_container')
-                    };
-                    if (window.openMediaLibrary) {
-                        window.openMediaLibrary();
-                    } else {
-                        alert('Lỗi: Không tìm thấy hàm thư viện media (window.openMediaLibrary).');
-                    }
-                });
-            }
-            document.body.addEventListener('click', function(e) {
-                if (e.target && e.target.matches('.open-library-btn-variant')) {
-                    const variantIndex = e.target.dataset.variantIndex;
-                    window.mediaLibraryTarget = {
-                        type: 'variant',
-                        variantIndex: variantIndex,
-                        previewContainer: document.getElementById(
-                            `variant_${variantIndex}_image_preview_container`),
-                        idsContainer: document.getElementById(
-                            `variant_${variantIndex}_image_ids_container`)
-                    };
-                    if (window.openMediaLibrary) {
-                        window.openMediaLibrary();
-                    } else {
-                        alert('Lỗi: Không tìm thấy hàm thư viện media (window.openMediaLibrary).');
-                    }
+                    updateAllCopySpecButtons();
                 }
-            });
-
-            // **NEW**: Event listener for copying specs using event delegation
-            if (variantsContainer) {
-                variantsContainer.addEventListener('click', function(e) {
-                    if (e.target && e.target.classList.contains('copy-spec-link')) {
-                        e.preventDefault();
-                        const sourceIndex = e.target.dataset.sourceIndex;
-                        const targetIndex = e.target.dataset.targetIndex;
-
-                        const sourceSpecContainer = document.getElementById(
-                            `variant_${sourceIndex}_specifications_container`);
-                        const targetSpecContainer = document.getElementById(
-                            `variant_${targetIndex}_specifications_container`);
-
-                        if (!sourceSpecContainer || !targetSpecContainer) {
-                            showMessageModal('Lỗi', 'Không tìm thấy vùng chứa thông số.', 'error');
-                            return;
-                        }
-
-                        const sourceInputs = sourceSpecContainer.querySelectorAll(
-                            'input[type="text"], select, textarea');
-                        sourceInputs.forEach(sourceInput => {
-                            // Extract spec ID from the name: variants[0][specifications][12] -> 12
-                            const match = sourceInput.name.match(/\[specifications\]\[(\d+)\]/);
-                            if (match && match[1]) {
-                                const specId = match[1];
-                                const targetInput = targetSpecContainer.querySelector(
-                                    `input[name="variants[${targetIndex}][specifications][${specId}]"], select[name="variants[${targetIndex}][specifications][${specId}]"], textarea[name="variants[${targetIndex}][specifications][${specId}]"]`
-                                );
-                                if (targetInput) {
-                                    targetInput.value = sourceInput.value;
-                                }
-                            }
-                        });
-
-                        showMessageModal('Thành công',
-                            `Đã sao chép thông số từ Biến thể #${parseInt(sourceIndex) + 1}.`, 'success'
-                        );
-                    }
-                });
             }
-
-            // --- KHỞI TẠO FORM VÀ VALIDATION ---
-            toggleProductTypeFields();
-            if (slugInput) {
-                slugInput.dataset.auto = "true";
-                productNameInput.addEventListener('keyup', () => {
-                    if (slugInput.dataset.auto === "true") {
-                        slugInput.value = slugify(productNameInput.value);
-                    }
-                });
-                slugInput.addEventListener('input', () => {
-                    slugInput.dataset.auto = slugInput.value.trim() === "" ? "true" : "false";
-                });
+            if (e.target && e.target.matches('.open-library-btn-variant')) {
+                const variantIndex = e.target.dataset.variantIndex;
+                window.mediaLibraryTarget = {
+                    type: 'variant',
+                    variantIndex: variantIndex,
+                    previewContainer: document.getElementById(`variant_${variantIndex}_image_preview_container`),
+                    idsContainer: document.getElementById(`variant_${variantIndex}_image_ids_container`)
+                };
+                if (window.openMediaLibrary) {
+                    window.openMediaLibrary();
+                } else {
+                    alert('Lỗi: Không tìm thấy hàm thư viện media.');
+                }
             }
+        });
+        variantsContainer.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('variant-default-radio')) {
+                handleDefaultVariantChange(e);
+            }
+        });
+    }
 
-            // *** GỌI HÀM KHÔI PHỤC DỮ LIỆU "OLD" ***
-            repopulateFormFromOldData();
+    // --- GẮN SỰ KIỆN CHO CÁC NÚT "THÊM TỪ THƯ VIỆN" (GIỮ LẠI TỪ CODE GỐC) ---
+    const openLibraryBtnSimple = document.getElementById('open-library-btn-simple');
+    if (openLibraryBtnSimple) {
+        openLibraryBtnSimple.addEventListener('click', () => {
+            window.mediaLibraryTarget = {
+                type: 'simple',
+                previewContainer: document.getElementById('simple_product_image_preview_container'),
+                idsContainer: document.getElementById('image_ids_container')
+            };
+            if (window.openMediaLibrary) {
+                window.openMediaLibrary();
+            } else {
+                alert('Lỗi: Không tìm thấy hàm thư viện media.');
+            }
+        });
+    }
+
+    // --- KHỞI TẠO FORM VÀ VALIDATION (GIỮ LẠI TỪ CODE GỐC) ---
+    toggleProductTypeFields();
+    if (slugInput) {
+        slugInput.dataset.auto = "true";
+        productNameInput.addEventListener('keyup', () => {
+            if (slugInput.dataset.auto === "true") {
+                slugInput.value = slugify(productNameInput.value);
+            }
+        });
+        slugInput.addEventListener('input', () => {
+            slugInput.dataset.auto = slugInput.value.trim() === "" ? "true" : "false";
+        });
+    }
+    
+    // *** GỌI HÀM KHÔI PHỤC DỮ LIỆU "OLD" ***
+    repopulateFormFromOldData();
+
+
 
             // Add event listener for category change
             if (categorySelectElement) {

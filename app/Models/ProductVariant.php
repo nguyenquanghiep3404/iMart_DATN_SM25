@@ -108,5 +108,12 @@ public function getSellableStockAttribute(): int
                 ->sum('quantity');
 }
 
+// Một biến thể sản phẩm (ProductVariant) có thể nằm trong nhiều chương trình flash sale khác nhau.
+// Thiết lập quan hệ 1-n với bảng trung gian flash_sale_products.
+public function flashSaleProducts()
+{
+    return $this->hasMany(FlashSaleProduct::class);
+}
+
 
 }

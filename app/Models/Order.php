@@ -336,4 +336,8 @@ class Order extends Model
     {
         return $query->where('shipping_address_system', 'old');
     }
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 }
