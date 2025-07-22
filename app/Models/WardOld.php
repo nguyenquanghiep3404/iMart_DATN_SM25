@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Ward extends Model
+class WardOld extends Model
 {
-    protected $table = 'wards_new';
+    protected $table = 'wards_old';
     protected $primaryKey = 'code';
     public $incrementing = false;
     protected $keyType = 'string';
@@ -14,33 +14,35 @@ class Ward extends Model
     protected $fillable = [
         'code',
         'name',
-        'slug',
         'type',
         'name_with_type',
-        'path',
         'path_with_type',
-        'district_code',
-        'province_code'
+        'parent_code'
     ];
+
+    public function district()
+    {
+        return $this->belongsTo(DistrictOld::class, 'parent_code', 'code');
+    }
 
     public function province()
     {
-        return $this->belongsTo(Province::class, 'province_code', 'code');
+        return $this->district->province();
     }
 
     public function addresses()
     {
-        return $this->hasMany(Address::class, 'ward_code', 'code');
+        return $this->hasMany(Address::class, 'old_ward_code', 'code');
     }
 
     public function shippingOrders()
     {
-        return $this->hasMany(Order::class, 'shipping_ward_code', 'code');
+        return $this->hasMany(Order::class, 'shipping_old_ward_code', 'code');
     }
 
     public function billingOrders()
     {
-        return $this->hasMany(Order::class, 'billing_ward_code', 'code');
+        return $this->hasMany(Order::class, 'billing_old_ward_code', 'code');
     }
 
     // Accessor để kiểm tra loại

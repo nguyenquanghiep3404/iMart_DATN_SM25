@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Users;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\Cart;
-use App\Models\CartItem;
 use App\Models\Coupon;
+use App\Models\Product;
+use App\Models\CartItem;
 use App\Models\CouponUsage;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use App\Models\ProductVariant;
+use App\Models\ProductInventory;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 
 class CartController extends Controller

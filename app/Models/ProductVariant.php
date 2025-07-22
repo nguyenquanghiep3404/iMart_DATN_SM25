@@ -29,6 +29,7 @@ class ProductVariant extends Model
         'status',
         'cost_price', 
         'points_awarded_on_purchase'
+
     ];
 
     protected $casts = [
@@ -36,14 +37,12 @@ class ProductVariant extends Model
         'sale_price' => 'decimal:2',
         'sale_price_starts_at' => 'datetime',
         'sale_price_ends_at' => 'datetime',
-        'stock_quantity' => 'integer',
         'manage_stock' => 'boolean',
         'weight' => 'decimal:2',
         'dimensions_length' => 'decimal:2',
         'dimensions_width' => 'decimal:2',
         'dimensions_height' => 'decimal:2',
         'is_default' => 'boolean',
-
     ];
 
     public function product()
