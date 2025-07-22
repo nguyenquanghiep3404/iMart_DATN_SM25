@@ -93,9 +93,10 @@
         backdrop-filter: blur(16px);
         border-bottom-color: rgba(55, 65, 81, 0.6);
     }
+
     .after\:transition-all::after {
-    transition: all 0.3s ease;
-}
+        transition: all 0.3s ease;
+    }
 </style>
 <header id="page-header"
     class="bg-gray-900 text-white z-50 border-b border-transparent transition-all duration-300 @unless (Route::is('users.products.show')) sticky top-0 @endunless">
@@ -142,31 +143,34 @@
 
                     <!-- User Menu Container -->
                     <div class="relative">
-                        <button id="user-menu-trigger"
-                            class="w-7 h-7 rounded-full flex items-center justify-center text-gray-300 hover:bg-white/10 transition-colors overflow-hidden">
+                            <button id="user-menu-trigger"
+                                class="relative w-10 h-10 rounded-full flex items-center justify-center text-gray-300 hover:bg-white/10 transition-colors overflow-hidden">
 
-                            @guest
-                            {{-- Icon user mặc định cho khách chưa đăng nhập --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            @else
-                            {{-- Avatar người dùng hoặc chữ cái đầu --}}
-                            @if (Auth::user()->avatar_url)
-                            <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
-                                class="w-full h-full object-cover rounded-full">
-                            @else
-                            <span class="text-sm font-semibold text-white uppercase">
-                                {{ strtoupper(Auth::user()->name[0]) }}
-                            </span>
-                            @endif
-                            @endguest
+                                @guest
+                                {{-- Icon user mặc định cho khách chưa đăng nhập --}}
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                                @else
+                                {{-- Hiển thị chấm đỏ nếu có thông báo chưa đọc --}}
+                                @if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
+                                <span id="avatar-ping" class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10 animate-ping"></span>
+                                <span id="avatar-dot" class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10"></span>
+                                @endif
 
-                        </button>
-
-
+                                {{-- Avatar người dùng hoặc chữ cái đầu --}}
+                                @if (Auth::user()->avatar_url)
+                                <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
+                                    class="w-full h-full object-cover rounded-full">
+                                @else
+                                <span class="text-sm font-semibold text-white uppercase">
+                                    {{ strtoupper(Auth::user()->name[0]) }}
+                                </span>
+                                @endif
+                                @endguest
+                            </button>
                         <!-- Dropdown Container -->
                         <div id="user-dropdown-menu"
                             class="absolute top-full right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-20 overflow-hidden">
@@ -484,12 +488,12 @@
         @php $tab = request('tab', 'san-pham'); $q = request('q'); @endphp
 
         <a href="{{ route('users.products.search', ['q' => $q, 'tab' => 'san-pham']) }}"
-           class="relative px-4 py-2 text-sm font-medium {{ $tab === 'san-pham' ? 'text-red-600 after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:bg-red-600 text-gray-500 hover:text-red-600' : '' }}">
+            class="relative px-4 py-2 text-sm font-medium {{ $tab === 'san-pham' ? 'text-red-600 after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:bg-red-600 text-gray-500 hover:text-red-600' : '' }}">
             Sản phẩm
         </a>
 
         <a href="{{ route('users.products.search', ['q' => $q, 'tab' => 'bai-viet']) }}"
-           class="relative px-4 py-2 text-sm font-medium {{ $tab === 'bai-viet' ? 'text-red-600 after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:bg-red-600 text-gray-500 hover:text-red-600' : '' }}">
+            class="relative px-4 py-2 text-sm font-medium {{ $tab === 'bai-viet' ? 'text-red-600 after:absolute after:left-0 after:bottom-0 after:h-0.5 after:w-full after:bg-red-600 text-gray-500 hover:text-red-600' : '' }}">
             Bài viết
         </a>
     </div>
@@ -578,6 +582,8 @@
             // View Triggers
             const notificationTrigger = document.getElementById('notification-trigger');
             const backToMenuBtn = document.getElementById('back-to-menu-btn');
+            const ping = document.getElementById('avatar-ping');
+            const dot = document.getElementById('avatar-dot');
 
             // --- User Dropdown Menu Logic ---
             if (userMenuTrigger && userDropdownMenu) {
@@ -620,6 +626,8 @@
                                 const badge = document.querySelector(
                                     '#notification-trigger span.ml-auto');
                                 if (badge) badge.remove();
+                                if (ping) ping.remove();
+                                if (dot) dot.remove();
                             }
                         }).catch(err => console.error('Error marking notifications as read:', err));
                     }

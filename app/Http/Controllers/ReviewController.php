@@ -22,23 +22,29 @@ class ReviewController extends Controller
     {
         $user = Auth::user();
 
-        $userReviews = Review::with('product')
-            ->where('user_id', $user->id)
+        // Lấy tất cả review của user, key theo product_variant_id để tra cứu nhanh
+        $userReviews = Review::where('user_id', $user->id)
             ->get()
             ->keyBy('product_variant_id');
 
+        // Lấy các order items thuộc đơn đã giao/thành công
         $orderItems = $user->orders()
+            ->whereIn('status', ['delivered', 'completed'])
             ->with(['items.variant.product'])
             ->get()
             ->pluck('items')
             ->flatten()
-            ->unique('product_variant_id');
+            ->filter(fn($item) => $item->variant && $item->variant->product) // loại bỏ item lỗi
+            ->unique('product_variant_id')
+            ->values(); // reset chỉ số
 
+        // Chuyển thành collection có thông tin cần thiết cho view
         $itemsForReview = $orderItems->map(function ($item) use ($userReviews) {
             $variantId = $item->product_variant_id;
 
             return [
                 'product'       => $item->variant->product,
+                'variant'       => $item->variant,
                 'variant_id'    => $variantId,
                 'order_item_id' => $item->id,
                 'review'        => $userReviews->get($variantId),
@@ -47,6 +53,7 @@ class ReviewController extends Controller
 
         return view('users.profile.reviews', compact('itemsForReview'));
     }
+
 
     /**
      * Lưu đánh giá mới
@@ -152,6 +159,7 @@ class ReviewController extends Controller
             'message' => 'Cảm ơn bạn đã đánh giá!'
         ]);
     }
+
 
     /**
      * Xem chi tiết đánh giá

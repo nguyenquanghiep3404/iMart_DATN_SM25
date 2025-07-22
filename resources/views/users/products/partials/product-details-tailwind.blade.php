@@ -130,21 +130,10 @@
         {{-- Header và thống kê đánh giá --}}
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-900">Đánh giá & Nhận xét từ khách hàng</h2>
-            @auth
-                @if (isset($orderItemId) && $orderItemId)
-                    @if (!isset($hasReviewed) || !$hasReviewed)
-                        <button id="write-review-btn"
-                            class="bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
-                            Viết đánh giá
-                        </button>
-                    @else
-                        <p class="text-sm text-green-600">Bạn đã đánh giá sản phẩm này.</p>
-                    @endif
-                @else
-                    <p class="text-sm text-gray-600">Bạn cần mua và nhận hàng để viết đánh giá.</p>
-                @endif
-                <p class="text-sm text-gray-600">Đăng nhập để viết đánh giá.</p>
-            @endauth
+        <button id="write-review-btn"
+            class="bg-black text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+            Viết đánh giá
+        </button>
         </div>
 
         {{-- Thống kê sao --}}
@@ -252,72 +241,65 @@
 
             <!-- DANH SÁCH GỘP (BÌNH LUẬN & ĐÁNH GIÁ) -->
             <div id="combined-list" class="mt-6">
+
                 @forelse ($paginatedItems as $item)
-                    {{-- MỤC NÀY LÀ MỘT ĐÁNH GIÁ (REVIEW) --}}
-                    @if ($item->type === 'review')
-                        @php $review = $item->data; @endphp
-                        <div class="border-b border-gray-200 py-4">
-                            <div class="flex items-start gap-4">
-                                {{-- Avatar --}}
-                                @if ($review->user->avatar_url)
-                                    <img src="{{ $review->user->avatar_url }}" alt="{{ $review->user->name }}"
-                                        class="w-10 h-10 rounded-full object-cover">
-                                @else
-                                    <div
-                                        class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
-                                        {{ strtoupper(mb_substr($review->user->name, 0, 1)) }}
-                                    </div>
-                                @endif
+    @if ($item->type === 'review')
+        @php $review = $item->data; @endphp
+        <div class="border-b border-gray-200 py-4">
+            <div class="flex items-start gap-4">
+                {{-- Avatar --}}
+                @if ($review->user->avatar_url)
+                    <img src="{{ $review->user->avatar_url }}" alt="{{ $review->user->name }}" class="w-10 h-10 rounded-full object-cover">
+                @else
+                    <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
+                        {{ strtoupper(mb_substr($review->user->name, 0, 1)) }}
+                    </div>
+                @endif
 
-                                <div class="flex-1">
-                                    <p class="font-semibold text-gray-800">{{ $review->user->name }}</p>
+                <div class="flex-1">
+                    <p class="font-semibold text-gray-800">{{ $review->user->name }}</p>
 
-                                    {{-- Sao đánh giá --}}
-                                    <div class="flex text-yellow-400 text-sm my-1">
-                                        @for ($i = 1; $i <= 5; $i++)
-                                            @if ($i <= $review->rating)
-                                                ★
-                                            @else
-                                                <span class="text-gray-300">★</span>
-                                            @endif
-                                        @endfor
-                                    </div>
-                                    <p class="text-sm text-gray-600 review-text">{{ $review->comment }}</p>
-                                    {{-- Ảnh review --}}
-                                    @if ($review->images->count())
-                                        <div class="flex gap-2 mt-2 flex-wrap">
-                                            @foreach ($review->images as $image)
-                                                <a href="{{ Storage::url($image->path) }}" target="_blank"
-                                                    class="block">
-                                                    <img src="{{ Storage::url($image->path) }}" alt="Ảnh đánh giá"
-                                                        class="w-20 h-20 rounded-md object-cover border border-gray-200">
-                                                </a>
-                                            @endforeach
-                                        </div>
-                                    @endif
+                    {{-- Sao đánh giá --}}
+                    <div class="flex text-yellow-400 text-sm my-1">
+                        @for ($i = 1; $i <= 5; $i++)
+                            @if ($i <= $review->rating)
+                                ★
+                            @else
+                                <span class="text-gray-300">★</span>
+                            @endif
+                        @endfor
+                    </div>
 
-                                    <span
-                                        class="text-xs text-gray-500 mt-2 flex items-center gap-4">{{ $review->created_at->diffForHumans() }}</span>
+                    <p class="text-sm text-gray-600 review-text">{{ $review->comment }}</p>
 
-                                    {{-- THÔNG BÁO TRẠNG THÁI --}}
-                                    @if (
-                                        $review->status !== 'approved' &&
-                                            Auth::check() &&
-                                            ($review->user_id === Auth::id() || Auth::user()->hasRole('admin')))
-                                        <p class="text-yellow-600 text-sm italic mt-1">Bình luận của bạn đang chờ duyệt
-                                        </p>
-                                    @endif
-                                </div>
-                                {{-- MỤC NÀY LÀ MỘT BÌNH LUẬN (COMMENT) --}}
-                            @elseif ($item->type === 'comment')
-                                @include('users.products.partials.recursive-comment', [
-                                    'comment' => $item->data,
-                                ])
+                    {{-- Ảnh review --}}
+                    @if ($review->images->count())
+                        <div class="flex gap-2 mt-2 flex-wrap">
+                            @foreach ($review->images as $image)
+                                <a href="{{ Storage::url($image->path) }}" target="_blank" class="block">
+                                    <img src="{{ Storage::url($image->path) }}" alt="Ảnh đánh giá" class="w-20 h-20 rounded-md object-cover border border-gray-200">
+                                </a>
+                            @endforeach
+                        </div>
                     @endif
 
-                @empty
-                    <p class="text-sm text-gray-500 mt-4">Chưa có đánh giá hoặc bình luận nào.</p>
-                @endforelse
+                    <span class="text-xs text-gray-500 mt-2 flex items-center gap-4">{{ $review->created_at->diffForHumans() }}</span>
+
+                    {{-- Trạng thái --}}
+                    @if ($review->status !== 'approved' && Auth::check() && ($review->user_id === Auth::id() || Auth::user()->hasRole('admin')))
+                        <p class="text-yellow-600 text-sm italic mt-1">Bình luận của bạn đang chờ duyệt</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+    @elseif ($item->type === 'comment')
+        @include('users.products.partials.recursive-comment', ['comment' => $item->data])
+    @endif
+@empty
+    <p class="text-sm text-gray-500 mt-4">Chưa có đánh giá hoặc bình luận nào.</p>
+@endforelse
+
 
                 <!-- NÚT PHÂN TRANG -->
                 <div class="mt-8">
@@ -484,9 +466,11 @@
         initUserInfoModal();
     });
 
-    const ORDER_ITEM_ID = {{ isset($orderItemId) ? json_encode($orderItemId) : 'null' }};
+   const ORDER_ITEM_ID = {{ isset($orderItemId) ? json_encode($orderItemId) : 'null' }};
+    const HAS_REVIEWED = {{ $hasReviewed ? 'true' : 'false' }};
     const PRODUCT_VARIANT_ID = {{ json_encode($defaultVariant->id ?? null) }};
     const reviewPostUrl = "{{ route('reviews.store') }}";
+
 
 
     // Gửi phản hồi (trả lời bình luận)
@@ -667,7 +651,7 @@
 
             if (files) {
                 for (let i = 0; i < files.length && i < 5; i++) {
-                    formData.append('images[]', files[i]);
+                    formData.append('media[]', files[i]);
                 }
             }
 
