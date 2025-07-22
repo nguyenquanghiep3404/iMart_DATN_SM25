@@ -92,13 +92,13 @@
                                         <div class="col-12">
                                             <label class="form-label">Hệ thống địa chỉ <span class="text-danger">*</span></label>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="address_system" id="address_system_new" value="new" checked>
+                                                <input class="form-check-input" type="radio" name="address_system" id="address_system_new" value="new">
                                                 <label class="form-check-label" for="address_system_new">
                                                     <strong>Hệ thống địa chỉ mới</strong> (Hà Nội - Tỉnh/Thành phố → Phường/Xã)
                                                 </label>
                                             </div>
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="address_system" id="address_system_old" value="old">
+                                                <input class="form-check-input" type="radio" name="address_system" id="address_system_old" value="old" checked>
                                                 <label class="form-check-label" for="address_system_old">
                                                     <strong>Hệ thống địa chỉ cũ</strong> (Các tỉnh khác - Tỉnh/Thành phố → Quận/Huyện → Phường/Xã)
                                                 </label>
@@ -149,11 +149,11 @@
                                                     <input type="radio" class="form-check-input fs-base me-2 me-sm-3"
                                                         name="shipping-method">
                                                     Giao hàng nhanh
-                                                    <span class="fw-normal ms-auto">35.000 VNĐ</span>
+                                                    <span class="fw-normal ms-auto" id="shipping-fast-fee-display"></span>
                                                 </label>
                                             </div>
                                             <div class="collapse" id="courier" data-bs-parent="#shippingMethod">
-                                                <div class="pb-4 ps-3 ms-2 ms-sm-3">
+                                                {{-- <div class="pb-4 ps-3 ms-2 ms-sm-3">
                                                     <p class="fs-sm">Chọn thời gian giao hàng phù hợp:</p>
                                                     <div class="d-flex justify-content-start">
                                                         <button type="button"
@@ -320,7 +320,7 @@
                                                             <i class="ci-chevron-right fs-lg"></i>
                                                         </button>
                                                     </div>
-                                                </div>
+                                                </div> --}}
                                             </div>
                                         </div>
 
@@ -337,7 +337,7 @@
                                                 </label>
                                             </div>
                                             <div class="collapse" id="pickup" data-bs-parent="#shippingMethod">
-                                                <div class="pb-4 ps-3 ms-2 ms-sm-3">
+                                                {{-- <div class="pb-4 ps-3 ms-2 ms-sm-3">
                                                     <p class="fs-sm mb-2">Chọn cửa hàng gần nhất:</p>
                                                     <div class="w-100 mb-4" style="max-width: 300px">
                                                         <select class="form-select"
@@ -538,7 +538,7 @@
                                                             <i class="ci-chevron-right fs-lg"></i>
                                                         </button>
                                                     </div>
-                                                </div>
+                                                </div> --}}
                                             </div>
                                         </div>
 
@@ -564,9 +564,9 @@
                                                                 class="text-info-emphasis fw-semibold">3-5</span> ngày làm
                                                             việc.</div>
                                                     </div>
-                                                    <p class="fs-sm mb-0">Dự kiến giao hàng - <span
+                                                    {{-- <p class="fs-sm mb-0">Dự kiến giao hàng - <span
                                                             class="text-body-emphasis fw-medium">15 tháng 3, 2024</span>
-                                                    </p>
+                                                    </p> --}}
                                                 </div>
                                             </div>
                                         </div>
@@ -1475,64 +1475,97 @@
                 });
             });
 
-            // Chức năng cập nhật phí vận chuyển và tổng số
-            function updateShippingFee() {
+            // Thêm sau khai báo shippingFees và các biến liên quan
+            const ghnFeeCache = {};
+
+            // Thêm các biến khối lượng và kích thước từ backend
+            const baseWeight = {{ $baseWeight ?? 1000 }};
+            const baseLength = {{ $baseLength ?? 20 }};
+            const baseWidth = {{ $baseWidth ?? 10 }};
+            const baseHeight = {{ $baseHeight ?? 10 }};
+
+            async function fetchGhnFee(provinceName, districtName, wardName, weight, length, width, height) {
+                const cacheKey = `${provinceName}|${districtName}|${wardName}|${weight}|${length}|${width}|${height}`;
+                if (ghnFeeCache[cacheKey]) return ghnFeeCache[cacheKey];
+                try {
+                    const res = await fetch('/ajax/ghn/shipping-fee', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            province_name: provinceName,
+                            district_name: districtName,
+                            ward_name: wardName,
+                            weight: weight,
+                            length: length,
+                            width: width,
+                            height: height
+                        })
+                    });
+                    const data = await res.json();
+                    if (typeof data.fee !== 'undefined') {
+                        ghnFeeCache[cacheKey] = data.fee;
+                        return data.fee;
+                    } else {
+                        alert(data.message || 'Không lấy được phí GHN');
+                        return null;
+                    }
+                } catch (e) {
+                    alert('Lỗi khi gọi phí GHN');
+                    return null;
+                }
+            }
+
+            // Thay thế hàm updateShippingFee
+            async function updateShippingFee() {
                 const selectedMethod = document.querySelector('input[name="shipping-method"]:checked');
                 if (selectedMethod) {
-                    // Lấy văn bản nhãn từ khoảng đầu tiên (tên phương thức)
                     const labelElement = selectedMethod.closest('label');
-                    if (!labelElement) {
-                        console.error('Label element not found');
-                        return;
-                    }
-
-                    // Làm sạch văn bản bằng cách xóa khoảng trắng và dòng mới thừa
-                    const labelText = labelElement.textContent
-                        .replace(/\s+/g, ' ') // Thay thế nhiều khoảng trắng/dòng mới bằng một khoảng trắng
-                        .trim();
-
-                    console.log('Cleaned label text:', labelText);
-
+                    if (!labelElement) return;
+                    const labelText = labelElement.textContent.replace(/\s+/g, ' ').trim();
                     let shippingFee = 0;
-                    if (labelText.includes('Giao hàng nhanh')) {
-                        shippingFee = 35000;
+                    let shippingFeeFormatted = '';
+                    let isGhn = labelText.includes('Giao hàng nhanh');
+                    if (isGhn && addressSystemOld.checked) {
+                        // Lấy thông tin địa chỉ
+                        const province = document.getElementById('province');
+                        const district = document.getElementById('district');
+                        const ward = document.getElementById('ward');
+                        const provinceText = province.options[province.selectedIndex]?.textContent || '';
+                        const districtText = district.options[district.selectedIndex]?.textContent || '';
+                        const wardText = ward.options[ward.selectedIndex]?.textContent || '';
+                        // Đảm bảo các biến là số hợp lệ
+                        const weight = Number(baseWeight) > 0 ? Number(baseWeight) : 1000;
+                        const length = Number(baseLength) > 0 ? Number(baseLength) : 20;
+                        const width = Number(baseWidth) > 0 ? Number(baseWidth) : 10;
+                        const height = Number(baseHeight) > 0 ? Number(baseHeight) : 10;
+                        shippingFee = await fetchGhnFee(provinceText, districtText, wardText, weight, length, width, height);
+                        if (shippingFee === null || typeof shippingFee === 'undefined' || isNaN(shippingFee)) {
+                            shippingFee = 0;
+                            shippingFeeFormatted = 'Không hỗ trợ';
+                        } else {
+                            shippingFeeFormatted = number_format(shippingFee) + ' VNĐ';
+                        }
+                        const fastFeeEl = document.getElementById('shipping-fast-fee-display');
+                        if (fastFeeEl) fastFeeEl.textContent = shippingFeeFormatted;
                     } else if (labelText.includes('Giao hàng tiêu chuẩn')) {
                         shippingFee = 25000;
-                    } // Nhận tại hàng vẫn là 0
-
-                    console.log('Calculated shipping fee:', shippingFee);
-
+                        shippingFeeFormatted = number_format(shippingFee) + ' VNĐ';
+                        const fastFeeEl = document.getElementById('shipping-fast-fee-display');
+                        if (fastFeeEl) fastFeeEl.textContent = '';
+                    } else {
+                        shippingFee = 0;
+                        shippingFeeFormatted = 'Miễn phí';
+                        const fastFeeEl = document.getElementById('shipping-fast-fee-display');
+                        if (fastFeeEl) fastFeeEl.textContent = '';
+                    }
                     const grandTotal = baseSubtotal + shippingFee - baseDiscount;
-                    const shippingFeeFormatted = shippingFee === 0 ? 'Miễn phí' : number_format(shippingFee) +
-                        ' VNĐ';
-
-                    // Cập nhật tất cả các màn hình hiển thị phí vận chuyển
                     document.getElementById('shipping-fee-display').textContent = shippingFeeFormatted;
                     document.getElementById('grand-total-display').textContent = number_format(grandTotal) + ' VNĐ';
                     document.getElementById('offcanvas-shipping-fee').textContent = shippingFeeFormatted;
-                    document.getElementById('offcanvas-grand-total').textContent = number_format(grandTotal) +
-                        ' VNĐ';
-
-                    // Cũng cập nhật phương thức vận chuyển hiển thị trong phần tóm tắt
-                    const methodElement = document.getElementById('selected-shipping-method');
-                    if (methodElement) {
-                        methodElement.textContent = labelText;
-                    }
-                } else {
-                    // Đặt lại màn hình khi không có phương pháp nào được chọn
-                    const displays = [
-                        'shipping-fee-display',
-                        'grand-total-display',
-                        'offcanvas-shipping-fee',
-                        'offcanvas-grand-total'
-                    ];
-                    displays.forEach(id => {
-                        const element = document.getElementById(id);
-                        if (element) {
-                            element.textContent = id.includes('shipping') ? 'Chọn phương thức vận chuyển' :
-                                number_format(baseSubtotal - baseDiscount) + ' VNĐ';
-                        }
-                    });
+                    document.getElementById('offcanvas-grand-total').textContent = number_format(grandTotal) + ' VNĐ';
                 }
             }
 
@@ -1649,7 +1682,13 @@
                 placeOrderBtn.innerHTML =
                     '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang xử lý...';
 
-                // Chuẩn bị dữ liệu đơn hàng
+                // Lấy phí ship động hiện tại (nếu có)
+                let shippingFeeValue = 0;
+                const shippingFeeDisplay = document.getElementById('shipping-fee-display');
+                if (shippingFeeDisplay) {
+                    const feeText = shippingFeeDisplay.textContent.replace(/[^\d]/g, '');
+                    shippingFeeValue = parseInt(feeText) || 0;
+                }
                 const orderData = {
                     address_system: isNewSystem ? 'new' : 'old',
                     province_code: province.value,
@@ -1666,7 +1705,8 @@
                     address: address,
                     postcode: document.getElementById('shipping-postcode').value.trim(),
                     payment_method: selectedPaymentMethod.id,
-                    notes: null
+                    notes: null,
+                    shipping_fee: shippingFeeValue
                 };
                 // Xác định endpoint dựa vào loại đơn hàng
                 const isBuyNow = {{ isset($is_buy_now) && $is_buy_now ? 'true' : 'false' }};
@@ -1709,6 +1749,50 @@
                         placeOrderBtn.innerHTML = 'Đặt hàng <i class="ci-check fs-lg ms-1 me-n1"></i>';
                     });
             });
+
+            // Tạo thông báo và chèn sau wardSelect
+            const newSystemNotice = document.createElement('div');
+            newSystemNotice.className = 'alert alert-warning mt-3';
+            newSystemNotice.innerHTML = 'Tính năng đang phát triển khu vực chờ cập nhật thêm.';
+            newSystemNotice.style.display = 'none';
+            wardSelect.parentNode.insertBefore(newSystemNotice, wardSelect.nextSibling);
+
+            // Hàm bật/tắt thông báo và enable/disable dropdown
+            function setNewSystemMode(isNew) {
+                if (isNew) {
+                    newSystemNotice.style.display = '';
+                    provinceSelect.disabled = true;
+                    districtSelect.disabled = true;
+                    wardSelect.disabled = true;
+                } else {
+                    newSystemNotice.style.display = 'none';
+                    provinceSelect.disabled = false;
+                    districtSelect.disabled = false;
+                    wardSelect.disabled = false;
+                }
+            }
+
+            // Đảm bảo radio hệ thống cũ được checked khi load trang
+            addressSystemNew.checked = false;
+            addressSystemOld.checked = true;
+
+            // Khởi tạo đúng trạng thái ban đầu (luôn là hệ thống cũ)
+            setNewSystemMode(false);
+            districtContainer.style.display = 'block';
+            loadOldProvinces();
+
+            // Sự kiện chuyển đổi radio
+            addressSystemNew.addEventListener('change', function() {
+                if (this.checked) setNewSystemMode(true);
+            });
+            addressSystemOld.addEventListener('change', function() {
+                if (this.checked) setNewSystemMode(false);
+            });
+
+            // Thêm hàm loại bỏ tiền tố hành chính
+            function removePrefix(name) {
+                return name.replace(/^(Tỉnh|Thành phố|Quận|Huyện|Thị xã|Phường|Xã)\s+/i, '').trim();
+            }
         });
     </script>
 @endsection

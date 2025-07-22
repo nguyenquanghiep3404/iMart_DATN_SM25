@@ -30,7 +30,26 @@ class PaymentController extends Controller
         if ($cartData['items']->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
         }
-        return view('users.payments.information', $cartData);
+        // Tính tổng khối lượng và kích thước
+        $items = $cartData['items'];
+        $totalWeight = $items->sum(function($item) {
+            return ($item->productVariant->weight ?? 0) * $item->quantity;
+        });
+        $maxLength = $items->max(function($item) {
+            return $item->productVariant->dimensions_length ?? 0;
+        });
+        $maxWidth = $items->max(function($item) {
+            return $item->productVariant->dimensions_width ?? 0;
+        });
+        $totalHeight = $items->sum(function($item) {
+            return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
+        });
+        return view('users.payments.information', array_merge($cartData, [
+            'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
+            'baseLength' => $maxLength > 0 ? $maxLength : 20,
+            'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
+            'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
+        ]));
     }
     /**
      * Xử lý đặt hàng COD
@@ -72,6 +91,15 @@ class PaymentController extends Controller
         if ($cartData['items']->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Giỏ hàng đang trống.'], 400);
         }
+        // Xử lý địa chỉ GHN nếu chọn phương thức GHN
+        $ghnProvinceId = null;
+        $ghnDistrictId = null;
+        $ghnWardCode = null;
+        if ($request->shipping_method === 'ghn') {
+            $ghnProvinceId = $request->input('ghn_province_id');
+            $ghnDistrictId = $request->input('ghn_district_id');
+            $ghnWardCode = $request->input('ghn_ward_code');
+        }
         // Nếu là thanh toán VNPay
         if ($request->payment_method === 'vnpay') {
             return $this->createVnpayPayment($request, $cartData);
@@ -88,7 +116,7 @@ class PaymentController extends Controller
         // Tạo mã đơn hàng
         $orderCode = 'DH-' . strtoupper(Str::random(10));
         // Tính toán shipping fee dựa vào phương thức
-        $shippingFee = $this->calculateShippingFee($request->shipping_method);
+        $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
         // Format delivery date/time
         $deliveryInfo = $this->formatDeliveryDateTime(
             $request->shipping_method,
@@ -116,6 +144,9 @@ class PaymentController extends Controller
             'shipping_old_province_code' => $addressData['shipping_old_province_code'],
             'shipping_old_district_code' => $addressData['shipping_old_district_code'],
             'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
+            'ghn_province_id' => $ghnProvinceId,
+            'ghn_district_id' => $ghnDistrictId,
+            'ghn_ward_code' => $ghnWardCode,
             // Địa chỉ thanh toán (mặc định giống địa chỉ giao hàng)
             'billing_address_line1' => $request->address,
             'billing_zip_code' => $request->postcode,
@@ -183,7 +214,7 @@ class PaymentController extends Controller
             // Tạo mã đơn hàng
             $orderCode = 'DH-' . strtoupper(Str::random(10));
             // Tính toán shipping fee dựa vào phương thức
-            $shippingFee = $this->calculateShippingFee($request->shipping_method);
+            $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
             // Format delivery date/time
             $deliveryInfo = $this->formatDeliveryDateTime(
                 $request->shipping_method,
@@ -1192,7 +1223,7 @@ public function showBankTransferQr(Order $order)
             // Tạo mã đơn hàng
             $orderCode = 'DH-' . strtoupper(Str::random(10));
             // Tính toán shipping fee
-            $shippingFee = $this->calculateShippingFee($request->shipping_method);
+            $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
             // Format delivery date/time
             $deliveryInfo = $this->formatDeliveryDateTime(
                 $request->shipping_method,
@@ -1413,5 +1444,170 @@ public function showBankTransferQr(Order $order)
         return $variant->inventories()
             ->where('inventory_type', 'new')
             ->sum('quantity');
+    }
+
+    /**
+     * Chuẩn hóa tên để so khớp với GHN
+     */
+    private function normalize($str)
+    {
+        $str = mb_strtolower($str, 'UTF-8');
+        // Loại bỏ các tiền tố hành chính phổ biến
+        $str = preg_replace('/\b(tinh|thanh pho|quan|huyen|xa|phuong)\b\s*/u', '', $str);
+        $str = preg_replace('/[áàảãạăắằẳẵặâấầẩẫậ]/u', 'a', $str);
+        $str = preg_replace('/[éèẻẽẹêếềểễệ]/u', 'e', $str);
+        $str = preg_replace('/[iíìỉĩị]/u', 'i', $str);
+        $str = preg_replace('/[óòỏõọôốồổỗộơớờởỡợ]/u', 'o', $str);
+        $str = preg_replace('/[úùủũụưứừửữự]/u', 'u', $str);
+        $str = preg_replace('/[ýỳỷỹỵ]/u', 'y', $str);
+        $str = preg_replace('/đ/u', 'd', $str);
+        $str = preg_replace('/[^a-z0-9 ]/', '', $str);
+        return trim($str);
+    }
+
+    /**
+     * AJAX: Lấy phí ship GHN động (so khớp tên địa chỉ cũ với GHN)
+     */
+    public function ajaxGhnShippingFee(Request $request)
+    {
+        $request->validate([
+            'province_name' => 'required|string',
+            'district_name' => 'required|string',
+            'ward_name' => 'required|string',
+            'weight' => 'required|integer|min:10',
+            'length' => 'nullable|integer|min:1',
+            'width' => 'nullable|integer|min:1',
+            'height' => 'nullable|integer|min:1',
+        ]);
+        $token = config('services.ghn.token');
+        // \Log::info('GHN API - Địa chỉ nhận vào', [
+        //     'province_name' => $request->province_name,
+        //     'district_name' => $request->district_name,
+        //     'ward_name' => $request->ward_name,
+        //     'weight' => $request->weight
+        // ]);
+        // // Log lại config GHN thực tế trước khi gọi API
+        // \Log::info('GHN config', [
+        //     'api_url' => config('services.ghn.api_url'),
+        //     'token' => config('services.ghn.token'),
+        //     'shop_id' => config('services.ghn.shop_id'),
+        // ]);
+        $ghnProvinces = Http::withHeaders(['Token' => $token])
+            ->get(config('services.ghn.api_url') . '/shiip/public-api/master-data/province');
+        // \Log::info('GHN API - Response province', ['status' => $ghnProvinces->status(), 'body' => $ghnProvinces->body()]);
+        $ghnProvinces = $ghnProvinces->json('data');
+        if (!is_array($ghnProvinces)) {
+            // \Log::error('GHN API - Danh sách tỉnh GHN trả về null hoặc không phải mảng', ['response' => $ghnProvinces]);
+            return response()->json(['success' => false, 'message' => 'Không lấy được danh sách tỉnh từ GHN. Vui lòng kiểm tra cấu hình token/shop_id/API_URL.']);
+        }
+        // \Log::info('GHN API - Danh sách tỉnh GHN', ['provinces' => $ghnProvinces]);
+        $provinceId = null;
+        $inputNorm = $this->normalize($request->province_name);
+        $matchedProvinces = [];
+        foreach ($ghnProvinces as $province) {
+            if ($this->normalize($province['ProvinceName']) === $inputNorm) {
+                $matchedProvinces[] = $province;
+            }
+            if (!empty($province['NameExtension']) && is_array($province['NameExtension'])) {
+                foreach ($province['NameExtension'] as $ext) {
+                    if ($this->normalize($ext) === $inputNorm) {
+                        $matchedProvinces[] = $province;
+                        break;
+                    }
+                }
+            }
+        }
+        // Ưu tiên bản ghi có ProvinceName = 'Hà Nội'
+        foreach ($matchedProvinces as $province) {
+            if ($this->normalize($province['ProvinceName']) === 'ha noi') {
+                $provinceId = $province['ProvinceID'];
+                break;
+            }
+        }
+        // Nếu không có thì lấy bản đầu tiên khớp
+        if (!$provinceId && count($matchedProvinces) > 0) {
+            $provinceId = $matchedProvinces[0]['ProvinceID'];
+        }
+        if (!$provinceId) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy tỉnh GHN phù hợp']);
+        }
+        // 2. Lấy danh sách quận/huyện GHN
+        $ghnDistricts = Http::withHeaders(['Token' => $token])
+            ->post(config('services.ghn.api_url') . '/shiip/public-api/master-data/district', [
+                'province_id' => $provinceId
+            ]);
+        // \Log::info('GHN API - Response district', ['status' => $ghnDistricts->status(), 'body' => $ghnDistricts->body()]);
+        $ghnDistricts = $ghnDistricts->json('data');
+        // \Log::info('GHN API - Danh sách quận/huyện GHN', ['districts' => $ghnDistricts, 'province_id' => $provinceId]);
+        $districtId = null;
+        if (is_array($ghnDistricts)) {
+            foreach ($ghnDistricts as $district) {
+                // \Log::info('So khớp huyện', [
+                //     'input' => $this->normalize($request->district_name),
+                //     'ghn' => $this->normalize($district['DistrictName']),
+                //     'raw_ghn' => $district['DistrictName']
+                // ]);
+                if ($this->normalize($district['DistrictName']) === $this->normalize($request->district_name)) {
+                    $districtId = $district['DistrictID'];
+                    break;
+                }
+            }
+        } else {
+            // \Log::error('GHN API - Danh sách quận/huyện GHN trả về null hoặc không phải mảng', ['province_id' => $provinceId, 'response' => $ghnDistricts]);
+        }
+        // 3. Lấy danh sách phường/xã GHN
+        $ghnWards = Http::withHeaders(['Token' => $token])
+            ->post(config('services.ghn.api_url') . '/shiip/public-api/master-data/ward', [
+                'district_id' => $districtId
+            ]);
+        // \Log::info('GHN API - Response ward', ['status' => $ghnWards->status(), 'body' => $ghnWards->body()]);
+        $ghnWards = $ghnWards->json('data');
+        // \Log::info('GHN API - Danh sách phường/xã GHN', ['wards' => $ghnWards]);
+        $wardCode = null;
+        foreach ($ghnWards as $ward) {
+            // \Log::info('So khớp xã', [
+            //     'input' => $this->normalize($request->ward_name),
+            //     'ghn' => $this->normalize($ward['WardName']),
+            //     'raw_ghn' => $ward['WardName']
+            // ]);
+            if ($this->normalize($ward['WardName']) === $this->normalize($request->ward_name)) {
+                $wardCode = $ward['WardCode'];
+                break;
+            }
+        }
+        if (!$wardCode) {
+            // \Log::error('GHN API - Không tìm thấy phường/xã GHN phù hợp', [
+            //     'input' => $request->ward_name,
+            //     'normalized_input' => $this->normalize($request->ward_name)
+            // ]);
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy phường/xã GHN phù hợp']);
+        }
+        // 4. Gọi service GHN lấy phí ship
+        $ghn = new \App\Services\GhnService();
+        $length = $request->input('length', 20);
+        $width = $request->input('width', 10);
+        $height = $request->input('height', 10);
+        $fee = $ghn->calculateShippingFee((int)$districtId, (string)$wardCode, (int)$request->weight, (int)$length, (int)$width, (int)$height);
+        // Nếu $fee là instance của JsonResponse thì lấy giá trị fee thực sự
+        if ($fee instanceof \Illuminate\Http\JsonResponse) {
+            // \Log::info('GHN API - Phí ship trả về (unwrap)', ['fee' => $data['fee']]);
+            $data = $fee->getData(true);
+            if (isset($data['fee']) && is_numeric($data['fee'])) {
+                // \Log::info('GHN API - Phí ship trả về (unwrap)', ['fee' => $data['fee']]);
+                return response()->json(['success' => true, 'fee' => $data['fee']]);
+            } else {
+                return response()->json(['success' => false, 'message' => $data['message'] ?? 'Không lấy được phí GHN', 'fee' => null]);
+            }
+        }
+        if ($fee !== false && is_numeric($fee)) {
+            // \Log::info('GHN API - Phí ship trả về (direct)', ['fee' => $fee]);
+            return response()->json(['success' => true, 'fee' => $fee]);
+        }
+        // \Log::error('GHN API - Không lấy được phí vận chuyển từ GHN', [
+        //     'districtId' => $districtId,
+        //     'wardCode' => $wardCode,
+        //     'weight' => $request->weight
+        // ]);
+        return response()->json(['success' => false, 'message' => 'Không lấy được phí vận chuyển từ GHN', 'fee' => null]);
     }
 }

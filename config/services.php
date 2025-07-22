@@ -44,4 +44,12 @@ return [
     'webhook_secret' => env('CASSO_WEBHOOK_SECRET'),
     ],
 
+    'ghn' => [
+        'api_url' => env('GHN_API_URL', 'https://online-gateway.ghn.vn'),
+        'tracking_url' => env('GHN_TRACKING_URL', 'https://donhang.ghn.vn'),
+        'token' => env('GHN_TOKEN'),
+        'shop_id' => env('GHN_SHOP_ID'),
+        'from_district_id' => env('GHN_FROM_DISTRICT_ID', 1485),
+    ],
+
 ];

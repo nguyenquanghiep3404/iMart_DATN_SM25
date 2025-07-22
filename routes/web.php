@@ -167,6 +167,16 @@ Route::prefix('api/locations')->name('api.locations.')->group(function () {
     Route::get('/check-support/{provinceCode}', [LocationController::class, 'checkNewSystemSupport'])->name('check.support');
 });
 
+// API lấy địa chỉ GHN ( Để lại nếu không cần bỏ được để xem xét)
+// Route::get('/api/ghn/provinces', function() {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_provinces')->get() ]);
+// });
+// Route::get('/api/ghn/districts/{province_id}', function($province_id) {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_districts')->where('province_id', $province_id)->get() ]);
+// });
+// Route::get('/api/ghn/wards/{district_id}', function($district_id) {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_wards')->where('district_id', $district_id)->get() ]);
+// });
 //==========================================================================
 // ADMIN ROUTES
 //==========================================================================
@@ -463,3 +473,4 @@ Route::get('/test-403', function () {
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
+Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping_fee');
