@@ -18,7 +18,6 @@ class ProductVariant extends Model
         'sale_price',
         'sale_price_starts_at',
         'sale_price_ends_at',
-        'stock_quantity',
         'manage_stock',
         'stock_status',
         'weight',
@@ -28,10 +27,8 @@ class ProductVariant extends Model
         'dimensions_height',
         'is_default',
         'status',
-        'sku',
-        'stock_quantity',
-        'stock_status',
-
+        'cost_price', 
+        'points_awarded_on_purchase'
     ];
 
     protected $casts = [

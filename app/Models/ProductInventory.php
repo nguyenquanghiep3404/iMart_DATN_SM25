@@ -13,5 +13,6 @@ class ProductInventory extends Model
         'product_variant_id',
         'inventory_type',
         'quantity',
+        'store_location_id',
     ];
 }

@@ -17,11 +17,11 @@ return new class extends Migration {
             $table->string('phone_number')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            // Cột 'avatar' đã được bỏ, sẽ dùng bảng 'uploaded_files'
             $table->enum('status', ['active', 'inactive', 'banned'])->default('active');
+             $table->integer('loyalty_points_balance')->default(0)->comment('Tổng số điểm thưởng hiện tại của người dùng');
             $table->timestamp('last_login_at')->nullable();
             $table->rememberToken();
-            $table->timestamps(); // created_at and updated_at
+            $table->timestamps(); 
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

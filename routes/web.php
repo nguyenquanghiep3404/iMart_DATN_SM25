@@ -185,7 +185,7 @@ Route::prefix('admin')
         // Route riêng cho việc xóa ảnh gallery
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
             ->name('products.gallery.delete');
-
+        Route::post('/products/upload-image-ckeditor', [ProductController::class, 'uploadImageCkeditor'])->name('media.ckeditor_upload');
         // Route xóa mềm người dùng
         // Route::middleware('can:is-admin')->group(function () {
         Route::prefix('users')->name('users.')->group(function () {
