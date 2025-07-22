@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('guest_phone')->nullable()->after('guest_email');
             
             // Thêm trường giới tính (gender)
-            $table->enum('gender', ['male', 'female', 'other'])->nullable()->after('guest_phone');
+            $table->enum('gender', ['Anh', 'Chị'])->nullable()->after('guest_phone');
         });
     }
 

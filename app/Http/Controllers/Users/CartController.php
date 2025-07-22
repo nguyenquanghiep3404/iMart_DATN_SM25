@@ -275,28 +275,28 @@ class CartController extends Controller
             'item_id' => 'required|integer',
             'force_remove' => 'sometimes|boolean',
         ]);
-
+    
         $itemId = $request->input('item_id');
         $forceRemove = $request->boolean('force_remove', false);
         $code = session('applied_coupon.code') ?? null;
         $discount = session('applied_coupon.discount') ?? 0;
         $voucherRemoved = false;
-
+    
         try {
             if (auth()->check()) {
                 $item = CartItem::find($itemId);
                 if (!$item) {
                     return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.'], 404);
                 }
-
+    
                 $cartId = $item->cart_id;
                 $remainingItems = CartItem::where('cart_id', $cartId)
                     ->where('id', '!=', $itemId)
                     ->get();
-
+    
                 $subtotal = $remainingItems->sum(fn($i) => $i->price * $i->quantity);
                 $totalQuantity = $remainingItems->sum('quantity');
-
+    
                 if ($code) {
                     $coupon = Coupon::where('code', $code)->first();
                     if ($coupon && $coupon->min_order_amount && $subtotal < $coupon->min_order_amount) {
@@ -310,26 +310,44 @@ class CartController extends Controller
                                 'message' => "Bạn cần giữ đơn hàng tối thiểu " . number_format($coupon->min_order_amount, 0, ',', '.') . "₫ để tiếp tục sử dụng mã “{$coupon->code}”"
                             ]);
                         } else {
-                            session()->forget('applied_coupon');
+                            session()->forget(['applied_coupon', 'discount', 'applied_voucher']);
                             $voucherRemoved = true;
                             $discount = 0;
                         }
                     }
                 }
-
+    
+                // Xóa item trong DB
                 $item->delete();
+    
+                // Xóa item tương ứng trong session cart để tránh dữ liệu session sai
+                $cartSession = session()->get('cart', []);
+                if (isset($cartSession[$item->cartable_id])) {
+                    unset($cartSession[$item->cartable_id]);
+                    session()->put('cart', $cartSession);
+                }
+    
+                // Nếu giỏ hàng đã trống sau khi xóa, xóa luôn voucher và reset giá trị
+                if ($remainingItems->isEmpty()) {
+                    session()->forget(['applied_coupon', 'discount', 'applied_voucher']);
+                    $subtotal = 0;
+                    $totalQuantity = 0;
+                    $discount = 0;
+                }
+    
             } else {
+                // User chưa đăng nhập xử lý session
                 $cart = session('cart', []);
                 if (!isset($cart[$itemId])) {
                     return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.'], 404);
                 }
-
+    
                 $tempCart = $cart;
                 unset($tempCart[$itemId]);
-
+    
                 $subtotal = collect($tempCart)->sum(fn($i) => $i['price'] * $i['quantity']);
                 $totalQuantity = collect($tempCart)->sum('quantity');
-
+    
                 if ($code) {
                     $coupon = Coupon::where('code', $code)->first();
                     if ($coupon && $coupon->min_order_amount && $subtotal < $coupon->min_order_amount) {
@@ -343,16 +361,16 @@ class CartController extends Controller
                                 'message' => "Bạn cần giữ đơn hàng tối thiểu " . number_format($coupon->min_order_amount, 0, ',', '.') . "₫ để tiếp tục sử dụng mã “{$coupon->code}”. Hiện tại đơn hàng còn lại là " . number_format($subtotal, 0, ',', '.') . "₫."
                             ]);
                         } else {
-                            session()->forget('applied_coupon');
+                            session()->forget(['applied_coupon', 'discount', 'applied_voucher']);
                             $voucherRemoved = true;
                             $discount = 0;
                         }
                     }
                 }
-
+    
                 unset($cart[$itemId]);
                 if (empty($cart)) {
-                    session()->forget(['cart', 'applied_coupon']);
+                    session()->forget(['cart', 'applied_coupon', 'discount', 'applied_voucher']);
                     $subtotal = 0;
                     $totalQuantity = 0;
                     $discount = 0;
@@ -360,9 +378,9 @@ class CartController extends Controller
                     session()->put('cart', $cart);
                 }
             }
-
+    
             $totalAfterDiscount = max(0, $subtotal - $discount);
-
+    
             return response()->json([
                 'success' => true,
                 'totalQuantity' => $totalQuantity,
@@ -379,6 +397,7 @@ class CartController extends Controller
             ], 500);
         }
     }
+    
     // cập nhập số lượng
     public function updateQuantity(Request $request)
     {
@@ -784,6 +803,8 @@ class CartController extends Controller
                     'price' => $finalPrice,
                     'quantity' => $item['quantity'],
                     'image' => $variant->image_url,
+                    'cartable_type' => \App\Models\ProductVariant::class,
+                    'cartable_id' => $variant->id,
                 ];
             }
 

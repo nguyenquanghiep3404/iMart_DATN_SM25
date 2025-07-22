@@ -6,12 +6,6 @@
             <!-- Page title + Add list button-->
             <div class="d-flex align-items-center justify-content-between pb-3 mb-1 mb-sm-2 mb-md-3">
                 <h1 class="h2 me-3 mb-0">Danh sách sản phẩm yêu thích</h1>
-                <div class="nav">
-                    <a class="nav-link animate-underline px-0 py-1 py-ms-2" href="/">
-                        <i class="ci-plus fs-base me-1"></i>
-                        <span class="animate-target">Thêm danh sách yêu thích</span>
-                    </a>
-                </div>
             </div>
 
             <!-- Wishlist selector -->
