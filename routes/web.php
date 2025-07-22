@@ -160,10 +160,27 @@ Route::post('/buy-now/process', [PaymentController::class, 'processBuyNowOrder']
 // LOCATION API ROUTES
 //==========================================================================
 Route::prefix('api/locations')->name('api.locations.')->group(function () {
+    // Hệ thống địa chỉ mới
     Route::get('/provinces', [LocationController::class, 'getProvinces'])->name('provinces');
     Route::get('/wards/{provinceCode}', [LocationController::class, 'getWardsByProvince'])->name('wards');
+    // Hệ thống địa chỉ cũ
+    Route::get('/old/provinces', [LocationController::class, 'getOldProvinces'])->name('old.provinces');
+    Route::get('/old/districts/{provinceCode}', [LocationController::class, 'getOldDistrictsByProvince'])->name('old.districts');
+    Route::get('/old/wards/{districtCode}', [LocationController::class, 'getOldWardsByDistrict'])->name('old.wards');
+    // Kiểm tra hỗ trợ hệ thống mới
+    Route::get('/check-support/{provinceCode}', [LocationController::class, 'checkNewSystemSupport'])->name('check.support');
 });
 
+// API lấy địa chỉ GHN ( Để lại nếu không cần bỏ được để xem xét)
+// Route::get('/api/ghn/provinces', function() {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_provinces')->get() ]);
+// });
+// Route::get('/api/ghn/districts/{province_id}', function($province_id) {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_districts')->where('province_id', $province_id)->get() ]);
+// });
+// Route::get('/api/ghn/wards/{district_id}', function($district_id) {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_wards')->where('district_id', $district_id)->get() ]);
+// });
 //==========================================================================
 // ADMIN ROUTES
 //==========================================================================
@@ -455,3 +472,4 @@ Route::get('/test-403', function () {
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
+Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping_fee');

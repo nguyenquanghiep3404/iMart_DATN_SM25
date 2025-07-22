@@ -31,6 +31,10 @@ class DatabaseSeeder extends Seeder
             ReviewSeeder::class,        // Tạo đánh giá sau khi có sản phẩm và đơn hàng
             ProFeaturesSeeder::class,
             // ActivityLogSeeder::class, // Nếu có
+            
+            // Thêm các seeder cho hệ thống địa chỉ kép
+            NewAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ MỚI
+            OldAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ CŨ
         ]);
         $this->command->info('All seeders ran successfully!');
     }

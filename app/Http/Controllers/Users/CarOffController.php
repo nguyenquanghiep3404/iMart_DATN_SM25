@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Users;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
-use Illuminate\Support\Facades\Session;
+use App\Models\ProductInventory;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Session;
+
 class CarOffController extends Controller
 {
     
@@ -270,7 +272,9 @@ class CarOffController extends Controller
                 return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại trong giỏ hàng.'], 404);
             }
 
-            $stock = $cartItem->productVariant->stock_quantity ?? 0;
+            $stock = ProductInventory::where('product_variant_id', $cartItem->productVariant->id)
+                ->where('inventory_type', 'new')
+                ->sum('quantity');
             if ($quantity > $stock) {
                 return response()->json([
                     'success' => false,
@@ -290,7 +294,9 @@ class CarOffController extends Controller
             }
 
             $variant = ProductVariant::find($itemId);
-            $stock = $variant->stock_quantity ?? 0;
+            $stock = ProductInventory::where('product_variant_id', $variant->id)
+                ->where('inventory_type', 'new')
+                ->sum('quantity');
 
             if ($quantity > $stock) {
                 return response()->json([
