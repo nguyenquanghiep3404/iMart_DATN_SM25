@@ -3,7 +3,6 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -11,23 +10,27 @@ class AbandonedCartReminder extends Notification
 {
     use Queueable;
 
+    protected array $channels;
+
     /**
-     * Create a new notification instance.
+     * Khởi tạo notification với danh sách kênh (mail/database)
      */
-    public function __construct()
+    public function __construct(array $channels = ['mail', 'database'])
     {
-        //
+        $this->channels = $channels;
     }
 
     /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
+     * Xác định kênh gửi thông báo
      */
     public function via(object $notifiable): array
     {
-        return ['mail','database'];
+        return $this->channels;
     }
+
+    /**
+     * Thông báo in-app (ghi vào database)
+     */
     public function toDatabase(object $notifiable): array
     {
         return [
@@ -36,8 +39,9 @@ class AbandonedCartReminder extends Notification
             'action_url' => url('/cart'),
         ];
     }
+
     /**
-     * Get the mail representation of the notification.
+     * Gửi email
      */
     public function toMail(object $notifiable): MailMessage
     {
@@ -50,15 +54,8 @@ class AbandonedCartReminder extends Notification
             ->line('Cảm ơn bạn đã mua sắm tại ' . config('app.name') . '!');
     }
 
-    /**
-     * Get the array representation of the notification.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(object $notifiable): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 }

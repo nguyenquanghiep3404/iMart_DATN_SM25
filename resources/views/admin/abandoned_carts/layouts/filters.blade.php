@@ -4,7 +4,7 @@
         <div class="lg:col-span-2">
             <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
             <input type="text" id="search" name="search" value="{{ request('search') }}" class="form-input"
-                placeholder="Tên khách hàng, email, SĐT...">
+                placeholder="Tên khách hàng, email">
         </div>
 
         <!-- Trạng thái khôi phục -->

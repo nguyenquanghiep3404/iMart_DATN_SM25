@@ -8,7 +8,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Notifications\AbandonedCartReminder;
 use App\Models\AbandonedCartLog;
-
+use App\Mail\AbandonedCartMail;
+use Illuminate\Support\Facades\Mail;
 class AbandonedCartController  extends Controller
 {
     public function index(Request $request)
@@ -68,52 +69,29 @@ class AbandonedCartController  extends Controller
 
         return view('admin.abandoned_carts.index', compact('abandonedCarts', 'totalAbandonedCarts'));
     }
-
-    // public function show($id)
-    // {
-    //     $cart = \App\Models\AbandonedCart::with([
-    //         'user',
-    //         'logs', // 👈 THÊM DÒNG NÀY
-    //         'cart.items.cartable' => function ($morphTo) {
-    //             $morphTo->morphWith([
-    //                 \App\Models\ProductVariant::class => ['product'],
-    //                 \App\Models\TradeInItem::class => [],
-    //             ]);
-    //         }
-    //     ])->findOrFail($id);
-    
-    //     // Tính tổng tiền từ các cart items
-    //     $total = $cart->cart->items->sum(function ($item) {
-    //         $price = $item->price ?? ($item->cartable->price ?? 0);
-    //         return $item->quantity * $price;
-    //     });
-        
-    //     return view('admin.abandoned_carts.show', compact('cart', 'total'));
-    // }
     public function show($id)
-{
-    $cart = \App\Models\AbandonedCart::with([
-        'user',
-        'cart.items.cartable' => function ($morphTo) {
-            $morphTo->morphWith([
-                \App\Models\ProductVariant::class => ['product'],
-                \App\Models\TradeInItem::class => [],
-            ]);
-        }
-    ])->findOrFail($id);
+    {
+        $cart = \App\Models\AbandonedCart::with([
+            'user',
+            'cart.items.cartable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\ProductVariant::class => ['product'],
+                    \App\Models\TradeInItem::class => [],
+                ]);
+            }
+        ])->findOrFail($id);
 
-    $total = $cart->cart->items->sum(function ($item) {
-        $price = $item->price ?? ($item->cartable->price ?? 0);
-        return $item->quantity * $price;
-    });
+        $total = $cart->cart->items->sum(function ($item) {
+            $price = $item->price ?? ($item->cartable->price ?? 0);
+            return $item->quantity * $price;
+        });
 
-    return view('admin.abandoned_carts.show', compact('cart', 'total'));
-}
-
-
+        return view('admin.abandoned_carts.show', compact('cart', 'total'));
+    } 
     public function sendInApp($id)
     {
         $abandonedCart = AbandonedCart::with('user')->find($id);
+
         if (!$abandonedCart) {
             return response()->json(['success' => false, 'message' => 'Không tìm thấy giỏ hàng.']);
         }
@@ -123,13 +101,12 @@ class AbandonedCartController  extends Controller
         }
 
         try {
-            $abandonedCart->user->notify(new AbandonedCartReminder());
+            // ✅ CHỈ gửi in-app notification
+            $abandonedCart->user->notify(new AbandonedCartReminder(['database']));
 
-            // ✅ Cập nhật trạng thái đã gửi
             $abandonedCart->in_app_notification_status = 'sent';
             $abandonedCart->save();
 
-            // ✅ Ghi log gửi in-app vào bảng logs
             AbandonedCartLog::create([
                 'abandoned_cart_id' => $abandonedCart->id,
                 'action' => 'sent_in_app_notification',
@@ -143,5 +120,32 @@ class AbandonedCartController  extends Controller
         }
 
         return response()->json(['success' => true, 'message' => 'Đã gửi thông báo in-app thành công.']);
-    } 
+    }
+    public function sendEmail($id)
+    {
+        $abandonedCart = AbandonedCart::findOrFail($id);
+
+        if (!$abandonedCart->user || !$abandonedCart->user->email) {
+            return response()->json(['message' => 'Không có email để gửi.'], 400);
+        }
+
+        try {
+            Mail::to($abandonedCart->user->email)
+                ->send(new AbandonedCartMail($abandonedCart->cart)); // truyền Cart đúng
+
+            $abandonedCart->email_status = 'sent'; // ✅ sửa đúng cột
+            $abandonedCart->last_notified_at = now(); // nếu muốn ghi lại thời điểm gửi
+            $abandonedCart->save();
+
+            return response()->json(['message' => 'Đã gửi email thành công.']);
+        } catch (\Exception $e) {
+            \Log::error('Gửi mail lỗi: ' . $e->getMessage());
+
+            // Cập nhật trạng thái thất bại (tuỳ chọn)
+            $abandonedCart->email_status = 'failed';
+            $abandonedCart->save();
+
+            return response()->json(['message' => 'Lỗi gửi mail: ' . $e->getMessage()], 500);
+        }
+    }
 }

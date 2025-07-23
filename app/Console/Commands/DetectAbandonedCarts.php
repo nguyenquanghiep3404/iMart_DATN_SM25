@@ -15,7 +15,7 @@ class DetectAbandonedCarts extends Command
 
     public function handle()
     {
-        $cutoff = now()->subMinutes(1); // Có thể là 60 hoặc 30 phút tuỳ bạn
+        $cutoff = now()->subMinutes(1); // sửa thời gian
     
         $query = Cart::with('user')
             ->where('updated_at', '<', $cutoff)

@@ -327,6 +327,8 @@ Route::prefix('admin')
         ->name('abandoned_carts.show');
         Route::post('abandoned-carts/send-inapp/{cart}', [AbandonedCartController::class, 'sendInApp'])
         ->name('abandoned_carts.send_inapp');
+        Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
+        ->name('abandoned_carts.send_email');
     
         // Banner routes
 
