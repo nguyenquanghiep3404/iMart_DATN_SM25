@@ -173,10 +173,12 @@
                                 <i class="fas fa-paper-plane mr-2"></i>
                                 Gửi lại Email khôi phục
                             </button>
-                            <button class="btn btn-info w-full">
+                            <button class="btn btn-info w-full btn-send-inapp" data-id="{{ $cart->id }}"
+                                title="Gửi thông báo in-app" @if ($cart->in_app_notification_status === 'sent') disabled @endif>
                                 <i class="fas fa-bell mr-2"></i>
                                 Gửi lại thông báo In-App
                             </button>
+
                         </div>
                     </div>
 
@@ -201,3 +203,4 @@
         </div>
     </div>
 @endsection
+@include('admin.abandoned_carts.script.script')

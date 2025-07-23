@@ -72,29 +72,25 @@
                 <i class="fas fa-check-circle text-green-500 w-5 text-center"></i>
                 <span class="ml-2">
                     Email:
-                    @if ($logs->has('email'))
-                        <span class="font-medium">
-                            Đã gửi ({{ \Carbon\Carbon::parse($logs['email']->last()->sent_at)->format('d/m') }})
-                        </span>
+                    @if ($cart->email_status === 'sent')
+                        <span class="text-green-600 font-semibold">Đã gửi</span>
                     @else
-                        <span class="text-red-500 font-medium">Chưa gửi</span>
+                        <span class="text-red-600 font-semibold">Chưa gửi</span>
                     @endif
                 </span>
             </div>
-
             <div class="flex items-center text-gray-700">
                 <i class="fas fa-check-circle text-green-500 w-5 text-center"></i>
                 <span class="ml-2">
                     In-App:
-                    @if ($logs->has('in_app'))
-                        <span class="font-medium">
-                            Đã gửi ({{ \Carbon\Carbon::parse($logs['in_app']->last()->sent_at)->format('d/m') }})
-                        </span>
+                    @if ($cart->in_app_notification_status === 'sent')
+                        <span class="text-green-600 font-semibold">Đã gửi</span>
                     @else
-                        <span class="text-red-500 font-medium">Chưa gửi</span>
+                        <span class="text-red-600 font-semibold">Chưa gửi</span>
                     @endif
                 </span>
             </div>
+
         </div>
     </div>
 </div>

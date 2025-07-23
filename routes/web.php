@@ -325,7 +325,9 @@ Route::prefix('admin')
         Route::get('/abandoned-carts', [AbandonedCartController::class, 'index'])->name('abandoned-carts.index');
         Route::get('/admin/abandoned-carts/{id}', [AbandonedCartController::class, 'show'])
         ->name('abandoned_carts.show');
-
+        Route::post('abandoned-carts/send-inapp/{cart}', [AbandonedCartController::class, 'sendInApp'])
+        ->name('abandoned_carts.send_inapp');
+    
         // Banner routes
 
         Route::get('/banners/trash', [BannerController::class, 'trash'])->name('banners.trash');
