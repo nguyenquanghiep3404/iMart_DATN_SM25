@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreTradeInItemRequest; // Import Form Request
+use App\Http\Requests\StoreTradeInItemRequest;
+use App\Http\Requests\UpdateTradeInItemRequest; 
 use App\Models\ProductVariant;
 use App\Models\StoreLocation;
 use App\Models\TradeInItem;
@@ -12,118 +13,198 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Product;
 
 class TradeInItemController extends Controller
 {
     /**
      * Hiển thị trang danh sách các sản phẩm cũ & mở hộp.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Logic để lấy và hiển thị danh sách sản phẩm cũ
-        // Ví dụ: $items = TradeInItem::with('productVariant')->latest()->paginate(15);
-        // return view('admin.trade_in_items.index', compact('items'));
-        
-        // Tạm thời trả về view trống
-        return "Đây là trang danh sách sản phẩm cũ (index).";
+        // Bắt đầu xây dựng câu truy vấn
+        $query = TradeInItem::query();
+
+        // Eager load các relationship để tránh vấn đề N+1 queries
+        // Tải sẵn thông tin biến thể, sản phẩm gốc, và các thuộc tính của biến thể
+        $query->with([
+            'productVariant.product', // Tải sản phẩm gốc (để lấy tên)
+            'productVariant.attributeValues.attribute', // Tải các giá trị thuộc tính và tên thuộc tính
+            'storeLocation', 
+            'images'
+        ]);
+
+        // 1. Áp dụng bộ lọc TÌM KIẾM
+        if ($request->filled('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('sku', 'LIKE', "%{$searchTerm}%")
+                  ->orWhere('imei_or_serial', 'LIKE', "%{$searchTerm}%")
+                  // Tìm kiếm trong bảng liên quan (products)
+                  ->orWhereHas('productVariant.product', function ($subQuery) use ($searchTerm) {
+                      $subQuery->where('name', 'LIKE', "%{$searchTerm}%");
+                  });
+            });
+        }
+
+        // 2. Áp dụng bộ lọc TRẠNG THÁI
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        // 3. Áp dụng bộ lọc TÌNH TRẠNG
+        if ($request->filled('condition_grade')) {
+            $query->where('condition_grade', $request->input('condition_grade'));
+        }
+
+        // Sắp xếp các sản phẩm mới nhất lên đầu
+        $query->orderBy('created_at', 'desc');
+
+        // Phân trang kết quả, mỗi trang 15 mục
+        $items = $query->paginate(15)->withQueryString();
+
+        // Trả về view 'index' cùng với biến $items
+        return view('admin.trade_in_items.index', compact('items'));
     }
+
 
     /**
      * Hiển thị form để thêm mới một sản phẩm cũ.
      */
     public function create()
     {
-        // Lấy danh sách các sản phẩm mới (product_variants) để hiển thị trong dropdown
-        $productVariants = ProductVariant::where('status', 'active')->get();
-        
-        // Lấy danh sách các cửa hàng/kho
+        $products = Product::where('status', 'published')
+            ->whereHas('variants', fn($q) => $q->where('status', 'active'))
+            ->with(['variants' => fn($q) => $q->where('status', 'active')->with('attributeValues.attribute')])
+            ->orderBy('name')
+            ->get();
+
         $storeLocations = StoreLocation::where('is_active', true)->get();
 
-        return view('admin.trade_in_items.create', compact('productVariants', 'storeLocations'));
+        // --- LOGIC MỚI: LẤY DỮ LIỆU ẢNH CŨ KHI VALIDATION LỖI ---
+        $old_images_data = [];
+        $all_image_ids = array_unique(array_filter(array_merge(
+            [old('primary_image_id')],
+            old('image_ids', [])
+        )));
+
+        if (!empty($all_image_ids)) {
+            $images = UploadedFile::whereIn('id', $all_image_ids)->get();
+            $old_images_data = $images->keyBy('id')->map(fn ($image) => [
+                'id' => $image->id,
+                'url' => $image->url,
+                'alt_text' => $image->alt_text
+            ])->all();
+        }
+        // --- KẾT THÚC LOGIC MỚI ---
+
+        return view('admin.trade_in_items.create', compact('products', 'storeLocations', 'old_images_data'));
     }
 
-    /**
-     * Lưu một sản phẩm cũ mới vào database.
-     *
-     * @param  \App\Http\Requests\StoreTradeInItemRequest  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
     public function store(StoreTradeInItemRequest $request)
     {
-        // Lấy dữ liệu đã được validate từ Form Request
         $validatedData = $request->validated();
-
-        // Bắt đầu một transaction để đảm bảo toàn vẹn dữ liệu
-        // Nếu có lỗi xảy ra ở bất kỳ bước nào, tất cả sẽ được rollback
         DB::beginTransaction();
-
         try {
-            // 1. Tạo bản ghi trong bảng `trade_in_items`
             $tradeInItem = TradeInItem::create([
-                'product_variant_id' => $validatedData['product_variant_id'],
-                'store_location_id' => $validatedData['store_location_id'],
-                'type' => $validatedData['type'],
-                'sku' => $validatedData['sku'] ?? $this->generateSku($validatedData['product_variant_id']),
-                'condition_grade' => $validatedData['condition_grade'],
+                'product_variant_id'    => $validatedData['product_variant_id'],
+                'store_location_id'     => $validatedData['store_location_id'],
+                'type'                  => $validatedData['type'],
+                'sku'                   => $validatedData['sku'] ?? $this->generateSku($validatedData['product_variant_id']),
+                'condition_grade'       => $validatedData['condition_grade'],
                 'condition_description' => $validatedData['condition_description'],
-                'selling_price' => $validatedData['selling_price'],
-                'imei_or_serial' => $validatedData['imei_or_serial'],
-                'status' => $validatedData['status'],
+                'selling_price'         => $validatedData['selling_price'],
+                'imei_or_serial'        => $validatedData['imei_or_serial'],
+                'status'                => $validatedData['status'],
             ]);
 
-            // 2. Xử lý upload hình ảnh (nếu có)
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $imageFile) {
-                    // Lưu file vào storage (ví dụ: storage/app/public/trade-in-images)
-                    $path = $imageFile->store('trade-in-images', 'public');
+            // --- LOGIC MỚI: ĐỒNG BỘ HÌNH ẢNH ---
+            $this->syncImages(
+                $tradeInItem,
+                $validatedData['primary_image_id'],
+                $validatedData['image_ids']
+            );
+            // --- KẾT THÚC LOGIC MỚI ---
 
-                    // Tạo bản ghi trong bảng `uploaded_files`
-                    $uploadedFile = UploadedFile::create([
-                        'path' => $path,
-                        'filename' => $imageFile->hashName(),
-                        'original_name' => $imageFile->getClientOriginalName(),
-                        'mime_type' => $imageFile->getMimeType(),
-                        'size' => $imageFile->getSize(),
-                        'disk' => 'public',
-                        'attachable_id' => $tradeInItem->id, // Gán id của sản phẩm cũ
-                        'attachable_type' => TradeInItem::class, // Gán model class
-                        // 'user_id' => auth()->id(), // Nếu cần lưu người upload
-                    ]);
-
-                    // 3. Tạo mối quan hệ trong bảng `trade_in_item_images`
-                    // Lưu ý: Dựa trên CSDL của bạn, có vẻ bạn dùng bảng `uploaded_files` với attachable polymorphic.
-                    // Nếu bạn có bảng trung gian `trade_in_item_images(trade_in_item_id, uploaded_file_id)`,
-                    // bạn sẽ dùng lệnh sau:
-                    // $tradeInItem->images()->attach($uploadedFile->id);
-                }
-            }
-
-            // Nếu mọi thứ thành công, commit transaction
             DB::commit();
-
             return redirect()->route('admin.trade-in-items.index')
-                         ->with('success', 'Thêm sản phẩm cũ thành công!');
-
+                ->with('success', 'Thêm sản phẩm cũ thành công!');
         } catch (\Exception $e) {
-            // Nếu có lỗi, rollback lại tất cả các thay đổi
             DB::rollBack();
-            
-            // Ghi log lỗi để debug
             Log::error('Lỗi khi thêm sản phẩm cũ: ' . $e->getMessage());
-
             return back()->withInput()->with('error', 'Đã có lỗi xảy ra. Vui lòng thử lại.');
+        }
+    }
+    
+    /**
+     * Helper function để đồng bộ ảnh chính và ảnh album cho sản phẩm.
+     */
+    private function syncImages(TradeInItem $item, int $primaryImageId, array $allImageIds): void
+    {
+        // Gỡ liên kết tất cả ảnh cũ (quan trọng cho chức năng edit sau này)
+        $item->images()->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null]);
+
+        // Gán lại các ảnh mới
+        $order = 1;
+        foreach ($allImageIds as $imageId) {
+            UploadedFile::where('id', $imageId)->update([
+                'attachable_id'   => $item->id,
+                'attachable_type' => TradeInItem::class,
+                'type'            => ($imageId == $primaryImageId) ? 'primary_image' : 'album_image',
+                'order'           => $order++
+            ]);
+        }
+    }
+
+    private function generateSku($variantId)
+    {
+        return 'USED-' . $variantId . '-' . strtoupper(uniqid());
+    }
+    /**
+     * Chuyển sản phẩm vào thùng rác (Soft Delete).
+     */
+    public function destroy(TradeInItem $tradeInItem)
+    {
+        try {
+            $tradeInItem->delete(); // Thực hiện soft delete
+            return redirect()->route('admin.trade-in-items.index')->with('success', 'Sản phẩm đã được chuyển vào thùng rác.');
+        } catch (\Exception $e) {
+            Log::error("Lỗi khi xóa mềm sản phẩm thu cũ ID {$tradeInItem->id}: " . $e->getMessage());
+            return back()->with('error', 'Đã có lỗi xảy ra khi xóa sản phẩm.');
         }
     }
 
     /**
-     * Helper function để tự động tạo SKU nếu người dùng không nhập.
+     * Hiển thị danh sách các sản phẩm trong thùng rác.
      */
-    private function generateSku($variantId)
+    public function trash()
     {
-        $prefix = 'USED';
-        // Logic tạo SKU, ví dụ: USED-14PROMAX-12345
-        return $prefix . '-' . $variantId . '-' . strtoupper(uniqid());
+        $items = TradeInItem::onlyTrashed()->with([
+            'productVariant.product',
+            'storeLocation'
+        ])->latest('deleted_at')->paginate(15);
+
+        return view('admin.trade_in_items.trash', compact('items'));
     }
-    
-    // Các phương thức khác như edit, update, destroy sẽ được thêm ở đây...
+
+    /**
+     * Khôi phục một sản phẩm từ thùng rác.
+     */
+    public function restore($id)
+    {
+        $item = TradeInItem::onlyTrashed()->findOrFail($id);
+        $item->restore();
+        return redirect()->route('admin.trade-in-items.trash')->with('success', 'Sản phẩm đã được khôi phục thành công.');
+    }
+
+    /**
+     * Xóa vĩnh viễn một sản phẩm.
+     */
+    public function forceDelete($id)
+    {
+        $item = TradeInItem::onlyTrashed()->findOrFail($id);
+        // Cần thêm logic xóa ảnh liên quan nếu có
+        $item->forceDelete();
+        return redirect()->route('admin.trade-in-items.trash')->with('success', 'Sản phẩm đã được xóa vĩnh viễn.');
+    }
 }

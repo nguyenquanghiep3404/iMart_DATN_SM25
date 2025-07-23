@@ -99,7 +99,7 @@ public function delete(?string $path): bool
 
             // 4. Áp dụng quy tắc xử lý ảnh dựa trên ngữ cảnh (context-aware processing)
             $image = match ($contextFolder) {
-                'products'   => $this->processProductImage($image),
+                'products', 'trade-in-items' => $this->processProductImage($image),
                 'avatars'    => $this->processAvatarImage($image),
                 'banners'    => $this->processBannerImage($image),
                 'description'=> $this->processBannerImage($image),

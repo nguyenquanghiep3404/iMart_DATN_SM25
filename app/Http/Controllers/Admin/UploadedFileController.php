@@ -79,7 +79,7 @@ class UploadedFileController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'files.*' => 'required|file|mimes:jpg,jpeg,png,gif,webp,svg,pdf|max:10240',
-            'context' => ['sometimes', 'string', Rule::in(['products', 'avatars', 'banners', 'categories', 'posts', 'general'])],
+            'context' => ['sometimes', 'string', Rule::in(['products', 'avatars', 'banners', 'categories', 'posts', 'general', 'description', 'trade-in-items'])],
         ]);
 
         if ($validator->fails()) {

@@ -5,7 +5,6 @@
 @push('styles')
 <style>
     /* Các CSS custom cho card, button, table, badge... sẽ được đặt ở đây */
-    /* Bạn có thể copy CSS từ file HTML mẫu vào đây hoặc đặt trong file CSS chung */
     .card-custom {
         border-radius: 0.75rem;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -149,11 +148,25 @@
                             @forelse ($items as $item)
                                 <tr>
                                     <td>
-                                        <img src="{{ $item->cover_image_url }}" alt="{{ $item->productVariant->name }}" class="w-14 h-14 object-cover rounded-md">
+                                        <img src="{{ $item->cover_image_url }}" alt="Ảnh sản phẩm" class="w-14 h-14 object-cover rounded-md">
                                     </td>
                                     <td>
-                                        <a href="{{ route('admin.trade-in-items.edit', $item) }}" class="font-semibold text-indigo-600 hover:text-indigo-800">{{ $item->productVariant->name }}</a>
-                                        <p class="text-xs text-gray-500">{{ $item->type == 'used' ? 'Máy đã qua sử dụng' : 'Hàng mở hộp' }}</p>
+                                        @php
+                                            // Lấy tên sản phẩm gốc một cách an toàn
+                                            $baseName = optional($item->productVariant->product)->name;
+
+                                            // Sắp xếp thuộc tính theo tên (vd: Color, Storage) rồi lấy giá trị
+                                            $attributesString = $item->productVariant->attributeValues
+                                                ->sortBy(fn($val) => optional($val->attribute)->name)
+                                                ->map(fn($val) => $val->value)
+                                                ->implode(' - ');
+                                            
+                                            // Kết hợp tên và thuộc tính
+                                            $fullName = $baseName . ($attributesString ? ' - ' . $attributesString : '');
+                                        @endphp
+                                        
+                                        <a href="{{ route('admin.trade-in-items.edit', $item) }}" class="font-semibold text-indigo-600 hover:text-indigo-800">{{ $fullName }}</a>
+                                        <p class="text-xs text-gray-500">{{ $item->type === 'used' ? '(Máy đã qua sử dụng)' : '(Hàng mở hộp)' }}</p>
                                     </td>
                                     <td>
                                         <p class="font-medium">{{ $item->sku }}</p>
@@ -200,12 +213,12 @@
             
             @if ($items->hasPages())
             <div class="card-custom-footer">
-                 <div class="flex justify-between items-center">
-                    <p class="text-sm text-gray-700">
-                        Hiển thị từ <strong>{{ $items->firstItem() }}</strong> đến <strong>{{ $items->lastItem() }}</strong> trên <strong>{{ $items->total() }}</strong> kết quả
-                    </p>
-                    {{ $items->links() }}
-                </div>
+                   <div class="flex justify-between items-center">
+                        <p class="text-sm text-gray-700">
+                            Hiển thị từ <strong>{{ $items->firstItem() }}</strong> đến <strong>{{ $items->lastItem() }}</strong> trên <strong>{{ $items->total() }}</strong> kết quả
+                        </p>
+                        {{ $items->links() }}
+                    </div>
             </div>
             @endif
         </div>
