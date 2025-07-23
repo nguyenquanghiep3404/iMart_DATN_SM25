@@ -87,6 +87,25 @@
                                     <p class="fs-sm mb-4">Vui lòng chọn địa chỉ của bạn để xem các tùy chọn giao hàng và chi
                                         phí.</p>
 
+                                    <!-- Chọn hệ thống địa chỉ -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-12">
+                                            <label class="form-label">Hệ thống địa chỉ <span class="text-danger">*</span></label>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="address_system" id="address_system_new" value="new">
+                                                <label class="form-check-label" for="address_system_new">
+                                                    <strong>Hệ thống địa chỉ mới</strong> (Hà Nội - Tỉnh/Thành phố → Phường/Xã)
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="address_system" id="address_system_old" value="old" checked>
+                                                <label class="form-check-label" for="address_system_old">
+                                                    <strong>Hệ thống địa chỉ cũ</strong> (Các tỉnh khác - Tỉnh/Thành phố → Quận/Huyện → Phường/Xã)
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Biểu mẫu lựa chọn địa chỉ -->
                                     <div class="row g-3 mb-4">
                                         <div class="col-12">
@@ -95,6 +114,16 @@
                                             <select class="form-select" id="province" name="province" required>
                                                 <option value="">Chọn tỉnh/thành phố</option>
                                                 <!-- Dữ liệu sẽ được load từ API -->
+                                            </select>
+                                        </div>
+
+                                        <!-- Dropdown cho hệ thống cũ -->
+                                        <div class="col-md-6" id="district-container" style="display: none;">
+                                            <label for="district" class="form-label">Quận/Huyện <span
+                                                    class="text-danger">*</span></label>
+                                            <select class="form-select" id="district" name="district" disabled>
+                                                <option value="">Chọn tỉnh/thành phố trước</option>
+                                                <!-- Dữ liệu sẽ được load từ API khi chọn tỉnh -->
                                             </select>
                                         </div>
 
@@ -120,11 +149,11 @@
                                                     <input type="radio" class="form-check-input fs-base me-2 me-sm-3"
                                                         name="shipping-method">
                                                     Giao hàng nhanh
-                                                    <span class="fw-normal ms-auto">35.000 VNĐ</span>
+                                                    <span class="fw-normal ms-auto" id="shipping-fast-fee-display"></span>
                                                 </label>
                                             </div>
                                             <div class="collapse" id="courier" data-bs-parent="#shippingMethod">
-                                                <div class="pb-4 ps-3 ms-2 ms-sm-3">
+                                                {{-- <div class="pb-4 ps-3 ms-2 ms-sm-3">
                                                     <p class="fs-sm">Chọn thời gian giao hàng phù hợp:</p>
                                                     <div class="d-flex justify-content-start">
                                                         <button type="button"
@@ -291,7 +320,7 @@
                                                             <i class="ci-chevron-right fs-lg"></i>
                                                         </button>
                                                     </div>
-                                                </div>
+                                                </div> --}}
                                             </div>
                                         </div>
 
@@ -308,7 +337,7 @@
                                                 </label>
                                             </div>
                                             <div class="collapse" id="pickup" data-bs-parent="#shippingMethod">
-                                                <div class="pb-4 ps-3 ms-2 ms-sm-3">
+                                                {{-- <div class="pb-4 ps-3 ms-2 ms-sm-3">
                                                     <p class="fs-sm mb-2">Chọn cửa hàng gần nhất:</p>
                                                     <div class="w-100 mb-4" style="max-width: 300px">
                                                         <select class="form-select"
@@ -509,7 +538,7 @@
                                                             <i class="ci-chevron-right fs-lg"></i>
                                                         </button>
                                                     </div>
-                                                </div>
+                                                </div> --}}
                                             </div>
                                         </div>
 
@@ -535,9 +564,9 @@
                                                                 class="text-info-emphasis fw-semibold">3-5</span> ngày làm
                                                             việc.</div>
                                                     </div>
-                                                    <p class="fs-sm mb-0">Dự kiến giao hàng - <span
+                                                    {{-- <p class="fs-sm mb-0">Dự kiến giao hàng - <span
                                                             class="text-body-emphasis fw-medium">15 tháng 3, 2024</span>
-                                                    </p>
+                                                    </p> --}}
                                                 </div>
                                             </div>
                                         </div>
@@ -964,19 +993,69 @@
 
             // Các yếu tố vị trí
             const provinceSelect = document.getElementById('province');
+            const districtSelect = document.getElementById('district');
             const wardSelect = document.getElementById('ward');
+            const districtContainer = document.getElementById('district-container');
+            const addressSystemNew = document.getElementById('address_system_new');
+            const addressSystemOld = document.getElementById('address_system_old');
 
             // Tải các tỉnh khi tải trang
             loadProvinces();
 
+            // Xử lý thay đổi hệ thống địa chỉ
+            addressSystemNew.addEventListener('change', function() {
+                if (this.checked) {
+                    districtContainer.style.display = 'none';
+                    districtSelect.disabled = true;
+                    districtSelect.value = '';
+                    wardSelect.disabled = true;
+                    wardSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố trước</option>';
+                    loadProvinces();
+                }
+            });
+
+            addressSystemOld.addEventListener('change', function() {
+                if (this.checked) {
+                    districtContainer.style.display = 'block';
+                    loadOldProvinces();
+                }
+            });
+
             // Xử lý thay đổi tỉnh
             provinceSelect.addEventListener('change', function() {
                 const provinceCode = this.value;
+                const isNewSystem = addressSystemNew.checked;
+                
                 if (provinceCode) {
-                    loadWards(provinceCode);
+                    if (isNewSystem) {
+                        loadWards(provinceCode);
+                        wardSelect.disabled = false;
+                    } else {
+                        loadOldDistricts(provinceCode);
+                        districtSelect.disabled = false;
+                    }
+                } else {
+                    if (isNewSystem) {
+                        wardSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố trước</option>';
+                        wardSelect.disabled = true;
+                    } else {
+                        districtSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố trước</option>';
+                        districtSelect.disabled = true;
+                        wardSelect.innerHTML = '<option value="">Chọn quận/huyện trước</option>';
+                        wardSelect.disabled = true;
+                    }
+                }
+                updateDeliverySummary();
+            });
+
+            // Xử lý thay đổi quận/huyện (hệ thống cũ)
+            districtSelect.addEventListener('change', function() {
+                const districtCode = this.value;
+                if (districtCode) {
+                    loadOldWards(districtCode);
                     wardSelect.disabled = false;
                 } else {
-                    wardSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố trước</option>';
+                    wardSelect.innerHTML = '<option value="">Chọn quận/huyện trước</option>';
                     wardSelect.disabled = true;
                 }
                 updateDeliverySummary();
@@ -987,7 +1066,7 @@
                 updateDeliverySummary();
             });
 
-            // Tải các tỉnh từ API
+            // Tải các tỉnh từ API (hệ thống mới)
             async function loadProvinces() {
                 try {
                     const response = await fetch('/api/locations/provinces');
@@ -1010,7 +1089,30 @@
                 }
             }
 
-            // Tải phường từ API
+            // Tải các tỉnh từ API (hệ thống cũ)
+            async function loadOldProvinces() {
+                try {
+                    const response = await fetch('/api/locations/old/provinces');
+                    const data = await response.json();
+
+                    if (data.success) {
+                        provinceSelect.innerHTML = '<option value="">Chọn tỉnh/thành phố</option>';
+                        data.data.forEach(province => {
+                            const option = document.createElement('option');
+                            option.value = province.code;
+                            option.textContent = province.name_with_type;
+                            option.dataset.name = province.name;
+                            provinceSelect.appendChild(option);
+                        });
+                    } else {
+                        console.error('Error loading old provinces:', data.message);
+                    }
+                } catch (error) {
+                    console.error('Error fetching old provinces:', error);
+                }
+            }
+
+            // Tải phường từ API (hệ thống mới)
             async function loadWards(provinceCode) {
                 try {
                     wardSelect.innerHTML = '<option value="">Đang tải...</option>';
@@ -1035,6 +1137,64 @@
                     }
                 } catch (error) {
                     console.error('Error fetching wards:', error);
+                    wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+                }
+            }
+
+            // Tải quận/huyện từ API (hệ thống cũ)
+            async function loadOldDistricts(provinceCode) {
+                try {
+                    districtSelect.innerHTML = '<option value="">Đang tải...</option>';
+                    districtSelect.disabled = true;
+
+                    const response = await fetch(`/api/locations/old/districts/${provinceCode}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        districtSelect.innerHTML = '<option value="">Chọn quận/huyện</option>';
+                        data.data.forEach(district => {
+                            const option = document.createElement('option');
+                            option.value = district.code;
+                            option.textContent = district.name_with_type;
+                            option.dataset.name = district.name;
+                            districtSelect.appendChild(option);
+                        });
+                        districtSelect.disabled = false;
+                    } else {
+                        console.error('Error loading districts:', data.message);
+                        districtSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+                    }
+                } catch (error) {
+                    console.error('Error fetching districts:', error);
+                    districtSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+                }
+            }
+
+            // Tải phường/xã từ API (hệ thống cũ)
+            async function loadOldWards(districtCode) {
+                try {
+                    wardSelect.innerHTML = '<option value="">Đang tải...</option>';
+                    wardSelect.disabled = true;
+
+                    const response = await fetch(`/api/locations/old/wards/${districtCode}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+                        data.data.forEach(ward => {
+                            const option = document.createElement('option');
+                            option.value = ward.code;
+                            option.textContent = ward.name_with_type;
+                            option.dataset.name = ward.name;
+                            wardSelect.appendChild(option);
+                        });
+                        wardSelect.disabled = false;
+                    } else {
+                        console.error('Error loading old wards:', data.message);
+                        wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+                    }
+                } catch (error) {
+                    console.error('Error fetching old wards:', error);
                     wardSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
                 }
             }
@@ -1080,14 +1240,23 @@
 
                 // Cập nhật thông tin địa điểm
                 const province = document.getElementById('province');
+                const district = document.getElementById('district');
                 const ward = document.getElementById('ward');
                 const deliveryLocationEl = document.getElementById('delivery-location');
+                const isNewSystem = addressSystemNew.checked;
 
                 if (province && ward && deliveryLocationEl) {
                     if (province.selectedIndex > 0 && ward.selectedIndex > 0) {
                         const provinceText = province.options[province.selectedIndex].textContent;
                         const wardText = ward.options[ward.selectedIndex].textContent;
-                        const locationText = `${wardText}, ${provinceText}`;
+                        
+                        let locationText;
+                        if (isNewSystem) {
+                            locationText = `${wardText}, ${provinceText}`;
+                        } else {
+                            const districtText = district.options[district.selectedIndex].textContent;
+                            locationText = `${wardText}, ${districtText}, ${provinceText}`;
+                        }
                         deliveryLocationEl.textContent = locationText;
                     } else {
                         deliveryLocationEl.textContent = 'Chưa chọn địa chỉ';
@@ -1171,7 +1340,9 @@
                 const selectedTime = document.querySelector('input[name="courier-time"]:checked') ||
                     document.querySelector('input[name="pickup-time"]:checked');
                 const province = document.getElementById('province');
+                const district = document.getElementById('district');
                 const ward = document.getElementById('ward');
+                const isNewSystem = addressSystemNew.checked;
 
                 let errors = [];
 
@@ -1179,8 +1350,17 @@
                     errors.push('Tỉnh/Thành phố');
                 }
 
-                if (!ward || ward.selectedIndex === 0) {
-                    errors.push('Phường/Xã');
+                if (isNewSystem) {
+                    if (!ward || ward.selectedIndex === 0) {
+                        errors.push('Phường/Xã');
+                    }
+                } else {
+                    if (!district || district.selectedIndex === 0) {
+                        errors.push('Quận/Huyện');
+                    }
+                    if (!ward || ward.selectedIndex === 0) {
+                        errors.push('Phường/Xã');
+                    }
                 }
 
                 if (!selectedMethod) {
@@ -1203,7 +1383,14 @@
                 // Tự động điền địa chỉ ở bước 2
                 const provinceText = province.options[province.selectedIndex].textContent;
                 const wardText = ward.options[ward.selectedIndex].textContent;
-                const fullAddress = `${wardText}, ${provinceText}`;
+                
+                let fullAddress;
+                if (isNewSystem) {
+                    fullAddress = `${wardText}, ${provinceText}`;
+                } else {
+                    const districtText = district.options[district.selectedIndex].textContent;
+                    fullAddress = `${wardText}, ${districtText}, ${provinceText}`;
+                }
                 document.getElementById('auto-filled-address').value = fullAddress;
 
                 updateDeliverySummary();
@@ -1288,64 +1475,97 @@
                 });
             });
 
-            // Chức năng cập nhật phí vận chuyển và tổng số
-            function updateShippingFee() {
+            // Thêm sau khai báo shippingFees và các biến liên quan
+            const ghnFeeCache = {};
+
+            // Thêm các biến khối lượng và kích thước từ backend
+            const baseWeight = {{ $baseWeight ?? 1000 }};
+            const baseLength = {{ $baseLength ?? 20 }};
+            const baseWidth = {{ $baseWidth ?? 10 }};
+            const baseHeight = {{ $baseHeight ?? 10 }};
+
+            async function fetchGhnFee(provinceName, districtName, wardName, weight, length, width, height) {
+                const cacheKey = `${provinceName}|${districtName}|${wardName}|${weight}|${length}|${width}|${height}`;
+                if (ghnFeeCache[cacheKey]) return ghnFeeCache[cacheKey];
+                try {
+                    const res = await fetch('/ajax/ghn/shipping-fee', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            province_name: provinceName,
+                            district_name: districtName,
+                            ward_name: wardName,
+                            weight: weight,
+                            length: length,
+                            width: width,
+                            height: height
+                        })
+                    });
+                    const data = await res.json();
+                    if (typeof data.fee !== 'undefined') {
+                        ghnFeeCache[cacheKey] = data.fee;
+                        return data.fee;
+                    } else {
+                        alert(data.message || 'Không lấy được phí GHN');
+                        return null;
+                    }
+                } catch (e) {
+                    alert('Lỗi khi gọi phí GHN');
+                    return null;
+                }
+            }
+
+            // Thay thế hàm updateShippingFee
+            async function updateShippingFee() {
                 const selectedMethod = document.querySelector('input[name="shipping-method"]:checked');
                 if (selectedMethod) {
-                    // Lấy văn bản nhãn từ khoảng đầu tiên (tên phương thức)
                     const labelElement = selectedMethod.closest('label');
-                    if (!labelElement) {
-                        console.error('Label element not found');
-                        return;
-                    }
-
-                    // Làm sạch văn bản bằng cách xóa khoảng trắng và dòng mới thừa
-                    const labelText = labelElement.textContent
-                        .replace(/\s+/g, ' ') // Thay thế nhiều khoảng trắng/dòng mới bằng một khoảng trắng
-                        .trim();
-
-                    console.log('Cleaned label text:', labelText);
-
+                    if (!labelElement) return;
+                    const labelText = labelElement.textContent.replace(/\s+/g, ' ').trim();
                     let shippingFee = 0;
-                    if (labelText.includes('Giao hàng nhanh')) {
-                        shippingFee = 35000;
+                    let shippingFeeFormatted = '';
+                    let isGhn = labelText.includes('Giao hàng nhanh');
+                    if (isGhn && addressSystemOld.checked) {
+                        // Lấy thông tin địa chỉ
+                        const province = document.getElementById('province');
+                        const district = document.getElementById('district');
+                        const ward = document.getElementById('ward');
+                        const provinceText = province.options[province.selectedIndex]?.textContent || '';
+                        const districtText = district.options[district.selectedIndex]?.textContent || '';
+                        const wardText = ward.options[ward.selectedIndex]?.textContent || '';
+                        // Đảm bảo các biến là số hợp lệ
+                        const weight = Number(baseWeight) > 0 ? Number(baseWeight) : 1000;
+                        const length = Number(baseLength) > 0 ? Number(baseLength) : 20;
+                        const width = Number(baseWidth) > 0 ? Number(baseWidth) : 10;
+                        const height = Number(baseHeight) > 0 ? Number(baseHeight) : 10;
+                        shippingFee = await fetchGhnFee(provinceText, districtText, wardText, weight, length, width, height);
+                        if (shippingFee === null || typeof shippingFee === 'undefined' || isNaN(shippingFee)) {
+                            shippingFee = 0;
+                            shippingFeeFormatted = 'Không hỗ trợ';
+                        } else {
+                            shippingFeeFormatted = number_format(shippingFee) + ' VNĐ';
+                        }
+                        const fastFeeEl = document.getElementById('shipping-fast-fee-display');
+                        if (fastFeeEl) fastFeeEl.textContent = shippingFeeFormatted;
                     } else if (labelText.includes('Giao hàng tiêu chuẩn')) {
                         shippingFee = 25000;
-                    } // Nhận tại hàng vẫn là 0
-
-                    console.log('Calculated shipping fee:', shippingFee);
-
+                        shippingFeeFormatted = number_format(shippingFee) + ' VNĐ';
+                        const fastFeeEl = document.getElementById('shipping-fast-fee-display');
+                        if (fastFeeEl) fastFeeEl.textContent = '';
+                    } else {
+                        shippingFee = 0;
+                        shippingFeeFormatted = 'Miễn phí';
+                        const fastFeeEl = document.getElementById('shipping-fast-fee-display');
+                        if (fastFeeEl) fastFeeEl.textContent = '';
+                    }
                     const grandTotal = baseSubtotal + shippingFee - baseDiscount;
-                    const shippingFeeFormatted = shippingFee === 0 ? 'Miễn phí' : number_format(shippingFee) +
-                        ' VNĐ';
-
-                    // Cập nhật tất cả các màn hình hiển thị phí vận chuyển
                     document.getElementById('shipping-fee-display').textContent = shippingFeeFormatted;
                     document.getElementById('grand-total-display').textContent = number_format(grandTotal) + ' VNĐ';
                     document.getElementById('offcanvas-shipping-fee').textContent = shippingFeeFormatted;
-                    document.getElementById('offcanvas-grand-total').textContent = number_format(grandTotal) +
-                        ' VNĐ';
-
-                    // Cũng cập nhật phương thức vận chuyển hiển thị trong phần tóm tắt
-                    const methodElement = document.getElementById('selected-shipping-method');
-                    if (methodElement) {
-                        methodElement.textContent = labelText;
-                    }
-                } else {
-                    // Đặt lại màn hình khi không có phương pháp nào được chọn
-                    const displays = [
-                        'shipping-fee-display',
-                        'grand-total-display',
-                        'offcanvas-shipping-fee',
-                        'offcanvas-grand-total'
-                    ];
-                    displays.forEach(id => {
-                        const element = document.getElementById(id);
-                        if (element) {
-                            element.textContent = id.includes('shipping') ? 'Chọn phương thức vận chuyển' :
-                                number_format(baseSubtotal - baseDiscount) + ' VNĐ';
-                        }
-                    });
+                    document.getElementById('offcanvas-grand-total').textContent = number_format(grandTotal) + ' VNĐ';
                 }
             }
 
@@ -1386,18 +1606,29 @@
 
                 // Validate địa chỉ
                 const province = document.getElementById('province');
+                const district = document.getElementById('district');
                 const ward = document.getElementById('ward');
                 const selectedShippingMethod = document.querySelector(
                     'input[name="shipping-method"]:checked');
                 const selectedTime = document.querySelector('input[name="courier-time"]:checked') ||
                     document.querySelector('input[name="pickup-time"]:checked');
+                const isNewSystem = addressSystemNew.checked;
 
                 if (!province || province.selectedIndex === 0) {
                     errors.push('Tỉnh/Thành phố');
                 }
 
-                if (!ward || ward.selectedIndex === 0) {
-                    errors.push('Phường/Xã');
+                if (isNewSystem) {
+                    if (!ward || ward.selectedIndex === 0) {
+                        errors.push('Phường/Xã');
+                    }
+                } else {
+                    if (!district || district.selectedIndex === 0) {
+                        errors.push('Quận/Huyện');
+                    }
+                    if (!ward || ward.selectedIndex === 0) {
+                        errors.push('Phường/Xã');
+                    }
                 }
 
                 if (!selectedShippingMethod) {
@@ -1451,10 +1682,18 @@
                 placeOrderBtn.innerHTML =
                     '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang xử lý...';
 
-                // Chuẩn bị dữ liệu đơn hàng
+                // Lấy phí ship động hiện tại (nếu có)
+                let shippingFeeValue = 0;
+                const shippingFeeDisplay = document.getElementById('shipping-fee-display');
+                if (shippingFeeDisplay) {
+                    const feeText = shippingFeeDisplay.textContent.replace(/[^\d]/g, '');
+                    shippingFeeValue = parseInt(feeText) || 0;
+                }
                 const orderData = {
+                    address_system: isNewSystem ? 'new' : 'old',
                     province_code: province.value,
                     ward_code: ward.value,
+                    district_code: isNewSystem ? null : district.value,
                     shipping_method: selectedShippingMethod.closest('label').querySelector(
                         '.form-check-input').nextSibling.textContent.trim(),
                     shipping_time: selectedTime ? selectedTime.closest('.swiper-slide').querySelector(
@@ -1466,7 +1705,8 @@
                     address: address,
                     postcode: document.getElementById('shipping-postcode').value.trim(),
                     payment_method: selectedPaymentMethod.id,
-                    notes: null
+                    notes: null,
+                    shipping_fee: shippingFeeValue
                 };
                 // Xác định endpoint dựa vào loại đơn hàng
                 const isBuyNow = {{ isset($is_buy_now) && $is_buy_now ? 'true' : 'false' }};
@@ -1509,6 +1749,50 @@
                         placeOrderBtn.innerHTML = 'Đặt hàng <i class="ci-check fs-lg ms-1 me-n1"></i>';
                     });
             });
+
+            // Tạo thông báo và chèn sau wardSelect
+            const newSystemNotice = document.createElement('div');
+            newSystemNotice.className = 'alert alert-warning mt-3';
+            newSystemNotice.innerHTML = 'Tính năng đang phát triển khu vực chờ cập nhật thêm.';
+            newSystemNotice.style.display = 'none';
+            wardSelect.parentNode.insertBefore(newSystemNotice, wardSelect.nextSibling);
+
+            // Hàm bật/tắt thông báo và enable/disable dropdown
+            function setNewSystemMode(isNew) {
+                if (isNew) {
+                    newSystemNotice.style.display = '';
+                    provinceSelect.disabled = true;
+                    districtSelect.disabled = true;
+                    wardSelect.disabled = true;
+                } else {
+                    newSystemNotice.style.display = 'none';
+                    provinceSelect.disabled = false;
+                    districtSelect.disabled = false;
+                    wardSelect.disabled = false;
+                }
+            }
+
+            // Đảm bảo radio hệ thống cũ được checked khi load trang
+            addressSystemNew.checked = false;
+            addressSystemOld.checked = true;
+
+            // Khởi tạo đúng trạng thái ban đầu (luôn là hệ thống cũ)
+            setNewSystemMode(false);
+            districtContainer.style.display = 'block';
+            loadOldProvinces();
+
+            // Sự kiện chuyển đổi radio
+            addressSystemNew.addEventListener('change', function() {
+                if (this.checked) setNewSystemMode(true);
+            });
+            addressSystemOld.addEventListener('change', function() {
+                if (this.checked) setNewSystemMode(false);
+            });
+
+            // Thêm hàm loại bỏ tiền tố hành chính
+            function removePrefix(name) {
+                return name.replace(/^(Tỉnh|Thành phố|Quận|Huyện|Thị xã|Phường|Xã)\s+/i, '').trim();
+            }
         });
     </script>
 @endsection

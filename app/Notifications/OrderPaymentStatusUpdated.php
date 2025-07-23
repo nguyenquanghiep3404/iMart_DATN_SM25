@@ -41,7 +41,7 @@ class OrderPaymentStatusUpdated extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject($subject)
             ->line($line)
-            ->action('Xem chi tiết đơn hàng', route('users.orders.show', $this->order->id));
+            ->action('Xem chi tiết đơn hàng', route('orders.show', $this->order->id));
     }
 
     public function toArray($notifiable)

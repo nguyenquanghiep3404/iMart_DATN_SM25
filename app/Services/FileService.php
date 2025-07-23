@@ -102,6 +102,7 @@ public function delete(?string $path): bool
                 'products'   => $this->processProductImage($image),
                 'avatars'    => $this->processAvatarImage($image),
                 'banners'    => $this->processBannerImage($image),
+                'description'=> $this->processBannerImage($image),
                 default      => $image->scaleDown(1920), // Mặc định cho các context khác
             };
 
