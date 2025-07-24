@@ -55,10 +55,11 @@
             </div>
             <div class="flex justify-between items-center">
                 <span class="text-gray-500">Trạng thái giỏ hàng:</span>
-                <span class="font-semibold {{ $cart->is_recovered ? 'text-green-600' : 'text-yellow-600' }}">
-                    {{ $cart->is_recovered ? 'Đã khôi phục' : 'Chưa khôi phục' }}
+                <span class="font-semibold {{ $cart->status === 'recovered' ? 'text-green-600' : 'text-yellow-600' }}">
+                    {{ $cart->status === 'recovered' ? 'Đã khôi phục' : 'Chưa khôi phục' }}
                 </span>
             </div>
+
         </div>
 
         <div class="border-t border-gray-200 mt-4 pt-4 space-y-3">

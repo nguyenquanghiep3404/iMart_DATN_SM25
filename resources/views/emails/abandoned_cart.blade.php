@@ -10,6 +10,7 @@
 
     <h2>🛒 Xin chào {{ $cart->user->name ?? 'bạn' }},</h2>
     <p>Bạn còn một số sản phẩm trong giỏ hàng. Hãy quay lại và hoàn tất đơn hàng nhé!</p>
+    <p>DEBUG link khôi phục: {{ $recoveryUrl ?? 'Chưa có link' }}</p>
 
     <table cellpadding="10" cellspacing="0" border="1"
         style="width: 100%; border-collapse: collapse; background: #fff;">
@@ -74,7 +75,7 @@
     </table>
 
     <p style="margin-top: 20px;">
-        👉 <a href="{{ url('/cart') }}"
+        👉 <a href="{{ $recoveryUrl }}"
             style="color: #fff; background: #28a745; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
             Xem lại giỏ hàng
         </a>

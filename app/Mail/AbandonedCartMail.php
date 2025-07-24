@@ -2,7 +2,7 @@
 
 namespace App\Mail;
 
-use App\Models\Cart;
+use App\Models\AbandonedCart;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
@@ -13,19 +13,13 @@ class AbandonedCartMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $cart;
+    public $abandonedCart;
 
-    /**
-     * Create a new message instance.
-     */
-    public function __construct(Cart $cart)
+    public function __construct(AbandonedCart $abandonedCart)
     {
-        $this->cart = $cart;
+        $this->abandonedCart = $abandonedCart;
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -33,22 +27,21 @@ class AbandonedCartMail extends Mailable
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
+        $recoveryUrl = route('cart.restore', ['token' => $this->abandonedCart->recovery_token]);
+        \Log::info('Recovery URL sent in email: ' . $recoveryUrl);
+
         return new Content(
             view: 'emails.abandoned_cart',
             with: [
-                'cart' => $this->cart,
+                'user' => $this->abandonedCart->user,
+                'cart' => $this->abandonedCart->cart,
+                'recoveryUrl' => $recoveryUrl,
             ]
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     */
     public function attachments(): array
     {
         return [];

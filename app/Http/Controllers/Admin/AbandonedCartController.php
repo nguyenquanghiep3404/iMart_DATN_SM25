@@ -135,7 +135,7 @@ class AbandonedCartController  extends Controller
         }
         try {
             Mail::to($abandonedCart->user->email)
-                ->send(new AbandonedCartMail($abandonedCart->cart));
+                ->send(new AbandonedCartMail($abandonedCart));
             $abandonedCart->email_status = 'sent'; 
             $abandonedCart->last_notified_at = now(); 
             $abandonedCart->save();
