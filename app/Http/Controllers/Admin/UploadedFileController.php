@@ -290,4 +290,33 @@ class UploadedFileController extends Controller
         
         return response()->json($files);
     }
+    public function handleCkeditorUpload(Request $request)
+    {
+        $request->validate([
+            'upload' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+        ]);
+
+        try {
+            $file = $request->file('upload');
+            
+            // Sử dụng FileService đã có để lưu file, context là 'descriptions'
+            $uploadedFile = $this->fileService->store($file, 'products/descriptions');
+
+            // Trả về response JSON theo định dạng mà CKEditor yêu cầu
+            return response()->json([
+                'uploaded' => 1,
+                'fileName' => $uploadedFile->filename,
+                'url' => $uploadedFile->url // Model UploadedFile đã có accessor 'url'
+            ]);
+
+        } catch (\Exception $e) {
+            // Trả về lỗi nếu có sự cố
+            return response()->json([
+                'uploaded' => 0,
+                'error' => [
+                    'message' => 'Tải ảnh lên không thành công: ' . $e->getMessage()
+                ]
+            ], 500);
+        }
+    }
 }

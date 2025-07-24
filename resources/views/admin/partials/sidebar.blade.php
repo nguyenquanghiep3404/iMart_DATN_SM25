@@ -42,6 +42,9 @@
     } elseif (str_starts_with($currentRouteName, 'admin.abandoned-carts.')) {
         $activeParentNav = 18; // Index của "quản lý giỏ hàng lãng quên"
     }
+    elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
+        $activeParentNav = 18; // Index của "quản lý trang chủ"
+    }
     // Thêm các điều kiện khác nếu cần
 @endphp
 

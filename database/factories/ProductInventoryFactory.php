@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\ProductInventory;
+use App\Models\StoreLocation; // Thêm dòng này
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ProductInventoryFactory extends Factory
@@ -11,9 +12,14 @@ class ProductInventoryFactory extends Factory
 
     public function definition(): array
     {
-        // Mặc định, chúng ta sẽ tạo tồn kho cho hàng mới.
-        // Các loại khác sẽ được định nghĩa qua các state.
+        // Lấy một cửa hàng ngẫu nhiên để gán tồn kho.
+        // Nếu chưa có cửa hàng nào, tự động tạo một cửa hàng "Kho Online".
+        $storeLocation = StoreLocation::query()->inRandomOrder()->first() 
+            ?? StoreLocation::factory()->create(['name' => 'Kho Online Chính']);
+
         return [
+            'store_location_id' => $storeLocation->id,
+            
             'inventory_type' => 'new',
             'quantity' => $this->faker->numberBetween(50, 250),
         ];

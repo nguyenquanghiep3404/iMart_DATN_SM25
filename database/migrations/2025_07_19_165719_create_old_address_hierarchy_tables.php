@@ -11,7 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::table('product_inventories')->whereIn('inventory_type', ['open_box', 'used'])->delete();
+        Schema::create('old_address_hierarchy_tables', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+        });
     }
 
     /**
@@ -19,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        //
+        Schema::dropIfExists('old_address_hierarchy_tables');
     }
 };

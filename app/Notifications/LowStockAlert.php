@@ -26,17 +26,19 @@ class LowStockAlert extends Notification implements ShouldQueue
 
     public function toMail($notifiable)
     {
+        $sellableStock = $this->variant->getSellableStockAttribute();
         return (new MailMessage)
             ->subject('⚠️ Cảnh báo tồn kho thấp')
-            ->line("Tồn kho của sản phẩm \"{$this->variant->product->name}\" - SKU: {$this->variant->sku} chỉ còn {$this->variant->stock_quantity}.")
+            ->line("Tồn kho của sản phẩm \"{$this->variant->product->name}\" - SKU: {$this->variant->sku} chỉ còn {$sellableStock}.")
             ->action('Quản lý sản phẩm', url("/admin/products/{$this->variant->product_id}/edit"));
     }
 
    public function toArray($notifiable)
 {
+    $sellableStock = $this->variant->getSellableStockAttribute();
     return [
         'title' => '⚠️ Cảnh báo tồn kho thấp',
-        'message' => "Tồn kho thấp: {$this->variant->product->name} - SKU: {$this->variant->sku} chỉ còn {$this->variant->stock_quantity}",
+        'message' => "Tồn kho thấp: {$this->variant->product->name} - SKU: {$this->variant->sku} chỉ còn {$sellableStock}",
         'icon' => 'warning',
         'color' => 'red',
         'product_id' => $this->variant->product_id,
