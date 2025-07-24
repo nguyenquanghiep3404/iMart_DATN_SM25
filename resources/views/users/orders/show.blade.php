@@ -132,7 +132,7 @@
                                     <th>Đơn giá</th>
                                     <th>Số lượng</th>
                                     <th>Thành tiền</th>
-                                    <th>Đánh giá</th>
+                                    <td>Đánh giá</td>
                                 </tr>
                             </thead>
                             <tbody>
@@ -182,14 +182,9 @@
                                             <i class="fas fa-check-circle me-1"></i> Đã đánh giá
                                         </span>
                                         @else
-                                        <span class="text-muted">
-                                            <i class="fas fa-ban me-1"></i> Không thể đánh giá
-                                        </span>
                                         @endif
 
                                     </td>
-
-
                                 </tr>
                                 @endforeach
                             </tbody>
