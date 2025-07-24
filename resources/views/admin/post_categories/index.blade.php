@@ -1,4 +1,4 @@
-@extends('admin.comments.layouts.main') {{-- Hoặc layout khác nếu bạn dùng --}}
+@extends('admin.comments.layouts.main') 
 
 @section('content')
 <div class="bg-white rounded-md shadow p-6">

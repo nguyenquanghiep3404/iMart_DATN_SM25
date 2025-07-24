@@ -68,6 +68,22 @@
     .badge-warning { background-color: #f59e0b; color: #1f2937; }
     .badge-info { background-color: #3b82f6; }
     .badge-secondary { background-color: #6b7280; }
+
+    /* === SỬA Ở ĐÂY: Thêm CSS cho thanh cuộn ngang === */
+    .custom-scrollbar::-webkit-scrollbar {
+        height: 8px; /* Chiều cao của thanh cuộn */
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f1f1; /* Màu nền của rãnh cuộn */
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #d1d5db; /* Màu của con trượt */
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af; /* Màu con trượt khi di chuột vào */
+    }
 </style>
 @endpush
 
@@ -91,9 +107,14 @@
             <div class="card-custom-header">
                 <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center w-full">
                     <h3 class="card-custom-title">Danh sách sản phẩm ({{ $items->total() }})</h3>
-                    <a href="{{ route('admin.trade-in-items.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus mr-2"></i>Thêm sản phẩm mới
-                    </a>
+                    <div class="flex items-center space-x-2">
+                        <a href="{{ route('admin.trade-in-items.trash') }}" class="btn btn-secondary">
+                            <i class="fas fa-trash-alt mr-2"></i>Thùng rác
+                        </a>
+                        <a href="{{ route('admin.trade-in-items.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Thêm sản phẩm mới
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -130,16 +151,19 @@
                 </form>
 
                 <!-- TABLE -->
-                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                <!-- SỬA Ở ĐÂY: Thêm class custom-scrollbar -->
+                <div class="overflow-x-auto border border-gray-200 rounded-lg custom-scrollbar">
                     <table class="table-custom">
                         <thead>
                             <tr>
                                 <th style="width: 80px;">Ảnh</th>
                                 <th>Tên Sản Phẩm</th>
                                 <th>SKU / IMEI</th>
-                                <th class="text-center">Tình trạng</th>
+                                <!-- SỬA Ở ĐÂY: Thêm class responsive -->
+                                <th class="text-center hidden md:table-cell">Tình trạng</th>
                                 <th>Giá bán</th>
-                                <th>Cửa hàng</th>
+                                <!-- SỬA Ở ĐÂY: Thêm class responsive -->
+                                <th class="hidden lg:table-cell">Cửa hàng</th>
                                 <th>Trạng thái</th>
                                 <th style="width: 120px;" class="text-center">Thao tác</th>
                             </tr>
@@ -148,20 +172,16 @@
                             @forelse ($items as $item)
                                 <tr>
                                     <td>
-                                        <img src="{{ $item->cover_image_url }}" alt="Ảnh sản phẩm" class="w-14 h-14 object-cover rounded-md">
+                                        <img src="{{ $item->cover_image_url }}" alt="Ảnh sản phẩm" 
+                                             class="w-14 h-14 object-cover rounded-md relative transition-all duration-300 ease-in-out origin-bottom-left hover:scale-[3] hover:shadow-xl hover:z-10">
                                     </td>
                                     <td>
                                         @php
-                                            // Lấy tên sản phẩm gốc một cách an toàn
                                             $baseName = optional($item->productVariant->product)->name;
-
-                                            // Sắp xếp thuộc tính theo tên (vd: Color, Storage) rồi lấy giá trị
                                             $attributesString = $item->productVariant->attributeValues
                                                 ->sortBy(fn($val) => optional($val->attribute)->name)
                                                 ->map(fn($val) => $val->value)
                                                 ->implode(' - ');
-                                            
-                                            // Kết hợp tên và thuộc tính
                                             $fullName = $baseName . ($attributesString ? ' - ' . $attributesString : '');
                                         @endphp
                                         
@@ -172,7 +192,8 @@
                                         <p class="font-medium">{{ $item->sku }}</p>
                                         <p class="text-xs text-gray-500">{{ $item->imei_or_serial }}</p>
                                     </td>
-                                    <td class="text-center">
+                                    <!-- SỬA Ở ĐÂY: Thêm class responsive -->
+                                    <td class="text-center hidden md:table-cell">
                                         <span class="badge-custom 
                                             @if($item->condition_grade == 'A') badge-success @endif
                                             @if($item->condition_grade == 'B') badge-warning @endif
@@ -180,7 +201,8 @@
                                         ">{{ $item->condition_grade }}</span>
                                     </td>
                                     <td class="font-semibold text-red-600">{{ number_format($item->selling_price, 0, ',', '.') }} ₫</td>
-                                    <td>{{ $item->storeLocation->name ?? 'N/A' }}</td>
+                                    <!-- SỬA Ở ĐÂY: Thêm class responsive -->
+                                    <td class="hidden lg:table-cell">{{ $item->storeLocation->name ?? 'N/A' }}</td>
                                     <td>
                                         <span class="badge-custom 
                                             @if($item->status == 'available') badge-success @endif
@@ -191,7 +213,7 @@
                                     <td class="text-center">
                                         <div class="inline-flex space-x-1">
                                             <a href="{{ route('admin.trade-in-items.edit', $item) }}" class="btn btn-primary btn-sm" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
-                                            <form action="{{ route('admin.trade-in-items.destroy', $item) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn sản phẩm này?');">
+                                            <form action="{{ route('admin.trade-in-items.destroy', $item) }}" method="POST" onsubmit="return confirm('Bạn có chắc chắn muốn chuyển sản phẩm này vào thùng rác?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-danger btn-sm" title="Xóa"><i class="fas fa-trash"></i></button>

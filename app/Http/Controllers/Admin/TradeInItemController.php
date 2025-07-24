@@ -135,7 +135,95 @@ class TradeInItemController extends Controller
             return back()->withInput()->with('error', 'Đã có lỗi xảy ra. Vui lòng thử lại.');
         }
     }
-    
+    public function edit(TradeInItem $tradeInItem)
+    {
+        // Tải sẵn các mối quan hệ cần thiết
+        $tradeInItem->load(['productVariant', 'storeLocation', 'images']);
+
+        $products = Product::where('status', 'published')
+            ->whereHas('variants', fn($q) => $q->where('status', 'active'))
+            ->with(['variants' => fn($q) => $q->where('status', 'active')->with('attributeValues.attribute')])
+            ->orderBy('name')
+            ->get();
+
+        $storeLocations = StoreLocation::where('is_active', true)->get();
+
+        // Chuẩn bị dữ liệu ảnh để hiển thị trên form
+        $images_data = [];
+        $primary_image_id = null;
+        $image_ids = [];
+
+        // Nếu có lỗi validation, ưu tiên dữ liệu cũ (old input)
+        if (session()->hasOldInput()) {
+            $all_image_ids = array_unique(array_filter(array_merge(
+                [old('primary_image_id')],
+                old('image_ids', [])
+            )));
+
+            if (!empty($all_image_ids)) {
+                $images = UploadedFile::whereIn('id', $all_image_ids)->get();
+                $images_data = $images->keyBy('id')->map(fn ($image) => [
+                    'id' => $image->id, 'url' => $image->url, 'alt_text' => $image->alt_text
+                ])->all();
+            }
+        } else {
+            // Nếu không, lấy dữ liệu từ chính model
+            $primary_image = $tradeInItem->images()->where('type', 'primary_image')->first();
+            $primary_image_id = $primary_image ? $primary_image->id : ($tradeInItem->images->first()->id ?? null);
+            
+            $image_ids = $tradeInItem->images->pluck('id')->toArray();
+
+            $images_data = $tradeInItem->images->keyBy('id')->map(fn ($image) => [
+                'id' => $image->id, 'url' => $image->url, 'alt_text' => $image->alt_text
+            ])->all();
+        }
+
+        return view('admin.trade_in_items.edit', [
+            'item' => $tradeInItem,
+            'products' => $products,
+            'storeLocations' => $storeLocations,
+            'images_data' => $images_data,
+            'primary_image_id' => $primary_image_id,
+            'image_ids' => $image_ids,
+        ]);
+    }
+
+    /**
+     * Cập nhật thông tin sản phẩm cũ trong database.
+     */
+    public function update(UpdateTradeInItemRequest $request, TradeInItem $tradeInItem)
+    {
+        $validatedData = $request->validated();
+        DB::beginTransaction();
+        try {
+            $tradeInItem->update([
+                'product_variant_id'    => $validatedData['product_variant_id'],
+                'store_location_id'     => $validatedData['store_location_id'],
+                'type'                  => $validatedData['type'],
+                'sku'                   => $validatedData['sku'] ?? $tradeInItem->sku, // Giữ SKU cũ nếu để trống
+                'condition_grade'       => $validatedData['condition_grade'],
+                'condition_description' => $validatedData['condition_description'],
+                'selling_price'         => $validatedData['selling_price'],
+                'imei_or_serial'        => $validatedData['imei_or_serial'],
+                'status'                => $validatedData['status'],
+            ]);
+
+            // Gọi lại hàm syncImages để cập nhật ảnh
+            $this->syncImages(
+                $tradeInItem,
+                $validatedData['primary_image_id'],
+                $validatedData['image_ids']
+            );
+
+            DB::commit();
+            return redirect()->route('admin.trade-in-items.index')
+                ->with('success', 'Cập nhật sản phẩm cũ thành công!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Lỗi khi cập nhật sản phẩm cũ: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Đã có lỗi xảy ra. Vui lòng thử lại.');
+        }
+    }
     /**
      * Helper function để đồng bộ ảnh chính và ảnh album cho sản phẩm.
      */
