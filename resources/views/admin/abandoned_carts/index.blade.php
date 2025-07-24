@@ -90,7 +90,7 @@
                                                 @if ($cart->user && $cart->user->email)
                                                     <button class="btn btn-primary btn-sm btn-send-email"
                                                         data-id="{{ $cart->id }}" title="Gửi mail khôi phục"
-                                                        @if ($cart->email_sent) disabled @endif>
+                                                        @if ($cart->email_status === 'sent') disabled @endif>
                                                         <i class="fas fa-paper-plane"></i>
                                                     </button>
                                                 @endif
@@ -128,75 +128,6 @@
 
             </div>
         </div>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     </div>
 @endsection
 @include('admin.abandoned_carts.script.script')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).on('click', '.btn-send-email', function(e) {
-        e.preventDefault();
-
-        const btn = $(this);
-        const cartId = btn.data('id');
-
-        Swal.fire({
-            title: 'Xác nhận',
-            text: 'Bạn có chắc muốn gửi email khôi phục giỏ hàng?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Gửi',
-            cancelButtonText: 'Hủy',
-        }).then((result) => {
-            if (!result.isConfirmed) return;
-
-            btn.prop('disabled', true);
-
-            Swal.fire({
-                title: 'Đang gửi...',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-
-                    $.post("{{ route('admin.abandoned_carts.send_email', ['id' => '__id__']) }}"
-                        .replace('__id__', cartId), {
-                            _token: '{{ csrf_token() }}'
-                        }).done(function(res) {
-                        // Debug console xem dữ liệu server trả về
-                        console.log(res);
-
-                        // Nếu server có trường success (true/false)
-                        if ('success' in res) {
-                            Swal.fire({
-                                icon: res.success ? 'success' : 'error',
-                                title: res.success ? 'Thành công' : 'Lỗi',
-                                text: res.message || (res.success ?
-                                    'Đã gửi email!' : 'Gửi thất bại'),
-                            }).then(() => {
-                                if (res.success) {
-                                    location.reload();
-                                } else {
-                                    btn.prop('disabled', false);
-                                }
-                            });
-                        } else {
-                            // Nếu server chỉ trả message (không có success)
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Thành công',
-                                text: res.message ||
-                                    'Đã gửi email thành công!',
-                            }).then(() => {
-                                location.reload();
-                            });
-                        }
-                    }).fail(function(xhr) {
-                        console.error(xhr);
-                        Swal.fire('Lỗi', 'Đã xảy ra lỗi khi gửi email.', 'error');
-                        btn.prop('disabled', false);
-                    });
-                }
-            });
-        });
-    });
-</script>

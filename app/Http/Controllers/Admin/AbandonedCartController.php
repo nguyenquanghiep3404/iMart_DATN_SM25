@@ -86,7 +86,12 @@ class AbandonedCartController  extends Controller
             return $item->quantity * $price;
         });
 
-        return view('admin.abandoned_carts.show', compact('cart', 'total'));
+       $logs = \App\Models\AbandonedCartLog::with('causer')
+            ->where('abandoned_cart_id', $cart->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('admin.abandoned_carts.show', compact('cart', 'total','logs'));
     } 
     public function sendInApp($id)
     {
@@ -110,7 +115,7 @@ class AbandonedCartController  extends Controller
             AbandonedCartLog::create([
                 'abandoned_cart_id' => $abandonedCart->id,
                 'action' => 'sent_in_app_notification',
-                'description' => 'Đã gửi thông báo in-app cho user ID ' . $abandonedCart->user->id,
+                'description' => 'Đã gửi thông báo in-app cho  ' . $abandonedCart->user->email,
                 'causer_type' => auth()->check() ? get_class(auth()->user()) : null,
                 'causer_id' => auth()->id(),
             ]);
@@ -128,20 +133,22 @@ class AbandonedCartController  extends Controller
         if (!$abandonedCart->user || !$abandonedCart->user->email) {
             return response()->json(['message' => 'Không có email để gửi.'], 400);
         }
-
         try {
             Mail::to($abandonedCart->user->email)
-                ->send(new AbandonedCartMail($abandonedCart->cart)); // truyền Cart đúng
-
-            $abandonedCart->email_status = 'sent'; // ✅ sửa đúng cột
-            $abandonedCart->last_notified_at = now(); // nếu muốn ghi lại thời điểm gửi
+                ->send(new AbandonedCartMail($abandonedCart->cart));
+            $abandonedCart->email_status = 'sent'; 
+            $abandonedCart->last_notified_at = now(); 
             $abandonedCart->save();
-
+            // Tạo log hành động gửi email
+            AbandonedCartLog::create([
+                'abandoned_cart_id' => $abandonedCart->id,
+                'action' => 'sent_email',
+                'description' => 'Đã gửi email khôi phục cho  ' . $abandonedCart->user->email,
+                'causer_type' => auth()->check() ? get_class(auth()->user()) : null,
+                'causer_id' => auth()->id(),
+            ]);
             return response()->json(['message' => 'Đã gửi email thành công.']);
         } catch (\Exception $e) {
-            \Log::error('Gửi mail lỗi: ' . $e->getMessage());
-
-            // Cập nhật trạng thái thất bại (tuỳ chọn)
             $abandonedCart->email_status = 'failed';
             $abandonedCart->save();
 

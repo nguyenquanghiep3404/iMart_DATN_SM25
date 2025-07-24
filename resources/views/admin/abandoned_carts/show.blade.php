@@ -129,34 +129,7 @@
                     </div>
 
                     <!-- Restore History -->
-                    <div class="card-custom">
-                        <div class="card-custom-header">
-                            <h3 class="card-custom-title">Lịch sử khôi phục</h3>
-                        </div>
-                        <div class="card-custom-body">
-                            <div class="timeline">
-                                <div class="timeline-item timeline-email">
-                                    <p class="font-semibold">Đã gửi Email khôi phục</p>
-                                    <p class="text-sm text-gray-600">Gửi tới <span
-                                            class="font-medium text-gray-800">tuan.le@email.com</span> bởi <span
-                                            class="font-medium text-gray-800">Admin A</span>.</p>
-                                    <p class="text-xs text-gray-400 mt-1">16/07/2025 - 10:00</p>
-                                </div>
-                                <div class="timeline-item timeline-notification">
-                                    <p class="font-semibold">Đã gửi Thông báo In-App</p>
-                                    <p class="text-sm text-gray-600">Gửi tới khách hàng <span
-                                            class="font-medium text-gray-800">Lê Minh Tuấn</span> bởi <span
-                                            class="font-medium text-gray-800">Admin B</span>.</p>
-                                    <p class="text-xs text-gray-400 mt-1">15/07/2025 - 18:30</p>
-                                </div>
-                                <div class="timeline-item timeline-system">
-                                    <p class="font-semibold">Giỏ hàng được tạo</p>
-                                    <p class="text-sm text-gray-600">Khách hàng đã thêm sản phẩm vào giỏ.</p>
-                                    <p class="text-xs text-gray-400 mt-1">15/07/2025 - 14:30</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    @include('admin.abandoned_carts.layouts.restore_history')
                 </div>
 
                 <!-- Right Column -->
@@ -169,10 +142,14 @@
                             <h3 class="card-custom-title">Thao tác khôi phục</h3>
                         </div>
                         <div class="card-custom-body space-y-3">
-                            <button class="btn btn-primary w-full">
-                                <i class="fas fa-paper-plane mr-2"></i>
-                                Gửi lại Email khôi phục
-                            </button>
+                            @if ($cart->user && $cart->user->email)
+                                <button class="btn btn-primary btn-sm btn-send-email primary w-full"
+                                    data-id="{{ $cart->id }}" title="Gửi mail khôi phục"
+                                    @if ($cart->email_status === 'sent') disabled @endif>
+                                    <i class="fas fa-paper-plane mr-2"></i>
+                                    Gửi lại Email khôi phục
+                                </button>
+                            @endif
                             <button class="btn btn-info w-full btn-send-inapp" data-id="{{ $cart->id }}"
                                 title="Gửi thông báo in-app" @if ($cart->in_app_notification_status === 'sent') disabled @endif>
                                 <i class="fas fa-bell mr-2"></i>
