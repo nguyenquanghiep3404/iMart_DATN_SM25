@@ -7,72 +7,43 @@ use Illuminate\Validation\Rule;
 
 class StoreTradeInItemRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     *
-     * @return bool
-     */
-    public function authorize()
+    public function authorize(): bool
     {
-        // Mặc định là true để cho phép mọi admin có quyền truy cập
-        // Bạn có thể thêm logic phân quyền phức tạp hơn ở đây nếu cần
-        return true;
+        return true; // Hoặc return auth()->check();
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, mixed>
-     */
-    public function rules()
+    public function rules(): array
     {
         return [
-            // Thông tin sản phẩm
-            'product_variant_id' => 'required|exists:product_variants,id',
-            'sku' => [
-                'nullable',
-                'string',
-                'max:255',
-                Rule::unique('trade_in_items', 'sku')->ignore($this->trade_in_item), // Đảm bảo SKU là duy nhất
-            ],
-            'imei_or_serial' => [
+            'product_variant_id'    => 'required|integer|exists:product_variants,id',
+            'sku'                   => 'nullable|string|max:255|unique:trade_in_items,sku',
+            'imei_or_serial'        => 'required|string|max:255|unique:trade_in_items,imei_or_serial',
+            'selling_price'         => 'required|numeric|min:0',
+            'type'                  => 'required|string|in:used,open_box',
+            'status'                => 'required|string|in:pending_inspection,available,sold',
+            'condition_grade'       => 'required|string|in:A,B,C',
+            'store_location_id'     => 'required|integer|exists:store_locations,id',
+            'condition_description' => 'required|string|max:1000',
+
+            // --- CẬP NHẬT VALIDATION CHO ẢNH ---
+            'primary_image_id'      => [
                 'required',
-                'string',
-                'max:255',
-                Rule::unique('trade_in_items', 'imei_or_serial')->ignore($this->trade_in_item), // Đảm bảo IMEI/Serial là duy nhất
+                'integer',
+                'exists:uploaded_files,id',
+                // Đảm bảo ảnh chính phải nằm trong danh sách các ảnh được chọn
+                Rule::in($this->input('image_ids', [])),
             ],
-            'selling_price' => 'required|numeric|min:0',
-            'type' => 'required|in:used,open_box', // Chỉ chấp nhận giá trị 'used' hoặc 'open_box'
-            'status' => 'required|in:pending_inspection,available,sold',
-
-            // Tình trạng & Tồn kho
-            'condition_grade' => 'required|string|max:255', // Ví dụ: 'A', 'B', 'C'
-            'store_location_id' => 'required|exists:store_locations,id',
-            'condition_description' => 'required|string',
-
-            // Hình ảnh
-            'images' => 'nullable|array', // Phải là một mảng
-            'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120', // Mỗi file phải là ảnh và dung lượng tối đa 5MB
+            'image_ids'             => 'required|array|min:1',
+            'image_ids.*'           => 'required|integer|exists:uploaded_files,id',
         ];
     }
 
-    /**
-     * Tùy chỉnh thông báo lỗi.
-     *
-     * @return array
-     */
-    public function messages()
+    public function messages(): array
     {
         return [
-            'product_variant_id.required' => 'Vui lòng chọn sản phẩm gốc.',
-            'imei_or_serial.required' => 'Vui lòng nhập IMEI hoặc số Serial.',
-            'imei_or_serial.unique' => 'IMEI hoặc số Serial này đã tồn tại trong hệ thống.',
-            'selling_price.required' => 'Vui lòng nhập giá bán.',
-            'selling_price.numeric' => 'Giá bán phải là một con số.',
-            'condition_description.required' => 'Vui lòng mô tả chi tiết tình trạng sản phẩm.',
-            'images.*.image' => 'File tải lên phải là một hình ảnh.',
-            'images.*.mimes' => 'Chỉ hỗ trợ các định dạng ảnh: jpeg, png, jpg, webp.',
-            'images.*.max' => 'Dung lượng mỗi ảnh không được vượt quá 5MB.',
+            'primary_image_id.required' => 'Vui lòng chọn một ảnh làm ảnh đại diện.',
+            'image_ids.required' => 'Sản phẩm phải có ít nhất một hình ảnh.',
+            'image_ids.min' => 'Sản phẩm phải có ít nhất một hình ảnh.',
         ];
     }
 }

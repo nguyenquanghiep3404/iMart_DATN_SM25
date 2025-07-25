@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Ca Làm Việc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #eef2f9; /* A slightly blueish gray background */
+        }
+        .main-card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            color: #4b5563; /* text-gray-600 */
+        }
+        .info-value {
+            color: #111827; /* text-gray-900 */
+            font-weight: 600;
+        }
+        .difference-positive { color: #16a34a; /* green-600 */ }
+        .difference-negative { color: #dc2626; /* red-600 */ }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-2xl mx-auto p-4">
+
+        <!-- Card 1: Mở Ca Làm Việc (Hiển thị khi chưa có ca) -->
+        <div id="open-session-card" class="main-card">
+            <div class="p-6 sm:p-8">
+                <div class="text-center">
+                    <h1 class="text-3xl font-extrabold text-gray-800">Mở Ca Làm Việc</h1>
+                    <p class="text-gray-500 mt-2">Bắt đầu phiên bán hàng mới của bạn.</p>
+                </div>
+
+                <!-- Thông tin nhân viên và máy POS -->
+                <div class="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="font-medium text-gray-600">Nhân viên:</span>
+                        <span class="font-bold text-gray-900">Nguyễn Văn A</span>
+                    </div>
+                    <div class="flex items-center justify-between text-sm mt-2">
+                        <span class="font-medium text-gray-600">Máy POS:</span>
+                        <span class="font-bold text-gray-900">Quầy Thu Ngân 1</span>
+                    </div>
+                </div>
+
+                <!-- Form Mở Ca -->
+                <form id="open-session-form" class="mt-8">
+                    <div>
+                        <label for="opening_balance" class="block text-lg font-semibold text-gray-700 mb-2">Số tiền mặt đầu ca (VNĐ)</label>
+                        <input type="text" id="opening_balance" name="opening_balance" class="w-full text-2xl text-center font-bold p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="0" required>
+                    </div>
+                    <button type="submit" class="w-full mt-8 bg-blue-600 text-white font-bold py-4 rounded-lg shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-lg">
+                        BẮT ĐẦU CA LÀM VIỆC
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Card 2: Đóng Ca Làm Việc (Hiển thị khi có ca đang hoạt động) -->
+        <div id="close-session-card" class="main-card hidden">
+            <div class="p-6 sm:p-8">
+                <div class="text-center">
+                    <h1 class="text-3xl font-extrabold text-gray-800">Đóng Ca Làm Việc</h1>
+                    <p class="text-gray-500 mt-2">Tổng kết và đối soát doanh thu cuối ca.</p>
+                </div>
+                
+                <!-- Thông tin ca làm việc -->
+                 <div class="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium text-gray-600">Bắt đầu lúc:</span>
+                        <span class="font-bold text-gray-900">08:00:00 - 22/07/2025</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium text-gray-600">Nhân viên:</span>
+                        <span class="font-bold text-gray-900">Nguyễn Văn A</span>
+                    </div>
+                </div>
+
+                <!-- Báo cáo doanh thu -->
+                <div class="mt-8">
+                    <h2 class="text-lg font-semibold text-gray-700 mb-2">Báo cáo doanh thu</h2>
+                    <div class="border border-gray-200 rounded-lg p-4 space-y-3">
+                        <div class="info-row">
+                            <span class="info-label">Tiền mặt đầu ca</span>
+                            <span class="info-value" id="report-opening-balance">1,000,000 VNĐ</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Doanh thu tiền mặt</span>
+                            <span class="info-value" id="report-cash-sales">15,500,000 VNĐ</span>
+                        </div>
+                         <div class="info-row font-bold text-blue-700 bg-blue-50 -mx-4 px-4">
+                            <span class="info-label">Tổng tiền mặt dự kiến</span>
+                            <span class="info-value" id="report-expected-cash">16,500,000 VNĐ</span>
+                        </div>
+                        <div class="info-row pt-4">
+                            <span class="info-label">Doanh thu thẻ</span>
+                            <span class="info-value" id="report-card-sales">25,200,000 VNĐ</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Doanh thu chuyển khoản</span>
+                            <span class="info-value" id="report-transfer-sales">10,800,000 VNĐ</span>
+                        </div>
+                        <div class="info-row text-xl font-extrabold border-t-2 border-gray-300 pt-4 mt-4">
+                            <span class="info-label">TỔNG DOANH THU CA</span>
+                            <span class="info-value text-green-600" id="report-total-revenue">51,500,000 VNĐ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Đóng Ca -->
+                <form id="close-session-form" class="mt-8">
+                    <div>
+                        <label for="closing_balance" class="block text-lg font-semibold text-gray-700 mb-2">Số tiền mặt thực tế đếm được (VNĐ)</label>
+                        <input type="text" id="closing_balance" name="closing_balance" class="w-full text-2xl text-center font-bold p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition" placeholder="0" required>
+                    </div>
+                    <div class="mt-4 p-4 rounded-lg bg-gray-100 text-center">
+                        <span class="text-gray-600 font-medium">Chênh lệch:</span>
+                        <span id="difference-amount" class="text-xl font-bold ml-2">0 VNĐ</span>
+                    </div>
+                     <div>
+                        <label for="notes" class="block text-sm font-medium text-gray-700 mt-6 mb-2">Ghi chú cuối ca</label>
+                        <textarea id="notes" name="notes" rows="3" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Thêm ghi chú nếu có chênh lệch hoặc vấn đề phát sinh..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full mt-8 bg-red-600 text-white font-bold py-4 rounded-lg shadow-lg hover:bg-red-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 text-lg">
+                        XÁC NHẬN VÀ ĐÓNG CA
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const openSessionCard = document.getElementById('open-session-card');
+        const closeSessionCard = document.getElementById('close-session-card');
+        
+        const openSessionForm = document.getElementById('open-session-form');
+        const closeSessionForm = document.getElementById('close-session-form');
+
+        const openingBalanceInput = document.getElementById('opening_balance');
+        const closingBalanceInput = document.getElementById('closing_balance');
+        const differenceAmountEl = document.getElementById('difference-amount');
+        
+        // Mock data - In real app, this comes from the server
+        const sessionData = {
+            openingBalance: 1000000,
+            cashSales: 15500000,
+            cardSales: 25200000,
+            transferSales: 10800000,
+        };
+        const expectedCash = sessionData.openingBalance + sessionData.cashSales;
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+        }
+
+        function showOpenSession() {
+            openSessionCard.classList.remove('hidden');
+            closeSessionCard.classList.add('hidden');
+        }
+
+        function showCloseSession() {
+            openSessionCard.classList.add('hidden');
+            closeSessionCard.classList.remove('hidden');
+            
+            // Populate report data
+            document.getElementById('report-opening-balance').textContent = formatCurrency(sessionData.openingBalance);
+            document.getElementById('report-cash-sales').textContent = formatCurrency(sessionData.cashSales);
+            document.getElementById('report-expected-cash').textContent = formatCurrency(expectedCash);
+            document.getElementById('report-card-sales').textContent = formatCurrency(sessionData.cardSales);
+            document.getElementById('report-transfer-sales').textContent = formatCurrency(sessionData.transferSales);
+            const totalRevenue = sessionData.cashSales + sessionData.cardSales + sessionData.transferSales;
+            document.getElementById('report-total-revenue').textContent = formatCurrency(totalRevenue);
+            
+            updateDifference();
+        }
+        
+        function updateDifference() {
+            const closingBalance = parseFloat(closingBalanceInput.value.replace(/[^0-9]/g, '')) || 0;
+            const difference = closingBalance - expectedCash;
+
+            differenceAmountEl.textContent = formatCurrency(difference);
+            differenceAmountEl.classList.remove('difference-positive', 'difference-negative');
+            
+            if (difference > 0) {
+                differenceAmountEl.classList.add('difference-positive');
+            } else if (difference < 0) {
+                differenceAmountEl.classList.add('difference-negative');
+            }
+        }
+        
+        // Format currency input as user types
+        [openingBalanceInput, closingBalanceInput].forEach(input => {
+            input.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/[^0-9]/g, '');
+                if (value) {
+                    value = new Intl.NumberFormat('vi-VN').format(value);
+                }
+                e.target.value = value;
+                
+                if (e.target.id === 'closing_balance') {
+                    updateDifference();
+                }
+            });
+        });
+
+        // Form submission handlers
+        openSessionForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const openingBalance = openingBalanceInput.value;
+            console.log(`Bắt đầu ca với số tiền: ${openingBalance}`);
+            // In a real app, send this to the server, then on success:
+            alert('Đã mở ca thành công!');
+            showCloseSession();
+        });
+
+        closeSessionForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const closingBalance = closingBalanceInput.value;
+            console.log(`Đóng ca với số tiền thực tế: ${closingBalance}`);
+            // In a real app, send this to the server, then on success:
+            alert('Đã đóng ca thành công!');
+            showOpenSession();
+        });
+
+        // Initial state check (for demonstration)
+        // In a real app, you would check the session status from the server
+        const isSessionActive = false; // Change to true to see the close session screen
+        if (isSessionActive) {
+            showCloseSession();
+        } else {
+            showOpenSession();
+        }
+
+    </script>
+
+</body>
+</html>

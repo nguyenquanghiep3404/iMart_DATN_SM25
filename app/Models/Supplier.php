@@ -21,6 +21,7 @@ class Supplier extends Model
         'ward_code',
         'district_code',
         'province_code'
+
     ];
 
     public function ward()
