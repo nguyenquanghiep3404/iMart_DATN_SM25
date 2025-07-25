@@ -18,7 +18,6 @@ class ProductVariant extends Model
         'sale_price',
         'sale_price_starts_at',
         'sale_price_ends_at',
-        'stock_quantity',
         'manage_stock',
         'stock_status',
         'weight',
@@ -28,9 +27,8 @@ class ProductVariant extends Model
         'dimensions_height',
         'is_default',
         'status',
-        'sku',
-        'stock_quantity',
-        'stock_status',
+        'cost_price', 
+        'points_awarded_on_purchase'
 
     ];
 
@@ -39,14 +37,12 @@ class ProductVariant extends Model
         'sale_price' => 'decimal:2',
         'sale_price_starts_at' => 'datetime',
         'sale_price_ends_at' => 'datetime',
-        'stock_quantity' => 'integer',
         'manage_stock' => 'boolean',
         'weight' => 'decimal:2',
         'dimensions_length' => 'decimal:2',
         'dimensions_width' => 'decimal:2',
         'dimensions_height' => 'decimal:2',
         'is_default' => 'boolean',
-
     ];
 
     public function product()

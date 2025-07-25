@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xem trước Luồng Thanh toán</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .option-card {
+            border: 2px solid #e5e7eb;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+        /* --- MODIFIED STYLE --- */
+        .option-card.selected {
+            border-color: #111827; /* Black border */
+            background-color: #f3f4f6; /* Slightly darker gray background */
+            box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.2); /* Shadow matching the border color */
+        }
+        .form-select, .form-input {
+            border-color: #d1d5db;
+        }
+        .form-select:focus, .form-input:focus {
+            border-color: #111827; /* Changed focus color to match selection */
+            box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.2); /* Adjusted focus shadow */
+            outline: none;
+        }
+        .disabled-section {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- SIMULATOR CONTROLS -->
+        <div class="mb-8 p-4 bg-gray-100 border border-gray-300 rounded-lg">
+            <h3 class="font-bold text-lg text-gray-800">Bảng điều khiển Demo</h3>
+            <p class="text-sm text-gray-700">Chọn loại khách hàng để xem trước giao diện tương ứng:</p>
+            <div class="mt-2 flex flex-wrap gap-4">
+                <div class="flex items-center">
+                    <input type="radio" id="sim-guest" name="user_type_sim" class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-700" value="guest">
+                    <label for="sim-guest" class="ml-2 block text-sm font-medium text-gray-700">Khách vãng lai</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="radio" id="sim-logged-in-with-address" name="user_type_sim" class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-700" value="logged_in_with_address" checked>
+                    <label for="sim-logged-in-with-address" class="ml-2 block text-sm font-medium text-gray-700">Khách đăng nhập (Có sẵn địa chỉ)</label>
+                </div>
+                <div class="flex items-center">
+                    <input type="radio" id="sim-logged-in-no-address" name="user_type_sim" class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-700" value="logged_in_no_address">
+                    <label for="sim-logged-in-no-address" class="ml-2 block text-sm font-medium text-gray-700">Khách đăng nhập (Chưa có địa chỉ)</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHECKOUT PAGE LAYOUT -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 lg:gap-8 xl:gap-12">
+            <!-- Main Content -->
+            <div class="lg:col-span-7 xl:col-span-8">
+                <div class="flex flex-col space-y-8">
+
+                    <!-- Product List Section -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h2 class="text-lg font-bold mb-4">Sản phẩm trong đơn (<span id="product-count">0</span>)</h2>
+                        <div id="main-product-list" class="space-y-5">
+                            <!-- Products will be dynamically inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Shipping Details Section -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <!-- <h2 class="text-xl font-bold mb-4">Thông tin nhận hàng</h2> -->
+
+                        <!-- Delivery Method Choice -->
+                        <div class="mb-6">
+                            <h3 class="text-xl font-bold mb-4">Phương thức nhận hàng</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="option-card rounded-lg p-4 cursor-pointer" id="delivery-method-delivery">
+                                    <div class="flex items-center">
+                                        <input type="radio" name="delivery_method" value="delivery" id="delivery_method_radio_delivery" class="h-4 w-4 text-gray-800" checked>
+                                        <label for="delivery_method_radio_delivery" class="ml-3 font-medium text-gray-800 cursor-pointer">Giao hàng tận nơi</label>
+                                    </div>
+                                </div>
+                                <div class="option-card rounded-lg p-4 cursor-pointer" id="delivery-method-pickup">
+                                    <div class="flex items-center">
+                                        <input type="radio" name="delivery_method" value="pickup" id="delivery_method_radio_pickup" class="h-4 w-4 text-gray-800">
+                                        <label for="delivery_method_radio_pickup" class="ml-3 font-medium text-gray-800 cursor-pointer">Nhận tại cửa hàng</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Delivery Address Section -->
+                        <div id="delivery-address-section">
+                            <hr class="my-6">
+                            <!-- Address Book (for logged-in users with addresses) -->
+                            <div id="address-book" class="hidden">
+                                <h3 class="text-lg font-semibold mb-3">Sổ địa chỉ của bạn</h3>
+                                <div id="main-address-list" class="space-y-3">
+                                    <!-- Top addresses will be rendered here by JS -->
+                                </div>
+                                <div class="mt-4 space-x-4">
+                                    <button type="button" id="open-address-modal-btn" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-800 hover:bg-black">Chọn từ địa chỉ khác...</button>
+                                    <button type="button" id="use-new-address-btn" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Thêm địa chỉ mới</button>
+                                </div>
+                            </div>
+                            <!-- New Address Form (for guests or new address) -->
+                            <div id="new-address-form-wrapper" class="hidden">
+                                <p id="form-intro-text" class="text-sm text-gray-600 mb-4"></p>
+                                <form id="address-form" class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                                    <div>
+                                        <label for="full_name" class="block text-sm font-medium text-gray-700">Họ & tên <span class="text-red-500">*</span></label>
+                                        <input type="text" id="full_name" name="full_name" class="mt-1 block w-full form-input rounded-md shadow-sm py-3 px-4" required>
+                                    </div>
+                                    <div>
+                                        <label for="phone_number" class="block text-sm font-medium text-gray-700">Số điện thoại <span class="text-red-500">*</span></label>
+                                        <input type="tel" id="phone_number" name="phone_number" class="mt-1 block w-full form-input rounded-md shadow-sm py-3 px-4" required>
+                                    </div>
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
+                                        <input type="email" id="email" name="email" class="mt-1 block w-full form-input rounded-md shadow-sm py-3 px-4" required>
+                                    </div>
+                                    <div>
+                                        <label for="province_id" class="block text-sm font-medium text-gray-700">Tỉnh/Thành phố <span class="text-red-500">*</span></label>
+                                        <select id="province_id" name="province_id" class="mt-1 block w-full form-select rounded-md shadow-sm py-3 px-4" required>
+                                            <option value="">Chọn Tỉnh/Thành phố</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="district_id" class="block text-sm font-medium text-gray-700">Quận/Huyện <span class="text-red-500">*</span></label>
+                                        <select id="district_id" name="district_id" class="mt-1 block w-full form-select rounded-md shadow-sm py-3 px-4" required disabled>
+                                            <option value="">Chọn Quận/Huyện</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="ward_id" class="block text-sm font-medium text-gray-700">Phường/Xã <span class="text-red-500">*</span></label>
+                                        <select id="ward_id" name="ward_id" class="mt-1 block w-full form-select rounded-md shadow-sm py-3 px-4" required disabled>
+                                            <option value="">Chọn Phường/Xã</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label for="address_line1" class="block text-sm font-medium text-gray-700">Số nhà, Tên đường <span class="text-red-500">*</span></label>
+                                        <input type="text" id="address_line1" name="address_line1" class="mt-1 block w-full form-input rounded-md shadow-sm py-3 px-4" required>
+                                    </div>
+                                    <div id="save-address-wrapper" class="sm:col-span-2 hidden">
+                                        <div class="flex items-center">
+                                            <input id="save-address-check" name="save_address" type="checkbox" class="h-4 w-4 text-gray-800 border-gray-300 rounded focus:ring-gray-700">
+                                            <label for="save-address-check" class="ml-2 block text-sm text-gray-900">Lưu địa chỉ này vào sổ địa chỉ</label>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Pickup Location Section -->
+                        <div id="pickup-location-section" class="hidden">
+                             <hr class="my-6">
+                             <h3 class="text-lg font-semibold mb-3">Thông tin người nhận</h3>
+                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+                                 <div>
+                                     <label for="pickup_full_name" class="block text-sm font-medium text-gray-700">Họ & tên <span class="text-red-500">*</span></label>
+                                     <input type="text" id="pickup_full_name" name="pickup_full_name" class="mt-1 block w-full form-input rounded-md shadow-sm py-3 px-4" required>
+                                 </div>
+                                 <div>
+                                     <label for="pickup_phone_number" class="block text-sm font-medium text-gray-700">Số điện thoại <span class="text-red-500">*</span></label>
+                                     <input type="tel" id="pickup_phone_number" name="pickup_phone_number" class="mt-1 block w-full form-input rounded-md shadow-sm py-3 px-4" required>
+                                 </div>
+                                 <div class="sm:col-span-2">
+                                     <label for="pickup_email" class="block text-sm font-medium text-gray-700">Email <span class="text-red-500">*</span></label>
+                                     <input type="email" id="pickup_email" name="pickup_email" class="mt-1 block w-full form-input rounded-md shadow-sm py-3 px-4" required>
+                                 </div>
+                             </div>
+                             <hr class="my-6">
+                             <h3 class="text-lg font-semibold mb-3">Chọn cửa hàng để nhận hàng</h3>
+                             <select id="store-location-select" class="w-full form-select rounded-md shadow-sm py-3 px-4">
+                                 <option value="">Chọn một cửa hàng</option>
+                                 <option value="store1">iMart Ba Đình - 123 Đội Cấn, Ba Đình, Hà Nội</option>
+                                 <option value="store2">iMart Hoàn Kiếm - 456 Hàng Bài, Hoàn Kiếm, Hà Nội</option>
+                                 <option value="store3">iMart Tây Hồ - 789 Lạc Long Quân, Tây Hồ, Hà Nội</option>
+                             </select>
+                             <div class="mt-6">
+                                 <h3 class="text-lg font-semibold mb-3">Chọn thời gian nhận hàng</h3>
+                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                     <div>
+                                         <label for="pickup-date" class="block text-sm font-medium text-gray-700">Ngày nhận hàng</label>
+                                         <input type="date" id="pickup-date" name="pickup_date" class="mt-1 block w-full form-input rounded-md shadow-sm py-3 px-4">
+                                     </div>
+                                     <div>
+                                         <label for="pickup-time-slot" class="block text-sm font-medium text-gray-700">Giờ nhận hàng</label>
+                                         <select id="pickup-time-slot" name="pickup_time_slot" class="mt-1 block w-full form-select rounded-md shadow-sm py-3 px-4">
+                                             <option value="">Chọn khung giờ</option>
+                                             <option value="8-11">8:00 - 11:00</option>
+                                             <option value="11-14">11:00 - 14:00</option>
+                                             <option value="14-17">14:00 - 17:00</option>
+                                             <option value="17-20">17:00 - 20:00</option>
+                                             <option value="20-22">20:00 - 22:00</option>
+                                         </select>
+                                     </div>
+                                 </div>
+                             </div>
+                        </div>
+
+
+                        <hr class="my-6">
+
+                        <!-- Shipping Methods -->
+                        <div id="shipping-options-wrapper">
+                            <h3 class="text-lg font-semibold mb-3">Phương thức vận chuyển</h3>
+                            <div id="shipping-methods-container" class="space-y-3">
+                                <p class="text-sm text-gray-500">Vui lòng chọn phương thức nhận hàng và địa chỉ/cửa hàng.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Section -->
+                    <div class="bg-white rounded-lg shadow-sm p-6">
+                        <h2 class="text-xl font-bold mb-4">Thanh toán</h2>
+                        <div class="space-y-4">
+                            <div class="border rounded-lg p-4">
+                                <label for="cod" class="flex items-center cursor-pointer">
+                                    <input id="cod" name="payment_method" type="radio" value="cod" class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-700" checked>
+                                    <span class="ml-4 flex-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                        </svg>
+                                        <span class="text-sm font-medium text-gray-700">Thanh toán khi nhận hàng (COD)</span>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="border rounded-lg p-4">
+                                <label for="qrcode" class="flex items-center cursor-pointer">
+                                    <input id="qrcode" name="payment_method" type="radio" value="qrcode" class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-700">
+                                    <span class="ml-4 flex-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-500 mr-3" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM13 21h8v-8h-8v8zm2-6h4v4h-4v-4z"/>
+                                        </svg>
+                                        <span class="text-sm font-medium text-gray-700">Thanh toán bằng mã QR</span>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="border rounded-lg p-4">
+                                <label for="vnpay" class="flex items-center cursor-pointer">
+                                    <input id="vnpay" name="payment_method" type="radio" value="vnpay" class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-700">
+                                    <span class="ml-4 flex-1 flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-700">Thanh toán qua VNPay</span>
+                                        <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Icon-VNPAY-QR.png" alt="VNPay Logo" class="h-8 object-contain">
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="border rounded-lg p-4">
+                                <label for="momo" class="flex items-center cursor-pointer">
+                                    <input id="momo" name="payment_method" type="radio" value="momo" class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-700">
+                                    <span class="ml-4 flex-1 flex items-center justify-between">
+                                        <span class="text-sm font-medium text-gray-700">Thanh toán qua Ví MoMo</span>
+                                        <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MoMo Logo" class="h-8 object-contain">
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary Sidebar -->
+            <aside class="lg:col-span-5 xl:col-span-4 mt-8 lg:mt-0">
+                <div class="sticky top-8">
+                    <div class="bg-white rounded-lg shadow-sm p-6 flex flex-col space-y-4">
+                        <button class="w-full flex justify-between items-center text-left p-3 border rounded-lg">
+                            <span class="font-semibold text-red-600">Chọn hoặc nhập ưu đãi</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                        <button class="w-full flex items-center text-left p-3 border rounded-lg bg-yellow-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                                <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd" />
+                            </svg>
+                            <span class="text-sm font-semibold text-yellow-700">Đăng nhập để sử dụng điểm thưởng</span>
+                        </button>
+
+                        <div class="border-t pt-4">
+                            <h3 class="text-lg font-bold mb-4">Thông tin đơn hàng</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Tổng tiền:</span>
+                                    <span id="subtotal-summary" class="font-semibold text-gray-800">0 VNĐ</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Tổng khuyến mãi:</span>
+                                    <span id="promotion-summary" class="font-semibold text-gray-800">- 0 VNĐ</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Phí vận chuyển:</span>
+                                    <span id="shipping-fee-summary" class="font-semibold text-gray-800">Chưa xác định</span>
+                                </div>
+                                <div class="flex justify-between text-base font-bold">
+                                    <span>Cần thanh toán:</span>
+                                    <span id="grand-total-summary" class="text-red-600">0 VNĐ</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Điểm thưởng</span>
+                                    <span id="points-summary" class="font-semibold text-yellow-500 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                        +4,095
+                                    </span>
+                                </div>
+                                <a href="#" class="text-sm text-blue-600 hover:underline">Xem chi tiết</a>
+                            </div>
+                        </div>
+
+                        <button type="button" id="place-order-btn" class="w-full bg-red-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-red-700 transition-colors">
+                            Đặt hàng
+                        </button>
+
+                        <p class="text-xs text-gray-500 text-center">
+                            Bằng việc tiến hành đặt mua hàng, bạn đồng ý với
+                            <a href="#" class="font-semibold text-blue-600">Điều khoản dịch vụ</a> và 
+                            <a href="#" class="font-semibold text-blue-600">Chính sách xử lý dữ liệu cá nhân</a> của chúng tôi.
+                        </p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Address Selection Modal -->
+    <div id="address-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4 hidden modal-overlay opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg modal-content opacity-0 transform -translate-y-10">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-lg font-bold">Chọn địa chỉ giao hàng</h3>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="p-4">
+                <input type="text" id="address-search-input" placeholder="Tìm kiếm theo tên, SĐT, địa chỉ..." class="w-full form-input rounded-md shadow-sm mb-4 py-3 px-4">
+            </div>
+            <div id="modal-address-list" class="p-4 space-y-3 max-h-96 overflow-y-auto">
+                <!-- Modal address list will be rendered here -->
+            </div>
+            <div class="p-4 bg-gray-50 border-t flex justify-end">
+                <button id="confirm-address-selection-btn" class="bg-gray-800 text-white font-bold py-2 px-6 rounded-lg hover:bg-black transition-colors">
+                    Xác nhận
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- MOCK DATA ---
+        const mockAddresses = [
+            { id: 1, name: 'Trần Văn An', phone: '0987654321', full: 'Số 123, Đường ABC, Phường Cống Vị, Quận Ba Đình, Hà Nội', default: true },
+            { id: 2, name: 'Lê Thị Bình (Văn phòng)', phone: '0123456789', full: 'Tầng 10, Tòa nhà Lotte, 54 Liễu Giai, Phường Ngọc Khánh, Quận Ba Đình, Hà Nội', default: false },
+        ];
+        const mockProvinces = [{ code: 'HN', name_with_type: 'Thành phố Hà Nội' }, { code: 'HCM', name_with_type: 'Thành phố Hồ Chí Minh' }];
+        const mockDistricts = { 'HN': [{ code: 'BD', name_with_type: 'Quận Ba Đình' }, { code: 'CG', name_with_type: 'Quận Cầu Giấy' }], 'HCM': [{ code: 'Q1', name_with_type: 'Quận 1' }] };
+        const mockWards = { 'BD': [{ code: 'CV', name_with_type: 'Phường Cống Vị' }], 'CG': [{ code: 'DV', name_with_type: 'Phường Dịch Vọng' }], 'Q1': [{ code: 'BT', name_with_type: 'Phường Bến Thành' }] };
+        const mockShippingOptions = [
+            { method_id: 1, name: 'Giao hàng nhanh', fee: 30000 }, 
+            { method_id: 2, name: 'Giao hàng của cửa hàng', fee: 15000, hasTimeSlots: true }
+        ];
+        const mockCart = [
+            { id: 1, name: 'iPad Gen 11 11 inch A16 2025 WiFi 128GB', variant: 'Xanh dương', quantity: 1, price: 8990000, originalPrice: 9790000, image: 'https://placehold.co/80x80/e0f2fe/0c4a6e?text=iPad' },
+            { id: 2, name: 'Máy Lạnh Casper Inverter 1.5 HP GC-12IB36', variant: 'Trắng', quantity: 1, price: 7390000, originalPrice: 8990000, image: 'https://placehold.co/80x80/f1f5f9/475569?text=AC' },
+        ];
+        const mockPromotion = 2400000;
+
+        // --- DOM ELEMENTS ---
+        const simulatorRadios = document.querySelectorAll('input[name="user_type_sim"]');
+        const deliveryMethodCards = document.querySelectorAll('#delivery-method-delivery, #delivery-method-pickup');
+        const deliveryAddressSection = document.getElementById('delivery-address-section');
+        const pickupLocationSection = document.getElementById('pickup-location-section');
+        const addressBook = document.getElementById('address-book');
+        const mainAddressList = document.getElementById('main-address-list');
+        const newAddressFormWrapper = document.getElementById('new-address-form-wrapper');
+        const useNewAddressBtn = document.getElementById('use-new-address-btn');
+        const shippingOptionsWrapper = document.getElementById('shipping-options-wrapper');
+        const shippingMethodsContainer = document.getElementById('shipping-methods-container');
+        const saveAddressWrapper = document.getElementById('save-address-wrapper');
+        const formIntroText = document.getElementById('form-intro-text');
+        const provinceSelect = document.getElementById('province_id');
+        const districtSelect = document.getElementById('district_id');
+        const wardSelect = document.getElementById('ward_id');
+        const shippingFeeSummary = document.getElementById('shipping-fee-summary');
+        const grandTotalSummary = document.getElementById('grand-total-summary');
+        const subtotalSummary = document.getElementById('subtotal-summary');
+        const promotionSummary = document.getElementById('promotion-summary');
+        const addressForm = document.getElementById('address-form');
+
+        const addressModal = document.getElementById('address-modal');
+        const openModalBtn = document.getElementById('open-address-modal-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalAddressList = document.getElementById('modal-address-list');
+        const addressSearchInput = document.getElementById('address-search-input');
+        const confirmAddressBtn = document.getElementById('confirm-address-selection-btn');
+        
+        const pickupDateInput = document.getElementById('pickup-date');
+
+        let subtotal = 0;
+        let selectedAddressId = mockAddresses.find(a => a.default)?.id || null;
+
+        // --- CORE FUNCTIONS ---
+        function setupUIForUserType() {
+            const userType = document.querySelector('input[name="user_type_sim"]:checked').value;
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked').value;
+
+            addressBook.classList.add('hidden');
+            newAddressFormWrapper.style.display = 'none';
+            saveAddressWrapper.classList.add('hidden');
+            
+            if (deliveryMethod === 'delivery') {
+                deliveryAddressSection.style.display = 'block';
+                pickupLocationSection.style.display = 'none';
+                shippingOptionsWrapper.style.display = 'block'; 
+                shippingOptionsWrapper.classList.remove('disabled-section');
+                
+                const selectedShippingMethod = document.querySelector('input[name="shipping_method"]:checked');
+                if (selectedShippingMethod) {
+                    updateOrderInformation({ shippingFee: parseInt(selectedShippingMethod.dataset.fee, 10) });
+                } else {
+                    disableShippingOptions("Vui lòng chọn địa chỉ đầy đủ.");
+                }
+
+                if (userType === 'logged_in_with_address') {
+                    addressBook.classList.remove('hidden');
+                    renderMainAddressList();
+                    const defaultAddress = mockAddresses.find(a => a.default);
+                    if (defaultAddress) {
+                        selectAddress(defaultAddress.id);
+                    }
+                } else if (userType === 'logged_in_no_address') {
+                    formIntroText.textContent = "Bạn chưa có địa chỉ nào được lưu. Vui lòng nhập địa chỉ mới bên dưới.";
+                    saveAddressWrapper.classList.remove('hidden');
+                    showNewAddressForm();
+                } else { // Guest
+                    formIntroText.textContent = "Vui lòng điền đầy đủ thông tin để chúng tôi giao hàng cho bạn.";
+                    showNewAddressForm();
+                }
+            } else { // pickup
+                deliveryAddressSection.style.display = 'none';
+                pickupLocationSection.style.display = 'block';
+                shippingOptionsWrapper.style.display = 'block';
+                disableShippingOptions("Không áp dụng cho nhận tại cửa hàng.");
+                updateOrderInformation({ shippingFee: 0 });
+            }
+        }
+        
+        function selectAddress(addressId) {
+            selectedAddressId = addressId;
+            renderMainAddressList();
+            newAddressFormWrapper.style.display = 'none';
+            getShippingOptionsForSavedAddress();
+        }
+
+        function showNewAddressForm() {
+            selectedAddressId = null;
+            renderMainAddressList();
+            newAddressFormWrapper.style.display = 'block';
+            if (provinceSelect.options.length <= 1) loadProvinces();
+            disableShippingOptions("Vui lòng chọn địa chỉ đầy đủ.");
+        }
+
+        function renderMainAddressList() {
+             mainAddressList.innerHTML = '';
+             const topAddresses = mockAddresses.slice(0, 2); 
+             topAddresses.forEach(address => {
+                 const isSelected = address.id === selectedAddressId;
+                 const card = `
+                     <div class="option-card rounded-lg p-4 cursor-pointer ${isSelected ? 'selected' : ''}" data-address-id="${address.id}">
+                         <div class="flex items-start">
+                             <input type="radio" name="selected_address" id="address-${address.id}" value="${address.id}" class="mt-1 h-4 w-4 text-gray-800" ${isSelected ? 'checked' : ''}>
+                             <label for="address-${address.id}" class="ml-3 flex-1 cursor-pointer">
+                                 <strong class="block text-gray-900">${address.name}</strong>
+                                 <span class="block text-sm text-gray-600">${address.phone}</span>
+                                 <span class="block text-sm text-gray-600">${address.full}</span>
+                             </label>
+                         </div>
+                     </div>`;
+                 mainAddressList.innerHTML += card;
+             });
+             document.querySelectorAll('#main-address-list .option-card').forEach(card => {
+                 card.addEventListener('click', () => selectAddress(parseInt(card.dataset.addressId)));
+             });
+        }
+        
+        function openModal() {
+            renderModalAddressList();
+            addressModal.classList.remove('hidden');
+            setTimeout(() => {
+                addressModal.classList.remove('opacity-0');
+                addressModal.querySelector('.modal-content')?.classList.remove('opacity-0', '-translate-y-10');
+            }, 10);
+        }
+
+        function closeModal() {
+             addressModal.classList.add('opacity-0');
+             addressModal.querySelector('.modal-content')?.classList.add('opacity-0', '-translate-y-10');
+             setTimeout(() => addressModal.classList.add('hidden'), 300);
+        }
+        
+        function renderModalAddressList(searchTerm = '') {
+            modalAddressList.innerHTML = '';
+            const filtered = mockAddresses.filter(addr => 
+                addr.name.toLowerCase().includes(searchTerm) ||
+                addr.phone.toLowerCase().includes(searchTerm) ||
+                addr.full.toLowerCase().includes(searchTerm)
+            );
+
+            if (filtered.length === 0) {
+                 modalAddressList.innerHTML = `<p class="text-center text-gray-500">Không tìm thấy địa chỉ nào.</p>`;
+                 return;
+            }
+
+            filtered.forEach(address => {
+                const isSelected = address.id === selectedAddressId;
+                const item = `
+                    <div class="border rounded-lg p-3 cursor-pointer hover:bg-gray-50">
+                        <div class="flex items-start">
+                            <input type="radio" name="modal_selected_address" id="modal-address-${address.id}" value="${address.id}" class="mt-1 h-4 w-4 text-gray-800" ${isSelected ? 'checked' : ''}>
+                            <label for="modal-address-${address.id}" class="ml-3 flex-1">
+                                <strong class="block text-gray-900">${address.name}</strong>
+                                <span class="block text-sm text-gray-600">${address.phone}</span>
+                                <span class="block text-sm text-gray-600">${address.full}</span>
+                            </label>
+                        </div>
+                    </div>
+                `;
+                modalAddressList.innerHTML += item;
+            });
+        }
+        
+        function handleConfirmSelection() {
+            const selectedRadio = document.querySelector('input[name="modal_selected_address"]:checked');
+            if(selectedRadio) {
+                selectAddress(parseInt(selectedRadio.value));
+            }
+            closeModal();
+        }
+
+         function loadProvinces() {
+             provinceSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
+             mockProvinces.forEach(p => provinceSelect.innerHTML += `<option value="${p.code}">${p.name_with_type}</option>`);
+         }
+         function loadDistricts(provinceCode) {
+             districtSelect.innerHTML = '<option value="">Chọn Quận/Huyện</option>';
+             wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+             districtSelect.disabled = true;
+             wardSelect.disabled = true;
+             disableShippingOptions("Vui lòng chọn địa chỉ đầy đủ.");
+
+             if (!provinceCode) return;
+             const districts = mockDistricts[provinceCode] || [];
+             districts.forEach(d => {
+                 districtSelect.innerHTML += `<option value="${d.code}">${d.name_with_type}</option>`;
+             });
+             districtSelect.disabled = false;
+         }
+
+         function loadWards(districtCode) {
+             wardSelect.innerHTML = '<option value="">Chọn Phường/Xã</option>';
+             wardSelect.disabled = true;
+             disableShippingOptions("Vui lòng chọn địa chỉ đầy đủ.");
+             
+             if (!districtCode) return;
+             const wards = mockWards[districtCode] || [];
+             wards.forEach(w => {
+                 wardSelect.innerHTML += `<option value="${w.code}">${w.name_with_type}</option>`;
+             });
+             wardSelect.disabled = false;
+         }
+        
+        function disableShippingOptions(message) {
+            shippingOptionsWrapper.classList.add('disabled-section');
+            shippingMethodsContainer.innerHTML = `<p class="text-sm text-gray-500">${message}</p>`;
+            updateOrderInformation({ shippingFee: null });
+        }
+        function getShippingOptionsForSavedAddress() {
+            shippingOptionsWrapper.classList.remove('disabled-section');
+            shippingMethodsContainer.innerHTML = `<p class="text-sm text-gray-500">Đang tính phí vận chuyển...</p>`;
+            setTimeout(() => renderShippingOptions(mockShippingOptions), 500);
+        }
+        function getShippingOptionsFromForm() {
+            if (provinceSelect.value && districtSelect.value && wardSelect.value) {
+                getShippingOptionsForSavedAddress();
+            }
+        }
+        
+        function renderShippingOptions(options) {
+             if (options.length > 0) {
+                 let html = '';
+                 options.forEach((option, index) => {
+                     let timeSlotHtml = '';
+                     if (option.hasTimeSlots) {
+                         timeSlotHtml = `
+                             <div id="shipping-time-slot-container-${option.method_id}" class="mt-4 hidden">
+                                 <label for="shipping-time-slot-${option.method_id}" class="block text-sm font-medium text-gray-700 mb-1">Chọn khung giờ nhận hàng</label>
+                                 <select id="shipping-time-slot-${option.method_id}" name="shipping_time_slot" class="block w-full form-select rounded-md shadow-sm py-3 px-4">
+                                     <option value="">Chọn khung giờ</option>
+                                     <option value="8-11">8:00 - 11:00</option>
+                                     <option value="11-14">11:00 - 14:00</option>
+                                     <option value="14-17">14:00 - 17:00</option>
+                                     <option value="17-20">17:00 - 20:00</option>
+                                 </select>
+                             </div>
+                         `;
+                     }
+
+                     html += `
+                         <div class="border rounded-lg p-4">
+                             <div class="flex items-center">
+                                 <input type="radio" name="shipping_method" id="ship-${option.method_id}" value="${option.method_id}" data-fee="${option.fee}" data-has-time-slots="${!!option.hasTimeSlots}" ${index === 0 ? 'checked' : ''} class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-700">
+                                 <label for="ship-${option.method_id}" class="ml-3 flex justify-between w-full cursor-pointer">
+                                     <span class="text-sm font-medium text-gray-700">${option.name}</span>
+                                     <span class="text-sm font-semibold">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(option.fee)}</span>
+                                 </label>
+                             </div>
+                             ${timeSlotHtml}
+                         </div>`;
+                 });
+                 shippingMethodsContainer.innerHTML = html;
+                 
+                 document.querySelectorAll('input[name="shipping_method"]').forEach(radio => {
+                     radio.addEventListener('change', (e) => {
+                         updateOrderInformation({ shippingFee: parseInt(e.target.dataset.fee, 10) });
+                         
+                         document.querySelectorAll('[id^="shipping-time-slot-container-"]').forEach(container => {
+                             container.classList.add('hidden');
+                         });
+
+                         if(e.target.dataset.hasTimeSlots === 'true') {
+                             const containerToShow = document.getElementById(`shipping-time-slot-container-${e.target.value}`);
+                             if(containerToShow) {
+                                 containerToShow.classList.remove('hidden');
+                             }
+                         }
+                     });
+                 });
+                 
+                 const firstOption = document.querySelector('input[name="shipping_method"]');
+                 if(firstOption) {
+                     firstOption.checked = true;
+                     firstOption.dispatchEvent(new Event('change', { bubbles: true }));
+                 }
+             } else {
+                  shippingMethodsContainer.innerHTML = `<p class="text-sm text-red-600">Không tìm thấy phương thức vận chuyển.</p>`;
+                  updateOrderInformation({ shippingFee: null });
+             }
+        }
+
+        function renderMainProductList() {
+            const productListContainer = document.getElementById('main-product-list');
+            const productCount = document.getElementById('product-count');
+            if (!productListContainer || !productCount) return;
+
+            productListContainer.innerHTML = '';
+            subtotal = mockCart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            productCount.textContent = mockCart.length;
+
+            mockCart.forEach(product => {
+                const productHtml = `
+                    <div class="flex items-start space-x-4">
+                        <img src="${product.image}" alt="${product.name}" class="w-20 h-20 rounded-lg border flex-shrink-0 object-contain p-1" onerror="this.onerror=null;this.src='https://placehold.co/80x80/e2e8f0/e2e8f0?text=Img';">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-semibold text-gray-800 text-sm" title="${product.name}">${product.name}</p>
+                            <span class="inline-block bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 rounded-md mt-1">
+                                Màu: ${product.variant}
+                            </span>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-red-600 text-sm">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}</p>
+                            <p class="text-xs text-gray-500 line-through">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice)}</p>
+                            <p class="text-sm text-gray-600 mt-1">x${product.quantity}</p>
+                        </div>
+                    </div>
+                `;
+                productListContainer.innerHTML += productHtml;
+            });
+        }
+
+        function updateOrderInformation({ shippingFee }) {
+            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked').value;
+            if (deliveryMethod === 'pickup') {
+                shippingFee = 0;
+            }
+
+            const totalAmount = mockCart.reduce((acc, item) => acc + (item.originalPrice * item.quantity), 0);
+            const totalPromotion = totalAmount - subtotal;
+
+            subtotalSummary.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalAmount);
+            promotionSummary.textContent = `- ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPromotion)}`;
+
+            if (shippingFee === null) {
+                shippingFeeSummary.textContent = 'Chưa xác định';
+                grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(subtotal);
+            } else {
+                shippingFeeSummary.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(shippingFee);
+                const grandTotal = subtotal + shippingFee;
+                grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(grandTotal);
+            }
+        }
+
+        // --- EVENT BINDING ---
+        simulatorRadios.forEach(radio => radio.addEventListener('change', setupUIForUserType));
+        deliveryMethodCards.forEach(card => card.addEventListener('click', () => {
+            const radio = card.querySelector('input[type="radio"]');
+            radio.checked = true;
+            document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+            setupUIForUserType();
+        }));
+        useNewAddressBtn.addEventListener('click', showNewAddressForm);
+        
+        openModalBtn.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        addressModal.addEventListener('click', (e) => e.target === addressModal && closeModal());
+        addressSearchInput.addEventListener('input', (e) => renderModalAddressList(e.target.value.toLowerCase()));
+        confirmAddressBtn.addEventListener('click', handleConfirmSelection);
+        
+        provinceSelect.addEventListener('change', (e) => loadDistricts(e.target.value));
+        districtSelect.addEventListener('change', (e) => loadWards(e.target.value));
+        wardSelect.addEventListener('change', getShippingOptionsFromForm);
+        
+        // --- INITIALIZE UI ---
+        if (pickupDateInput) {
+            const today = new Date();
+            const maxDate = new Date();
+            maxDate.setDate(today.getDate() + 7);
+
+            const toYYYYMMDD = (date) => date.toISOString().split('T')[0];
+
+            pickupDateInput.setAttribute('min', toYYYYMMDD(today));
+            pickupDateInput.setAttribute('max', toYYYYMMDD(maxDate));
+        }
+        document.getElementById('delivery-method-delivery').classList.add('selected');
+        
+        renderMainProductList();
+        updateOrderInformation({ shippingFee: null });
+        setupUIForUserType();
+    });
+    </script>
+
+</body>
+</html>

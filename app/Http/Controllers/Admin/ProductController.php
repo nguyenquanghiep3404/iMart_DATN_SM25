@@ -22,6 +22,7 @@ class ProductController extends Controller
 
     public function __construct()
     {
+        $this->middleware('auth');
         $this->authorizeResource(Product::class, 'product');
     }
 
@@ -30,13 +31,12 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        // Hàm này đã đúng, không cần sửa.
         $query = Product::with([
             'category',
             'variants' => function ($q) {
                 $q->orderBy('is_default', 'desc')->orderBy('created_at', 'asc');
             },
-            'variants.inventories',
+            // Đã loại bỏ 'variants.inventories' khỏi đây
             'variants.primaryImage',
             'coverImage'
         ]);
@@ -106,6 +106,8 @@ class ProductController extends Controller
         $allCategories = Category::where('status', 'active')->get();
         $categories = $this->formatCategoriesForSelect($allCategories);
         $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
+        
+        // **ĐÃ XÓA LOGIC LẤY STORE LOCATIONS VÀ TỒN KHO**
 
         // Prepare data to restore images if validation fails
         $old_images_data = [];
@@ -159,11 +161,24 @@ class ProductController extends Controller
         try {
             // Dữ liệu cho bảng 'products'
             $productData = $request->except([
-                '_token', 'cover_image_id', 'gallery_images', 'variants',
-                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_inventories',
-                'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight',
-                'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height',
-                'specifications'
+                '_token',
+                'cover_image_id',
+                'gallery_images',
+                'variants',
+                'specifications',
+                'simple_sku',
+                'simple_price',
+                'simple_sale_price',
+                'simple_cost_price',
+                'simple_points_awarded_on_purchase',
+                'simple_inventories', // Đã xóa khỏi logic
+                'store_location_id',  // Đã xóa khỏi logic
+                'simple_sale_price_starts_at',
+                'simple_sale_price_ends_at',
+                'simple_weight',
+                'simple_dimensions_length',
+                'simple_dimensions_width',
+                'simple_dimensions_height',
             ]);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
@@ -196,6 +211,8 @@ class ProductController extends Controller
                     'product_id' => $product->id,
                     'sku' => $request->input('simple_sku'),
                     'price' => $request->input('simple_price'),
+                    'cost_price' => $request->input('simple_cost_price', 0),
+                    'points_awarded_on_purchase' => $request->input('simple_points_awarded_on_purchase', 0),
                     'sale_price' => $request->input('simple_sale_price'),
                     'sale_price_starts_at' => $request->input('simple_sale_price_starts_at'),
                     'sale_price_ends_at' => $request->input('simple_sale_price_ends_at'),
@@ -207,14 +224,15 @@ class ProductController extends Controller
                     'status' => 'active',
                 ]);
 
-                // Đồng bộ tồn kho chi tiết và thông số kỹ thuật
-                $this->syncVariantInventory($variant, $request->input('simple_inventories', []));
+                // **ĐÃ VÔ HIỆU HÓA LOGIC KHO**
+                // $this->syncVariantInventory($variant, $request->input('simple_inventories', []));
+                
                 $saveSpecifications($variant, $request->input('specifications', []));
             }
             // Xử lý sản phẩm có biến thể
             elseif ($request->input('type') === 'variable' && $request->has('variants')) {
-                // Sử dụng hàm helper để đồng bộ tất cả các biến thể
-                $this->syncProductVariants($product, $request->input('variants'), $request, $saveSpecifications);
+                $variants = $request->input('variants');
+                $this->syncProductVariants($product, $variants, $request, $saveSpecifications);
             }
 
             DB::commit();
@@ -249,7 +267,7 @@ class ProductController extends Controller
             'variants.attributeValues.attribute',
             'variants.images',
             'variants.specifications',
-            'variants.inventories',
+            // Đã loại bỏ 'variants.inventories' khỏi đây
             'coverImage',
             'galleryImages'
         ]);
@@ -257,51 +275,34 @@ class ProductController extends Controller
         $allCategories = Category::where('status', 'active')->get();
         $categories = $this->formatCategoriesForSelect($allCategories);
         $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
-        // START OF CHANGES: Thêm logic phục hồi ảnh từ old()
-    $old_images_data = [];
-    if (session()->hasOldInput()) {
-        $all_image_ids = [];
-
-        // Lấy ảnh từ sản phẩm đơn giản (nếu có)
-        $simple_gallery_ids = old('gallery_images', []);
-        $simple_cover_id = old('cover_image_id');
-        if ($simple_cover_id) {
-            $all_image_ids[] = $simple_cover_id;
-        }
-        if (!empty($simple_gallery_ids)) {
-            $all_image_ids = array_merge($all_image_ids, $simple_gallery_ids);
-        }
-
-        // Lấy ảnh từ các biến thể (nếu có)
-        if (old('variants')) {
-            foreach (old('variants') as $oldVariant) {
-                $variant_image_ids = $oldVariant['image_ids'] ?? [];
-                $variant_primary_id = $oldVariant['primary_image_id'] ?? null;
-                if ($variant_primary_id) {
-                    $all_image_ids[] = $variant_primary_id;
+        
+        // **ĐÃ XÓA LOGIC LẤY STORE LOCATIONS VÀ TỒN KHO**
+        
+        $old_images_data = [];
+        if (session()->hasOldInput()) {
+            // ... (code phục hồi ảnh giữ nguyên như trong hàm create)
+            $all_image_ids = [];
+            $simple_gallery_ids = old('gallery_images', []);
+            $simple_cover_id = old('cover_image_id');
+            if ($simple_cover_id) { $all_image_ids[] = $simple_cover_id; }
+            if (!empty($simple_gallery_ids)) { $all_image_ids = array_merge($all_image_ids, $simple_gallery_ids); }
+            if (old('variants')) {
+                foreach (old('variants') as $oldVariant) {
+                    $variant_image_ids = $oldVariant['image_ids'] ?? [];
+                    $variant_primary_id = $oldVariant['primary_image_id'] ?? null;
+                    if ($variant_primary_id) { $all_image_ids[] = $variant_primary_id; }
+                    if (!empty($variant_image_ids)) { $all_image_ids = array_merge($all_image_ids, $variant_image_ids); }
                 }
-                if (!empty($variant_image_ids)) {
-                    $all_image_ids = array_merge($all_image_ids, $variant_image_ids);
+            }
+            if (!empty($all_image_ids)) {
+                $unique_ids = array_unique(array_filter($all_image_ids));
+                if (!empty($unique_ids)) {
+                    $images = UploadedFile::whereIn('id', $unique_ids)->get();
+                    $old_images_data = $images->keyBy('id')->map(fn ($image) => ['id' => $image->id, 'url' => $image->url, 'alt_text' => $image->alt_text])->all();
                 }
             }
         }
-
-        // Truy vấn CSDL để lấy thông tin chi tiết của các ảnh
-        if (!empty($all_image_ids)) {
-            $unique_ids = array_unique(array_filter($all_image_ids));
-            if (!empty($unique_ids)) {
-                $images = UploadedFile::whereIn('id', $unique_ids)->get();
-                $old_images_data = $images->keyBy('id')->map(function ($image) {
-                    return [
-                        'id' => $image->id,
-                        'url' => $image->url,
-                        'alt_text' => $image->alt_text
-                    ];
-                })->all();
-            }
-        }
-    }
-         return view('admin.products.edit', compact('product', 'categories', 'attributes', 'hasBeenSold', 'old_images_data'));
+        return view('admin.products.edit', compact('product', 'categories', 'attributes', 'hasBeenSold', 'old_images_data'));
     }
 
     /**
@@ -325,12 +326,15 @@ class ProductController extends Controller
             $originalType = $product->type;
             $newType = $request->input('type');
 
-            // Dữ liệu cho bảng 'products'
             $productData = $request->except([
-                '_token', '_method', 'cover_image_id', 'gallery_images', 'variants', 'specifications',
-                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_inventories',
-                'simple_sale_price_starts_at', 'simple_sale_price_ends_at', 'simple_weight',
-                'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height',
+                '_token', '_method',
+                'cover_image_id', 'gallery_images', 'variants', 'specifications',
+                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_cost_price',
+                'simple_points_awarded_on_purchase',
+                'simple_inventories', // Đã xóa khỏi logic
+                'store_location_id',  // Đã xóa khỏi logic
+                'simple_sale_price_starts_at', 'simple_sale_price_ends_at',
+                'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height',
             ]);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
@@ -343,18 +347,18 @@ class ProductController extends Controller
                 UploadedFile::where('attachable_id', $product->id)
                     ->where('attachable_type', Product::class)
                     ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
-                
+
                 // Dọn dẹp các biến thể cũ và các mối quan hệ của chúng
                 $variantIds = $product->variants()->pluck('id');
                 if ($variantIds->isNotEmpty()) {
                     UploadedFile::where('attachable_type', ProductVariant::class)
                         ->whereIn('attachable_id', $variantIds)
                         ->update(['attachable_id' => null, 'attachable_type' => null]);
-                    
+
                     foreach ($product->variants as $variant) {
                         $variant->specifications()->detach();
                         $variant->attributeValues()->detach();
-                        $variant->inventories()->delete();
+                        $variant->inventories()->delete(); // Giữ lại để dọn dẹp data cũ nếu có
                     }
                     $product->variants()->delete();
                 }
@@ -365,6 +369,8 @@ class ProductController extends Controller
                 $variantData = [
                     'sku' => $request->input('simple_sku'),
                     'price' => $request->input('simple_price'),
+                    'cost_price' => $request->input('simple_cost_price', 0),
+                    'points_awarded_on_purchase' => $request->input('simple_points_awarded_on_purchase', 0),
                     'sale_price' => $request->input('simple_sale_price'),
                     'sale_price_starts_at' => $request->input('simple_sale_price_starts_at'),
                     'sale_price_ends_at' => $request->input('simple_sale_price_ends_at'),
@@ -375,11 +381,10 @@ class ProductController extends Controller
                     'is_default' => true,
                     'status' => 'active',
                 ];
-                // Chỉ có 1 biến thể cho sản phẩm đơn giản, nên ta có thể dùng updateOrCreate
                 $variant = $product->variants()->updateOrCreate(['product_id' => $product->id], $variantData);
 
-                // SỬA LỖI: Gọi hàm đồng bộ tồn kho cho sản phẩm đơn giản
-                $this->syncVariantInventory($variant, $request->input('simple_inventories', []));
+                // **ĐÃ VÔ HIỆU HÓA LOGIC KHO**
+                // $this->syncVariantInventory($variant, $request->input('simple_inventories', []));
 
                 $this->syncProductImages($product, $request->input('cover_image_id'), $request->input('gallery_images', []));
                 $saveSpecifications($variant, $request->input('specifications', []));
@@ -405,19 +410,31 @@ class ProductController extends Controller
             ->where('attachable_type', Product::class)
             ->update(['attachable_id' => null, 'attachable_type' => null, 'type' => null, 'order' => null]);
 
-        foreach ($galleryImageIds as $order => $imageId) {
+        // Chỉ gán ảnh nếu có coverImageId hoặc galleryImageIds
+        $allImageIds = array_unique(array_filter(array_merge([$coverImageId], $galleryImageIds)));
+        if(empty($allImageIds)) return;
+
+        // Ưu tiên gán ảnh bìa trước
+        if ($coverImageId) {
+             UploadedFile::where('id', $coverImageId)->update([
+                'attachable_id' => $product->id,
+                'attachable_type' => Product::class,
+                'type' => 'cover_image',
+                'order' => 1
+            ]);
+        }
+
+        $order = 1;
+        foreach ($galleryImageIds as $imageId) {
             UploadedFile::where('id', $imageId)->update([
                 'attachable_id' => $product->id,
                 'attachable_type' => Product::class,
                 'type' => ($imageId == $coverImageId) ? 'cover_image' : 'gallery_image',
-                'order' => $order + 1
+                'order' => $order++
             ]);
         }
     }
 
-    /**
-     * Đồng bộ các biến thể sản phẩm, bao gồm tồn kho, thuộc tính, ảnh và thông số kỹ thuật.
-     */
     private function syncProductVariants(Product $product, array $variantsData, Request $request, callable $saveSpecifications)
     {
         $existingVariantIds = $product->variants()->pluck('id')->toArray();
@@ -425,72 +442,65 @@ class ProductController extends Controller
         $defaultVariantCandidateId = null;
 
         foreach ($variantsData as $key => $variantData) {
-            // SỬA LỖI: Lấy đúng dữ liệu tồn kho và thông số từ MỖI biến thể
-            $inventoriesData = $variantData['inventories'] ?? [];
             $specificationsData = $variantData['specifications'] ?? [];
 
             $payload = [
-                'sku'                   => $variantData['sku'],
-                'price'                 => $variantData['price'],
-                'sale_price'            => $variantData['sale_price'] ?? null,
-                'sale_price_starts_at'  => $variantData['sale_price_starts_at'] ?? null,
-                'sale_price_ends_at'    => $variantData['sale_price_ends_at'] ?? null,
-                'weight'                => $variantData['weight'] ?? null,
-                'dimensions_length'     => $variantData['dimensions_length'] ?? null,
-                'dimensions_width'      => $variantData['dimensions_width'] ?? null,
-                'dimensions_height'     => $variantData['dimensions_height'] ?? null,
-                'primary_image_id'      => $variantData['primary_image_id'] ?? null,
-                'status'                => 'active',
+                'sku'                       => $variantData['sku'],
+                'price'                     => $variantData['price'],
+                'cost_price'                => $variantData['cost_price'] ?? 0,
+                'points_awarded_on_purchase' => $variantData['points_awarded_on_purchase'] ?? 0,
+                'sale_price'                => $variantData['sale_price'] ?? null,
+                'sale_price_starts_at'      => $variantData['sale_price_starts_at'] ?? null,
+                'sale_price_ends_at'        => $variantData['sale_price_ends_at'] ?? null,
+                'weight'                    => $variantData['weight'] ?? null,
+                'dimensions_length'         => $variantData['dimensions_length'] ?? null,
+                'dimensions_width'          => $variantData['dimensions_width'] ?? null,
+                'dimensions_height'         => $variantData['dimensions_height'] ?? null,
+                'primary_image_id'          => $variantData['primary_image_id'] ?? null,
+                'status'                    => 'active',
             ];
 
             $variant = $product->variants()->updateOrCreate(
-                ['id' => $variantData['id'] ?? null], // Điều kiện để tìm, nếu có 'id' thì update, không thì create
+                ['id' => $variantData['id'] ?? null],
                 $payload
             );
 
             $submittedVariantIds[] = $variant->id;
 
-            // 1. Đồng bộ tồn kho chi tiết
-            $this->syncVariantInventory($variant, $inventoriesData);
+            // **ĐÃ VÔ HIỆU HÓA LOGIC KHO**
+            // $this->syncVariantInventory($variant, $variantData['inventories'] ?? []);
 
-            // 2. Đồng bộ giá trị thuộc tính
             if (!empty($variantData['attributes'])) {
                 $variant->attributeValues()->sync(array_values($variantData['attributes']));
             } else {
                 $variant->attributeValues()->detach();
             }
 
-            // 3. Đồng bộ ảnh của biến thể
             $this->syncVariantImages($variant, $variantData['image_ids'] ?? []);
-
-            // 4. Đồng bộ thông số kỹ thuật
             $saveSpecifications($variant, $specificationsData);
 
-            // 5. Xác định biến thể mặc định
             if ($request->input("variant_is_default_radio_group") == $key) {
                 $defaultVariantCandidateId = $variant->id;
             }
         }
 
-        // Xóa các biến thể không còn tồn tại trên form
         $variantsToDelete = array_diff($existingVariantIds, $submittedVariantIds);
         if (!empty($variantsToDelete)) {
-            // Dọn dẹp các file và quan hệ liên quan trước khi xóa
             UploadedFile::where('attachable_type', ProductVariant::class)
                 ->whereIn('attachable_id', $variantsToDelete)
                 ->update(['attachable_id' => null, 'attachable_type' => null]);
             
             DB::table('product_variant_specification')->whereIn('product_variant_id', $variantsToDelete)->delete();
             DB::table('product_variant_attribute_values')->whereIn('product_variant_id', $variantsToDelete)->delete();
+            // Giữ lại để dọn dẹp data cũ nếu có
             DB::table('product_inventories')->whereIn('product_variant_id', $variantsToDelete)->delete();
 
             ProductVariant::destroy($variantsToDelete);
         }
 
-        // Cập nhật lại biến thể mặc định cho toàn bộ sản phẩm
         $product->refresh();
         if ($product->variants->isNotEmpty()) {
-            $product->variants->each(fn($v) => $v->update(['is_default' => false]));
+            $product->variants->each(fn ($v) => $v->update(['is_default' => false]));
             $defaultVariant = $product->variants->find($defaultVariantCandidateId) ?? $product->variants->first();
             if ($defaultVariant) {
                 $defaultVariant->update(['is_default' => true]);
@@ -514,34 +524,14 @@ class ProductController extends Controller
     }
 
     /**
-     * HÀM HELPER: Đồng bộ tồn kho chi tiết cho một biến thể sản phẩm.
+     * HÀM NÀY KHÔNG CÒN ĐƯỢC GỌI TỪ STORE/UPDATE NỮA
+     * Nó có thể sẽ được sử dụng bởi các module kho sau này.
+     * Vì vậy, ta chỉ vô hiệu hóa nội dung bên trong.
      */
     private function syncVariantInventory(ProductVariant $variant, array $inventories)
     {
-        if (empty($inventories)) {
-            // Nếu không có dữ liệu tồn kho gửi lên, có thể xóa hết tồn kho cũ
-            $variant->inventories()->delete();
-            return;
-        }
-
-        $submittedTypes = [];
-        foreach ($inventories as $type => $quantity) {
-            $quantity = (int) $quantity;
-            $submittedTypes[] = $type;
-
-            if ($quantity > 0) {
-                $variant->inventories()->updateOrCreate(
-                    ['inventory_type' => $type], // Điều kiện tìm kiếm
-                    ['quantity' => $quantity]     // Dữ liệu để cập nhật hoặc tạo mới
-                );
-            } else {
-                // Nếu số lượng là 0 hoặc không có, xóa bản ghi tồn kho đó đi
-                $variant->inventories()->where('inventory_type', $type)->delete();
-            }
-        }
-        
-        // Xóa các loại tồn kho không được gửi lên (ví dụ: trước đó có hàng 'used', giờ không có)
-        $variant->inventories()->whereNotIn('inventory_type', $submittedTypes)->delete();
+        // This function is now decoupled from product creation/update.
+        // It can be used by other inventory management modules like Purchase Orders, Stocktakes, etc.
     }
 
     /**
@@ -549,10 +539,11 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        $this->authorize('delete', $product);
         try {
             $product->status = 'trashed';
             $product->save();
-            $product->delete();
+            $product->delete(); // This performs the soft delete
             return redirect()->route('admin.products.index')->with('success', 'Sản phẩm đã được chuyển vào thùng rác.');
         } catch (\Exception $e) {
             Log::error("Lỗi khi chuyển sản phẩm vào thùng rác ID {$product->id}: " . $e->getMessage());
@@ -568,7 +559,7 @@ class ProductController extends Controller
         $this->authorize('viewTrash', Product::class);
         $query = Product::onlyTrashed()->with([
             'category',
-            'variants' => fn($q) => $q->orderBy('is_default', 'desc'),
+            'variants' => fn ($q) => $q->orderBy('is_default', 'desc'),
             'variants.primaryImage',
             'coverImage',
             'deletedBy'
@@ -602,7 +593,7 @@ class ProductController extends Controller
         $this->authorize('restore', $product);
         try {
             $product->restore();
-            $product->status = 'draft';
+            $product->status = 'draft'; // Set status back to draft after restoring
             $product->save();
             return redirect()->route('admin.products.trash')->with('success', 'Sản phẩm "' . $product->name . '" đã được khôi phục.');
         } catch (\Exception $e) {
@@ -618,6 +609,7 @@ class ProductController extends Controller
     {
         $product = Product::onlyTrashed()->findOrFail($id);
         $this->authorize('forceDelete', $product);
+        // The forceDeleting event in the Product model will handle related data cleanup.
         $product->forceDelete();
         return redirect()->route('admin.products.trash')->with('success', 'Sản phẩm đã được xóa vĩnh viễn.');
     }

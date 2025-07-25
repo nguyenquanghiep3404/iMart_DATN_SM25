@@ -42,36 +42,42 @@
                         <tbody class="align-middle">
 
                             <!-- Item -->
+                            {{-- Trong file resources/views/users/cart/layout/main.blade.php --}}
+
+
                             @foreach ($items as $item)
                                 {{-- <pre>
-                                    @dd($item)
-                            </pre> --}}
+        @dd($item)
+    </pre> --}}
                                 @php
-                                    $isNewProduct = $item['cartable_type'] === \App\Models\ProductVariant::class;
-                                    $productSlug = $item['slug'] ?? '';
+                                    // Dùng cú pháp object ->
+                                    $isNewProduct = $item->cartable_type === \App\Models\ProductVariant::class;
+                                    $productSlug = $item->slug ?? '';
+
                                     $productLink = $isNewProduct
-                                        ? route('users.products.show', $productSlug) . '?variant_id=' . $item['id']
-                                        : route('users.tradeins.show', $productSlug); // giả sử route này có cho hàng cũ
+                                        ? route('users.products.show', [
+                                            'slug' => $productSlug,
+                                            'variant_id' => $item->id,
+                                        ])
+                                        : route('users.tradeins.show', ['slug' => $productSlug]); // giả sử route này có cho hàng cũ
                                 @endphp
 
-                                <tr data-item-id="{{ $item['id'] }}" data-stock="{{ $item['stock_quantity'] }}">
+                                <tr data-item-id="{{ $item->id }}" data-stock="{{ $item->stock_quantity }}">
                                     <td class="py-3 ps-0">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ asset($item['image'] ?: 'path/to/default.jpg') }}"
-                                                alt="Ảnh sản phẩm" width="90" height="90">
+                                            <img src="{{ asset($item->image ?: 'path/to/default.jpg') }}" alt="Ảnh sản phẩm"
+                                                width="90" height="90">
 
                                             <div class="w-100 min-w-0 ps-2 ps-xl-3">
                                                 @php
+                                                    // Dùng cú pháp object ->
                                                     $isNewProduct =
-                                                        $item['cartable_type'] === \App\Models\ProductVariant::class;
+                                                        $item->cartable_type === \App\Models\ProductVariant::class;
                                                 @endphp
 
                                                 <h5 class="d-flex align-items-center animate-underline mb-2">
-                                                    <a
-                                                        href="{{ $isNewProduct
-                                                            ? route('users.products.show', $item['slug']) . '?variant_id=' . $item['id']
-                                                            : route('users.tradeins.show', $item['slug']) }}">
-                                                        {{ $item['name'] }}
+                                                    <a href="{{ $productLink }}">
+                                                        {{ $item->name }}
                                                     </a>
 
                                                     {{-- Hiển thị loại sản phẩm --}}
@@ -82,11 +88,10 @@
                                                     @endif
                                                 </h5>
 
-
                                                 {{-- Thuộc tính biến thể (chỉ có với hàng mới) --}}
-                                                @if ($isNewProduct && !empty($item['variant_attributes']))
+                                                @if ($isNewProduct && !empty($item->variant_attributes))
                                                     <ul class="list-unstyled gap-1 fs-xs mb-0">
-                                                        @foreach ($item['variant_attributes'] as $attrName => $attrValue)
+                                                        @foreach ($item->variant_attributes as $attrName => $attrValue)
                                                             <li>
                                                                 <span
                                                                     class="text-body-secondary">{{ $attrName }}:</span>
@@ -103,7 +108,7 @@
                                                         <i class="ci-minus"></i>
                                                     </button>
                                                     <input type="number" class="form-control form-control-sm"
-                                                        value="{{ $item['quantity'] }}" readonly>
+                                                        value="{{ $item->quantity }}" readonly>
                                                     <button type="button" class="btn btn-sm btn-icon" data-increment=""
                                                         aria-label="Increment quantity">
                                                         <i class="ci-plus"></i>
@@ -114,7 +119,7 @@
                                     </td>
 
                                     <td class="h6 py-3 d-none d-xl-table-cell">
-                                        {{ number_format($item['price'], 0, ',', '.') }}đ
+                                        {{ number_format($item->price, 0, ',', '.') }}đ
                                     </td>
 
                                     <td class="py-3 d-none d-md-table-cell">
@@ -123,10 +128,9 @@
                                                 aria-label="Decrement quantity">
                                                 <i class="ci-minus"></i>
                                             </button>
-                                            <input type="number"
-                                                class="form-control quantity-input text-center full-cart-input"
-                                                data-item-id="{{ $item['id'] }}" value="{{ $item['quantity'] }}"
-                                                min="1" max="{{ $item['stock_quantity'] }}">
+                                            <input type="number" class="form-control quantity-input text-center"
+                                                value="{{ $item->quantity }}" min="1"
+                                                max="{{ $item->stock_quantity }}">
                                             <button type="button" class="btn btn-icon btn-increment"
                                                 aria-label="Increment quantity">
                                                 <i class="ci-plus"></i>
@@ -134,15 +138,14 @@
                                         </div>
                                     </td>
 
-
                                     <td class="h6 py-3 d-none d-xl-table-cell item-subtotal"
-                                        data-price="{{ $item['price'] }}">
-                                        {{ number_format($item['price'] * $item['quantity'], 0, ',', '.') }}đ
+                                        data-price="{{ $item->price }}">
+                                        {{ number_format($item->price * $item->quantity, 0, ',', '.') }}đ
                                     </td>
 
                                     <td class="text-end py-3 px-0">
                                         <button type="button" class="btn-close fs-sm btn-remove-item"
-                                            data-id="{{ $item['id'] }}" data-bs-toggle="tooltip"
+                                            data-id="{{ $item->id }}" data-bs-toggle="tooltip"
                                             data-bs-custom-class="tooltip-sm" data-bs-title="Remove"
                                             aria-label="Remove from cart">
                                         </button>

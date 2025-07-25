@@ -39,7 +39,6 @@ class ProductRequest extends FormRequest
 
         // --- Rules based on Product Type ---
         if ($this->input('type') === 'simple') {
-            // Khi cập nhật, cần tìm ID của biến thể duy nhất để bỏ qua khi kiểm tra SKU
             $variantIdToIgnore = null;
             if ($product && $product->type === 'simple' && $product->variants->first()) {
                 $variantIdToIgnore = $product->variants->first()->id;
@@ -57,38 +56,36 @@ class ProductRequest extends FormRequest
                     'max:255',
                     Rule::unique('product_variants', 'sku')->ignore($variantIdToIgnore)
                 ],
-                // SỬA ĐỔI: Validation cho tồn kho chi tiết của sản phẩm đơn giản để khớp với view
-                'simple_inventories' => ['required', 'array'],
-                'simple_inventories.new' => ['required', 'integer', 'min:0'],
-                'simple_inventories.defective' => ['nullable', 'integer', 'min:0'],
+                // **ĐÃ XÓA CÁC QUY TẮC VỀ TỒN KHO**
             ]);
         }
 
         if ($this->input('type') === 'variable') {
-            $rules = array_merge($rules, [
-                'variants' => 'required|array|min:1',
-                'variants.*.id' => 'nullable|integer|exists:product_variants,id',
-                'variants.*.price' => 'required|nullable|numeric|min:0',
-                'variants.*.sale_price' => 'nullable|numeric|min:0|lte:variants.*.price',
-                'variants.*.sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
-                'variants.*.sale_price_ends_at' => ['nullable', 'date', 'after:variants.*.sale_price_starts_at'],
-                'variants.*.attributes' => 'required|array|min:1',
-                'variants.*.attributes.*' => 'required|integer|exists:attribute_values,id',
-                'variants.*.sku' => [
-                    'required',
-                    'string',
-                    'max:255',
-                    'distinct:ignore_case', // Kiểm tra trùng lặp SKU trong chính request
-                ],
-                // SỬA ĐỔI: Validation cho tồn kho chi tiết của biến thể để khớp với view
-                'variants.*.inventories' => ['required', 'array'],
-                'variants.*.inventories.new' => ['required', 'integer', 'min:0'],
-                'variants.*.inventories.defective' => ['nullable', 'integer', 'min:0'],
-            ]);
+            if (!$this->has('variants') || !is_array($this->input('variants')) || count($this->input('variants')) === 0) {
+                $rules['variants'] = 'required|array|min:1';
+            } else {
+                $rules = array_merge($rules, [
+                    'variants.*.id' => 'nullable|integer|exists:product_variants,id',
+                    'variants.*.price' => 'required|numeric|min:0',
+                    'variants.*.sale_price' => 'nullable|numeric|min:0|lte:variants.*.price',
+                    'variants.*.sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
+                    'variants.*.sale_price_ends_at' => ['nullable', 'date', 'after:variants.*.sale_price_starts_at'],
+                    'variants.*.attributes' => 'required|array|min:1',
+                    'variants.*.attributes.*' => 'required|integer|exists:attribute_values,id',
+                    'variants.*.sku' => [
+                        'required',
+                        'string',
+                        'max:255',
+                        'distinct:ignore_case',
+                    ],
+                    // **ĐÃ XÓA CÁC QUY TẮC VỀ TỒN KHO**
+                ]);
+            }
         }
 
         return $rules;
     }
+
 
     /**
      * Configure the validator instance.
@@ -154,10 +151,8 @@ class ProductRequest extends FormRequest
             'simple_sale_price.lte' => 'Giá khuyến mãi phải nhỏ hơn hoặc bằng giá gốc.',
             'simple_sale_price_starts_at.after_or_equal' => 'Thời gian bắt đầu khuyến mãi không được là ngày trong quá khứ.',
             'simple_sale_price_ends_at.after' => 'Thời gian kết thúc khuyến mãi phải sau thời gian bắt đầu.',
-            'simple_inventories.new.required' => 'Tồn kho "Hàng mới" không được để trống.',
-            'simple_inventories.new.min' => 'Tồn kho "Hàng mới" phải là số không âm.',
-            'simple_inventories.defective.min' => 'Tồn kho "Hàng lỗi" phải là số không âm.',
-
+            
+            // **ĐÃ XÓA CÁC THÔNG BÁO LỖI VỀ TỒN KHO**
 
             // Variants Messages
             'variants.required' => 'Sản phẩm có biến thể phải có ít nhất một biến thể.',
@@ -166,9 +161,6 @@ class ProductRequest extends FormRequest
             'variants.*.sku.distinct' => 'SKU của các biến thể trong form không được trùng nhau.',
             'variants.*.price.required' => 'Giá của biến thể không được để trống.',
             'variants.*.sale_price.lte' => 'Giá khuyến mãi của biến thể phải nhỏ hơn hoặc bằng giá gốc.',
-            'variants.*.inventories.new.required' => 'Tồn kho "Hàng mới" của biến thể không được để trống.',
-            'variants.*.inventories.new.min' => 'Tồn kho "Hàng mới" của biến thể phải là số không âm.',
-            'variants.*.inventories.defective.min' => 'Tồn kho "Hàng lỗi" của biến thể phải là số không âm.',
             'variants.*.attributes.required' => 'Mỗi biến thể phải có ít nhất một thuộc tính.',
             'variants.*.attributes.min' => 'Mỗi biến thể phải có ít nhất một thuộc tính.',
             'variants.*.sale_price_starts_at.after_or_equal' => 'Thời gian bắt đầu khuyến mãi của biến thể không được là ngày trong quá khứ.',
