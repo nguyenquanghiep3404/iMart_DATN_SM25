@@ -68,7 +68,7 @@ class ReviewController extends Controller
             'title'              => 'nullable|string|max:255',
             'comment'            => 'required|string|min:5',
             'media'              => 'nullable|array|max:6',
-            'media.*'            => 'file|mimes:jpg,jpeg,png,gif,mp4,webm,mov|max:10240', // tối đa 10MB
+            'media.*'            => 'file|mimes:jpg,jpeg,png,gif,mp4,webm,mov|max:10240',
         ]);
 
         if ($validator->fails()) {

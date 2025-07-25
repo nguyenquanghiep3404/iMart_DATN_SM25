@@ -44,6 +44,9 @@
     } elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
         $activeParentNav = 19; // Index của "quản lý trang chủ"
     }
+    elseif (str_starts_with($currentRouteName, 'admin.suppliers.')) {
+        $activeParentNav = 20; // Index của "Quản lý nhà cung cấp"
+    }
     // Thêm các điều kiện khác nếu cần
 @endphp
 
@@ -679,7 +682,83 @@
                         </a>
                     </li>
                 </ul>
-                </li>
+            </li>
+            {{-- 10. Quản lý comment --}}
+            <li>
+                @php $isCommentsActive = request()->routeIs('admin.comment.*'); @endphp
+                <a href="{{ route('admin.comment.index') }}"
+                    class="group flex items-center px-4 py-2.5
+                        text-base rounded-md transition-all duration-200 ease-in-out
+                        {{ $isCommentsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                    <span
+                        class="mr-3 text-lg {{ $isCommentsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
+                            fill="currentColor">
+                            <path
+                                d="M21,2H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V3A1,1,0,0,0,21,2ZM4,4H20V16H4ZM4,20V18H20v2Z" />
+                            <path d="M12.5,11.5a1,1,0,1,0-1-1A.999.999,0,0,0,12.5,11.5Z" />
+                            <path d="M6,6H8V8H6Z" />
+                        </svg>
+                    </span>
+                    Quản lý comment
+                </a>
+            </li>
+
+            {{-- 10. Quản lý trang chủ --}}
+<li>
+    @php $isHomepagesActive = request()->routeIs('admin.homepage.*'); @endphp
+    <a href="{{ route('admin.homepage.index') }}"
+        class="group flex items-center px-4 py-2.5
+            text-base rounded-md transition-all duration-200 ease-in-out
+            {{ $isHomepagesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+        <span
+            class="mr-3 text-lg {{ $isHomepagesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+            {{-- Icon mới: hình ngôi nhà --}}
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 9.857L12 3l9 6.857v9.286A1.857 1.857 0 0 1 19.143 21H4.857A1.857 1.857 0 0 1 3 19.143V9.857Zm9-4.714L5.571 10.5v8.643h12.858V10.5L12 5.143Zm-2.571 7.786h5.143v5.143H9.429v-5.143Z" />
+            </svg>
+        </span>
+        Quản lý trang chủ
+    </a>
+</li>
+
+   {{-- 10. Quản lý Flash-Sales --}}
+<li>
+    @php $isSalesActive = request()->routeIs('admin.flash-sales.*'); @endphp
+    <a href="{{ route('admin.flash-sales.index') }}"
+        class="group flex items-center px-4 py-2.5
+            text-base rounded-md transition-all duration-200 ease-in-out
+            {{ $isSalesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+        <span
+            class="mr-3 text-lg {{ $isSalesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+            {{-- Icon mới: hình ngôi nhà --}}
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M7 2v11h3v9l7-12h-4l3-8z"/>
+            </svg>
+        </span>
+        Quản lý Flash Sales
+    </a>
+</li>
+
+   {{-- 10. Quản lý nhà cung cấp --}}
+
+<li>
+    @php $isSuppliersActive = request()->routeIs('admin.suppliers.*'); @endphp
+    <a href="{{ route('admin.suppliers.index') }}"
+        class="group flex items-center px-4 py-2.5
+            text-base rounded-md transition-all duration-200 ease-in-out
+            {{ $isSuppliersActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+        <span
+            class="mr-3 text-lg {{ $isSuppliersActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+            {{-- Icon mới: hình ngôi nhà --}}
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M3 9.857L12 3l9 6.857v9.286A1.857 1.857 0 0 1 19.143 21H4.857A1.857 1.857 0 0 1 3 19.143V9.857Zm9-4.714L5.571 10.5v8.643h12.858V10.5L12 5.143Zm-2.571 7.786h5.143v5.143H9.429v-5.143Z" />
+            </svg>
+        </span>
+        Quản lý nhà cung cấp
+    </a>
+</li>
+
             </ul>
 
             {{-- Phần Cài đặt & Trang phụ (Giữ nguyên) --}}
