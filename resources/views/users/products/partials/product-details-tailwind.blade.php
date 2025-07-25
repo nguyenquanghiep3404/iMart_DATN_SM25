@@ -248,18 +248,18 @@
                 <div class="border-b border-gray-200 py-4">
                     <div class="flex items-start gap-4">
                         {{-- Avatar --}}
-                       @if ($review->user && $review->user->avatar_url)
-    <img src="{{ $review->user->avatar_url }}" alt="{{ $review->user->name }}" class="w-10 h-10 rounded-full object-cover">
-@elseif ($review->user)
-    <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
-        {{ strtoupper(mb_substr($review->user->name, 0, 1)) }}
-    </div>
-@else
-    {{-- Với khách chưa đăng ký --}}
-    <div class="w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
-        K
-    </div>
-@endif
+                        @if ($review->user && $review->user->avatar_url)
+                        <img src="{{ $review->user->avatar_url }}" alt="{{ $review->user->name }}" class="w-10 h-10 rounded-full object-cover">
+                        @elseif ($review->user)
+                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
+                            {{ strtoupper(mb_substr($review->user->name, 0, 1)) }}
+                        </div>
+                        @else
+                        {{-- Với khách chưa đăng ký --}}
+                        <div class="w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
+                            K
+                        </div>
+                        @endif
                         <div class="flex-1">
                             <p class="font-semibold text-gray-800">{{ optional($review->user)->name ?? 'Khách vãng lai' }}</p>
 
@@ -277,15 +277,22 @@
                             <p class="text-sm text-gray-600 review-text">{{ $review->comment }}</p>
 
                             {{-- Ảnh review --}}
-                            @if ($review->images->count())
-                            <div class="flex gap-2 mt-2 flex-wrap">
-                                @foreach ($review->images as $image)
-                                <a href="{{ Storage::url($image->path) }}" target="_blank" class="block">
-                                    <img src="{{ Storage::url($image->path) }}" alt="Ảnh đánh giá" class="w-20 h-20 rounded-md object-cover border border-gray-200">
+                            <div class="flex flex-wrap gap-3 mt-3">
+                                @foreach ($review->images as $media)
+                                @if (str_starts_with($media->mime_type, 'image/'))
+                                <a href="{{ Storage::url($media->path) }}" target="_blank" class="block">
+                                    <img src="{{ Storage::url($media->path) }}"
+                                        alt="Ảnh đánh giá"
+                                        class="w-24 h-24 rounded-md object-cover border border-gray-200">
                                 </a>
+                                @elseif (str_starts_with($media->mime_type, 'video/'))
+                                <video controls class="w-64 rounded border border-gray-300">
+                                    <source src="{{ Storage::url($media->path) }}" type="{{ $media->mime_type }}">
+                                    Trình duyệt không hỗ trợ video.
+                                </video>
+                                @endif
                                 @endforeach
                             </div>
-                            @endif
 
                             <span class="text-xs text-gray-500 mt-2 flex items-center gap-4">{{ $review->created_at->diffForHumans() }}</span>
 
@@ -445,11 +452,13 @@
                         </svg>
                         <div class="flex text-sm text-gray-600"><label for="file-upload"
                                 class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"><span>Tải
-                                    lên một file</span><input id="file-upload" name="file-upload" type="file"
-                                    class="sr-only" multiple></label>
+                                    lên một file</span><input id="file-upload" name="media[]" type="file" class="sr-only" multiple accept="image/*,video/*">
+
+                            </label>
                             <p class="pl-1">hoặc kéo và thả</p>
                         </div>
                         <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                        <div id="preview-images" class="flex flex-wrap gap-3 mt-3"></div>
                     </div>
                 </div>
             </div>
@@ -518,6 +527,7 @@
                     class="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
                     rows="4"></textarea>
             </div>
+
             <div>
                 <label class="font-semibold text-gray-700">Thêm hình ảnh/video</label>
                 <div
@@ -538,10 +548,11 @@
                         <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                     </div>
                 </div>
+                 <div id="preview-images-guest" class="flex flex-wrap gap-3 mt-3"></div>
             </div>
             <!-- Hidden input để JS gán giá trị -->
-<input type="hidden" id="order_item_id_guest" name="order_item_id_guest">
-<input type="hidden" id="product_variant_id_guest" name="product_variant_id_guest">
+            <input type="hidden" id="order_item_id_guest" name="order_item_id_guest">
+            <input type="hidden" id="product_variant_id_guest" name="product_variant_id_guest">
 
             <div class="text-right">
                 <button id="submit-review-btn-guest"
@@ -596,19 +607,19 @@
                 })
                 .then(res => res.json())
                 .then(data => {
-    if (!data.success || !data.items || data.items.length === 0) {
-        toastr.warning(data.message || 'Không tìm thấy đơn hàng hợp lệ.');
-        return;
-    }
+                    if (!data.success || !data.items || data.items.length === 0) {
+                        toastr.warning(data.message || 'Không tìm thấy đơn hàng hợp lệ.');
+                        return;
+                    }
 
-    const modalContent = document.getElementById('verifyModalContent');
-    const verifiedProductsSection = document.getElementById('verifiedProductsSection');
-    const productList = document.getElementById('productList');
-    productList.innerHTML = ''; // Clear trước
+                    const modalContent = document.getElementById('verifyModalContent');
+                    const verifiedProductsSection = document.getElementById('verifiedProductsSection');
+                    const productList = document.getElementById('productList');
+                    productList.innerHTML = ''; // Clear trước
 
-    // Render từng item
-    data.items.forEach(item => {
-        const productHTML = `
+                    // Render từng item
+                    data.items.forEach(item => {
+                        const productHTML = `
             <div class="border p-4 rounded-lg flex items-center justify-between shadow-sm bg-gray-50">
                 <div class="flex items-center space-x-4">
                     <img src="${item.image_url || '/images/no-image.png'}"
@@ -627,15 +638,15 @@
             </button>
             </div>
         `;
-        productList.innerHTML += productHTML;
-    });
+                        productList.innerHTML += productHTML;
+                    });
 
-    // Ẩn modal xác minh ban đầu
-    document.getElementById('guestReviewVerifyModal').classList.add('hidden');
+                    // Ẩn modal xác minh ban đầu
+                    document.getElementById('guestReviewVerifyModal').classList.add('hidden');
 
-    // Hiện modal chọn sản phẩm
-    verifiedProductsSection.classList.remove('hidden');
-});
+                    // Hiện modal chọn sản phẩm
+                    verifiedProductsSection.classList.remove('hidden');
+                });
 
 
         });
@@ -729,137 +740,187 @@
     }
 
     // Đánh giá sản phẩm (sao + comment + modal)
-    function initReviewModal() {
-        const writeBtn = document.getElementById('write-review-btn');
-        const modal = document.getElementById('review-modal');
-        const closeBtn = document.getElementById('close-review-modal-btn');
-        const starsContainer = document.getElementById('review-stars-container');
-        const submitBtn = document.getElementById('submit-review-btn');
-        const reviewText = document.getElementById('review-text');
-        const fileInput = document.getElementById('file-upload');
-        let selectedRating = 0;
-        if (!writeBtn || !modal || !closeBtn || !starsContainer) return;
+function initReviewModal() {
+    const writeBtn = document.getElementById('write-review-btn');
+    const modal = document.getElementById('review-modal');
+    const closeBtn = document.getElementById('close-review-modal-btn');
+    const starsContainer = document.getElementById('review-stars-container');
+    const submitBtn = document.getElementById('submit-review-btn');
+    const reviewText = document.getElementById('review-text');
+    const fileInput = document.getElementById('file-upload');
+    const previewContainer = document.getElementById('preview-images');
+    let selectedRating = 0;
+    let selectedFiles = [];
 
-        starsContainer.innerHTML = '';
-        for (let i = 1; i <= 5; i++) {
-            const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            star.setAttribute('class', 'review-star w-8 h-8 text-gray-300 cursor-pointer transition-colors');
-            star.setAttribute('fill', 'currentColor');
-            star.setAttribute('viewBox', '0 0 20 20');
-            star.dataset.rating = i;
-            star.innerHTML =
-                `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
-            starsContainer.appendChild(star);
-        }
+    if (!writeBtn || !modal || !closeBtn || !starsContainer || !fileInput || !previewContainer) return;
 
-        function showModal(modal) {
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.classList.add('overflow-hidden');
-            setTimeout(() => {
-                modal.classList.add('opacity-100');
-                modal.querySelector('div[class*="transform"]').classList.remove('scale-95');
-            }, 10);
-        }
+    // ⭐ Render sao
+    starsContainer.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+        const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        star.setAttribute('class', 'review-star w-8 h-8 text-gray-300 cursor-pointer transition-colors');
+        star.setAttribute('fill', 'currentColor');
+        star.setAttribute('viewBox', '0 0 20 20');
+        star.dataset.rating = i;
+        star.innerHTML =
+            `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
+        starsContainer.appendChild(star);
+    }
 
-        function hideModal(modal) {
-            document.body.classList.remove('overflow-hidden');
-            modal.classList.remove('opacity-100');
-            modal.querySelector('div[class*="transform"]').classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        }
-
-        const stars = starsContainer.querySelectorAll('.review-star');
-        stars.forEach(star => {
-            star.addEventListener('mouseover', () => {
-                stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star
-                    .dataset.rating));
-            });
-            star.addEventListener('mouseout', () => {
-                stars.forEach(s => {
-                    s.classList.remove('text-yellow-400');
-                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
-                        'text-gray-300');
-                });
-            });
-            star.addEventListener('click', () => {
-                selectedRating = parseInt(star.dataset.rating);
-                stars.forEach(s => {
-                    s.classList.remove('text-yellow-400', 'text-gray-300');
-                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
-                        'text-gray-300');
-                });
+    const stars = starsContainer.querySelectorAll('.review-star');
+    stars.forEach(star => {
+        star.addEventListener('mouseover', () => {
+            stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star.dataset.rating));
+        });
+        star.addEventListener('mouseout', () => {
+            stars.forEach(s => {
+                s.classList.remove('text-yellow-400');
+                s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
             });
         });
+        star.addEventListener('click', () => {
+            selectedRating = parseInt(star.dataset.rating);
+            stars.forEach(s => {
+                s.classList.remove('text-yellow-400', 'text-gray-300');
+                s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
+            });
+        });
+    });
 
-        if (writeBtn) {
-    writeBtn.addEventListener('click', () => {
-        if (IS_LOGGED_IN) {
-            if (ORDER_ITEM_ID !== null) {
-                // Đã đăng nhập và đã mua → mở modal đánh giá
-                showModal(modal);
-            } else {
-                // Đã đăng nhập nhưng chưa mua
-                toastr.warning('Bạn cần mua sản phẩm này và đơn hàng phải được giao để viết đánh giá.');
-            }
-        } else {
-            const verifyModal = document.getElementById('guestReviewVerifyModal');
-              verifyModal.classList.remove('hidden');
+    // ⭐ Hiện modal
+    function showModal(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+        setTimeout(() => {
+            modal.classList.add('opacity-100');
+            modal.querySelector('div[class*="transform"]').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function hideModal(modal) {
+        document.body.classList.remove('overflow-hidden');
+        modal.classList.remove('opacity-100');
+        modal.querySelector('div[class*="transform"]').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+
+            if (writeBtn) {
+            writeBtn.addEventListener('click', () => {
+                if (IS_LOGGED_IN) {
+                    if (ORDER_ITEM_ID !== null) {
+                        // Đã đăng nhập và đã mua → mở modal đánh giá
+                        showModal(modal);
+                    } else {
+                        // Đã đăng nhập nhưng chưa mua
+                        toastr.warning('Bạn cần mua sản phẩm này và đơn hàng phải được giao để viết đánh giá.');
+                    }
+                } else {
+                    const verifyModal = document.getElementById('guestReviewVerifyModal');
+                    verifyModal.classList.remove('hidden');
+                }
+            });
         }
+
+    closeBtn.addEventListener('click', () => hideModal(modal));
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) hideModal(modal);
+    });
+
+    // ⭐ Upload ảnh + preview
+    fileInput.addEventListener('change', function (e) {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            if (selectedFiles.length >= 5) {
+                toastr.warning('Chỉ được upload tối đa 5 file.');
+                return;
+            }
+
+            const exists = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+            if (exists) return;
+
+            selectedFiles.push(file);
+
+            const url = URL.createObjectURL(file);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative w-24 h-24 rounded overflow-hidden border border-gray-300';
+
+            let media;
+            if (file.type.startsWith('image/')) {
+                media = document.createElement('img');
+                media.src = url;
+                media.className = 'w-full h-full object-cover';
+            } else if (file.type.startsWith('video/')) {
+                media = document.createElement('video');
+                media.src = url;
+                media.controls = true;
+                media.className = 'w-full h-full object-cover';
+            } else {
+                return;
+            }
+
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '&times;';
+            removeBtn.className = 'absolute top-0 right-0 bg-white bg-opacity-75 text-red-600 font-bold rounded-bl px-1';
+
+            removeBtn.addEventListener('click', () => {
+                selectedFiles = selectedFiles.filter(f => !(f.name === file.name && f.size === file.size));
+                wrapper.remove();
+            });
+
+            wrapper.appendChild(media);
+            wrapper.appendChild(removeBtn);
+            previewContainer.appendChild(wrapper);
+        });
+
+        // Reset input để chọn lại file trùng
+        e.target.value = '';
+    });
+
+    // ⭐ Gửi đánh giá
+    submitBtn.addEventListener('click', () => {
+        if (!selectedRating) return toastr.warning('Vui lòng chọn số sao');
+        const comment = reviewText?.value.trim();
+
+        const formData = new FormData();
+        formData.append('rating', selectedRating);
+        formData.append('comment', comment);
+        formData.append('product_variant_id', PRODUCT_VARIANT_ID);
+        if (ORDER_ITEM_ID !== null) {
+            formData.append('order_item_id', ORDER_ITEM_ID);
+        }
+
+        selectedFiles.forEach(file => {
+            formData.append('media[]', file);
+        });
+
+        fetch(reviewPostUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Có lỗi xảy ra.');
+                return data;
+            })
+            .then(data => {
+                toastr.success(data.message || 'Đánh giá thành công!');
+                hideModal(modal);
+                setTimeout(() => location.reload(), 1500);
+            })
+            .catch(err => {
+                toastr.error(err.message || 'Lỗi kết nối server');
+            });
     });
 }
 
-        closeBtn.addEventListener('click', () => hideModal(modal));
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) hideModal(modal);
-        });
 
-        submitBtn.addEventListener('click', () => {
-            if (!selectedRating) return toastr.warning('Vui lòng chọn số sao');
-            const comment = reviewText?.value.trim();
-            const files = fileInput?.files;
-
-            const formData = new FormData();
-            formData.append('rating', selectedRating);
-            formData.append('comment', comment);
-            formData.append('product_variant_id', PRODUCT_VARIANT_ID);
-            if (ORDER_ITEM_ID !== null) {
-                formData.append('order_item_id', ORDER_ITEM_ID);
-            }
-
-            if (files) {
-                for (let i = 0; i < files.length && i < 5; i++) {
-                    formData.append('media[]', files[i]);
-                }
-            }
-
-            fetch(reviewPostUrl, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json',
-                    },
-                    body: formData
-                })
-                .then(async res => {
-                    const data = await res.json();
-                    if (!res.ok) {
-                        throw new Error(data.message || 'Có lỗi xảy ra.');
-                    }
-                    return data;
-                })
-                .then(data => {
-                    toastr.success(data.message || 'Đánh giá thành công!');
-                    hideModal(modal);
-                    setTimeout(() => location.reload(), 1500);
-                })
-                .catch(err => {
-                    toastr.error(err.message || 'Lỗi kết nối server');
-                });
-        });
-    }
     function initGuestReviewModal() {
     const modal = document.getElementById('review-modal-guest');
     const closeBtn = document.getElementById('close-review-modal-guest-btn');
@@ -867,13 +928,15 @@
     const submitBtn = document.getElementById('submit-review-btn-guest');
     const reviewText = document.getElementById('review-text-guest');
     const fileInput = document.getElementById('file-upload-guest');
+    const previewContainer = document.getElementById('preview-images-guest'); // ➕ BẠN PHẢI THÊM DIV này trong HTML
     const inputOrderItemId = document.getElementById('order_item_id_guest');
     const inputProductVariantId = document.getElementById('product_variant_id_guest');
     let selectedRating = 0;
+    let selectedFiles = [];
 
     if (!modal || !closeBtn || !starsContainer) return;
 
-    // Render stars
+    // ⭐ Render stars
     starsContainer.innerHTML = '';
     for (let i = 1; i <= 5; i++) {
         const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -908,6 +971,9 @@
     function showModal() {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
+        selectedFiles = [];
+        previewContainer.innerHTML = '';
+        fileInput.value = '';
         setTimeout(() => {
             modal.classList.add('opacity-100');
             modal.querySelector('div[class*="transform"]').classList.remove('scale-95');
@@ -925,12 +991,61 @@
         if (e.target === modal) hideModal();
     });
 
-    // Gửi đánh giá
+    // ⭐ Upload & preview ảnh/video
+    fileInput?.addEventListener('change', function (e) {
+        const files = Array.from(e.target.files);
+
+        files.forEach(file => {
+            if (selectedFiles.length >= 5) {
+                toastr.warning('Tối đa 5 ảnh/video');
+                return;
+            }
+
+            const exists = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+            if (exists) return;
+
+            selectedFiles.push(file);
+
+            const url = URL.createObjectURL(file);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative w-24 h-24 rounded overflow-hidden border border-gray-300';
+
+            let media;
+            if (file.type.startsWith('image/')) {
+                media = document.createElement('img');
+                media.src = url;
+                media.className = 'w-full h-full object-cover';
+            } else if (file.type.startsWith('video/')) {
+                media = document.createElement('video');
+                media.src = url;
+                media.controls = true;
+                media.className = 'w-full h-full object-cover';
+            } else {
+                return;
+            }
+
+            const removeBtn = document.createElement('button');
+            removeBtn.innerHTML = '&times;';
+            removeBtn.className = 'absolute top-0 right-0 bg-white bg-opacity-75 text-red-600 font-bold rounded-bl px-1';
+
+            removeBtn.addEventListener('click', () => {
+                selectedFiles = selectedFiles.filter(f => !(f.name === file.name && f.size === file.size));
+                wrapper.remove();
+            });
+
+            wrapper.appendChild(media);
+            wrapper.appendChild(removeBtn);
+            previewContainer.appendChild(wrapper);
+        });
+
+        e.target.value = '';
+    });
+
+    // ⭐ Gửi đánh giá khách
     submitBtn.addEventListener('click', () => {
         if (!selectedRating) return toastr.warning('Vui lòng chọn số sao');
 
         const comment = reviewText?.value.trim();
-        const files = fileInput?.files;
         const orderItemId = inputOrderItemId?.value;
         const productVariantId = inputProductVariantId?.value;
 
@@ -946,34 +1061,32 @@
         formData.append('product_variant_id', productVariantId);
         formData.append('guest', true);
 
-        if (files) {
-            for (let i = 0; i < files.length && i < 5; i++) {
-                formData.append('media[]', files[i]);
-            }
-        }
+        selectedFiles.forEach(file => {
+            formData.append('media[]', file);
+        });
 
         fetch(guestReviewPostUrl, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json'
-            },
-            body: formData
-        })
-        .then(async res => {
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Có lỗi xảy ra.');
-            return data;
-        })
-        .then(data => {
-            toastr.success(data.message || 'Đánh giá thành công!');
-            hideModal();
-            setTimeout(() => location.reload(), 1500);
-        })
-        .catch(err => toastr.error(err.message || 'Lỗi kết nối server'));
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Có lỗi xảy ra.');
+                return data;
+            })
+            .then(data => {
+                toastr.success(data.message || 'Đánh giá thành công!');
+                hideModal();
+                setTimeout(() => location.reload(), 1500);
+            })
+            .catch(err => toastr.error(err.message || 'Lỗi kết nối server'));
     });
 
-    // Gắn sự kiện click cho các nút "Viết đánh giá"
+    // Bắt sự kiện khi click nút “Viết đánh giá” cho khách
     document.addEventListener('click', function (e) {
         if (e.target.classList.contains('write-review-btn')) {
             const orderItemId = e.target.dataset.orderItemId;
@@ -988,6 +1101,7 @@
         }
     });
 }
+
 
 
     // Các hàm helper khác
@@ -1011,9 +1125,10 @@
             reviewModal.classList.remove('hidden');
         }
     }
+
     function closeVerifiedProductsSection() {
-    document.getElementById('verifiedProductsSection').classList.add('hidden');
-}
+        document.getElementById('verifiedProductsSection').classList.add('hidden');
+    }
 
 
 

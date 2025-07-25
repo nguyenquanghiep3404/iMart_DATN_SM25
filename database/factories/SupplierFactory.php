@@ -10,7 +10,7 @@ class SupplierFactory extends Factory
             'name' => $this->faker->company . ' Supplier',
             'email' => $this->faker->unique()->companyEmail,
             'phone' => $this->faker->phoneNumber,
-            'address' => $this->faker->address,
+            'address_line' => $this->faker->address,
         ];
     }
 }

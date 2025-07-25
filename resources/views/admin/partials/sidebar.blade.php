@@ -41,9 +41,8 @@
         $activeParentNav = 17; // Index của "quản lý trang chủ"
     } elseif (str_starts_with($currentRouteName, 'admin.abandoned-carts.')) {
         $activeParentNav = 18; // Index của "quản lý giỏ hàng lãng quên"
-    }
-    elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
-        $activeParentNav = 18; // Index của "quản lý trang chủ"
+    } elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
+        $activeParentNav = 19; // Index của "quản lý trang chủ"
     }
     // Thêm các điều kiện khác nếu cần
 @endphp
@@ -512,8 +511,7 @@
                         </li>
                     </ul>
                 </li>
-                {{-- 14. thông số sản phẩm --}}
-                <li>
+                {{-- 14. thông số sản phẩm --}} <li>
                     @php $isSpecificationsSectionActive = request()->routeIs('admin.specifications.*') || request()->routeIs('admin.specification-groups.*'); @endphp
                     <button @click="openNav !== 13 ? openNav = 13 : openNav = null"
                         :class="openNav === 13 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
@@ -616,8 +614,7 @@
                     </a>
                 </li>
                 <li>
-                    @php $isSalesActive = request()->routeIs('admin.abandoned-carts.*'); @endphp
-                    <a href="{{ route('admin.abandoned-carts.index') }}"
+                    @php $isSalesActive = request()->routeIs('admin.abandoned-carts.*'); @endphp <a href="{{ route('admin.abandoned-carts.index') }}"
                         class="group flex items-center px-4 py-2.5
                         text-base rounded-md transition-all duration-200 ease-in-out
                         {{ $isSalesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
@@ -638,6 +635,51 @@
                 </li>
 
 
+
+                @php $isCategoriesActive = request()->routeIs('admin.categories.*'); @endphp
+                <button @click="openNav !== 19 ? openNav = 19 : openNav = null"
+                    :class="openNav === 19 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                        'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                    class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                    <span
+                        class="mr-3 text-lg {{ $isCategoriesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
+                            fill="currentColor">
+                            <path
+                                d="M19,4H9A1,1,0,0,0,8,5V19a1,1,0,0,0,1,1H19a1,1,0,0,0,1-1V5A1,1,0,0,0,19,4ZM18,18H10V6H18ZM6,18H4V6H6ZM14,2H6A3,3,0,0,0,3,5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V14.45A2.83,2.83,0,0,1,14,14a3,3,0,0,1-3-3,3,3,0,0,1,3-3,2.83,2.83,0,0,1,.45,0V5A3,3,0,0,0,14,2Z" />
+                        </svg>
+                    </span>
+                    Quản lý Thu cũ & Mở hộp
+                    <span class="ml-auto transition-transform duration-200 ease-in-out"
+                        :class="openNav === 18 ? 'rotate-90' : ''">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
+                            fill="currentColor">
+                            <path
+                                d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                        </svg>
+                    </span>
+                </button>
+                <ul x-show="openNav === 19" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                    <li>
+                        <a href="{{ route('admin.trade-in-items.index') }}"
+                            class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                            Danh sách danh mục
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.trade-in-items.create') }}"
+                            class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                            Thêm mới danh mục
+                        </a>
+                    </li>
+                    <li>
+                        <a href=""
+                            class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                            Thùng rác
+                        </a>
+                    </li>
+                </ul>
+                </li>
             </ul>
 
             {{-- Phần Cài đặt & Trang phụ (Giữ nguyên) --}}
