@@ -85,7 +85,45 @@
         @endforeach
     @endif
 </div>
-
+<div id="user-info-modal"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4 transition-opacity duration-300">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-transform duration-300 scale-95">
+        <div class="flex justify-between items-center p-4 border-b flex-shrink-0">
+            <h3 class="text-xl font-bold text-gray-900">Thông tin người gửi</h3>
+            <button id="close-user-info-modal-btn"
+                class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
+        </div>
+        <div class="p-6 space-y-4 flex-grow">
+            <div class="flex gap-4">
+                <label class="flex items-center"><input type="radio" name="gender" value="Anh"
+                        class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500" checked> <span
+                        class="ml-2">Anh</span></label>
+                <label class="flex items-center"><input type="radio" name="gender" value="Chị"
+                        class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"> <span
+                        class="ml-2">Chị</span></label>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="guest-name" placeholder="Nhập họ và tên"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <input type="tel" id="guest-phone" placeholder="Nhập số điện thoại"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <input type="email" id="guest-email" placeholder="Nhập Email (nhận thông báo phản hồi)"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="p-6 bg-white border-t flex-shrink-0">
+            <label class="flex items-center text-sm text-gray-600">
+                <input id="terms-checkbox" type="checkbox"
+                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <span class="ml-2">Tôi đồng ý với điều khoản dịch vụ, chính sách thu thập và xử lý dữ liệu cá nhân của
+                    Shop</span>
+            </label>
+            <button id="qna-complete-btn"
+                class="mt-4 w-full bg-gray-300 text-gray-500 font-semibold py-3 rounded-lg cursor-not-allowed"
+                disabled>Hoàn tất</button>
+        </div>
+    </div>
+</div>
 <script>
     const csrfToken = '{{ csrf_token() }}';
 

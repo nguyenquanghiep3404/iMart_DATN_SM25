@@ -37,12 +37,21 @@ use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\AbandonedCartController;
 use App\Http\Controllers\Admin\TradeInItemController;
 use App\Notifications\GuestOrderConfirmation;
 use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\GuestReviewController;
+use App\Mail\AbandonedCartMail;
+use Illuminate\Support\Facades\Mail;
+use App\Models\AbandonedCart;
+use App\Http\Controllers\Users\CartRecoveryController;
 
-
+// router khôi phục giỏ hàng
+Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
+Route::get('/cart/recover-result', function () {
+    return view('users.cart.recover_result');
+})->name('cart.recover_result');
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
@@ -347,7 +356,27 @@ Route::prefix('admin')
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
         Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
 
-
+        // quản lý giỏ hàng lãng quên
+        Route::get('/abandoned-carts', [AbandonedCartController::class, 'index'])->name('abandoned-carts.index');
+        Route::get('/admin/abandoned-carts/{id}', [AbandonedCartController::class, 'show'])
+        ->name('abandoned_carts.show');
+        Route::post('abandoned-carts/send-inapp/{cart}', [AbandonedCartController::class, 'sendInApp'])
+        ->name('abandoned_carts.send_inapp');
+        Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
+        ->name('abandoned_carts.send_email');
+        Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
+            $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
+        
+            $email = $abandonedCart->user->email ?? $abandonedCart->guest_email;
+        
+            Mail::to($email)->send(new AbandonedCartMail($abandonedCart));
+        
+            return 'Email đã được gửi.';
+        });
+        
+        
+        
+        
 
         // Banner routes
 
