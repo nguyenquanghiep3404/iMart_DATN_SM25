@@ -1,4 +1,4 @@
-@extends('admin.comments.layouts.main')
+@extends('admin.layouts.app')
 
 @section('content')
     @include('admin.abandoned_carts.css.style')

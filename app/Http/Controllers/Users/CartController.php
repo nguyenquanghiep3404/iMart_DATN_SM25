@@ -18,93 +18,99 @@ use Illuminate\Support\Facades\Auth;
 class CartController extends Controller
 {
     public function index()
-{
-    $user = auth()->user();
-    $items = collect();
+    {
+        $user = auth()->user();
+        $items = collect();
 
-    if ($user && $user->cart) {
-        // Load cart items từ DB cho user đã đăng nhập
-        $items = $user->cart->items()
-            ->with('cartable.product', 'cartable.attributeValues.attribute')
-            ->get()
-            ->filter(fn($item) => $item->cartable && $item->cartable->product)
-            ->map(function ($item) {
-                $variant = $item->cartable;
-                $attributes = $variant->attributeValues->mapWithKeys(function ($attrVal) {
-                    return [$attrVal->attribute->name => $attrVal->value];
+        if ($user && $user->cart) {
+            // Load cart items từ DB cho user đã đăng nhập
+            $items = $user->cart->items()
+                ->with('cartable.product', 'cartable.attributeValues.attribute')
+                ->get()
+                ->filter(fn($item) => $item->cartable && $item->cartable->product)
+                ->map(function ($item) {
+                    $variant = $item->cartable;
+                    $attributes = $variant->attributeValues->mapWithKeys(function ($attrVal) {
+                        return [$attrVal->attribute->name => $attrVal->value];
+                    });
+                    $stockQuantity = \App\Models\ProductInventory::where('product_variant_id', $variant->id)
+                        ->where('inventory_type', 'new')
+                        ->sum('quantity');
+
+                    // SỬA Ở ĐÂY: Thêm (object) để chuyển array thành object
+                    return (object) [
+                        'id' => $item->id,
+                        'name' => $variant->product->name,
+                        'slug' => $variant->product->slug ?? '',
+                        'price' => $item->price,
+                        'quantity' => $item->quantity,
+                        'stock_quantity' => $stockQuantity,
+                        'image' => $variant->image_url ?? '',
+                        'variant_attributes' => $attributes,
+                        'cartable_type' => $item->cartable_type,
+                    ];
                 });
-                $stockQuantity = \App\Models\ProductInventory::where('product_variant_id', $variant->id)
+
+        } else {
+            // User chưa đăng nhập, lấy cart từ session
+            $sessionCart = session('cart', []);
+            $items = collect($sessionCart)->map(function ($data) {
+                if (!isset($data['cartable_type'], $data['cartable_id'])) {
+                    return null;
+                }
+                $cartableType = $data['cartable_type'];
+                $cartableId = $data['cartable_id'];
+                switch ($cartableType) {
+                    case \App\Models\ProductVariant::class:
+                        $cartable = \App\Models\ProductVariant::with(['product', 'attributeValues.attribute'])
+                            ->find($cartableId);
+                        break;
+                    default:
+                        return null;
+                }
+                if (!$cartable || !$cartable->product) {
+                    return null;
+                }
+                $attributes = $cartable->attributeValues->mapWithKeys(fn($attrVal) => [
+                    $attrVal->attribute->name => $attrVal->value
+                ]);
+                $stockQuantity = \App\Models\ProductInventory::where('product_variant_id', $cartable->id)
                     ->where('inventory_type', 'new')
                     ->sum('quantity');
 
                 // SỬA Ở ĐÂY: Thêm (object) để chuyển array thành object
                 return (object) [
-                    'id' => $item->id,
-                    'name' => $variant->product->name,
-                    'slug' => $variant->product->slug ?? '',
-                    'price' => $item->price,
-                    'quantity' => $item->quantity,
+                    'id' => $cartableId,
+                    'name' => $cartable->product->name,
+                    'slug' => $cartable->product->slug ?? '',
+                    'price' => (float)($data['price'] ?? 0),
+                    'quantity' => (int)($data['quantity'] ?? 1),
                     'stock_quantity' => $stockQuantity,
-                    'image' => $variant->image_url ?? '',
+                    'image' => $data['image'] ?? $cartable->image_url ?? '',
                     'variant_attributes' => $attributes,
-                    'cartable_type' => $item->cartable_type,
+                    'cartable_type' => $cartableType,
                 ];
-            });
+            })->filter();
+        }
 
-    } else {
-        // User chưa đăng nhập, lấy cart từ session
-        $sessionCart = session('cart', []);
-        $items = collect($sessionCart)->map(function ($data) {
-            if (!isset($data['cartable_type'], $data['cartable_id'])) {
-                return null;
-            }
-            $cartableType = $data['cartable_type'];
-            $cartableId = $data['cartable_id'];
-            switch ($cartableType) {
-                case \App\Models\ProductVariant::class:
-                    $cartable = \App\Models\ProductVariant::with(['product', 'attributeValues.attribute'])
-                        ->find($cartableId);
-                    break;
-                default:
-                    return null;
-            }
-            if (!$cartable || !$cartable->product) {
-                return null;
-            }
-            $attributes = $cartable->attributeValues->mapWithKeys(fn($attrVal) => [
-                $attrVal->attribute->name => $attrVal->value
-            ]);
-            $stockQuantity = \App\Models\ProductInventory::where('product_variant_id', $cartable->id)
-                ->where('inventory_type', 'new')
-                ->sum('quantity');
+        // Tính tổng tiền trước giảm giá
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity); // Sửa $item['price'] thành $item->price
 
-            // SỬA Ở ĐÂY: Thêm (object) để chuyển array thành object
-            return (object) [
-                'id' => $cartableId,
-                'name' => $cartable->product->name,
-                'slug' => $cartable->product->slug ?? '',
-                'price' => (float)($data['price'] ?? 0),
-                'quantity' => (int)($data['quantity'] ?? 1),
-                'stock_quantity' => $stockQuantity,
-                'image' => $data['image'] ?? $cartable->image_url ?? '',
-                'variant_attributes' => $attributes,
-                'cartable_type' => $cartableType,
-            ];
-        })->filter();
-    }
+        // Lấy thông tin giảm giá (nếu có)
+        $appliedCoupon = session('applied_coupon');
+        $discount = $appliedCoupon['discount'] ?? 0;
+        $voucherCode = $appliedCoupon['code'] ?? null;
 
-    // Tính tổng tiền trước giảm giá
-    $subtotal = $items->sum(fn($item) => $item->price * $item->quantity); // Sửa $item['price'] thành $item->price
-
-    // Lấy thông tin giảm giá (nếu có)
-    $appliedCoupon = session('applied_coupon');
-    $discount = $appliedCoupon['discount'] ?? 0;
-    $voucherCode = $appliedCoupon['code'] ?? null;
-
-    $total = max(0, $subtotal - $discount);
-
-    return view('users.cart.layout.main', compact('items', 'subtotal', 'discount', 'total', 'voucherCode'));
-}   
+        $total = max(0, $subtotal - $discount);
+        // Lấy coupon còn hiệu lực (ví dụ đơn giản)
+        $availableCoupons = Coupon::where('status', 'active')
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->where('is_public', 1)
+            ->where('min_order_amount', '<=', $subtotal)
+            ->get();
+        return view('users.cart.layout.main', compact('items', 'subtotal', 'discount', 'total', 'voucherCode','availableCoupons'));
+    }   
 
     // thêm sản phẩm vào giỏ
     public function add(Request $request)
