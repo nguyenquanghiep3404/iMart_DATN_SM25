@@ -52,7 +52,7 @@ class FlashSaleController extends Controller
     'start_time' => 'required|date',
     'end_time' => 'required|date|after:start_time',
     'banner_image_url' => 'nullable|string',
-    'status' => 'in:scheduled,active,finished,inactive',
+    'status' => 'in:active,inactive',
     'time_slots' => 'nullable|array',
     'time_slots.*.start_time' => 'nullable|date_format:H:i',
     'time_slots.*.end_time' => [
@@ -106,17 +106,98 @@ class FlashSaleController extends Controller
     // Cập nhật Flash Sale
     public function update(Request $request, FlashSale $flashSale)
     {
+        $messages = [
+            'name.required' => 'Vui lòng nhập tên chiến dịch.',
+            'slug.required' => 'Vui lòng nhập slug.',
+            'slug.unique' => 'Slug đã tồn tại. Vui lòng chọn slug khác.',
+            'start_time.required' => 'Vui lòng chọn thời gian bắt đầu.',
+            'start_time.date' => 'Thời gian bắt đầu không hợp lệ.',
+            'end_time.required' => 'Vui lòng chọn thời gian kết thúc.',
+            'end_time.date' => 'Thời gian kết thúc không hợp lệ.',
+            'end_time.after' => 'Thời gian kết thúc phải sau thời gian bắt đầu.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+            'time_slots.array' => 'Khung giờ không hợp lệ.',
+            'time_slots.*.start_time.date_format' => 'Thời gian bắt đầu phải đúng định dạng HH:MM.',
+            'time_slots.*.end_time.date_format' => 'Thời gian kết thúc phải đúng định dạng HH:MM.',
+            'time_slots.*.end_time.after' => 'Thời gian kết thúc phải sau thời gian bắt đầu của cùng khung giờ.',
+        ];
+
         $validated = $request->validate([
             'name' => 'required|string',
             'slug' => 'required|unique:flash_sales,slug,' . $flashSale->id,
             'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
-            'time_slot' => 'nullable|string',
             'banner_image_url' => 'nullable|string',
-            'status' => 'in:scheduled,active,finished,inactive',
+            'status' => 'in:active,inactive',
+            'time_slots' => 'nullable|array',
+            'time_slots.*.id' => 'nullable|integer|exists:flash_sale_time_slots,id',
+            'time_slots.*.start_time' => 'nullable|date_format:H:i',
+            'time_slots.*.end_time' => [
+                'nullable',
+                'date_format:H:i',
+                function ($attribute, $value, $fail) use ($request) {
+                    if (preg_match('/time_slots\\.(\\d+)\\.end_time/', $attribute, $matches)) {
+                        $index = $matches[1];
+                        $start = $request->input("time_slots.$index.start_time");
+                        if ($start && $value && strtotime($value) <= strtotime($start)) {
+                            $fail('Thời gian kết thúc phải sau thời gian bắt đầu của cùng khung giờ.');
+                        }
+                    }
+                },
+            ],
+        ], $messages);
+
+        $flashSale->update([
+            'name' => $validated['name'],
+            'slug' => $validated['slug'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'banner_image_url' => $validated['banner_image_url'] ?? null,
+            'status' => $validated['status'],
         ]);
 
-        $flashSale->update($validated);
+        // Xử lý time_slots
+        $inputSlots = $validated['time_slots'] ?? [];
+        $existingSlotIds = $flashSale->flashSaleTimeSlots()->pluck('id')->toArray();
+        $requestSlotIds = collect($inputSlots)->pluck('id')->filter()->toArray();
+        // Xóa các slot không còn trong request
+        $toDelete = array_diff($existingSlotIds, $requestSlotIds);
+        $cannotDelete = [];
+        if (!empty($toDelete)) {
+            foreach ($toDelete as $slotId) {
+                $slot = $flashSale->flashSaleTimeSlots()->find($slotId);
+                if ($slot && $slot->products()->count() > 0) {
+                    $cannotDelete[] = $slot;
+                } else {
+                    $slot?->delete();
+                }
+            }
+        }
+        // Thêm mới hoặc cập nhật
+        foreach ($inputSlots as $slot) {
+            if (!empty($slot['id'])) {
+                // Update
+                $flashSale->flashSaleTimeSlots()->where('id', $slot['id'])->update([
+                    'start_time' => $slot['start_time'],
+                    'end_time' => $slot['end_time'],
+                ]);
+            } else {
+                // Create
+                $flashSale->flashSaleTimeSlots()->create([
+                    'start_time' => $slot['start_time'],
+                    'end_time' => $slot['end_time'],
+                ]);
+            }
+        }
+
+        if (!empty($cannotDelete)) {
+            $slotTimes = collect($cannotDelete)->map(function($slot) {
+                return ($slot->start_time ? date('H:i', strtotime($slot->start_time)) : '') . ' - ' . ($slot->end_time ? date('H:i', strtotime($slot->end_time)) : '');
+            })->implode(', ');
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['time_slots' => 'Không thể xóa các khung giờ sau vì đã có sản phẩm: ' . $slotTimes]);
+        }
 
         return redirect()->route('admin.flash-sales.index')->with('success', 'Cập nhật Flash Sale thành công!');
     }
