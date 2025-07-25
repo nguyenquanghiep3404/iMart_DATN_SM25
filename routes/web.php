@@ -457,6 +457,9 @@ Route::prefix('admin')
         Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
 
         // Quản lý thu cũ và hàng mở hộp
+        Route::get('trade-in-items/trash', [TradeInItemController::class, 'trash'])->name('trade-in-items.trash');
+        Route::post('trade-in-items/{id}/restore', [TradeInItemController::class, 'restore'])->name('trade-in-items.restore');
+        Route::delete('trade-in-items/{id}/force-delete', [TradeInItemController::class, 'forceDelete'])->name('trade-in-items.force-delete');
         Route::resource('trade-in-items', TradeInItemController::class);
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);

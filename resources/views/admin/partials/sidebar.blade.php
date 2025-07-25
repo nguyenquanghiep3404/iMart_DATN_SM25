@@ -39,9 +39,8 @@
         $activeParentNav = 16; // Index của "quản lý trang chủ"
     } elseif (str_starts_with($currentRouteName, 'admin.flash-sales.')) {
         $activeParentNav = 17; // Index của "quản lý trang chủ"
-    }
-    elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
-        $activeParentNav = 18; // Index của "quản lý trang chủ"
+    } elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
+        $activeParentNav = 18; // Index của "quản lý "
     }
     // Thêm các điều kiện khác nếu cần
 @endphp
@@ -386,7 +385,7 @@
                         </li>
                     </ul>
                 </li>
-                
+
 
                 {{-- 10. Quản lý banner --}}
                 <li>
@@ -505,112 +504,115 @@
                                 class="block w-full py-1.5
                                 px-3 text-sm rounded-md
                                 {{ request()->routeIs('admin.media.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Thùng rác
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            {{-- 14. thông số sản phẩm --}}
-            <li>
-                @php $isSpecificationsSectionActive = request()->routeIs('admin.specifications.*') || request()->routeIs('admin.specification-groups.*'); @endphp
-                <button @click="openNav !== 13 ? openNav = 13 : openNav = null"
-                    :class="openNav === 13 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
-                        'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
-                    class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
-                    <span
-                        class="mr-3 text-lg {{ $isSpecificationsSectionActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        {{-- Icon mới cho thông số --}}
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M21.92,7.62A1,1,0,0,0,21,7H3a1,1,0,0,0,0,2H21a1,1,0,0,0,.92-1.38ZM21.92,15.62A1,1,0,0,0,21,15H3a1,1,0,0,0,0,2H21a1,1,0,0,0,.92-1.38Z" />
-                            <path d="M7,11H3a1,1,0,0,0,0,2H7a1,1,0,0,0,0-2Z" />
-                            <path d="M7,19H3a1,1,0,0,0,0,2H7a1,1,0,0,0,0-2Z" />
-                            <path d="M21,3H3A1,1,0,0,0,3,5H21a1,1,0,0,0,0-2Z" />
-                        </svg>
-                    </span>
-                    Thông số sản phẩm
-                    <span class="ml-auto transition-transform duration-200 ease-in-out"
-                        :class="openNav === 13 ? 'rotate-90' : ''">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
-                            fill="currentColor">
-                            <path
-                                d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
-                        </svg>
-                    </span>
-                </button>
-                <ul x-show="openNav === 13" class="pl-8 pr-2 py-1 space-y-1 mt-1">
-                    <li>
-                        <a href="{{ route('admin.specification-groups.index') }}"
-                            class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.specification-groups.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Nhóm thông số
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('admin.specifications.index') }}"
-                            class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.specifications.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                            Thông số kỹ thuật
-                        </a>
-                    </li>
-                </ul>
-            </li>
-            {{-- 10. Quản lý comment --}}
-            <li>
-                @php $isCommentsActive = request()->routeIs('admin.comment.*'); @endphp
-                <a href="{{ route('admin.comment.index') }}"
-                    class="group flex items-center px-4 py-2.5
+                                Thùng rác
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                {{-- 10. Quản lý comment --}}
+                <li>
+                    @php $isCommentsActive = request()->routeIs('admin.comment.*'); @endphp
+                    <a href="{{ route('admin.comment.index') }}"
+                        class="group flex items-center px-4 py-2.5
                         text-base rounded-md transition-all duration-200 ease-in-out
                         {{ $isCommentsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-                    <span
-                        class="mr-3 text-lg {{ $isCommentsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
-                            fill="currentColor">
-                            <path
-                                d="M21,2H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V3A1,1,0,0,0,21,2ZM4,4H20V16H4ZM4,20V18H20v2Z" />
-                            <path d="M12.5,11.5a1,1,0,1,0-1-1A.999.999,0,0,0,12.5,11.5Z" />
-                            <path d="M6,6H8V8H6Z" />
-                        </svg>
-                    </span>
-                    Quản lý comment
-                </a>
-            </li>
+                        <span
+                            class="mr-3 text-lg {{ $isCommentsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M21,2H3A1,1,0,0,0,2,3V21a1,1,0,0,0,1,1H21a1,1,0,0,0,1-1V3A1,1,0,0,0,21,2ZM4,4H20V16H4ZM4,20V18H20v2Z" />
+                                <path d="M12.5,11.5a1,1,0,1,0-1-1A.999.999,0,0,0,12.5,11.5Z" />
+                                <path d="M6,6H8V8H6Z" />
+                            </svg>
+                        </span>
+                        Quản lý comment
+                    </a>
+                </li>
 
-            {{-- 10. Quản lý trang chủ --}}
-<li>
-    @php $isHomepagesActive = request()->routeIs('admin.homepage.*'); @endphp
-    <a href="{{ route('admin.homepage.index') }}"
-        class="group flex items-center px-4 py-2.5
+                {{-- 10. Quản lý trang chủ --}}
+                <li>
+                    @php $isHomepagesActive = request()->routeIs('admin.homepage.*'); @endphp
+                    <a href="{{ route('admin.homepage.index') }}"
+                        class="group flex items-center px-4 py-2.5
             text-base rounded-md transition-all duration-200 ease-in-out
             {{ $isHomepagesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-        <span
-            class="mr-3 text-lg {{ $isHomepagesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-            {{-- Icon mới: hình ngôi nhà --}}
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3 9.857L12 3l9 6.857v9.286A1.857 1.857 0 0 1 19.143 21H4.857A1.857 1.857 0 0 1 3 19.143V9.857Zm9-4.714L5.571 10.5v8.643h12.858V10.5L12 5.143Zm-2.571 7.786h5.143v5.143H9.429v-5.143Z" />
-            </svg>
-        </span>
-        Quản lý trang chủ
-    </a>
-</li>
+                        <span
+                            class="mr-3 text-lg {{ $isHomepagesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            {{-- Icon mới: hình ngôi nhà --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                fill="currentColor" viewBox="0 0 24 24">
+                                <path
+                                    d="M3 9.857L12 3l9 6.857v9.286A1.857 1.857 0 0 1 19.143 21H4.857A1.857 1.857 0 0 1 3 19.143V9.857Zm9-4.714L5.571 10.5v8.643h12.858V10.5L12 5.143Zm-2.571 7.786h5.143v5.143H9.429v-5.143Z" />
+                            </svg>
+                        </span>
+                        Quản lý trang chủ
+                    </a>
+                </li>
 
-   {{-- 10. Quản lý Flash-Sales --}}
-<li>
-    @php $isSalesActive = request()->routeIs('admin.flash-sales.*'); @endphp
-    <a href="{{ route('admin.flash-sales.index') }}"
-        class="group flex items-center px-4 py-2.5
+                {{-- 10. Quản lý Flash-Sales --}}
+                <li>
+                    @php $isSalesActive = request()->routeIs('admin.flash-sales.*'); @endphp
+                    <a href="{{ route('admin.flash-sales.index') }}"
+                        class="group flex items-center px-4 py-2.5
             text-base rounded-md transition-all duration-200 ease-in-out
             {{ $isSalesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-        <span
-            class="mr-3 text-lg {{ $isSalesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
-            {{-- Icon mới: hình ngôi nhà --}}
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M7 2v11h3v9l7-12h-4l3-8z"/>
-            </svg>
-        </span>
-        Quản lý Flash Sales
-    </a>
-</li>
-
+                        <span
+                            class="mr-3 text-lg {{ $isSalesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            {{-- Icon mới: hình ngôi nhà --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                                fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M7 2v11h3v9l7-12h-4l3-8z" />
+                            </svg>
+                        </span>
+                        Quản lý Flash Sales
+                    </a>
+                </li>
+                <li>
+                    @php $isCategoriesActive = request()->routeIs('admin.categories.*'); @endphp
+                    <button @click="openNav !== 18 ? openNav = 18 : openNav = null"
+                        :class="openNav === 18 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                        <span
+                            class="mr-3 text-lg {{ $isCategoriesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
+                                fill="currentColor">
+                                <path
+                                    d="M19,4H9A1,1,0,0,0,8,5V19a1,1,0,0,0,1,1H19a1,1,0,0,0,1-1V5A1,1,0,0,0,19,4ZM18,18H10V6H18ZM6,18H4V6H6ZM14,2H6A3,3,0,0,0,3,5V19a3,3,0,0,0,3,3h8a3,3,0,0,0,3-3V14.45A2.83,2.83,0,0,1,14,14a3,3,0,0,1-3-3,3,3,0,0,1,3-3,2.83,2.83,0,0,1,.45,0V5A3,3,0,0,0,14,2Z" />
+                            </svg>
+                        </span>
+                        Quản lý Thu cũ & Mở hộp
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 18 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"
+                                fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 18" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.trade-in-items.index') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách danh mục
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.trade-in-items.create') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thêm mới danh mục
+                            </a>
+                        </li>
+                        <li>
+                            <a href=""
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.categories.trash') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
+                    </ul>
+                </li>
             </ul>
 
             {{-- Phần Cài đặt & Trang phụ (Giữ nguyên) --}}
