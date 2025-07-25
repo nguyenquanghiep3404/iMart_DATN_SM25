@@ -1,12 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hỗ trợ trực tuyến</title>
+
+    {{-- Laravel CSRF token --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {{-- Fonts và Tailwind CSS CDN (tạm thời, nên dùng Tailwind qua Vite trong production) --}}
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-     <style>
+
+    <style>
         /* --- Cài đặt chung và Biến màu (Theme Glassmorphism) --- */
         :root {
             --primary-color: #000000;
@@ -22,7 +31,6 @@
         body {
             font-family: var(--font-family);
             margin: 0;
-            /* CẬP NHẬT: Xóa background-image, chỉ giữ màu nền trắng */
             background-color: var(--background-color);
         }
 
@@ -67,9 +75,7 @@
             max-width: 90vw;
             height: 600px;
             max-height: 85vh;
-            /* CẬP NHẬT: Hiệu ứng gương */
             background: rgba(255, 255, 255, 0.5); /* Tăng độ mờ nền */
-            /* CẬP NHẬT: Giảm độ mờ hiệu ứng blur */
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-radius: 20px;
@@ -304,10 +310,22 @@
         .modal-footer .send-btn svg { width: 20px; height: 20px; fill: white; transform: translateX(1px); }
 
     </style>
-    {{-- Laravel CSRF token and Echo/Pusher scripts --}}
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.x.x/dist/echo.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pusher-js@7.x.x/dist/pusher.min.js"></script>
+
+    {{-- Các biến Blade được truyền vào đối tượng window để JavaScript có thể truy cập --}}
+    {{-- Đây là cách an toàn để truyền dữ liệu từ PHP sang JS khi dùng Vite --}}
+    <script>
+        window.APP_AUTH_ID = {{ Auth::check() ? Auth::id() : 'null' }};
+        window.APP_GUEST_USER_ID = {{ Illuminate\Support\Js::from($guestUserId ?? null) }};
+        window.APP_CONVERSATIONS_DATA = {{ Illuminate\Support\Js::from($conversations ?? collect()) }};
+        // Log để debug trong console (có thể xóa sau khi mọi thứ hoạt động)
+        console.log('APP_AUTH_ID:', window.APP_AUTH_ID);
+        console.log('APP_GUEST_USER_ID:', window.APP_GUEST_USER_ID);
+        console.log('APP_CONVERSATIONS_DATA:', window.APP_CONVERSATIONS_DATA);
+    </script>
+
+    {{-- Bao gồm các tài nguyên được Vite xử lý (CSS và JavaScript chính của bạn) --}}
+    {{-- Đảm bảo bạn đã chạy "npm install" và "npm run dev" --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
 
@@ -353,7 +371,7 @@
                     {{-- Các tin nhắn sẽ được tải động tại đây --}}
                     @if(isset($conversations) && $conversations->isNotEmpty())
                         @foreach($conversations->first()->messages as $message)
-                            <div class="message {{ $message->sender_id == (Auth::id() ?? $guestUserId) ? 'sent' : 'received' }}">
+                            <div class="message {{ $message->sender_id == (Auth::id() ?? ($guestUserId ?? null)) ? 'sent' : 'received' }}">
                                 <div class="content">{{ $message->content }}</div>
                                 <div class="timestamp">{{ \Carbon\Carbon::parse($message->created_at)->format('H:i A') }}</div>
                             </div>
@@ -390,271 +408,5 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Biến Laravel Blade cho xác thực và ID khách
-            const AUTH_ID = {{ Auth::check() ? Auth::id() : 'null' }};
-            const GUEST_USER_ID_FROM_BACKEND = "{{ $guestUserId ?? 'null' }}"; // ID khách ban đầu từ backend
-
-            let guestUserId = localStorage.getItem('guest_user_id') || GUEST_USER_ID_FROM_BACKEND;
-            let currentConversationId = null; // Quản lý cuộc hội thoại đang hoạt động cho chat với nhân viên
-
-            // --- LẤY CÁC PHẦN TỬ DOM ---
-            const chatBubble = document.getElementById('chatBubble');
-            const chatModal = document.getElementById('chatModal');
-            const closeModalBtn = document.getElementById('closeModal');
-            const welcomeScreen = document.getElementById('welcomeScreen');
-            const welcomeForm = document.getElementById('welcomeForm');
-            const guestNameInput = document.getElementById('guestName');
-            const guestPhoneInput = document.getElementById('guestPhone');
-            const mainChatInterface = document.getElementById('mainChatInterface');
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const humanChatTab = document.getElementById('humanChat');
-            const aiChatTab = document.getElementById('aiChat');
-            const humanChatBody = document.getElementById('humanChatBody');
-            const aiChatBody = document.getElementById('aiChatBody');
-            const humanMessageInput = document.getElementById('humanMessageInput');
-            const humanSendButton = document.getElementById('humanSendButton');
-            const aiMessageInput = document.getElementById('aiMessageInput');
-            const aiSendButton = document.getElementById('aiSendButton');
-
-            // Cấu hình Laravel Echo
-            window.Pusher = Pusher;
-            window.Echo = new Echo({
-                broadcaster: 'reverb',
-                key: '{{ config('reverb.apps.0.key') }}',
-                wsHost: window.location.hostname,
-                wsPort: {{ config('reverb.port') }},
-                wssPort: {{ config('reverb.port') }},
-                forceTLS: false,
-                disableStats: true,
-                enabledTransports: ['ws', 'wss'],
-                authEndpoint: '/broadcasting/auth', // Đảm bảo endpoint này được cấu hình đúng
-                auth: {
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                },
-            });
-
-            // --- HÀM CHỨC NĂNG ---
-
-            function displayMessage(container, text, type, timestamp = null) {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('message', type);
-
-                if (type === 'received' && container.parentElement.id === 'aiChat') {
-                    messageElement.classList.add('ai');
-                }
-
-                const time = timestamp ? new Date(timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-
-                messageElement.innerHTML = `
-                    <div class="content">${text}</div>
-                    <div class="timestamp">${time}</div>
-                `;
-                container.appendChild(messageElement);
-                container.scrollTop = container.scrollHeight;
-            }
-
-            function showMainChat() {
-                welcomeScreen.style.display = 'none';
-                mainChatInterface.style.display = 'flex';
-                // Khởi tạo cuộc hội thoại cho người dùng đã đăng nhập hoặc khách hiện có
-                @if(isset($conversations) && $conversations->isNotEmpty())
-                    currentConversationId = "{{ $conversations->first()->id }}";
-                    // Xóa tin nhắn khởi tạo và tải tin nhắn thực
-                    humanChatBody.innerHTML = '';
-                    @foreach($conversations->first()->messages as $message)
-                        displayMessage(humanChatBody, "{{ $message->content }}", "{{ $message->sender_id == (Auth::id() ?? $guestUserId) ? 'sent' : 'received' }}", "{{ $message->created_at }}");
-                    @endforeach
-                    humanChatBody.scrollTop = humanChatBody.scrollHeight; // Cuộn xuống dưới cùng
-                @else
-                    // Nếu không có cuộc hội thoại nào, hiển thị lời chào ban đầu
-                    humanChatBody.innerHTML = '';
-                    @if(Auth::check())
-                        displayMessage(humanChatBody, `Xin chào {{ Auth::user()->name }}! Tôi có thể giúp gì cho bạn?`, 'received');
-                    @else
-                        // Nhánh này sẽ được kích hoạt sau khi đăng ký khách hoặc nếu không tìm thấy ID khách
-                        // Tin nhắn ban đầu sẽ được xử lý bởi phản hồi fetch hoặc bên dưới nếu không có conv_id
-                        displayMessage(humanChatBody, `Xin chào! Tôi có thể giúp gì cho bạn?`, 'received');
-                    @endif
-                @endif
-            }
-
-            function openModal() {
-                chatModal.classList.add('show');
-                chatBubble.style.opacity = '0';
-                chatBubble.style.visibility = 'hidden';
-                chatBubble.style.transform = 'scale(0)';
-
-                if (AUTH_ID || guestUserId !== 'null') { // Kiểm tra xem đã đăng nhập hoặc có ID khách chưa
-                    showMainChat();
-                } else {
-                    welcomeScreen.style.display = 'flex';
-                    mainChatInterface.style.display = 'none';
-                }
-            }
-
-            function closeModal() {
-                chatModal.classList.remove('show');
-                chatBubble.style.opacity = '1';
-                chatBubble.style.visibility = 'visible';
-                chatBubble.style.transform = 'scale(1)';
-            }
-
-            // --- GÁN SỰ KIỆN ---
-            chatBubble.addEventListener('click', openModal);
-            closeModalBtn.addEventListener('click', closeModal);
-
-            welcomeForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                const name = guestNameInput.value.trim();
-                const phone_number = guestPhoneInput.value.trim();
-
-                if (name === '' || phone_number === '') {
-                    alert('Vui lòng nhập đầy đủ Tên và Số điện thoại.');
-                    return;
-                }
-
-                try {
-                    const response = await fetch('/chat/register-guest', { // Sử dụng /chat/register-guest từ web.php
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        },
-                        body: JSON.stringify({ name, phone_number })
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        localStorage.setItem('guest_user_id', data.user_id);
-                        guestUserId = data.user_id; // Cập nhật guestUserId cục bộ
-                        // Không cần tải lại, chỉ cần chuyển sang giao diện chat chính và lấy các cuộc hội thoại
-                        showMainChat();
-                        // Lấy lại các cuộc hội thoại cho khách mới đăng ký nếu cần,
-                        // hoặc dựa vào thiết lập cuộc hội thoại ban đầu của máy chủ.
-                        // Hiện tại, chúng ta chỉ hiển thị lời chào.
-                        humanChatBody.innerHTML = ''; // Xóa tin nhắn chào mừng hiện có
-                        displayMessage(humanChatBody, `Xin chào ${name}! Tôi có thể giúp gì cho bạn?`, 'received');
-
-                        // Đăng ký kênh cuộc hội thoại mới cho khách
-                        // Điều này giả định một cuộc hội thoại được tạo ngay lập tức khi đăng ký khách/tin nhắn đầu tiên
-                        // Nếu việc tạo cuộc hội thoại là vào tin nhắn đầu tiên được gửi, điều này cần điều chỉnh
-                        if (data.conversation_id) { // Nếu backend trả về conversation_id ngay lập tức
-                            currentConversationId = data.conversation_id;
-                            window.Echo.private('chat.conversation.' + currentConversationId)
-                                .listen('.message.sent', (e) => {
-                                    displayMessage(humanChatBody, e.message.content, e.message.sender_id == (AUTH_ID || guestUserId) ? 'sent' : 'received', e.message.created_at);
-                                });
-                        }
-                    } else {
-                        alert(data.message || 'Lỗi khi đăng ký khách.');
-                    }
-                } catch (error) {
-                    console.error('Lỗi:', error);
-                    alert('Đã xảy ra lỗi trong quá trình đăng ký khách.');
-                }
-            });
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
-                    button.classList.add('active');
-                    document.querySelector(button.dataset.target).classList.add('active');
-                });
-            });
-
-            // Xử lý gửi tin nhắn cho Chat với nhân viên (thời gian thực)
-            humanSendButton.addEventListener('click', async () => {
-                const content = humanMessageInput.value.trim();
-                if (content === '') return;
-
-                displayMessage(humanChatBody, content, 'sent');
-                humanMessageInput.value = '';
-                humanMessageInput.focus();
-
-                try {
-                    const payload = { content: content };
-                    if (currentConversationId) {
-                        payload.conversation_id = currentConversationId;
-                    }
-                    if (!AUTH_ID && guestUserId !== 'null') { // Truyền ID người dùng khách nếu chưa đăng nhập
-                        payload.guest_user_id = guestUserId;
-                    }
-
-                    const response = await fetch('/chat/send-message', { // Sử dụng /chat/send-message từ web.php
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        },
-                        body: JSON.stringify(payload)
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        if (!currentConversationId && data.conversation_id) {
-                            currentConversationId = data.conversation_id;
-                            // Đăng ký kênh cuộc hội thoại mới nếu nó vừa được tạo
-                            window.Echo.private('chat.conversation.' + currentConversationId)
-                                .listen('.message.sent', (e) => {
-                                    displayMessage(humanChatBody, e.message.content, e.message.sender_id == (AUTH_ID || guestUserId) ? 'sent' : 'received', e.message.created_at);
-                                });
-                        }
-                    } else {
-                        alert(data.message || 'Lỗi khi gửi tin nhắn.');
-                    }
-                } catch (error) {
-                    console.error('Lỗi:', error);
-                    alert('Đã xảy ra lỗi khi gửi tin nhắn.');
-                }
-            });
-
-            humanMessageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') humanSendButton.click();
-            });
-
-            // Xử lý gửi tin nhắn cho Chat với AI (mô phỏng)
-            aiSendButton.addEventListener('click', () => {
-                const messageText = aiMessageInput.value.trim();
-                if (messageText === '') return;
-                displayMessage(aiChatBody, messageText, 'sent');
-                aiMessageInput.value = '';
-                aiMessageInput.focus();
-                simulateAiResponse(aiChatBody, messageText);
-            });
-
-            aiMessageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') aiSendButton.click();
-            });
-
-            function simulateAiResponse(container, userMessage) {
-                setTimeout(() => {
-                    let aiReply = "Tôi chưa hiểu câu hỏi của bạn. Bạn có thể hỏi về 'bảo hành', 'khuyến mãi', hoặc 'địa chỉ'.";
-                    const lowerCaseMessage = userMessage.toLowerCase();
-
-                    if (lowerCaseMessage.includes('bảo hành')) {
-                        aiReply = "Sản phẩm chính hãng được bảo hành 12 tháng tại tất cả các cửa hàng trên toàn quốc ạ.";
-                    } else if (lowerCaseMessage.includes('khuyến mãi') || lowerCaseMessage.includes('giảm giá')) {
-                        aiReply = "Hiện tại đang có chương trình giảm giá 10% cho các phụ kiện khi mua kèm điện thoại. Bạn xem chi tiết tại trang khuyến mãi nhé.";
-                    } else if (lowerCaseMessage.includes('địa chỉ') || lowerCaseMessage.includes('cửa hàng')) {
-                        aiReply = "Cửa hàng chính của chúng tôi ở tại 123 Đường ABC, Quận 1, TP.HCM. Rất hân hạnh được phục vụ bạn!";
-                    }
-
-                    displayMessage(container, aiReply, 'received');
-                }, 1000);
-            }
-
-            // Khách hàng: Lắng nghe tin nhắn trên kênh cuộc hội thoại cụ thể nếu đã có cuộc hội thoại
-            @if(isset($conversations) && $conversations->isNotEmpty())
-                currentConversationId = "{{ $conversations->first()->id }}";
-                window.Echo.private('chat.conversation.' + currentConversationId)
-                    .listen('.message.sent', (e) => {
-                        displayMessage(humanChatBody, e.message.content, e.message.sender_id == (AUTH_ID || guestUserId) ? 'sent' : 'received', e.message.created_at);
-                    });
-            @endif
-        });
-    </script>
 </body>
 </html>

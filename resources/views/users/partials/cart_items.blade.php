@@ -1,51 +1,57 @@
 @if (isset($items) && $items->isNotEmpty())
     <div id="cart-items-wrapper">
         @foreach ($items as $item)
-            {{-- <pre>@dd($item)</pre> --}}
-            <div class="d-flex align-items-center mb-3 border-bottom pb-2 cart-item" data-item-id="{{ $item['id'] }}"
-                data-price="{{ $item['price'] }}" data-stock="{{ $item['stock_quantity'] ?? 0 }}">
+            @php
+                // Khai báo các biến để truy cập dữ liệu lồng nhau một cách gọn gàng
+                // Giả định cấu trúc trả về từ controller là $item->productVariant->product
+                $product = $item->productVariant->product ?? null;
+                $variant = $item->productVariant ?? null;
+                $imageUrl = $variant->primaryImage->file_path ?? ($item->image ?? 'assets/users/img/shop/electronics/thumbs/08.png');
+                $productName = $product->name ?? ($item->name ?? 'Sản phẩm không xác định');
+                $productSlug = $product->slug ?? ($item->slug ?? '#');
+            @endphp
+            
+            <div class="d-flex align-items-center mb-3 border-bottom pb-2 cart-item" 
+                 data-item-id="{{ $item->id }}"
+                 data-price="{{ $item->price }}" 
+                 data-stock="{{ $item->stock_quantity ?? 0 }}">
 
                 {{-- Hình ảnh --}}
-                <a class="flex-shrink-0"
-                    href="{{ !empty($item['slug']) ? route('users.products.show', ['slug' => $item['slug']]) : '#' }}">
-                    <img src="{{ asset($item['image'] ?: 'assets/users/img/shop/electronics/thumbs/08.png') }}"
-                        width="80" alt="{{ $item['name'] }}">
+                <a class="flex-shrink-0" href="{{ $productSlug !== '#' ? route('users.products.show', ['slug' => $productSlug]) : '#' }}">
+                    <img src="{{ asset($imageUrl) }}" width="80" alt="{{ $productName }}">
                 </a>
 
                 {{-- Nội dung bên phải --}}
                 <div class="w-100 min-w-0 ps-2 ps-sm-3">
                     <h5 class="d-flex animate-underline mb-2">
                         <a class="d-block fs-sm fw-medium text-truncate animate-target"
-                            href="{{ !empty($item['slug']) ? route('users.products.show', ['slug' => $item['slug']]) : '#' }}">
-                            {{ $item['name'] }}
+                           href="{{ $productSlug !== '#' ? route('users.products.show', ['slug' => $productSlug]) : '#' }}">
+                            {{ $productName }}
                         </a>
                     </h5>
 
                     {{-- Giá --}}
                     <div class="h6 pb-1 mb-2 text-danger">
-                        {{ number_format($item['price'], 0, ',', '.') }} đ
+                        {{ number_format($item->price, 0, ',', '.') }} đ
                     </div>
 
                     {{-- Tăng giảm & xóa --}}
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="count-input rounded-2">
                             <button type="button" class="btn btn-icon btn-sm" data-decrement
-                                aria-label="Giảm số lượng">
+                                    aria-label="Giảm số lượng">
                                 <i class="ci-minus"></i>
                             </button>
-                            {{-- <input type="number" class="form-control form-control-sm" value="{{ $item['quantity'] }}"
-                                readonly> --}}
-                            <input type="number" class="form-control form-control-sm mini-cart-input"
-                                data-item-id="{{ $item['id'] }}" value="{{ $item['quantity'] }}" readonly>
-
+                            <input type="number" class="form-control form-control-sm" value="{{ $item->quantity }}"
+                                   readonly>
                             <button type="button" class="btn btn-icon btn-sm" data-increment
-                                aria-label="Tăng số lượng">
+                                    aria-label="Tăng số lượng">
                                 <i class="ci-plus"></i>
                             </button>
                         </div>
 
-                        <button type="button" class="btn-close fs-sm" data-item-id="{{ $item['id'] }}"
-                            data-bs-toggle="tooltip" data-bs-title="Xóa" aria-label="Xóa khỏi giỏ hàng">
+                        <button type="button" class="btn-close fs-sm" 
+                                data-bs-toggle="tooltip" data-bs-title="Xóa" aria-label="Xóa khỏi giỏ hàng">
                         </button>
                     </div>
                 </div>

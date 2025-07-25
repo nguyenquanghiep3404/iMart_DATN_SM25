@@ -149,6 +149,7 @@ class User extends Authenticatable implements MustVerifyEmail
         // Quan hệ: Một user (shipper) có thể có nhiều đơn hàng
         return $this->hasMany(Order::class, 'shipped_by');
     }
+
     public function conversations()
     {
         return $this->hasMany(ChatConversation::class, 'user_id');
@@ -168,4 +169,6 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(ChatParticipant::class, 'user_id');
     }
+
+
 }

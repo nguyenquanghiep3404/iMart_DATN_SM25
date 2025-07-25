@@ -50,6 +50,7 @@ Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name('cart.addMultiple');
 Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
 
+
 // cart_offcanvas
 Route::get('/cart/offcanvas', [CarOffController::class, 'index']);
 // Route::post('/vnpay/payment', [VNPayController::class, 'createPayment'])->name('vnpay.payment');
@@ -154,7 +155,7 @@ Route::post('/payments/process', [PaymentController::class, 'processOrder'])->na
 Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
 
 // Các tuyến đường chat của khách hàng
-Route::get('/chat', [ChatController::class, 'index'])->name('client.chat.index');
+Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
 Route::post('/chat/register-guest', [ChatController::class, 'registerGuest'])->name('client.chat.registerGuest');
 Route::post('/chat/send-message', [ChatController::class, 'sendMessage'])->name('client.chat.sendMessage');
 Route::post('/chat/guest-login', [ChatController::class, 'guestLogin'])->name('client.chat.guestLogin');
@@ -266,16 +267,16 @@ Route::prefix('admin')
         // {uploadedFile} ở đây sẽ là ID của bản ghi trong bảng uploaded_files
         // Laravel sẽ tự động thực hiện Route Model Binding nếu tham số trong controller là UploadedFile $uploadedFile
         // Route::middleware('can:manage-content')->group(function () {
-        Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
-            ->name('products.gallery.delete');
+        // Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
+        //     ->name('products.gallery.delete');
 
         // Category routes
         // Route::resource('categories', CategoryController::class);
 
 
         // Route::middleware('can:manage-content')->group(function () {
-        Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
-            ->name('products.gallery.delete');
+        // Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
+        //     ->name('products.gallery.delete');
 
         // Category routes
         // Route::resource('categories', CategoryController::class);
@@ -438,7 +439,7 @@ Route::prefix('admin')
         Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
 
         // Các tuyến đường chat của quản trị viên (Yêu cầu xác thực và các vai trò/quyền phù hợp)
-        Route::middleware(['auth', 'can:access_admin_dashboard'])->prefix('admin/chat')->name('admin.chat.')->group(function () {
+        Route::prefix('chat')->name('chat.')->group(function () {
             Route::get('/', [AdminChatController::class, 'index'])->name('dashboard');
             Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
             Route::post('/{conversation}/send-message', [AdminChatController::class, 'sendMessage'])->name('sendMessage');
