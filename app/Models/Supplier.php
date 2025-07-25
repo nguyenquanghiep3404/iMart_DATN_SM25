@@ -18,7 +18,7 @@ class Supplier extends Model
         'name',
         'email',
         'phone',
-        'address',
+        'address_line',
     ];
 
     // public function purchaseOrders()

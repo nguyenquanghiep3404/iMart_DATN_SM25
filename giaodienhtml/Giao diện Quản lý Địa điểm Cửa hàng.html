@@ -17,37 +17,24 @@
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6;
         }
-
         .card-custom {
             border-radius: 0.75rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             background-color: #fff;
         }
-
         .card-custom-header {
             padding: 1.25rem 1.5rem;
             border-bottom: 1px solid #e5e7eb;
             background-color: #f9fafb;
         }
-
         .card-custom-title {
             font-size: 1.25rem;
             font-weight: 600;
             color: #1f2937;
         }
-
         .card-custom-body {
             padding: 1.5rem;
         }
-        
-        .card-custom-footer {
-            background-color: #f9fafb;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid #e5e7eb;
-            border-bottom-left-radius: 0.75rem;
-            border-bottom-right-radius: 0.75rem;
-        }
-
         .btn {
             border-radius: 0.5rem;
             transition: all 0.2s ease-in-out;
@@ -60,21 +47,18 @@
             line-height: 1.25rem;
             border: 1px solid transparent;
         }
-        
         .btn-sm {
             padding: 0.375rem 0.75rem;
             font-size: 0.75rem;
             line-height: 1rem;
         }
-
         .btn-primary { background-color: #4f46e5; color: white; }
         .btn-primary:hover { background-color: #4338ca; }
         .btn-secondary { background-color: #e5e7eb; color: #374151; border-color: #d1d5db; }
         .btn-secondary:hover { background-color: #d1d5db; }
         .btn-danger { background-color: #ef4444; color: white; }
         .btn-danger:hover { background-color: #dc2626; }
-
-        .form-input, .form-select, .form-textarea {
+        .form-input, .form-select {
             width: 100%;
             padding: 0.625rem 1rem;
             border-radius: 0.5rem;
@@ -82,46 +66,33 @@
             font-size: 0.875rem;
             background-color: white;
         }
-
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
+        .form-input:focus, .form-select:focus {
             border-color: #4f46e5;
             outline: 0;
             box-shadow: 0 0 0 0.2rem rgba(79,70,229,.25);
         }
-        
         .table-custom { width: 100%; min-width: 700px; color: #374151; }
         .table-custom th, .table-custom td { padding: 0.75rem 1rem; vertical-align: middle !important; border-bottom-width: 1px; border-color: #e5e7eb; white-space: nowrap; }
         .table-custom thead th { font-weight: 600; color: #4b5563; background-color: #f9fafb; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; text-align: left; }
-        
         .badge-custom { display: inline-block; padding: 0.35em 0.65em; font-size: .75em; font-weight: 700; line-height: 1; color: #fff; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.375rem; }
         .badge-success { background-color: #10b981; }
         .badge-secondary { background-color: #6b7280; }
-
         .form-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .form-switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #4f46e5; }
         input:checked + .slider:before { transform: translateX(20px); }
-        
         [x-cloak] { display: none !important; }
     </style>
 </head>
 
-<body x-data="storeLocationManager()">
+<body x-data="storeLocationManager()" x-init="init()">
     <div class="px-4 sm:px-6 md:px-8 py-8">
         <div class="container mx-auto max-w-full">
-
             <!-- PAGE HEADER -->
             <header class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-800">Quản lý Địa điểm Cửa hàng</h1>
-                <nav aria-label="breadcrumb" class="mt-2">
-                    <ol class="flex text-sm text-gray-500">
-                        <li class="breadcrumb-item"><a href="#" class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a></li>
-                        <li class="text-gray-400 mx-2">/</li>
-                        <li class="breadcrumb-item active text-gray-700 font-medium" aria-current="page">Địa điểm Cửa hàng</li>
-                    </ol>
-                </nav>
             </header>
 
             <div class="card-custom">
@@ -135,7 +106,6 @@
                 </div>
 
                 <div class="card-custom-body">
-                    <!-- TABLE -->
                     <div class="overflow-x-auto border border-gray-200 rounded-lg">
                         <table class="table-custom">
                             <thead>
@@ -153,7 +123,7 @@
                                     <tr>
                                         <td x-text="index + 1"></td>
                                         <td class="font-semibold" x-text="location.name"></td>
-                                        <td x-text="location.address"></td>
+                                        <td x-text="getFullAddress(location)"></td>
                                         <td x-text="location.phone || 'N/A'"></td>
                                         <td class="text-center">
                                             <span class="badge-custom" :class="location.is_active ? 'badge-success' : 'badge-secondary'" x-text="location.is_active ? 'Đang hoạt động' : 'Ngưng hoạt động'"></span>
@@ -161,7 +131,7 @@
                                         <td class="text-center">
                                             <div class="inline-flex space-x-1">
                                                 <button @click="editLocation(location)" type="button" class="btn btn-primary btn-sm" title="Chỉnh sửa"><i class="fas fa-edit"></i></button>
-                                                <button type="button" class="btn btn-danger btn-sm" title="Xóa"><i class="fas fa-trash"></i></button>
+                                                <button @click="deleteLocation(location.id)" type="button" class="btn btn-danger btn-sm" title="Xóa"><i class="fas fa-trash"></i></button>
                                             </div>
                                         </td>
                                     </tr>
@@ -179,34 +149,64 @@
         <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="isModalOpen" @click="closeModal()" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-            <div x-show="isModalOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div x-show="isModalOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title" x-text="isEditMode ? 'Chỉnh sửa Địa điểm' : 'Thêm Địa điểm mới'"></h3>
-                            <div class="mt-4 space-y-4">
-                                <div>
-                                    <label for="name" class="block text-sm font-medium text-gray-700">Tên địa điểm</label>
-                                    <input type="text" id="name" x-model="formData.name" class="form-input mt-1">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title" x-text="isEditMode ? 'Chỉnh sửa Địa điểm' : 'Thêm Địa điểm mới'"></h3>
+                    <div class="mt-4 grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-4">
+                        <!-- Cột trái -->
+                        <div class="space-y-4 sm:col-span-1">
+                            <div>
+                                <label for="name" class="block text-sm font-medium text-gray-700">Tên địa điểm*</label>
+                                <input type="text" id="name" x-model="formData.name" class="form-input mt-1">
+                            </div>
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                                <input type="text" id="phone" x-model="formData.phone" class="form-input mt-1">
+                            </div>
+                             <div>
+                                <label class="block text-sm font-medium text-gray-700">Trạng thái</label>
+                                <div class="mt-2 flex items-center">
+                                    <label class="form-switch">
+                                        <input type="checkbox" x-model="formData.is_active">
+                                        <span class="slider"></span>
+                                    </label>
+                                    <span class="ml-3 text-sm text-gray-600" x-text="formData.is_active ? 'Đang hoạt động' : 'Ngưng hoạt động'"></span>
                                 </div>
-                                <div>
-                                    <label for="address" class="block text-sm font-medium text-gray-700">Địa chỉ</label>
-                                    <textarea id="address" rows="3" x-model="formData.address" class="form-textarea mt-1"></textarea>
-                                </div>
-                                <div>
-                                    <label for="phone" class="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                                    <input type="text" id="phone" x-model="formData.phone" class="form-input mt-1">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Trạng thái</label>
-                                    <div class="mt-2">
-                                        <label class="form-switch">
-                                          <input type="checkbox" x-model="formData.is_active">
-                                          <span class="slider"></span>
-                                        </label>
-                                        <span class="ml-3 text-sm text-gray-600" x-text="formData.is_active ? 'Đang hoạt động' : 'Ngưng hoạt động'"></span>
-                                    </div>
-                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cột phải -->
+                        <div class="space-y-4 sm:col-span-1">
+                            <div>
+                                <label for="province_code" class="block text-sm font-medium text-gray-700">Tỉnh/Thành phố*</label>
+                                <select id="province_code" x-model="formData.province_code" @change="updateDistricts()" class="form-select mt-1">
+                                    <option value="">Chọn Tỉnh/Thành phố</option>
+                                    <template x-for="province in staticAddressData.provinces" :key="province.code">
+                                        <option :value="province.code" x-text="province.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="district_code" class="block text-sm font-medium text-gray-700">Quận/Huyện*</label>
+                                <select id="district_code" x-model="formData.district_code" @change="updateWards()" class="form-select mt-1" :disabled="!formData.province_code">
+                                    <option value="">Chọn Quận/Huyện</option>
+                                    <template x-for="district in filteredAddressData.districts" :key="district.code">
+                                        <option :value="district.code" x-text="district.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="ward_code" class="block text-sm font-medium text-gray-700">Phường/Xã*</label>
+                                <select id="ward_code" x-model="formData.ward_code" class="form-select mt-1" :disabled="!formData.district_code">
+                                    <option value="">Chọn Phường/Xã</option>
+                                    <template x-for="ward in filteredAddressData.wards" :key="ward.code">
+                                        <option :value="ward.code" x-text="ward.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="address_line" class="block text-sm font-medium text-gray-700">Địa chỉ chi tiết (số nhà, đường)*</label>
+                                <input type="text" id="address_line" x-model="formData.address_line" class="form-input mt-1" placeholder="Ví dụ: 123 Lê Lợi">
                             </div>
                         </div>
                     </div>
@@ -224,50 +224,127 @@
             return {
                 isModalOpen: false,
                 isEditMode: false,
-                locations: [
-                    { id: 1, name: 'iMart Quận 1', address: '123 Lê Lợi, Phường Bến Nghé, Quận 1, TP. HCM', phone: '0901234567', is_active: true },
-                    { id: 2, name: 'iMart Quận 3', address: '456 Nguyễn Đình Chiểu, Phường 6, Quận 3, TP. HCM', phone: '0907654321', is_active: true },
-                    { id: 3, name: 'Kho tổng Thủ Đức', address: 'Khu công nghệ cao, Xa lộ Hà Nội, TP. Thủ Đức', phone: '02812345678', is_active: false },
-                ],
-                formData: {
-                    id: null,
-                    name: '',
-                    address: '',
-                    phone: '',
-                    is_active: true
+                // Dữ liệu địa chỉ tĩnh (không dùng fetch)
+                staticAddressData: {
+                    provinces: [
+                        { code: '79', name: 'Thành phố Hồ Chí Minh' },
+                        { code: '01', name: 'Thành phố Hà Nội' },
+                    ],
+                    districts: [
+                        { code: '760', province_code: '79', name: 'Quận 1' },
+                        { code: '770', province_code: '79', name: 'Quận 3' },
+                        { code: '762', province_code: '79', name: 'Thành phố Thủ Đức' },
+                        { code: '001', province_code: '01', name: 'Quận Ba Đình' },
+                        { code: '002', province_code: '01', name: 'Quận Hoàn Kiếm' },
+                    ],
+                    wards: [
+                        { code: '26734', district_code: '760', name: 'Phường Bến Nghé' },
+                        { code: '27103', district_code: '770', name: 'Phường 06' },
+                        { code: '26797', district_code: '762', name: 'Phường Hiệp Phú' },
+                        { code: '00001', district_code: '001', name: 'Phường Phúc Xá' },
+                        { code: '00040', district_code: '002', name: 'Phường Hàng Buồm' },
+                    ]
                 },
+                // Dữ liệu được lọc để hiển thị trên form
+                filteredAddressData: {
+                    districts: [],
+                    wards: [],
+                },
+                // Danh sách địa điểm hiện tại
+                locations: [],
+                formData: {},
+                
+                init() {
+                    this.resetForm();
+                    this.locations = [
+                        { id: 1, name: 'iMart Quận 1', phone: '0901234567', is_active: true, province_code: '79', district_code: '760', ward_code: '26734', address_line: '123 Lê Lợi' },
+                        { id: 2, name: 'iMart Hà Nội', phone: '0987654321', is_active: true, province_code: '01', district_code: '002', ward_code: '00040', address_line: '50 Hàng Buồm' },
+                        { id: 3, name: 'Kho tổng Thủ Đức', phone: '02812345678', is_active: false, province_code: '79', district_code: '762', ward_code: '26797', address_line: 'Khu công nghệ cao' },
+                    ];
+                },
+
                 resetForm() {
-                    this.formData = { id: null, name: '', address: '', phone: '', is_active: true };
+                    this.formData = { 
+                        id: null, 
+                        name: '', 
+                        phone: '', 
+                        is_active: true,
+                        province_code: '',
+                        district_code: '',
+                        ward_code: '',
+                        address_line: ''
+                    };
+                    this.filteredAddressData.districts = [];
+                    this.filteredAddressData.wards = [];
                 },
+
                 openModal() {
                     this.isEditMode = false;
                     this.resetForm();
                     this.isModalOpen = true;
                 },
+
                 closeModal() {
                     this.isModalOpen = false;
                 },
+                
                 editLocation(location) {
                     this.isEditMode = true;
-                    this.formData = { ...location }; // Copy data to form
+                    // Gán dữ liệu form
+                    this.formData = { ...location }; 
+                    // Cập nhật danh sách quận/huyện và phường/xã tương ứng
+                    this.updateDistricts();
+                    this.updateWards();
                     this.isModalOpen = true;
                 },
+                
+                // Lọc và cập nhật danh sách quận/huyện
+                updateDistricts() {
+                    this.filteredAddressData.districts = this.staticAddressData.districts.filter(d => d.province_code === this.formData.province_code);
+                    // Reset quận và xã khi tỉnh thay đổi
+                    if(!this.isEditMode || this.filteredAddressData.districts.findIndex(d => d.code === this.formData.district_code) === -1) {
+                         this.formData.district_code = '';
+                         this.formData.ward_code = '';
+                    }
+                    this.updateWards();
+                },
+
+                // Lọc và cập nhật danh sách phường/xã
+                updateWards() {
+                    this.filteredAddressData.wards = this.staticAddressData.wards.filter(w => w.district_code === this.formData.district_code);
+                     if(!this.isEditMode || this.filteredAddressData.wards.findIndex(w => w.code === this.formData.ward_code) === -1) {
+                         this.formData.ward_code = '';
+                    }
+                },
+
+                // Tạo chuỗi địa chỉ đầy đủ để hiển thị
+                getFullAddress(location) {
+                    const province = this.staticAddressData.provinces.find(p => p.code === location.province_code)?.name || '';
+                    const district = this.staticAddressData.districts.find(d => d.code === location.district_code)?.name || '';
+                    const ward = this.staticAddressData.wards.find(w => w.code === location.ward_code)?.name || '';
+                    return [location.address_line, ward, district, province].filter(Boolean).join(', ');
+                },
+                
                 saveLocation() {
-                    // Đây là nơi bạn sẽ gửi dữ liệu đến server
+                    if (!this.formData.name || !this.formData.province_code || !this.formData.district_code || !this.formData.ward_code || !this.formData.address_line) {
+                        alert('Vui lòng điền đầy đủ các trường có dấu *');
+                        return;
+                    }
                     if (this.isEditMode) {
-                        console.log('Updating location:', this.formData);
-                        // Logic cập nhật
                         const index = this.locations.findIndex(l => l.id === this.formData.id);
-                        if (index !== -1) {
-                            this.locations[index] = { ...this.formData };
-                        }
+                        if (index !== -1) this.locations.splice(index, 1, { ...this.formData });
                     } else {
-                        console.log('Creating new location:', this.formData);
-                        // Logic thêm mới
-                        const newId = Math.max(...this.locations.map(l => l.id)) + 1;
+                        const newId = this.locations.length > 0 ? Math.max(...this.locations.map(l => l.id)) + 1 : 1;
                         this.locations.push({ ...this.formData, id: newId });
                     }
                     this.closeModal();
+                },
+                
+                deleteLocation(id) {
+                    // Sử dụng modal tùy chỉnh thay cho confirm() trong thực tế
+                    if(confirm('Bạn có chắc chắn muốn xóa địa điểm này không?')) {
+                        this.locations = this.locations.filter(l => l.id !== id);
+                    }
                 }
             }
         }
