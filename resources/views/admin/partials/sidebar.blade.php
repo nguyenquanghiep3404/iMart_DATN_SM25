@@ -39,6 +39,8 @@
         $activeParentNav = 16; // Index của "quản lý trang chủ"
     } elseif (str_starts_with($currentRouteName, 'admin.flash-sales.')) {
         $activeParentNav = 17; // Index của "quản lý trang chủ"
+    } elseif (str_starts_with($currentRouteName, 'admin.bundle-products.')) {
+        $activeParentNav = 21; // Index của "quản lý trang chủ"
     } elseif (str_starts_with($currentRouteName, 'admin.abandoned-carts.')) {
         $activeParentNav = 18; // Index của "quản lý giỏ hàng lãng quên"
     } elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
@@ -740,6 +742,23 @@
     </a>
 </li>
 
+
+   {{-- 10. Quản lý Flash-Sales --}}
+<li>
+    @php $isBundleProductsActive = request()->routeIs('admin.bundle-products.*'); @endphp
+    <a href="{{ route('admin.bundle-products.index') }}"
+        class="group flex items-center px-4 py-2.5
+            text-base rounded-md transition-all duration-200 ease-in-out
+            {{ $isBundleProductsActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+        <span
+            class="mr-3 text-lg {{ $isBundleProductsActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+            {{-- Icon 2 sản phẩm --}}
+<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+  <path d="M20 6H4V4h16v2zm0 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8h16zm-5 3h-6v2h6v-2z"/>
+</svg>
+
+        </span>
+        Quản lý Gói Sản Phẩm
    {{-- 10. Quản lý nhà cung cấp --}}
 
 <li>

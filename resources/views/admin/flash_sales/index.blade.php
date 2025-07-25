@@ -149,20 +149,19 @@
                         <table class="table-custom table-striped">
                             <thead>
                                 <tr>
-                                    <th>Tên chiến dịch</th>
-                                    <th>Thời gian bắt đầu & kết thúc</th>
-                                    <th>Khung giờ áp dụng</th>
-
-                                    <th>Số sản phẩm</th>
-                                    <th>Trạng thái</th>
-                                    <th class="text-center">Hành động</th>
+                                    <th class="text-left text-base font-medium" style="width: 20%;">Tên chiến dịch</th>
+                                    <th class="text-left text-base font-medium" style="width: 20%;">Thời gian bắt đầu & kết thúc</th>
+                                    <th class="text-left text-base font-medium" style="width: 20%;">Khung giờ ưu đãi</th>
+                                    <th class="text-left text-base font-medium" style="width: 10%;">Số sản phẩm</th>
+                                    <th class="text-left text-base font-medium" style="width: 15%;">Trạng thái</th>
+                                    <th class="text-left text-base font-medium" style="width: 15%;">Hành động</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse ($flashSales as $flashSale)
                                     <tr>
-                                        <td class="font-semibold text-gray-800">{{ $flashSale->name }}</td>
-                                        <td class="text-xs">
+                                        <td class="text-left text-base font-medium">{{ $flashSale->name }}</td>
+                                        <td class="text-left text-base font-medium">
                                             <div class="text-green-600">
                                                 {{ \Carbon\Carbon::parse($flashSale->start_time)->format('d/m/Y H:i:s') }}
                                             </div>
@@ -170,63 +169,50 @@
                                                 {{ \Carbon\Carbon::parse($flashSale->end_time)->format('d/m/Y H:i:s') }}
                                             </div>
                                         </td>
-
-                                        <td>
+                                        <td class="text-left text-base font-medium">
                                             @if ($flashSale->flashSaleTimeSlots->isNotEmpty())
                                                 @foreach ($flashSale->flashSaleTimeSlots as $slot)
                                                     <div>{{ \Carbon\Carbon::parse($slot->start_time)->format('H:i') }} -
                                                         {{ \Carbon\Carbon::parse($slot->end_time)->format('H:i') }}</div>
                                                 @endforeach
                                             @else
-                                                -
+                                                Toàn thời gian chiến dịch
                                             @endif
                                         </td>
-
-
-                                        <td>{{ $flashSale->flashSaleProducts->count() }}</td>
-                                        <td>
+                                        <td class="text-left text-base font-medium">{{ $flashSale->flashSaleProducts->count() }}</td>
+                                        <td class="text-left text-base font-medium">
                                             @php
                                                 $now = now();
-                                                if ($flashSale->start_time > $now) {
+                                                if ($flashSale->status === 'inactive') {
+                                                    $status = 'Tạm dừng';
+                                                    $bgClass = 'bg-gray-500';
+                                                } elseif ($flashSale->start_time > $now) {
                                                     $status = 'Đã lên lịch';
                                                     $bgClass = 'bg-blue-500';
                                                 } elseif ($flashSale->end_time < $now) {
                                                     $status = 'Đã kết thúc';
                                                     $bgClass = 'bg-gray-500';
                                                 } else {
-                                                    $status = 'Đang hoạt động';
+                                                    $status = 'Đang diễn ra';
                                                     $bgClass = 'bg-green-500';
                                                 }
                                             @endphp
-                                            <span
-                                                class="{{ $bgClass }} text-white text-xs font-semibold px-3 py-1 rounded-full">
-                                                {{ $status }}
-                                            </span>
+                                            <span class="px-3 py-1 rounded text-white {{ $bgClass }}">{{ $status }}</span>
                                         </td>
-
-                                        <td class="text-center">
+                                        <td class="text-left text-base font-medium">
                                             <div class="inline-flex space-x-1">
-                                                <a href="{{ route('admin.flash-sales.show', $flashSale) }}"
-                                                    class="btn btn-primary btn-sm" title="Quản lý">
-                                                    <i class="fas fa-tasks"></i>
-                                                </a>
-                                                <a href="{{ route('admin.flash-sales.edit', $flashSale) }}"
-                                                    class="btn btn-warning btn-sm" title="Chỉnh sửa"><i
+                                                <a href="{{ route('admin.flash-sales.show', $flashSale->id) }}"
+                                                    class="btn btn-sm btn-primary" title="Chi tiết"><i
+                                                        class="fas fa-list"></i></a>
+                                                <a href="{{ route('admin.flash-sales.edit', $flashSale->id) }}"
+                                                    class="btn btn-sm btn-warning" title="Sửa"><i
                                                         class="fas fa-edit"></i></a>
-                                                <form action="{{ route('admin.flash-sales.destroy', $flashSale) }}"
-                                                    method="POST" style="display:inline-block;"
-                                                    onsubmit="return confirm('Bạn có chắc muốn xóa?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button class="btn btn-danger btn-sm" title="Xóa"><i
-                                                            class="fas fa-trash"></i></button>
-                                                </form>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center">Không có chiến dịch flash sale nào.</td>
+                                        <td colspan="6" class="text-center">Không có chiến dịch nào.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
