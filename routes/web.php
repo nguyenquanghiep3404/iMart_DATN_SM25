@@ -41,6 +41,7 @@ use App\Http\Controllers\Admin\TradeInItemController;
 use App\Notifications\GuestOrderConfirmation;
 use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\GuestReviewController;
+use App\Http\Controllers\Admin\SupplierController;
 
 
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
@@ -458,6 +459,20 @@ Route::prefix('admin')
 
         // Quản lý thu cũ và hàng mở hộp
         Route::resource('trade-in-items', TradeInItemController::class);
+
+        // Quản lý nhà cung cấp
+        // Quản lý nhà cung cấp
+        Route::prefix('suppliers')->name('suppliers.')->group(function () {
+            Route::get('/', [SupplierController::class, 'index'])->name('index');
+            Route::post('/', [SupplierController::class, 'store'])->name('store');
+            Route::get('/trash', [SupplierController::class, 'trash'])->name('trash');
+            Route::get('/{supplier}', [SupplierController::class, 'show'])->name('show');
+            Route::put('/{supplier}', [SupplierController::class, 'update'])->name('update');
+            Route::delete('/{supplier}', [SupplierController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
+            Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
+        });
+
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
