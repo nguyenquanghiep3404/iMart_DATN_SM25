@@ -43,6 +43,8 @@
         $activeParentNav = 18; // Index của "quản lý giỏ hàng lãng quên"
     } elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
         $activeParentNav = 19; // Index của "quản lý trang chủ"
+    } elseif (str_starts_with($currentRouteName, 'admin.registers.')) {
+        $activeParentNav = 20; // Index của "quản lý trang chủ"
     }
     // Thêm các điều kiện khác nếu cần
 @endphp
@@ -633,6 +635,27 @@
                         Quản lý giỏ hàng bỏ lỡ
                     </a>
                 </li>
+                <li>
+                    @php $isSalesActive = request()->routeIs('admin.registers.*'); @endphp
+                    <a href="{{ route('admin.registers.index') }}"
+                        class="group flex items-center px-4 py-2.5
+                        text-base rounded-md transition-all duration-200 ease-in-out
+                        {{ $isSalesActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+
+                        <span
+                            class="mr-3 text-lg {{ $isSalesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            {{-- Icon máy POS --}}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 3h12a1 1 0 011 1v3H5V4a1 1 0 011-1zm0 5h12v13a1 1 0 01-1 1H7a1 1 0 01-1-1V8zm2 3h2m4 0h2m-8 4h6" />
+                            </svg>
+                        </span>
+
+                        Quản lý máy POS
+                    </a>
+                </li>
+
 
 
 

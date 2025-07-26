@@ -174,7 +174,7 @@ class AbandonedCartController  extends Controller
                 AbandonedCartLog::create([
                     'abandoned_cart_id' => $cart->id,
                     'action' => 'sent_email',
-                    'description' => 'Đã gửi email hàng loạt cho ' . $cart->user->email,
+                    'description' => 'Đã gửi email cho ' . $cart->user->email,
                     'causer_type' => auth()->check() ? get_class(auth()->user()) : null,
                     'causer_id' => auth()->id(),
                 ]);
@@ -205,7 +205,7 @@ class AbandonedCartController  extends Controller
                 AbandonedCartLog::create([
                     'abandoned_cart_id' => $cart->id,
                     'action' => 'sent_in_app_notification',
-                    'description' => 'Đã gửi in-app hàng loạt cho ' . $cart->user->email,
+                    'description' => 'Đã gửi in-app cho ' . $cart->user->email,
                     'causer_type' => auth()->check() ? get_class(auth()->user()) : null,
                     'causer_id' => auth()->id(),
                 ]);

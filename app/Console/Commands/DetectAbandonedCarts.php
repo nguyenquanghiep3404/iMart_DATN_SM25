@@ -51,14 +51,14 @@ class DetectAbandonedCarts extends Command
             }
 
             // Gửi thông báo nếu có user và chưa gửi lần nào
-            if (
-                $cart->user &&
-                $cart->user->unreadNotifications()
-                    ->where('type', AbandonedCartReminder::class)
-                    ->doesntExist()
-            ) {
-                $cart->user->notify(new AbandonedCartReminder());
-            }
+            // if (
+            //     $cart->user &&
+            //     $cart->user->unreadNotifications()
+            //         ->where('type', AbandonedCartReminder::class)
+            //         ->doesntExist()
+            // ) {
+            //     $cart->user->notify(new AbandonedCartReminder());
+            // }
 
             $count++;
         }
