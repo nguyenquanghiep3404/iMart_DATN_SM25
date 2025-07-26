@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Casts\Attribute;
 class PurchaseOrder extends Model
 {
     use HasFactory;
@@ -19,6 +19,7 @@ class PurchaseOrder extends Model
         'po_code',
         'status',
         'order_date',
+        'store_location_id', 
     ];
 
     /**
@@ -45,4 +46,29 @@ class PurchaseOrder extends Model
     {
         return $this->hasMany(PurchaseOrderItem::class);
     }
+    public function storeLocation()
+    {
+        return $this->belongsTo(StoreLocation::class);
+    }
+    /**
+     * Lấy tất cả các chi tiết (sản phẩm) của phiếu nhập.
+     */
+    public function items()
+    {
+        return $this->hasMany(PurchaseOrderItem::class);
+    }
+    
+    /**
+     * Accessor để tính tổng tiền của phiếu nhập.
+     * Cách dùng trong view: $purchaseOrder->total_amount
+     */
+    protected function totalAmount(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->items->sum(function ($item) {
+                return $item->quantity * $item->cost_price;
+            })
+        );
+    }
+    
 }

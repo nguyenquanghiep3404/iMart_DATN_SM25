@@ -52,6 +52,7 @@ use App\Mail\AbandonedCartMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -502,8 +503,6 @@ Route::prefix('admin')
 
         // Xóa mềm gói sản phẩm
 
-
-
         // Post routes
         Route::get('posts/trashed', [PostController::class, 'trashed'])->name('posts.trashed'); // Danh sách bài đã xóa
         Route::get('posts/preview/{id}', [PostController::class, 'preview'])->name('posts.preview');
@@ -542,7 +541,6 @@ Route::prefix('admin')
 
         // Quản lí địa điểm cử hàng
        Route::resource('store-locations', StoreLocationController::class)->except(['create', 'show']);
-
         // Các route AJAX riêng biệt vẫn giữ nguyên để tương tác động
         Route::get('store-locations/{storeLocation}/edit-data', [StoreLocationController::class, 'edit'])->name('store-locations.edit-data');
         Route::delete('store-locations/{storeLocation}/soft-delete', [StoreLocationController::class, 'destroy'])->name('store-locations.soft-delete');
@@ -555,7 +553,6 @@ Route::prefix('admin')
         Route::get('api/districts', [StoreLocationController::class, 'getDistrictsByProvince'])->name('api.districts');
         Route::get('api/wards', [StoreLocationController::class, 'getWardsByDistrict'])->name('api.wards');
         // Quản lý nhà cung cấp
-        // Quản lý nhà cung cấp
         Route::prefix('suppliers')->name('suppliers.')->group(function () {
             Route::get('/', [SupplierController::class, 'index'])->name('index');
             Route::post('/', [SupplierController::class, 'store'])->name('store');
@@ -566,7 +563,17 @@ Route::prefix('admin')
             Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
             Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
         });
-
+        //==========================================================================
+        // QUẢN LÝ NHẬP KHO (PURCHASE ORDERS)
+        //==========================================================================
+        Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+            // Route để tìm kiếm sản phẩm (dùng cho AJAX khi thêm sản phẩm vào phiếu)
+            Route::get('/search-products', [PurchaseOrderController::class, 'searchProducts'])->name('search-products');
+            
+            // Route để nhận hàng vào kho
+            Route::post('/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receiveItems'])->name('receive');
+        });
+        Route::resource('purchase-orders', PurchaseOrderController::class);
 
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);

@@ -23,8 +23,9 @@ return new class extends Migration
         Schema::create('purchase_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supplier_id')->constrained('suppliers');
+            $table->foreignId('store_location_id')->nullable()->constrained('store_locations');
             $table->string('po_code')->unique();
-            $table->string('status')->default('pending'); // pending, completed
+            $table->string('status')->default('pending'); 
             $table->date('order_date');
             $table->timestamps();
         });
