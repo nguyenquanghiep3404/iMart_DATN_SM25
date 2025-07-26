@@ -364,17 +364,21 @@ Route::prefix('admin')
         ->name('abandoned_carts.send_inapp');
         Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
         ->name('abandoned_carts.send_email');
-        Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
-            $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
+        // Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
+        //     $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
         
-            $email = $abandonedCart->user->email ?? $abandonedCart->guest_email;
+        //     $email = $abandonedCart->user->email ?? $abandonedCart->guest_email;
         
-            Mail::to($email)->send(new AbandonedCartMail($abandonedCart));
+        //     Mail::to($email)->send(new AbandonedCartMail($abandonedCart));
         
-            return 'Email đã được gửi.';
-        });
-        
-        
+        //     return 'Email đã được gửi.';
+        // });
+        Route::post('/abandoned-carts/bulk-send-email', [AbandonedCartController::class, 'bulkSendEmail'])
+            ->name('abandoned_carts.bulk_send_email');
+
+        Route::post('/abandoned-carts/bulk-send-inapp', [AbandonedCartController::class, 'bulkSendInApp'])
+            ->name('abandoned_carts.bulk_send_inapp');
+            
         
         
 

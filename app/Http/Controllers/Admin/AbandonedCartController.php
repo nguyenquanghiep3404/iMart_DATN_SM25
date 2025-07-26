@@ -155,4 +155,66 @@ class AbandonedCartController  extends Controller
             return response()->json(['message' => 'Lỗi gửi mail: ' . $e->getMessage()], 500);
         }
     }
+    public function bulkSendEmail(Request $request)
+    {
+        $ids = $request->input('cart_ids', []);
+        if (empty($ids)) {
+            return response()->json(['success' => false, 'message' => 'Không có giỏ hàng nào được chọn.']);
+        }
+
+        $carts = AbandonedCart::with('user')->whereIn('id', $ids)->get();
+
+        foreach ($carts as $cart) {
+            if (!$cart->user || !$cart->user->email) continue;
+
+            try {
+                Mail::to($cart->user->email)->send(new AbandonedCartMail($cart));
+                $cart->update(['email_status' => 'sent', 'last_notified_at' => now()]);
+
+                AbandonedCartLog::create([
+                    'abandoned_cart_id' => $cart->id,
+                    'action' => 'sent_email',
+                    'description' => 'Đã gửi email hàng loạt cho ' . $cart->user->email,
+                    'causer_type' => auth()->check() ? get_class(auth()->user()) : null,
+                    'causer_id' => auth()->id(),
+                ]);
+            } catch (\Exception $e) {
+                \Log::error("Bulk email failed for cart {$cart->id}: {$e->getMessage()}");
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Đã gửi email cho các giỏ hàng được chọn.']);
+    }
+
+    public function bulkSendInApp(Request $request)
+    {
+        $ids = $request->input('cart_ids', []);
+        if (empty($ids)) {
+            return response()->json(['success' => false, 'message' => 'Không có giỏ hàng nào được chọn.']);
+        }
+
+        $carts = AbandonedCart::with('user')->whereIn('id', $ids)->get();
+
+        foreach ($carts as $cart) {
+            if (!$cart->user) continue;
+
+            try {
+                $cart->user->notify(new AbandonedCartReminder(['database']));
+                $cart->update(['in_app_notification_status' => 'sent']);
+
+                AbandonedCartLog::create([
+                    'abandoned_cart_id' => $cart->id,
+                    'action' => 'sent_in_app_notification',
+                    'description' => 'Đã gửi in-app hàng loạt cho ' . $cart->user->email,
+                    'causer_type' => auth()->check() ? get_class(auth()->user()) : null,
+                    'causer_id' => auth()->id(),
+                ]);
+            } catch (\Exception $e) {
+                \Log::error("Bulk in-app failed for cart {$cart->id}: {$e->getMessage()}");
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Đã gửi in-app cho các giỏ hàng được chọn.']);
+    }
+
 }
