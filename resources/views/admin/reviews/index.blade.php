@@ -95,8 +95,8 @@
                             <div class="flex items-center">
                                 <img src="{{ $review->user->avatar_url ?? 'https://placehold.co/40x40' }}" alt="Avatar" class="w-10 h-10 rounded-full mr-4">
                                 <div>
-                                    <div class="font-semibold text-gray-900">{{ $review->user->name }}</div>
-                                    <div class="text-xs text-gray-500">{{ $review->user->email }}</div>
+                                    <div class="font-semibold text-gray-900">{{ $review->user->name ?? 'Khách vãng lai' }}</div>
+                                    <div class="text-xs text-gray-500">{{ $review->user->email ?? '' }}</div>
                                 </div>
                             </div>
                         </td>
@@ -137,7 +137,7 @@
                         <td class="px-6 py-4 text-sm text-gray-500">{{ $review->created_at->format('d/m/Y') }}</td>
                         <td class="px-6 py-4 text-right">
                             <button
-                                onclick="openStatusModal( '{{ $review->id }}', '{{ $review->user->name }}', '{{ $review->status }}')"
+                                onclick="openStatusModal( '{{ $review->id }}', '{{ $review->user->name ?? 'Khách vãng lai' }}', '{{ $review->status }}')"
                                 class="text-indigo-600 hover:text-indigo-900 text-lg"
                                 title="Thay đổi trạng thái">
                                 <i class="fas fa-edit"></i>

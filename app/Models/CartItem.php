@@ -16,9 +16,10 @@ class CartItem extends Model
      */
     protected $fillable = [
         'cart_id',
-        'product_variant_id',
+        'cartable_id',
+        'cartable_type',
         'quantity',
-        'price', // Giá tại thời điểm thêm vào giỏ
+        'price',
         'added_at',
     ];
 
@@ -48,10 +49,14 @@ class CartItem extends Model
     {
         return $this->belongsTo(ProductVariant::class);
     }
+    public function cartable()
+    {
+        return $this->morphTo();
+    }
 
     // Accessor để tính thành tiền cho mục này
     public function getSubtotalAttribute()
     {
-        return $this->quantity * ($this->price ?? $this->productVariant->price);
+        return $this->quantity * ($this->price ?? ($this->cartable->price ?? 0));
     }
 }

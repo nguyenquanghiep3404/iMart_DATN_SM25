@@ -6,12 +6,6 @@
             <!-- Page title + Add list button-->
             <div class="d-flex align-items-center justify-content-between pb-3 mb-1 mb-sm-2 mb-md-3">
                 <h1 class="h2 me-3 mb-0">Danh sách sản phẩm yêu thích</h1>
-                <div class="nav">
-                    <a class="nav-link animate-underline px-0 py-1 py-ms-2" href="/">
-                        <i class="ci-plus fs-base me-1"></i>
-                        <span class="animate-target">Thêm danh sách yêu thích</span>
-                    </a>
-                </div>
             </div>
 
             <!-- Wishlist selector -->
@@ -191,142 +185,289 @@
                 </script>
             @endif
         </div>
-        <script>
-            document.getElementById('wishlist-master').addEventListener('change', function() {
-                const checked = this.checked; // trạng thái của checkbox master
-                // Lấy tất cả checkbox con
-                const checkboxes = document.querySelectorAll('.select-card-check');
-                checkboxes.forEach(cb => cb.checked = checked);
-
-                // Đồng thời đổi label của checkbox master nếu muốn
-                const label = this.nextElementSibling; // giả sử label nằm ngay sau input
-                if (label) {
-                    label.textContent = checked ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
-                }
-            });
-            // thêm sản phẩm vào giỏ hàng
-            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
-                button.addEventListener('click', function() {
-                    const variantId = this.dataset.variantId;
-                    console.log("Click: ", variantId);
-
-                    fetch("{{ route('cart.add') }}", {
-                            method: "POST",
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                product_variant_id: variantId,
-                                quantity: 1
-                            })
-                        })
-                        .then(async res => {
-                            const data = await res.json();
-
-                            if (res.ok) {
-                                if (data.success) {
-                                    toastr.success(data.success);
-
-                                    // **Thêm đoạn cập nhật badge giỏ hàng ở đây**
-                                    const cartBadge = document.getElementById('cart-badge');
-                                    if (cartBadge) {
-                                        if (data.cartItemCount !== undefined && data.cartItemCount >
-                                            0) {
-                                            cartBadge.textContent = data.cartItemCount;
-                                            cartBadge.style.display = 'flex';
-                                        } else {
-                                            cartBadge.style.display = 'none';
-                                        }
-                                    }
-                                }
-                                if (data.redirect) {
-                                    window.location.href = data.redirect;
-                                }
-                            } else {
-                                toastr.error(data.message || "Đã vượt quá tồn kho");
-                            }
-                        })
-                        .catch(err => {
-                            toastr.error("Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.");
-                            console.error(err);
-                        });
-                });
-            });
-
-
+        <!-- Bắt buộc: Thêm trước khi dùng toastr -->
+        {{-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script> --}}
+        {{-- <script>
+            // ✅ Cấu hình toastr với hiệu ứng Animate.css
             toastr.options = {
                 closeButton: true,
                 progressBar: true,
-                positionClass: "toast-top-right",
-                timeOut: "3000",
-                showDuration: "300",
-                hideDuration: "1000",
-                showMethod: "slideDown",
-                hideMethod: "slideUp"
+                escapeHtml: false,
+                positionClass: "toast-bottom-right", // 👈 nằm dưới cùng bên phải
+                timeOut: 3000,
+                extendedTimeOut: 1000,
+
+                // 👇 Dùng hiệu ứng Animate.css (KHÔNG dùng showMethod)
+                showClass: 'animate__animated animate__fadeInRight',
+                hideClass: 'animate__animated animate__fadeOutRight'
             };
+
             document.addEventListener('DOMContentLoaded', function() {
                 const csrfToken = '{{ csrf_token() }}';
 
-                // xử lý nút thêm nhiều sản phẩm
-                const addBtn = document.getElementById('add-selected-to-cart');
-                if (!addBtn) return;
+                // ✅ Chức năng: Chọn / Bỏ chọn tất cả checkbox
+                const masterCheckbox = document.getElementById('wishlist-master');
+                if (masterCheckbox) {
+                    masterCheckbox.addEventListener('change', function() {
+                        const checked = this.checked;
+                        document.querySelectorAll('.select-card-check').forEach(cb => cb.checked = checked);
+                        const label = this.nextElementSibling;
+                        if (label) {
+                            label.textContent = checked ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+                        }
+                    });
+                }
 
-                addBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
+                // ✅ Thêm 1 sản phẩm vào giỏ
+                document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const variantId = this.dataset.variantId;
 
-                    const selectedCheckboxes = document.querySelectorAll('.select-card-check:checked');
-                    if (selectedCheckboxes.length === 0) {
-                        toastr.warning('Vui lòng chọn ít nhất một sản phẩm.');
-                        return;
-                    }
-
-                    const products = Array.from(selectedCheckboxes).map(cb => ({
-                        product_variant_id: cb.value,
-                        quantity: 1
-                    }));
-
-                    fetch('/cart/add-multiple', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrfToken,
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                products
+                        fetch("{{ route('cart.add') }}", {
+                                method: "POST",
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    product_variant_id: variantId,
+                                    quantity: 1
+                                })
                             })
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            // Hiển thị thông báo từng sản phẩm
-                            if (data.results && Array.isArray(data.results)) {
-                                data.results.forEach(item => {
-                                    if (item.success) {
-                                        toastr.success(item.message);
-                                    } else {
-                                        toastr.error(item.message);
-                                    }
-                                });
-                            }
-
-                            // Cập nhật badge số lượng trên header
-                            const cartBadge = document.getElementById('cart-badge');
-                            if (cartBadge) {
-                                if (data.cartItemCount !== undefined && data.cartItemCount > 0) {
-                                    cartBadge.textContent = data.cartItemCount;
-                                    cartBadge.style.display = 'flex';
+                            .then(async res => {
+                                const data = await res.json();
+                                
+                                if (res.ok && data.success) {
+                                    const cartUrl = "{{ route('cart.index') }}";
+                                    const message =
+                                        `${data.success} <br><a href="${cartUrl}" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>`;
+                                    toastr.success(message);
+                                    updateCartBadge(data.cartItemCount);
                                 } else {
-                                    cartBadge.style.display = 'none';
+                                    toastr.error(data.message || "Đã vượt quá tồn kho");
                                 }
-                            }
-                        })
-                        .catch(() => {
-                            toastr.error('Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.');
-                        });
+
+                                if (data.redirect) {
+                                    window.location.href = data.redirect;
+                                }
+                            })
+                            .catch(err => {
+                                toastr.error("Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.");
+                                console.error(err);
+                            });
+                    });
                 });
 
+                // ✅ Thêm nhiều sản phẩm đã chọn
+                const addMultipleBtn = document.getElementById('add-selected-to-cart');
+                if (addMultipleBtn) {
+                    addMultipleBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        const selectedCheckboxes = document.querySelectorAll('.select-card-check:checked');
+                        if (selectedCheckboxes.length === 0) {
+                            toastr.warning('Vui lòng chọn ít nhất một sản phẩm.');
+                            return;
+                        }
+
+                        const products = Array.from(selectedCheckboxes).map(cb => ({
+                            product_variant_id: cb.value,
+                            quantity: 1
+                        }));
+
+                        fetch('/cart/add-multiple', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    products
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (Array.isArray(data.results)) {
+                                    data.results.forEach(item => {
+                                        if (item.success) {
+                                            toastr.success(item.message);
+                                        } else {
+                                            toastr.error(item.message);
+                                        }
+                                    });
+                                }
+                                updateCartBadge(data.cartItemCount);
+                            })
+                            .catch(() => {
+                                toastr.error('Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.');
+                            });
+                    });
+                }
+
+                // ✅ Hàm cập nhật số lượng badge
+                function updateCartBadge(count) {
+                    const cartBadge = document.getElementById('cart-badge');
+                    if (!cartBadge) return;
+
+                    if (count && count > 0) {
+                        cartBadge.textContent = count;
+                        cartBadge.style.display = 'flex';
+                    } else {
+                        cartBadge.style.display = 'none';
+                    }
+                }
+            });
+        </script> --}}
+        <!-- Các thư viện cần thiết -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+        <script>
+            // ✅ Cấu hình toastr
+            toastr.options = {
+                closeButton: true,
+                progressBar: true,
+                escapeHtml: false, // Cho phép HTML (để hiển thị nút)
+                positionClass: "toast-bottom-right",
+                timeOut: 3000,
+                extendedTimeOut: 1000,
+                showClass: 'animate__animated animate__fadeInRight',
+                hideClass: 'animate__animated animate__fadeOutRight'
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                const csrfToken = '{{ csrf_token() }}';
+
+                // ✅ Chọn tất cả
+                const masterCheckbox = document.getElementById('wishlist-master');
+                if (masterCheckbox) {
+                    masterCheckbox.addEventListener('change', function() {
+                        const checked = this.checked;
+                        document.querySelectorAll('.select-card-check').forEach(cb => cb.checked = checked);
+                        const label = this.nextElementSibling;
+                        if (label) {
+                            label.textContent = checked ? 'Bỏ chọn tất cả' : 'Chọn tất cả';
+                        }
+                    });
+                }
+
+                // ✅ Thêm 1 sản phẩm
+                document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const variantId = button.dataset.variantId;
+
+                        fetch("{{ route('cart.add') }}", {
+                                method: "POST",
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    product_variant_id: variantId,
+                                    quantity: 1
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success) {
+                                    const cartUrl = "{{ route('cart.index') }}";
+                                    const message = `
+                            <div>
+                                ${data.success}
+                                <br>
+                                <a href="${cartUrl}" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>
+                            </div>
+                        `;
+                                    toastr.success(message);
+                                    updateCartBadge(data.cartItemCount);
+                                } else {
+                                    toastr.error(data.error || 'Đã xảy ra lỗi khi thêm sản phẩm.');
+                                }
+
+                                if (data.redirect) {
+                                    window.location.href = data.redirect;
+                                }
+                            })
+                            .catch(err => {
+                                toastr.error('Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.');
+                                console.error(err);
+                            });
+                    });
+                });
+
+                // ✅ Thêm nhiều sản phẩm
+                const addMultipleBtn = document.getElementById('add-selected-to-cart');
+                if (addMultipleBtn) {
+                    addMultipleBtn.addEventListener('click', e => {
+                        e.preventDefault();
+
+                        const selectedCheckboxes = document.querySelectorAll('.select-card-check:checked');
+                        if (selectedCheckboxes.length === 0) {
+                            toastr.warning('Vui lòng chọn ít nhất một sản phẩm.');
+                            return;
+                        }
+
+                        const products = Array.from(selectedCheckboxes).map(cb => ({
+                            product_variant_id: cb.value,
+                            quantity: 1
+                        }));
+
+                        fetch('/cart/add-multiple', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    products
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (Array.isArray(data.results)) {
+                                    data.results.forEach(item => {
+                                        if (item.success) {
+                                            const cartUrl = "{{ route('cart.index') }}";
+                                            const msg = `
+                                    <div>
+                                        ${item.message}
+                                        <br>
+                                        <a href="${cartUrl}" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>
+                                    </div>
+                                `;
+                                            toastr.success(msg);
+                                        } else {
+                                            toastr.error(item.message);
+                                        }
+                                    });
+                                }
+                                updateCartBadge(data.cartItemCount);
+                            })
+                            .catch(() => {
+                                toastr.error('Đã xảy ra lỗi khi thêm sản phẩm vào giỏ hàng.');
+                            });
+                    });
+                }
+
+                // ✅ Cập nhật badge giỏ hàng
+                function updateCartBadge(count) {
+                    const cartBadge = document.getElementById('cart-badge');
+                    if (!cartBadge) return;
+                    if (count && count > 0) {
+                        cartBadge.textContent = count;
+                        cartBadge.style.display = 'flex';
+                    } else {
+                        cartBadge.style.display = 'none';
+                    }
+                }
             });
         </script>
+
     @endsection

@@ -18,6 +18,7 @@
                   <h1 class="h4 mb-0 me-3">Cảm ơn bạn đã đặt hàng!</h1>
                   @if($order)
                   <div class="nav mt-2 mt-sm-0 ms-auto">
+                
                     <a class="nav-link text-decoration-underline p-0" href="#!">Theo dõi đơn hàng</a>
                   </div>
                   @endif

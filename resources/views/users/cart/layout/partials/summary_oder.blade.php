@@ -31,12 +31,12 @@
                         Tiến hành thanh toán
                         <i class="ci-chevron-right fs-lg ms-1 me-n1"></i>
                     </a>
-                    <div class="nav justify-content-center fs-sm mt-3">
+                    {{-- <div class="nav justify-content-center fs-sm mt-3">
                         <a class="nav-link text-decoration-underline p-0 me-1" href="#authForm"
                             data-bs-toggle="offcanvas" role="button">Create an account</a>
                         and get
                         <span class="text-dark-emphasis fw-medium ms-1">239 bonuses</span>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>
@@ -64,11 +64,139 @@
                         </form>
                     </div>
                 </div>
+                <button type="button" class="btn btn-outline-secondary w-100 mt-3" data-bs-toggle="modal"
+                    data-bs-target="#couponModal">
+                    <i class="ci-percent me-2"></i> Chọn mã khuyến mãi
+                </button>
             </div>
         </div>
     </div>
 </aside>
+<!-- Modal chọn mã khuyến mãi -->
+<div class="modal fade" id="couponModal" tabindex="-1" aria-labelledby="couponModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4">
+            <div class="modal-header bg-light text-dark">
+                <h5 class="modal-title" id="couponModalLabel">🎁 Chọn mã khuyến mãi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                @php
+                    $now = \Carbon\Carbon::now();
+                @endphp
+
+                @if ($availableCoupons->count())
+                    <div class="list-group">
+                        @foreach ($availableCoupons as $coupon)
+                            @php
+                                $startDate = \Carbon\Carbon::parse($coupon->start_date);
+                                $endDate = \Carbon\Carbon::parse($coupon->end_date);
+                                $isDisabled = $now->lt($startDate) || $now->gt($endDate);
+                                $discount =
+                                    $coupon->type === 'percentage'
+                                        ? "Giảm {$coupon->value}%"
+                                        : 'Giảm ' . number_format($coupon->value, 0, ',', '.') . '₫';
+                            @endphp
+
+                            <label
+                                class="list-group-item d-flex justify-between align-items-center {{ $isDisabled ? 'opacity-50' : '' }}"
+                                style="cursor: {{ $isDisabled ? 'not-allowed' : 'pointer' }};">
+                                <div>
+                                    <strong>{{ $coupon->code }}</strong>
+                                    <div class="text-muted small">
+                                        {{ $coupon->description ?? $discount }}<br>
+                                        Thời gian áp dụng: {{ $startDate->format('d/m/Y') }} -
+                                        {{ $endDate->format('d/m/Y') }}<br>
+                                        Đơn tối thiểu:
+                                        {{ $coupon->min_order_amount ? number_format($coupon->min_order_amount, 0, ',', '.') . '₫' : 'Không' }}
+                                    </div>
+                                </div>
+                                <input type="radio" class="form-check-input mt-0 coupon-radio" name="selected_coupon"
+                                    value="{{ $coupon->code }}" data-disabled="{{ $isDisabled ? '1' : '0' }}"
+                                    {{ $isDisabled ? 'disabled' : '' }}>
+                            </label>
+                        @endforeach
+                    </div>
+                @else
+                    <p>Hiện không có mã khuyến mãi nào khả dụng.</p>
+                @endif
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="applySelectedCouponBtn">Áp dụng mã</button>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
+    $(document).ready(function() {
+        // Cấu hình toastr
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toast-top-right",
+            timeOut: "3000",
+            showDuration: "300",
+            hideDuration: "1000",
+            showMethod: "slideDown",
+            hideMethod: "slideUp"
+        };
+
+        // Setup CSRF
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+
+        // Hàm xử lý gọi ajax dùng chung
+        function applyVoucher(voucherCode) {
+            $.ajax({
+                url: '{{ route('cart.applyVoucherAjax') }}',
+                method: 'POST',
+                data: {
+                    voucher_code: voucherCode
+                },
+                success: function(response) {
+                    const formatMoney = (amount) => amount.toLocaleString('vi-VN') + '₫';
+
+                    if (response.success) {
+                        toastr.success(response.message);
+                        $('#cart-discount').text('-' + formatMoney(response.discount));
+                        $('#cart-total').text(formatMoney(response.total_after_discount));
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Lỗi AJAX:', error);
+                    toastr.error('Đã có lỗi xảy ra. Vui lòng thử lại!');
+                }
+            });
+        }
+
+        // Gửi từ form nhập mã voucher
+        $('#voucher-form').on('submit', function(e) {
+            e.preventDefault();
+            const voucherCode = $(this).find('input[name="voucher_code"]').val();
+            applyVoucher(voucherCode);
+        });
+
+        // Gửi từ nút chọn mã trong danh sách gợi ý
+        $('#applySelectedCouponBtn').on('click', function() {
+            const selectedCode = $('input[name="selected_coupon"]:checked').val();
+
+            if (!selectedCode) {
+                toastr.warning('Vui lòng chọn một mã khuyến mãi trước khi áp dụng.');
+                return;
+            }
+
+            applyVoucher(selectedCode);
+        });
+    });
+</script>
+
+{{-- <script>
     $(document).ready(function() {
         // Cấu hình toastr
         toastr.options = {
@@ -120,4 +248,38 @@
             });
         });
     });
-</script>
+    $('#applySelectedCouponBtn').on('click', function() {
+        const selectedCode = $('input[name="selected_coupon"]:checked').val();
+
+        if (!selectedCode) {
+            toastr.warning('Vui lòng chọn một mã khuyến mãi trước khi áp dụng.');
+            return;
+        }
+
+        $.ajax({
+            url: '{{ route('cart.applyVoucherAjax') }}',
+            method: 'POST',
+            data: {
+                voucher_code: selectedCode
+            },
+            success: function(response) {
+                if (response.success) {
+                    toastr.success(response.message);
+
+                    const formatMoney = (amount) => amount.toLocaleString('vi-VN') + '₫';
+                    $('#cart-discount').text('-' + formatMoney(response.discount));
+                    $('#cart-total').text(formatMoney(response.total_after_discount));
+
+                    // ❌ Không ẩn modal nữa
+                    // => Người dùng có thể thử các mã khác nếu muốn
+                } else {
+                    toastr.error(response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Lỗi AJAX:', error);
+                toastr.error('Đã có lỗi xảy ra. Vui lòng thử lại!');
+            }
+        });
+    });
+</script> --}}

@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\HomepageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
@@ -11,40 +10,59 @@ use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Users\BlogController;
+use App\Http\Controllers\Users\CartController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\CommentController as AdminCommentController;
-use App\Http\Controllers\Admin\ShipperManagementController;
+use App\Http\Controllers\Users\CarOffController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Users\CommentController;
 use App\Http\Controllers\Users\PaymentController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\HomepageController;
 use App\Http\Controllers\Users\WishlistController;
-use App\Http\Controllers\Users\CommentController;
 use App\Http\Controllers\Admin\AttributeController;
+use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Shipper\ShipperController;
+use App\Http\Controllers\Users\UserOrderController;
+use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
-use App\Http\Controllers\Admin\DashboardAdminController;
-use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
-use App\Http\Controllers\Users\CartController;
-use App\Http\Controllers\Admin\OrderManagerController;
+use App\Http\Controllers\Admin\BundleProductController;
 use App\Http\Controllers\Admin\SpecificationController;
+use App\Http\Controllers\Admin\DashboardAdminController;
+use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
-use App\Http\Controllers\Users\UserOrderController;
-use App\Http\Controllers\Users\CarOffController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\AbandonedCartController;
+use App\Http\Controllers\Admin\TradeInItemController;
+use App\Notifications\GuestOrderConfirmation;
+use Illuminate\Support\Facades\Notification;
+use App\Http\Controllers\GuestReviewController;
+use App\Http\Controllers\Admin\SupplierController;
+use App\Mail\AbandonedCartMail;
+use Illuminate\Support\Facades\Mail;
+use App\Models\AbandonedCart;
+use App\Http\Controllers\Users\CartRecoveryController;
 
+// router khôi phục giỏ hàng
+Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
+Route::get('/cart/recover-result', function () {
+    return view('users.cart.recover_result');
+})->name('cart.recover_result');
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
-// Route::post('cart/remove', [CarOffController::class, 'removeItem'])->name('cart.removeItem');
+Route::post('/cart/remove-coupon', [CartController::class, 'removeCoupon'])->name('cart.removeCoupon');
 Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAjax'])->name('cart.applyVoucherAjax');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name('cart.addMultiple');
 Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
+
 
 // cart_offcanvas
 Route::get('/cart/offcanvas', [CarOffController::class, 'index']);
@@ -72,6 +90,7 @@ Route::prefix('payments')->name('payments.')->group(function () {
 //==========================================================================
 Route::get('/', [HomeController::class, 'index'])->name('users.home');  // Trang chủ, không cần đăng nhập
 Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.products.show');
+Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/danh-muc-san-pham/{id}-{slug}', [HomeController::class, 'allProducts'])->name('products.byCategory');
 Route::get('/danh-muc-san-pham', [HomeController::class, 'allProducts'])->name('users.products.all');
 Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestions'])->name('products.compare_suggestions');
@@ -79,6 +98,16 @@ Route::post('/api/compare-suggestions', [HomeController::class, 'compareSuggesti
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
+Route::get('/tim-kiem', [HomeController::class, 'search'])->name('users.products.search');
+Route::get('/api/search-suggestions', [HomeController::class, 'searchSuggestions'])->name('search.suggestions');
+Route::post('/reviews/verify-guest', [ReviewController::class, 'verifyGuest'])->name('reviews.guest.verify.post');
+Route::prefix('guest-review')->controller(GuestReviewController::class)->group(function () {
+    Route::post('/verify', 'verifyOrder')->name('guest.reviews.verify');
+    Route::post('/submit', 'store')->name('guest.reviews.store');
+});
+
+
+
 // BLOG ROUTES (PUBLIC)
 Route::prefix('blog')->group(function () {
     Route::get('/', [BlogController::class, 'home'])->name('users.blogs.home');
@@ -95,7 +124,6 @@ Route::post('/notifications/mark-as-read', function () {
     auth()->user()->unreadNotifications->markAsRead();
     return response()->json(['status' => 'success']);
 })->name('notifications.markAsRead')->middleware('auth');
-
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -109,10 +137,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
     //Routes đơn hàng của user
     Route::prefix('my-orders')->group(function () {
-            Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
-            Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
-            Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
-            Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
+        Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
+        Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
+        Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
+        Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
     });
 });
 
@@ -127,6 +155,7 @@ Route::get('/product/{id}', [ProductController::class, 'show'])
 // router cart
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/add-combo', [CartController::class, 'addCombo'])->name('cart.addCombo');
 // routes/web.php
 Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
 Route::get('/session/flush-message', function () {
@@ -152,10 +181,27 @@ Route::post('/buy-now/process', [PaymentController::class, 'processBuyNowOrder']
 // LOCATION API ROUTES
 //==========================================================================
 Route::prefix('api/locations')->name('api.locations.')->group(function () {
+    // Hệ thống địa chỉ mới
     Route::get('/provinces', [LocationController::class, 'getProvinces'])->name('provinces');
     Route::get('/wards/{provinceCode}', [LocationController::class, 'getWardsByProvince'])->name('wards');
+    // Hệ thống địa chỉ cũ
+    Route::get('/old/provinces', [LocationController::class, 'getOldProvinces'])->name('old.provinces');
+    Route::get('/old/districts/{provinceCode}', [LocationController::class, 'getOldDistrictsByProvince'])->name('old.districts');
+    Route::get('/old/wards/{districtCode}', [LocationController::class, 'getOldWardsByDistrict'])->name('old.wards');
+    // Kiểm tra hỗ trợ hệ thống mới
+    Route::get('/check-support/{provinceCode}', [LocationController::class, 'checkNewSystemSupport'])->name('check.support');
 });
 
+// API lấy địa chỉ GHN ( Để lại nếu không cần bỏ được để xem xét)
+// Route::get('/api/ghn/provinces', function() {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_provinces')->get() ]);
+// });
+// Route::get('/api/ghn/districts/{province_id}', function($province_id) {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_districts')->where('province_id', $province_id)->get() ]);
+// });
+// Route::get('/api/ghn/wards/{district_id}', function($district_id) {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_wards')->where('district_id', $district_id)->get() ]);
+// });
 //==========================================================================
 // ADMIN ROUTES
 //==========================================================================
@@ -176,7 +222,7 @@ Route::prefix('admin')
         // Route riêng cho việc xóa ảnh gallery
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
             ->name('products.gallery.delete');
-
+        Route::post('/products/upload-image-ckeditor', [ProductController::class, 'uploadImageCkeditor'])->name('media.ckeditor_upload');
         // Route xóa mềm người dùng
         // Route::middleware('can:is-admin')->group(function () {
         Route::prefix('users')->name('users.')->group(function () {
@@ -311,8 +357,29 @@ Route::prefix('admin')
         Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
         Route::get('/orders/shippers/list', [OrderController::class, 'getShippers'])->name('orders.shippers');
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
+        Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
 
-
+        // quản lý giỏ hàng lãng quên
+        Route::get('/abandoned-carts', [AbandonedCartController::class, 'index'])->name('abandoned-carts.index');
+        Route::get('/admin/abandoned-carts/{id}', [AbandonedCartController::class, 'show'])
+        ->name('abandoned_carts.show');
+        Route::post('abandoned-carts/send-inapp/{cart}', [AbandonedCartController::class, 'sendInApp'])
+        ->name('abandoned_carts.send_inapp');
+        Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
+        ->name('abandoned_carts.send_email');
+        Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
+            $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
+        
+            $email = $abandonedCart->user->email ?? $abandonedCart->guest_email;
+        
+            Mail::to($email)->send(new AbandonedCartMail($abandonedCart));
+        
+            return 'Email đã được gửi.';
+        });
+        
+        
+        
+        
 
         // Banner routes
 
@@ -343,6 +410,7 @@ Route::prefix('admin')
 
 
         // Quản lý comment
+        Route::get('comments/product/{product}', [AdminCommentController::class, 'byProduct'])->name('comments.byProduct');
         Route::get('/comments', [AdminCommentController::class, 'index'])->name('comment.index');
         Route::get('products/{id}-{slug}', [ProductController::class, 'show'])->name('products.show');
         Route::get('posts/{id}-{slug}', [PostController::class, 'show'])->name('posts.show');
@@ -365,40 +433,60 @@ Route::prefix('admin')
             ->names('categories_post');
 
         // Route quản lí trang chủ (client)
-
-        // ✅ Hiển thị trang quản lý trang chủ (dùng index vì là quản lý tổng thể)
-        Route::get('/homepage', [HomepageController::class, 'index'])->name('admin.homepage.index');
-
-        // ✅ Lưu toàn bộ thay đổi
+        Route::get('/homepage', [HomepageController::class, 'index'])->name('homepage.index');
         Route::post('/homepage/update', [HomepageController::class, 'update'])->name('homepage.update');
-
-        // ✅ Sắp xếp banner (drag & drop)
         Route::post('/homepage/banners/sort', [HomepageController::class, 'sortBanners'])->name('admin.homepage.banners.sort');
-
-        // ✅ Lưu danh mục hiển thị
         Route::post('/homepage/categories', [HomepageController::class, 'saveCategories'])->name('admin.homepage.categories.save');
-
-        // ✅ Sắp xếp danh mục
         Route::post('/homepage/categories/sort', [HomepageController::class, 'sortCategories'])->name('admin.homepage.categories.sort');
-
-        // ✅ Lấy danh sách danh mục từ DB (dùng cho fetch)
         Route::get('/homepage/categories/list', [HomepageController::class, 'getCategories'])->name('admin.homepage.categories.list');
-
-        // ✅ Thêm khối sản phẩm
         Route::post('/homepage/product-blocks', [HomepageController::class, 'storeProductBlock'])->name('homepage.blocks.store');
-
-        // ✅ Xoá khối sản phẩm
         Route::delete('/homepage/product-blocks/{id}', [HomepageController::class, 'destroyProductBlock'])->name('homepage.blocks.destroy');
-
         Route::get('/homepage/products/search', [HomepageController::class, 'searchProducts'])->name('homepage.products.search');
-
-
-        // ✅ Cập nhật thứ tự khối sản phẩm
-        Route::post('/homepage/product-blocks/sort', [HomepageController::class, 'sortProductBlocks'])->name('admin.homepage.blocks.sort');
+        Route::patch('/homepage/blocks/{id}/toggle-visibility', [HomepageController::class, 'toggleBlockVisibility'])
+            ->name('homepage.blocks.toggleVisibility');
+        Route::post('/homepage/product-blocks/update-order', [HomepageController::class, 'updateBlockOrder'])->name('homepage.blocks.update-order');
+        Route::post('/homepage/product-blocks/{blockId}/update-order', [HomepageController::class, 'updateProductOrder'])
+            ->name('homepage.blocks.products.update-order');
+        Route::post('/homepage/banners/update-order', [HomepageController::class, 'updateBannerOrder'])->name('homepage.banners.update-order');
+        Route::post('/homepage/product-blocks/sort', [HomepageController::class, 'sortProductBlocks'])->name('homepage.blocks.sort');
         Route::post('/homepage/block/{block}/add-products', [HomepageController::class, 'addProductsToBlock'])->name('homepage.blocks.add-products');
         Route::post('/homepage/product-blocks/{block}/products', [HomepageController::class, 'addProductsToBlock'])
-    ->name('homepage.blocks.add-products');
+            ->name('homepage.blocks.add-products');
+        Route::patch('/homepage/categories/{categoryId}/toggle', [HomepageController::class, 'toggleCategory'])->name('homepage.categories.toggle');
+        Route::post('/homepage/categories/update-order', [HomepageController::class, 'updateCategoryOrder'])->name('homepage.categories.update-order');
 
+        // Route Quản lí Flash Sale
+        Route::resource('flash-sales', \App\Http\Controllers\Admin\FlashSaleController::class);
+        Route::post('flash-sales/{flash_sale}/attach-product', [FlashSaleController::class, 'attachProduct'])
+            ->name('flash-sales.attachProduct');
+        Route::delete('flash-sales/{flash_sale}/detach-product/{product}', [FlashSaleController::class, 'detachProduct'])
+            ->name('flash-sales.detachProduct');
+        Route::post('flash-sales/{flashSale}/time-slots', [FlashSaleController::class, 'addTimeSlot'])
+            ->name('admin.flash-sales.time-slots.store');
+        // Route cập nhật sản phẩm trong Flash Sale
+        Route::put('flash-sales/{flash_sale}/update-product/{flash_product}', [FlashSaleController::class, 'updateProduct'])
+            ->name('flash-sales.updateProduct');
+
+        // Route quản lý Gói sản phẩm (Bundle Products)
+        // Soft Delete Feature
+        Route::get('bundle-products/trashed', [BundleProductController::class, 'trashed'])->name('bundle-products.trashed');
+        Route::patch('bundle-products/{id}/restore', [BundleProductController::class, 'restore'])->name('bundle-products.restore');
+        Route::delete('bundle-products/{id}/force-delete', [BundleProductController::class, 'forceDelete'])->name('bundle-products.forceDelete');
+        Route::patch('bundle-products/restore-bulk', [BundleProductController::class, 'restoreBulk'])->name('bundle-products.restore.bulk');
+        Route::delete('bundle-products/force-delete-bulk', [BundleProductController::class, 'forceDeleteBulk'])->name('bundle-products.forceDelete.bulk');
+
+
+        // Gói sản phẩm
+        Route::get('bundle-products', [BundleProductController::class, 'index'])->name('bundle-products.index');
+        Route::get('bundle-products/create', [BundleProductController::class, 'create'])->name('bundle-products.create');
+        Route::post('bundle-products', [BundleProductController::class, 'store'])->name('bundle-products.store');
+        Route::get('bundle-products/{bundle}/edit', [BundleProductController::class, 'edit'])->name('bundle-products.edit');
+        Route::put('bundle-products/{bundle}', [BundleProductController::class, 'update'])->name('bundle-products.update');
+        Route::delete('bundle-products/{bundle}', [BundleProductController::class, 'destroy'])->name('bundle-products.destroy');
+        Route::get('bundle-products/{bundle}', [BundleProductController::class, 'show'])->name('bundle-products.show');
+        Route::patch('bundle-products/{bundle}/toggle-status', [BundleProductController::class, 'toggleStatus'])->name('bundle-products.toggle-status');
+
+        // Xóa mềm gói sản phẩm
 
 
 
@@ -420,6 +508,25 @@ Route::prefix('admin')
         Route::post('coupons/validate', [CouponController::class, 'validateCoupon'])->name('coupons.validate');
         Route::post('/coupons/restore/{id}', [CouponController::class, 'restore'])->name('coupons.restore');
         Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
+
+        // Quản lý thu cũ và hàng mở hộp
+        Route::get('trade-in-items/trash', [TradeInItemController::class, 'trash'])->name('trade-in-items.trash');
+        Route::post('trade-in-items/{id}/restore', [TradeInItemController::class, 'restore'])->name('trade-in-items.restore');
+        Route::delete('trade-in-items/{id}/force-delete', [TradeInItemController::class, 'forceDelete'])->name('trade-in-items.force-delete');
+        Route::resource('trade-in-items', TradeInItemController::class);
+
+        // Quản lý nhà cung cấp
+        // Quản lý nhà cung cấp
+        Route::prefix('suppliers')->name('suppliers.')->group(function () {
+            Route::get('/', [SupplierController::class, 'index'])->name('index');
+            Route::post('/', [SupplierController::class, 'store'])->name('store');
+            Route::get('/trash', [SupplierController::class, 'trash'])->name('trash');
+            Route::get('/{supplier}', [SupplierController::class, 'show'])->name('show');
+            Route::put('/{supplier}', [SupplierController::class, 'update'])->name('update');
+            Route::delete('/{supplier}', [SupplierController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
+            Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
+        });
 
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
@@ -446,3 +553,4 @@ Route::get('/test-403', function () {
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
+Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping_fee');

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quét mã IMEI - Hệ thống POS</title>
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTML5-QRCode Library -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <!-- Thêm thư viện Howler.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <style>
+        /* Animation for success scan */
+        @keyframes flash-border {
+            0% { border-color: #10b981; }
+            50% { border-color: #34d399; }
+            100% { border-color: #10b981; }
+        }
+        .flash-success {
+            animation: flash-border 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="p-4 bg-blue-600 text-white">
+                <h1 class="text-xl font-bold text-center">Quét mã IMEI cho sản phẩm Apple</h1>
+            </div>
+            
+            <div class="p-4">
+                <div id="reader-container" class="relative">
+                    <div id="reader" class="w-full border-4 border-gray-300 rounded-lg overflow-hidden transition-all duration-300"></div>
+                    <div id="loading-message" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 text-white hidden">
+                        <div class="text-center">
+                            <svg class="animate-spin h-10 w-10 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p>Đang khởi tạo camera...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="scan-result" class="mt-4 p-3 bg-gray-100 rounded-lg hidden">
+                    <h3 class="font-semibold text-gray-700">Kết quả quét:</h3>
+                    <p id="result-text" class="text-lg font-bold text-blue-600 break-all"></p>
+                </div>
+                
+                <div id="error-message" class="mt-4 p-3 bg-red-100 text-red-700 rounded-lg hidden"></div>
+                
+                <div class="mt-4 flex flex-col space-y-2">
+                    <button id="test-sound-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        Kiểm tra âm thanh
+                    </button>
+                    <button id="start-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        Bắt đầu quét
+                    </button>
+                    <button id="stop-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors hidden">
+                        Dừng quét
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-gray-50 border-t">
+                <p class="text-sm text-gray-600">Vui lòng đưa mã IMEI vào vùng quét. Hệ thống sẽ tự động nhận diện.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audio element for beep sound -->
+    <audio id="beep-sound" preload="auto">
+        <source src="shop-scanner-beeps.mp3" type="audio/mpeg">
+    </audio>
+    
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const startButton = document.getElementById('start-button');
+    const stopButton = document.getElementById('stop-button');
+    const testSoundButton = document.getElementById('test-sound-button');
+    const readerContainer = document.getElementById('reader-container');
+    const reader = document.getElementById('reader');
+    const scanResult = document.getElementById('scan-result');
+    const resultText = document.getElementById('result-text');
+    const errorMessage = document.getElementById('error-message');
+    const loadingMessage = document.getElementById('loading-message');
+
+    // Variables
+    let html5QrCode = null;
+    let isScanning = false;
+    let scanPaused = false;
+    let cameraId = null;
+    let beepSound = null;
+    let soundInitialized = false;
+
+    // Initialize sound using Howler.js
+    function initializeSound() {
+        if (!soundInitialized) {
+            console.log("Đang khởi tạo âm thanh...");
+            beepSound = new Howl({
+                src: ['shop-scanner-beeps.mp3'],
+                volume: 1.0,
+                preload: true,
+                onload: function() {
+                    console.log("Âm thanh đã được tải thành công");
+                    soundInitialized = true;
+                },
+                onloaderror: function(id, err) {
+                    console.error("Lỗi khi tải âm thanh:", err);
+                    // Phương án dự phòng: Tạo âm thanh bằng AudioContext
+                    fallbackBeep();
+                }
+            });
+        }
+    }
+
+    // Fallback beep using AudioContext
+    function fallbackBeep() {
+        try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            oscillator.type = 'square';
+            oscillator.frequency.value = 800;
+            oscillator.connect(context.destination);
+            oscillator.start();
+            setTimeout(() => {
+                oscillator.stop();
+            }, 200);
+        } catch (err) {
+            console.error("Không thể tạo âm thanh dự phòng:", err);
+        }
+    }
+
+    // Play beep sound
+    function playBeep() {
+        if (soundInitialized && beepSound) {
+            beepSound.play();
+            console.log("Âm thanh đã phát thành công");
+        } else {
+            console.warn("Âm thanh chưa được khởi tạo, đang thử khởi tạo lại...");
+            initializeSound();
+            // Đợi một chút để âm thanh tải, sau đó thử phát lại
+            setTimeout(() => {
+                if (soundInitialized && beepSound) {
+                    beepSound.play();
+                } else {
+                    fallbackBeep();
+                }
+            }, 500);
+        }
+    }
+
+    // Vibrate device if supported
+    function vibrateDevice() {
+        if (navigator.vibrate) {
+            navigator.vibrate(200); // Vibrate for 200ms
+        }
+    }
+
+    // Flash camera border
+    function flashCameraBorder() {
+        reader.classList.add('border-green-500');
+        reader.classList.add('flash-success');
+        setTimeout(() => {
+            reader.classList.remove('border-green-500');
+            reader.classList.remove('flash-success');
+        }, 1000);
+    }
+
+    // Handle successful scan
+    function onScanSuccess(decodedText, decodedResult) {
+        if (scanPaused) return;
+
+        // Update UI with result
+        resultText.textContent = decodedText;
+        scanResult.classList.remove('hidden');
+
+        // Provide feedback
+        playBeep();
+        vibrateDevice();
+        flashCameraBorder();
+
+        // Pause scanning temporarily
+        scanPaused = true;
+        setTimeout(() => {
+            scanPaused = false;
+        }, 2000); // Resume after 2 seconds
+    }
+
+    // Handle scan failure
+    function onScanFailure(error) {
+        // Ignore, as it's usually frames without codes
+        // console.warn(`Không tìm thấy mã trong khung hình: ${error}`);
+    }
+
+    // Show error message
+    function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.remove('hidden');
+    }
+
+    // Hide error message
+    function hideError() {
+        errorMessage.classList.add('hidden');
+    }
+
+    // Start scanning
+    function startScanning() {
+        if (isScanning) return;
+
+        hideError();
+        loadingMessage.classList.remove('hidden');
+
+        // Initialize QR Code scanner
+        html5QrCode = new Html5Qrcode("reader");
+
+        // Get cameras
+        Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length) {
+                // Prefer back camera if available
+                const backCamera = devices.find(device => {
+                    return /(back|rear)/i.test(device.label);
+                });
+
+                cameraId = backCamera ? backCamera.id : devices[0].id;
+
+                // Configure scanner
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0
+                };
+
+                // Start scanner
+                html5QrCode.start(
+                    cameraId,
+                    config,
+                    onScanSuccess,
+                    onScanFailure
+                ).then(() => {
+                    isScanning = true;
+                    loadingMessage.classList.add('hidden');
+                    startButton.classList.add('hidden');
+                    stopButton.classList.remove('hidden');
+                }).catch(err => {
+                    loadingMessage.classList.add('hidden');
+                    showError(`Không thể khởi động camera: ${err}`);
+                });
+            } else {
+                loadingMessage.classList.add('hidden');
+                showError('Không tìm thấy camera trên thiết bị của bạn.');
+            }
+        }).catch(err => {
+            loadingMessage.classList.add('hidden');
+            showError(`Lỗi khi truy cập camera: ${err}. Vui lòng đảm bảo bạn đã cấp quyền truy cập camera.`);
+        });
+    }
+
+    // Stop scanning
+    function stopScanning() {
+        if (!isScanning) return;
+
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                isScanning = false;
+                startButton.classList.remove('hidden');
+                stopButton.classList.add('hidden');
+            }).catch(err => {
+                showError(`Lỗi khi dừng camera: ${err}`);
+            });
+        }
+    }
+
+    // Event listeners
+    startButton.addEventListener('click', () => {
+        initializeSound(); // Initialize sound on user interaction
+        startScanning();
+    });
+
+    stopButton.addEventListener('click', stopScanning);
+
+    testSoundButton.addEventListener('click', () => {
+        initializeSound();
+        playBeep();
+    });
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+        if (isScanning && html5QrCode) {
+            html5QrCode.stop().catch(err => console.error(err));
+        }
+    });
+});
+</script>
+</body>
+</html>

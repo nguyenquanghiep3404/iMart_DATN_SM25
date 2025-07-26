@@ -23,7 +23,7 @@
             Chính hãng
         </span>
         <button id="compare-btn"
-            class="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800"
+            class="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-black hover:bg-gray-100 rounded-md"
             data-default-variant-id="{{ $defaultVariant->id }}">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path
@@ -42,14 +42,14 @@
                 class="flex items-center gap-1.5 text-sm font-semibold transition-colors
     {{ $wishlistVariantIds ? 'text-red-500' : 'text-gray-500 hover:text-red-500' }}">
                 <span id="wishlist-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd"
                             d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" />
                     </svg>
                 </span>
                 <span>Yêu thích</span>
             </button>
+
         </form>
 
 
@@ -103,7 +103,7 @@
                                 fill="url(#half-grad)" />
                         </svg>
                     @else
-                        <svg class="w-4 h-4 fill-current text-gray-300" viewBox="0 0 20 20">
+                        <svg class="w-4 h-4 fill-current text-gray-200" viewBox="0 0 20 20">
                             <path
                                 d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276 5.212 6.084.878-4.18 4.09 1.698 5.91z" />
                         </svg>
@@ -384,7 +384,7 @@
                         <i class="ci-minus"></i>
                     </button>
                     <input type="number" class="form-control form-control-lg" name="quantity" id="quantity_input"
-                        value="1" min="1" max="5" readonly>
+                        value="1" min="1" max="1000">
                     <button type="button" class="btn btn-icon btn-lg" data-increment aria-label="Tăng số lượng">
                         <i class="ci-plus"></i>
                     </button>
@@ -412,8 +412,6 @@
         <span id="slide-alert-message">Thông báo</span>
         <button id="slide-alert-close" class="ml-2 font-bold focus:outline-none">&times;</button>
     </div>
-    <div class="text-sm text-gray-500 mt-4 text-center sm:text-left"><span class="font-semibold">Giao hàng dự
-            kiến:</span> Thứ Ba, 28/06 - Thứ Tư, 29/06.</div>
 </div>
 @if (session('success'))
     <script>
@@ -460,13 +458,26 @@
             if (variantData[key]) {
                 inputVariantId.value = variantData[key].id || '';
                 inputImage.value = variantData[key].image || '';
+
+                // Cập nhật max số lượng theo tồn kho biến thể
+                if (variantData[key].stock_quantity !== undefined) {
+                    quantityInput.max = variantData[key].stock_quantity;
+                } else {
+                    quantityInput.removeAttribute('max');
+                }
             } else {
                 inputVariantId.value = '';
                 inputImage.value = '';
+                quantityInput.removeAttribute('max');
             }
+
+            // Reset số lượng về 1 mỗi khi chọn biến thể mới
+            quantityInput.value = 1;
+
             console.log('Variant Key:', key);
             console.log('Variant ID:', inputVariantId.value);
             console.log('Image:', inputImage.value);
+            console.log('Max Quantity:', quantityInput.max);
         }
 
         // Bắt sự kiện radio chọn thuộc tính
@@ -479,44 +490,56 @@
             });
         });
 
-        // Sự kiện tăng/giảm số lượng
-        document.querySelector('[data-increment]').addEventListener('click', () => {
-            let val = parseInt(quantityInput.value) || 1;
-            if (val < 5) quantityInput.value = val + 1;
-        });
-        document.querySelector('[data-decrement]').addEventListener('click', () => {
-            let val = parseInt(quantityInput.value) || 1;
-            if (val > 1) quantityInput.value = val - 1;
-        });
-
-        // Gửi form bằng fetch (POST) đúng route cart.add
+        // Xử lý submit form Thêm vào giỏ
         document.getElementById('add-to-cart-form').addEventListener('submit', function(e) {
             e.preventDefault();
+
+            // Lấy giá trị số lượng hiện tại và giới hạn min/max
+            let quantity = parseInt(quantityInput.value);
+            const min = parseInt(quantityInput.min) || 1;
+            const max = parseInt(quantityInput.max) || 1000;
+
+            if (isNaN(quantity) || quantity < min) quantity = min;
+            if (quantity > max) quantity = max;
+            quantityInput.value = quantity; // cập nhật lại input số lượng nếu vượt giới hạn
+
+            const token = this.querySelector('input[name="_token"]').value;
 
             const postData = {
                 product_variant_id: inputVariantId.value,
                 variant_key: inputVariantKey.value,
                 image: inputImage.value,
                 product_id: this.querySelector('input[name="product_id"]').value,
-                quantity: quantityInput.value,
-                _token: this.querySelector('input[name="_token"]').value,
+                quantity: quantity,
+                _token: token,
             };
 
-            fetch("{{ route('cart.add') }}", { // đổi đúng route cart.add
+            fetch("{{ route('cart.add') }}", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                         "Accept": "application/json",
-                        "X-CSRF-TOKEN": postData._token
+                        "X-CSRF-TOKEN": token,
                     },
                     body: JSON.stringify(postData)
                 })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        toastr.success(data.success);
+                        const cartUrl = "{{ route('cart.index') }}";
+                        const message =
+                            `${data.success} <br><a href="${cartUrl}" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>`;
 
-                        // ✅ Cập nhật số lượng hiển thị trên giỏ hàng
+                        toastr.options = {
+                            closeButton: true,
+                            progressBar: true,
+                            escapeHtml: false,
+                            timeOut: 3000,
+                            positionClass: 'toast-bottom-right'
+                        };
+
+                        toastr.success(message);
+
                         const cartBadge = document.getElementById('cart-badge');
                         if (cartBadge) {
                             if (data.cartItemCount > 0) {
@@ -526,12 +549,10 @@
                                 cartBadge.style.display = 'none';
                             }
                         }
-
                     } else if (data.error) {
                         toastr.error(data.error);
                     }
                 })
-
                 .catch(err => {
                     toastr.error('Có lỗi xảy ra, vui lòng thử lại.');
                     console.error(err);
@@ -542,85 +563,91 @@
         const buyNowBtn = document.getElementById('buy-now-btn');
         if (buyNowBtn) {
             buyNowBtn.addEventListener('click', function() {
-                // Lấy dữ liệu từ form
                 const form = document.getElementById('add-to-cart-form');
                 const formData = new FormData(form);
-                // Validation chi tiết hơn
+
                 const variantKey = inputVariantKey.value?.trim();
-                const quantity = parseInt(quantityInput.value) || 1;
+                let quantity = parseInt(quantityInput.value) || 1;
+                const min = parseInt(quantityInput.min) || 1;
+                const max = parseInt(quantityInput.max) || 5;
+                if (quantity < min) quantity = min;
+                if (quantity > max) quantity = max;
+                quantityInput.value = quantity;
+
                 const productId = formData.get('product_id');
-                // Kiểm tra variant key (chỉ với sản phẩm có biến thể)
                 const hasVariants = Object.keys(variantData).length > 1;
-                if (hasVariants && (!variantKey || variantKey === '' || variantKey === '_' || variantKey.includes('undefined'))) {
+
+                if (hasVariants && (!variantKey || variantKey === '' || variantKey === '_' || variantKey
+                        .includes('undefined'))) {
                     toastr.error('Vui lòng chọn đầy đủ thông tin sản phẩm');
                     return;
                 }
-                // Kiểm tra product ID
                 if (!productId) {
                     toastr.error('Không tìm thấy thông tin sản phẩm.');
                     return;
                 }
-                // Kiểm tra số lượng tồn kho
+
                 const currentVariant = variantData[variantKey];
                 if (currentVariant && currentVariant.stock_quantity !== undefined) {
                     if (quantity > currentVariant.stock_quantity) {
-                        toastr.error(`Số lượng vượt quá tồn kho. Chỉ còn ${currentVariant.stock_quantity} sản phẩm.`);
+                        toastr.error(
+                            `Số lượng vượt quá tồn kho. Chỉ còn ${currentVariant.stock_quantity} sản phẩm.`
+                        );
                         return;
                     }
                 }
-                // Disable button và thay đổi text với loading
+
                 buyNowBtn.disabled = true;
-                buyNowBtn.innerHTML = '<span class="inline-block animate-spin mr-2"></span>Đang xử lý...';
-                // Tạo dữ liệu gửi với validation
+                buyNowBtn.innerHTML =
+                    '<span class="inline-block animate-spin mr-2"></span>Đang xử lý...';
+
                 const buyNowData = {
                     product_id: parseInt(productId),
                     variant_key: variantKey,
-                    quantity: quantity
+                    quantity: quantity,
                 };
-                console.log('Buy Now Data:', buyNowData);
-                // Gửi request đến endpoint Buy Now
-                fetch('{{ route("buy-now.checkout") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(buyNowData)
-                })
-                .then(async res => {
-                    const contentType = res.headers.get('content-type');
-                    if (!contentType || !contentType.includes('application/json')) {
-                        throw new Error('Server trả về định dạng không hợp lệ');
-                    }
-                    const data = await res.json();
-                    if (!res.ok) {
-                        throw new Error(data.message || `Lỗi server: ${res.status}`);
-                    }
-                    return data;
-                })
-                .then(data => {
-                    console.log(' Buy Now Response:', data);
-                    if (data.success && data.redirect_url) {
-                        // Chuyển hướng ngay lập tức
-                        window.location.href = data.redirect_url;
-                    } else {
-                        throw new Error(data.message || 'Phản hồi không hợp lệ từ server.');
-                    }
-                })
-                .catch(error => {
-                    console.error(' Buy Now Error:', error);
-                    toastr.error(error.message || 'Đã xảy ra lỗi khi xử lý. Vui lòng thử lại.');
-                })
-                .finally(() => {
-                    // Khôi phục button sau delay để tránh spam click
-                    setTimeout(() => {
-                        buyNowBtn.disabled = false;
-                        buyNowBtn.innerHTML = 'MUA NGAY';
-                    }, 1000);
-                });
+
+                fetch('{{ route('buy-now.checkout') }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                .content,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(buyNowData)
+                    })
+                    .then(async res => {
+                        const contentType = res.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            throw new Error('Server trả về định dạng không hợp lệ');
+                        }
+                        const data = await res.json();
+                        if (!res.ok) {
+                            throw new Error(data.message || `Lỗi server: ${res.status}`);
+                        }
+                        return data;
+                    })
+                    .then(data => {
+                        if (data.success && data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                        } else {
+                            throw new Error(data.message || 'Phản hồi không hợp lệ từ server.');
+                        }
+                    })
+                    .catch(error => {
+                        toastr.error(error.message || 'Đã xảy ra lỗi khi xử lý. Vui lòng thử lại.');
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        setTimeout(() => {
+                            buyNowBtn.disabled = false;
+                            buyNowBtn.innerHTML = 'MUA NGAY';
+                        }, 1000);
+                    });
             });
         }
+
         // Khởi tạo cập nhật lần đầu
         updateVariantFields();
     });
@@ -629,8 +656,147 @@
     window.variantData = @json($variantData);
     window.attributeOrder = @json($attributeOrder);
 </script>
-
 <script>
+    const wishlistVariantIds = @json($wishlistVariantIds ?? []);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const variantData = window.variantData;
+        const attributeOrder = window.attributeOrder;
+
+        const inputVariantId = document.getElementById('wishlist-variant-id');
+        const inputVariantKey = document.getElementById('wishlist-variant-key');
+        const inputImage = document.getElementById('wishlist-variant-image');
+        const wishlistBtn = document.getElementById('wishlist-submit-btn');
+        const radios = document.querySelectorAll('.variants input[type="radio"]');
+
+        // Lấy selection hiện tại
+        function getCurrentSelection() {
+            const selection = {};
+            radios.forEach(radio => {
+                if (radio.checked) {
+                    const attrName = radio.getAttribute('data-attr-name');
+                    const value = radio.value;
+                    selection[attrName] = value;
+                }
+            });
+            return selection;
+        }
+
+        // Xây variant key
+        function buildVariantKey(selection) {
+            return attributeOrder.map(attr => selection[attr] || '').join('_');
+        }
+
+        // Cập nhật input hidden
+        function updateWishlistForm(variantKey, variantInfo) {
+            if (!variantInfo) return;
+            inputVariantId.value = variantInfo.variant_id;
+            inputVariantKey.value = variantKey;
+            inputImage.value = variantInfo.image;
+        }
+
+        // Cập nhật màu nút yêu thích
+        function updateWishlistButton(variantId) {
+            if (wishlistVariantIds.includes(Number(variantId))) {
+                wishlistBtn.classList.add('text-red-500', 'hover:text-red-600');
+                wishlistBtn.classList.remove('text-gray-500');
+            } else {
+                wishlistBtn.classList.remove('text-red-500', 'hover:text-red-600');
+                wishlistBtn.classList.add('text-gray-500');
+            }
+        }
+
+        // Khi đổi biến thể
+        function handleVariantChange() {
+            const selection = getCurrentSelection();
+            const variantKey = buildVariantKey(selection);
+            const variantInfo = variantData[variantKey];
+            updateWishlistForm(variantKey, variantInfo);
+            if (variantInfo) {
+                updateWishlistButton(variantInfo.variant_id);
+            }
+        }
+
+        // Gắn sự kiện
+        radios.forEach(radio => {
+            radio.addEventListener('change', handleVariantChange);
+        });
+        document.querySelectorAll('.option-container').forEach(label => {
+            label.addEventListener('click', () => {
+                setTimeout(() => handleVariantChange(), 10);
+            });
+        });
+
+        // Gọi khi trang load
+        handleVariantChange();
+
+        // Gửi form AJAX
+        document.getElementById('wishlist-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const variantId = Number(inputVariantId.value);
+            const variantKey = inputVariantKey.value;
+            const image = inputImage.value;
+            const productId = this.querySelector('input[name="product_id"]').value;
+            const token = this.querySelector('input[name="_token"]').value;
+
+            const postData = {
+                product_variant_id: variantId,
+                variant_key: variantKey,
+                image: image,
+                product_id: productId,
+                _token: token
+            };
+
+            fetch("{{ route('wishlist.add') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "X-CSRF-TOKEN": token
+                    },
+                    body: JSON.stringify(postData)
+                })
+                .then(response => {
+                    if (!response.ok) return response.json().then(err => Promise.reject(err));
+                    return response.json();
+                })
+                .then(data => {
+                    toastr.options = {
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: "toast-top-right",
+                        timeOut: "3000",
+                        showDuration: "300",
+                        hideDuration: "1000",
+                        showMethod: "slideDown",
+                        hideMethod: "slideUp"
+                    };
+
+                    if (data.success) {
+                        toastr.success(data.success);
+
+                        const idx = wishlistVariantIds.indexOf(variantId);
+                        if (data.success.includes('xóa')) {
+                            if (idx > -1) wishlistVariantIds.splice(idx, 1);
+                        } else {
+                            if (idx === -1) wishlistVariantIds.push(variantId);
+                        }
+
+                        updateWishlistButton(variantId);
+                    } else if (data.error) {
+                        toastr.error(data.error);
+                    }
+                })
+                .catch(err => {
+                    toastr.error(err?.error || 'Có lỗi xảy ra, vui lòng thử lại.');
+                    console.error('Lỗi AJAX:', err);
+                });
+        });
+    });
+</script>
+
+{{-- <script>
     document.addEventListener('DOMContentLoaded', function() {
         const variantData = window.variantData;
         const attributeOrder = window.attributeOrder;
@@ -755,12 +921,26 @@
 
                     if (data.success) {
                         toastr.success(data.success);
+
+                        const wishlistBtn = document.getElementById('wishlist-submit-btn');
+
+                        // Nếu message chứa "xóa" => màu xám, ngược lại màu đỏ
+                        if (data.success.includes('xóa')) {
+                            wishlistBtn.classList.remove('text-red-500');
+                            wishlistBtn.classList.add('text-gray-500');
+                            wishlistBtn.classList.remove('hover:text-red-600');
+                        } else {
+                            wishlistBtn.classList.add('text-red-500');
+                            wishlistBtn.classList.remove('text-gray-500');
+                            wishlistBtn.classList.add('hover:text-red-600');
+                        }
                     } else if (data.info) {
                         toastr.info(data.info);
                     } else if (data.error) {
                         toastr.error(data.error);
                     }
                 })
+
                 .catch(err => {
                     toastr.options = {
                         closeButton: true,
@@ -815,4 +995,4 @@
             });
         });
     });
-</script>
+</script> --}}

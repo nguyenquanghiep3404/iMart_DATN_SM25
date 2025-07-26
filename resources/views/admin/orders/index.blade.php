@@ -31,7 +31,7 @@
         .payment-paid { background-color: #dcfce7; color: #16a34a; }
         .payment-failed { background-color: #fee2e2; color: #dc2626; }
         
-        /* Custom scrollbar for modal */
+        /* Thanh cuộn tùy chỉnh cho modal */
         .modal-content::-webkit-scrollbar {
             width: 8px;
         }
@@ -46,7 +46,7 @@
             background: #555;
         }
 
-        /* Pagination styles */
+        /* Kiểu phân trang */
         #pagination-controls button {
             transition: all 0.2s ease;
         }
@@ -54,8 +54,7 @@
             transform: translateY(-1px);
             shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
-        /* Toast notification styles */
+        /* Kiểu thông báo (toast) */
         #toast-container {
             position: fixed;
             top: 20px;
@@ -63,7 +62,6 @@
             z-index: 9999;
             max-width: 400px;
         }
-        
         .toast {
             background: white;
             border-radius: 12px;
@@ -152,7 +150,7 @@
             background: #f3f4f6;
         }
 
-        /* Product item styles */
+        /* Kiểu cho sản phẩm */
         .line-clamp-2 {
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -170,7 +168,7 @@
             color: #9ca3af;
         }
         
-        /* Enhanced modal table styling */
+        /* Kiểu bảng trong modal nâng cao */
         #modal-order-items tr:hover {
             background-color: #f9fafb;
         }
@@ -183,7 +181,7 @@
             transform: scale(1.05);
         }
         
-        /* Responsive table for modal */
+        /* Bảng trong modal đáp ứng trên thiết bị nhỏ */
         @media (max-width: 768px) {
             .modal-content table {
                 font-size: 14px;
@@ -192,6 +190,245 @@
             .modal-content .w-16.h-16 {
                 width: 48px;
                 height: 48px;
+            }
+        }
+
+        /* Đánh dấu đơn hàng mới */
+        .new-order-row {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border-left: 4px solid #0ea5e9;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .new-order-row:hover {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        }
+
+        .new-order-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: linear-gradient(45deg, #ef4444, #dc2626);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+        }
+        /* Làm chữ đơn hàng mới đậm hơn */
+        .new-order-row .font-bold {
+            font-weight: 800;
+        }
+        .new-order-row .font-semibold {
+            font-weight: 700;
+        }
+        /* Progress Bar Styles - Beautiful Design */
+        .order-progress-section {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f1f5f9;
+            margin-bottom: 40px;
+        }
+                 .order-progress-title {
+             font-size: 20px;
+             font-weight: 700;
+             color: #1e293b;
+             margin-bottom: 32px;
+             text-align: center;
+         }
+        .progress-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            padding: 0;
+        }
+        .progress-line {
+            position: absolute;
+            top: 50%;
+            left: 24px;
+            right: 24px;
+            height: 3px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+        .progress-line-filled {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+            border-radius: 2px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            min-width: 0;
+        }
+        .progress-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 3px solid #e2e8f0;
+            background: #ffffff;
+            color: #9ca3af;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .progress-step.completed .progress-icon {
+            background: #22c55e;
+            border-color: #22c55e;
+            color: white;
+            box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+        }
+        .progress-step.current .progress-icon {
+            background: #6366f1;
+            border-color: #6366f1;
+            color: white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            transform: scale(1.05);
+        }
+        .progress-step.cancelled .progress-icon {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: white;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+        }
+        .progress-step.failed .progress-icon {
+            background: #ef4444;
+            border-color: #ef4444;
+            color: white;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+        }
+        .progress-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-align: center;
+            color: #9ca3af;
+            max-width: 120px;
+            line-height: 1.3;
+            margin-top: 4px;
+            word-wrap: break-word;
+            hyphens: auto;
+        }
+        .progress-step.completed .progress-label {
+            color: #22c55e;
+            font-weight: 700;
+        }
+        .progress-step.current .progress-label {
+            color: #6366f1;
+            font-weight: 700;
+        }
+        .progress-step.cancelled .progress-label {
+            color: #ef4444;
+            font-weight: 700;
+        }
+        .progress-step.failed .progress-label {
+            color: #ef4444;
+            font-weight: 700;
+        }
+        /* Responsive design cho progress bar */
+        @media (max-width: 768px) {
+            .order-progress-section {
+                padding: 24px 16px;
+                margin-bottom: 24px;
+            }
+            .order-progress-title {
+                font-size: 18px;
+                margin-bottom: 24px;
+            }
+            .progress-container {
+                flex-direction: column;
+                gap: 16px;
+                padding: 0;
+            }
+            
+            .progress-line {
+                display: none;
+            }
+            .progress-step {
+                flex-direction: row;
+                justify-content: flex-start;
+                width: 100%;
+                align-items: center;
+                padding: 16px;
+                border-radius: 12px;
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                transition: all 0.3s ease;
+            }
+            .progress-step.completed {
+                background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+                border-color: #22c55e;
+            }
+            .progress-step.current {
+                background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+                border-color: #6366f1;
+                box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+            }
+            .progress-step.cancelled {
+                background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+                border-color: #ef4444;
+            }
+            .progress-step.failed {
+                background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+                border-color: #ef4444;
+            }
+            .progress-icon {
+                margin-right: 16px;
+                margin-bottom: 0;
+                width: 44px;
+                height: 44px;
+                font-size: 16px;
+                flex-shrink: 0;
+            }
+            .progress-step.current .progress-icon {
+                transform: scale(1.0);
+            }
+            .progress-label {
+                max-width: none;
+                text-align: left;
+                flex: 1;
+                margin-top: 0;
+                font-size: 14px;
+                line-height: 1.4;
+            }
+        }
+        /* Cải thiện hiển thị trên màn hình nhỏ hơn */
+        @media (max-width: 480px) {
+            .order-progress-section {
+                padding: 20px 12px;
+            }
+            
+            .progress-step {
+                padding: 12px;
+            }
+            
+            .progress-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 14px;
+                margin-right: 12px;
+            }
+            
+            .progress-label {
+                font-size: 13px;
             }
         }
 </style>
@@ -211,7 +448,12 @@
 
         <!-- Filter Section -->
         <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="mb-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">Bộ lọc đơn hàng</h3>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <div>
                     <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
                     <div class="relative">
@@ -248,16 +490,33 @@
                     </select>
                 </div>
                 <div>
-                    <label for="date-range" class="block text-sm font-medium text-gray-700 mb-1">Khoảng ngày</label>
-                    <input type="date" id="date-range" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                    <label for="from-date" class="block text-sm font-medium text-gray-700 mb-1">Từ ngày</label>
+                    <input type="date" id="from-date" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="to-date" class="block text-sm font-medium text-gray-700 mb-1">Đến ngày</label>
+                    <input type="date" id="to-date" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
             </div>
-             <div class="mt-4 flex justify-end space-x-3">
-                <button id="clear-filters" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Xóa lọc</button>
-                <button id="apply-filters" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2">
-                    <i class="fas fa-filter"></i>
-                    <span>Áp dụng</span>
-                </button>
+            <div class="mt-4 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="new-orders-only" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2">
+                        <span class="ml-2 text-sm font-medium text-gray-700">Chỉ xem đơn hàng mới (24h)</span>
+                        <span id="new-orders-count" class="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full hidden">0</span>
+                    </label>
+                </div>
+                <div class="flex space-x-3">
+                    <button id="refresh-orders" class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold flex items-center space-x-2">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Làm mới</span>
+                    </button>
+                    <button id="clear-filters" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Xóa lọc</button>
+                    <button id="apply-filters" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2">
+                        <i class="fas fa-filter"></i>
+                        <span>Áp dụng</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -301,18 +560,39 @@
                 </button>
             </div>
             <div class="p-8 flex-grow overflow-y-auto modal-content">
+                <!-- Progress Bar Trạng thái đơn hàng -->
+                <div id="order-progress-bar" class="order-progress-section">
+                    <!--Nội dung được chèn -->
+                </div>
+
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- Left Column: Customer & Address -->
+                    <!--  Khách hàng & Địa chỉ -->
                     <div class="lg:col-span-1 space-y-6">
                         <div>
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Thông tin khách hàng</h3>
-                            <p><strong>Tên:</strong> <span id="modal-customer-name"></span></p>
-                            <p><strong>Email:</strong> <span id="modal-customer-email"></span></p>
-                            <p><strong>SĐT:</strong> <span id="modal-customer-phone"></span></p>
+                            <div class="space-y-2">
+                                <p><strong>Tên:</strong> <span id="modal-customer-name"></span></p>
+                                <p><strong>Email:</strong> <span id="modal-customer-email"></span></p>
+                                <p><strong>SĐT:</strong> <span id="modal-customer-phone"></span></p>
+                            </div>
                         </div>
                         <div>
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Địa chỉ giao hàng</h3>
-                            <address class="not-italic" id="modal-shipping-address"></address>
+                            <address class="not-italic text-gray-700 leading-relaxed" id="modal-shipping-address"></address>
+                        </div>
+                        <div id="modal-shipper-info" class="hidden">
+                            <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Thông tin shipper</h3>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-shipping-fast text-blue-600"></i>
+                                    <span class="font-medium text-blue-800">Shipper được gán:</span>
+                                </div>
+                                <div class="space-y-1 text-sm">
+                                    <p><strong>Tên:</strong> <span id="modal-shipper-name"></span></p>
+                                    <p><strong>Email:</strong> <span id="modal-shipper-email"></span></p>
+                                    <p><strong>SĐT:</strong> <span id="modal-shipper-phone"></span></p>
+                                </div>
+                            </div>
                         </div>
                          <div>
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Ghi chú</h3>
@@ -488,7 +768,7 @@
     </div>
 
     <script>
-    // --- CONFIGURATION ---
+    // --- CẤU HÌNH ---
     const CONFIG = {
         routes: {
             index: '{{ route("admin.orders.index") }}',
@@ -500,12 +780,127 @@
         csrfToken: '{{ csrf_token() }}'
     };
 
-    // Global pagination state
+    // Trạng thái phân trang toàn cục
     let currentPage = 1;
     let totalPages = 1;
 
-    // --- UTILITY FUNCTIONS ---
+    // --- HÀM TIỆN ÍCH ---
     const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    
+    // --- HÀM TẠO PROGRESS BAR ---
+    function createOrderProgressBar(currentStatus) {
+        // Định nghĩa các bước tiến trình chính
+        const progressSteps = [
+            { status: 'pending_confirmation', label: 'Chờ xác nhận', icon: '<i class="fas fa-clipboard-check"></i>' },
+            { status: 'processing', label: 'Đang xử lý', icon: '<i class="fas fa-cogs"></i>' },
+            { status: 'awaiting_shipment', label: 'Chờ giao hàng', icon: '<i class="fas fa-box"></i>' },
+            { status: 'shipped', label: 'Đã xuất kho', icon: '<i class="fas fa-shipping-fast"></i>' },
+            { status: 'out_for_delivery', label: 'Đang giao', icon: '<i class="fas fa-truck"></i>' },
+            { status: 'delivered', label: 'Giao thành công', icon: '<i class="fas fa-check-circle"></i>' }
+        ];
+        // Xác định vị trí của trạng thái hiện tại trong mảng
+        const currentStepIndex = progressSteps.findIndex(step => step.status === currentStatus);
+        // Xử lý trạng thái "đã hủy hoặc giao hàng thất bại"
+        let stepsToShow = [...progressSteps]; // luôn hiển thị đủ trạng thái
+        let progressTitle = 'Tiến trình đơn hàng';
+        let progressPercentage = 0;
+        if (currentStatus === 'cancelled') {
+            // Trạng thái bị hủy - thay thế bước thích hợp bằng "Đã hủy"
+            let cancelledStepIndex = Math.max(0, currentStepIndex >= 0 ? currentStepIndex : 1); // Nếu không tìm thấy, mặc định là bước 2
+            // Thay thế bước tại vị trí hiện tại bằng "Đã hủy"
+            stepsToShow[cancelledStepIndex] = { status: 'cancelled', label: 'Đã hủy', icon: '<i class="fas fa-times-circle"></i>' };
+            progressTitle = 'Đơn hàng đã bị hủy';
+            progressPercentage = (cancelledStepIndex / (stepsToShow.length - 1)) * 100;
+        } else if (currentStatus === 'failed_delivery') {
+            // Trạng thái giao hàng thất bại - thay thế bước "Giao thành công" bằng "Giao hàng thất bại"
+            stepsToShow[5] = { status: 'failed_delivery', label: 'Giao hàng thất bại', icon: '<i class="fas fa-exclamation-triangle"></i>' };
+            progressTitle = 'Giao hàng thất bại';
+            progressPercentage = (5 / (stepsToShow.length - 1)) * 100;
+        } else if (currentStatus === 'returned') {
+            // Trạng thái trả hàng - thay thế bước "Giao thành công" bằng "Đã trả hàng"
+            stepsToShow[5] = { status: 'returned', label: 'Đã trả hàng', icon: '<i class="fas fa-undo-alt"></i>' };
+            progressTitle = 'Đơn hàng đã được trả lại';
+            progressPercentage = (5 / (stepsToShow.length - 1)) * 100;
+        } else {
+            // Trạng thái bình thường - tính toán phần trăm tiến trình
+            if (currentStepIndex >= 0) {
+                progressPercentage = (currentStepIndex / (stepsToShow.length - 1)) * 100;
+            }
+            // Tùy chỉnh tiêu đề theo trạng thái
+            if (currentStatus === 'delivered') {
+                progressTitle = 'Đơn hàng đã được giao thành công';
+            } else if (currentStatus === 'out_for_delivery') {
+                progressTitle = 'Đơn hàng đang được giao';
+            } else if (currentStatus === 'shipped') {
+                progressTitle = 'Đơn hàng đã xuất kho';
+            } else if (currentStatus === 'awaiting_shipment') {
+                progressTitle = 'Đơn hàng đang chờ giao';
+            }
+        }
+                // Tạo HTML cho progress bar
+                        const progressBarHTML = `
+            <div class="order-progress-title">${progressTitle}</div>
+            <div class="progress-container">
+                <div class="progress-line">
+                    <div class="progress-line-filled" style="width: ${progressPercentage}%"></div>
+                </div>
+                ${stepsToShow.map((step, index) => {
+                    let stepClass = 'progress-step';
+                    // Xác định trạng thái của từng bước
+                    if (step.status === currentStatus) {
+                        // Bước hiện tại - kiểm tra loại trạng thái để gán màu đúng
+                        if (currentStatus === 'cancelled') {
+                            stepClass += ' cancelled';
+                        } else if (currentStatus === 'failed_delivery') {
+                            stepClass += ' failed';
+                        } else if (currentStatus === 'returned') {
+                            stepClass += ' cancelled';
+                        } else {
+                            stepClass += ' current';
+                        }
+                    } else if (step.status === 'cancelled') {
+                        // Bước hủy
+                        stepClass += ' cancelled';
+                    } else if (step.status === 'failed_delivery') {
+                        // Bước thất bại
+                        stepClass += ' failed';
+                    } else if (step.status === 'returned') {
+                        // Bước trả hàng
+                        stepClass += ' cancelled'; // Sử dụng style tương tự cancelled
+                    } else {
+                        // Kiểm tra xem bước này đã hoàn thành chưa
+                        const stepIndex = progressSteps.findIndex(s => s.status === step.status);
+                        
+                        // Đối với trạng thái bình thường
+                        if (currentStepIndex >= 0 && stepIndex >= 0 && stepIndex < currentStepIndex) {
+                            stepClass += ' completed';
+                        }
+                        
+                        // Đối với trạng thái đặc biệt (cancelled, failed_delivery, returned)
+                        if (currentStatus === 'cancelled' || currentStatus === 'failed_delivery' || currentStatus === 'returned') {
+                            const currentSpecialIndex = stepsToShow.findIndex(s => s.status === currentStatus);
+                            
+                            // Nếu bước này xuất hiện trước bước hiện tại trong danh sách hiển thị
+                            if (index < currentSpecialIndex) {
+                                stepClass += ' completed';
+                            }
+                        }
+                    }
+                    return `
+                        <div class="${stepClass}">
+                            <div class="progress-icon">
+                                ${step.icon}
+                            </div>
+                            <div class="progress-label">
+                                ${step.label}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+        return progressBarHTML;
+	}
     
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -514,6 +909,61 @@
             month: '2-digit',
             year: 'numeric'
         });
+    };
+
+    const formatDateTime = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    };
+
+    // Theo dõi đơn hàng đã xem (đơn đã cập nhật trạng thái)
+    let viewedOrders = new Set(JSON.parse(localStorage.getItem('viewedOrders') || '[]'));
+
+    // Kiểm tra đơn hàng mới (tạo trong 24h qua và chưa xem)
+    const isNewOrder = (createdAt, orderId) => {
+        if (viewedOrders.has(orderId)) {
+            return false; // Đơn hàng đã được xem/cập nhật
+        }
+        const orderDate = new Date(createdAt);
+        const now = new Date();
+        const diffInHours = (now - orderDate) / (1000 * 60 * 60);
+        return diffInHours <= 24;
+    };
+
+    // Đánh dấu đơn hàng đã xem
+    const markOrderAsViewed = (orderId) => {
+        viewedOrders.add(orderId);
+        localStorage.setItem('viewedOrders', JSON.stringify([...viewedOrders]));
+    };
+
+    // Cập nhật số lượng đơn hàng mới
+    const updateNewOrdersCount = (orders) => {
+        const newOrdersCount = orders.filter(order => isNewOrder(order.created_at, order.id)).length;
+        const countElement = document.getElementById('new-orders-count');
+        
+        if (newOrdersCount > 0) {
+            countElement.textContent = newOrdersCount;
+            countElement.classList.remove('hidden');
+            
+            // Thay đổi màu dựa trên số lượng
+            countElement.classList.remove('bg-red-100', 'text-red-800', 'bg-orange-500', 'text-white', 'bg-red-500');
+            if (newOrdersCount >= 10) {
+                countElement.classList.add('bg-red-500', 'text-white');
+            } else if (newOrdersCount >= 5) {
+                countElement.classList.add('bg-orange-500', 'text-white');
+            } else {
+                countElement.classList.add('bg-red-100', 'text-red-800');
+            }
+        } else {
+            countElement.classList.add('hidden');
+        }
     };
 
     const statusMap = {
@@ -536,18 +986,21 @@
         partially_refunded: { text: "Hoàn tiền một phần", class: "payment-pending" }
     };
 
-    // --- RENDER FUNCTIONS ---
+    // --- HÀM HIỂN THỊ ---
     function renderOrderRow(order) {
         const orderStatus = statusMap[order.status] || { text: 'N/A', class: '' };
         const paymentStatus = paymentStatusMap[order.payment_status] || { text: 'N/A', class: '' };
         
-        // Determine shipper display
+        // Kiểm tra đơn hàng mới
+        const isNew = isNewOrder(order.created_at, order.id);
+        
+        // Xác định hiển thị shipper
         let shipperDisplay = '<span class="text-gray-400 italic">Chưa gán</span>';
         if (order.shipper && order.shipper.name) {
             shipperDisplay = `<span class="text-gray-700 font-medium">${order.shipper.name}</span>`;
         }
         
-        // Show assign shipper button only for "awaiting_shipment" status
+        // Chỉ hiển thị nút gán shipper cho trạng thái "chờ giao hàng"
         let assignShipperButton = '';
         if (order.status === 'awaiting_shipment') {
             assignShipperButton = `
@@ -559,8 +1012,15 @@
             `;
         }
         
+        // Huy hiệu đơn hàng mới
+        const newOrderBadge = isNew ? '<span class="new-order-badge">Mới</span>' : '';
+        
+        // Lớp dòng
+        const rowClass = isNew ? 'new-order-row border-b hover:bg-blue-50' : 'bg-white border-b hover:bg-gray-50';
+        
         return `
-            <tr class="bg-white border-b hover:bg-gray-50">
+            <tr class="${rowClass}" style="position: relative;">
+                ${newOrderBadge}
                 <td class="p-6 font-bold text-indigo-600">${order.order_code}</td>
                 <td class="p-6">
                     <div class="font-semibold">${order.customer_name}</div>
@@ -569,7 +1029,7 @@
                 <td class="p-6 font-semibold">${formatCurrency(order.grand_total)}</td>
                 <td class="p-6"><span class="status-badge ${orderStatus.class}">${orderStatus.text}</span></td>
                 <td class="p-6"><span class="status-badge ${paymentStatus.class}">${paymentStatus.text}</span></td>
-                <td class="p-6">${formatDate(order.created_at)}</td>
+                <td class="p-6 ${isNew ? 'font-bold' : ''}"><strong>${formatDateTime(order.created_at)}</strong></td>
                 <td class="p-6">${shipperDisplay}</td>
                 <td class="p-6 text-center">
                     <button onclick='viewOrder(${order.id})' class="text-indigo-600 hover:text-indigo-900 font-medium text-lg" title="Xem chi tiết">
@@ -586,19 +1046,34 @@
 
     const tbody = document.getElementById('orders-tbody');
     function renderTable(orders) {
+        // Cập nhật số lượng đơn hàng mới
+        updateNewOrdersCount(orders);
+        
         if (orders.length === 0) {
             tbody.innerHTML = `<tr><td colspan="8" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào.</td></tr>`;
             return;
         }
-        tbody.innerHTML = orders.map(renderOrderRow).join('');
+        
+        // Áp dụng lọc phía client chỉ cho đơn hàng mới
+        let filteredOrders = orders;
+        if (newOrdersOnlyFilter.checked) {
+            filteredOrders = orders.filter(order => isNewOrder(order.created_at, order.id));
+        }
+        
+        if (filteredOrders.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào phù hợp với bộ lọc.</td></tr>`;
+            return;
+        }
+        
+        tbody.innerHTML = filteredOrders.map(renderOrderRow).join('');
     }
 
-    // --- PAGINATION FUNCTIONS ---
+    // --- HÀM PHÂN TRANG ---
     function renderPagination(paginationData) {
         const paginationInfo = document.getElementById('pagination-info');
         const paginationControls = document.getElementById('pagination-controls');
         
-        // Update pagination info
+        // Cập nhật thông tin phân trang
         if (paginationData.total > 0) {
             paginationInfo.innerHTML = `
                 Hiển thị ${paginationData.from} đến ${paginationData.to} trong tổng số ${paginationData.total} kết quả
@@ -607,14 +1082,14 @@
             paginationInfo.innerHTML = 'Không có dữ liệu';
         }
         
-        // Update global state
+        // Cập nhật trạng thái toàn cục
         currentPage = paginationData.current_page;
         totalPages = paginationData.last_page;
         
-        // Generate pagination controls
+        // Tạo nút điều khiển phân trang
         let paginationHtml = '';
         
-        // Previous button
+        // Nút trước
         if (currentPage > 1) {
             paginationHtml += `
                 <button onclick="goToPage(${currentPage - 1})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700">
@@ -629,7 +1104,7 @@
             `;
         }
         
-        // Page numbers
+        // Số trang
         const startPage = Math.max(1, currentPage - 2);
         const endPage = Math.min(totalPages, currentPage + 2);
         
@@ -649,7 +1124,7 @@
             }
         }
         
-        // Next button
+        // Nút tiếp
         if (currentPage < totalPages) {
             paginationHtml += `
                 <button onclick="goToPage(${currentPage + 1})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700">
@@ -673,11 +1148,12 @@
         const formData = new FormData();
         formData.append('page', page);
         
-        // Add current filters
+        // Thêm bộ lọc hiện tại
         if (searchInput.value) formData.append('search', searchInput.value);
         if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
         if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
-        if (dateFilter.value) formData.append('date_range', dateFilter.value);
+        if (fromDateFilter.value) formData.append('date_from', fromDateFilter.value);
+        if (toDateFilter.value) formData.append('date_to', toDateFilter.value);
 
         try {
             const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
@@ -689,6 +1165,8 @@
             
             const result = await response.json();
             if (result.success) {
+                // Lưu dữ liệu hiện tại để lọc phía client
+                sessionStorage.setItem('currentOrdersData', JSON.stringify(result.data));
                 renderTable(result.data);
                 renderPagination(result.pagination);
             }
@@ -698,7 +1176,7 @@
         }
     }
 
-    // --- MODAL LOGIC ---
+    // --- XỬ LÝ MODAL ---
     const modal = document.getElementById('order-detail-modal');
 
     async function viewOrder(orderId) {
@@ -727,13 +1205,56 @@
         document.getElementById('modal-customer-name').textContent = order.customer_name || 'N/A';
         document.getElementById('modal-customer-email').textContent = order.customer_email || 'N/A';
         document.getElementById('modal-customer-phone').textContent = order.customer_phone || 'N/A';
-        
-        document.getElementById('modal-shipping-address').innerHTML = `
-            ${order.shipping_address_line1 || 'N/A'}<br>
-            ${order.shipping_ward || 'N/A'}, ${order.shipping_district || 'N/A'},<br>
-            ${order.shipping_city || 'N/A'}
-        `;
 
+        // Hiển thị địa chỉ chi tiết
+        let addressParts = [];
+        // Hiển thị thông tin đầy đủ từ Ward (bao gồm cả District thông qua path_with_type)
+        // Hiển thị gộp thông tin
+        // if (order.shipping_ward && order.shipping_ward.path_with_type) {
+        //     const wardPath = order.shipping_ward.path_with_type;
+        //     // path_with_type thường có format: "Tỉnh/Thành phố, Quận/Huyện, Phường/Xã"
+        //     addressParts.push(`<strong>Vị trí:</strong> ${wardPath}`);
+        // } else {
+        //     // Fallback nếu không có path_with_type
+        //     if (order.shipping_ward && order.shipping_ward.name_with_type) {
+        //         addressParts.push(`<strong>Phường/Xã:</strong> ${order.shipping_ward.name_with_type}`);
+        //     }
+        //     if (order.shipping_province && order.shipping_province.name_with_type) {
+        //         addressParts.push(`<strong>Tỉnh/Thành phố:</strong> ${order.shipping_province.name_with_type}`);
+        //     }
+        // }
+
+        // Hiển thị riêng 
+        if (order.shipping_province && order.shipping_province.name_with_type) {
+            addressParts.push(`<strong>Tỉnh/Thành phố:</strong> ${order.shipping_province.name_with_type}`);
+        }
+        if (order.shipping_ward && order.shipping_ward.name_with_type) {
+            addressParts.push(`<strong>Phường/Xã:</strong> ${order.shipping_ward.name_with_type}`);
+        }
+        if (order.shipping_address_line1) {
+            addressParts.push(`<strong>Địa chỉ chi tiết :</strong> ${order.shipping_address_line1}`);
+        }
+        if (order.shipping_address_line2) {
+            addressParts.push(`<strong>Địa chỉ 2:</strong> ${order.shipping_address_line2}`);
+        }
+        
+
+        
+        document.getElementById('modal-shipping-address').innerHTML = 
+            addressParts.length > 0 ? addressParts.join('<br>') : 'Không có thông tin địa chỉ';
+
+        // Hiển thị thông tin shipper nếu có
+        const shipperInfo = document.getElementById('modal-shipper-info');
+        if (order.shipper && order.shipper.name) {
+            document.getElementById('modal-shipper-name').textContent = order.shipper.name;
+            document.getElementById('modal-shipper-email').textContent = order.shipper.email || 'N/A';
+            document.getElementById('modal-shipper-phone').textContent = order.shipper.phone_number || 'N/A';
+            shipperInfo.classList.remove('hidden');
+        } else {
+            shipperInfo.classList.add('hidden');
+        }
+
+        // Hiển thị tổng tiền và các khoản
         document.getElementById('modal-customer-notes').textContent = order.notes_from_customer || "Không có ghi chú.";
         document.getElementById('modal-order-date').textContent = order.created_at ? formatDate(order.created_at) : 'N/A';
         
@@ -749,12 +1270,16 @@
 
         document.getElementById('modal-payment-method').textContent = order.payment_method || 'N/A';
 
-        // Render items
+        // Hiển thị progress bar trạng thái đơn hàng
+        const progressBarContainer = document.getElementById('order-progress-bar');
+        progressBarContainer.innerHTML = createOrderProgressBar(order.status);
+
+        // Hiển thị sản phẩm
         const itemsTbody = document.getElementById('modal-order-items');
         if (order.items && Array.isArray(order.items)) {
 
         itemsTbody.innerHTML = order.items.map(item => {
-            // Prepare product image - check multiple sources
+            // Chuẩn bị ảnh sản phẩm - kiểm tra nhiều nguồn
             let productImage = null;
             if (item.product_variant?.primary_image?.path) {
                 productImage = `/storage/${item.product_variant.primary_image.path}`;
@@ -766,7 +1291,7 @@
                 productImage = item.product_image;
             }
             
-            // Prepare product link for admin - link to admin product edit page
+            // Chuẩn bị link sản phẩm cho admin - liên kết đến trang chỉnh sửa sản phẩm
             let productLink = '#';
             if (item.product_variant?.product?.id) {
                 productLink = '/admin/products/' + item.product_variant.product.id + '/edit';
@@ -774,7 +1299,7 @@
                 productLink = '/admin/products/' + item.product_id + '/edit';
             }
 
-            // Prepare variant information from variant_attributes
+            // Chuẩn bị thông tin biến thể từ variant_attributes
             let variantInfo = '';
             if (item.variant_attributes && item.variant_attributes !== null) {
                 let variantAttrs = null;
@@ -782,10 +1307,10 @@
                                  // Parse JSON string if needed
                  if (typeof item.variant_attributes === 'string') {
                      try {
-                         // Try parsing as JSON first
+                         // Thử phân tích JSON đầu tiên
                          variantAttrs = JSON.parse(item.variant_attributes);
                      } catch (e) {
-                         // If JSON parse fails, try decoding HTML entities first
+                         // Nếu phân tích JSON thất bại, thử giải mã ký tự HTML trước
                          try {
                              const decodedString = item.variant_attributes.replace(/\\u([0-9a-fA-F]{4})/g, (match, grp) => 
                                  String.fromCharCode(parseInt(grp, 16))
@@ -804,7 +1329,7 @@
                     const variants = Object.entries(variantAttrs)
                         .filter(([key, value]) => value !== null && value !== '' && value !== undefined)
                         .map(([key, value]) => {
-                            // Vietnamese translation for common variant types
+                            // Dịch tiếng Việt cho các loại biến thể phổ biến
                             const translations = {
                                 'color': 'Màu sắc',
                                 'size': 'Kích cỡ', 
@@ -830,7 +1355,7 @@
                 }
             }
             
-            // Get SKU from variant if available
+            // Lấy SKU từ biến thể nếu có
             const productSku = item.product_variant?.sku || item.sku || item.product_sku || null;
             
             return `
@@ -874,7 +1399,7 @@
             itemsTbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-500">Không có sản phẩm</td></tr>';
         }
 
-        // Render totals
+        // Hiển thị tổng tiền
         document.getElementById('modal-sub-total').textContent = formatCurrency(order.sub_total || 0);
         document.getElementById('modal-shipping-fee').textContent = formatCurrency(order.shipping_fee || 0);
         document.getElementById('modal-discount').textContent = `- ${formatCurrency(order.discount_amount || 0)}`;
@@ -886,28 +1411,31 @@
         modal.querySelector('div').classList.add('scale-95');
     }
     
-    // Close modal on escape key press
+    // Đóng modal khi nhấn phím Escape
     window.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
             closeModal();
         }
     });
 
-    // --- FILTERING LOGIC ---
+    // --- XỬ LÝ BỘ LỌC ---
     const searchInput = document.getElementById('search');
     const orderStatusFilter = document.getElementById('order-status');
     const paymentStatusFilter = document.getElementById('payment-status');
-    const dateFilter = document.getElementById('date-range');
+    const fromDateFilter = document.getElementById('from-date');
+    const toDateFilter = document.getElementById('to-date');
+    const newOrdersOnlyFilter = document.getElementById('new-orders-only');
     
     async function refreshCurrentPage() {
-        // Keep current page and filters when refreshing
+        // Giữ nguyên trang và bộ lọc khi làm mới
         const formData = new FormData();
         formData.append('page', currentPage);
         
         if (searchInput.value) formData.append('search', searchInput.value);
         if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
         if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
-        if (dateFilter.value) formData.append('date_range', dateFilter.value);
+        if (fromDateFilter.value) formData.append('date_from', fromDateFilter.value);
+        if (toDateFilter.value) formData.append('date_to', toDateFilter.value);
 
         try {
             const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
@@ -919,6 +1447,8 @@
             
             const result = await response.json();
             if (result.success) {
+                // Lưu dữ liệu hiện tại để lọc phía client
+                sessionStorage.setItem('currentOrdersData', JSON.stringify(result.data));
                 renderTable(result.data);
                 renderPagination(result.pagination);
             }
@@ -931,13 +1461,14 @@
     async function applyFilters() {
         const formData = new FormData();
         
-        // Reset to page 1 when applying filters
+        // Đặt lại về trang 1 khi áp dụng bộ lọc
         formData.append('page', 1);
         
         if (searchInput.value) formData.append('search', searchInput.value);
         if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
         if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
-        if (dateFilter.value) formData.append('date_range', dateFilter.value);
+        if (fromDateFilter.value) formData.append('date_from', fromDateFilter.value);
+        if (toDateFilter.value) formData.append('date_to', toDateFilter.value);
 
         try {
             const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
@@ -949,6 +1480,8 @@
             
             const result = await response.json();
             if (result.success) {
+                // Lưu dữ liệu hiện tại để lọc phía client
+                sessionStorage.setItem('currentOrdersData', JSON.stringify(result.data));
                 renderTable(result.data);
                 renderPagination(result.pagination);
             }
@@ -963,11 +1496,39 @@
         searchInput.value = '';
         orderStatusFilter.value = '';
         paymentStatusFilter.value = '';
-        dateFilter.value = '';
+        fromDateFilter.value = '';
+        toDateFilter.value = '';
+        newOrdersOnlyFilter.checked = false;
         loadOrders();
     });
 
-    // --- INITIAL LOAD ---
+    // Nút làm mới thủ công
+    document.getElementById('refresh-orders').addEventListener('click', () => {
+        const refreshButton = document.getElementById('refresh-orders');
+        const icon = refreshButton.querySelector('i');
+        
+        // Thêm hiệu ứng quay
+        icon.classList.add('fa-spin');
+        refreshButton.disabled = true;
+        
+        // Làm mới dữ liệu
+        refreshCurrentPage();
+        
+        // Gỡ hiệu ứng quay sau 1 giây
+        setTimeout(() => {
+            icon.classList.remove('fa-spin');
+            refreshButton.disabled = false;
+        }, 1000);
+    });
+
+    // Tự động áp dụng bộ lọc khi checkbox "chỉ đơn hàng mới" thay đổi
+    newOrdersOnlyFilter.addEventListener('change', function() {
+        // Hiển thị lại dữ liệu hiện tại với bộ lọc mới
+        const currentData = JSON.parse(sessionStorage.getItem('currentOrdersData') || '[]');
+        renderTable(currentData);
+    });
+
+    // --- TẢI DỮ LIỆU BAN ĐẦU ---
     async function loadOrders() {
         try {
             const response = await fetch(CONFIG.routes.index, {
@@ -979,24 +1540,26 @@
             
             const result = await response.json();
             if (result.success) {
+                // Lưu dữ liệu hiện tại để lọc phía client
+                sessionStorage.setItem('currentOrdersData', JSON.stringify(result.data));
                 renderTable(result.data);
                 renderPagination(result.pagination);
             }
         } catch (error) {
             console.error('Error loading orders:', error);
             showToast('Không thể tải danh sách đơn hàng từ server. Hiển thị dữ liệu cache.', 'warning', 'Tải dữ liệu thất bại');
-            // Fallback to show initial data from server
+            // Dự phòng: hiển thị dữ liệu ban đầu từ server
             @if(isset($orders))
                 renderTable(@json($orders->items()));
             @endif
         }
     }
 
-    // --- TOAST NOTIFICATION SYSTEM ---
+    // --- HỆ THỐNG THÔNG BÁO TOAST ---
     function showToast(message, type = 'success', title = null) {
         const toastContainer = document.getElementById('toast-container');
         
-        // Determine title and icon based on type
+        // Xác định tiêu đề và biểu tượng dựa trên loại
         let toastTitle = title;
         let icon = '';
         
@@ -1020,7 +1583,7 @@
             }
         }
         
-        // Create toast element
+        // Tạo phần tử toast
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerHTML = `
@@ -1036,15 +1599,15 @@
             </button>
         `;
         
-        // Add to container
+        // Thêm vào vùng chứa
         toastContainer.appendChild(toast);
         
-        // Trigger animation
+        // Kích hoạt hiệu ứng
         setTimeout(() => {
             toast.classList.add('show');
         }, 100);
         
-        // Auto remove after 5 seconds
+        // Tự động xóa sau 5 giây
         setTimeout(() => {
             removeToast(toast);
         }, 5000);
@@ -1061,14 +1624,14 @@
         }
     }
 
-    // --- UPDATE STATUS MODAL LOGIC ---
+    // --- XỬ LÝ MODAL CẬP NHẬT TRẠNG THÁI ---
     const updateStatusModal = document.getElementById('update-status-modal');
     let currentOrderId = null;
 
     function showUpdateStatusModal(orderId, currentStatus) {
         currentOrderId = orderId;
         
-        // Find order data to get order code
+        // Tìm dữ liệu đơn hàng để lấy mã đơn
         const orderRows = document.querySelectorAll('#orders-tbody tr');
         let orderCode = '';
         orderRows.forEach(row => {
@@ -1083,7 +1646,7 @@
         document.getElementById('admin-note').value = '';
         document.getElementById('cancellation-reason').value = '';
         
-        // Show/hide cancellation reason field
+        // Hiện/ẩn trường lý do hủy
         toggleCancellationField(currentStatus);
         
         updateStatusModal.classList.add('is-open');
@@ -1099,17 +1662,27 @@
     function toggleCancellationField(status) {
         const cancellationField = document.getElementById('cancellation-reason-field');
         const cancellationTextarea = document.getElementById('cancellation-reason');
+        const fieldLabel = cancellationField.querySelector('label');
         
         if (status === 'cancelled') {
             cancellationField.style.display = 'block';
             cancellationTextarea.setAttribute('required', 'required');
+            fieldLabel.innerHTML = 'Lý do hủy đơn <span class="text-red-500">*</span>';
+            cancellationTextarea.setAttribute('placeholder', 'Nhập lý do hủy đơn hàng...');
+        } else if (status === 'failed_delivery') {
+            cancellationField.style.display = 'block';
+            cancellationTextarea.setAttribute('required', 'required');
+            fieldLabel.innerHTML = 'Lý do giao hàng thất bại <span class="text-red-500">*</span>';
+            cancellationTextarea.setAttribute('placeholder', 'Nhập lý do giao hàng thất bại...');
         } else {
             cancellationField.style.display = 'none';
             cancellationTextarea.removeAttribute('required');
+            fieldLabel.innerHTML = 'Lý do hủy đơn <span class="text-red-500">*</span>';
+            cancellationTextarea.setAttribute('placeholder', 'Nhập lý do hủy đơn hàng...');
         }
     }
 
-    // Validate form before submit
+    // Kiểm tra form trước khi gửi
     function validateStatusForm() {
         const newStatus = document.getElementById('new-status').value;
         
@@ -1129,12 +1702,12 @@
         return true;
     }
 
-    // Listen for status change to show/hide cancellation field
+    // Lắng nghe thay đổi trạng thái để hiện/ẩn trường lý do hủy
     document.getElementById('new-status').addEventListener('change', function() {
         toggleCancellationField(this.value);
     });
 
-    // Handle update status form submission
+    // Xử lý gửi form cập nhật trạng thái
     document.getElementById('update-status-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -1143,7 +1716,7 @@
             return;
         }
 
-        // Validate form
+        // Kiểm tra form
         if (!validateStatusForm()) {
             return;
         }
@@ -1168,19 +1741,22 @@
             const result = await response.json();
             
             if (response.ok && result.success) {
-                // Show enhanced success message
+                // Hiển thị thông báo cải thiện
                 const statusText = result.data?.status_text || 'trạng thái mới';
                 showToast(`Đơn hàng đã được cập nhật thành "${statusText}" thành công!`, 'success', 'Cập nhật thành công');
                 
-                // Close modal
+                // Đánh dấu đơn hàng này đã xem (bỏ đánh dấu "mới")
+                markOrderAsViewed(currentOrderId);
+                
+                // Đóng modal
                 closeUpdateStatusModal();
                 
-                // Refresh current page instead of going to page 1
+                // Làm mới trang hiện tại thay vì về trang 1
                 refreshCurrentPage();
             } else {
-                // Handle different types of errors
+                // Xử lý các loại lỗi khác nhau
                 if (response.status === 422) {
-                    // Validation errors
+                    // Lỗi xác thực
                     if (result.errors) {
                         const errorMessages = Object.values(result.errors).flat();
                         showToast(errorMessages.join('. '), 'error', 'Dữ liệu không hợp lệ');
@@ -1207,7 +1783,7 @@
         }
     });
 
-    // Close modal on escape key
+    // Đóng modal khi nhấn phím escape
     window.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && updateStatusModal.classList.contains('is-open')) {
             closeUpdateStatusModal();
@@ -1217,25 +1793,25 @@
         }
     });
 
-    // --- ASSIGN SHIPPER MODAL LOGIC ---
+    // --- XỬ LÝ MODAL GÁN SHIPPER ---
     const assignShipperModal = document.getElementById('assign-shipper-modal');
     let currentAssignOrderId = null;
-    let shippersCache = null; // Cache for shippers list
+    let shippersCache = null; // Bộ nhớ tạm cho danh sách shipper
 
     async function showAssignShipperModal(orderId, orderCode) {
         currentAssignOrderId = orderId;
         
-        // Set order code
+        // Đặt mã đơn hàng
         document.getElementById('assign-shipper-order-code').textContent = orderCode;
         
-        // Reset form
+        // Đặt lại form
         document.getElementById('shipper-select').value = '';
         
-        // Show modal
+        // Hiện modal
         assignShipperModal.classList.add('is-open');
         assignShipperModal.querySelector('div').classList.remove('scale-95');
         
-        // Load shippers
+        // Tải danh sách shipper
         await loadShippers();
     }
 
@@ -1249,12 +1825,12 @@
         const shipperSelect = document.getElementById('shipper-select');
         const loadingDiv = document.getElementById('shipper-loading');
         
-        // Show loading
+        // Hiện loading
         loadingDiv.style.display = 'block';
         shipperSelect.disabled = true;
         
         try {
-            // Use cache if available
+            // Dùng cache nếu có
             if (shippersCache) {
                 populateShipperSelect(shippersCache);
                 return;
@@ -1270,7 +1846,7 @@
             const result = await response.json();
             
             if (result.success) {
-                shippersCache = result.data; // Cache the result
+                shippersCache = result.data; // Lưu kết quả vào cache
                 populateShipperSelect(result.data);
             } else {
                 showToast('Không thể tải danh sách shipper.', 'error', 'Lỗi tải dữ liệu');
@@ -1287,10 +1863,10 @@
     function populateShipperSelect(shippers) {
         const shipperSelect = document.getElementById('shipper-select');
         
-        // Clear existing options except the first one
+        // Xóa các lựa chọn cũ trừ lựa chọn đầu tiên
         shipperSelect.innerHTML = '<option value="">-- Chọn Shipper --</option>';
         
-        // Add shipper options
+        // Thêm lựa chọn shipper
         shippers.forEach(shipper => {
             const option = document.createElement('option');
             option.value = shipper.id;
@@ -1299,7 +1875,7 @@
         });
     }
 
-    // Handle assign shipper form submission
+    // Xử lý gửi form gán shipper
     document.getElementById('assign-shipper-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -1334,10 +1910,13 @@
             if (response.ok && result.success) {
                 showToast(`Đã gán shipper "${result.data.shipper.name}" cho đơn hàng thành công!`, 'success', 'Gán shipper thành công');
                 
-                // Close modal
+                // Đánh dấu đơn hàng này đã xem (bỏ đánh dấu "mới")
+                markOrderAsViewed(currentAssignOrderId);
+                
+                // Đóng modal
                 closeAssignShipperModal();
                 
-                // Refresh current page
+                // Làm mới trang hiện tại
                 refreshCurrentPage();
             } else {
                 if (response.status === 422) {
@@ -1362,7 +1941,9 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         @if(isset($orders))
-            renderTable(@json($orders->items()));
+            const initialData = @json($orders->items());
+            sessionStorage.setItem('currentOrdersData', JSON.stringify(initialData));
+            renderTable(initialData);
             renderPagination({
                 current_page: {{ $orders->currentPage() }},
                 last_page: {{ $orders->lastPage() }},
@@ -1374,6 +1955,8 @@
         @else
             loadOrders();
         @endif
+
+
     });
 
     </script>

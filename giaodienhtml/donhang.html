@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng điều khiển Quản lý Đơn hàng</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Be Vietnam Pro -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-delivered { background-color: #dcfce7; color: #16a34a; }
+        .status-shipping { background-color: #dbeafe; color: #2563eb; }
+        .status-cancelled, .status-delivery_failed, .status-returned { background-color: #fee2e2; color: #dc2626; }
+        .status-pending, .status-processing, .status-waiting_for_delivery { background-color: #f3f4f6; color: #4b5563; }
+        
+        .modal {
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .modal-content {
+             transform: scale(0.95);
+             transition: transform 0.3s ease;
+        }
+        .modal:not(.hidden) .modal-content {
+            transform: scale(1);
+        }
+        
+        /* Horizontal Stepper for Order History */
+        .stepper { display: flex; align-items: flex-start; justify-content: space-between; }
+        .stepper-item { display: flex; flex-direction: column; align-items: center; text-align: center; width: 110px; position: relative; }
+        .stepper-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 1; border: 2px solid; transition: all 0.3s ease; }
+        .stepper-label { margin-top: 8px; font-size: 12px; transition: all 0.3s ease; }
+        .stepper-connector { flex: 1; height: 2px; margin-top: 17px; transition: all 0.3s ease; }
+
+        /* Default state */
+        .stepper-item .stepper-icon { background-color: #f3f4f6; border-color: #e5e7eb; color: #6b7280; }
+        .stepper-item .stepper-label { color: #6b7280; }
+        .stepper-connector { background-color: #e5e7eb; }
+
+        /* Completed state */
+        .stepper-item.completed .stepper-icon { background-color: #dcfce7; border-color: #16a34a; color: #16a34a; }
+        .stepper-item.completed .stepper-label { color: #1f2937; }
+        .stepper-connector.completed { background-color: #16a34a; }
+
+        /* Current state */
+        .stepper-item.current .stepper-icon { background-color: #4f46e5; border-color: #4f46e5; color: #ffffff; transform: scale(1.1); }
+        .stepper-item.current .stepper-label { color: #4f46e5; font-weight: 600; }
+
+        /* Failed/Cancelled state */
+        .stepper-item.failed .stepper-icon { background-color: #fee2e2; border-color: #ef4444; color: #ef4444; }
+        .stepper-item.failed .stepper-label { color: #ef4444; font-weight: 600; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-screen-2xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 flex flex-col md:flex-row justify-between md:items-center">
+            <div>
+                 <h1 class="text-3xl font-bold text-gray-800">Tổng quan Đơn hàng</h1>
+                 <p class="text-gray-500 mt-1">Theo dõi và quản lý tất cả các đơn hàng của bạn.</p>
+            </div>
+            <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                <div class="flex items-center space-x-2 bg-white p-1 rounded-lg border">
+                    <button class="px-4 py-1.5 rounded-md text-sm font-semibold bg-indigo-600 text-white">Hôm nay</button>
+                    <button class="px-4 py-1.5 rounded-md text-sm font-semibold text-gray-600 hover:bg-gray-100">Tuần này</button>
+                    <button class="px-4 py-1.5 rounded-md text-sm font-semibold text-gray-600 hover:bg-gray-100">Tháng này</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm"><p class="text-sm text-gray-500">Tổng đơn hàng</p><p id="stat-total" class="text-2xl font-bold text-gray-800 mt-1">0</p></div>
+            <div class="bg-white p-6 rounded-xl shadow-sm"><p class="text-sm text-gray-500">Giao thành công</p><p id="stat-delivered" class="text-2xl font-bold text-green-600 mt-1">0</p></div>
+            <div class="bg-white p-6 rounded-xl shadow-sm"><p class="text-sm text-gray-500">Đang giao</p><p id="stat-shipping" class="text-2xl font-bold text-blue-600 mt-1">0</p></div>
+            <div class="bg-white p-6 rounded-xl shadow-sm"><p class="text-sm text-gray-500">Đã hủy</p><p id="stat-cancelled" class="text-2xl font-bold text-red-600 mt-1">0</p></div>
+            <div class="bg-white p-6 rounded-xl shadow-sm"><p class="text-sm text-gray-500">Thất bại / Trả hàng</p><p id="stat-failed" class="text-2xl font-bold text-gray-600 mt-1">0</p></div>
+        </div>
+
+        <!-- Orders Table Section -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+             <div class="p-6 border-b">
+                 <h3 class="text-lg font-semibold text-gray-800">Danh sách đơn hàng</h3>
+             </div>
+             <div class="overflow-x-auto">
+                 <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="p-6">Mã đơn</th>
+                            <th scope="col" class="p-6">Khách hàng</th>
+                            <th scope="col" class="p-6">Ngày đặt</th>
+                            <th scope="col" class="p-6">Shipper</th>
+                            <th scope="col" class="p-6">Tổng tiền</th>
+                            <th scope="col" class="p-6">Trạng thái</th>
+                            <th scope="col" class="p-6 text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orders-tbody">
+                        <!-- Order rows will be inserted here by JavaScript -->
+                    </tbody>
+                </table>
+             </div>
+             <div id="no-orders" class="hidden text-center p-12 text-gray-500">
+                 <i class="fas fa-receipt fa-3x text-gray-400 mb-4"></i>
+                 <h3 class="text-lg font-semibold text-gray-700">Chưa có đơn hàng</h3>
+                 <p class="text-gray-500">Hiện tại không có đơn hàng nào trong danh sách.</p>
+             </div>
+        </div>
+    </div>
+    
+    <!-- Order Detail Modal -->
+    <div id="order-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <div id="order-modal-content" class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+            <!-- Modal content will be injected here -->
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- MOCK DATA ---
+            const mockShippers = [
+                { id: 1, name: 'Nguyễn Tuấn Dũng' },
+                { id: 2, name: 'Trần Văn Mạnh' },
+                { id: 5, name: 'Vũ Đức Thắng' },
+            ];
+            
+            // --- NEW STATUS MAP ---
+            const statusMap = {
+                pending: { text: 'Chờ xác nhận', class: 'status-pending', icon: 'fa-file-alt' },
+                processing: { text: 'Đang xử lý', class: 'status-processing', icon: 'fa-cogs' },
+                waiting_for_delivery: { text: 'Chờ giao hàng', class: 'status-waiting_for_delivery', icon: 'fa-box' },
+                shipping: { text: 'Đang giao', class: 'status-shipping', icon: 'fa-truck' },
+                delivered: { text: 'Giao thành công', class: 'status-delivered', icon: 'fa-check-circle' },
+                cancelled: { text: 'Đã hủy', class: 'status-cancelled', icon: 'fa-times-circle' },
+                delivery_failed: { text: 'Giao hàng thất bại', class: 'status-delivery_failed', icon: 'fa-exclamation-triangle' },
+                returned: { text: 'Đã trả hàng', class: 'status-returned', icon: 'fa-undo' },
+            };
+
+            const mockOrders = [
+                { 
+                    id: 'DH-85721', 
+                    customer: { name: 'Trần Minh Anh', phone: '0987111222', email: 'minhanh.tran@example.com', address: { street: 'Số 12, ngõ 50', ward: 'Phường Láng Hạ', district: 'Quận Đống Đa', province: 'Hà Nội' } }, 
+                    createdAt: '2024-07-10T09:15:00Z', 
+                    shipperId: 1, 
+                    status: 'delivered', 
+                    statusHistory: [
+                        { status: 'delivered', timestamp: '2024-07-10T14:30:00Z' },
+                        { status: 'shipping', timestamp: '2024-07-10T10:00:00Z' },
+                        { status: 'waiting_for_delivery', timestamp: '2024-07-10T09:45:00Z' },
+                        { status: 'processing', timestamp: '2024-07-10T09:30:00Z' },
+                        { status: 'pending', timestamp: '2024-07-10T09:15:00Z' },
+                    ],
+                    payment: { method: 'COD', status: 'Đã thanh toán', statusClass: 'text-green-600' },
+                    total: 27990000, 
+                    products: [{ name: 'iPhone 15 Pro Max 256GB', sku: 'IP15PM-256-BL', qty: 1, price: 27990000, image: 'https://placehold.co/64x64/f0f0f0/333?text=iPhone' }],
+                    note: 'Giao hàng trong giờ hành chính.'
+                },
+                { 
+                    id: 'DH-85720', 
+                    customer: { name: 'Lê Hoàng Long', phone: '0912333444', email: 'long.le@example.com', address: { street: 'Chung cư The Sun', ward: 'Phường Mễ Trì', district: 'Quận Nam Từ Liêm', province: 'Hà Nội' } }, 
+                    createdAt: '2024-07-11T08:30:00Z', 
+                    shipperId: 2, 
+                    status: 'shipping', 
+                    statusHistory: [
+                        { status: 'shipping', timestamp: '2024-07-11T09:00:00Z' },
+                        { status: 'waiting_for_delivery', timestamp: '2024-07-11T08:50:00Z' },
+                        { status: 'processing', timestamp: '2024-07-11T08:45:00Z' },
+                        { status: 'pending', timestamp: '2024-07-11T08:30:00Z' },
+                    ],
+                    payment: { method: 'Chuyển khoản', status: 'Đã thanh toán', statusClass: 'text-green-600' },
+                    total: 18490000, 
+                    products: [{ name: 'MacBook Air M1', sku: 'MBA-M1-8-256', qty: 1, price: 18490000, image: 'https://placehold.co/64x64/f0f0f0/333?text=MacBook' }] ,
+                    note: ''
+                },
+                { 
+                    id: 'DH-85719', 
+                    customer: { name: 'Phạm Thị Bích', phone: '0905555666', email: 'bich.pham@example.com', address: { street: '102 Trần Phú', ward: 'Phường Mộ Lao', district: 'Quận Hà Đông', province: 'Hà Nội' } }, 
+                    createdAt: '2024-07-09T16:45:00Z', 
+                    shipperId: 5, 
+                    status: 'delivery_failed', 
+                     statusHistory: [
+                        { status: 'delivery_failed', timestamp: '2024-07-10T11:00:00Z' },
+                        { status: 'shipping', timestamp: '2024-07-10T09:10:00Z' },
+                        { status: 'waiting_for_delivery', timestamp: '2024-07-09T17:15:00Z' },
+                        { status: 'processing', timestamp: '2024-07-09T17:00:00Z' },
+                        { status: 'pending', timestamp: '2024-07-09T16:45:00Z' },
+                    ],
+                    payment: { method: 'COD', status: 'Chưa thanh toán', statusClass: 'text-yellow-600' },
+                    total: 1290000, 
+                    products: [{ name: 'AirPods 2', sku: 'AP-2-W', qty: 1, price: 1290000, image: 'https://placehold.co/64x64/f0f0f0/333?text=AirPods' }] ,
+                    note: 'Khách hẹn giao lại vào chiều mai.'
+                },
+                { 
+                    id: 'DH-85718', 
+                    customer: { name: 'Vũ Ngọc Mai', phone: '0934777888', email: 'mai.vu@example.com', address: { street: '88 Láng Hạ', ward: 'Phường Láng Hạ', district: 'Quận Đống Đa', province: 'Hà Nội' } }, 
+                    createdAt: '2024-07-08T14:20:00Z', 
+                    shipperId: 1, 
+                    status: 'cancelled', 
+                    statusHistory: [
+                        { status: 'cancelled', timestamp: '2024-07-08T15:00:00Z' },
+                        { status: 'processing', timestamp: '2024-07-08T14:30:00Z' },
+                        { status: 'pending', timestamp: '2024-07-08T14:20:00Z' },
+                    ],
+                    payment: { method: 'COD', status: 'Đã hủy', statusClass: 'text-red-600' },
+                    total: 34990000, 
+                    products: [{ name: 'MacBook Pro 14 inch M3', sku: 'MBP-14-M3-8-512', qty: 1, price: 34990000, image: 'https://placehold.co/64x64/f0f0f0/333?text=MacBook' }] ,
+                    note: 'Khách báo nhầm sản phẩm.'
+                },
+            ];
+
+            // --- DOM ELEMENTS ---
+            const tbody = document.getElementById('orders-tbody');
+            const noOrdersDiv = document.getElementById('no-orders');
+            const orderModal = document.getElementById('order-modal');
+            const orderModalContent = document.getElementById('order-modal-content');
+
+            // --- UTILITY FUNCTIONS ---
+            const formatDate = (dateString, includeTime = false) => {
+                const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+                if (includeTime) {
+                    options.hour = '2-digit';
+                    options.minute = '2-digit';
+                }
+                return new Date(dateString).toLocaleString('vi-VN', options);
+            }
+            const formatCurrency = (number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
+
+            // --- RENDER FUNCTIONS ---
+            function renderStats() {
+                document.getElementById('stat-total').textContent = mockOrders.length;
+                document.getElementById('stat-delivered').textContent = mockOrders.filter(o => o.status === 'delivered').length;
+                document.getElementById('stat-shipping').textContent = mockOrders.filter(o => o.status === 'shipping').length;
+                document.getElementById('stat-cancelled').textContent = mockOrders.filter(o => o.status === 'cancelled').length;
+                document.getElementById('stat-failed').textContent = mockOrders.filter(o => ['delivery_failed', 'returned'].includes(o.status)).length;
+            }
+
+            function renderOrderRow(order) {
+                const orderStatus = statusMap[order.status] || statusMap.pending;
+                const shipper = mockShippers.find(s => s.id === order.shipperId);
+                return `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="p-6 font-semibold text-indigo-600">${order.id}</td>
+                        <td class="p-6">
+                            <div class="font-medium text-gray-800">${order.customer.name}</div>
+                            <div class="text-gray-500">${order.customer.phone}</div>
+                        </td>
+                        <td class="p-6">${formatDate(order.createdAt)}</td>
+                        <td class="p-6">${shipper ? shipper.name : 'Chưa gán'}</td>
+                        <td class="p-6 font-medium">${formatCurrency(order.total)}</td>
+                        <td class="p-6"><span class="status-badge ${orderStatus.class}"><i class="fas ${orderStatus.icon}"></i><span>${orderStatus.text}</span></span></td>
+                        <td class="p-6 text-center">
+                            <button onclick='openModal("${order.id}")' class="text-indigo-600 hover:text-indigo-900" title="Xem chi tiết">
+                                <i class="fas fa-eye"></i> Xem chi tiết
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+
+            function renderTable(ordersToRender) {
+                if (!ordersToRender || ordersToRender.length === 0) {
+                    tbody.innerHTML = '';
+                    noOrdersDiv.classList.remove('hidden');
+                    return;
+                }
+                noOrdersDiv.classList.add('hidden');
+                tbody.innerHTML = ordersToRender.map(renderOrderRow).join('');
+            }
+            
+            // --- MODAL LOGIC ---
+            window.openModal = (orderId) => {
+                const order = mockOrders.find(o => o.id === orderId);
+                if (!order) return;
+
+                const productsHtml = order.products.map(p => `
+                    <tr class="border-b">
+                        <td class="p-4">
+                            <div class="flex items-center space-x-4">
+                                <img src="${p.image}" alt="${p.name}" class="w-16 h-16 rounded-lg object-cover" onerror="this.onerror=null;this.src='https://placehold.co/64x64/cccccc/ffffff?text=IMG';">
+                                <div>
+                                    <p class="font-semibold text-gray-800">${p.name}</p>
+                                    <p class="text-sm text-gray-500">SKU: ${p.sku}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4 text-center">${p.qty}</td>
+                        <td class="p-4 text-right">${formatCurrency(p.price)}</td>
+                        <td class="p-4 text-right font-semibold">${formatCurrency(p.qty * p.price)}</td>
+                    </tr>
+                `).join('');
+
+                // --- HORIZONTAL STEPPER LOGIC (IMPROVED) ---
+                const standardFlow = ['pending', 'processing', 'waiting_for_delivery', 'shipping', 'delivered'];
+                const terminalStates = ['cancelled', 'delivery_failed', 'returned'];
+                const historyStatuses = order.statusHistory.map(h => h.status);
+                const finalStatus = order.status;
+                
+                let stepperHtml = '<div class="stepper p-4 overflow-x-auto">';
+                let stepsToDisplay = [...standardFlow];
+
+                // If the final status is a terminal one, find where it branched off and insert it.
+                if (terminalStates.includes(finalStatus)) {
+                    let lastStandardStepIndex = -1;
+                    standardFlow.forEach((step, index) => {
+                        if (historyStatuses.includes(step)) {
+                            lastStandardStepIndex = index;
+                        }
+                    });
+                    // Insert the terminal state after the last known standard step
+                    stepsToDisplay.splice(lastStandardStepIndex + 1, 0, finalStatus);
+                }
+
+                stepsToDisplay.forEach((step, index) => {
+                    if (!statusMap[step]) return; // Skip if status is not defined
+
+                    const stepInfo = statusMap[step];
+                    const isCompleted = historyStatuses.includes(step) && finalStatus !== step;
+                    const isCurrent = finalStatus === step && !terminalStates.includes(step);
+                    const isFailed = finalStatus === step && terminalStates.includes(step);
+
+                    let itemClass = '';
+                    if (isFailed) itemClass = 'failed';
+                    else if (isCurrent) itemClass = 'current';
+                    else if (isCompleted) itemClass = 'completed';
+                    
+                    if (index > 0) {
+                        const prevStep = stepsToDisplay[index - 1];
+                        if (historyStatuses.includes(prevStep) && (historyStatuses.includes(step) || finalStatus === step)) {
+                             stepperHtml += `<div class="stepper-connector completed"></div>`;
+                        } else {
+                             stepperHtml += `<div class="stepper-connector"></div>`;
+                        }
+                    }
+
+                    stepperHtml += `
+                        <div class="stepper-item ${itemClass}">
+                            <div class="stepper-icon"><i class="fas ${stepInfo.icon}"></i></div>
+                            <p class="stepper-label">${stepInfo.text}</p>
+                        </div>
+                    `;
+                });
+                stepperHtml += '</div>';
+
+
+                const modalHtml = `
+                    <div class="p-6 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                        <h2 class="text-xl font-bold text-gray-800">Chi tiết đơn hàng: ${order.id}</h2>
+                        <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times fa-lg"></i></button>
+                    </div>
+                    
+                    <!-- Main Content -->
+                    <div class="p-6">
+                        <!-- Stepper Section -->
+                        <div class="border rounded-lg mb-6">
+                            ${stepperHtml}
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Left Column -->
+                            <div class="lg:col-span-1 space-y-6">
+                                <div class="p-4 border rounded-lg">
+                                    <h3 class="font-semibold text-gray-800 mb-3">Thông tin khách hàng</h3>
+                                    <p><strong>Tên:</strong> ${order.customer.name}</p>
+                                    <p><strong>Email:</strong> ${order.customer.email}</p>
+                                    <p><strong>SĐT:</strong> ${order.customer.phone}</p>
+                                </div>
+                                <div class="p-4 border rounded-lg">
+                                    <h3 class="font-semibold text-gray-800 mb-3">Địa chỉ giao hàng</h3>
+                                    <p><strong>Địa chỉ:</strong> ${order.customer.address.street}</p>
+                                    <p><strong>Phường/Xã:</strong> ${order.customer.address.ward}</p>
+                                    <p><strong>Quận/Huyện:</strong> ${order.customer.address.district}</p>
+                                    <p><strong>Tỉnh/Thành:</strong> ${order.customer.address.province}</p>
+                                </div>
+                                <div class="p-4 border rounded-lg">
+                                    <h3 class="font-semibold text-gray-800 mb-3">Ghi chú</h3>
+                                    <p>${order.note || 'Không có ghi chú.'}</p>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div class="lg:col-span-2 space-y-6">
+                                <div class="p-4 border rounded-lg">
+                                    <h3 class="font-semibold text-gray-800 mb-3">Tổng quan thanh toán</h3>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div><p class="text-sm text-gray-500">Ngày đặt</p><p class="font-semibold">${formatDate(order.createdAt)}</p></div>
+                                        <div><p class="text-sm text-gray-500">Trạng thái thanh toán</p><p class="font-semibold ${order.payment.statusClass}">${order.payment.status}</p></div>
+                                        <div><p class="text-sm text-gray-500">Phương thức</p><p class="font-semibold">${order.payment.method}</p></div>
+                                        <div><p class="text-sm text-gray-500">Shipper</p><p class="font-semibold">${mockShippers.find(s => s.id === order.shipperId)?.name || 'Chưa gán'}</p></div>
+                                    </div>
+                                </div>
+                                <div class="border rounded-lg">
+                                    <h3 class="font-semibold text-gray-800 p-4">Sản phẩm trong đơn</h3>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-sm">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="p-4 text-left font-medium text-gray-600">Sản phẩm</th>
+                                                    <th class="p-4 text-center font-medium text-gray-600">SL</th>
+                                                    <th class="p-4 text-right font-medium text-gray-600">Đơn giá</th>
+                                                    <th class="p-4 text-right font-medium text-gray-600">Thành tiền</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>${productsHtml}</tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3 sticky bottom-0 z-10">
+                        <button type="button" onclick="closeModal()" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Đóng</button>
+                        <button type="button" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2"><i class="fas fa-print"></i><span>In hóa đơn</span></button>
+                    </div>
+                `;
+                orderModalContent.innerHTML = modalHtml;
+                orderModal.classList.remove('hidden');
+            };
+
+            window.closeModal = () => {
+                orderModal.classList.add('hidden');
+                orderModalContent.innerHTML = '';
+            }
+
+            // --- INITIAL RENDER ---
+            renderStats();
+            renderTable(mockOrders);
+        });
+    </script>
+</body>
+</html>

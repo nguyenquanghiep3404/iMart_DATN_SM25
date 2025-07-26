@@ -18,7 +18,6 @@ class ProductVariant extends Model
         'sale_price',
         'sale_price_starts_at',
         'sale_price_ends_at',
-        'stock_quantity',
         'manage_stock',
         'stock_status',
         'weight',
@@ -28,9 +27,8 @@ class ProductVariant extends Model
         'dimensions_height',
         'is_default',
         'status',
-        'sku',
-        'stock_quantity',
-        'stock_status',
+        'cost_price', 
+        'points_awarded_on_purchase'
 
     ];
 
@@ -39,14 +37,12 @@ class ProductVariant extends Model
         'sale_price' => 'decimal:2',
         'sale_price_starts_at' => 'datetime',
         'sale_price_ends_at' => 'datetime',
-        'stock_quantity' => 'integer',
         'manage_stock' => 'boolean',
         'weight' => 'decimal:2',
         'dimensions_length' => 'decimal:2',
         'dimensions_width' => 'decimal:2',
         'dimensions_height' => 'decimal:2',
         'is_default' => 'boolean',
-
     ];
 
     public function product()
@@ -99,8 +95,55 @@ class ProductVariant extends Model
             ->withPivot('value') // Quan trọng: Lấy cột 'value' từ bảng trung gian
             ->withTimestamps();
     }
-    protected static function booted()
-    {
-        static::observe(\App\Observers\ProductVariantObserver::class);
-    }
+    public function inventories()
+{
+    return $this->hasMany(ProductInventory::class);
+}
+
+/**
+ * Lấy tổng số lượng tồn kho có thể bán được (ví dụ: new + open_box).
+ */
+public function getSellableStockAttribute(): int
+{
+    $sellableTypes = ['new']; 
+    return $this->inventories()
+                ->whereIn('inventory_type', $sellableTypes)
+                ->sum('quantity');
+}
+
+// Một biến thể sản phẩm (ProductVariant) có thể nằm trong nhiều chương trình flash sale khác nhau.
+// Thiết lập quan hệ 1-n với bảng trung gian flash_sale_products.
+public function flashSaleProducts()
+{
+    return $this->hasMany(FlashSaleProduct::class);
+}
+
+/**
+ * Lấy danh sách tất cả các gói sản phẩm (bundle) mà biến thể sản phẩm này đóng vai trò là **sản phẩm chính**.
+ *
+ * Mỗi bản ghi trong bảng `bundle_main_products` tương ứng với một mối quan hệ giữa biến thể này
+ * và một `ProductBundle` mà nó làm sản phẩm chính.
+ *
+ * @return \Illuminate\Database\Eloquent\Relations\HasMany
+ */
+public function bundleMainProducts()
+{
+    return $this->hasMany(BundleMainProduct::class, 'product_variant_id');
+}
+
+/**
+ * Lấy danh sách tất cả các gợi ý sản phẩm mà biến thể sản phẩm này xuất hiện trong các **gợi ý sản phẩm đi kèm**.
+ *
+ * Mỗi bản ghi trong bảng `bundle_suggested_products` thể hiện một mối quan hệ giữa biến thể này
+ * và một `ProductBundle` mà nó được đề xuất đi kèm.
+ *
+ * @return \Illuminate\Database\Eloquent\Relations\HasMany
+ */
+public function bundleSuggestedProducts()
+{
+    return $this->hasMany(BundleSuggestedProduct::class, 'product_variant_id');
+}
+
+
+
 }

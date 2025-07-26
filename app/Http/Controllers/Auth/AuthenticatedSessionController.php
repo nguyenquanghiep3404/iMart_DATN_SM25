@@ -9,6 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log; // Thêm use cho Log
+use App\Models\Cart; // Thêm use cho Cart model
+use App\Models\CartItem; // Thêm use cho CartItem model
+use App\Models\ProductVariant; // Thêm use cho ProductVariant model
+use App\Models\ProductInventory; // Thêm use cho ProductInventory model
 class AuthenticatedSessionController extends Controller
 {
     /**
@@ -22,42 +28,150 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
+
     public function store(LoginRequest $request): RedirectResponse
     {
-        // 1. Xác thực email + password
+        // 1. Xác thực đăng nhập
         $request->authenticate();
 
-        // 2. Regenerate session
+        // 2. Regenerate session (tạo lại session mới)
         $request->session()->regenerate();
 
-        // 3. Lấy user vừa đăng nhập
+        // 3. Lấy user đăng nhập
         $user = Auth::user();
 
-        // 4. Chuyển hướng theo role:
-        //    - Nếu user có role_id = 2 (customer) → chuyển đến /dashboard (user dashboard)
-        //    - Nếu user có role_id thuộc [1,4,5] (admin roles) → chuyển đến /admin/dashboard
+        // 4. Xử lý giỏ hàng session nếu có
+        if (session()->has('cart')) {
+            $sessionCart = session('cart');
+
+            // Bắt đầu transaction để đảm bảo tính nhất quán
+            DB::beginTransaction();
+
+            try {
+                // 5. Lấy hoặc tạo cart của user
+                $cart = \App\Models\Cart::firstOrCreate(['user_id' => $user->id]);
+
+                // 6. Duyệt qua từng item trong giỏ hàng session
+                foreach ($sessionCart as $item) {
+                    // 6.1. Kiểm tra và xác thực variant_id
+                    $variantId = $item['variant_id'] ?? null;
+                    if (!$variantId || !is_numeric($variantId)) {
+                        Log::warning('Cart item missing or invalid variant_id', ['item' => $item]);
+                        continue;
+                    }
+
+                    // 6.2. Lấy số lượng yêu cầu từ session, mặc định là 1 nếu không có
+                    $quantityRequested = isset($item['quantity']) && is_numeric($item['quantity']) && $item['quantity'] > 0
+                        ? (int)$item['quantity'] : 1;
+
+                    // 6.3. Lấy giá sản phẩm từ session
+                    $price = isset($item['price']) && is_numeric($item['price'])
+                        ? (float)$item['price'] : 0;
+
+                    // 6.4. Kiểm tra tồn tại biến thể sản phẩm (product variant)
+                    $variant = \App\Models\ProductVariant::find($variantId);
+                    if (!$variant) {
+                        Log::warning("ProductVariant not found: ID {$variantId}");
+                        continue;
+                    }
+
+                    // 6.5. Kiểm tra tồn kho từ product_inventories (tổng quantity)
+                    $totalStock = \App\Models\ProductInventory::where('product_variant_id', $variantId)->sum('quantity');
+                    if ($totalStock < 1) {
+                        Log::info("Out of stock variant: ID {$variantId}");
+                        continue;
+                    }
+
+                    // 6.6. Kiểm tra giỏ hàng đã có sản phẩm này chưa
+                    $existingItem = \App\Models\CartItem::where('cart_id', $cart->id)
+                        ->where('cartable_id', $variantId)
+                        ->where('cartable_type', \App\Models\ProductVariant::class)
+                        ->lockForUpdate()  // Khóa bản ghi để tránh race condition
+                        ->first();
+
+                    // 6.7. Cập nhật hoặc thêm mới sản phẩm vào giỏ hàng
+                    if ($existingItem) {
+                        // Nếu item đã có trong giỏ hàng, cộng thêm số lượng
+                        $newQuantity = $existingItem->quantity + $quantityRequested;
+
+                        // Giới hạn số lượng không vượt quá tồn kho
+                        $finalQuantity = min($newQuantity, $totalStock);
+
+                        // Cập nhật số lượng sản phẩm trong giỏ hàng
+                        if ($finalQuantity != $existingItem->quantity) {
+                            $existingItem->quantity = $finalQuantity;
+                            $existingItem->save();
+                        }
+                    } else {
+                        // Nếu item chưa có trong giỏ hàng, tạo mới với số lượng yêu cầu
+                        $finalQuantity = min($quantityRequested, $totalStock);  // Giới hạn theo tồn kho
+
+                        if ($finalQuantity > 0) {
+                            \App\Models\CartItem::create([
+                                'cart_id' => $cart->id,
+                                'cartable_id' => $variantId,
+                                'cartable_type' => \App\Models\ProductVariant::class,
+                                'quantity' => $finalQuantity,
+                                'price' => $price,
+                            ]);
+                        }
+                    }
+                }
+
+                // 7. Xóa giỏ hàng session sau khi xử lý thành công
+                session()->forget('cart');
+
+                // Commit transaction nếu mọi thứ ổn
+                DB::commit();
+
+            } catch (\Exception $e) {
+                // Rollback nếu có lỗi xảy ra
+                DB::rollBack();
+
+                // Log lỗi để kiểm tra sau
+                Log::error('Error while transferring cart from session to DB: ' . $e->getMessage(), [
+                    'user_id' => $user->id,
+                    'cart_data' => $sessionCart,
+                ]);
+            }
+        }
+
+        // 8. Chuyển hướng theo role của người dùng
         if ($user->roles->contains('id', 2)) {
             return redirect()->intended(route('users.home'));
         }
 
-        if ($user->roles->contains('id', 1) ||
-            $user->roles->contains('id', 4) ||
-            $user->roles->contains('id', 6) ||
-            $user->roles->contains('id', 5)
-        ) {
+        if ($user->roles->contains('id', 1) || 
+            $user->roles->contains('id', 4) || 
+            $user->roles->contains('id', 5) || 
+            $user->roles->contains('id', 6)) {
             return redirect()->intended(route('admin.dashboard'));
         }
 
+        // Nếu không thuộc các role trên, chuyển hướng đến shipper dashboard
         return redirect()->intended(route('shipper.dashboard'));
     }
-
     /**
      * Destroy an authenticated session.
      */
+    // public function destroy(Request $request): RedirectResponse
+    // {
+    //     Auth::guard('web')->logout();
+
+    //     $request->session()->invalidate();
+    //     $request->session()->regenerateToken();
+
+    //     return redirect('/');
+    // }
     public function destroy(Request $request): RedirectResponse
     {
+        // Xóa giỏ hàng trong session khi đăng xuất
+        session()->forget('cart');
+
+        // Thực hiện đăng xuất
         Auth::guard('web')->logout();
 
+        // Xóa session và regenerate token
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

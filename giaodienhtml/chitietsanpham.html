@@ -20,29 +20,21 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
 
     <style>
-        /* --- CUSTOM STYLES FOR NEW THEME --- */
+        /* Custom styles */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #ffffff; /* White background */
+            background-color: #f9fafb; /* Light gray background */
         }
         
-        /* Style for content cards to stand out on white background */
-        .content-card {
-            border: 1px solid #e5e7eb; /* border-gray-200 */
-        }
-        
-        /* Style for selected variant buttons */
         .variant-selected {
-            border-color: #000000;
-            background-color: #111827; /* bg-gray-900 */
-            color: #ffffff;
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            color: #2563eb;
         }
 
-        /* Hide scrollbar for carousels */
         .carousel::-webkit-scrollbar { display: none; }
         .carousel { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Accordion styles */
         .accordion-content {
             max-height: 0;
             overflow: hidden;
@@ -52,18 +44,16 @@
             transition: transform 0.3s ease;
         }
 
-        /* Tab button styles */
         .tab-button {
             border-bottom: 2px solid transparent;
             transition: all 0.2s ease-in-out;
         }
         .tab-active {
-            border-color: #000000; /* Black border */
-            color: #000000; /* Black text */
-            background-color: #f3f4f6; /* bg-gray-100 */
+            border-color: #3b82f6; /* blue-500 */
+            color: #2563eb; /* blue-600 */
+            background-color: #eff6ff; /* blue-50 */
         }
         
-        /* Description fade-out effect */
         .description-content.collapsed {
             max-height: 300px;
             overflow: hidden;
@@ -83,7 +73,6 @@
             color: #ef4444; /* red-500 */
         }
         
-        /* Flash sale timer box */
         .timer-box {
             background: #333;
             color: white;
@@ -92,7 +81,6 @@
             font-weight: 600;
         }
         
-        /* Review star styles */
         .review-star {
             color: #d1d5db; /* gray-300 */
             cursor: pointer;
@@ -102,19 +90,15 @@
             color: #f59e0b; /* amber-500 */
         }
         
-        /* Sticky bar transition */
         #sticky-bar {
             transition: transform 0.3s ease-in-out;
-            border: 1px solid rgba(229, 231, 235, 0.8); /* border-gray-200/80 */
         }
         
-        /* Lightbox image styles */
         #lightbox-main-image {
             transition: transform 0.3s ease;
             cursor: zoom-in;
         }
         
-        /* Loading spinner */
         .loader {
             border: 4px solid #f3f3f3;
             border-top: 4px solid #3498db;
@@ -129,37 +113,44 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* --- SWIPER.JS GALLERY STYLES --- */
+        /* === CSS MỚI CHO SWIPER.JS GALLERY === */
         .gallery-top {
             border-radius: 0.5rem;
             border: 1px solid #e5e7eb;
         }
+
         .gallery-thumbs {
-            padding-top: 0.5rem;
+            padding-top: 0.5rem; /* Giảm padding */
         }
+
         .gallery-thumbs .swiper-slide {
-            width: 20%;
+            width: 20%; /* Hiển thị 5 ảnh cùng lúc */
             height: auto;
-            opacity: 0.6;
+            opacity: 0.6; /* Giao diện giống FPT Shop */
             cursor: pointer;
             transition: opacity 0.3s ease;
             border: 2px solid transparent;
-            border-radius: 0.375rem;
+            border-radius: 0.375rem; /* rounded-md */
         }
+        
         .gallery-thumbs .swiper-slide:hover {
             opacity: 1;
         }
+
         .gallery-thumbs .swiper-slide-thumb-active {
             opacity: 1;
-            border-color: #000000; /* Black border for active thumb */
+            border-color: #3b82f6; /* Vẫn giữ border để người dùng biết ảnh nào đang active */
         }
+        
         .gallery-thumbs .swiper-slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            aspect-ratio: 1 / 1;
-            border-radius: 0.25rem;
+             width: 100%;
+             height: 100%;
+             object-fit: cover;
+             aspect-ratio: 1 / 1;
+             border-radius: 0.25rem; /* rounded-sm */
         }
+        
+        /* Style cho các nút điều hướng */
         .thumb-nav-btn {
             position: absolute;
             top: 50%;
@@ -181,40 +172,43 @@
         .thumb-prev-btn { left: -12px; }
         .thumb-next-btn { right: -12px; }
         
-        /* --- AI BUTTON GRADIENT --- */
+        /* --- NEW STYLES FOR BUTTONS --- */
         @keyframes gradient-animation {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
+
         .summarize-btn-animated {
-            background: linear-gradient(90deg, #868f96, #596164, #434343, #000000);
+            background: linear-gradient(90deg, #a1c4fd, #c2e9fb, #fbc2eb, #a6c1ee);
             background-size: 300% 300%;
             transition: all 0.4s ease;
         }
+
         .summarize-btn-animated:hover {
             animation: gradient-animation 4s ease infinite;
         }
 
-        /* --- MODAL BACKDROP BLUR --- */
-        .modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+        /* --- NEW STYLES FOR STORE CAROUSEL --- */
+        #store-prev-btn.swiper-button-disabled,
+        #store-next-btn.swiper-button-disabled {
+             opacity: 0.3;
+             pointer-events: none;
         }
-        .lightbox-backdrop {
-             background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        
+        .navigation-hidden #store-prev-btn,
+        .navigation-hidden #store-next-btn {
+            display: none;
         }
+
 
     </style>
 </head>
-<body class="bg-white">
+<body class="bg-gray-50">
 
     <div class="container mx-auto p-4 md:p-8">
         <!-- Main Product Section -->
-        <main class="bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-sm content-card">
+        <main class="bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-sm">
             <!-- Breadcrumb -->
             <nav class="text-sm text-gray-500 mb-4">
                 <a href="#" class="hover:underline">Trang chủ</a> &gt;
@@ -224,12 +218,12 @@
             </nav>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:items-start">
-                <!-- PHẦN 1: CỘT TRÁI - THƯ VIỆN HÌNH ẢNH (SWIPER.JS) -->
+                <!-- PHẦN 1: CỘT TRÁI - THƯ VIỆN HÌNH ẢNH (ĐÃ CẬP NHẬT VỚI SWIPER.JS) -->
                 <div class="image-gallery lg:sticky top-8">
                     <!-- Slider ảnh chính -->
                     <div id="main-image-container" class="swiper gallery-top group relative cursor-pointer">
                         <div class="swiper-wrapper">
-                            <!-- Swiper.js will auto-generate slides here -->
+                            <!-- Swiper.js sẽ tự động tạo các slide ở đây -->
                         </div>
                     </div>
                     
@@ -238,7 +232,7 @@
                          <!-- Container cho các thumbnail -->
                         <div class="swiper gallery-thumbs">
                              <div class="swiper-wrapper" id="main-thumbnails-wrapper">
-                                 <!-- Swiper.js will auto-generate thumbnail slides here -->
+                                 <!-- Swiper.js sẽ tự động tạo các slide thumbnail ở đây -->
                              </div>
                         </div>
 
@@ -261,11 +255,13 @@
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 mr-1"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>
                             Chính hãng
                         </span>
-                        <button id="compare-btn" class="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-black p-1 hover:bg-gray-100 rounded-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" /></svg>
+                        <button id="compare-btn" class="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
+                            </svg>
                             So sánh
                         </button>
-                        <button id="favorite-btn" class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors p-1 hover:bg-gray-100 rounded-md">
+                        <button id="favorite-btn" class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors">
                             <span id="favorite-icon-container">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.5l1.318-1.182a4.5 4.5 0 116.364 6.364L12 21l-7.682-7.318a4.5 4.5 0 010-6.364z" />
@@ -274,7 +270,7 @@
                             <span>Yêu thích</span>
                         </button>
                         <div class="relative">
-                            <button id="share-btn" class="flex items-center gap-1.5 text-sm font-semibold text-gray-600 hover:text-black p-1 hover:bg-gray-100 rounded-md">
+                            <button id="share-btn" class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-blue-600">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                                 </svg>
@@ -298,14 +294,14 @@
                             <h4 class="font-medium text-gray-800 mb-2">Dung lượng</h4>
                             <div class="flex gap-2 flex-wrap">
                                 <button class="px-4 py-2 border-2 rounded-lg text-sm font-semibold variant-selected" onclick="selectVariant(this)">256GB</button>
-                                <button class="px-4 py-2 border-2 border-gray-200 bg-gray-100 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-200" onclick="selectVariant(this)">512GB</button>
-                                <button class="px-4 py-2 border-2 border-gray-200 bg-gray-100 rounded-lg text-sm font-semibold text-gray-800 hover:bg-gray-200" onclick="selectVariant(this)">1TB</button>
+                                <button class="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:border-blue-500" onclick="selectVariant(this)">512GB</button>
+                                <button class="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:border-blue-500" onclick="selectVariant(this)">1TB</button>
                             </div>
                         </div>
                         <div>
                             <h4 class="font-medium text-gray-800 mb-2">Màu sắc: <span id="colorName" class="font-bold">Titan Tự nhiên</span></h4>
                             <div class="flex gap-2">
-                                <button class="w-8 h-8 rounded-full bg-gray-300 ring-2 ring-black ring-offset-1 focus:outline-none" style="background-color: #8A8A8D;" onclick="selectColor(this, 'Titan Tự nhiên')"></button>
+                                <button class="w-8 h-8 rounded-full bg-gray-300 ring-2 ring-blue-500 ring-offset-1 focus:outline-none" style="background-color: #8A8A8D;" onclick="selectColor(this, 'Titan Tự nhiên')"></button>
                                 <button class="w-8 h-8 rounded-full bg-blue-900 ring-2 ring-transparent ring-offset-1 focus:outline-none" style="background-color: #2E3A48;" onclick="selectColor(this, 'Titan Xanh')"></button>
                                 <button class="w-8 h-8 rounded-full bg-white border border-gray-300 ring-2 ring-transparent ring-offset-1 focus:outline-none" style="background-color: #F5F5F7;" onclick="selectColor(this, 'Titan Trắng')"></button>
                                 <button class="w-8 h-8 rounded-full bg-gray-800 ring-2 ring-transparent ring-offset-1 focus:outline-none" style="background-color: #4A4A4A;" onclick="selectColor(this, 'Titan Đen')"></button>
@@ -338,6 +334,92 @@
                             <span class="bg-red-200 text-red-800 text-sm font-semibold px-2 py-0.5 rounded-md">-6%</span>
                         </div>
                     </div>
+
+                    <!-- Store Availability Section -->
+                    <section class="mt-6 p-4 sm:p-5 bg-gray-50 rounded-xl border border-gray-200">
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Xem chi nhánh có hàng</h3>
+                            <p class="text-sm text-gray-600 mt-1">Có <span class="font-bold text-blue-600">46</span> cửa hàng có sản phẩm</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                            <!-- City Selector -->
+                            <select class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                                <option>Hồ Chí Minh</option>
+                                <option>Hà Nội</option>
+                                <option>Đà Nẵng</option>
+                            </select>
+                            <!-- District Selector -->
+                            <select class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                                <option>Quận/Huyện</option>
+                                <option>Quận 1</option>
+                                <option>Quận 3</option>
+                                <option>Quận Ba Đình</option>
+                            </select>
+                        </div>
+                        <!-- Store List Carousel -->
+                        <div class="relative mt-4">
+                            <div id="store-swiper" class="swiper -mx-1 px-1 pb-2">
+                                <div class="swiper-wrapper">
+                                    <!-- Store Card 1 -->
+                                    <div class="swiper-slide w-64 sm:w-72">
+                                        <div class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
+                                            <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">55B Trần Quang Khải, P. Tân Định, Q. 1</p>
+                                            <div class="flex gap-2 mt-3 text-center">
+                                                <a href="tel:02871083355" class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
+                                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 013.5 2h1.148a1.5 1.5 0 011.465 1.175l.716 3.223a1.5 1.5 0 01-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 006.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 011.767-1.052l3.223.716A1.5 1.5 0 0118 15.352V16.5a1.5 1.5 0 01-1.5 1.5h-2.148a1.5 1.5 0 01-1.465-1.175l-.716-3.223a1.5 1.5 0 00-1.767-1.052l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 01-6.254-6.254c-.163-.395.07-.833.48-.95l.933-.267a1.5 1.5 0 001.052-1.767l-.716-3.223A1.5 1.5 0 013.5 2H2z" clip-rule="evenodd" /></svg>
+                                                    <span>02871083355</span>
+                                                </a>
+                                                <a href="#" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                                   <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.976 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.757.433.57.57 0 00.281.14l.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clip-rule="evenodd" /></svg>
+                                                    <span>Bản đồ</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Store Card 2 -->
+                                    <div class="swiper-slide w-64 sm:w-72">
+                                        <div class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
+                                            <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">134 Nguyễn Thái Học, P. Phạm Ngũ Lão, Q.1, TP HCM</p>
+                                            <div class="flex gap-2 mt-3 text-center">
+                                                <a href="tel:02871000132" class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
+                                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 013.5 2h1.148a1.5 1.5 0 011.465 1.175l.716 3.223a1.5 1.5 0 01-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 006.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 011.767-1.052l3.223.716A1.5 1.5 0 0118 15.352V16.5a1.5 1.5 0 01-1.5 1.5h-2.148a1.5 1.5 0 01-1.465-1.175l-.716-3.223a1.5 1.5 0 00-1.767-1.052l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 01-6.254-6.254c-.163-.395.07-.833.48-.95l.933-.267a1.5 1.5 0 001.052-1.767l-.716-3.223A1.5 1.5 0 013.5 2H2z" clip-rule="evenodd" /></svg>
+                                                    <span>02871000132</span>
+                                                </a>
+                                                <a href="#" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.976 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.757.433.57.57 0 00.281.14l.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clip-rule="evenodd" /></svg>
+                                                    <span>Bản đồ</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- Store Card 3 -->
+                                    <div class="swiper-slide w-64 sm:w-72">
+                                        <div class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
+                                            <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">258 Tô Ký, P. Tân Chánh Hiệp, Q.12, TP HCM</p>
+                                            <div class="flex gap-2 mt-3 text-center">
+                                                <a href="tel:02871083355" class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
+                                                     <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 3.5A1.5 1.5 0 013.5 2h1.148a1.5 1.5 0 011.465 1.175l.716 3.223a1.5 1.5 0 01-1.052 1.767l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 006.254 6.254c.395.163.833-.07.95-.48l.267-.933a1.5 1.5 0 011.767-1.052l3.223.716A1.5 1.5 0 0118 15.352V16.5a1.5 1.5 0 01-1.5 1.5h-2.148a1.5 1.5 0 01-1.465-1.175l-.716-3.223a1.5 1.5 0 00-1.767-1.052l-.933.267c-.41.117-.643.555-.48.95a11.542 11.542 0 01-6.254-6.254c-.163-.395.07-.833.48-.95l.933-.267a1.5 1.5 0 001.052-1.767l-.716-3.223A1.5 1.5 0 013.5 2H2z" clip-rule="evenodd" /></svg>
+                                                    <span>02871083355</span>
+                                                </a>
+                                                <a href="#" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.976 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.757.433.57.57 0 00.281.14l.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clip-rule="evenodd" /></svg>
+                                                    <span>Bản đồ</span>
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Carousel Navigation -->
+                            <button id="store-prev-btn" class="absolute top-1/2 -translate-y-1/2 -left-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                            </button>
+                            <button id="store-next-btn" class="absolute top-1/2 -translate-y-1/2 -right-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                            </button>
+                        </div>
+                    </section>
+
                     <div class="promotions mt-6">
                         <h3 class="font-semibold text-gray-800 mb-2">Khuyến mãi & Ưu đãi</h3>
                         <ul class="space-y-2 text-sm">
@@ -349,9 +431,10 @@
                     
                     <div class="mt-6"><h4 class="font-medium text-gray-800 mb-2">Số lượng</h4><div class="flex items-center border border-gray-300 rounded-lg w-fit"><button id="minusBtn" class="px-3 py-1 text-lg text-gray-600 hover:bg-gray-100 rounded-l-md">-</button><input id="quantityInput" type="text" value="1" class="w-12 text-center border-l border-r font-semibold text-gray-800 focus:outline-none"><button id="plusBtn" class="px-3 py-1 text-lg text-gray-600 hover:bg-gray-100 rounded-r-md">+</button></div></div>
                     <div id="main-cta-buttons" class="mt-auto pt-6 flex flex-col sm:flex-row gap-3">
-                        <button class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-gray-400 text-gray-900 font-bold rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" /></svg>THÊM VÀO GIỎ HÀNG</button>
-                        <button class="flex-1 w-full px-6 py-4 bg-gray-900 text-white font-bold rounded-lg hover:bg-black transition-colors">MUA NGAY</button>
+                        <button class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" /></svg>THÊM VÀO GIỎ HÀNG</button>
+                        <button class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">MUA NGAY</button>
                     </div>
+                     <div class="text-sm text-gray-500 mt-4 text-center sm:text-left"><span class="font-semibold">Giao hàng dự kiến:</span> Thứ Ba, 30/06 - Thứ Tư, 01/07.</div>
                 </div>
             </div>
         </main>
@@ -360,7 +443,7 @@
         <div class="mt-10 md:mt-12 space-y-10 md:space-y-12">
             
             <!-- Mua Kèm Deal Sốc / Cheaper Together -->
-            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm content-card">
+            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Mua Kèm Deal Sốc</h2>
                 <div class="flex flex-col lg:flex-row items-center justify-center gap-4" id="bundle-deal-container">
                     
@@ -377,7 +460,7 @@
 
                         <!-- Bundle Item 1 -->
                         <div class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
-                            <input type="checkbox" data-price="4490000" class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-gray-900 focus:ring-black" checked>
+                            <input type="checkbox" data-price="4490000" class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500" checked>
                             <img src="https://placehold.co/150x150/e0e0e0/333?text=AirPods" class="w-32 h-32 object-contain mb-2">
                             <p class="font-semibold text-sm">AirPods Pro 2</p>
                             <p class="font-bold text-red-600">4.490.000₫ <span class="text-gray-500 line-through text-xs">5.990.000₫</span></p>
@@ -387,7 +470,7 @@
 
                         <!-- Bundle Item 2 -->
                         <div class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
-                            <input type="checkbox" data-price="890000" class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-gray-900 focus:ring-black">
+                            <input type="checkbox" data-price="890000" class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500">
                             <img src="https://placehold.co/150x150/d0d0d0/333?text=Sạc" class="w-32 h-32 object-contain mb-2">
                             <p class="font-semibold text-sm">Sạc nhanh 20W</p>
                             <p class="font-bold text-red-600">890.000₫ <span class="text-gray-500 line-through text-xs">1.200.000₫</span></p>
@@ -406,7 +489,7 @@
             </section>
 
             <!-- PHẦN 2 & 3: TABS - BÀI VIẾT & THÔNG SỐ -->
-            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm content-card">
+            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
                 <!-- Tab Buttons -->
                 <div class="flex justify-center border-2 border-gray-200 rounded-xl p-1 mb-6 max-w-md mx-auto">
                     <button id="tab-desc-btn" class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-600">Bài viết đánh giá</button>
@@ -490,7 +573,7 @@
             </section>
             
             <!-- PHẦN 4: ĐÁNH GIÁ & NHẬN XÉT -->
-            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm content-card">
+            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
                 <div class="flex justify-between items-center mb-6 flex-wrap gap-y-4">
                     <h2 class="text-2xl font-bold text-gray-900">Đánh giá & Nhận xét</h2>
                     <div class="flex gap-2">
@@ -524,16 +607,16 @@
                     <div class="flex justify-between items-center mb-4 flex-wrap gap-y-4">
                         <h3 class="text-lg font-bold text-gray-800">1,258 Bình luận</h3>
                         <div class="flex gap-2 flex-wrap">
-                            <button class="px-3 py-1 bg-gray-900 text-white text-sm font-medium rounded-full border-2 border-transparent">Tất cả</button>
-                            <button class="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:bg-gray-200">5 <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg></button>
+                            <button class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full border-2 border-transparent hover:border-gray-400">Tất cả</button>
+                            <button class="px-3 py-1 bg-gray-200 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:border-gray-400">5 <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg></button>
                             <!-- Other filter buttons -->
                         </div>
                     </div>
                     <div class="my-6">
                         <div class="flex items-center gap-2 relative">
-                            <textarea id="comment-textarea" maxlength="3000" placeholder="Nhập nội dung bình luận..." class="w-full px-4 py-3 pr-56 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition resize-none"></textarea>
+                            <textarea id="comment-textarea" maxlength="3000" placeholder="Nhập nội dung bình luận..." class="w-full px-4 py-3 pr-56 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition resize-none"></textarea>
                             <span id="char-counter" class="absolute right-40 bottom-3 text-sm text-gray-400">0/3000</span>
-                            <button id="comment-submit-btn" class="absolute right-2 bottom-1.5 bg-gray-800 text-white font-semibold py-2 px-5 rounded-lg hover:bg-black transition-colors">Gửi</button>
+                            <button id="comment-submit-btn" class="absolute right-2 bottom-1.5 bg-gray-800 text-white font-semibold py-2 px-5 rounded-lg hover:bg-gray-900 transition-colors">Gửi bình luận</button>
                         </div>
                     </div>
                     <div id="review-list">
@@ -544,11 +627,11 @@
             </section>
             
             <!-- PHẦN 5: HỎI & ĐÁP VỚI TRỢ LÝ AI -->
-            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm content-card">
+            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-900 mb-6">Hỏi & Đáp với Trợ lý AI</h2>
                 <div class="mb-6">
-                    <textarea id="qna-textarea" placeholder="Nhập câu hỏi của bạn về iPhone 15 Pro Max..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition" rows="3"></textarea>
-                    <button id="ask-ai-btn" class="mt-2 bg-gray-900 text-white font-semibold py-2 px-4 rounded-lg hover:bg-black transition-colors flex items-center gap-2">
+                    <textarea id="qna-textarea" placeholder="Nhập câu hỏi của bạn về iPhone 15 Pro Max..." class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="3"></textarea>
+                    <button id="ask-ai-btn" class="mt-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3zM10 15a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 15zM4.134 5.866a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.06 1.06a.75.75 0 11-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM15 10a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0115 10zM10 4a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 4zM5.866 14.134a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm9.193-9.193a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zM10 16a6 6 0 100-12 6 6 0 000 12z" clip-rule="evenodd" /></svg>
                         ✨ Hỏi AI ngay
                     </button>
@@ -568,9 +651,9 @@
             <section>
                  <h2 class="text-2xl font-bold text-gray-900 mb-6">Sản phẩm tương tự</h2>
                  <div class="carousel flex gap-4 overflow-x-auto pb-4">
-                    <div class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform content-card"><img src="https://placehold.co/200x200/e0e0e0/333?text=iPhone+15+Plus" class="w-full h-40 object-cover"><div class="p-3"><h4 class="font-semibold text-sm text-gray-800 truncate">iPhone 15 Plus 128GB</h4><p class="font-bold text-red-600 mt-1">24.990.000₫</p><div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.8 ★</div></div></div>
-                    <div class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform content-card"><img src="https://placehold.co/200x200/e0e0e0/333?text=Galaxy+S24+Ultra" class="w-full h-40 object-cover"><div class="p-3"><h4 class="font-semibold text-sm text-gray-800 truncate">Samsung Galaxy S24 Ultra</h4><p class="font-bold text-red-600 mt-1">28.490.000₫</p><div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.9 ★</div></div></div>
-                    <div class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform content-card"><img src="https://placehold.co/200x200/e0e0e0/333?text=iPhone+15+Pro" class="w-full h-40 object-cover"><div class="p-3"><h4 class="font-semibold text-sm text-gray-800 truncate">iPhone 15 Pro 128GB</h4><p class="font-bold text-red-600 mt-1">27.990.000₫</p><div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.9 ★</div></div></div>
+                    <div class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform"><img src="https://placehold.co/200x200/e0e0e0/333?text=iPhone+15+Plus" class="w-full h-40 object-cover"><div class="p-3"><h4 class="font-semibold text-sm text-gray-800 truncate">iPhone 15 Plus 128GB</h4><p class="font-bold text-red-600 mt-1">24.990.000₫</p><div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.8 ★</div></div></div>
+                    <div class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform"><img src="https://placehold.co/200x200/e0e0e0/333?text=Galaxy+S24+Ultra" class="w-full h-40 object-cover"><div class="p-3"><h4 class="font-semibold text-sm text-gray-800 truncate">Samsung Galaxy S24 Ultra</h4><p class="font-bold text-red-600 mt-1">28.490.000₫</p><div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.9 ★</div></div></div>
+                    <div class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform"><img src="https://placehold.co/200x200/e0e0e0/333?text=iPhone+15+Pro" class="w-full h-40 object-cover"><div class="p-3"><h4 class="font-semibold text-sm text-gray-800 truncate">iPhone 15 Pro 128GB</h4><p class="font-bold text-red-600 mt-1">27.990.000₫</p><div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.9 ★</div></div></div>
                  </div>
             </section>
         </div>
@@ -579,7 +662,7 @@
     <!-- MODALS SECTION -->
     
     <!-- Image Lightbox Modal -->
-    <div id="image-lightbox-modal" class="fixed inset-0 lightbox-backdrop z-50 hidden flex-col items-center justify-center p-4 transition-opacity duration-300">
+    <div id="image-lightbox-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden flex-col items-center justify-center p-4 transition-opacity duration-300">
         <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-4 bg-black/50 p-2 rounded-full">
             <button id="lightbox-zoom-in" class="text-white hover:text-gray-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg></button>
             <button id="lightbox-zoom-out" class="text-white hover:text-gray-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"></path></svg></button>
@@ -597,7 +680,7 @@
     </div>
 
     <!-- Write Review Modal -->
-    <div id="review-modal" class="fixed inset-0 modal-backdrop z-50 hidden items-center justify-center p-4 transition-opacity duration-300">
+    <div id="review-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4 transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-transform duration-300 scale-95">
             <div class="flex justify-between items-center p-4 border-b border-gray-200"><h3 class="text-xl font-bold text-gray-900">Viết đánh giá</h3><button id="close-review-modal-btn" class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button></div>
             <div class="p-6 space-y-4">
@@ -609,7 +692,7 @@
                 </div>
                 <div>
                     <label for="review-text" class="font-semibold text-gray-700">Bình luận</label>
-                    <textarea id="review-text" placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm..." class="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black transition" rows="4"></textarea>
+                    <textarea id="review-text" placeholder="Hãy chia sẻ cảm nhận của bạn về sản phẩm..." class="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="4"></textarea>
                 </div>
                 <div>
                     <label class="font-semibold text-gray-700">Thêm hình ảnh/video</label>
@@ -622,14 +705,14 @@
                     </div>
                 </div>
                 <div class="text-right">
-                    <button id="submit-review-btn" class="bg-gray-900 text-white font-semibold py-2 px-5 rounded-lg hover:bg-black transition-colors">Gửi đánh giá</button>
+                    <button id="submit-review-btn" class="bg-blue-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-700 transition-colors">Gửi đánh giá</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- User Info Modal -->
-    <div id="user-info-modal" class="fixed inset-0 modal-backdrop z-50 hidden items-center justify-center p-4 transition-opacity duration-300">
+    <div id="user-info-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4 transition-opacity duration-300">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-transform duration-300 scale-95">
             <div class="flex justify-between items-center p-4 border-b flex-shrink-0">
                 <h3 class="text-xl font-bold text-gray-900">Thông tin người gửi</h3>
@@ -637,18 +720,18 @@
             </div>
             <div class="p-6 space-y-4 flex-grow">
                 <div class="flex gap-4">
-                    <label class="flex items-center"><input type="radio" name="gender" class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-900" checked> <span class="ml-2">Anh</span></label>
-                    <label class="flex items-center"><input type="radio" name="gender" class="h-4 w-4 text-gray-800 border-gray-300 focus:ring-gray-900"> <span class="ml-2">Chị</span></label>
+                    <label class="flex items-center"><input type="radio" name="gender" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500" checked> <span class="ml-2">Anh</span></label>
+                    <label class="flex items-center"><input type="radio" name="gender" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500"> <span class="ml-2">Chị</span></label>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" placeholder="Nhập họ và tên" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black">
-                    <input type="tel" placeholder="Nhập số điện thoại" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black">
+                    <input type="text" placeholder="Nhập họ và tên" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <input type="tel" placeholder="Nhập số điện thoại" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                 </div>
-                <input type="email" placeholder="Nhập Email (nhận thông báo phản hồi)" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black">
+                <input type="email" placeholder="Nhập Email (nhận thông báo phản hồi)" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="p-6 bg-white border-t flex-shrink-0">
                 <label class="flex items-center text-sm text-gray-600">
-                    <input id="terms-checkbox" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-black">
+                    <input id="terms-checkbox" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                     <span class="ml-2">Tôi đồng ý với điều khoản dịch vụ, chính sách thu thập và xử lý dữ liệu cá nhân của Shop</span>
                 </label>
                 <button id="qna-complete-btn" class="mt-4 w-full bg-gray-300 text-gray-500 font-semibold py-3 rounded-lg cursor-not-allowed" disabled>Hoàn tất</button>
@@ -657,7 +740,7 @@
     </div>
     
     <!-- Sticky Add to Cart Bar -->
-    <div id="sticky-bar" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-5xl bg-white/80 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-2xl transform translate-y-full z-40">
+    <div id="sticky-bar" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-5xl bg-white/80 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-2xl transform translate-y-full transition-transform duration-300 z-40">
         <div class="flex items-center justify-between gap-4 w-full">
             <!-- Left side: Product Info -->
             <div class="flex items-center gap-4 overflow-hidden">
@@ -673,10 +756,10 @@
                     <p class="font-bold text-red-600 text-lg">30.490.000₫</p>
                     <p class="text-xs text-gray-500 line-through">34.990.000₫</p>
                 </div>
-                <button class="hidden sm:flex items-center justify-center p-3 border-2 border-gray-400 text-gray-900 font-bold rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                <button class="hidden sm:flex items-center justify-center p-3 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215"></path></svg>
                 </button>
-                <button class="w-full sm:w-auto px-4 sm:px-6 py-3 bg-gray-900 text-white font-bold rounded-lg hover:bg-black transition-colors text-sm sm:text-base">
+                <button class="w-full sm:w-auto px-4 sm:px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base">
                     Mua Ngay
                 </button>
             </div>
@@ -702,7 +785,7 @@
             { thumb: 'https://placehold.co/120x120/909090/333?text=Cạnh+phải', main: 'https://placehold.co/600x600/909090/333?text=Cạnh+phải', lightbox: 'https://placehold.co/1200x1200/909090/333?text=Cạnh+phải', description: 'Nút nguồn và cạnh máy', type: 'image' },
             { thumb: 'https://placehold.co/120x120/808080/333?text=Cổng+sạc', main: 'https://placehold.co/600x600/808080/333?text=Cổng+sạc', lightbox: 'https://placehold.co/1200x1200/808080/333?text=Cổng+sạc', description: 'Cổng sạc USB-C mới', type: 'image' }
         ];
-        let currentImageIndex = 0; // Used for lightbox
+        let currentImageIndex = 0; // Dùng cho lightbox
 
         // --- ELEMENTS ---
         const mainImageContainer = document.getElementById('main-image-container');
@@ -941,11 +1024,11 @@
         window.selectColor = function(element, colorName) {
             const colorButtons = document.querySelectorAll('.variants div button[style]');
             colorButtons.forEach(btn => {
-                btn.classList.remove('ring-black');
+                btn.classList.remove('ring-blue-500');
                 btn.classList.add('ring-transparent');
             });
             element.classList.remove('ring-transparent');
-            element.classList.add('ring-black');
+            element.classList.add('ring-blue-500');
             document.getElementById('colorName').textContent = colorName;
             updateStickyBarInfo();
         }
@@ -954,10 +1037,10 @@
             const variantButtons = document.querySelectorAll('.variants div button:not([style])');
             variantButtons.forEach(btn => {
                 btn.classList.remove('variant-selected');
-                btn.classList.add('border-gray-200', 'bg-gray-100', 'text-gray-800', 'hover:bg-gray-200');
+                btn.classList.add('border-gray-300', 'text-gray-700', 'hover:border-blue-500');
             });
             element.classList.add('variant-selected');
-            element.classList.remove('border-gray-200', 'bg-gray-100', 'text-gray-800', 'hover:bg-gray-200');
+            element.classList.remove('border-gray-300', 'text-gray-700', 'hover:border-blue-500');
             updateStickyBarInfo();
         }
         
@@ -1144,11 +1227,11 @@
             if (termsCheckbox.checked) {
                 qnaCompleteBtn.disabled = false;
                 qnaCompleteBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-                qnaCompleteBtn.classList.add('bg-gray-900', 'text-white', 'hover:bg-black');
+                qnaCompleteBtn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
             } else {
                 qnaCompleteBtn.disabled = true;
                 qnaCompleteBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-                qnaCompleteBtn.classList.remove('bg-gray-900', 'text-white', 'hover:bg-black');
+                qnaCompleteBtn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
             }
         });
 
@@ -1272,9 +1355,9 @@
             parts.slice(1).forEach(part => {
                 const itemText = part.replace(/^\s*[\*\-]\s*/, '').replace(/\*\*(.*?)\*\*/g, '<span class="font-semibold text-gray-800">$1</span>');
                 html += `<li class="flex items-start gap-2 text-gray-700">
-                                     <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
-                                     <span>${itemText}</span>
-                                 </li>`;
+                                 <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" /></svg>
+                                 <span>${itemText}</span>
+                               </li>`;
             });
             html += '</ul>';
             return html;
@@ -1366,7 +1449,7 @@
             for (let i = 1; i <= pageCount; i++) {
                 const btn = document.createElement('button');
                 btn.innerText = i;
-                btn.className = `px-3 py-1 mx-1 rounded-md text-sm font-medium ${i === reviewCurrentPage ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`;
+                btn.className = `px-3 py-1 mx-1 rounded-md text-sm font-medium ${i === reviewCurrentPage ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
                 btn.addEventListener('click', () => {
                     reviewCurrentPage = i;
                     renderReviews();
@@ -1406,7 +1489,7 @@
             for (let i = 1; i <= pageCount; i++) {
                 const btn = document.createElement('button');
                 btn.innerText = i;
-                btn.className = `px-3 py-1 mx-1 rounded-md text-sm font-medium ${i === qnaCurrentPage ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`;
+                btn.className = `px-3 py-1 mx-1 rounded-md text-sm font-medium ${i === qnaCurrentPage ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
                 btn.addEventListener('click', () => {
                     qnaCurrentPage = i;
                     renderQna();
@@ -1431,6 +1514,35 @@
         if(mainCtaButtons) {
             scrollObserver.observe(mainCtaButtons);
         }
+
+        // --- STORE LOCATOR SWIPER ---
+        new Swiper('#store-swiper', {
+            slidesPerView: 'auto',
+            spaceBetween: 12, // Corresponds to gap-3
+            freeMode: true,
+            navigation: {
+                nextEl: '#store-next-btn',
+                prevEl: '#store-prev-btn',
+            },
+            on: {
+                init: function () {
+                    const container = this.el.parentElement;
+                    if (this.isLocked) {
+                        container.classList.add('navigation-hidden');
+                    } else {
+                        container.classList.remove('navigation-hidden');
+                    }
+                },
+                resize: function () {
+                    const container = this.el.parentElement;
+                    if (this.isLocked) {
+                        container.classList.add('navigation-hidden');
+                    } else {
+                        container.classList.remove('navigation-hidden');
+                    }
+                }
+            }
+        });
 
 
         // --- INITIALIZE ALL ---

@@ -5,22 +5,26 @@ namespace App\Http\Controllers\Users;
 use Carbon\Carbon;
 use App\Models\Post;
 use App\Models\Banner;
+use App\Models\Review;
 use App\Models\Comment;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\FlashSale;
+use App\Models\OrderItem;
 use Illuminate\Support\Str;
 use App\Models\PostCategory;
+use App\Models\WishlistItem;
 use Illuminate\Http\Request;
+use App\Models\ProductBundle;
 use App\Models\ProductVariant;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\HomepageProductBlock;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Auth;
-use App\Models\WishlistItem;
-
-
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class HomeController extends Controller
 {
@@ -33,34 +37,31 @@ class HomeController extends Controller
             ->get();
 
         $blocks = HomepageProductBlock::where('is_visible', true)
-    ->orderBy('order')
-    ->with(['products' => function ($query) {
-        $query->where('products.status', 'published') // ✅ fix lỗi ambiguous
-            ->with([
-                'category',
-                'coverImage',
-                'galleryImages',
-                'variants.primaryImage',
-                'variants.images',
-                'reviews' => function ($query) {
-                    $query->where('reviews.status', 'approved'); // ✅ fix luôn
-                },
-            ])
-            ->withCount([
-                'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved'); // ✅
-                },
-            ]);
-    }])
-    ->get();
+            ->orderBy('order')
+            ->with(['products' => function ($query) {
+                $query->where('products.status', 'published') // ✅ fix lỗi ambiguous
+                    ->with([
+                        'category',
+                        'coverImage',
+                        'galleryImages',
+                        'variants.primaryImage',
+                        'variants.images',
+                        'reviews' => function ($query) {
+                            $query->where('reviews.status', 'approved'); // ✅ fix luôn
+                        },
+                    ])
+                    ->withCount([
+                        'reviews as approved_reviews_count' => function ($query) {
+                            $query->where('reviews.status', 'approved'); // ✅
+                        },
+                    ]);
+            }])
+            ->get();
 
 
         // Hàm xử lý đánh giá và phần trăm giảm giá
         $calculateAverageRating = function ($products) {
             foreach ($products as $product) {
-                $averageRating = $product->reviews->avg('rating') ?? 0;
-                $product->average_rating = round($averageRating, 1);
-
                 $now = now();
                 $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
 
@@ -83,8 +84,8 @@ class HomeController extends Controller
             'category',
             'coverImage',
             'galleryImages',
-            'variants.primaryImage', // 👈 Load primaryImage
-            'variants.images',        // 👈 Load images của variant nếu có
+            'variants.primaryImage',
+            'variants.images',
             'reviews' => function ($query) {
                 $query->where('reviews.status', 'approved');
             }
@@ -136,6 +137,13 @@ class HomeController extends Controller
             ->take(8)
             ->get();
 
+        $suggestedProducts = Product::with('coverImage')
+            ->where('status', 'published')
+            ->inRandomOrder()
+            ->take(5)
+            ->get();
+
+
         // Tính rating & discount
         $calculateAverageRating($latestProducts);
 
@@ -162,13 +170,95 @@ class HomeController extends Controller
         }
 
 
-
         $featuredPosts = Post::with('coverImage')
             ->where('status', 'published')
             ->where('is_featured', true)
             ->latest('published_at')
             ->take(3)
             ->get();
+
+        // === Lấy danh sách Flash Sale (theo logic quản lý) ===
+
+        $flashSales = FlashSale::with([
+            'flashSaleTimeSlots' => function ($q) {
+                $q->orderBy('start_time');
+            },
+            'flashSaleTimeSlots.products.productVariant.attributeValues.attribute',
+            'flashSaleTimeSlots.products.productVariant.product.coverImage',
+        ])
+            ->where('status', 'active')
+            ->where('start_time', '<=', now())
+            ->where('end_time', '>=', now())
+            ->orderBy('start_time')
+            ->get();
+
+        // Xử lý format thời gian + tên biến thể đầy đủ và xác định slot đang active
+        $now = now();
+        $flashSales->each(function ($sale) use ($now) {
+            $activeSlotId = null;
+            $upcomingSlotId = null;
+            $minUpcomingTime = null;
+            foreach ($sale->flashSaleTimeSlots as $slot) {
+                $slot->start_time = \Carbon\Carbon::parse($slot->start_time)->toIso8601String();
+                $slot->end_time = \Carbon\Carbon::parse($slot->end_time)->toIso8601String();
+
+                $start = \Carbon\Carbon::parse($slot->start_time);
+                $end = \Carbon\Carbon::parse($slot->end_time);
+                $isActive = $now->between($start, $end);
+                $isUpcoming = $now->lt($start);
+                $isPast = $now->gt($end);
+
+                \Log::info('DEBUG_FLASH_SLOT', [
+                    'slot_id' => $slot->id,
+                    'start_time' => $slot->start_time,
+                    'end_time' => $slot->end_time,
+                    'now' => $now->toIso8601String(),
+                    'isActive' => $isActive,
+                    'isUpcoming' => $isUpcoming,
+                    'isPast' => $isPast,
+                    'activeSlotId' => $activeSlotId,
+                ]);
+
+                if ($isActive && $activeSlotId === null) {
+                    $activeSlotId = $slot->id;
+                }
+                if ($isUpcoming && ($minUpcomingTime === null || $start->lt($minUpcomingTime))) {
+                    $minUpcomingTime = $start;
+                    $upcomingSlotId = $slot->id;
+                }
+
+                $slot->products->each(function ($product) {
+                    $variant = $product->productVariant;
+                    $productName = $variant->product->name ?? '';
+
+                    $attributes = $variant->attributeValues ?? collect();
+
+                    $nonColor = $attributes
+                        ->filter(fn($v) => $v->attribute->name !== 'Màu sắc')
+                        ->pluck('value')
+                        ->join(' ');
+
+                    $color = $attributes
+                        ->firstWhere(fn($v) => $v->attribute->name === 'Màu sắc')?->value;
+
+                    $variantName = trim($productName . ' ' . $nonColor . ' ' . $color);
+
+                    $product->variant_name = $variantName;
+                });
+            }
+            if ($activeSlotId) {
+                $sale->active_slot_id = $activeSlotId;
+            } elseif ($upcomingSlotId) {
+                $sale->active_slot_id = $upcomingSlotId;
+            } else {
+                $sale->active_slot_id = $sale->flashSaleTimeSlots->last()->id ?? null;
+            }
+            \Log::info('DEBUG_FLASH_SALE_ACTIVE_SLOT', [
+                'sale_id' => $sale->id,
+                'active_slot_id' => $sale->active_slot_id,
+            ]);
+        });
+
 
         return view('users.home', compact(
             'featuredProducts',
@@ -178,10 +268,12 @@ class HomeController extends Controller
             'featuredPosts',
             'unreadNotificationsCount',
             'recentNotifications',
+            'flashSales',
+            'suggestedProducts' // 👈 THÊM BIẾN NÀY
         ));
     }
 
-    public function show(Request $request,$slug)
+    public function show(Request $request, $slug)
     {
         $product = Product::with([
             'category',
@@ -205,8 +297,94 @@ class HomeController extends Controller
             ->where('status', 'published')
             ->firstOrFail();
 
-        $product->increment('view_count');
+        $variantIds = $product->variants->pluck('id');
 
+        $ratingFilter = $request->query('rating');
+
+        $allReviews = Review::with(['user', 'images'])
+            ->whereIn('product_variant_id', $variantIds)
+            ->where(function ($query) {
+                $query->where('status', 'approved');
+
+                if (Auth::check()) {
+                    $query->orWhere(function ($q) {
+                        $q->where('user_id', Auth::id())
+                            ->whereIn('status', ['pending', 'rejected', 'spam']);
+                    });
+
+                    if (Auth::user()->hasRole('admin')) {
+                        $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+                    }
+                }
+            });
+
+        if ($ratingFilter && in_array((int)$ratingFilter, [1, 2, 3, 4, 5])) {
+            $allReviews = $allReviews->where('rating', (int)$ratingFilter);
+        }
+        $allReviews  = $allReviews->get();
+
+        // 2. Lấy TẤT CẢ bình luận (comments) gốc đã được duyệt
+        // (Giữ nguyên logic query comment phức tạp của bạn)
+        $allComments = $product->comments()
+            ->whereNull('parent_id')
+            ->where(function ($query) {
+                $query->where('status', 'approved');
+
+                if (Auth::check()) {
+                    $query->orWhere(function ($q) {
+                        $q->where('user_id', Auth::id())
+                            ->whereIn('status', ['pending', 'rejected', 'spam']);
+                    });
+
+                    if (Auth::user()->hasRole('admin')) {
+                        $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+                    }
+                }
+            })
+            ->with(['user', 'replies.user'])
+            ->get();
+
+        // 3. Gộp 2 danh sách lại và chuẩn hóa cấu trúc để sắp xếp
+        $combinedList = collect();
+
+        foreach ($allReviews as $review) {
+            $combinedList->push((object)[
+                'type' => 'review',        // Thêm trường 'type' để phân biệt trong view
+                'data' => $review,         // Dữ liệu gốc
+                'sort_date' => $review->created_at // Dùng để sắp xếp chung
+            ]);
+        }
+
+        foreach ($allComments as $comment) {
+            $combinedList->push((object)[
+                'type' => 'comment',
+                'data' => $comment,
+                'sort_date' => $comment->created_at
+            ]);
+        }
+
+        // 4. Sắp xếp danh sách đã gộp theo ngày tạo mới nhất
+        $sortedList = $combinedList->sortByDesc('sort_date');
+
+        // 5. Tự tạo phân trang bằng tay
+        $perPage = 5; // Số mục trên mỗi trang (ví dụ: 3 bình luận + 2 đánh giá)
+        $currentPage = request()->get('page', 1);
+        $currentPageItems = $sortedList->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        $paginatedItems = new LengthAwarePaginator(
+            $currentPageItems,
+            $sortedList->count(),
+            $perPage,
+            $currentPage,
+            // Giữ lại các query string khác trên URL khi chuyển trang
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
+        // Gán lại biến $totalReviews và $commentsCount để hiển thị số lượng đúng
+        $totalReviews = $allReviews->count();
+        $commentsCount = $allComments->where('status', 'approved')->count();
+
+        $product->increment('view_count');
 
         $averageRating = $product->reviews->avg('rating') ?? 0;
         $product->average_rating = round($averageRating, 1);
@@ -323,12 +501,154 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-        $comments = $product->comments()
-            ->where('status', 'approved')
-            ->whereNull('parent_id')
-            ->with(['user', 'replies.user'])
-            ->orderByDesc('created_at')
-            ->get();
+        // --- Logic mới: Xử lý gói sản phẩm (bundles) ---
+        $variantId = $request->query('variant_id');
+        $selectedVariant = $variantId && $product->variants->contains('id', $variantId)
+            ? $product->variants->firstWhere('id', $variantId)
+            : $defaultVariant;
+
+        $productBundles = ProductBundle::with([
+            'mainProducts.productVariant.product.coverImage',
+            'suggestedProducts.productVariant.product.coverImage'
+        ])
+            ->where('status', 'active')
+            ->where(function ($query) use ($selectedVariant) {
+                $query->where('start_date', '<=', now())
+                    ->where(function ($q) {
+                        $q->where('end_date', '>=', now())
+                            ->orWhereNull('end_date');
+                    })
+                    ->whereHas('mainProducts', function ($q) use ($selectedVariant) {
+                        $q->where('product_variant_id', $selectedVariant->id);
+                    });
+            })
+            ->get()
+            ->map(function ($bundle) use ($selectedVariant) {
+                $mainProduct = $bundle->mainProducts->firstWhere('product_variant_id', $selectedVariant->id);
+                $mainVariant = $mainProduct->productVariant;
+                $mainProductData = $mainVariant->product;
+
+                // Tính giá sản phẩm chính
+                $mainPrice = (int) ($mainVariant->price ?? 0);
+                $mainSalePrice = $mainVariant->sale_price !== null ? (int) $mainVariant->sale_price : null;
+
+                $hasFlashTime = !empty($mainVariant->sale_price_starts_at) && !empty($mainVariant->sale_price_ends_at);
+                $isFlashSale = $hasFlashTime && now()->between($mainVariant->sale_price_starts_at, $mainVariant->sale_price_ends_at);
+                $isSale = !$isFlashSale && $mainSalePrice !== null && $mainSalePrice < $mainPrice;
+
+                $mainDisplayPrice = ($isFlashSale || $isSale) && $mainSalePrice !== null ? $mainSalePrice : $mainPrice;
+                $mainOriginalPrice = ($isFlashSale || $isSale) && $mainPrice > $mainSalePrice ? $mainPrice : null;
+
+                Log::info('Main product pricing', [
+                    'variant_id' => $mainVariant->id,
+                    'product_name' => $mainProductData->name,
+                    'main_price' => $mainPrice,
+                    'main_sale_price' => $mainSalePrice,
+                    'is_flash_sale' => $isFlashSale,
+                    'is_sale' => $isSale,
+                    'main_display_price' => $mainDisplayPrice,
+                    'main_original_price' => $mainOriginalPrice,
+                ]);
+
+
+                // Lấy hình ảnh sản phẩm chính (ưu tiên primaryImage của variant, sau đó đến coverImage của product)
+                $mainImage = $mainVariant->primaryImage ? Storage::url($mainVariant->primaryImage->path)
+                    : ($mainProductData->coverImage ? Storage::url($mainProductData->coverImage->path)
+                        : asset('images/placeholder.jpg'));
+                // Dữ liệu sản phẩm chính
+                $mainProductItem = [
+                    'variant_id' => $mainVariant->id,
+                    'product_id' => $mainProductData->id,
+                    'name' => $mainProductData->name,
+                    'slug' => $mainProductData->slug,
+                    'image' => $mainImage,
+                    'price' => $mainPrice,
+                    'sale_price' => $mainSalePrice,
+                    'display_price' => $mainDisplayPrice,
+                    'original_price' => $mainOriginalPrice,
+                ];
+                Log::info('Main product item', $mainProductItem);
+
+
+                // Dữ liệu sản phẩm gợi ý
+                $suggestedProducts = $bundle->suggestedProducts->sortBy('display_order')->map(function ($suggested) {
+                    $variant = $suggested->productVariant;
+                    $product = $variant->product;
+                    $price = (int) $variant->price;
+                    $salePrice = (int) $variant->sale_price;
+                    $hasFlashTime = !empty($variant->sale_price_starts_at) && !empty($variant->sale_price_ends_at);
+                    $isFlashSale = $hasFlashTime && now()->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+                    $isSale = !$isFlashSale && $salePrice && $salePrice < $price;
+                    $originalPrice = $isFlashSale || $isSale ? $price : null;
+
+
+                    // Tính giá ưu đãi theo discount_type
+                    if ($suggested->discount_type === 'fixed_price') {
+                        $bundlePrice = (int) $suggested->discount_value;
+                    } else {
+                        $basePrice = $isFlashSale || $isSale ? $salePrice : $price;
+                        $bundlePrice = $basePrice * (1 - $suggested->discount_value / 100);
+                    }
+
+                    return [
+                        'variant_id' => $variant->id,
+                        'product_id' => $product->id,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'image' => $variant->primaryImage ? Storage::url($variant->primaryImage->path)
+                            : ($product->coverImage ? Storage::url($product->coverImage->path)
+                                : asset('images/placeholder.jpg')),
+                        'price' => $price,
+                        'sale_price' => $salePrice,
+                        'bundle_price' => $bundlePrice,
+                        'original_price' => $originalPrice,
+                        'is_preselected' => $suggested->is_preselected,
+                        'display_order' => $suggested->display_order,
+                    ];
+                })->toArray();
+
+                // Tính tổng giá gói (chỉ tính sản phẩm được chọn sẵn)
+                $totalBundlePrice = $mainDisplayPrice;
+                foreach ($suggestedProducts as $suggested) {
+                    if ($suggested['is_preselected']) {
+                        $totalBundlePrice += $suggested['bundle_price'];
+                    }
+                }
+
+                return [
+                    'id' => $bundle->id,
+                    'name' => $bundle->name,
+                    'display_title' => $bundle->display_title,
+                    'description' => $bundle->description,
+                    'main_product' => $mainProductItem,
+                    'suggested_products' => $suggestedProducts,
+                    'total_bundle_price' => $totalBundlePrice,
+                ];
+            });
+
+        // Kết thúc xử lý gói sản phẩm
+
+        // // $comments = $product->comments()
+        // //     ->whereNull('parent_id')
+        // //     ->where(function ($query) {
+        // //         $query->where('status', 'approved');
+
+        //         if (Auth::check()) {
+        //             $query->orWhere(function ($q) {
+        //                 $q->where('user_id', Auth::id())
+        //                     ->whereIn('status', ['pending', 'rejected', 'spam']);
+        //             });
+
+        //             if (Auth::user()->hasRole('admin')) {
+        //                 $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
+        //             }
+        //         }
+        //     })
+        //     ->with(['user', 'replies.user'])
+        //     ->orderByDesc('created_at')
+        //     ->get();
+
+
 
         $initialVariantAttributes = [];
         if ($defaultVariant) {
@@ -377,27 +697,115 @@ class HomeController extends Controller
                 $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
             }
         }
+        $commentsCount = $product->comments()
+            ->where('status', 'approved')
+            ->whereNull('parent_id')
+            ->count();
+
+        // --- Bắt đầu đoạn code ĐÃ THÊM để lấy order_item_id ---
+        $orderItemId = null; // Khởi tạo biến này là null
+
+        $totalReviews = $product->reviews_count ?? 0;
+        $averageRating = round($product->reviews->avg('rating') ?? 0, 1);
+        $reviewsData = []; // ✅ khai báo để tránh undefined
+        $starRatingsCount = [];
+        for ($i = 5; $i >= 1; $i--) {
+            $starRatingsCount[$i] = $product->reviews->where('rating', $i)->count();
+        }
+        $hasReviewed = false; // ✅ Khởi tạo mặc định trước
+        $totalReviewsCount = $allReviews->count();
+
+        $totalCommentsCount = $allComments->count();
+        // Chỉ tìm kiếm order_item_id nếu người dùng đã đăng nhập
+        if (Auth::check()) {
+            $userId = Auth::id(); // Lấy ID của người dùng hiện tại
+            $productVariantIdToFind = null;
+
+            // Ưu tiên variant_id từ query parameter
+            if ($request->has('variant_id') && $product->variants->contains('id', $request->query('variant_id'))) {
+                $productVariantIdToFind = $request->query('variant_id');
+            } elseif ($defaultVariant) {
+                $productVariantIdToFind = $defaultVariant->id;
+            }
+
+            if ($productVariantIdToFind) { // Đảm bảo có product_variant_id để tìm kiếm
+                // Tìm OrderItem mà người dùng hiện tại đã mua của biến thể sản phẩm này.
+                // Điều kiện:
+                // 1. Phải thuộc về người dùng hiện tại (qua mối quan hệ order.user_id)
+                // 2. Phải có product_variant_id tương ứng
+                // 3. Đơn hàng phải ở trạng thái "completed" (hoặc trạng thái bạn cho phép đánh giá)
+                $orderItem = OrderItem::where('product_variant_id', $productVariantIdToFind)
+                    ->whereHas('order', function ($query) use ($userId) {
+                        $query->where('user_id', $userId)
+                            ->where('status', 'delivered'); // Ví dụ: chỉ cho phép đánh giá khi đơn hàng đã hoàn thành
+                    })
+                    ->latest() // Lấy order item gần nhất nếu có nhiều
+                    ->first();
+
+                if ($orderItem) {
+                    $orderItemId = $orderItem->id;
+                }
+            }
+            // Lấy dữ liệu đánh giá
+            $variantIds = $product->variants->pluck('id');
+
+            $reviewsData = Review::whereIn('product_variant_id', $variantIds) // <-- CHANGE THIS LINE
+                ->where('status', 'approved') // Assuming you only want approved reviews
+                ->select('rating', DB::raw('count(*) as count'))
+                ->groupBy('rating')
+                ->pluck('count', 'rating')
+                ->toArray();
+            $totalReviews = array_sum($reviewsData); // Tính tổng số đánh giá
+            if ($totalReviews > 0) {
+                $sumRatings = 0;
+                foreach ($reviewsData as $rating => $count) {
+                    $sumRatings += ($rating * $count);
+                }
+                $averageRating = $sumRatings / $totalReviews;
+            }
+
+            for ($i = 5; $i >= 1; $i--) {
+                $starRatingsCount[$i] = $reviewsData[$i] ?? 0;
+            }
+            $hasReviewed = false;
+
+            if ($orderItemId) {
+                $hasReviewed = Review::where('order_item_id', $orderItemId)->exists();
+            }
+        }
+        // --- Kết thúc đoạn code ĐÃ THÊM ---
+
         return view('users.products.show', compact(
             'product',
             'relatedProducts',
             'ratingCounts',
             'ratingPercentages',
-            'totalReviews',
             'attributes',
             'variantData',
             'availableCombinations',
             'defaultVariant',
-            'comments',
             'attributeOrder',
             'initialVariantAttributes',
             'variantCombinations',
             'attributesGrouped',
             'specGroupsData',
             'variantSpecs',
-            'wishlistVariantIds' 
+            'wishlistVariantIds',
+            'commentsCount',
+            'orderItemId',
+            'averageRating',
+            'totalReviews',
+            'starRatingsCount',
+            'hasReviewed',
+            'paginatedItems',
+            'allComments',
+            'allReviews',
+            'totalReviewsCount',
+            'totalCommentsCount',
+            'ratingFilter',
+            'productBundles' // Thêm biến mới
         ));
     }
-
 
 
     public function allProducts(Request $request, $id = null, $slug = null)
@@ -638,19 +1046,13 @@ class HomeController extends Controller
                 ]);
             }
 
-            // Lấy variant hiện tại để loại trừ chính nó
             $currentVariant = ProductVariant::find($variantId);
             $currentProductId = $currentVariant?->product_id;
 
-            // Lọc bỏ sản phẩm trùng (cùng id và variant_key)
             $filtered = collect($recentProductIds)
-                ->filter(
-                    fn($item) =>
-                    isset($item['id']) &&
-                        ($item['id'] != $currentProductId || ($item['variant_key'] ?? '') !== $this->getVariantKey($currentVariant))
-                )
-                ->reverse() // Ưu tiên mới nhất
-                ->take(5);
+                ->filter(fn($item) => isset($item['id']))
+                ->unique(fn($item) => $item['id'] . '_' . $item['variant_key']) // tránh trùng
+                ->take(5); // không đảo ngược thứ tự
 
             $results = collect();
 
@@ -659,6 +1061,7 @@ class HomeController extends Controller
                     'variants.attributeValues.attribute',
                     'coverImage',
                     'variants.primaryImage',
+                    'variants.specifications' // Tải thông số kỹ thuật của biến thể
                 ])
                     ->where('id', $item['id'])
                     ->where('status', 'published')
@@ -667,36 +1070,49 @@ class HomeController extends Controller
                 if (!$product) continue;
 
                 $variantKey = $item['variant_key'] ?? null;
+                $variant = null;
 
-                $variant = $product->variants->first(function ($v) use ($variantKey) {
-                    $key = $v->attributeValues
-                        ->sortBy(fn($attr) => $attr->attribute->id)
-                        ->pluck('value')
-                        ->implode('_');
-                    return $key === $variantKey;
-                });
+                // 1. Nếu có variant_key → tìm đúng biến thể
+                if (!empty($variantKey)) {
+                    $variant = $product->variants->first(function ($v) use ($variantKey) {
+                        $key = $v->attributeValues
+                            ->sortBy(fn($attr) => $attr->attribute->id)
+                            ->pluck('value')
+                            ->implode('_');
+                        return $key === $variantKey;
+                    });
+                }
 
-                $variantName = $variant
-                    ? $variant->attributeValues
+                // 2. Nếu không có variant_key và là sản phẩm đơn giản → lấy biến thể duy nhất
+                if (!$variant && $product->type === 'simple' && $product->variants->count() === 1) {
+                    $variant = $product->variants->first();
+                }
+
+                if (!$variant) continue; // Bỏ qua nếu không có biến thể nào phù hợp
+
+                $variantName = $variant->attributeValues
                     ->sortBy(fn($attr) => $attr->attribute->id)
                     ->pluck('value')
-                    ->implode(' ')
-                    : '';
+                    ->implode(' ');
 
-                $imageUrl = $variant?->primaryImage?->path
-                    ?? $variant?->image?->path
+                $imageUrl = $variant->primaryImage?->path
+                    ?? $variant->image?->path
                     ?? $product->coverImage?->path;
+
+                // Định dạng specs theo cấu trúc mong muốn
+                $specs = $variant->specifications ? $this->formatSpecs($variant->specifications) : [];
 
                 $results->push([
                     'id' => $product->id,
                     'name' => $product->name,
                     'slug' => $product->slug,
-                    'variant_id' => $variant?->id,
+                    'variant_id' => $variant->id,
                     'variant_name' => $variantName,
+                    'variant_key' => $variantKey,
                     'cover_image' => $imageUrl ? Storage::url($imageUrl) : asset('/images/no-image.png'),
-                    'price' => $variant && $variant->price ? (int) $variant->price : (int) $product->price,
-                    'sale_price' => $variant && $variant->sale_price ? (int) $variant->sale_price : ($product->sale_price ?? null),
-
+                    'price' => (int) $variant->price,
+                    'sale_price' => $variant->sale_price !== null ? (int) $variant->sale_price : null,
+                    'specs' => $specs // Thêm specs vào phản hồi
                 ]);
             }
 
@@ -711,6 +1127,20 @@ class HomeController extends Controller
         }
     }
 
+    private function formatSpecs($specs)
+    {
+        $formatted = [];
+        foreach ($specs as $spec) {
+            $groupName = $spec->group_name ?? 'Thông số chung';
+            if (!isset($formatted[$groupName])) {
+                $formatted[$groupName] = [];
+            }
+            $formatted[$groupName][$spec->name] = $spec->value;
+        }
+        return $formatted;
+    }
+
+
     private function getVariantKey(?ProductVariant $variant): string
     {
         if (!$variant) return '';
@@ -718,5 +1148,78 @@ class HomeController extends Controller
             ->sortBy(fn($attr) => $attr->attribute->id)
             ->pluck('value')
             ->implode('_');
+    }
+    public function search(Request $request)
+    {
+        $query = $request->input('q');
+        $tab = $request->input('tab', 'san-pham'); // mặc định là 'san-pham'
+
+        if ($tab === 'bai-viet') {
+            $posts = Post::with('coverImage')
+                ->where('status', 'published')
+                ->where(function ($q) use ($query) {
+                    $q->where('slug', 'like', "%{$query}%")
+                        ->orWhere('title', 'like', "%{$query}%");
+                })
+                ->paginate(10);
+
+            return view('users.blogs.index', [
+                'posts' => $posts,
+                'parentCategories' => PostCategory::withCount('posts')->whereNull('parent_id')->get(),
+                'featuredPosts' => Post::where('is_featured', true)->where('status', 'published')->latest()->take(5)->get(),
+                'currentCategory' => null,
+            ]);
+        }
+
+        // Tab mặc định: Sản phẩm
+        // Tab mặc định: Sản phẩm
+        $products = Product::with(['category', 'variants', 'coverImage'])
+            ->where('status', 'published')
+            ->where(function ($q) use ($query) {
+                $q->where('slug', 'like', "%{$query}%")
+                    ->orWhere('name', 'like', "%{$query}%");
+            })
+            ->paginate(12);
+
+        // ✅ Thêm dòng này để truyền danh mục vào view
+        $categories = Category::all();
+        $parentCategories = $categories->whereNull('parent_id');
+
+        return view('users.shop', [
+            'products' => $products,
+            'searchQuery' => $query,
+            'tab' => $tab,
+            'categories' => $categories,
+            'parentCategories' => $parentCategories,
+            'currentCategory' => null, // vì không phải xem theo danh mục
+        ]);
+    }
+
+    public function searchSuggestions(Request $request)
+    {
+        $query = $request->input('q');
+
+        $products = Product::with(['coverImage', 'variants'])
+            ->where('status', 'published')
+            ->where('name', 'like', "%{$query}%")
+            ->take(5)
+            ->get()
+            ->map(function ($product) {
+                $variants = $product->variants;
+
+                // Lấy giá sale thấp nhất (nếu có), nếu không thì lấy giá gốc
+                $minSalePrice = $variants->whereNotNull('sale_price')->min('sale_price');
+                $minPrice = $variants->min('price');
+
+                return [
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'price' => $minPrice ? number_format($minPrice) . ' ₫' : null,
+                    'sale_price' => $minSalePrice ? number_format($minSalePrice) . ' ₫' : null,
+                    'image_url' => $product->coverImage->url ?? asset('images/no-image.png'),
+                ];
+            });
+
+        return response()->json($products);
     }
 }

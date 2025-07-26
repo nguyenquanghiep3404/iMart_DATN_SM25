@@ -16,9 +16,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,      // Tạo danh mục trước sản phẩm
             AttributeSeeder::class,     // Tạo thuộc tính và giá trị thuộc tính trước sản phẩm có biến thể
             ProductSeeder::class,       // Tạo sản phẩm và biến thể
-            CartSeeder::class,
-            OrderSeeder::class,         // Tạo đơn hàng và chi tiết đơn hàng
-            ReviewSeeder::class,        // Tạo đánh giá sau khi có sản phẩm và đơn hàng
+            // CartSeeder::class,
             BannerSeeder::class,
             PostSeeder::class,          // Sẽ seed PostCategory, PostTag, Post
             CouponSeeder::class,
@@ -29,7 +27,15 @@ class DatabaseSeeder extends Seeder
             SystemSettingSeeder::class,
             ContactFormSeeder::class,
             SpecificationSeeder::class,
+            AbandonedCartSeeder::class,
+            OrderSeeder::class,
+            ReviewSeeder::class,        // Tạo đánh giá sau khi có sản phẩm và đơn hàng
+            ProFeaturesSeeder::class,
             // ActivityLogSeeder::class, // Nếu có
+            
+            // Thêm các seeder cho hệ thống địa chỉ kép
+            NewAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ MỚI
+            OldAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ CŨ
         ]);
         $this->command->info('All seeders ran successfully!');
     }

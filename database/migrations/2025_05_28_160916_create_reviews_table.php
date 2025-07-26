@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_variant_id')->constrained()->onDelete('cascade'); // Đánh giá theo biến thể
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Reviewer
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('order_item_id')->nullable()->constrained()->onDelete('set null'); // To verify purchase
             $table->unsignedTinyInteger('rating'); // 1 to 5
             $table->string('title')->nullable();

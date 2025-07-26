@@ -66,7 +66,7 @@
                                 <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
                                 Tên danh mục <span class="text-red-500 ml-1">*</span>
                             </label>
-                            <input type="text" name="name" id="name" value="{{ old('name') }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
+                            <input type="text" name="name" id="name" value="{{ old('name') }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                             @error('name')
                                 <p class="mt-2 text-base text-red-600">{{ $message }}</p>
                             @enderror
@@ -130,7 +130,7 @@
                                     <svg class="w-4 h-4 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                     Trạng thái <span class="text-red-500 ml-1">*</span>
                                 </label>
-                                <select name="status" id="status" class="mt-1 block w-full h-10 rounded-lg border-gray-300 bg-gray-50" required>
+                                <select name="status" id="status" class="mt-1 block w-full h-10 rounded-lg border-gray-300 bg-gray-50">
                                     <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Hoạt động</option>
                                     <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Không hoạt động</option>
                                 </select>

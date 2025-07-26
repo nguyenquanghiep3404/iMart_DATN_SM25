@@ -416,5 +416,9 @@
             width: 100%;
             height: 60px;
         }
+
+        #blogSidebar {
+    z-index: 10;
+}
     </style>
 @endpush
