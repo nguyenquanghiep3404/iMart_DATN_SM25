@@ -12,22 +12,15 @@ return new class extends Migration {
     {
         Schema::create('warranty_claims', function (Blueprint $table) {
             $table->id();
-
             $table->foreignId('user_id')->constrained('users');
-
-            // --- THÊM MỚI: Cột chỉ định trung tâm bảo hành ---
-            $table->foreignId('service_location_id')->nullable()->after('user_id')
+            $table->foreignId('service_location_id')->nullable()
                 ->comment('ID của trung tâm bảo hành xử lý yêu cầu')
                 ->constrained('store_locations')
                 ->onDelete('set null');
-
             $table->foreignId('order_item_id')->constrained('order_items');
             $table->string('claim_code')->unique();
             $table->text('reported_defect');
-
-            // --- THÊM MỚI: Cột ghi nhận thời điểm nhận hàng ---
-            $table->timestamp('item_received_at')->nullable()->after('reported_defect');
-
+            $table->timestamp('item_received_at')->nullable();
             $table->string('status')->default('pending_review');
             $table->string('resolution')->nullable();
             $table->text('technician_notes')->nullable();
@@ -41,6 +34,5 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('warranty_claims');
     }
 };
