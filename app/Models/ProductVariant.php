@@ -29,7 +29,6 @@ class ProductVariant extends Model
         'status',
         'cost_price', 
         'points_awarded_on_purchase'
-
     ];
 
     protected $casts = [
@@ -70,12 +69,14 @@ class ProductVariant extends Model
     {
         return $this->morphMany(UploadedFile::class, 'attachable')->where('type', 'variant_image')->orderBy('order');
     }
+    
     public function primaryImage()
     {
         // Giả định bạn có cột `primary_image_id` trong bảng `product_variants`
         // và nó liên kết với bảng `uploaded_files`.
         return $this->belongsTo(UploadedFile::class, 'primary_image_id');
     }
+    
     public function getImageUrlAttribute()
     {
         if ($this->primaryImage && $this->primaryImage->path) {
@@ -85,38 +86,54 @@ class ProductVariant extends Model
         // fallback nếu không có ảnh
         return '/images/no-image.png';
     }
-    // public function specificationValues()
-    // {
-    //     return $this->hasMany(ProductSpecificationValue::class);
-    // }
+
     public function specifications(): BelongsToMany
     {
         return $this->belongsToMany(Specification::class, 'product_specification_values')
             ->withPivot('value') // Quan trọng: Lấy cột 'value' từ bảng trung gian
             ->withTimestamps();
     }
+    
     public function inventories()
-{
-    return $this->hasMany(ProductInventory::class);
-}
+    {
+        return $this->hasMany(ProductInventory::class);
+    }
 
-/**
- * Lấy tổng số lượng tồn kho có thể bán được (ví dụ: new + open_box).
- */
-public function getSellableStockAttribute(): int
-{
-    $sellableTypes = ['new']; 
-    return $this->inventories()
-                ->whereIn('inventory_type', $sellableTypes)
-                ->sum('quantity');
-}
+    /**
+    * Lấy tổng số lượng tồn kho có thể bán được (ví dụ: new + open_box).
+    */
+    public function getSellableStockAttribute(): int
+    {
+        $sellableTypes = ['new']; 
+        return $this->inventories()
+                    ->whereIn('inventory_type', $sellableTypes)
+                    ->sum('quantity');
+    }
 
-// Một biến thể sản phẩm (ProductVariant) có thể nằm trong nhiều chương trình flash sale khác nhau.
-// Thiết lập quan hệ 1-n với bảng trung gian flash_sale_products.
-public function flashSaleProducts()
-{
-    return $this->hasMany(FlashSaleProduct::class);
-}
+    // Một biến thể sản phẩm (ProductVariant) có thể nằm trong nhiều chương trình flash sale khác nhau.
+    // Thiết lập quan hệ 1-n với bảng trung gian flash_sale_products.
+    public function flashSaleProducts()
+    {
+        return $this->hasMany(FlashSaleProduct::class);
+    }
 
+    /**
+    * Lấy danh sách tất cả các gói sản phẩm (bundle) mà biến thể sản phẩm này đóng vai trò là **sản phẩm chính**.
+    *
+    * @return \Illuminate\Database\Eloquent\Relations\HasMany
+    */
+    public function bundleMainProducts()
+    {
+        return $this->hasMany(BundleMainProduct::class, 'product_variant_id');
+    }
 
+    /**
+    * Lấy danh sách tất cả các gợi ý sản phẩm mà biến thể sản phẩm này xuất hiện trong các **gợi ý sản phẩm đi kèm**.
+    *
+    * @return \Illuminate\Database\Eloquent\Relations\HasMany
+    */
+    public function bundleSuggestedProducts()
+    {
+        return $this->hasMany(BundleSuggestedProduct::class, 'product_variant_id');
+    }
 }

@@ -43,7 +43,7 @@
                                 dịch</label>
                             <input type="text" id="name" name="name" value="{{ old('name') }}"
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                required>
+                                >
                         </div>
 
                         {{-- Slug --}}
@@ -51,30 +51,30 @@
                             <label for="slug" class="block mb-2 text-sm font-medium text-gray-900">Slug</label>
                             <input type="text" id="slug" name="slug" value="{{ old('slug') }}"
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                required>
+                                >
                         </div>
 
                         {{-- Start time --}}
                         <div>
                             <label for="start_time" class="block mb-2 text-sm font-medium text-gray-900">Thời gian bắt
-                                đầu</label>
+                                đầu chiến dịch</label>
                             <input type="datetime-local" id="start_time" name="start_time" value="{{ old('start_time') }}"
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                step="60" required>
+                                step="60" >
                         </div>
 
                         {{-- End time --}}
                         <div>
                             <label for="end_time" class="block mb-2 text-sm font-medium text-gray-900">Thời gian kết
-                                thúc</label>
+                                thúc chiến dịch</label>
                             <input type="datetime-local" id="end_time" name="end_time" value="{{ old('end_time') }}"
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                step="60" required>
+                                step="60" >
                         </div>
 
                         {{-- Danh sách khung giờ --}}
                         <div class="md:col-span-2">
-                            <label class="block mb-2 text-sm font-medium text-gray-900">Khung giờ</label>
+                            <label class="block mb-2 text-sm font-medium text-gray-900">Khung giờ ưu đãi</label>
                             <div id="time-slots-wrapper" class="space-y-4">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 time-slot">
                                     <div>
@@ -95,30 +95,14 @@
                                 giờ</button>
                         </div>
 
-
-                        {{-- Banner --}}
-                        <div class="md:col-span-2">
-                            <label for="banner_image_url" class="block mb-2 text-sm font-medium text-gray-900">URL ảnh
-                                banner (tùy chọn)</label>
-                            <input type="text" id="banner_image_url" name="banner_image_url"
-                                value="{{ old('banner_image_url') }}"
-                                class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                        </div>
-
                         {{-- Trạng thái --}}
                         <div class="md:col-span-2">
                             <label for="status" class="block mb-2 text-sm font-medium text-gray-900">Trạng thái</label>
                             <select id="status" name="status"
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                 required>
-                                <option value="scheduled" {{ old('status') == 'scheduled' ? 'selected' : '' }}>Đã lên lịch
-                                </option>
-                                <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Đang hoạt động
-                                </option>
-                                <option value="finished" {{ old('status') == 'finished' ? 'selected' : '' }}>Đã kết thúc
-                                </option>
-                                <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Không hoạt
-                                    động</option>
+                                <option value="active" {{ old('status') == 'active' ? 'selected' : '' }}>Đang hoạt động</option>
+                                <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Tạm dừng</option>
                             </select>
                         </div>
                     </div>
@@ -213,11 +197,11 @@
                 newSlot.innerHTML = `
                 <div>
                     <label class="block mb-1 text-xs font-medium text-gray-700">Giờ bắt đầu</label>
-                    <input type="time" name="time_slots[${slotIndex}][start_time]" class="time-slot-start w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" step="60" required>
+                    <input type="time" name="time_slots[${slotIndex}][start_time]" class="time-slot-start w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" step="60">
                 </div>
                 <div>
                     <label class="block mb-1 text-xs font-medium text-gray-700">Giờ kết thúc</label>
-                    <input type="time" name="time_slots[${slotIndex}][end_time]" class="time-slot-end w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" step="60" required>
+                    <input type="time" name="time_slots[${slotIndex}][end_time]" class="time-slot-end w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" step="60">
                 </div>
             `;
                 wrapper.appendChild(newSlot);

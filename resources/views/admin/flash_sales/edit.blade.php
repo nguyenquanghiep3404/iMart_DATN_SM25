@@ -34,10 +34,12 @@
                     </div>
                 @endif
 
-                <form action="{{ route('admin.flash-sales.update', $flashSale->id) }}" method="POST">
+                <form action="{{ route('admin.flash-sales.update', $flashSale->id) }}" method="POST"
+                    id="edit-flash-sale-form">
                     @csrf
                     @method('PUT')
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {{-- Tên --}}
                         <div>
                             <label for="name" class="block mb-2 text-sm font-medium text-gray-900">Tên chiến
                                 dịch</label>
@@ -45,14 +47,14 @@
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                 required>
                         </div>
-
+                        {{-- Slug --}}
                         <div>
                             <label for="slug" class="block mb-2 text-sm font-medium text-gray-900">Slug</label>
                             <input type="text" id="slug" name="slug" value="{{ old('slug', $flashSale->slug) }}"
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                 required>
                         </div>
-
+                        {{-- Start time --}}
                         <div>
                             <label for="start_time" class="block mb-2 text-sm font-medium text-gray-900">Thời gian bắt
                                 đầu</label>
@@ -61,7 +63,7 @@
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                 step="60" required>
                         </div>
-
+                        {{-- End time --}}
                         <div>
                             <label for="end_time" class="block mb-2 text-sm font-medium text-gray-900">Thời gian kết
                                 thúc</label>
@@ -70,69 +72,55 @@
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                 step="60" required>
                         </div>
-                        <div class="mt-6">
-                            <h3 class="text-base font-semibold mb-3">Các khung giờ trong chiến dịch</h3>
-                           
-                            @foreach ($flashSale->flashSaleTimeSlots ?? [] as $index => $timeSlot)
-
-                                <div class="grid grid-cols-[1fr_1fr_auto] gap-3 items-center mb-2 time-slot-row">
-                                    <input type="time" name="time_slots[{{ $index }}][start_time]"
-                                        value="{{ \Carbon\Carbon::parse($timeSlot->start_time)->format('H:i') }}"
-                                        class="p-2 border rounded w-full" required>
-
-                                    <input type="time" name="time_slots[{{ $index }}][end_time]"
-                                        value="{{ \Carbon\Carbon::parse($timeSlot->end_time)->format('H:i') }}"
-                                        class="p-2 border rounded w-full" required>
-
-                                    {{-- <form action="{{ route('admin.flash-sales.time-slots.destroy', $timeSlot->id) }}"
-                                        method="POST"
-                                        onsubmit="return confirm('Bạn có chắc chắn muốn xoá khung giờ này?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger text-red-500 text-sm">Xoá</button>
-                                    </form> --}}
-                                </div>
-                            @endforeach
-
-                            <div id="time-slots-wrapper"></div>
-
-                            <button type="button" id="add-time-slot"
-                                class="btn btn-secondary mt-3 inline-block text-blue-600 hover:underline text-sm">+ Thêm
-                                khung giờ</button>
-                        </div>
-
-
-
-
+                        {{-- Danh sách khung giờ --}}
                         <div class="md:col-span-2">
-                            <label for="banner_image_url" class="block mb-2 text-sm font-medium text-gray-900">URL ảnh
-                                banner</label>
-                            <input type="text" id="banner_image_url" name="banner_image_url"
-                                value="{{ old('banner_image_url', $flashSale->banner_image_url) }}"
-                                class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            <label class="block mb-2 text-sm font-medium text-gray-900">Khung giờ</label>
+                            <div id="time-slots-wrapper" class="space-y-4">
+                                @php $slotIndex = 0; @endphp
+                                @foreach ($flashSale->flashSaleTimeSlots ?? [] as $timeSlot)
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 time-slot"
+                                        data-index="{{ $slotIndex }}">
+                                        <input type="hidden" name="time_slots[{{ $slotIndex }}][id]"
+                                            value="{{ $timeSlot->id }}">
+                                        <div>
+                                            <label class="block mb-1 text-xs font-medium text-gray-700">Giờ bắt đầu</label>
+                                            <input type="time" name="time_slots[{{ $slotIndex }}][start_time]"
+                                                value="{{ \Carbon\Carbon::parse($timeSlot->start_time)->format('H:i') }}"
+                                                class="time-slot-start w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                                                step="60" required>
+                                        </div>
+                                        <div>
+                                            <label class="block mb-1 text-xs font-medium text-gray-700">Giờ kết thúc</label>
+                                            <input type="time" name="time_slots[{{ $slotIndex }}][end_time]"
+                                                value="{{ \Carbon\Carbon::parse($timeSlot->end_time)->format('H:i') }}"
+                                                class="time-slot-end w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                                                step="60" required>
+                                        </div>
+                                        <div class="flex items-end pb-2">
+                                            <button type="button" class="btn btn-danger remove-time-slot">Xoá</button>
+                                        </div>
+                                    </div>
+                                    @php $slotIndex++; @endphp
+                                @endforeach
+                            </div>
+                            <button type="button" id="add-time-slot" class="mt-3 btn btn-secondary">+ Thêm khung
+                                giờ</button>
                         </div>
-
+                        {{-- Trạng thái --}}
                         <div class="md:col-span-2">
                             <label for="status" class="block mb-2 text-sm font-medium text-gray-900">Trạng thái</label>
                             <select id="status" name="status"
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                 required>
-                                <option value="scheduled"
-                                    {{ old('status', $flashSale->status) == 'scheduled' ? 'selected' : '' }}>Đã lên lịch
-                                </option>
                                 <option value="active"
-                                    {{ old('status', $flashSale->status) == 'active' ? 'selected' : '' }}>Đang hoạt động
-                                </option>
-                                <option value="finished"
-                                    {{ old('status', $flashSale->status) == 'finished' ? 'selected' : '' }}>Đã kết thúc
+                                    {{ old('status', $flashSale->status) == 'active' ? 'selected' : '' }}>Tiếp tục
                                 </option>
                                 <option value="inactive"
-                                    {{ old('status', $flashSale->status) == 'inactive' ? 'selected' : '' }}>Không hoạt động
+                                    {{ old('status', $flashSale->status) == 'inactive' ? 'selected' : '' }}>Tạm dừng
                                 </option>
                             </select>
                         </div>
                     </div>
-
                     <div class="mt-6 flex justify-end space-x-2">
                         <a href="{{ route('admin.flash-sales.index') }}" class="btn btn-secondary">Hủy</a>
                         <button type="submit" class="btn btn-primary">Cập nhật</button>
@@ -222,12 +210,13 @@
                 slugInput.value = slug;
             });
 
-            // Thêm khung giờ động
-            let slotIndex = 1;
+            // Thêm/xóa khung giờ động
+            let slotIndex = {{ isset($slotIndex) ? $slotIndex : 0 }};
             const wrapper = document.getElementById('time-slots-wrapper');
             document.getElementById('add-time-slot').addEventListener('click', function() {
                 const newSlot = document.createElement('div');
                 newSlot.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4 time-slot';
+                newSlot.setAttribute('data-index', slotIndex);
                 newSlot.innerHTML = `
                 <div>
                     <label class="block mb-1 text-xs font-medium text-gray-700">Giờ bắt đầu</label>
@@ -237,9 +226,19 @@
                     <label class="block mb-1 text-xs font-medium text-gray-700">Giờ kết thúc</label>
                     <input type="time" name="time_slots[${slotIndex}][end_time]" class="time-slot-end w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" step="60" required>
                 </div>
+                <div class="flex items-end pb-2">
+                    <button type="button" class="btn btn-danger remove-time-slot">Xoá</button>
+                </div>
             `;
                 wrapper.appendChild(newSlot);
                 slotIndex++;
+            });
+            // Xóa khung giờ
+            wrapper.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-time-slot')) {
+                    const slot = e.target.closest('.time-slot');
+                    slot.remove();
+                }
             });
         });
     </script>
