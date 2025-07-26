@@ -267,23 +267,20 @@
         </div>
 
         <!-- Modal: Sửa sản phẩm -->
-        {{-- <div id="edit-product-modal" class="custom-modal">
+        <div id="edit-product-modal" class="custom-modal">
             <div class="custom-modal-content">
-                <form method="POST"
-                    action="{{ route('admin.flash-sales.updateProduct', [$flashSale->id, $flashProduct->id]) }}">
+                <form method="POST" id="edit-product-form" action="">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="product_variant_id" id="edit-modal-product-variant-id">
                     <input type="hidden" name="flash_product_id" id="edit-modal-flash-product-id">
                     <div class="p-4 border-b flex justify-between items-center">
                         <h3 class="text-lg font-bold">Sửa sản phẩm</h3>
-                        <button type="button"
-                            class="modal-close-btn text-gray-400 hover:text-gray-700 text-2xl">×</button>
+                        <button type="button" class="modal-close-btn text-gray-400 hover:text-gray-700 text-2xl">×</button>
                     </div>
                     <div class="p-6">
                         <div class="flex items-center gap-4 mb-6">
-                            <img id="edit-modal-product-image" src="" alt="Product"
-                                class="w-16 h-16 rounded-md object-cover">
+                            <img id="edit-modal-product-image" src="" alt="Product" class="w-16 h-16 rounded-md object-cover">
                             <div>
                                 <p id="edit-modal-product-name" class="font-bold"></p>
                                 <p id="edit-modal-product-original-price" class="text-sm text-gray-500"></p>
@@ -293,8 +290,7 @@
                             @if ($flashSale->flashSaleTimeSlots->count())
                                 <div>
                                     <label class="block mb-2 text-sm font-medium">Khung giờ</label>
-                                    <select name="flash_sale_time_slot_id" id="edit-modal-time-slot-id"
-                                        class="w-full p-2.5 border border-gray-300 rounded-lg">
+                                    <select name="flash_sale_time_slot_id" id="edit-modal-time-slot-id" class="w-full p-2.5 border border-gray-300 rounded-lg">
                                         <option value="">-- Toàn thời gian --</option>
                                         @foreach ($flashSale->flashSaleTimeSlots as $slot)
                                             <option value="{{ $slot->id }}">
@@ -306,13 +302,11 @@
                             @endif
                             <div>
                                 <label class="block mb-2 text-sm font-medium">Giá Flash (VNĐ)</label>
-                                <input type="number" name="flash_price" id="edit-modal-flash-price"
-                                    class="w-full p-2.5 border border-gray-300 rounded-lg" required>
+                                <input type="number" name="flash_price" id="edit-modal-flash-price" class="w-full p-2.5 border border-gray-300 rounded-lg" required>
                             </div>
                             <div>
                                 <label class="block mb-2 text-sm font-medium">Số lượng giới hạn</label>
-                                <input type="number" name="quantity_limit" id="edit-modal-quantity-limit"
-                                    class="w-full p-2.5 border border-gray-300 rounded-lg" required>
+                                <input type="number" name="quantity_limit" id="edit-modal-quantity-limit" class="w-full p-2.5 border border-gray-300 rounded-lg" required>
                             </div>
                         </div>
                     </div>
@@ -322,7 +316,7 @@
                     </div>
                 </form>
             </div>
-        </div> --}}
+        </div>
 
 
 
@@ -518,21 +512,21 @@
                     const flashPrice = btn.dataset.flashPrice;
                     const quantityLimit = btn.dataset.quantityLimit;
                     const timeSlotId = btn.dataset.timeSlotId;
-                    const productName = btn.dataset.name; // Thêm nếu cần
-                    const productImage = btn.dataset.image; // Thêm nếu cần
-
-                    // Điền dữ liệu vào modal chỉnh sửa
+                    const productName = btn.dataset.name;
+                    const productImage = btn.dataset.image;
+                    const originalPrice = btn.dataset.originalPrice;
+                    // Set lại action động cho form
+                    const form = document.getElementById('edit-product-form');
+                    form.action = `/admin/flash-sales/{{ $flashSale->id }}/update-product/${flashProductId}`;
+                    // Điền dữ liệu vào modal
                     document.getElementById('edit-modal-product-variant-id').value = variantId;
-                    document.getElementById('edit-modal-product-name').innerText = productName ||
-                        '';
+                    document.getElementById('edit-modal-flash-product-id').value = flashProductId;
+                    document.getElementById('edit-modal-product-name').innerText = productName || '';
                     document.getElementById('edit-modal-product-image').src = productImage || '';
-                    document.getElementById('edit-modal-product-original-price').innerText =
-                        'Giá gốc: ' + (btn.dataset.originalPrice || '') + '₫';
+                    document.getElementById('edit-modal-product-original-price').innerText = 'Giá gốc: ' + (originalPrice || '') + '₫';
                     document.getElementById('edit-modal-flash-price').value = flashPrice || '';
-                    document.getElementById('edit-modal-quantity-limit').value = quantityLimit ||
-                        '';
+                    document.getElementById('edit-modal-quantity-limit').value = quantityLimit || '';
                     document.getElementById('edit-modal-time-slot-id').value = timeSlotId || '';
-
                     openModal(editProductModal); // Mở modal chỉnh sửa
                 });
             });
@@ -617,6 +611,22 @@
                 if (event.key === 'Escape') {
                     document.querySelectorAll('.modal.show').forEach(modal => closeModal(modal.id));
                 }
+            });
+
+            // Tìm kiếm sản phẩm theo tên hoặc SKU
+            const searchInput = document.getElementById('search-variant');
+            const variantItems = document.querySelectorAll('#variant-list .variant-item');
+            searchInput.addEventListener('input', function() {
+                const keyword = this.value.trim().toLowerCase();
+                variantItems.forEach(item => {
+                    const name = item.getAttribute('data-name').toLowerCase();
+                    const sku = item.getAttribute('data-sku').toLowerCase();
+                    if (name.includes(keyword) || sku.includes(keyword)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
             });
         });
     </script>
