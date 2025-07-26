@@ -90,14 +90,13 @@
         .status-pending { background-color: #FEF3C7; color: #92400E; }
         .status-completed { background-color: #D1FAE5; color: #065F46; }
         .status-cancelled { background-color: #FEE2E2; color: #991B1B; }
-    </style>
+     </style>
 @endpush
 
 @section('content')
 <div class="body-content px-4 sm:px-6 md:px-8 py-8">
     <div class="container mx-auto max-w-full">
 
-        <!-- Page Header -->
         <header class="mb-8 flex flex-col sm:flex-row items-center justify-between">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800">Phiếu Nhập Kho</h1>
@@ -109,16 +108,14 @@
             </a>
         </header>
 
-        <!-- Main Content Card -->
         <div class="card-custom">
             <div class="card-custom-body">
-                <!-- Filter and Search Bar -->
                 <form action="{{ route('admin.purchase-orders.index') }}" method="GET">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="md:col-span-2">
                             <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
                             <input type="text" id="search" name="search" value="{{ request('search') }}"
-                                placeholder="Tìm theo mã phiếu, nhà cung cấp..." class="form-input">
+                                   placeholder="Tìm theo mã phiếu, nhà cung cấp..." class="form-input">
                         </div>
                         <div>
                             <label for="filter_location" class="block text-sm font-medium text-gray-700 mb-1">Kho nhận</label>
@@ -137,8 +134,8 @@
                                 <option value="">Tất cả trạng thái</option>
                                 @foreach ($statuses as $key => $value)
                                      <option value="{{ $key }}" {{ request('status') == $key ? 'selected' : '' }}>
-                                        {{ $value }}
-                                    </option>
+                                         {{ $value }}
+                                     </option>
                                 @endforeach
                             </select>
                         </div>
@@ -150,7 +147,6 @@
                 </form>
             </div>
 
-            <!-- Purchase Orders Table -->
             <div class="overflow-x-auto border-t border-gray-200">
                 <table class="table-custom w-full">
                     <thead>
@@ -186,10 +182,15 @@
                                 {{ number_format($po->total_amount, 0, ',', '.') }} ₫
                             </td>
                             <td class="text-center">
-                                <a href="{{ route('admin.purchase-orders.edit', $po->id) }}" class="btn btn-primary btn-sm" title="Xem & Nhập kho">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                {{-- Bạn có thể thêm các nút khác như Xóa ở đây nếu cần --}}
+                                {{-- MODIFIED: Actions column with two buttons --}}
+                                <div class="flex items-center justify-center gap-x-2">
+                                    <a href="{{ route('admin.purchase-orders.show', $po->id) }}" class="btn btn-primary btn-sm" title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ route('admin.purchase-orders.edit', $po->id) }}" class="btn btn-secondary btn-sm" title="Sửa phiếu">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         @empty
@@ -207,7 +208,6 @@
                 </table>
             </div>
 
-            <!-- Pagination -->
             @if ($purchaseOrders->hasPages())
             <div class="card-custom-footer flex flex-col sm:flex-row items-center justify-between">
                 <span class="text-sm text-gray-700 mb-2 sm:mb-0">

@@ -188,42 +188,53 @@ class PurchaseOrderController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(PurchaseOrder $purchaseOrder)
-    {
-        $purchaseOrder->load('items.productVariant.product', 'items.productVariant.primaryImage', 'items.productVariant.attributeValues.attribute');
-        
-        $provinces = ProvinceOld::orderBy('name')->get();
-        $districts = DistrictOld::orderBy('name')->get();
+{
+    // Tải tất cả các mối quan hệ cần thiết cho trang edit
+    $purchaseOrder->load([
+        'supplier', 
+        'storeLocation', 
+        'items.productVariant' => function ($query) {
+            $query->with([
+                'product', 
+                'primaryImage', 
+                'attributeValues.attribute', 
+                'inventories' // Quan trọng: Lấy dữ liệu tồn kho
+            ]);
+        }
+    ]);
+    
+    $provinces = ProvinceOld::orderBy('name')->get();
+    $districts = DistrictOld::orderBy('name')->get();
 
-        $locations = StoreLocation::with(['province', 'district', 'ward'])
-            ->where('is_active', true)
-            ->get()
-            ->map(function ($location) {
-                return [
-                    'id' => $location->id,
-                    'name' => $location->name,
-                    'fullAddress' => $location->full_address,
-                    'province_id' => $location->province_code,
-                    'district_id' => $location->district_code,
-                ];
-            });
-        
-        $suppliers = Supplier::with(['province', 'district', 'ward'])->get()->map(function ($supplier) {
+    $locations = StoreLocation::with(['province', 'district', 'ward'])
+        ->where('is_active', true)
+        ->get()
+        ->map(function ($location) {
             return [
-                'id' => $supplier->id,
-                'name' => $supplier->name,
-                'addresses' => [[
-                    'id' => $supplier->id,
-                    'fullAddress' => $supplier->full_address,
-                    'province_id' => $supplier->province_code,
-                    'district_id' => $supplier->district_code,
-                    'phone' => $supplier->phone
-                ]]
+                'id' => $location->id,
+                'name' => $location->name,
+                'fullAddress' => $location->full_address,
+                'province_id' => $location->province_code,
+                'district_id' => $location->district_code,
             ];
         });
+    
+    $suppliers = Supplier::with(['province', 'district', 'ward'])->get()->map(function ($supplier) {
+        return [
+            'id' => $supplier->id,
+            'name' => $supplier->name,
+            'addresses' => [[
+                'id' => $supplier->id,
+                'fullAddress' => $supplier->full_address,
+                'province_id' => $supplier->province_code,
+                'district_id' => $supplier->district_code,
+                'phone' => $supplier->phone
+            ]]
+        ];
+    });
 
-        // You will need to create an `edit.blade.php` view, which can be very similar to `create.blade.php`
-        return view('admin.purchase_orders.edit', compact('purchaseOrder', 'provinces', 'districts', 'locations', 'suppliers'));
-    }
+    return view('admin.purchase_orders.edit', compact('purchaseOrder', 'provinces', 'districts', 'locations', 'suppliers'));
+}
 
 
     /**
