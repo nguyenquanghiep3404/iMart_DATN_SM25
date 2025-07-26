@@ -36,10 +36,13 @@ use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
+use App\Http\Controllers\Users\ChatController;
+use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\AbandonedCartController;
 use App\Http\Controllers\Admin\TradeInItemController;
+use App\Http\Controllers\Admin\StoreLocationController;
 use App\Notifications\GuestOrderConfirmation;
 use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\GuestReviewController;
@@ -174,6 +177,12 @@ Route::get('/payments', [PaymentController::class, 'index'])->name('payments.inf
 Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
 Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
 
+// Các tuyến đường chat của khách hàng
+Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+Route::post('/chat/register-guest', [ChatController::class, 'registerGuest'])->name('client.chat.registerGuest');
+Route::post('/chat/send-message', [ChatController::class, 'sendMessage'])->name('client.chat.sendMessage');
+Route::post('/chat/guest-login', [ChatController::class, 'guestLogin'])->name('client.chat.guestLogin');
+
 // Routes cho Buy Now - phiên thanh toán riêng biệt
 Route::post('/buy-now/checkout', [PaymentController::class, 'buyNowCheckout'])->name('buy-now.checkout');
 Route::get('/buy-now/information', [PaymentController::class, 'buyNowInformation'])->name('buy-now.information');
@@ -298,16 +307,16 @@ Route::prefix('admin')
         // {uploadedFile} ở đây sẽ là ID của bản ghi trong bảng uploaded_files
         // Laravel sẽ tự động thực hiện Route Model Binding nếu tham số trong controller là UploadedFile $uploadedFile
         // Route::middleware('can:manage-content')->group(function () {
-        Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
-            ->name('products.gallery.delete');
+        // Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
+        //     ->name('products.gallery.delete');
 
         // Category routes
         // Route::resource('categories', CategoryController::class);
 
 
         // Route::middleware('can:manage-content')->group(function () {
-        Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
-            ->name('products.gallery.delete');
+        // Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
+        //     ->name('products.gallery.delete');
 
         // Category routes
         // Route::resource('categories', CategoryController::class);
@@ -370,17 +379,17 @@ Route::prefix('admin')
         ->name('abandoned_carts.send_email');
         Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
             $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
-        
+
             $email = $abandonedCart->user->email ?? $abandonedCart->guest_email;
-        
+
             Mail::to($email)->send(new AbandonedCartMail($abandonedCart));
-        
+
             return 'Email đã được gửi.';
         });
-        
-        
-        
-        
+
+
+
+
 
         // Banner routes
 
@@ -508,13 +517,36 @@ Route::prefix('admin')
         Route::post('/coupons/restore/{id}', [CouponController::class, 'restore'])->name('coupons.restore');
         Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
 
+
+        // Các tuyến đường chat của quản trị viên (Yêu cầu xác thực và các vai trò/quyền phù hợp)
+        Route::prefix('chat')->name('chat.')->group(function () {
+            Route::get('/', [AdminChatController::class, 'index'])->name('dashboard');
+            Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
+            Route::post('/{conversation}/send-message', [AdminChatController::class, 'sendMessage'])->name('sendMessage');
+            Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
+            Route::post('/{conversation}/close', [AdminChatController::class, 'closeConversation'])->name('close');
+            Route::post('/create-internal', [AdminChatController::class, 'createInternalChat'])->name('createInternal');
+        });
+
         // Quản lý thu cũ và hàng mở hộp
         Route::get('trade-in-items/trash', [TradeInItemController::class, 'trash'])->name('trade-in-items.trash');
         Route::post('trade-in-items/{id}/restore', [TradeInItemController::class, 'restore'])->name('trade-in-items.restore');
         Route::delete('trade-in-items/{id}/force-delete', [TradeInItemController::class, 'forceDelete'])->name('trade-in-items.force-delete');
         Route::resource('trade-in-items', TradeInItemController::class);
 
-        // Quản lý nhà cung cấp
+        // Quản lí địa điểm cử hàng
+       Route::resource('store-locations', StoreLocationController::class)->except(['create', 'show']);
+        // Các route AJAX riêng biệt vẫn giữ nguyên để tương tác động
+        Route::get('store-locations/{storeLocation}/edit-data', [StoreLocationController::class, 'edit'])->name('store-locations.edit-data');
+        Route::delete('store-locations/{storeLocation}/soft-delete', [StoreLocationController::class, 'destroy'])->name('store-locations.soft-delete');
+        Route::get('store-locations/trashed', [StoreLocationController::class, 'trashed'])->name('store-locations.trashed');
+        Route::post('store-locations/{id}/restore', [StoreLocationController::class, 'restore'])->name('store-locations.restore');
+        Route::delete('store-locations/{id}/force-delete', [StoreLocationController::class, 'forceDelete'])->name('store-locations.force-delete');
+        Route::patch('store-locations/{storeLocation}/toggle-active', [StoreLocationController::class, 'toggleActive'])->name('store-locations.toggle-active');
+
+        // Routes API cho địa chỉ (vẫn dùng AJAX)
+        Route::get('api/districts', [StoreLocationController::class, 'getDistrictsByProvince'])->name('api.districts');
+        Route::get('api/wards', [StoreLocationController::class, 'getWardsByDistrict'])->name('api.wards');
         // Quản lý nhà cung cấp
         Route::prefix('suppliers')->name('suppliers.')->group(function () {
             Route::get('/', [SupplierController::class, 'index'])->name('index');
@@ -537,6 +569,7 @@ Route::prefix('admin')
             Route::post('/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receiveItems'])->name('receive');
         });
         Route::resource('purchase-orders', PurchaseOrderController::class);
+
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });

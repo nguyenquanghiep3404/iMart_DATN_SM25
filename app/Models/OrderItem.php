@@ -72,5 +72,5 @@ class OrderItem extends Model
             ? $value
             : json_encode($value);
     }
-     
+
 }

@@ -6,6 +6,7 @@
     $navSections = [
         'dashboard' => ['admin.dashboard'],
         'sales' => ['admin.orders.', 'admin.purchase-orders.', 'admin.abandoned-carts.'],
+        'stores' => ['admin.store-locations.', 'admin.chat.'],
         'catalog' => ['admin.products.', 'admin.categories.', 'admin.attributes.', 'admin.specification-groups.', 'admin.specifications.', 'admin.bundle-products.', 'admin.trade-in-items.'],
         'marketing' => ['admin.coupons.', 'admin.flash-sales.', 'admin.homepage.', 'admin.banners.'],
         'content' => ['admin.posts.', 'admin.categories_post.', 'admin.post-tags.', 'admin.comment.', 'admin.reviews.'],
@@ -76,8 +77,27 @@
                         <li><a href="{{ route('admin.abandoned-carts.index') }}" class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.abandoned-carts.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Giỏ hàng bỏ lỡ</a></li>
                     </ul>
                 </li>
+
+                {{-- 3. Store Management --}}
+                <li>
+                    <button @click="openNav !== 'stores' ? openNav = 'stores' : openNav = null"
+                        :class="openNav === 'stores' ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                        <span class="mr-3 text-lg {{ $activeParentNav === 'stores' ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M21,8H19V5H16V3h3a2,2,0,0,1,2,2ZM5,8H3V5A2,2,0,0,1,5,3H8V5H5Zm13,9v3H6V17H3a2,2,0,0,0-2,2v2H23V19a2,2,0,0,0-2-2Z"/></svg>
+                        </span>
+                        Quản lý Cửa hàng
+                        <span class="ml-auto transition-transform duration-200" :class="openNav === 'stores' ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" /></svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 'stores'" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li><a href="{{ route('admin.store-locations.index') }}" class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.store-locations.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Địa điểm Cửa hàng</a></li>
+                        <li><a href="{{ route('admin.chat.dashboard') }}" class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.chat.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Chat với Khách hàng</a></li>
+                    </ul>
+                </li>
                 
-                {{-- 3. Catalog Management --}}
+                {{-- 4. Catalog Management --}}
                 <li>
                     <button @click="openNav !== 'catalog' ? openNav = 'catalog' : openNav = null"
                         :class="openNav === 'catalog' ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
@@ -100,7 +120,7 @@
                     </ul>
                 </li>
                 
-                {{-- 4. Marketing Management --}}
+                {{-- 5. Marketing Management --}}
                 <li>
                     <button @click="openNav !== 'marketing' ? openNav = 'marketing' : openNav = null"
                         :class="openNav === 'marketing' ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
@@ -121,7 +141,7 @@
                     </ul>
                 </li>
                 
-                {{-- 5. Content Management --}}
+                {{-- 6. Content Management --}}
                 <li>
                     <button @click="openNav !== 'content' ? openNav = 'content' : openNav = null"
                         :class="openNav === 'content' ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
@@ -143,7 +163,7 @@
                     </ul>
                 </li>
                 
-                {{-- 6. Customer Management --}}
+                {{-- 7. Customer Management --}}
                 <li>
                     <button @click="openNav !== 'customers' ? openNav = 'customers' : openNav = null"
                         :class="openNav === 'customers' ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
@@ -161,7 +181,7 @@
                     </ul>
                 </li>
                 
-                {{-- 7. Employee Management --}}
+                {{-- 8. Employee Management --}}
                 <li>
                     <button @click="openNav !== 'employees' ? openNav = 'employees' : openNav = null"
                         :class="openNav === 'employees' ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
@@ -182,7 +202,7 @@
                     </ul>
                 </li>
                 
-                {{-- 8. Supplier Management --}}
+                {{-- 9. Supplier Management --}}
                 <li>
                     @php $isSuppliersActive = request()->routeIs('admin.suppliers.*'); @endphp
                      <a href="{{ route('admin.suppliers.index') }}"
@@ -195,7 +215,7 @@
                     </a>
                 </li>
                 
-                {{-- 9. Media Library --}}
+                {{-- 10. Media Library --}}
                 <li>
                     @php $isMediaActive = request()->routeIs('admin.media.*'); @endphp
                      <a href="{{ route('admin.media.index') }}"

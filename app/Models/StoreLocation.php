@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class StoreLocation extends Model
 {
-    use HasFactory;
+     use HasFactory, SoftDeletes;
     
     protected $fillable = [
         'name', 
@@ -18,9 +19,10 @@ class StoreLocation extends Model
         'province_code', 
         'district_code', 
         'ward_code', 
-        'is_active'
+        'latitude',
+        'longitude',
+        'is_active',
     ];
-
     /**
      * Mối quan hệ với Tỉnh/Thành (bảng cũ).
      */
@@ -38,21 +40,6 @@ class StoreLocation extends Model
         return $this->belongsTo(DistrictOld::class, 'district_code', 'code');
     }
 
-    /**
-     * Mối quan hệ với Phường/Xã (bảng cũ).
-     */
-    public function ward()
-    {
-        return $this->belongsTo(WardOld::class, 'ward_code', 'code');
-    }
-
-    public function registers() {
-        return $this->hasMany(Register::class);
-    }
-
-    public function productInventories() {
-        return $this->hasMany(ProductInventory::class);
-    }
     protected function fullAddress(): Attribute
     {
         return Attribute::make(
@@ -78,5 +65,11 @@ class StoreLocation extends Model
                 return implode(', ', $parts);
             }
         );
+    }
+    // Mối quan hệ để lấy thông tin Phường/Xã từ mã ward_code
+    public function ward()
+    {
+        // Liên kết ward_code của store_locations với code của wards_old
+        return $this->belongsTo(WardOld::class, 'ward_code', 'code');
     }
 }

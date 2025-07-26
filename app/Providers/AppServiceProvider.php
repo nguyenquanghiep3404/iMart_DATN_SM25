@@ -26,6 +26,7 @@ use App\Models\Order;
 use App\Observers\OrderObserver;
 use App\Models\ProductVariant;
 use App\Observers\ProductVariantObserver;
+use Illuminate\Support\Facades\Request;
 
 
 
@@ -56,11 +57,16 @@ class AppServiceProvider extends ServiceProvider
         ProductVariant::observe(ProductVariantObserver::class);
         Order::observe(OrderObserver::class);
         Paginator::useTailwind();
-        $layout = (auth()->check() && auth()->user()->role === 'admin')
+        // Xác định layout tự động cho mọi view (kể cả lỗi)
+        View::composer('*', function ($view) {
+        $prefix = request()->route()?->getPrefix();
+
+        $layout = str_contains($prefix, 'admin')
             ? 'admin.layouts.app'
             : 'users.layouts.app';
 
-        View::share('layout', $layout);
+        $view->with('layout', $layout);
+    });
 
         // Đăng ký listener cho sự kiện Verified
         Event::listen(
@@ -79,6 +85,9 @@ class AppServiceProvider extends ServiceProvider
             Gate::define('access_shipper_dashboard', function (User $user) {
                 // Chỉ những người dùng có vai trò 'shipper' mới được phép
                 return $user->hasRole('shipper');
+            });
+            Gate::define('manage_chat', function (User $user) {
+                return $user->hasRole('admin') || $user->hasRole('order_manager');
             });
 
             // Không còn các Gate như 'manage-users', 'manage-roles' ở đây nữa
@@ -134,5 +143,6 @@ class AppServiceProvider extends ServiceProvider
             }
             $view->with('cartItemCount', $totalQuantity);
         });
+
     }
 }

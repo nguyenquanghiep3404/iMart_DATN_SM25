@@ -5,13 +5,22 @@
             <button @click="isModalOpen = false" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
         </header>
         <div class="p-5 bg-gray-50">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block mb-1 text-sm font-medium text-gray-700">Lọc theo Tỉnh/Thành</label>
+                    <label class="block mb-1 text-sm font-medium text-gray-700">Tỉnh/Thành</label>
                     <select x-model="modalSelectedProvince" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">Tất cả tỉnh thành</option>
                         <template x-for="province in provinces" :key="province.code">
                             <option :value="province.code" x-text="province.name"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="block mb-1 text-sm font-medium text-gray-700">Quận/Huyện</label>
+                    <select x-model="modalSelectedDistrict" :disabled="!modalSelectedProvince" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200">
+                        <option value="">Tất cả quận huyện</option>
+                        <template x-for="district in filteredDistricts" :key="district.code">
+                            <option :value="district.code" x-text="district.name"></option>
                         </template>
                     </select>
                 </div>
