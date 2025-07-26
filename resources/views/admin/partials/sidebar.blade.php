@@ -322,6 +322,56 @@
                     </ul>
                 </li>
 
+                {{-- 6. Quản lý người dùng --}}
+                <li>
+                    @php $isUsersActive = request()->routeIs('admin.users.*'); @endphp
+                    <button @click="openNav !== 4 ? openNav = 4 : openNav = null"
+                        :class="openNav === 4 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                        <span
+                            class="mr-3 text-lg {{ $isUsersActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M12,12A6,6,0,1,0,6,6,6.006,6.006,0,0,0,12,12ZM12,2A4,4,0,1,1,8,6,4,4,0,0,1,12,2Z" />
+                                <path
+                                    d="M12,14a9.01,9.01,0,0,0-9,9,1,1,0,0,0,1,1H20a1,1,0,0,0,1-1A9.01,9.01,0,0,0,12,14ZM4.136,22A7.006,7.006,0,0,1,11,16H13a7.006,7.006,0,0,1,6.864,6Z" />
+                            </svg>
+                        </span>
+                        Quản lý người dùng
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 4 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 4" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+                        <li>
+                            <a href="{{ route('admin.users.index') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách người dùng
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.users.create') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thêm mới người dùng
+                            </a>
+                        </li>
+                        <li>
+
+                            <a href="{{ route('admin.users.trash') }}"
+                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.create') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
 
 
 
@@ -779,6 +829,63 @@
 </li>
 
             </ul>
+            {{-- 11. Quản lý cửa hàng --}}
+                <li>
+                    <!-- @php $isPostCategoriesActive = request()->routeIs('admin.post-categories.*'); @endphp -->
+                    <button @click="openNav !== 9 ? openNav = 9 : openNav = null"
+                        :class="openNav === 9 ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                            'text-gray-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                        <span
+                            class="mr-3 text-lg {{ $isPostCategoriesActive ? 'text-indigo-600' : 'text-gray-500 group-hover:text-indigo-500' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                height="18" fill="currentColor">
+                                <path
+                                    d="M19,2H5A3,3,0,0,0,2,5V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V5A3,3,0,0,0,19,2Zm1,17a1,1,0,0,1-1,1H5a1,1,0,0,1-1-1V5A1,1,0,0,1,5,4H19a1,1,0,0,1,1,1Z" />
+                                <path d="M7,7h4a1,1,0,0,0,0-2H7A1,1,0,0,0,7,7Z" />
+                                <path d="M17,11H7a1,1,0,0,0,0,2H17a1,1,0,0,0,0-2Z" />
+                                <path d="M17,15H7a1,1,0,0,0,0,2H17a1,1,0,0,0,0-2Z" />
+                            </svg>
+                        </span>
+                        Quản lý cửa hàng
+                        <span class="ml-auto transition-transform duration-200 ease-in-out"
+                            :class="openNav === 9 ? 'rotate-90' : ''">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                height="16" fill="currentColor">
+                                <path
+                                    d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                            </svg>
+                        </span>
+                    </button>
+                    <ul x-show="openNav === 9" class="pl-8 pr-2 py-1 space-y-1 mt-1">
+
+                        <li>
+                            <a href="{{ route('admin.store-locations.index') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.categories_post.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách cửa hàng
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ route('admin.store-locations.trashed') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.post-tags.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Thùng rác
+                            </a>
+                        </li>
+                        <!-- <li>
+                            <a href="{{ route('admin.posts.index') }}" {{-- Giả sử route --}}
+                                class="block w-full py-1.5
+                                px-3 text-sm rounded-md
+                                {{ request()->routeIs('admin.posts.index') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-gray-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
+                                Danh sách bài viết
+                            </a>
+                        </li> -->
+
+                    </ul>
+                </li>
 
             {{-- Phần Cài đặt & Trang phụ (Giữ nguyên) --}}
             <div class="border-t border-gray-200 pt-3 mt-3">
