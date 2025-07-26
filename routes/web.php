@@ -30,6 +30,7 @@ use App\Http\Controllers\Users\UserOrderController;
 use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
+use App\Http\Controllers\Admin\BundleProductController;
 use App\Http\Controllers\Admin\SpecificationController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\ShipperManagementController;
@@ -39,13 +40,23 @@ use App\Http\Controllers\Users\ChatController;
 use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\AbandonedCartController;
 use App\Http\Controllers\Admin\TradeInItemController;
 use App\Http\Controllers\Admin\StoreLocationController;
 use App\Notifications\GuestOrderConfirmation;
 use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\GuestReviewController;
+use App\Http\Controllers\Admin\SupplierController;
+use App\Mail\AbandonedCartMail;
+use Illuminate\Support\Facades\Mail;
+use App\Models\AbandonedCart;
+use App\Http\Controllers\Users\CartRecoveryController;
 
-
+// router khôi phục giỏ hàng
+Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
+Route::get('/cart/recover-result', function () {
+    return view('users.cart.recover_result');
+})->name('cart.recover_result');
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('cart/remove', [CartController::class, 'removeItem'])->name('cart.removeItem');
@@ -147,6 +158,7 @@ Route::get('/product/{id}', [ProductController::class, 'show'])
 // router cart
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+Route::post('/cart/add-combo', [CartController::class, 'addCombo'])->name('cart.addCombo');
 // routes/web.php
 Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
 Route::get('/session/flush-message', function () {
@@ -356,6 +368,26 @@ Route::prefix('admin')
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
         Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
 
+        // quản lý giỏ hàng lãng quên
+        Route::get('/abandoned-carts', [AbandonedCartController::class, 'index'])->name('abandoned-carts.index');
+        Route::get('/admin/abandoned-carts/{id}', [AbandonedCartController::class, 'show'])
+        ->name('abandoned_carts.show');
+        Route::post('abandoned-carts/send-inapp/{cart}', [AbandonedCartController::class, 'sendInApp'])
+        ->name('abandoned_carts.send_inapp');
+        Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
+        ->name('abandoned_carts.send_email');
+        Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
+            $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
+
+            $email = $abandonedCart->user->email ?? $abandonedCart->guest_email;
+
+            Mail::to($email)->send(new AbandonedCartMail($abandonedCart));
+
+            return 'Email đã được gửi.';
+        });
+
+
+
 
 
         // Banner routes
@@ -444,6 +476,27 @@ Route::prefix('admin')
         Route::put('flash-sales/{flash_sale}/update-product/{flash_product}', [FlashSaleController::class, 'updateProduct'])
             ->name('flash-sales.updateProduct');
 
+        // Route quản lý Gói sản phẩm (Bundle Products)
+        // Soft Delete Feature
+        Route::get('bundle-products/trashed', [BundleProductController::class, 'trashed'])->name('bundle-products.trashed');
+        Route::patch('bundle-products/{id}/restore', [BundleProductController::class, 'restore'])->name('bundle-products.restore');
+        Route::delete('bundle-products/{id}/force-delete', [BundleProductController::class, 'forceDelete'])->name('bundle-products.forceDelete');
+        Route::patch('bundle-products/restore-bulk', [BundleProductController::class, 'restoreBulk'])->name('bundle-products.restore.bulk');
+        Route::delete('bundle-products/force-delete-bulk', [BundleProductController::class, 'forceDeleteBulk'])->name('bundle-products.forceDelete.bulk');
+
+
+        // Gói sản phẩm
+        Route::get('bundle-products', [BundleProductController::class, 'index'])->name('bundle-products.index');
+        Route::get('bundle-products/create', [BundleProductController::class, 'create'])->name('bundle-products.create');
+        Route::post('bundle-products', [BundleProductController::class, 'store'])->name('bundle-products.store');
+        Route::get('bundle-products/{bundle}/edit', [BundleProductController::class, 'edit'])->name('bundle-products.edit');
+        Route::put('bundle-products/{bundle}', [BundleProductController::class, 'update'])->name('bundle-products.update');
+        Route::delete('bundle-products/{bundle}', [BundleProductController::class, 'destroy'])->name('bundle-products.destroy');
+        Route::get('bundle-products/{bundle}', [BundleProductController::class, 'show'])->name('bundle-products.show');
+        Route::patch('bundle-products/{bundle}/toggle-status', [BundleProductController::class, 'toggleStatus'])->name('bundle-products.toggle-status');
+
+        // Xóa mềm gói sản phẩm
+
 
 
         // Post routes
@@ -496,6 +549,21 @@ Route::prefix('admin')
         // Routes API cho địa chỉ (vẫn dùng AJAX)
         Route::get('api/districts', [StoreLocationController::class, 'getDistrictsByProvince'])->name('api.districts');
         Route::get('api/wards', [StoreLocationController::class, 'getWardsByDistrict'])->name('api.wards');
+        // Quản lý nhà cung cấp
+        // Quản lý nhà cung cấp
+        Route::prefix('suppliers')->name('suppliers.')->group(function () {
+            Route::get('/', [SupplierController::class, 'index'])->name('index');
+            Route::post('/', [SupplierController::class, 'store'])->name('store');
+            Route::get('/trash', [SupplierController::class, 'trash'])->name('trash');
+            Route::get('/{supplier}', [SupplierController::class, 'show'])->name('show');
+            Route::put('/{supplier}', [SupplierController::class, 'update'])->name('update');
+            Route::delete('/{supplier}', [SupplierController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
+            Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
+        });
+
+
+
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
 // Group các route dành cho shipper và bảo vệ chúng

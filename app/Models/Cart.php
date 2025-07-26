@@ -63,4 +63,19 @@ class Cart extends Model
     {
         return $this->items->sum('quantity');
     }
+    public function order()
+    {
+        return $this->hasOne(Order::class);
+    }
+
+    public function abandonedCart()
+    {
+        return $this->hasOne(AbandonedCart::class);
+    }
+    protected static function booted()
+    {
+        static::saved(function ($cart) {
+            $cart->touch();  // Cập nhật 'updated_at' mỗi khi giỏ hàng được lưu
+        });
+    }
 }
