@@ -999,8 +999,13 @@
             const addressSystemNew = document.getElementById('address_system_new');
             const addressSystemOld = document.getElementById('address_system_old');
 
-            // Tải các tỉnh khi tải trang
-            loadProvinces();
+            // Tải các tỉnh khi tải trang dựa trên hệ thống được chọn
+            if (addressSystemOld.checked) {
+                districtContainer.style.display = 'block';
+                loadOldProvinces();
+            } else {
+                loadProvinces();
+            }
 
             // Xử lý thay đổi hệ thống địa chỉ
             addressSystemNew.addEventListener('change', function() {
