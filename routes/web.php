@@ -26,6 +26,7 @@ use App\Http\Controllers\Users\WishlistController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Shipper\ShipperController;
+use App\Http\Controllers\Users\AddressesController;
 use App\Http\Controllers\Users\UserOrderController;
 use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\PostCategoryController;
@@ -115,6 +116,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
+
+    // Routes cho quản lý địa chỉ của người dùng
+    Route::resource('addresses', AddressesController::class)->except(['show']);
+    Route::post('addresses/{address}/default', [AddressesController::class, 'setDefault'])->name('addresses.setDefault');
     //Routes đơn hàng của user
     Route::prefix('my-orders')->group(function () {
         Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
@@ -473,3 +478,6 @@ Route::get('/test-403', function () {
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
 Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping_fee');
+// Route::get('api/old-provinces', [AddressesController::class, 'getOldProvinces']);
+// Route::get('api/old-districts/{province_code}', [AddressesController::class, 'getOldDistricts']);
+// Route::get('api/old-wards/{district_code}', [AddressesController::class, 'getOldWards']);
