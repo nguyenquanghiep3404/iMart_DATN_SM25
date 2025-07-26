@@ -48,6 +48,7 @@ use App\Mail\AbandonedCartMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -488,8 +489,6 @@ Route::prefix('admin')
 
         // Xóa mềm gói sản phẩm
 
-
-
         // Post routes
         Route::get('posts/trashed', [PostController::class, 'trashed'])->name('posts.trashed'); // Danh sách bài đã xóa
         Route::get('posts/preview/{id}', [PostController::class, 'preview'])->name('posts.preview');
@@ -527,7 +526,17 @@ Route::prefix('admin')
             Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
             Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
         });
-
+        //==========================================================================
+        // QUẢN LÝ NHẬP KHO (PURCHASE ORDERS)
+        //==========================================================================
+        Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+            // Route để tìm kiếm sản phẩm (dùng cho AJAX khi thêm sản phẩm vào phiếu)
+            Route::get('/search-products', [PurchaseOrderController::class, 'searchProducts'])->name('search-products');
+            
+            // Route để nhận hàng vào kho
+            Route::post('/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receiveItems'])->name('receive');
+        });
+        Route::resource('purchase-orders', PurchaseOrderController::class);
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
