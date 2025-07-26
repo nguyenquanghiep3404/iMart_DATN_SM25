@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
 use App\Models\Review;
 use App\Models\UploadedFile;
@@ -22,23 +23,29 @@ class ReviewController extends Controller
     {
         $user = Auth::user();
 
-        $userReviews = Review::with('product')
-            ->where('user_id', $user->id)
+        // Lấy tất cả review của user, key theo product_variant_id để tra cứu nhanh
+        $userReviews = Review::where('user_id', $user->id)
             ->get()
             ->keyBy('product_variant_id');
 
+        // Lấy các order items thuộc đơn đã giao/thành công
         $orderItems = $user->orders()
+            ->whereIn('status', ['delivered', 'completed'])
             ->with(['items.variant.product'])
             ->get()
             ->pluck('items')
             ->flatten()
-            ->unique('product_variant_id');
+            ->filter(fn($item) => $item->variant && $item->variant->product) // loại bỏ item lỗi
+            ->unique('product_variant_id')
+            ->values(); // reset chỉ số
 
+        // Chuyển thành collection có thông tin cần thiết cho view
         $itemsForReview = $orderItems->map(function ($item) use ($userReviews) {
             $variantId = $item->product_variant_id;
 
             return [
                 'product'       => $item->variant->product,
+                'variant'       => $item->variant,
                 'variant_id'    => $variantId,
                 'order_item_id' => $item->id,
                 'review'        => $userReviews->get($variantId),
@@ -47,6 +54,7 @@ class ReviewController extends Controller
 
         return view('users.profile.reviews', compact('itemsForReview'));
     }
+
 
     /**
      * Lưu đánh giá mới
@@ -59,8 +67,8 @@ class ReviewController extends Controller
             'rating'             => 'required|integer|min:1|max:5',
             'title'              => 'nullable|string|max:255',
             'comment'            => 'required|string|min:5',
-            'media'              => 'nullable|array|max:3',
-            'media.*'            => 'file|mimes:jpg,jpeg,png,gif|max:10240',
+            'media'              => 'nullable|array|max:6',
+            'media.*'            => 'file|mimes:jpg,jpeg,png,gif,mp4,webm,mov|max:10240', // tối đa 10MB
         ]);
 
         if ($validator->fails()) {
@@ -73,15 +81,17 @@ class ReviewController extends Controller
         $data = $validator->validated();
         $userId = Auth::id();
 
-        // Check đã đánh giá chưa
-        if (Review::where('user_id', $userId)->where('product_variant_id', $data['product_variant_id'])->exists()) {
+        // Kiểm tra đã đánh giá chưa
+        if (Review::where('user_id', $userId)
+            ->where('product_variant_id', $data['product_variant_id'])->exists()
+        ) {
             return response()->json([
                 'success' => false,
                 'message' => 'Bạn đã đánh giá phiên bản sản phẩm này rồi.'
             ], 409);
         }
 
-        // Check đã mua chưa (bắt buộc)
+        // Kiểm tra đã mua chưa
         $hasOrdered = DB::table('order_items')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->where('orders.user_id', $userId)
@@ -95,7 +105,7 @@ class ReviewController extends Controller
             ], 403);
         }
 
-        // Gán dữ liệu đánh giá
+        // Tạo review
         $review = Review::create([
             'product_variant_id' => $data['product_variant_id'],
             'order_item_id'      => $data['order_item_id'] ?? null,
@@ -107,51 +117,66 @@ class ReviewController extends Controller
             'is_verified_purchase' => !empty($data['order_item_id']),
         ]);
 
-        // Lưu ảnh nếu có
-        if ($request->hasFile('media')) {
-            foreach ($request->file('media') as $index => $file) {
-                $path = $file->store('review_images', 'public');
+        // Xử lý media
+        $mediaFiles = $request->file('media', []);
+        $imageCount = collect($mediaFiles)->filter(fn($file) => str_starts_with($file->getMimeType(), 'image/'))->count();
+        $videoCount = collect($mediaFiles)->filter(fn($file) => str_starts_with($file->getMimeType(), 'video/'))->count();
 
-                $review->images()->create([
-                    'path'          => $path,
-                    'filename'      => basename($path),
-                    'original_name' => $file->getClientOriginalName(),
-                    'mime_type'     => $file->getMimeType(),
-                    'size'          => $file->getSize(),
-                    'disk'          => 'public',
-                    'type'          => 'review_image',
-                    'order'         => $index,
-                ]);
-            }
+        if ($imageCount > 5) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn chỉ được tải lên tối đa 5 ảnh.'
+            ], 422);
         }
 
-        $productVariant = ProductVariant::with('product')->find($data['product_variant_id']);
-        $product = $productVariant->product ?? null;
+        if ($videoCount > 1) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chỉ được tải lên 1 video.'
+            ], 422);
+        }
 
+        foreach ($mediaFiles as $index => $file) {
+            $path = $file->store('review_media', 'public');
 
+            $review->images()->create([
+                'path'          => $path,
+                'filename'      => basename($path),
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type'     => $file->getMimeType(),
+                'size'          => $file->getSize(),
+                'disk'          => 'public',
+                'type'          => str_starts_with($file->getMimeType(), 'image/') ? 'review_image' : 'review_video',
+                'order'         => $index,
+            ]);
+        }
+
+        // Gửi notify nếu cần
         if ($review->status === 'pending') {
-            $productVariant = ProductVariant::with('product')->find($data['product_variant_id']);
-            $product = $productVariant->product ?? null;
+            $productName = optional(ProductVariant::with('product')->find($data['product_variant_id'])->product)->name;
 
-            $admins = User::whereHas('roles', function ($query) {
-                $query->whereIn('name', ['admin', 'content_manager']);
-            })->get();
+            $admins = User::whereHas(
+                'roles',
+                fn($q) =>
+                $q->whereIn('name', ['admin', 'content_manager'])
+            )->get();
 
             foreach ($admins as $admin) {
                 $admin->notify(new NewReviewOrCommentPending(
                     'đánh giá',
-                    $product?->name ?? 'sản phẩm',
+                    $productName ?? 'sản phẩm',
                     route('admin.reviews.index')
                 ));
             }
         }
 
-
         return response()->json([
             'success' => true,
-            'message' => 'Cảm ơn bạn đã đánh giá!'
+            'message' => 'Cảm ơn bạn đã đánh giá!',
+            'review_id' => $review->id,
         ]);
     }
+
 
     /**
      * Xem chi tiết đánh giá

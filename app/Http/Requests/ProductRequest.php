@@ -23,77 +23,68 @@ class ProductRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array|string>
      */
     public function rules(): array
-{
-    /** @var Product|null $product */
-    $product = $this->route('product');
-    $productId = $product ? $product->id : null;
+    {
+        /** @var Product|null $product */
+        $product = $this->route('product');
+        $productId = $product ? $product->id : null;
 
-    $rules = [
-        // --- General Rules ---
-        'name' => ['required', 'string', 'max:255', Rule::unique('products')->ignore($productId)],
-        'slug' => ['nullable', 'string', 'max:255', Rule::unique('products')->ignore($productId)],
-        'category_id' => 'required|exists:categories,id',
-        'status' => 'required|in:published,draft,pending_review,trashed',
-        'type' => 'required|in:simple,variable',
-    ];
+        $rules = [
+            // --- General Rules ---
+            'name' => ['required', 'string', 'max:255', Rule::unique('products')->ignore($productId)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique('products')->ignore($productId)],
+            'category_id' => 'required|exists:categories,id',
+            'status' => 'required|in:published,draft,pending_review,trashed',
+            'type' => 'required|in:simple,variable',
+        ];
 
-    // --- Rules based on Product Type ---
-    if ($this->input('type') === 'simple') {
-        $variantIdToIgnore = null;
-        if ($product && $product->type === 'simple' && $product->variants->first()) {
-            $variantIdToIgnore = $product->variants->first()->id;
-        }
+        // --- Rules based on Product Type ---
+        if ($this->input('type') === 'simple') {
+            $variantIdToIgnore = null;
+            if ($product && $product->type === 'simple' && $product->variants->first()) {
+                $variantIdToIgnore = $product->variants->first()->id;
+            }
 
-        $rules = array_merge($rules, [
-            'cover_image_id' => 'required|integer|exists:uploaded_files,id',
-            'simple_price' => 'required|numeric|min:0',
-            'simple_sale_price' => 'nullable|numeric|min:0|lte:simple_price',
-            'simple_sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
-            'simple_sale_price_ends_at' => ['nullable', 'date', 'after:simple_sale_price_starts_at'],
-            'simple_sku' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('product_variants', 'sku')->ignore($variantIdToIgnore)
-            ],
-            'simple_inventories' => ['required', 'array'],
-            'simple_inventories.new' => ['required', 'integer', 'min:0'],
-            'simple_inventories.defective' => ['nullable', 'integer', 'min:0'],
-        ]);
-    }
-
-    if ($this->input('type') === 'variable') {
-        // BẮT ĐẦU SỬA ĐỔI
-        // Kiểm tra xem người dùng đã thực sự thêm biến thể chưa
-        if (!$this->has('variants') || !is_array($this->input('variants')) || count($this->input('variants')) === 0) {
-            // Nếu chưa, chỉ cần yêu cầu phải có ít nhất một biến thể
-            $rules['variants'] = 'required|array|min:1';
-        } else {
-            // Nếu đã thêm biến thể, áp dụng các quy tắc chi tiết cho từng biến thể
             $rules = array_merge($rules, [
-                'variants.*.id' => 'nullable|integer|exists:product_variants,id',
-                'variants.*.price' => 'required|numeric|min:0',
-                'variants.*.sale_price' => 'nullable|numeric|min:0|lte:variants.*.price',
-                'variants.*.sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
-                'variants.*.sale_price_ends_at' => ['nullable', 'date', 'after:variants.*.sale_price_starts_at'],
-                'variants.*.attributes' => 'required|array|min:1',
-                'variants.*.attributes.*' => 'required|integer|exists:attribute_values,id',
-                'variants.*.sku' => [
+                'cover_image_id' => 'required|integer|exists:uploaded_files,id',
+                'simple_price' => 'required|numeric|min:0',
+                'simple_sale_price' => 'nullable|numeric|min:0|lte:simple_price',
+                'simple_sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
+                'simple_sale_price_ends_at' => ['nullable', 'date', 'after:simple_sale_price_starts_at'],
+                'simple_sku' => [
                     'required',
                     'string',
                     'max:255',
-                    'distinct:ignore_case',
+                    Rule::unique('product_variants', 'sku')->ignore($variantIdToIgnore)
                 ],
-                'variants.*.inventories' => ['required', 'array'],
-                'variants.*.inventories.new' => ['required', 'integer', 'min:0'],
-                'variants.*.inventories.defective' => ['nullable', 'integer', 'min:0'],
+                // **ĐÃ XÓA CÁC QUY TẮC VỀ TỒN KHO**
             ]);
         }
-        // KẾT THÚC SỬA ĐỔI
-    }
 
-    return $rules;
-}
+        if ($this->input('type') === 'variable') {
+            if (!$this->has('variants') || !is_array($this->input('variants')) || count($this->input('variants')) === 0) {
+                $rules['variants'] = 'required|array|min:1';
+            } else {
+                $rules = array_merge($rules, [
+                    'variants.*.id' => 'nullable|integer|exists:product_variants,id',
+                    'variants.*.price' => 'required|numeric|min:0',
+                    'variants.*.sale_price' => 'nullable|numeric|min:0|lte:variants.*.price',
+                    'variants.*.sale_price_starts_at' => ['nullable', 'date', 'after_or_equal:now'],
+                    'variants.*.sale_price_ends_at' => ['nullable', 'date', 'after:variants.*.sale_price_starts_at'],
+                    'variants.*.attributes' => 'required|array|min:1',
+                    'variants.*.attributes.*' => 'required|integer|exists:attribute_values,id',
+                    'variants.*.sku' => [
+                        'required',
+                        'string',
+                        'max:255',
+                        'distinct:ignore_case',
+                    ],
+                    // **ĐÃ XÓA CÁC QUY TẮC VỀ TỒN KHO**
+                ]);
+            }
+        }
+
+        return $rules;
+    }
 
 
     /**
@@ -160,10 +151,8 @@ class ProductRequest extends FormRequest
             'simple_sale_price.lte' => 'Giá khuyến mãi phải nhỏ hơn hoặc bằng giá gốc.',
             'simple_sale_price_starts_at.after_or_equal' => 'Thời gian bắt đầu khuyến mãi không được là ngày trong quá khứ.',
             'simple_sale_price_ends_at.after' => 'Thời gian kết thúc khuyến mãi phải sau thời gian bắt đầu.',
-            'simple_inventories.new.required' => 'Tồn kho "Hàng mới" không được để trống.',
-            'simple_inventories.new.min' => 'Tồn kho "Hàng mới" phải là số không âm.',
-            'simple_inventories.defective.min' => 'Tồn kho "Hàng lỗi" phải là số không âm.',
-
+            
+            // **ĐÃ XÓA CÁC THÔNG BÁO LỖI VỀ TỒN KHO**
 
             // Variants Messages
             'variants.required' => 'Sản phẩm có biến thể phải có ít nhất một biến thể.',
@@ -172,9 +161,6 @@ class ProductRequest extends FormRequest
             'variants.*.sku.distinct' => 'SKU của các biến thể trong form không được trùng nhau.',
             'variants.*.price.required' => 'Giá của biến thể không được để trống.',
             'variants.*.sale_price.lte' => 'Giá khuyến mãi của biến thể phải nhỏ hơn hoặc bằng giá gốc.',
-            'variants.*.inventories.new.required' => 'Tồn kho "Hàng mới" của biến thể không được để trống.',
-            'variants.*.inventories.new.min' => 'Tồn kho "Hàng mới" của biến thể phải là số không âm.',
-            'variants.*.inventories.defective.min' => 'Tồn kho "Hàng lỗi" của biến thể phải là số không âm.',
             'variants.*.attributes.required' => 'Mỗi biến thể phải có ít nhất một thuộc tính.',
             'variants.*.attributes.min' => 'Mỗi biến thể phải có ít nhất một thuộc tính.',
             'variants.*.sale_price_starts_at.after_or_equal' => 'Thời gian bắt đầu khuyến mãi của biến thể không được là ngày trong quá khứ.',

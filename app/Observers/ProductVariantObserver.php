@@ -17,12 +17,13 @@ class ProductVariantObserver
 {
     public function updating(ProductVariant $variant)
     {
-        if ($variant->isDirty('stock_quantity')) {
-            $newQty = $variant->stock_quantity;
+        // Kiểm tra xem có thay đổi trong inventories không
+        if ($variant->isDirty('inventories')) {
+            $sellableStock = $variant->getSellableStockAttribute();
 
-            if ($newQty == 0) {
+            if ($sellableStock == 0) {
                 $variant->stock_status = 'out_of_stock';
-            } elseif ($newQty < 5) {
+            } elseif ($sellableStock < 5) {
                 $variant->stock_status = 'low';
             } else {
                 $variant->stock_status = 'in_stock';
@@ -47,11 +48,14 @@ class ProductVariantObserver
             return;
         }
 
-        // Tồn kho thấp
+        // Tồn kho thấp - kiểm tra dựa trên sellable stock
+        $currentSellableStock = $variant->getSellableStockAttribute();
+        $previousSellableStock = $this->getPreviousSellableStock($variant);
+
         if (
-            $variant->wasChanged('stock_quantity') &&
-            $variant->getOriginal('stock_quantity') >= $threshold &&
-            $variant->stock_quantity < $threshold
+            $previousSellableStock >= $threshold &&
+            $currentSellableStock < $threshold &&
+            $currentSellableStock > 0
         ) {
             Notification::send($adminUsers, new LowStockAlert($variant));
         }
@@ -70,25 +74,22 @@ class ProductVariantObserver
             $q->where('product_variant_id', $variant->id);
         })->pluck('user_id')->unique();
 
-
-
         if ($wishlistUserIds->isNotEmpty()) {
             $users = User::whereIn('id', $wishlistUserIds)->get();
 
             // 1. Có hàng trở lại
             if (
-                $variant->wasChanged('stock_quantity') &&
-                $variant->getOriginal('stock_quantity') == 0 &&
-                $variant->stock_quantity > 0
+                $previousSellableStock == 0 &&
+                $currentSellableStock > 0
             ) {
                 Notification::send($users, new WishlistProductBackInStock($variant));
             }
 
             // 2. Sắp hết hàng
             if (
-                $variant->wasChanged('stock_quantity') &&
-                $variant->getOriginal('stock_quantity') >= $threshold &&
-                $variant->stock_quantity < $threshold
+                $previousSellableStock >= $threshold &&
+                $currentSellableStock < $threshold &&
+                $currentSellableStock > 0
             ) {
                 Notification::send($users, new WishlistProductLowStock($variant));
             }
@@ -101,5 +102,22 @@ class ProductVariantObserver
                 Notification::send($users, new WishlistProductOnSale($variant));
             }
         }
+    }
+
+    /**
+     * Helper method để lấy tồn kho có thể bán trước khi cập nhật
+     */
+    private function getPreviousSellableStock(ProductVariant $variant): int
+    {
+        // Lấy dữ liệu inventories trước khi cập nhật
+        $originalInventories = $variant->getOriginal('inventories') ?? [];
+        
+        if (is_array($originalInventories)) {
+            return collect($originalInventories)
+                ->where('inventory_type', 'new')
+                ->sum('quantity');
+        }
+        
+        return 0;
     }
 }

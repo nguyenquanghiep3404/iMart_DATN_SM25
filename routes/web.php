@@ -39,6 +39,11 @@ use App\Http\Controllers\Users\ChatController;
 use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\TradeInItemController;
+use App\Http\Controllers\Admin\StoreLocationController;
+use App\Notifications\GuestOrderConfirmation;
+use Illuminate\Support\Facades\Notification;
+use App\Http\Controllers\GuestReviewController;
 
 
 Route::post('/comments/store', [CommentController::class, 'store'])->name('comments.store');
@@ -87,6 +92,12 @@ Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallb
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
 Route::get('/tim-kiem', [HomeController::class, 'search'])->name('users.products.search');
 Route::get('/api/search-suggestions', [HomeController::class, 'searchSuggestions'])->name('search.suggestions');
+Route::post('/reviews/verify-guest', [ReviewController::class, 'verifyGuest'])->name('reviews.guest.verify.post');
+Route::prefix('guest-review')->controller(GuestReviewController::class)->group(function () {
+    Route::post('/verify', 'verifyOrder')->name('guest.reviews.verify');
+    Route::post('/submit', 'store')->name('guest.reviews.store');
+});
+
 
 
 // BLOG ROUTES (PUBLIC)
@@ -105,7 +116,6 @@ Route::post('/notifications/mark-as-read', function () {
     auth()->user()->unreadNotifications->markAsRead();
     return response()->json(['status' => 'success']);
 })->name('notifications.markAsRead')->middleware('auth');
-
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -168,10 +178,27 @@ Route::post('/buy-now/process', [PaymentController::class, 'processBuyNowOrder']
 // LOCATION API ROUTES
 //==========================================================================
 Route::prefix('api/locations')->name('api.locations.')->group(function () {
+    // Hệ thống địa chỉ mới
     Route::get('/provinces', [LocationController::class, 'getProvinces'])->name('provinces');
     Route::get('/wards/{provinceCode}', [LocationController::class, 'getWardsByProvince'])->name('wards');
+    // Hệ thống địa chỉ cũ
+    Route::get('/old/provinces', [LocationController::class, 'getOldProvinces'])->name('old.provinces');
+    Route::get('/old/districts/{provinceCode}', [LocationController::class, 'getOldDistrictsByProvince'])->name('old.districts');
+    Route::get('/old/wards/{districtCode}', [LocationController::class, 'getOldWardsByDistrict'])->name('old.wards');
+    // Kiểm tra hỗ trợ hệ thống mới
+    Route::get('/check-support/{provinceCode}', [LocationController::class, 'checkNewSystemSupport'])->name('check.support');
 });
 
+// API lấy địa chỉ GHN ( Để lại nếu không cần bỏ được để xem xét)
+// Route::get('/api/ghn/provinces', function() {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_provinces')->get() ]);
+// });
+// Route::get('/api/ghn/districts/{province_id}', function($province_id) {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_districts')->where('province_id', $province_id)->get() ]);
+// });
+// Route::get('/api/ghn/wards/{district_id}', function($district_id) {
+//     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_wards')->where('district_id', $district_id)->get() ]);
+// });
 //==========================================================================
 // ADMIN ROUTES
 //==========================================================================
@@ -192,7 +219,7 @@ Route::prefix('admin')
         // Route riêng cho việc xóa ảnh gallery
         Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
             ->name('products.gallery.delete');
-
+        Route::post('/products/upload-image-ckeditor', [ProductController::class, 'uploadImageCkeditor'])->name('media.ckeditor_upload');
         // Route xóa mềm người dùng
         // Route::middleware('can:is-admin')->group(function () {
         Route::prefix('users')->name('users.')->group(function () {
@@ -438,6 +465,7 @@ Route::prefix('admin')
         Route::post('/coupons/restore/{id}', [CouponController::class, 'restore'])->name('coupons.restore');
         Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
 
+
         // Các tuyến đường chat của quản trị viên (Yêu cầu xác thực và các vai trò/quyền phù hợp)
         Route::prefix('chat')->name('chat.')->group(function () {
             Route::get('/', [AdminChatController::class, 'index'])->name('dashboard');
@@ -448,7 +476,26 @@ Route::prefix('admin')
             Route::post('/create-internal', [AdminChatController::class, 'createInternalChat'])->name('createInternal');
         });
 
+        // Quản lý thu cũ và hàng mở hộp
+        Route::get('trade-in-items/trash', [TradeInItemController::class, 'trash'])->name('trade-in-items.trash');
+        Route::post('trade-in-items/{id}/restore', [TradeInItemController::class, 'restore'])->name('trade-in-items.restore');
+        Route::delete('trade-in-items/{id}/force-delete', [TradeInItemController::class, 'forceDelete'])->name('trade-in-items.force-delete');
+        Route::resource('trade-in-items', TradeInItemController::class);
 
+        // Quản lí địa điểm cử hàng
+       Route::resource('store-locations', StoreLocationController::class)->except(['create', 'show']);
+
+        // Các route AJAX riêng biệt vẫn giữ nguyên để tương tác động
+        Route::get('store-locations/{storeLocation}/edit-data', [StoreLocationController::class, 'edit'])->name('store-locations.edit-data');
+        Route::delete('store-locations/{storeLocation}/soft-delete', [StoreLocationController::class, 'destroy'])->name('store-locations.soft-delete');
+        Route::get('store-locations/trashed', [StoreLocationController::class, 'trashed'])->name('store-locations.trashed');
+        Route::post('store-locations/{id}/restore', [StoreLocationController::class, 'restore'])->name('store-locations.restore');
+        Route::delete('store-locations/{id}/force-delete', [StoreLocationController::class, 'forceDelete'])->name('store-locations.force-delete');
+        Route::patch('store-locations/{storeLocation}/toggle-active', [StoreLocationController::class, 'toggleActive'])->name('store-locations.toggle-active');
+
+        // Routes API cho địa chỉ (vẫn dùng AJAX)
+        Route::get('api/districts', [StoreLocationController::class, 'getDistrictsByProvince'])->name('api.districts');
+        Route::get('api/wards', [StoreLocationController::class, 'getWardsByDistrict'])->name('api.wards');
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
 // Group các route dành cho shipper và bảo vệ chúng
@@ -473,3 +520,4 @@ Route::get('/test-403', function () {
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
+Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping_fee');

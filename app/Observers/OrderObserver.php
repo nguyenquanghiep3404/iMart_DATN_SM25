@@ -12,6 +12,7 @@ use App\Notifications\OrderPaymentStatusUpdated;
 use App\Notifications\NewOrderAssignedToShipper;
 use App\Notifications\OrderCancelledNotification;
 use App\Notifications\OrderNoteForShipperUpdated;
+use App\Notifications\GuestOrderConfirmation;
 
 
 class OrderObserver
@@ -19,22 +20,27 @@ class OrderObserver
     /**
      * Handle the Order "created" event.
      */
-    public function created(Order $order)
-    {
-        // Gửi thông báo cho admin và người quản lý đơn
-        $recipients = User::whereHas('roles', function ($q) {
-            $q->whereIn('name', ['admin', 'order_manager']);
-        })->get();
+   public function created(Order $order)
+{
+    // Gửi cho admin và order_manager
+    $recipients = User::whereHas('roles', function ($q) {
+        $q->whereIn('name', ['admin', 'order_manager']);
+    })->get();
 
-        if ($recipients->isNotEmpty()) {
-            Notification::send($recipients, new NewOrderNotification($order));
-        }
-
-        // Gửi xác nhận đơn hàng cho khách
-        if ($order->user) {
-            $order->user->notify(new OrderPlacedConfirmation($order));
-        }
+    if ($recipients->isNotEmpty()) {
+        Notification::send($recipients, new NewOrderNotification($order));
     }
+
+    // Gửi xác nhận cho khách đã đăng nhập
+    if ($order->user) {
+        $order->user->notify(new OrderPlacedConfirmation($order));
+    } else if ($order->customer_email) {
+        // 👈 Gửi thông báo cho khách vãng lai qua email
+            Notification::route('mail', $order->customer_email)
+            ->notify(new GuestOrderConfirmation($order));
+    }
+}
+
 
 
 
