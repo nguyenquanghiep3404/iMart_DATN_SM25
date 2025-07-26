@@ -27,6 +27,9 @@ class ProductVariant extends Model
         'dimensions_height',
         'is_default',
         'status',
+        'cost_price', 
+        'points_awarded_on_purchase'
+
     ];
 
     protected $casts = [
@@ -114,6 +117,33 @@ public function flashSaleProducts()
 {
     return $this->hasMany(FlashSaleProduct::class);
 }
+
+/**
+ * Lấy danh sách tất cả các gói sản phẩm (bundle) mà biến thể sản phẩm này đóng vai trò là **sản phẩm chính**.
+ *
+ * Mỗi bản ghi trong bảng `bundle_main_products` tương ứng với một mối quan hệ giữa biến thể này
+ * và một `ProductBundle` mà nó làm sản phẩm chính.
+ *
+ * @return \Illuminate\Database\Eloquent\Relations\HasMany
+ */
+public function bundleMainProducts()
+{
+    return $this->hasMany(BundleMainProduct::class, 'product_variant_id');
+}
+
+/**
+ * Lấy danh sách tất cả các gợi ý sản phẩm mà biến thể sản phẩm này xuất hiện trong các **gợi ý sản phẩm đi kèm**.
+ *
+ * Mỗi bản ghi trong bảng `bundle_suggested_products` thể hiện một mối quan hệ giữa biến thể này
+ * và một `ProductBundle` mà nó được đề xuất đi kèm.
+ *
+ * @return \Illuminate\Database\Eloquent\Relations\HasMany
+ */
+public function bundleSuggestedProducts()
+{
+    return $this->hasMany(BundleSuggestedProduct::class, 'product_variant_id');
+}
+
 
 
 }

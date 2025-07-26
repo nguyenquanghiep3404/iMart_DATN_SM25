@@ -79,7 +79,7 @@ class UploadedFileController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'files.*' => 'required|file|mimes:jpg,jpeg,png,gif,webp,svg,pdf|max:10240',
-            'context' => ['sometimes', 'string', Rule::in(['products', 'avatars', 'banners', 'categories', 'posts', 'general'])],
+            'context' => ['sometimes', 'string', Rule::in(['products', 'avatars', 'banners', 'categories', 'posts', 'general', 'description', 'trade-in-items'])],
         ]);
 
         if ($validator->fails()) {
@@ -289,5 +289,34 @@ class UploadedFileController extends Controller
         $files->through(fn ($file) => $file->append(['url', 'formatted_size', 'attachable_display']));
         
         return response()->json($files);
+    }
+    public function handleCkeditorUpload(Request $request)
+    {
+        $request->validate([
+            'upload' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+        ]);
+
+        try {
+            $file = $request->file('upload');
+            
+            // Sử dụng FileService đã có để lưu file, context là 'descriptions'
+            $uploadedFile = $this->fileService->store($file, 'products/descriptions');
+
+            // Trả về response JSON theo định dạng mà CKEditor yêu cầu
+            return response()->json([
+                'uploaded' => 1,
+                'fileName' => $uploadedFile->filename,
+                'url' => $uploadedFile->url // Model UploadedFile đã có accessor 'url'
+            ]);
+
+        } catch (\Exception $e) {
+            // Trả về lỗi nếu có sự cố
+            return response()->json([
+                'uploaded' => 0,
+                'error' => [
+                    'message' => 'Tải ảnh lên không thành công: ' . $e->getMessage()
+                ]
+            ], 500);
+        }
     }
 }

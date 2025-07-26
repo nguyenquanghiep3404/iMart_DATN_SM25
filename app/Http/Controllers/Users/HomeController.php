@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use App\Models\PostCategory;
 use App\Models\WishlistItem;
 use Illuminate\Http\Request;
+use App\Models\ProductBundle;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -184,7 +185,12 @@ class HomeController extends Controller
             },
             'flashSaleTimeSlots.products.productVariant.attributeValues.attribute',
             'flashSaleTimeSlots.products.productVariant.product.coverImage',
-        ])->orderBy('start_time')->get();
+        ])
+            ->where('status', 'active')
+            ->where('start_time', '<=', now())
+            ->where('end_time', '>=', now())
+            ->orderBy('start_time')
+            ->get();
 
         // Xử lý format thời gian + tên biến thể đầy đủ và xác định slot đang active
         $now = now();
@@ -201,7 +207,7 @@ class HomeController extends Controller
                 $isActive = $now->between($start, $end);
                 $isUpcoming = $now->lt($start);
                 $isPast = $now->gt($end);
-                
+
                 \Log::info('DEBUG_FLASH_SLOT', [
                     'slot_id' => $slot->id,
                     'start_time' => $slot->start_time,
@@ -495,6 +501,133 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
+        // --- Logic mới: Xử lý gói sản phẩm (bundles) ---
+        $variantId = $request->query('variant_id');
+        $selectedVariant = $variantId && $product->variants->contains('id', $variantId)
+            ? $product->variants->firstWhere('id', $variantId)
+            : $defaultVariant;
+
+        $productBundles = ProductBundle::with([
+            'mainProducts.productVariant.product.coverImage',
+            'suggestedProducts.productVariant.product.coverImage'
+        ])
+            ->where('status', 'active')
+            ->where(function ($query) use ($selectedVariant) {
+                $query->where('start_date', '<=', now())
+                    ->where(function ($q) {
+                        $q->where('end_date', '>=', now())
+                            ->orWhereNull('end_date');
+                    })
+                    ->whereHas('mainProducts', function ($q) use ($selectedVariant) {
+                        $q->where('product_variant_id', $selectedVariant->id);
+                    });
+            })
+            ->get()
+            ->map(function ($bundle) use ($selectedVariant) {
+                $mainProduct = $bundle->mainProducts->firstWhere('product_variant_id', $selectedVariant->id);
+                $mainVariant = $mainProduct->productVariant;
+                $mainProductData = $mainVariant->product;
+
+                // Tính giá sản phẩm chính
+                $mainPrice = (int) ($mainVariant->price ?? 0);
+                $mainSalePrice = $mainVariant->sale_price !== null ? (int) $mainVariant->sale_price : null;
+
+                $hasFlashTime = !empty($mainVariant->sale_price_starts_at) && !empty($mainVariant->sale_price_ends_at);
+                $isFlashSale = $hasFlashTime && now()->between($mainVariant->sale_price_starts_at, $mainVariant->sale_price_ends_at);
+                $isSale = !$isFlashSale && $mainSalePrice !== null && $mainSalePrice < $mainPrice;
+
+                $mainDisplayPrice = ($isFlashSale || $isSale) && $mainSalePrice !== null ? $mainSalePrice : $mainPrice;
+                $mainOriginalPrice = ($isFlashSale || $isSale) && $mainPrice > $mainSalePrice ? $mainPrice : null;
+
+                Log::info('Main product pricing', [
+                    'variant_id' => $mainVariant->id,
+                    'product_name' => $mainProductData->name,
+                    'main_price' => $mainPrice,
+                    'main_sale_price' => $mainSalePrice,
+                    'is_flash_sale' => $isFlashSale,
+                    'is_sale' => $isSale,
+                    'main_display_price' => $mainDisplayPrice,
+                    'main_original_price' => $mainOriginalPrice,
+                ]);
+
+
+                // Lấy hình ảnh sản phẩm chính (ưu tiên primaryImage của variant, sau đó đến coverImage của product)
+                $mainImage = $mainVariant->primaryImage ? Storage::url($mainVariant->primaryImage->path)
+                    : ($mainProductData->coverImage ? Storage::url($mainProductData->coverImage->path)
+                        : asset('images/placeholder.jpg'));
+                // Dữ liệu sản phẩm chính
+                $mainProductItem = [
+                    'variant_id' => $mainVariant->id,
+                    'product_id' => $mainProductData->id,
+                    'name' => $mainProductData->name,
+                    'slug' => $mainProductData->slug,
+                    'image' => $mainImage,
+                    'price' => $mainPrice,
+                    'sale_price' => $mainSalePrice,
+                    'display_price' => $mainDisplayPrice,
+                    'original_price' => $mainOriginalPrice,
+                ];
+                Log::info('Main product item', $mainProductItem);
+
+
+                // Dữ liệu sản phẩm gợi ý
+                $suggestedProducts = $bundle->suggestedProducts->sortBy('display_order')->map(function ($suggested) {
+                    $variant = $suggested->productVariant;
+                    $product = $variant->product;
+                    $price = (int) $variant->price;
+                    $salePrice = (int) $variant->sale_price;
+                    $hasFlashTime = !empty($variant->sale_price_starts_at) && !empty($variant->sale_price_ends_at);
+                    $isFlashSale = $hasFlashTime && now()->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+                    $isSale = !$isFlashSale && $salePrice && $salePrice < $price;
+                    $originalPrice = $isFlashSale || $isSale ? $price : null;
+
+
+                    // Tính giá ưu đãi theo discount_type
+                    if ($suggested->discount_type === 'fixed_price') {
+                        $bundlePrice = (int) $suggested->discount_value;
+                    } else {
+                        $basePrice = $isFlashSale || $isSale ? $salePrice : $price;
+                        $bundlePrice = $basePrice * (1 - $suggested->discount_value / 100);
+                    }
+
+                    return [
+                        'variant_id' => $variant->id,
+                        'product_id' => $product->id,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'image' => $variant->primaryImage ? Storage::url($variant->primaryImage->path)
+                            : ($product->coverImage ? Storage::url($product->coverImage->path)
+                                : asset('images/placeholder.jpg')),
+                        'price' => $price,
+                        'sale_price' => $salePrice,
+                        'bundle_price' => $bundlePrice,
+                        'original_price' => $originalPrice,
+                        'is_preselected' => $suggested->is_preselected,
+                        'display_order' => $suggested->display_order,
+                    ];
+                })->toArray();
+
+                // Tính tổng giá gói (chỉ tính sản phẩm được chọn sẵn)
+                $totalBundlePrice = $mainDisplayPrice;
+                foreach ($suggestedProducts as $suggested) {
+                    if ($suggested['is_preselected']) {
+                        $totalBundlePrice += $suggested['bundle_price'];
+                    }
+                }
+
+                return [
+                    'id' => $bundle->id,
+                    'name' => $bundle->name,
+                    'display_title' => $bundle->display_title,
+                    'description' => $bundle->description,
+                    'main_product' => $mainProductItem,
+                    'suggested_products' => $suggestedProducts,
+                    'total_bundle_price' => $totalBundlePrice,
+                ];
+            });
+
+        // Kết thúc xử lý gói sản phẩm
+
         // // $comments = $product->comments()
         // //     ->whereNull('parent_id')
         // //     ->where(function ($query) {
@@ -670,6 +803,7 @@ class HomeController extends Controller
             'totalReviewsCount',
             'totalCommentsCount',
             'ratingFilter',
+            'productBundles' // Thêm biến mới
         ));
     }
 

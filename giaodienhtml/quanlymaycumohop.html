@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Máy Cũ & Mở Hộp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .card-custom {
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            background-color: #fff;
+        }
+
+        .card-custom-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+
+        .card-custom-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .card-custom-body {
+            padding: 1.5rem;
+        }
+        
+        .card-custom-footer {
+            background-color: #f9fafb;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            border-bottom-left-radius: 0.75rem;
+            border-bottom-right-radius: 0.75rem;
+        }
+
+        .btn {
+            border-radius: 0.5rem;
+            transition: all 0.2s ease-in-out;
+            font-weight: 500;
+            padding: 0.625rem 1.25rem;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.25rem;
+            border: 1px solid transparent;
+        }
+        
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+            line-height: 1rem;
+        }
+
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+        }
+
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+            border-color: #d1d5db;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+        
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            font-size: 0.875rem;
+            background-color: white;
+        }
+
+        .form-input:focus, .form-select:focus {
+            border-color: #4f46e5;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
+        }
+        
+        .table-custom {
+            width: 100%;
+            min-width: 800px;
+            color: #374151;
+        }
+
+        .table-custom th,
+        .table-custom td {
+            padding: 0.75rem 1rem;
+            vertical-align: middle !important;
+            border-bottom-width: 1px;
+            border-color: #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .table-custom thead th {
+            font-weight: 600;
+            color: #4b5563;
+            background-color: #f9fafb;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            text-align: left;
+        }
+        
+        .badge-custom {
+            display: inline-block;
+            padding: 0.35em 0.65em;
+            font-size: .75em;
+            font-weight: 700;
+            line-height: 1;
+            color: #fff;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.375rem;
+        }
+
+        .badge-success { background-color: #10b981; }
+        .badge-danger { background-color: #ef4444; }
+        .badge-warning { background-color: #f59e0b; color: #1f2937; }
+        .badge-info { background-color: #3b82f6; }
+        .badge-secondary { background-color: #6b7280; }
+        
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+
+<body x-data="tradeInManager()">
+    <div class="px-4 sm:px-6 md:px-8 py-8">
+        <div class="container mx-auto max-w-full">
+
+            <!-- PAGE HEADER -->
+            <header class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-800">Quản lý Máy Cũ & Mở Hộp</h1>
+                <nav aria-label="breadcrumb" class="mt-2">
+                    <ol class="flex text-sm text-gray-500">
+                        <li class="breadcrumb-item"><a href="#" class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a></li>
+                        <li class="text-gray-400 mx-2">/</li>
+                        <li class="breadcrumb-item active text-gray-700 font-medium" aria-current="page">Máy Cũ & Mở Hộp</li>
+                    </ol>
+                </nav>
+            </header>
+
+            <div class="card-custom">
+                <div class="card-custom-header">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center w-full">
+                        <h3 class="card-custom-title">Danh sách sản phẩm (<span x-text="items.length"></span>)</h3>
+                        <a href="#" class="btn btn-primary">
+                            <i class="fas fa-plus mr-2"></i>Thêm sản phẩm mới
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-custom-body">
+                    <!-- FILTERS -->
+                    <form action="#" method="GET" class="mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="md:col-span-2">
+                                <label for="search" class="sr-only">Tìm kiếm</label>
+                                <input type="text" id="search" x-model="searchQuery" class="form-input" placeholder="Tìm theo tên, SKU, IMEI/Serial...">
+                            </div>
+                            <div>
+                                <label for="filter_status" class="sr-only">Trạng thái</label>
+                                <select id="filter_status" class="form-select">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="available">Sẵn sàng bán</option>
+                                    <option value="pending_inspection">Chờ kiểm tra</option>
+                                    <option value="sold">Đã bán</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="filter_condition" class="sr-only">Tình trạng</label>
+                                <select id="filter_condition" class="form-select">
+                                    <option value="">Tất cả tình trạng</option>
+                                    <option value="A">Loại A (Như mới)</option>
+                                    <option value="B">Loại B (Trầy xước nhẹ)</option>
+                                    <option value="C">Loại C (Trầy xước nhiều)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- TABLE -->
+                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                        <table class="table-custom">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">Ảnh</th>
+                                    <th>Tên Sản Phẩm</th>
+                                    <th>SKU / IMEI</th>
+                                    <th class="text-center">Tình trạng</th>
+                                    <th>Giá bán</th>
+                                    <th>Cửa hàng</th>
+                                    <th>Trạng thái</th>
+                                    <th style="width: 120px;" class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="item in filteredItems" :key="item.id">
+                                    <tr>
+                                        <td>
+                                            <img :src="item.image" :alt="item.product_name" class="w-14 h-14 object-cover rounded-md">
+                                        </td>
+                                        <td>
+                                            <a href="#" class="font-semibold text-indigo-600 hover:text-indigo-800" x-text="item.product_name"></a>
+                                            <p class="text-xs text-gray-500" x-text="item.type === 'used' ? 'Máy đã qua sử dụng' : 'Hàng mở hộp'"></p>
+                                        </td>
+                                        <td>
+                                            <p class="font-medium" x-text="item.sku"></p>
+                                            <p class="text-xs text-gray-500" x-text="item.imei"></p>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge-custom" 
+                                                :class="{
+                                                    'badge-success': item.condition_grade === 'A',
+                                                    'badge-warning': item.condition_grade === 'B',
+                                                    'badge-danger': item.condition_grade === 'C'
+                                                }" 
+                                                x-text="item.condition_grade">
+                                            </span>
+                                        </td>
+                                        <td class="font-semibold text-red-600" x-text="item.price"></td>
+                                        <td x-text="item.location"></td>
+                                        <td>
+                                            <span class="badge-custom"
+                                                :class="{
+                                                    'badge-success': item.status === 'available',
+                                                    'badge-info': item.status === 'pending_inspection',
+                                                    'badge-secondary': item.status === 'sold'
+                                                }"
+                                                x-text="item.status_text">
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="inline-flex space-x-1">
+                                                <a href="#" class="btn btn-primary btn-sm" title="Chỉnh sửa"><i class="fas fa-edit"></i></a>
+                                                <button type="button" class="btn btn-danger btn-sm" title="Xóa"><i class="fas fa-trash"></i></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                 <!-- PAGINATION -->
+                <div class="card-custom-footer">
+                     <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center w-full">
+                        <p class="text-sm text-gray-700 leading-5">
+                            Hiển thị từ <span class="font-medium">1</span> đến <span class="font-medium">3</span> trên tổng số <span class="font-medium">3</span> kết quả
+                        </p>
+                        <div>
+                            <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i class="fas fa-chevron-left h-5 w-5"></i>
+                                </a>
+                                <a href="#" aria-current="page" class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium"> 1 </a>
+                                <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                    <i class="fas fa-chevron-right h-5 w-5"></i>
+                                </a>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function tradeInManager() {
+            return {
+                searchQuery: '',
+                items: [
+                    { id: 1, image: 'https://placehold.co/100x100/e2e8f0/e2e8f0', product_name: 'iPhone 14 Pro Max 256GB', type: 'used', sku: 'USED-IP14PM-001', imei: '358812345678901', condition_grade: 'A', price: '22.500.000 ₫', location: 'Cửa hàng Quận 1', status: 'available', status_text: 'Sẵn sàng bán' },
+                    { id: 2, image: 'https://placehold.co/100x100/e2e8f0/e2e8f0', product_name: 'Macbook Pro 14" M2', type: 'open_box', sku: 'OPEN-MBP14M2-001', imei: 'C02F1234ABCD', condition_grade: 'B', price: '45.000.000 ₫', location: 'Kho tổng', status: 'pending_inspection', status_text: 'Chờ kiểm tra' },
+                    { id: 3, image: 'https://placehold.co/100x100/e2e8f0/e2e8f0', product_name: 'Apple Watch Ultra', type: 'used', sku: 'USED-AWU-001', imei: 'G99A1234BCDE', condition_grade: 'A', price: '15.200.000 ₫', location: 'Cửa hàng Quận 3', status: 'sold', status_text: 'Đã bán' },
+                ],
+                get filteredItems() {
+                    if (this.searchQuery.trim() === '') return this.items;
+                    const searchLower = this.searchQuery.toLowerCase();
+                    return this.items.filter(item => 
+                        item.product_name.toLowerCase().includes(searchLower) ||
+                        item.sku.toLowerCase().includes(searchLower) ||
+                        item.imei.toLowerCase().includes(searchLower)
+                    );
+                }
+            }
+        }
+    </script>
+</body>
+</html>

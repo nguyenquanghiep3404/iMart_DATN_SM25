@@ -38,6 +38,9 @@ return new class extends Migration
             $table->boolean('is_default')->default(false);
             $table->enum('status', ['active', 'inactive'])->default('active');
 
+            // Cột điểm thưởng được thêm vào
+            $table->unsignedInteger('points_awarded_on_purchase')->default(0)->comment('Số điểm thưởng nhận được khi mua biến thể sản phẩm này');
+            
             $table->softDeletes();
             $table->timestamps();
         });

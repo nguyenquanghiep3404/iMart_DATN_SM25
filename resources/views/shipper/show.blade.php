@@ -57,14 +57,34 @@
             </div>
         </div>
 
+        {{-- === BẮT ĐẦU THAY ĐỔI === --}}
         <div class="bg-white p-4 rounded-xl shadow-sm space-y-2">
             <h3 class="text-base font-bold text-gray-800">Chi tiết sản phẩm</h3>
             <ul class="divide-y divide-gray-200">
                 @foreach($order->items as $item)
-                    <li class="py-3">
-                        <p class="font-semibold text-gray-800">{{ $item->product_name }}</p>
-                        <div class="flex justify-between text-sm text-gray-600">
-                            <span>Số lượng: <span class="font-bold">{{ $item->quantity }}</span></span>
+                    <li class="py-3 flex space-x-4 items-center">
+                        {{-- Hiển thị ảnh sản phẩm --}}
+                        <img src="{{ $item->image_url ?? 'https://via.placeholder.com/150?text=No+Image' }}" alt="{{ $item->product_name }}" class="w-20 h-20 object-cover rounded-lg shadow-md">
+
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">{{ $item->product_name }}</p>
+
+                            {{-- Hiển thị biến thể sản phẩm --}}
+                            @php
+                                // Chuyển đổi chuỗi JSON thành mảng để xử lý, phòng trường hợp dữ liệu là null hoặc chuỗi 'null'
+                                $attributes = is_string($item->variant_attributes) ? json_decode($item->variant_attributes, true) : $item->variant_attributes;
+                            @endphp
+                            @if(!empty($attributes) && is_array($attributes))
+                                <div class="text-sm text-gray-500 mt-1">
+                                    @foreach($attributes as $key => $value)
+                                        <span>{{ $key }}: <strong>{{ $value }}</strong></span>@if(!$loop->last), @endif
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <div class="flex justify-between text-sm text-gray-600 mt-2">
+                                <span>Số lượng: <span class="font-bold">{{ $item->quantity }}</span></span>
+                            </div>
                         </div>
                     </li>
                 @endforeach
@@ -72,9 +92,25 @@
         </div>
 
         <div class="bg-white p-4 rounded-xl shadow-sm text-center">
-            <p class="text-gray-500">Tổng tiền thu hộ (COD)</p>
-            <p class="text-3xl font-bold text-green-600">{{ number_format($order->grand_total, 0, ',', '.') }}đ</p>
+            {{-- Hiển thị Phương thức thanh toán --}}
+            <div class="flex justify-between items-center text-base text-gray-700 mb-3 pb-3 border-b">
+                <span>Phương thức thanh toán:</span>
+                <span class="font-bold text-blue-600">{{ Str::upper($order->payment_method) }}</span>
+            </div>
+
+            {{-- Kiểm tra nếu là COD thì hiển thị tiền cần thu --}}
+            @if(strtolower($order->payment_method) === 'cod')
+                <p class="text-gray-500">Tổng tiền thu hộ (COD)</p>
+                <p class="text-3xl font-bold text-green-600">{{ number_format($order->grand_total, 0, ',', '.') }}đ</p>
+            @else
+                <p class="text-gray-500">Tổng tiền</p>
+                <p class="text-3xl font-bold text-gray-800">{{ number_format($order->grand_total, 0, ',', '.') }}đ</p>
+                <p class="mt-1 text-sm font-semibold {{ $order->payment_status === 'paid' ? 'text-green-600' : 'text-orange-500' }}">
+                    (Trạng thái: {{ $order->payment_status === 'paid' ? 'Đã thanh toán' : 'Chờ thanh toán' }})
+                </p>
+            @endif
         </div>
+        {{-- === KẾT THÚC THAY ĐỔI === --}}
     </div>
 
     {{-- Footer chứa các nút hành động (nếu có) --}}
@@ -101,10 +137,10 @@
 @endsection
 
 @push('modals')
+    {{-- Modal không thay đổi --}}
     <div id="failure-reason-modal" class="modal-overlay">
         <div class="modal-content">
             <h2 class="text-xl font-bold text-gray-800 p-6 border-b">Lý do giao không thành công</h2>
-
             <form id="fail-delivery-form" action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST" style="display: none;">
                 @csrf
                 @method('PATCH')
@@ -112,7 +148,6 @@
                 <input type="hidden" id="fail-reason-input" name="reason">
                 <input type="hidden" id="fail-notes-input" name="notes">
             </form>
-
             <div class="modal-body p-6 space-y-4">
                 <div>
                     <label for="failure-reason" class="block text-sm font-medium text-gray-700 mb-1">Lý do chính</label>
@@ -129,26 +164,25 @@
                 </div>
             </div>
             <div class="p-6 grid grid-cols-2 gap-3 border-t">
-                 <button type="button" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg close-modal-btn">Hủy</button>
-                 <button type="button" id="confirm-failure-btn" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg">Xác nhận</button>
+                <button type="button" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg close-modal-btn">Hủy</button>
+                <button type="button" id="confirm-failure-btn" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg">Xác nhận</button>
             </div>
         </div>
     </div>
 @endpush
 
 @push('scripts')
+    {{-- Scripts không thay đổi --}}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const failActionButton = document.getElementById('btn-fail-action');
         const modal = document.getElementById('failure-reason-modal');
-
         if (failActionButton && modal) {
             const closeButtons = modal.querySelectorAll('.close-modal-btn');
             const confirmButton = modal.querySelector('#confirm-failure-btn');
             const failForm = document.getElementById('fail-delivery-form');
             const reasonSelect = modal.querySelector('#failure-reason');
             const notesTextarea = modal.querySelector('#failure-notes');
-
             failActionButton.addEventListener('click', () => {
                 modal.classList.add('is-visible');
             });

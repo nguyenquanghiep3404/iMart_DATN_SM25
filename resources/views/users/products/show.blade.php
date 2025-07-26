@@ -31,7 +31,12 @@
             </div>
 
         </main>
-                    @include('users.products.partials.product-details-tailwind',['product' => $product])
+               @include('users.products.partials.product-details-tailwind', [
+    'product' => $product,
+    'orderItemId' => $orderItemId,
+    'hasReviewed' => $hasReviewed
+])
+
     </div>
     <!-- Image Lightbox Modal -->
     <div id="image-lightbox-modal"

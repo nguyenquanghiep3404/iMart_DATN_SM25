@@ -4,7 +4,7 @@
         <div class="d-flex align-items-center">
             <div class="position-relative">
                 <div role="button" data-bs-toggle="modal" data-bs-target="#chooseAvatarModal">
-                    @if (Auth::user()->avatar)
+                    {{-- @if (Auth::user()->avatar)
                         <img src="{{ Auth::user()->avatar_url }}" alt="Avatar" class="rounded-circle flex-shrink-0"
                             style="width: 3rem; height: 3rem; object-fit: cover;">
                     @else
@@ -12,7 +12,23 @@
                             style="width: 3rem; height: 3rem;">
                             {{ strtoupper(Auth::user()->name[0]) }}
                         </div>
+                    @endif --}}
+                    @if (Auth::check() && Auth::user()->avatar)
+                        <img src="{{ Auth::user()->avatar_url }}" alt="Avatar" class="rounded-circle flex-shrink-0"
+                            style="width: 3rem; height: 3rem; object-fit: cover;">
+                    @elseif (Auth::check())
+                        <div class="h5 d-flex justify-content-center align-items-center flex-shrink-0 text-primary bg-primary-subtle lh-1 rounded-circle mb-0"
+                            style="width: 3rem; height: 3rem;">
+                            {{ strtoupper(Auth::user()->name[0]) }}
+                        </div>
+                    @else
+                        {{-- Trường hợp người dùng chưa đăng nhập --}}
+                        <div class="h5 d-flex justify-content-center align-items-center flex-shrink-0 text-secondary bg-light lh-1 rounded-circle mb-0"
+                            style="width: 3rem; height: 3rem;">
+                            ?
+                        </div>
                     @endif
+
                 </div>
 
                 <div class="position-absolute bottom-0 end-0 bg-white rounded-circle p-0 border"
@@ -23,7 +39,10 @@
             </div>
 
             <div class="min-w-0 ps-3">
-                <h5 class="h6 mb-1">{{ Auth::user()->name }}</h5>
+                {{-- <h5 class="h6 mb-1">{{ Auth::user()->name }}</h5> --}}
+                @auth
+                    <h5 class="h6 mb-1">{{ Auth::user()->name }}</h5>
+                @endauth
             </div>
         </div>
 
@@ -36,7 +55,7 @@
                     </div>
                     <div class="modal-body">
                         <p>Ảnh hồ sơ giúp người khác nhận ra bạn.</p>
-                        @if (Auth::user()->avatar)
+                        {{-- @if (Auth::user()->avatar)
                             <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
                                 class="rounded-circle flex-shrink-0 d-block mx-auto"
                                 style="width: 15rem; height: 15rem; object-fit: cover;">
@@ -45,7 +64,24 @@
                                 style="width: 15rem; height: 15rem;">
                                 {{ strtoupper(Auth::user()->name[0]) }}
                             </div>
+                        @endif --}}
+                        @if (Auth::check() && Auth::user()->avatar)
+                            <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
+                                class="rounded-circle flex-shrink-0 d-block mx-auto"
+                                style="width: 15rem; height: 15rem; object-fit: cover;">
+                        @elseif (Auth::check())
+                            <div class="h5 d-flex justify-content-center align-items-center flex-shrink-0 text-primary bg-primary-subtle lh-1 rounded-circle mb-0"
+                                style="width: 15rem; height: 15rem;">
+                                {{ strtoupper(Auth::user()->name[0]) }}
+                            </div>
+                        @else
+                            {{-- Trường hợp chưa đăng nhập --}}
+                            <div class="h5 d-flex justify-content-center align-items-center flex-shrink-0 text-secondary bg-light lh-1 rounded-circle mb-0"
+                                style="width: 15rem; height: 15rem;">
+                                ?
+                            </div>
                         @endif
+
                         <input type="file" id="chooseAvatarInput" accept="image/*" class="form-control">
                     </div>
                     <div class="modal-footer">
@@ -59,12 +95,14 @@
     </div>
     <div class="offcanvas-body d-block pt-2 pt-lg-4 pb-lg-0">
         <nav class="list-group list-group-borderless">
-            <a class="list-group-item list-group-item-action d-flex align-items-center" href="{{ route('orders.index') }}">
+            <a class="list-group-item list-group-item-action d-flex align-items-center"
+                href="{{ route('orders.index') }}">
                 <i class="ci-shopping-bag fs-base opacity-75 me-2"></i>
                 Đơn hàng của tôi
                 <span class="badge bg-primary rounded-pill ms-auto">1</span>
             </a>
-            <a class="list-group-item list-group-item-action d-flex align-items-center" href="{{ route('wishlist.index') }}">
+            <a class="list-group-item list-group-item-action d-flex align-items-center"
+                href="{{ route('wishlist.index') }}">
                 <i class="ci-heart fs-base opacity-75 me-2"></i>
                 Danh sách yêu thích
             </a>
