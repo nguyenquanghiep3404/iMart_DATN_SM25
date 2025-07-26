@@ -52,7 +52,9 @@ use App\Mail\AbandonedCartMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
+
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -382,6 +384,19 @@ Route::prefix('admin')
         ->name('abandoned_carts.send_inapp');
         Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
         ->name('abandoned_carts.send_email');
+
+        Route::post('/abandoned-carts/bulk-send-email', [AbandonedCartController::class, 'bulkSendEmail'])
+            ->name('abandoned_carts.bulk_send_email');
+
+        Route::post('/abandoned-carts/bulk-send-inapp', [AbandonedCartController::class, 'bulkSendInApp'])
+            ->name('abandoned_carts.bulk_send_inapp');
+        
+        
+        // quản lý máy pos
+        Route::get('/registers', [RegisterController::class, 'index'])->name('registers.index');
+        Route::post('/registers/save', [RegisterController::class, 'save'])->name('registers.save');
+        Route::delete('/registers/{id}', [RegisterController::class, 'destroy'])->name('registers.destroy');
+
         Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
             $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
 
@@ -391,6 +406,7 @@ Route::prefix('admin')
 
             return 'Email đã được gửi.';
         });
+
 
 
 
