@@ -52,6 +52,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\PackingStationController;
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -569,6 +570,26 @@ Route::prefix('admin')
             Route::post('/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receiveItems'])->name('receive');
         });
         Route::resource('purchase-orders', PurchaseOrderController::class);
+
+        
+        // Route để hiển thị trang Trạm Đóng Gói
+       Route::prefix('packing-station')->name('packing-station.')->group(function () {
+        // Route để hiển thị trang chính
+        Route::get('/', [PackingStationController::class, 'index'])->name('index');
+
+        // ==== API routes for the packing station interface ====
+        // Route để lấy danh sách đơn hàng chờ đóng gói
+        Route::get('/orders', [PackingStationController::class, 'getOrdersForPacking'])->name('get-orders');
+
+        // Route để lấy chi tiết một đơn hàng
+        Route::get('/orders/{id}', [PackingStationController::class, 'getOrderDetails'])->name('get-order-details');
+        
+        // Route để xác thực IMEI/Serial
+        Route::post('/validate-imei', [PackingStationController::class, 'validateImei'])->name('validate-imei');
+        
+        // Route để xác nhận hoàn tất đóng gói
+        Route::post('/orders/{orderId}/confirm-packing', [PackingStationController::class, 'confirmPacking'])->name('confirm-packing');
+    });
 
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
