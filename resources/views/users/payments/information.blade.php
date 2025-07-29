@@ -1940,6 +1940,7 @@
             updateOrderInformation({ shippingFee: null });
             setupUIForUserType();
             setupInputValidation();
+            // End
         });
     </script>
 @endsection
