@@ -21,6 +21,11 @@
         50% { border-color: #34d399; box-shadow: 0 0 10px #34d399; }
     }
     .flash-success { animation: flash-border 0.7s ease-in-out; }
+
+    /* Status Badge Styles */
+    .status-badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 9999px; }
+    .status-pending { background-color: #FEF9C3; color: #713F12; } /* Yellow for Pending */
+    .status-received { background-color: #D1FAE5; color: #065F46; } /* Green for Received */
 </style>
 @endpush
 
@@ -30,6 +35,14 @@
     <!-- Header -->
     <header class="mb-8 flex flex-col sm:flex-row items-center justify-between">
         <div>
+             <div class="mb-4">
+                <a href="{{ route('admin.purchase-orders.index') }}" class="text-indigo-600 hover:text-indigo-800 flex items-center text-sm font-medium">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    Quay lại danh sách
+                </a>
+            </div>
             <h1 class="text-3xl font-bold text-gray-800">Tiếp nhận Hàng hóa</h1>
             <p class="text-gray-600 mt-1">Chọn Đơn Mua Hàng và quét IMEI/Serial cho sản phẩm.</p>
         </div>
@@ -59,22 +72,22 @@
 
         <!-- PO Selection -->
         <template x-if="!selectedPO && !isLoading">
-            <div class="max-w-xl mx-auto text-center">
+            <div class="w-full max-w-7xl mx-auto text-center">
                 <h2 class="text-xl font-semibold text-gray-800">Chọn Đơn Mua Hàng để bắt đầu</h2>
                 <p class="text-gray-500 mt-2">Chọn phiếu nhập kho bạn muốn tiếp nhận hàng hóa.</p>
-                <div class="mt-6 space-y-3">
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <template x-for="po in purchaseOrders" :key="po.id">
-                        <div @click="selectPO(po.id)" class="p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-400 cursor-pointer transition-colors text-left">
+                        <div @click="selectPO(po.id)" class="p-4 border rounded-lg hover:bg-indigo-50 hover:border-indigo-400 cursor-pointer transition-colors text-left">
                             <div class="flex justify-between items-center">
-                                <p class="font-bold text-blue-600" x-text="po.po_code"></p>
-                                <span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Chờ nhận hàng</span>
+                                <p class="font-bold text-indigo-600" x-text="po.po_code"></p>
+                                <span class="status-badge" :class="'status-' + po.status" x-text="po.status_text"></span>
                             </div>
-                            <p class="text-sm text-gray-700">NCC: <span class="font-medium" x-text="po.supplier_name"></span></p>
+                            <p class="text-sm text-gray-700 mt-2">NCC: <span class="font-medium" x-text="po.supplier_name"></span></p>
                             <p class="text-sm text-gray-500">Ngày đặt: <span x-text="new Date(po.order_date).toLocaleDateString('vi-VN')"></span></p>
                         </div>
                     </template>
                      <template x-if="purchaseOrders.length === 0">
-                        <div class="pt-4 text-center">
+                        <div class="pt-4 text-center md:col-span-2 lg:col-span-3">
                             <i class="fas fa-box-open text-4xl text-gray-400"></i>
                             <p class="text-gray-500 mt-3">Không có đơn hàng nào chờ nhận.</p>
                         </div>
@@ -86,18 +99,17 @@
         <!-- Scanning Interface -->
         <template x-if="selectedPO">
             <div x-cloak class="w-full">
-                <div class="flex justify-between items-start mb-6 pb-6 border-b">
+                <div class="flex flex-col md:flex-row justify-between items-start mb-6 pb-6 border-b">
                     <div>
                         <p class="text-gray-500">Đang tiếp nhận cho đơn hàng:</p>
                         <h2 class="text-2xl font-bold text-gray-800" x-text="selectedPO.po_code"></h2>
                         <p class="text-gray-700">Nhà cung cấp: <span class="font-semibold" x-text="selectedPO.supplier_name"></span></p>
                         <p class="text-gray-700">Kho nhận: <span class="font-semibold" x-text="selectedPO.store_location_name"></span></p>
                     </div>
-                    <button @click="resetSelection()" class="text-sm font-semibold text-blue-600 hover:text-blue-800">
+                    <button @click="resetSelection()" class="mt-4 md:mt-0 text-sm font-semibold text-indigo-600 hover:text-indigo-800">
                        <i class="fas fa-arrow-left mr-1"></i> Quay lại chọn đơn
                     </button>
                 </div>
-
                 <div class="space-y-6">
                     <template x-for="item in selectedPO.items" :key="item.id">
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center p-3 rounded-md hover:bg-gray-50">
@@ -119,7 +131,7 @@
                             <div class="md:col-span-1 text-right">
                                  <button @click="openScanningModal(item)"
                                         class="w-full md:w-auto px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors"
-                                        :class="scannedData[item.id].length === item.quantity ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'">
+                                        :class="scannedData[item.id].length === item.quantity ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'">
                                     <i class="fas" :class="scannedData[item.id].length === item.quantity ? 'fa-check-circle' : 'fa-barcode'"></i>
                                     <span x-text="scannedData[item.id].length === item.quantity ? 'Xem lại' : 'Bắt đầu quét'"></span>
                                 </button>
@@ -138,7 +150,7 @@
             <header class="p-5 border-b flex justify-between items-center">
                 <div>
                      <h3 class="text-xl font-bold text-gray-800">Quét & Nhập IMEI/Serial</h3>
-                     <p x-text="currentItemForScanning.name" class="text-sm text-gray-600"></p>
+                     <p x-show="currentItemForScanning" x-text="currentItemForScanning.name" class="text-sm text-gray-600"></p>
                 </div>
                 <button @click="closeScanningModal()" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
             </header>
@@ -147,15 +159,15 @@
                 <div class="flex flex-col space-y-3">
                      <form @submit.prevent="addSerial()">
                          <label for="serial-input" class="font-semibold text-gray-700">
-                             Quét mã cho sản phẩm (<span x-text="scannedData[currentItemForScanning?.id]?.length || 0"></span>/<span x-text="currentItemForScanning.quantity"></span>)
+                             Quét mã cho sản phẩm (<span x-text="scannedData[currentItemForScanning?.id]?.length || 0"></span>/<span x-text="currentItemForScanning?.quantity || 0"></span>)
                          </label>
                          <input type="text" id="serial-input" x-model="currentSerialInput"
-                                class="w-full p-3 mt-1 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full p-3 mt-1 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 placeholder="Nhập tay hoặc quét barcode...">
                          <p x-show="scanError" x-text="scanError" class="text-sm text-red-600 h-5 mt-1"></p>
                      </form>
                      <div class="flex-1 flex flex-col space-y-2">
-                        <button @click="addSerial()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                        <button @click="addSerial()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors">
                             <i class="fas fa-keyboard mr-2"></i> Thêm
                         </button>
                         <button @click="openBarcodeScanner()" class="w-full bg-gray-700 text-white font-bold py-3 rounded-lg hover:bg-gray-800 transition-colors">
@@ -190,7 +202,7 @@
     <!-- Barcode Scanner Modal -->
     <div x-show="isScannerOpen" x-cloak x-transition class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
         <div @click.outside="closeBarcodeScanner()" class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col">
-            <header class="p-4 bg-blue-600 text-white rounded-t-xl">
+            <header class="p-4 bg-indigo-600 text-white rounded-t-xl">
                 <h3 class="text-xl font-bold text-center">Quét Barcode / QR Code</h3>
             </header>
             <main class="p-4 flex-1">
@@ -259,14 +271,13 @@ function pageData() {
 
         init() {
             this.fetchPurchaseOrders();
-            this.initializeSound(); // Tải âm thanh sẵn sàng
+            this.initializeSound();
             
-            // Lắng nghe sự kiện khi có mã được quét thành công từ camera
             window.addEventListener('barcode-scanned', (event) => {
                 const scannedCode = event.detail.code;
                 if (this.isScanningModalOpen) {
                     this.currentSerialInput = scannedCode;
-                    this.addSerial(); // Tự động thêm serial vừa quét
+                    this.addSerial();
                 }
             });
         },
@@ -275,10 +286,10 @@ function pageData() {
         initializeSound() {
             if (this.soundInitialized || typeof Howl === 'undefined') return;
             this.beepSound = new Howl({
-                src: ['{{ asset('sounds/shop-scanner-beeps.mp3') }}'], // Đảm bảo bạn có file này trong public/sounds
+                src: ['{{ asset('sounds/shop-scanner-beeps.mp3') }}'], // Make sure you have this file
                 volume: 0.8,
                 onload: () => { this.soundInitialized = true; },
-                onloaderror: (id, err) => { console.error('Lỗi tải âm thanh:', err); }
+                onloaderror: (id, err) => { console.error('Sound load error:', err); }
             });
         },
         playBeep() {
@@ -290,8 +301,14 @@ function pageData() {
             this.isLoading = true;
             fetch('{{ route('admin.purchase-orders.api.pending') }}')
                 .then(response => response.json())
-                .then(data => this.purchaseOrders = data)
-                .catch(error => console.error('Lỗi khi tải đơn hàng:', error))
+                .then(data => {
+                    // Add status_text to each PO for display
+                    this.purchaseOrders = data.map(po => ({
+                        ...po,
+                        status_text: po.status === 'pending' ? 'Chờ xử lý' : po.status
+                    }));
+                })
+                .catch(error => console.error('Error fetching orders:', error))
                 .finally(() => this.isLoading = false);
         },
 
@@ -346,7 +363,7 @@ function pageData() {
             currentList.push(trimmedSerial);
             this.currentSerialInput = '';
             this.scanError = '';
-            // Tự động focus lại vào input để quét/nhập tiếp
+            this.playBeep();
             this.$nextTick(() => document.getElementById('serial-input').focus());
         },
         removeSerial(itemId, serialToRemove) {
@@ -383,11 +400,7 @@ function pageData() {
                 this.playBeep();
                 try { if (navigator.vibrate) navigator.vibrate(100); } catch (e) {}
                 
-                // Gửi sự kiện chứa mã đã quét
                 window.dispatchEvent(new CustomEvent('barcode-scanned', { detail: { code: decodedText } }));
-                
-                // Không đóng modal ngay, để người dùng có thể quét liên tục
-                // this.closeBarcodeScanner();
             };
 
             this.html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, (error) => {})
@@ -400,7 +413,7 @@ function pageData() {
         },
         stopScanning() {
             if (this.html5QrCode && this.html5QrCode.isScanning) {
-                this.html5QrCode.stop().catch(err => console.error("Lỗi khi dừng camera:", err));
+                this.html5QrCode.stop().catch(err => console.error("Error stopping camera:", err));
             }
         },
 
@@ -413,6 +426,7 @@ function pageData() {
             fetch(url, {
                 method: 'POST',
                 headers: {
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
@@ -427,12 +441,12 @@ function pageData() {
                     this.successMessage = `Đã nhập kho thành công cho đơn hàng ${this.selectedPO.po_code}!`;
                     this.isSuccessModalOpen = true;
                 } else {
-                    alert('Lỗi từ máy chủ: ' + data.message);
+                    alert('Lỗi: ' + data.message);
                 }
             })
             .catch(error => {
-                console.error('Lỗi khi xác nhận nhập kho:', error);
-                alert('Đã có lỗi xảy ra. Chi tiết: ' + (error.message || 'Lỗi không xác định'));
+                console.error('Error confirming reception:', error);
+                alert('Đã xảy ra lỗi. Chi tiết: ' + (error.message || 'Lỗi không xác định'));
             })
             .finally(() => this.isLoading = false);
         },
