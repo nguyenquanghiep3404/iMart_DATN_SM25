@@ -26,6 +26,7 @@ use App\Http\Controllers\Users\WishlistController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Shipper\ShipperController;
+use App\Http\Controllers\Users\AddressesController;
 use App\Http\Controllers\Users\UserOrderController;
 use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\PostCategoryController;
@@ -51,8 +52,10 @@ use App\Mail\AbandonedCartMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\PackingStationController;
+
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -140,6 +143,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
+
+    // Routes cho quản lý địa chỉ của người dùng
+    Route::resource('addresses', AddressesController::class)->except(['show']);
+    Route::post('addresses/{address}/default', [AddressesController::class, 'setDefault'])->name('addresses.setDefault');
     //Routes đơn hàng của user
     Route::prefix('my-orders')->group(function () {
         Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
@@ -201,6 +208,14 @@ Route::prefix('api/locations')->name('api.locations.')->group(function () {
     Route::get('/old/wards/{districtCode}', [LocationController::class, 'getOldWardsByDistrict'])->name('old.wards');
     // Kiểm tra hỗ trợ hệ thống mới
     Route::get('/check-support/{provinceCode}', [LocationController::class, 'checkNewSystemSupport'])->name('check.support');
+});
+
+// STORE LOCATIONS API ROUTES
+//==========================================================================
+Route::prefix('api/store-locations')->name('api.store-locations.')->group(function () {
+    Route::get('/provinces', [PaymentController::class, 'getProvincesWithStores'])->name('provinces');
+    Route::get('/districts', [PaymentController::class, 'getDistrictsWithStores'])->name('districts');
+    Route::get('/stores', [PaymentController::class, 'getStoreLocations'])->name('stores');
 });
 
 // API lấy địa chỉ GHN ( Để lại nếu không cần bỏ được để xem xét)
@@ -378,6 +393,19 @@ Route::prefix('admin')
         ->name('abandoned_carts.send_inapp');
         Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
         ->name('abandoned_carts.send_email');
+
+        Route::post('/abandoned-carts/bulk-send-email', [AbandonedCartController::class, 'bulkSendEmail'])
+            ->name('abandoned_carts.bulk_send_email');
+
+        Route::post('/abandoned-carts/bulk-send-inapp', [AbandonedCartController::class, 'bulkSendInApp'])
+            ->name('abandoned_carts.bulk_send_inapp');
+        
+        
+        // quản lý máy pos
+        Route::get('/registers', [RegisterController::class, 'index'])->name('registers.index');
+        Route::post('/registers/save', [RegisterController::class, 'save'])->name('registers.save');
+        Route::delete('/registers/{id}', [RegisterController::class, 'destroy'])->name('registers.destroy');
+
         Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
             $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
 
@@ -387,6 +415,7 @@ Route::prefix('admin')
 
             return 'Email đã được gửi.';
         });
+
 
 
 
@@ -618,3 +647,6 @@ Route::get('/test-403', function () {
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
 Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping_fee');
+// Route::get('api/old-provinces', [AddressesController::class, 'getOldProvinces']);
+// Route::get('api/old-districts/{province_code}', [AddressesController::class, 'getOldDistricts']);
+// Route::get('api/old-wards/{district_code}', [AddressesController::class, 'getOldWards']);

@@ -123,7 +123,8 @@
                 <i class="ci-user fs-base opacity-75 me-2"></i>
                 Thông tin cá nhân
             </a>
-            <a class="list-group-item list-group-item-action d-flex align-items-center" href="account-addresses.html">
+            <a class="list-group-item list-group-item-action d-flex align-items-center"
+                href="{{ route('addresses.index') }}">
                 <i class="ci-map-pin fs-base opacity-75 me-2"></i>
                 Địa chỉ
             </a>
