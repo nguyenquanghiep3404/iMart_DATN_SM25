@@ -28,19 +28,54 @@ class Order extends Model
     public const PAYMENT_PARTIALLY_REFUNDED = 'partially_refunded';
 
     protected $fillable = [
-        'user_id', 'guest_id', 'order_code', 'customer_name', 'customer_email', 'customer_phone',
-        'shipping_address_line1', 'shipping_address_line2', 'shipping_zip_code', 'shipping_country',
-        'shipping_address_system', 'shipping_new_province_code', 'shipping_new_ward_code',
-        'shipping_old_province_code', 'shipping_old_district_code', 'shipping_old_ward_code',
-        'billing_address_line1', 'billing_address_line2', 'billing_zip_code', 'billing_country',
-        'billing_address_system', 'billing_new_province_code', 'billing_new_ward_code',
-        'billing_old_province_code', 'billing_old_district_code', 'billing_old_ward_code',
-        'sub_total', 'shipping_fee', 'discount_amount', 'tax_amount', 'grand_total',
-        'payment_method', 'payment_status', 'shipping_method', 'status',
-        'notes_from_customer', 'notes_for_shipper', 'admin_note',
-        'desired_delivery_date', 'desired_delivery_time_slot',
-        'processed_by', 'shipped_by', 'delivered_at', 'cancelled_at',
-        'cancellation_reason', 'failed_delivery_reason', 'ip_address', 'user_agent',
+        'user_id',
+        'guest_id',
+        'order_code',
+        'customer_name',
+        'customer_email',
+        'customer_phone',
+        'shipping_address_line1',
+        'shipping_address_line2',
+        'shipping_zip_code',
+        'shipping_country',
+        'shipping_address_system',
+        'shipping_new_province_code',
+        'shipping_new_ward_code',
+        'shipping_old_province_code',
+        'shipping_old_district_code',
+        'shipping_old_ward_code',
+        'billing_address_line1',
+        'billing_address_line2',
+        'billing_zip_code',
+        'billing_country',
+        'billing_address_system',
+        'billing_new_province_code',
+        'billing_new_ward_code',
+        'billing_old_province_code',
+        'billing_old_district_code',
+        'billing_old_ward_code',
+        'sub_total',
+        'shipping_fee',
+        'discount_amount',
+        'tax_amount',
+        'grand_total',
+        'payment_method',
+        'payment_status',
+        'shipping_method',
+        'status',
+        'notes_from_customer',
+        'notes_for_shipper',
+        'admin_note',
+        'desired_delivery_date',
+        'desired_delivery_time_slot',
+        'processed_by',
+        'shipped_by',
+        'delivered_at',
+        'cancelled_at',
+        'cancellation_reason',
+        'failed_delivery_reason',
+        'ip_address',
+        'user_agent',
     ];
 
     protected $casts = [
@@ -198,8 +233,8 @@ class Order extends Model
         if ($this->shipping_address_system === 'old') {
             return $this->shippingOldDistrict();
         }
-        // Hệ thống mới không có district
-        return null;
+        // Hệ thống mới không có district, trả về relationship rỗng
+        return $this->belongsTo(DistrictOld::class, 'shipping_old_district_code', 'code');
     }
 
     // Quan hệ động dựa trên địa chỉ mới - Billing
@@ -226,8 +261,8 @@ class Order extends Model
         if ($this->billing_address_system === 'old') {
             return $this->billingOldDistrict();
         }
-        // Hệ thống mới không có district
-        return null;
+        // Hệ thống mới không có district, trả về relationship rỗng
+        return $this->belongsTo(DistrictOld::class, 'billing_old_district_code', 'code');
     }
 
     // Accessors để lấy địa chỉ đầy đủ
@@ -241,7 +276,7 @@ class Order extends Model
             $this->shippingProvince?->name,
             $this->shipping_country,
         ]);
-        
+
         return implode(', ', $parts);
     }
 
@@ -255,14 +290,14 @@ class Order extends Model
             $this->shippingProvince?->name_with_type,
             $this->shipping_country,
         ]);
-        
+
         return implode(', ', $parts);
     }
 
     public function getBillingFullAddressAttribute()
     {
         if (!$this->billing_address_line1) {
-            return null;
+            return '';
         }
 
         $parts = array_filter([
@@ -273,14 +308,14 @@ class Order extends Model
             $this->billingProvince?->name,
             $this->billing_country,
         ]);
-        
+
         return implode(', ', $parts);
     }
 
     public function getBillingFullAddressWithTypeAttribute()
     {
         if (!$this->billing_address_line1) {
-            return null;
+            return '';
         }
 
         $parts = array_filter([
@@ -291,7 +326,7 @@ class Order extends Model
             $this->billingProvince?->name_with_type,
             $this->billing_country,
         ]);
-        
+
         return implode(', ', $parts);
     }
 
@@ -312,17 +347,17 @@ class Order extends Model
 
     public function scopeByProvince($query, $provinceCode)
     {
-        return $query->where(function($q) use ($provinceCode) {
+        return $query->where(function ($q) use ($provinceCode) {
             $q->where('shipping_new_province_code', $provinceCode)
-              ->orWhere('shipping_old_province_code', $provinceCode);
+                ->orWhere('shipping_old_province_code', $provinceCode);
         });
     }
 
     public function scopeByWard($query, $wardCode)
     {
-        return $query->where(function($q) use ($wardCode) {
+        return $query->where(function ($q) use ($wardCode) {
             $q->where('shipping_new_ward_code', $wardCode)
-              ->orWhere('shipping_old_ward_code', $wardCode);
+                ->orWhere('shipping_old_ward_code', $wardCode);
         });
     }
 
@@ -339,5 +374,19 @@ class Order extends Model
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    // Accessor for formatted delivery date
+    public function getFormattedDeliveryDateAttribute()
+    {
+        if (!$this->desired_delivery_date) {
+            return '';
+        }
+        // Nếu ngày đã được lưu theo định dạng d/m/Y thì trả về trực tiếp
+        if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $this->desired_delivery_date)) {
+            return $this->desired_delivery_date;
+        }
+        // Nếu ngày được lưu theo định dạng Y-m-d, format lại thành d/m/Y
+        return \Carbon\Carbon::parse($this->desired_delivery_date)->format('d/m/Y');
     }
 }
