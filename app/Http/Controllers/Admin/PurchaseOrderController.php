@@ -390,4 +390,148 @@ class PurchaseOrderController extends Controller
             'allVariants' => $allVariants,
         ]);
     }
+    /**
+     * Hiển thị trang tiếp nhận hàng hóa.
+     */
+    public function showReceivingPage()
+    {
+        // Chỉ cần trả về view, dữ liệu sẽ được load bằng AJAX
+        return view('admin.purchase_orders.receiving');
+    }
+
+    /**
+     * API: Lấy danh sách các đơn mua hàng đang chờ nhận.
+     */
+    public function getPendingPurchaseOrders()
+    {
+        $purchaseOrders = PurchaseOrder::where('status', 'pending')
+            ->with(['supplier', 'items.productVariant', 'storeLocation'])
+            ->latest()
+            ->get();
+
+        // Định dạng lại dữ liệu cho phù hợp với AlpineJS
+        $formattedData = $purchaseOrders->map(function ($po) {
+            return [
+                'id' => $po->id,
+                'po_code' => $po->po_code,
+                'supplier_name' => $po->supplier->name,
+                'order_date' => $po->order_date->toDateString(),
+                'store_location_id' => $po->store_location_id,
+                'store_location_name' => $po->storeLocation->name ?? 'N/A',
+                'items' => $po->items->map(function ($item) {
+                    return [
+                        'id' => $item->id, // Đây là ID của purchase_order_items
+                        'product_variant_id' => $item->product_variant_id,
+                        'name' => $item->productVariant->sku . ' - ' . $item->productVariant->product->name,
+                        'sku' => $item->productVariant->sku,
+                        'quantity' => $item->quantity,
+                    ];
+                }),
+            ];
+        });
+
+        return response()->json($formattedData);
+    }
+
+
+    /**
+     * Xử lý việc nhận hàng và quét serials.
+     * Route: POST /admin/purchase-orders/{purchaseOrder}/receive
+     */
+    public function receiveItems(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        $validated = $request->validate([
+            'scanned_serials' => 'required|array',
+            'scanned_serials.*' => 'present|array', // Đảm bảo mỗi item có một mảng serial, có thể rỗng
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $storeLocationId = $purchaseOrder->store_location_id;
+            if (!$storeLocationId) {
+                throw new \Exception('Phiếu nhập hàng không có thông tin kho nhận.');
+            }
+
+            foreach ($validated['scanned_serials'] as $poItemId => $serials) {
+                $poItem = PurchaseOrderItem::findOrFail($poItemId);
+                $productVariantId = $poItem->product_variant_id;
+                $quantity = $poItem->quantity;
+
+                if (count($serials) !== $quantity) {
+                    throw new \Exception("Số lượng serial cho sản phẩm SKU {$poItem->productVariant->sku} không khớp. Yêu cầu {$quantity}, đã quét " . count($serials));
+                }
+
+                // 1. Tạo Lô Hàng Mới
+                $lot = InventoryLot::create([
+                    'lot_code' => "PO-{$purchaseOrder->po_code}-V-{$productVariantId}-" . time(),
+                    'product_variant_id' => $productVariantId,
+                    'purchase_order_item_id' => $poItem->id,
+                    'cost_price' => $poItem->cost_price,
+                    'initial_quantity' => $quantity,
+                    'quantity_on_hand' => $quantity, // Ban đầu số lượng còn lại = số lượng nhập
+                    // 'expiry_date' => $request->input('expiry_date'), // Thêm nếu cần
+                ]);
+                
+                // 2. Tạo vị trí cho lô hàng
+                 InventoryLotLocation::create([
+                    'lot_id' => $lot->id,
+                    'store_location_id' => $storeLocationId,
+                    'quantity' => $quantity,
+                ]);
+
+                // 3. Tạo các bản ghi Serial cho Lô này
+                $serialData = [];
+                foreach ($serials as $serialNumber) {
+                    $serialData[] = [
+                        'product_variant_id' => $productVariantId,
+                        'lot_id' => $lot->id,
+                        'store_location_id' => $storeLocationId,
+                        'serial_number' => $serialNumber,
+                        'status' => 'available',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+                InventorySerial::insert($serialData);
+
+                // 4. Cập nhật tổng tồn kho
+                $inventory = ProductInventory::firstOrCreate(
+                    [
+                        'product_variant_id' => $productVariantId,
+                        'store_location_id' => $storeLocationId,
+                        'inventory_type' => 'new', // Giả định là hàng mới
+                    ],
+                    ['quantity' => 0]
+                );
+                $inventory->increment('quantity', $quantity);
+
+                // 5. Ghi nhận lịch sử di chuyển kho
+                InventoryMovement::create([
+                    'product_variant_id' => $productVariantId,
+                    'store_location_id' => $storeLocationId,
+                    'lot_id' => $lot->id,
+                    'inventory_type' => 'new',
+                    'quantity_change' => $quantity,
+                    'quantity_after_change' => $inventory->quantity,
+                    'reason' => 'Nhập hàng từ NCC',
+                    'reference_type' => PurchaseOrder::class,
+                    'reference_id' => $purchaseOrder->id,
+                    'user_id' => auth()->id(),
+                ]);
+            }
+
+            // 6. Cập nhật trạng thái phiếu nhập hàng
+            $purchaseOrder->status = 'received';
+            $purchaseOrder->save();
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Nhập kho thành công!']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Lỗi khi nhập kho cho PO #{$purchaseOrder->id}: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Đã xảy ra lỗi: ' . $e->getMessage()], 500);
+        }
+    }
+
 }

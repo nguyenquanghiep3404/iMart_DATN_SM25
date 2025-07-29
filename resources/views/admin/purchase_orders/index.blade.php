@@ -3,38 +3,16 @@
 @section('title', 'Quản lý Phiếu Nhập Kho')
 
 @push('styles')
-    {{-- CSS cho các huy hiệu trạng thái, có thể đưa vào file CSS chung nếu muốn --}}
+    {{-- CSS cho các huy hiệu trạng thái --}}
      <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Changed to match my style */
+            background-color: #f3f4f6;
         }
-
-        /* My consistent card, button, form styles */
         .card-custom {
             border-radius: 0.75rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             background-color: #fff;
-        }
-        .card-custom-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-            background-color: #f9fafb;
-        }
-        .card-custom-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1f2937;
-        }
-        .card-custom-body {
-            padding: 1.5rem;
-        }
-        .card-custom-footer {
-            background-color: #f9fafb;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid #e5e7eb;
-            border-bottom-left-radius: 0.75rem;
-            border-bottom-right-radius: 0.75rem;
         }
         .btn {
             border-radius: 0.5rem;
@@ -55,8 +33,11 @@
         }
         .btn-primary { background-color: #4f46e5; color: white; }
         .btn-primary:hover { background-color: #4338ca; }
+        .btn-success { background-color: #10b981; color: white; } /* Green button */
+        .btn-success:hover { background-color: #059669; }
         .btn-secondary { background-color: #e5e7eb; color: #374151; border-color: #d1d5db; }
         .btn-secondary:hover { background-color: #d1d5db; }
+
         .form-input, .form-select {
             width: 100%;
             padding: 0.625rem 1rem;
@@ -74,7 +55,6 @@
         .table-custom th, .table-custom td { padding: 0.75rem 1rem; vertical-align: middle !important; border-bottom-width: 1px; border-color: #e5e7eb; white-space: nowrap; }
         .table-custom thead th { font-weight: 600; color: #4b5563; background-color: #f9fafb; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; text-align: left; }
         
-        /* Original status badge styles */
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -87,9 +67,10 @@
             vertical-align: baseline;
             border-radius: 0.375rem;
         }
-        .status-pending { background-color: #FEF3C7; color: #92400E; }
-        .status-completed { background-color: #D1FAE5; color: #065F46; }
-        .status-cancelled { background-color: #FEE2E2; color: #991B1B; }
+        .status-pending { background-color: #FEF3C7; color: #92400E; } /* Yellow */
+        .status-received { background-color: #D1FAE5; color: #065F46; } /* Green */
+        .status-cancelled { background-color: #FEE2E2; color: #991B1B; } /* Red */
+        .status-default { background-color: #E5E7EB; color: #4B5563; } /* Gray */
      </style>
 @endpush
 
@@ -102,10 +83,17 @@
                 <h1 class="text-3xl font-bold text-gray-800">Phiếu Nhập Kho</h1>
                 <p class="text-gray-600 mt-1">Theo dõi và quản lý tất cả các đơn hàng nhập từ nhà cung cấp.</p>
             </div>
-            <a href="{{ route('admin.purchase-orders.create') }}" class="btn btn-primary mt-4 sm:mt-0 w-full sm:w-auto">
-                <i class="fas fa-plus mr-2"></i>
-                Tạo Phiếu Nhập Mới
-            </a>
+            <div class="flex items-center space-x-2 mt-4 sm:mt-0">
+                 {{-- Button điều hướng đến trang tiếp nhận hàng --}}
+                <a href="{{ route('admin.purchase-orders.receiving.index') }}" class="btn btn-success w-full sm:w-auto">
+                    <i class="fas fa-dolly-flatbed mr-2"></i>
+                    Đi đến Tiếp Nhận
+                </a>
+                <a href="{{ route('admin.purchase-orders.create') }}" class="btn btn-primary w-full sm:w-auto">
+                    <i class="fas fa-plus mr-2"></i>
+                    Tạo Phiếu Nhập Mới
+                </a>
+            </div>
         </header>
 
         <div class="card-custom">
@@ -133,9 +121,9 @@
                             <select id="filter_status" name="status" class="form-select">
                                 <option value="">Tất cả trạng thái</option>
                                 @foreach ($statuses as $key => $value)
-                                     <option value="{{ $key }}" {{ request('status') == $key ? 'selected' : '' }}>
-                                         {{ $value }}
-                                     </option>
+                                      <option value="{{ $key }}" {{ request('status') == $key ? 'selected' : '' }}>
+                                          {{ $value }}
+                                      </option>
                                 @endforeach
                             </select>
                         </div>
@@ -171,7 +159,7 @@
                                 @php
                                     $statusClass = 'status-default'; // Mặc định
                                     if ($po->status == 'pending') $statusClass = 'status-pending';
-                                    elseif ($po->status == 'completed') $statusClass = 'status-completed';
+                                    elseif ($po->status == 'received') $statusClass = 'status-received';
                                     elseif ($po->status == 'cancelled') $statusClass = 'status-cancelled';
                                 @endphp
                                 <span class="status-badge {{ $statusClass }}">
@@ -182,14 +170,23 @@
                                 {{ number_format($po->total_amount, 0, ',', '.') }} ₫
                             </td>
                             <td class="text-center">
-                                {{-- MODIFIED: Actions column with two buttons --}}
                                 <div class="flex items-center justify-center gap-x-2">
-                                    <a href="{{ route('admin.purchase-orders.show', $po->id) }}" class="btn btn-primary btn-sm" title="Xem chi tiết">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('admin.purchase-orders.edit', $po->id) }}" class="btn btn-secondary btn-sm" title="Sửa phiếu">
-                                        <i class="fas fa-pencil-alt"></i>
-                                    </a>
+                                    {{-- ================== CHANGE START ================== --}}
+                                    @if($po->status == 'pending')
+                                        {{-- Nếu đang chờ, hiển thị nút "Nhận Hàng" --}}
+                                        <a href="{{ route('admin.purchase-orders.receiving.index') }}" class="btn btn-success btn-sm" title="Tiếp nhận hàng hóa">
+                                            <i class="fas fa-qrcode mr-1"></i> Nhận Hàng
+                                        </a>
+                                    @else
+                                        {{-- Nếu đã xử lý, hiển thị nút xem/sửa thông thường --}}
+                                        <a href="{{ route('admin.purchase-orders.show', $po->id) }}" class="btn btn-primary btn-sm" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('admin.purchase-orders.edit', $po->id) }}" class="btn btn-secondary btn-sm" title="Sửa phiếu">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </a>
+                                    @endif
+                                    {{-- =================== CHANGE END =================== --}}
                                 </div>
                             </td>
                         </tr>
@@ -214,7 +211,6 @@
                     Hiển thị <span class="font-semibold text-gray-900">{{ $purchaseOrders->firstItem() }}</span> đến <span class="font-semibold text-gray-900">{{ $purchaseOrders->lastItem() }}</span> của <span class="font-semibold text-gray-900">{{ $purchaseOrders->total() }}</span> Phiếu nhập
                 </span>
                 <div>
-                    {{-- Nối các tham số filter vào link phân trang --}}
                     {!! $purchaseOrders->appends(request()->query())->links() !!}
                 </div>
             </div>
@@ -223,7 +219,3 @@
     </div>
 </div>
 @endsection
-
-@push('scripts')
-    {{-- Script tùy chỉnh nếu có, ví dụ: cho modal xác nhận xóa --}}
-@endpush
