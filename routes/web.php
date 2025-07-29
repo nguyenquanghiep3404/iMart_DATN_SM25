@@ -209,6 +209,14 @@ Route::prefix('api/locations')->name('api.locations.')->group(function () {
     Route::get('/check-support/{provinceCode}', [LocationController::class, 'checkNewSystemSupport'])->name('check.support');
 });
 
+// STORE LOCATIONS API ROUTES
+//==========================================================================
+Route::prefix('api/store-locations')->name('api.store-locations.')->group(function () {
+    Route::get('/provinces', [PaymentController::class, 'getProvincesWithStores'])->name('provinces');
+    Route::get('/districts', [PaymentController::class, 'getDistrictsWithStores'])->name('districts');
+    Route::get('/stores', [PaymentController::class, 'getStoreLocations'])->name('stores');
+});
+
 // API lấy địa chỉ GHN ( Để lại nếu không cần bỏ được để xem xét)
 // Route::get('/api/ghn/provinces', function() {
 //     return response()->json([ 'success' => true, 'data' => \DB::table('ghn_provinces')->get() ]);

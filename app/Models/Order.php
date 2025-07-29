@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Carbon\Carbon;
 
 class Order extends Model
 {
@@ -76,6 +77,7 @@ class Order extends Model
         'failed_delivery_reason',
         'ip_address',
         'user_agent',
+        'store_location_id',
     ];
 
     protected $casts = [
@@ -153,6 +155,11 @@ class Order extends Model
     public function couponUsages()
     {
         return $this->hasMany(CouponUsage::class);
+    }
+
+    public function storeLocation()
+    {
+        return $this->belongsTo(StoreLocation::class);
     }
 
     // Địa chỉ mới - Shipping
@@ -376,7 +383,7 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    // Accessor for formatted delivery date
+    // Định dạng cho ngày giao hàng 
     public function getFormattedDeliveryDateAttribute()
     {
         if (!$this->desired_delivery_date) {
@@ -386,7 +393,13 @@ class Order extends Model
         if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $this->desired_delivery_date)) {
             return $this->desired_delivery_date;
         }
-        // Nếu ngày được lưu theo định dạng Y-m-d, format lại thành d/m/Y
-        return \Carbon\Carbon::parse($this->desired_delivery_date)->format('d/m/Y');
+        // Kiểm tra xem có phải là ngày tháng hợp lệ không
+        try {
+            // Nếu ngày được lưu theo định dạng Y-m-d, format lại thành d/m/Y
+            return Carbon::parse($this->desired_delivery_date)->format('d/m/Y');
+        } catch (\Exception $e) {
+            // Nếu không parse được, trả về giá trị gốc hoặc chuỗi rỗng
+            return $this->desired_delivery_date;
+        }
     }
 }
