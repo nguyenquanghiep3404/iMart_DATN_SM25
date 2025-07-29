@@ -1,60 +1,15 @@
 @php
     $currentRouteName = request()->route()->getName();
-    if (str_starts_with($currentRouteName, 'admin.dashboard')) {
-        $activeParentNav = 0;
-    } elseif (str_starts_with($currentRouteName, 'admin.products.')) {
-        $activeParentNav = 1; // Index của "Sản Phẩm"
-    } elseif (str_starts_with($currentRouteName, 'admin.categories.')) {
-        $activeParentNav = 2; // Index của "Danh mục sản phẩm"
-    } elseif (str_starts_with($currentRouteName, 'admin.orders.')) {
-        $activeParentNav = 3; // Index của "Đơn hàng"
-    } elseif (str_starts_with($currentRouteName, 'admin.users.')) {
-        $activeParentNav = 4; // Index của "Quản lý người dùng"
-    } elseif (str_starts_with($currentRouteName, 'admin.reviews.')) {
-        $activeParentNav = 5; // Index của "Quản lý đánh giá"
-    } elseif (str_starts_with($currentRouteName, 'admin.coupons.')) {
-        $activeParentNav = 6; // Index của "Quản lý mã giảm giá"
-    } elseif (str_starts_with($currentRouteName, 'admin.roles.')) {
-        $activeParentNav = 7; // Index của "Quản lý phân quyền"
-    } elseif (str_starts_with($currentRouteName, 'admin.banners.')) {
-        $activeParentNav = 8; // Index của "Quản lý banner"
-    } elseif (str_starts_with($currentRouteName, 'admin.post-categories.')) {
-        $activeParentNav = 9; // Index của "Quản lý danh mục bài viết"
-    } elseif (str_starts_with($currentRouteName, 'admin.shippers.')) {
-        $activeParentNav = 10; // Index của "Quản lý nhân viên giao hàng"
-    } elseif (str_starts_with($currentRouteName, 'admin.media.')) {
-        $activeParentNav = 11; // Index của "Quản lý media"
-    } elseif (str_starts_with($currentRouteName, 'admin.attributes.')) {
-        $activeParentNav = 12; // Index của "Thuộc tính"
-    } elseif (str_starts_with($currentRouteName, 'admin.specifications.')) {
-        $activeParentNav = 13; // Index của "Thuộc tính"
-    } elseif (str_starts_with($currentRouteName, 'admin.content-staffs.')) {
-        $activeParentNav = 14; // Index của "Quản lý nhân viên content"
-    } elseif (str_starts_with($currentRouteName, 'admin.comments.')) {
-        $activeParentNav = 15; // Index của "quản lý comment"
-    } elseif (str_starts_with($currentRouteName, 'admin.odermannager.')) {
-        $activeParentNav = 15; // Index của "quản lý comment"
-    } elseif (str_starts_with($currentRouteName, 'admin.homepage.')) {
-        $activeParentNav = 16; // Index của "quản lý trang chủ"
-    } elseif (str_starts_with($currentRouteName, 'admin.flash-sales.')) {
-        $activeParentNav = 17; // Index của "quản lý trang chủ"
-    } elseif (str_starts_with($currentRouteName, 'admin.abandoned-carts.')) {
-        $activeParentNav = 18; // Index của "quản lý giỏ hàng lãng quên"
-    } elseif (str_starts_with($currentRouteName, 'admin.trade-in-items.')) {
-        $activeParentNav = 19; // Index của "quản lý trang chủ"
-    } elseif (str_starts_with($currentRouteName, 'admin.registers.')) {
-        $activeParentNav = 20; // Index của "quản lý trang chủ"
-    $activeParentNav = null;
     $user = auth()->user() ?? (object) [];
+    $activeParentNav = null; // Initialize active nav variable
 
     // Define navigation sections with their corresponding route prefixes for active state detection.
-    // I've reorganized and added the missing routes here for better logical grouping.
     $navSections = [
         'dashboard' => ['admin.dashboard'],
         'sales' => [
             'admin.orders.',
             'admin.purchase-orders.',
-            'admin.packing-station.', // Added Packing Station
+            'admin.packing-station.',
             'admin.abandoned-carts.',
         ],
         'stores' => ['admin.store-locations.', 'admin.chat.'],
@@ -66,7 +21,7 @@
             'admin.specifications.',
             'admin.bundle-products.',
             'admin.trade-in-items.',
-            'admin.suppliers.', // Moved Suppliers here
+            'admin.suppliers.',
         ],
         'marketing' => [
             'admin.coupons.',
@@ -89,6 +44,7 @@
             'admin.roles.',
         ],
         'media' => ['admin.media.'],
+        // Note: I'm assuming 'settings' is handled differently as it's in a separate section below.
     ];
 
     // Determine the currently active parent navigation section.
