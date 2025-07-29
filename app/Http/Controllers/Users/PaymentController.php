@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
+use App\Models\StoreLocation;
 
 class PaymentController extends Controller
 {
@@ -137,6 +138,7 @@ class PaymentController extends Controller
                     'notes_from_customer' => $request->notes,
                     'desired_delivery_date' => $deliveryInfo['date'],
                     'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
+                    'store_location_id' => $customerInfo['store_location_id'] ?? null,
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
                 ]);
@@ -371,6 +373,7 @@ class PaymentController extends Controller
                 'notes_from_customer' => $request->notes,
                 'desired_delivery_date' => $deliveryInfo['date'],
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
+                'store_location_id' => $customerInfo['store_location_id'] ?? null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
@@ -645,6 +648,7 @@ class PaymentController extends Controller
                 'notes_from_customer' => $request->notes,
                 'desired_delivery_date' => $deliveryInfo['date'],
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
+                'store_location_id' => $customerInfo['store_location_id'] ?? null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
@@ -917,12 +921,12 @@ class PaymentController extends Controller
             if (Auth::check()) {
                 $order = Order::where('id', $orderId)
                     ->where('user_id', Auth::id())
-                    ->with(['items.productVariant.product', 'shippingProvince', 'shippingWard'])
+                    ->with(['items.productVariant.product', 'shippingProvince', 'shippingWard', 'storeLocation.ward', 'storeLocation.district', 'storeLocation.province'])
                     ->first();
             } else {
                 $order = Order::where('id', $orderId)
                     ->where('guest_id', session()->getId())
-                    ->with(['items.productVariant.product', 'shippingProvince', 'shippingWard'])
+                    ->with(['items.productVariant.product', 'shippingProvince', 'shippingWard', 'storeLocation.ward', 'storeLocation.district', 'storeLocation.province'])
                     ->first();
             }
         }
@@ -1059,7 +1063,7 @@ class PaymentController extends Controller
             }
 
             return [
-                'date' => 'Nhận tại cửa hàng',
+                'date' => null,
                 'time_slot' => null
             ];
         }
@@ -1129,6 +1133,7 @@ class PaymentController extends Controller
                 'customer_email' => $request->pickup_email,
                 'customer_phone' => $request->pickup_phone_number,
                 'shipping_address_line1' => 'Nhận tại cửa hàng',
+                'store_location_id' => $request->store_location_id,
                 'shipping_zip_code' => null,
             ];
         }
@@ -1341,6 +1346,7 @@ class PaymentController extends Controller
                 'notes_from_customer' => $request->notes,
                 'desired_delivery_date' => $deliveryInfo['date'],
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
+                'store_location_id' => $customerInfo['store_location_id'] ?? null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
@@ -1749,5 +1755,93 @@ class PaymentController extends Controller
         //     'weight' => $request->weight
         // ]);
         return response()->json(['success' => false, 'message' => 'Không lấy được phí vận chuyển từ GHN', 'fee' => null]);
+    }
+    // Lấy danh sách cửa hàng theo tỉnh/huyện
+    public function getStoreLocations(Request $request)
+    {
+        $provinceCode = $request->input('province_code');
+        $districtCode = $request->input('district_code');
+
+        $query = StoreLocation::with(['province', 'district', 'ward'])
+            ->where('is_active', true)
+            ->where('type', 'store');
+
+        if ($provinceCode) {
+            $query->where('province_code', $provinceCode);
+        }
+        if ($districtCode) {
+            $query->where('district_code', $districtCode);
+        }
+        $storeLocations = $query->get()->map(function ($location) {
+            return [
+                'id' => $location->id,
+                'name' => $location->name,
+                'address' => $location->address,
+                'phone' => $location->phone,
+                'full_address' => $location->full_address,
+                'province_name' => $location->province ? $location->province->name_with_type : '',
+                'district_name' => $location->district ? $location->district->name_with_type : '',
+                'ward_name' => $location->ward ? $location->ward->name_with_type : '',
+            ];
+        });
+        return response()->json([
+            'success' => true,
+            'data' => $storeLocations
+        ]);
+    }
+    // Lấy danh sách tỉnh/thành phố có cửa hàng
+    public function getProvincesWithStores()
+    {
+        $provinces = StoreLocation::with('province')
+            ->where('is_active', true)
+            ->where('type', 'store')
+            ->whereNotNull('province_code')
+            ->get()
+            ->pluck('province')
+            ->unique('code')
+            ->filter()
+            ->values()
+            ->map(function ($province) {
+                return [
+                    'code' => $province->code,
+                    'name' => $province->name_with_type
+                ];
+            });
+        return response()->json([
+            'success' => true,
+            'data' => $provinces
+        ]);
+    }
+    // Lấy danh sách quận/huyện có cửa hàng theo tỉnh
+    public function getDistrictsWithStores(Request $request)
+    {
+        $provinceCode = $request->input('province_code');
+
+        if (!$provinceCode) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng chọn tỉnh/thành phố'
+            ], 400);
+        }
+        $districts = StoreLocation::with('district')
+            ->where('is_active', true)
+            ->where('type', 'store')
+            ->where('province_code', $provinceCode)
+            ->whereNotNull('district_code')
+            ->get()
+            ->pluck('district')
+            ->unique('code')
+            ->filter()
+            ->values()
+            ->map(function ($district) {
+                return [
+                    'code' => $district->code,
+                    'name' => $district->name_with_type
+                ];
+            });
+        return response()->json([
+            'success' => true,
+            'data' => $districts
+        ]);
     }
 }

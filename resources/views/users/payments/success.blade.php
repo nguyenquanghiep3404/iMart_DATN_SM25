@@ -28,10 +28,28 @@
             @if($order)
             <div class="d-flex flex-column gap-4 pt-3 pb-5 mt-3">
               <div>
-                <h3 class="h6 mb-2">Địa chỉ giao hàng</h3>
-                <p class="fs-sm mb-1">Họ tên : <strong>{{ $order->customer_name }}</strong></p>
-                <p class="fs-sm mb-1">Số điện thoại : <strong>{{ $order->customer_phone }}</strong></p>
-                <p class="fs-sm mb-0">Địa chỉ : <strong>{{ $order->shipping_full_address_with_type }}</strong></p>
+                <h3 class="h6 mb-2">
+                  @if(str_contains(strtolower($order->shipping_method), 'nhận tại cửa hàng'))
+                    Thông tin nhận hàng
+                  @else
+                    Địa chỉ giao hàng
+                  @endif
+                </h3>
+                @if(str_contains(strtolower($order->shipping_method), 'nhận tại cửa hàng'))
+                  <p class="fs-sm mb-1">Họ tên : <strong>{{ $order->customer_name }}</strong></p>
+                  <p class="fs-sm mb-1">Số điện thoại : <strong>{{ $order->customer_phone }}</strong></p>
+                  @if($order->storeLocation)
+                    <p class="fs-sm mb-1">Tên cửa hàng : <strong>{{ $order->storeLocation->name }}</strong></p>
+                    <p class="fs-sm mb-1">Số điện thoại cửa hàng : <strong>{{ $order->storeLocation->phone }}</strong></p>
+                    <p class="fs-sm mb-0">Địa chỉ cửa hàng : <strong>{{ $order->storeLocation->full_address }}</strong></p>
+                  @else
+                    <p class="fs-sm mb-0">Địa chỉ : <strong>Nhận tại cửa hàng</strong></p>
+                  @endif
+                @else
+                  <p class="fs-sm mb-1">Họ tên : <strong>{{ $order->customer_name }}</strong></p>
+                  <p class="fs-sm mb-1">Số điện thoại : <strong>{{ $order->customer_phone }}</strong></p>
+                  <p class="fs-sm mb-0">Địa chỉ : <strong>{{ $order->shipping_full_address_with_type }}</strong></p>
+                @endif
               </div>
               
               <div>

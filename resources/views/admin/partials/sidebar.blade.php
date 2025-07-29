@@ -45,7 +45,7 @@
     } elseif (str_starts_with($currentRouteName, 'admin.registers.')) {
         $activeParentNav = 20; // Index của "quản lý trang chủ"
     $activeParentNav = null;
-
+    }
     // Define navigation sections with their corresponding route prefixes for active state detection.
     $navSections = [
         'dashboard' => ['admin.dashboard'],

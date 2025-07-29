@@ -96,7 +96,6 @@
             z-index: 10;
             padding-bottom: 1rem;
         }
-        /* Ensure smooth scrolling behavior */
         @media (max-width: 991.98px) {
             .order-summary-sticky {
                 position: static;
@@ -104,16 +103,13 @@
                 overflow-y: visible;
             }
         }
-        /* Style for order summary content */
         .order-summary-sticky .bg-white {
             border: 1px solid #e5e7eb;
         }
-        /* Ensure button is always visible */
         .order-summary-sticky button {
             position: relative;
             z-index: 1;
         }
-        /* Custom scrollbar for sidebar */
         .order-summary-sticky::-webkit-scrollbar {
             width: 6px;
         }
@@ -128,18 +124,65 @@
         .order-summary-sticky::-webkit-scrollbar-thumb:hover {
             background: #c82333;
         }
-        /* Ensure all sidebar content is visible */
         .order-summary-sticky .bg-white {
             min-height: auto;
             max-height: none;
         }
-        /* Ensure the first element is always visible */
         .order-summary-sticky > .bg-white:first-child {
             margin-top: 0;
             padding-top: 1rem;
         }
+        .store-location-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .store-location-card:hover {
+            border-color: #dc3545;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .store-location-card input[type="radio"]:checked + label {
+            color: #dc3545;
+        }
+        .store-location-card input[type="radio"]:checked ~ .store-location-card {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        .store-item {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .store-item:hover {
+            border-color: #dc3545;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .store-item input[type="radio"]:checked + label {
+            color: #dc3545;
+        }
+        .store-item.border-danger {
+            border-color: #dc3545 !important;
+            background-color: #fff5f5 !important;
+        }
+        #store-selection-modal .modal-dialog {
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+        #store-selection-modal .modal-content {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .store-modal-header {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .store-modal-header .modal-title {
+            color: #212529 !important;
+        }
     </style>
-
     <!-- Page content -->
     <main class="content-wrapper" style="min-height: 100vh;">
         <div class="container py-5">
@@ -320,12 +363,30 @@
                                 </div>
                                 <hr class="my-4">
                                 <h4 class="h6 mb-3">Chọn cửa hàng để nhận hàng</h4>
-                                <select id="store-location-select" class="form-select mb-3">
-                                    <option value="">Chọn một cửa hàng</option>
-                                    <option value="store1">iMart Ba Đình - 123 Đội Cấn, Ba Đình, Hà Nội</option>
-                                    <option value="store2">iMart Hoàn Kiếm - 456 Hàng Bài, Hoàn Kiếm, Hà Nội</option>
-                                    <option value="store3">iMart Tây Hồ - 789 Lạc Long Quân, Tây Hồ, Hà Nội</option>
-                                </select>
+                                <!-- Button chọn cửa hàng -->
+                                <div class="mb-3">
+                                    <button type="button" id="select-store-btn" class="btn btn-outline-secondary w-100 text-start d-flex align-items-center justify-content-between">
+                                        <span id="store-selection-text">Chọn shop có hàng gần nhất</span>
+                                        <i class="fas fa-chevron-right text-muted"></i>
+                                    </button>
+                                </div>
+                                <!-- Hiển thị cửa hàng đã chọn -->
+                                <div id="selected-store-display" class="mb-3" style="display: none;">
+                                    <div class="border rounded p-3 bg-light">
+                                        <div class="d-flex align-items-start">
+                                            <i class="fas fa-store text-primary me-3 mt-1"></i>
+                                            <div class="flex-grow-1">
+                                                <strong id="selected-store-name" class="d-block text-dark"></strong>
+                                                <span id="selected-store-address" class="d-block small text-muted"></span>
+                                                <span id="selected-store-phone" class="d-block small text-muted"></span>
+                                            </div>
+                                            <button type="button" id="change-store-btn" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit me-1"></i>Thay đổi
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                        
                                 <div id="store_location_error" class="error-message" style="display: none;">
                                     <i class="fas fa-exclamation-circle text-danger"></i>
                                     <span>Vui lòng chọn cửa hàng nhận hàng</span>
@@ -608,6 +669,51 @@
         </div>
     </div>
 
+    <!-- Store Selection Modal -->
+    <div class="modal fade" id="store-selection-modal" tabindex="-1" aria-labelledby="storeSelectionModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header store-modal-header">
+                    <h5 class="modal-title" id="storeSelectionModalLabel">
+                        <i class="fas fa-store me-2"></i>Chọn shop
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Filter Section -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <select id="modal-store-province-select" class="form-select">
+                                <option value="">Tất cả Tỉnh/Thành phố</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <select id="modal-store-district-select" class="form-select" disabled>
+                                <option value="">Tất cả Quận/Huyện</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <span class="text-muted small" id="store-count-text">Có 0 cửa hàng còn hàng</span>
+                    </div>
+                    
+                    <!-- Store List -->
+                    <div id="modal-store-list" class="store-list" style="max-height: 350px; overflow-y: auto;">
+                        <p class="text-muted small text-center">Đang tải danh sách cửa hàng...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Hủy
+                    </button>
+                    <button type="button" id="confirm-store-selection-btn" class="btn btn-danger" disabled>
+                        <i class="fas fa-check me-1"></i>Xác nhận
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // --- DỮ LIỆU NGƯỜI DÙNG TỪ SERVER ---
@@ -671,9 +777,26 @@
             const deliveryTimeSlotSection = document.getElementById('delivery-time-slot-section');
             const deliveryDateInput = document.getElementById('delivery-date');
             const deliveryTimeSlotSelect = document.getElementById('delivery-time-slot');
+            
+            // Các phần tử chọn cửa hàng
+            const selectStoreBtn = document.getElementById('select-store-btn');
+            const selectedStoreDisplay = document.getElementById('selected-store-display');
+            const selectedStoreName = document.getElementById('selected-store-name');
+            const selectedStoreAddress = document.getElementById('selected-store-address');
+            const selectedStorePhone = document.getElementById('selected-store-phone');
+            const changeStoreBtn = document.getElementById('change-store-btn');
+            
+            // Các phần tử modal cửa hàng
+            const storeSelectionModal = document.getElementById('store-selection-modal');
+            const modalStoreProvinceSelect = document.getElementById('modal-store-province-select');
+            const modalStoreDistrictSelect = document.getElementById('modal-store-district-select');
+            const modalStoreList = document.getElementById('modal-store-list');
+            const storeCountText = document.getElementById('store-count-text');
+            const confirmStoreSelectionBtn = document.getElementById('confirm-store-selection-btn');
 
             let subtotal = 0;
             let selectedAddressId = userAddresses.find(a => a.default)?.id || null;
+            let selectedStore = null;
 
             // --- CÁC HÀM CHÍNH ---
             function setupUIForUserType() {
@@ -1327,7 +1450,7 @@
                 promotionSummary.textContent = `-${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(baseDiscount)}`;
 
                 if (shippingFee === null || shippingFee === undefined) {
-                    // Check if current selected shipping method is unsupported GHN
+                    // Kiểm tra xem phương thức vận chuyển hiện tại có được GHN hỗ trợ không
                     const selectedShippingMethod = document.querySelector('input[name="shipping_method"]:checked');
                     if (selectedShippingMethod && selectedShippingMethod.dataset.fee === 'unsupported') {
                         shippingFeeSummary.textContent = 'Không hỗ trợ';
@@ -1454,6 +1577,38 @@
             if (districtSelect) districtSelect.addEventListener('change', (e) => loadWards(e.target.value));
             if (wardSelect) wardSelect.addEventListener('change', getShippingOptionsFromForm);
             
+            // Event listeners cho việc chọn cửa hàng
+            if (selectStoreBtn) {
+                selectStoreBtn.addEventListener('click', openStoreSelectionModal);
+            }
+            
+            if (changeStoreBtn) {
+                changeStoreBtn.addEventListener('click', openStoreSelectionModal);
+            }
+            
+            // Event listeners cho modal cửa hàng
+            if (modalStoreProvinceSelect) {
+                modalStoreProvinceSelect.addEventListener('change', (e) => {
+                    const provinceCode = e.target.value;
+                    loadModalStoreDistricts(provinceCode);
+                    loadModalStoreLocations(provinceCode);
+                });
+            }
+            
+            if (modalStoreDistrictSelect) {
+                modalStoreDistrictSelect.addEventListener('change', (e) => {
+                    const provinceCode = modalStoreProvinceSelect.value;
+                    const districtCode = e.target.value;
+                    loadModalStoreLocations(provinceCode, districtCode);
+                });
+            }
+            
+
+            
+            if (confirmStoreSelectionBtn) {
+                confirmStoreSelectionBtn.addEventListener('click', confirmStoreSelection);
+            }
+            
             // Nút đặt hàng
             const placeOrderBtn = document.getElementById('place-order-btn');
                             if (placeOrderBtn) {
@@ -1522,10 +1677,10 @@
                     payment_method: document.querySelector('input[name="payment_method"]:checked')?.value
                 };
 
-                // Clear store_location for delivery method to avoid validation conflict
-                if (deliveryMethod === 'delivery') {
-                    orderData.store_location = null;
-                }
+                                        // Xóa store_location_id cho phương thức giao hàng để tránh xung đột validation
+                        if (deliveryMethod === 'delivery') {
+                            orderData.store_location_id = null;
+                        }
 
                 if (deliveryMethod === 'delivery') {
                     if (selectedAddressId) {
@@ -1564,7 +1719,7 @@
                     orderData.pickup_full_name = document.getElementById('pickup_full_name')?.value.trim();
                     orderData.pickup_phone_number = document.getElementById('pickup_phone_number')?.value.trim();
                     orderData.pickup_email = document.getElementById('pickup_email')?.value.trim();
-                    orderData.store_location = document.getElementById('store-location-select')?.value;
+                    orderData.store_location_id = selectedStore?.id;
                     orderData.pickup_date = document.getElementById('pickup-date')?.value;
                     orderData.pickup_time_slot = document.getElementById('pickup-time-slot')?.value;
                     orderData.shipping_method = 'Nhận tại cửa hàng'; // Đặt shipping_method cho pickup
@@ -1697,8 +1852,8 @@
                         return;
                     }
                     
-                    // Xử lý đặc biệt cho store_location (select)
-                    if (fieldName === 'store_location') {
+                    // Xử lý đặc biệt cho store_location_id (radio buttons)
+                    if (fieldName === 'store_location_id') {
                         const errorElement = document.getElementById('store_location_error');
                         const storeSelect = document.getElementById('store-location-select');
                         
@@ -1706,11 +1861,8 @@
                             errorElement.querySelector('span').textContent = errorMessage;
                             errorElement.style.display = 'flex';
                             
-                            if (storeSelect) {
-                                storeSelect.classList.add('is-invalid');
-                                if (!firstErrorField) {
-                                    firstErrorField = storeSelect;
-                                }
+                            if (!firstErrorField) {
+                                firstErrorField = storeLocationsContainer;
                             }
                         }
                         return;
@@ -1769,11 +1921,182 @@
                 loadProvinces();
             }
             
+            // Không cần tải dữ liệu store locations khi trang tải vì sẽ tải khi mở modal
+            
             // Hàm hỗ trợ cho định dạng số
             function number_format(number) {
                 return new Intl.NumberFormat('vi-VN').format(number);
             }
             
+            // Hàm mở modal chọn cửa hàng
+            function openStoreSelectionModal() {
+                loadModalStoreProvinces();
+                loadModalStoreLocations();
+                const modal = new bootstrap.Modal(storeSelectionModal);
+                modal.show();
+            }
+            
+            // Hàm lấy danh sách tỉnh/thành phố có cửa hàng cho modal
+            async function loadModalStoreProvinces() {
+                try {
+                    const response = await fetch('/api/store-locations/provinces');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        modalStoreProvinceSelect.innerHTML = '<option value="">Tất cả Tỉnh/Thành phố</option>';
+                        data.data.forEach(province => {
+                            const option = document.createElement('option');
+                            option.value = province.code;
+                            option.textContent = province.name;
+                            modalStoreProvinceSelect.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading store provinces:', error);
+                }
+            }
+            
+            // Hàm lấy danh sách quận/huyện có cửa hàng theo tỉnh cho modal
+            async function loadModalStoreDistricts(provinceCode) {
+                try {
+                    modalStoreDistrictSelect.innerHTML = '<option value="">Đang tải...</option>';
+                    modalStoreDistrictSelect.disabled = true;
+                    
+                    if (!provinceCode) {
+                        modalStoreDistrictSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
+                        modalStoreDistrictSelect.disabled = false;
+                        return;
+                    }
+                    
+                    const response = await fetch(`/api/store-locations/districts?province_code=${provinceCode}`);
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        modalStoreDistrictSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
+                        data.data.forEach(district => {
+                            const option = document.createElement('option');
+                            option.value = district.code;
+                            option.textContent = district.name;
+                            modalStoreDistrictSelect.appendChild(option);
+                        });
+                        modalStoreDistrictSelect.disabled = false;
+                    } else {
+                        modalStoreDistrictSelect.innerHTML = '<option value="">Không có dữ liệu</option>';
+                        modalStoreDistrictSelect.disabled = true;
+                    }
+                } catch (error) {
+                    console.error('Error loading store districts:', error);
+                    modalStoreDistrictSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+                    modalStoreDistrictSelect.disabled = true;
+                }
+            }
+            
+            // Hàm lấy danh sách cửa hàng cho modal
+            async function loadModalStoreLocations(provinceCode = '', districtCode = '') {
+                try {
+                    modalStoreList.innerHTML = '<p class="text-muted small text-center">Đang tải danh sách cửa hàng...</p>';
+                    
+                    const params = new URLSearchParams();
+                    if (provinceCode) params.append('province_code', provinceCode);
+                    if (districtCode) params.append('district_code', districtCode);
+                    
+                    const response = await fetch(`/api/store-locations/stores?${params.toString()}`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.data.length > 0) {
+                        storeCountText.textContent = `Có ${data.data.length} cửa hàng còn hàng`;
+                        
+                        let html = '';
+                        data.data.forEach(store => {
+                                html += `
+                                    <div class="border rounded p-3 mb-2 store-item" data-store-id="${store.id}">
+                                        <div class="d-flex align-items-start">
+                                            <input type="radio" name="modal_store_location" id="modal-store-${store.id}" value="${store.id}" class="form-check-input mt-1">
+                                            <label for="modal-store-${store.id}" class="ms-3 flex-grow-1 cursor-pointer">
+                                                <strong class="d-block text-dark">${store.name}</strong>
+                                                <span class="d-block small text-muted">${store.address}</span>
+                                                ${store.phone ? `<span class="d-block small text-muted"><i class="fas fa-phone me-1"></i>${store.phone}</span>` : ''}
+                                                <span class="d-block small text-muted">${store.full_address}</span>
+                                            </label>
+                                        </div>
+                                        {{-- <div class="mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="viewDirections('${store.full_address}')">
+                                                <i class="fas fa-map-marker-alt me-1"></i>Xem chỉ đường
+                                            </button>
+                                        </div> --}}
+                                    </div>
+                                `;
+                            });
+                            modalStoreList.innerHTML = html;
+                            
+                            // Thêm event listeners cho các radio buttons
+                            document.querySelectorAll('input[name="modal_store_location"]').forEach(radio => {
+                                radio.addEventListener('change', () => {
+                                    confirmStoreSelectionBtn.disabled = false;
+                                    
+                                    // Cập nhật visual state cho các items
+                                    document.querySelectorAll('.store-item').forEach(item => {
+                                        item.classList.remove('border-danger', 'bg-light');
+                                    });
+                                    
+                                    const selectedItem = radio.closest('.store-item');
+                                    if (selectedItem) {
+                                        selectedItem.classList.add('border-danger', 'bg-light');
+                                    }
+                                });
+                            });
+                    } else {
+                        storeCountText.textContent = 'Có 0 cửa hàng còn hàng';
+                        modalStoreList.innerHTML = '<p class="text-muted small text-center">Không có cửa hàng nào trong khu vực này.</p>';
+                    }
+                } catch (error) {
+                    console.error('Error loading store locations:', error);
+                    modalStoreList.innerHTML = '<p class="text-danger small text-center">Lỗi khi tải danh sách cửa hàng.</p>';
+                }
+            }
+            // Hàm xem chỉ đường
+            // function viewDirections(address) {
+            //     const encodedAddress = encodeURIComponent(address);
+            //     window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+            // }
+            // Hàm xác nhận chọn cửa hàng
+            function confirmStoreSelection() {
+                const selectedRadio = document.querySelector('input[name="modal_store_location"]:checked');
+                if (selectedRadio) {
+                    const storeId = selectedRadio.value;
+                    const storeItem = selectedRadio.closest('.store-item');
+                    const storeName = storeItem.querySelector('strong').textContent;
+                    const storeAddress = storeItem.querySelector('span').textContent;
+                    const storePhone = storeItem.querySelector('.fa-phone')?.parentElement?.textContent.trim() || '';
+                    
+                    // Lưu thông tin cửa hàng đã chọn
+                    selectedStore = {
+                        id: storeId,
+                        name: storeName,
+                        address: storeAddress,
+                        phone: storePhone
+                    };
+                    
+                    // Hiển thị cửa hàng đã chọn
+                    selectedStoreName.textContent = storeName;
+                    selectedStoreAddress.textContent = storeAddress;
+                    selectedStorePhone.textContent = storePhone;
+                    
+                    // Ẩn button chọn và hiển thị thông tin cửa hàng
+                    selectStoreBtn.style.display = 'none';
+                    selectedStoreDisplay.style.display = 'block';
+                    
+                    // Ẩn lỗi nếu có
+                    const storeError = document.getElementById('store_location_error');
+                    if (storeError) {
+                        storeError.style.display = 'none';
+                    }
+                    
+                    // Đóng modal
+                    const modal = bootstrap.Modal.getInstance(storeSelectionModal);
+                    modal.hide();
+                }
+            }
             // Các hàm validation
             function validateName(value) {
                 // Chỉ cho phép chữ cái, khoảng trắng và ký tự tiếng Việt
@@ -1940,7 +2263,7 @@
             updateOrderInformation({ shippingFee: null });
             setupUIForUserType();
             setupInputValidation();
-            // End
+            // Kết thúc
         });
     </script>
 @endsection

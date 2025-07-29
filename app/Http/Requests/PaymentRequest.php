@@ -108,7 +108,7 @@ class PaymentRequest extends FormRequest
                     'regex:/^0[0-9]{9,10}$/' // Định dạng số điện thoại Việt Nam
                 ],
                 'pickup_email' => 'required|email|max:255',
-                'store_location' => 'required|string',
+                'store_location_id' => 'required|integer|exists:store_locations,id',
                 'pickup_date' => 'nullable|date|after_or_equal:today',
                 'pickup_time_slot' => 'nullable|string|in:8-11,11-14,14-17,17-20,20-22',
                 'shipping_method' => 'nullable|string', // Cho phép null khi pickup
@@ -130,7 +130,7 @@ class PaymentRequest extends FormRequest
             ]);
         } else {
             // Nếu là phương thức giao hàng, loại trừ rõ ràng các trường liên quan đến pickup khỏi validation
-            $rules['store_location'] = 'nullable|string';
+            $rules['store_location_id'] = 'nullable|integer';
             $rules['pickup_full_name'] = 'nullable|string';
             $rules['pickup_phone_number'] = 'nullable|string';
             $rules['pickup_email'] = 'nullable|string';
@@ -204,7 +204,8 @@ class PaymentRequest extends FormRequest
             'pickup_email.required' => 'Vui lòng nhập email người nhận',
             'pickup_email.email' => 'Vui lòng nhập email hợp lệ',
 
-            'store_location.required' => 'Vui lòng chọn cửa hàng nhận hàng',
+            'store_location_id.required' => 'Vui lòng chọn cửa hàng nhận hàng',
+            'store_location_id.exists' => 'Cửa hàng không tồn tại',
 
             'pickup_date.after_or_equal' => 'Ngày nhận hàng không được là ngày trong quá khứ',
             'pickup_time_slot.in' => 'Khung giờ nhận hàng không hợp lệ',
