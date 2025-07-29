@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết Yêu cầu Trả hàng - Admin</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style cho modal */
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+        /* Timeline styles */
+        .timeline-item .timeline-dot {
+            position: absolute;
+            left: -0.43rem;
+            top: 0.5rem;
+            width: 0.875rem;
+            height: 0.875rem;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        .timeline-item:last-child .timeline-line {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Yêu cầu #YEUCAU-12345</h1>
+            <div class="flex items-center space-x-2">
+                <span id="status-badge" class="px-3 py-1 text-sm font-semibold rounded-full"></span>
+                <select id="status-switcher" class="bg-white border border-gray-300 rounded-md shadow-sm py-1 text-sm">
+                    <option value="pending_review">Chờ xử lý</option>
+                    <option value="approved">Đã phê duyệt</option>
+                    <option value="item_received">Đã nhận hàng</option>
+                    <option value="refunded">Đã hoàn tiền</option>
+                    <option value="rejected">Đã từ chối</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Chi tiết sản phẩm trả -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Chi tiết sản phẩm trả</h2>
+                    <div class="flex items-start space-x-4">
+                        <img src="https://placehold.co/100x100/e2e8f0/334155?text=iPhone+15" alt="Sản phẩm" class="w-24 h-24 rounded-md">
+                        <div class="flex-grow">
+                            <p class="font-bold">iPhone 15 Pro Max 256GB - Titan Tự Nhiên</p>
+                            <p class="text-sm text-gray-500">SKU: APL-IP15PM-256-NT</p>
+                            <p class="text-sm">Số lượng trả: <span class="font-semibold">1</span></p>
+                            <p class="text-lg font-bold text-red-600 mt-2">29.990.000 VNĐ</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 border-t pt-4 space-y-2">
+                        <p><strong class="font-semibold">Lý do từ khách hàng:</strong> Sản phẩm bị lỗi do nhà sản xuất</p>
+                        <p><strong class="font-semibold">Mô tả:</strong> Màn hình của máy có một điểm chết màu xanh lá cây ở góc trên bên phải. Đã thử khởi động lại nhưng không hết.</p>
+                    </div>
+                    <div class="mt-4">
+                        <h3 class="font-semibold mb-2">Hình ảnh/Video bằng chứng:</h3>
+                        <div class="flex space-x-2">
+                            <img src="https://placehold.co/120x120/e2e8f0/334155?text=Ảnh+lỗi+1" alt="Bằng chứng 1" class="w-24 h-24 rounded-md cursor-pointer hover:opacity-80 transition">
+                            <img src="https://placehold.co/120x120/e2e8f0/334155?text=Ảnh+lỗi+2" alt="Bằng chứng 2" class="w-24 h-24 rounded-md cursor-pointer hover:opacity-80 transition">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thông tin hoàn tiền -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Thông tin hoàn tiền</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Phương thức khách chọn:</span>
+                            <span class="font-semibold text-blue-600">Chuyển khoản Ngân hàng</span>
+                        </div>
+                         <div id="bank-info-display" class="bg-gray-50 p-3 rounded-md border border-gray-200">
+                            <p><strong class="font-medium">Ngân hàng:</strong> Vietcombank</p>
+                            <p><strong class="font-medium">Chủ tài khoản:</strong> NGUYEN VAN A</p>
+                            <p><strong class="font-medium">Số tài khoản:</strong> 0123456789</p>
+                        </div>
+                        <div class="flex justify-between items-center border-t pt-3">
+                            <span class="text-lg font-semibold text-gray-800">Tổng tiền hoàn trả:</span>
+                            <input type="text" id="refund-amount-input" value="29.990.000" class="text-right text-lg font-bold text-red-600 border border-gray-300 rounded-md px-2 py-1 w-48" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hành động của Admin -->
+                <div id="actions-panel" class="bg-white p-6 rounded-lg shadow">
+                    <!-- Nội dung hành động sẽ được JS chèn vào đây -->
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-6">
+                <!-- Thông tin Khách hàng & Đơn hàng -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <div class="mb-4">
+                        <h3 class="font-semibold text-gray-800 mb-2">Khách hàng</h3>
+                        <p class="text-blue-600 font-semibold">Nguyễn Văn A</p>
+                        <p class="text-sm text-gray-500">nguyenvana@email.com</p>
+                    </div>
+                    <div class="border-t pt-4">
+                         <h3 class="font-semibold text-gray-800 mb-2">Đơn hàng gốc</h3>
+                         <a href="#" class="text-blue-600 hover:underline font-semibold">#DONHANG-98765</a>
+                         <p class="text-sm text-gray-500">Ngày đặt: 20/07/2025</p>
+                    </div>
+                </div>
+                <!-- Ghi chú nội bộ -->
+                 <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="font-semibold text-gray-800 mb-2">Ghi chú nội bộ</h3>
+                    <textarea class="w-full border border-gray-300 rounded-md p-2" rows="3" placeholder="Thêm ghi chú..."></textarea>
+                    <button class="mt-2 w-full bg-gray-600 text-white py-2 rounded-md hover:bg-gray-700 transition">Lưu ghi chú</button>
+                </div>
+                <!-- Lịch sử hoạt động -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="font-semibold text-gray-800 mb-4">Lịch sử hoạt động</h3>
+                    <div class="relative pl-4 border-l border-gray-200 space-y-6">
+                        <div class="timeline-item">
+                            <div class="timeline-dot bg-green-500"></div>
+                            <p class="font-semibold text-sm">Đã nhận hàng</p>
+                            <p class="text-xs text-gray-500">Nhân viên kho <strong class="font-medium">Trần B</strong> xác nhận | 26/07/2025 14:30</p>
+                        </div>
+                        <div class="timeline-item">
+                             <div class="timeline-dot bg-blue-500"></div>
+                            <p class="font-semibold text-sm">Đã phê duyệt yêu cầu</p>
+                            <p class="text-xs text-gray-500">Admin <strong class="font-medium">Lê C</strong> phê duyệt | 25/07/2025 10:00</p>
+                        </div>
+                         <div class="timeline-item">
+                             <div class="timeline-dot bg-gray-400"></div>
+                            <p class="font-semibold text-sm">Khách hàng tạo yêu cầu</p>
+                            <p class="text-xs text-gray-500">24/07/2025 20:15</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal từ chối -->
+    <div id="rejection-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h2 class="text-xl font-bold mb-4">Lý do từ chối yêu cầu</h2>
+            <textarea id="rejection-reason" class="w-full border border-gray-300 rounded-md p-2" rows="4" placeholder="Nhập lý do... (sẽ được gửi đến khách hàng)"></textarea>
+            <div class="flex justify-end space-x-3 mt-4">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Hủy</button>
+                <button onclick="submitRejection()" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">Xác nhận từ chối</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const statusConfig = {
+        pending_review: { text: 'Chờ xử lý', badge: 'bg-yellow-100 text-yellow-800' },
+        approved: { text: 'Đã phê duyệt', badge: 'bg-blue-100 text-blue-800' },
+        item_received: { text: 'Đã nhận hàng', badge: 'bg-green-100 text-green-800' },
+        refunded: { text: 'Đã hoàn tiền', badge: 'bg-purple-100 text-purple-800' },
+        completed: { text: 'Hoàn tất', badge: 'bg-gray-100 text-gray-800' },
+        rejected: { text: 'Đã từ chối', badge: 'bg-red-100 text-red-800' }
+    };
+
+    const statusBadge = document.getElementById('status-badge');
+    const actionsPanel = document.getElementById('actions-panel');
+    const statusSwitcher = document.getElementById('status-switcher');
+    const refundAmountInput = document.getElementById('refund-amount-input');
+    const rejectionModal = document.getElementById('rejection-modal');
+
+    function renderActions(status) {
+        // Cập nhật badge
+        statusBadge.textContent = statusConfig[status].text;
+        statusBadge.className = `px-3 py-1 text-sm font-semibold rounded-full ${statusConfig[status].badge}`;
+        
+        let content = `<h2 class="text-xl font-semibold text-gray-800 mb-4">Hành động</h2>`;
+        refundAmountInput.disabled = true; // Vô hiệu hóa input mặc định
+
+        switch (status) {
+            case 'pending_review':
+                content += `
+                    <p class="text-sm text-gray-500 mb-4">Vui lòng kiểm tra kỹ thông tin trước khi phê duyệt.</p>
+                    <div class="flex space-x-3">
+                        <button class="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition">Phê duyệt</button>
+                        <button onclick="openModal()" class="flex-1 bg-white border border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50 transition">Từ chối</button>
+                    </div>
+                `;
+                break;
+            case 'approved':
+                content += `
+                    <p class="text-sm text-gray-500 mb-4">Yêu cầu đã được duyệt. Chờ nhận hàng từ khách.</p>
+                    <button class="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition">Xác nhận Đã nhận hàng</button>
+                `;
+                break;
+            case 'item_received':
+                refundAmountInput.disabled = false; // Cho phép sửa giá trị hoàn
+                content += `
+                    <p class="text-sm text-gray-500 mb-2">Hàng đã được nhận. Vui lòng kiểm tra tình trạng sản phẩm và xác nhận số tiền hoàn cuối cùng.</p>
+                    <p class="text-sm text-gray-500 mb-4">Sau đó, tiến hành hoàn tiền cho khách theo phương thức đã chọn.</p>
+                    <button class="w-full bg-purple-600 text-white py-3 rounded-md hover:bg-purple-700 transition font-bold">Hoàn tiền 29.990.000 VNĐ qua Chuyển khoản</button>
+                    <p class="text-xs text-gray-500 mt-2 text-center">Lưu ý: Nút này xác nhận bạn ĐÃ thực hiện chuyển khoản thủ công cho khách.</p>
+                `;
+                break;
+            case 'refunded':
+            case 'completed':
+                content += `<p class="text-sm text-green-600 text-center font-semibold">Yêu cầu đã được xử lý và hoàn tất.</p>`;
+                break;
+            case 'rejected':
+                 content += `
+                    <p class="text-sm text-red-600 text-center font-semibold">Yêu cầu đã bị từ chối.</p>
+                    <p class="text-sm text-gray-600 mt-2"><strong>Lý do:</strong> Sản phẩm không đủ điều kiện đổi trả do có dấu hiệu va đập mạnh.</p>
+                 `;
+                break;
+        }
+        actionsPanel.innerHTML = content;
+    }
+
+    // Modal functions
+    function openModal() {
+        rejectionModal.classList.remove('hidden');
+        setTimeout(() => rejectionModal.classList.remove('opacity-0'), 20);
+    }
+    function closeModal() {
+        rejectionModal.classList.add('opacity-0');
+        setTimeout(() => rejectionModal.classList.add('hidden'), 250);
+    }
+    function submitRejection() {
+        // API call to submit rejection reason goes here
+        console.log('Lý do từ chối:', document.getElementById('rejection-reason').value);
+        closeModal();
+        statusSwitcher.value = 'rejected';
+        renderActions('rejected');
+    }
+
+    // Initial render
+    statusSwitcher.addEventListener('change', (e) => renderActions(e.target.value));
+    renderActions(statusSwitcher.value);
+</script>
+
+</body>
+</html>

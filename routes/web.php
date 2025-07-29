@@ -54,6 +54,7 @@ use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
 use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\PackingStationController;
 
 
 // router khôi phục giỏ hàng
@@ -587,17 +588,38 @@ Route::prefix('admin')
             Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
             Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
         });
-        //==========================================================================
         // QUẢN LÝ NHẬP KHO (PURCHASE ORDERS)
-        //==========================================================================
-        Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+       Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
             // Route để tìm kiếm sản phẩm (dùng cho AJAX khi thêm sản phẩm vào phiếu)
             Route::get('/search-products', [PurchaseOrderController::class, 'searchProducts'])->name('search-products');
             
             // Route để nhận hàng vào kho
             Route::post('/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receiveItems'])->name('receive');
+
+            // Route để hiển thị trang tiếp nhận hàng
+            Route::get('/receiving', [PurchaseOrderController::class, 'showReceivingPage'])->name('receiving.index');
+            // Route API để lấy danh sách PO đang chờ
+            Route::get('/api/pending', [PurchaseOrderController::class, 'getPendingPurchaseOrders'])->name('api.pending');
         });
         Route::resource('purchase-orders', PurchaseOrderController::class);
+        // Route để hiển thị trang Trạm Đóng Gói
+        Route::prefix('packing-station')->name('packing-station.')->group(function () {
+        // Route để hiển thị trang chính
+        Route::get('/', [PackingStationController::class, 'index'])->name('index');
+
+        // ==== API routes for the packing station interface ====
+        // Route để lấy danh sách đơn hàng chờ đóng gói
+        Route::get('/orders', [PackingStationController::class, 'getOrdersForPacking'])->name('get-orders');
+
+        // Route để lấy chi tiết một đơn hàng
+        Route::get('/orders/{id}', [PackingStationController::class, 'getOrderDetails'])->name('get-order-details');
+        
+        // Route để xác thực IMEI/Serial
+        Route::post('/validate-imei', [PackingStationController::class, 'validateImei'])->name('validate-imei');
+        
+        // Route để xác nhận hoàn tất đóng gói
+        Route::post('/orders/{orderId}/confirm-packing', [PackingStationController::class, 'confirmPacking'])->name('confirm-packing');
+    });
 
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);

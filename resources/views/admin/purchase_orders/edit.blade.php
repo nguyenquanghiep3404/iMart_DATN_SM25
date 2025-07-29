@@ -1,18 +1,21 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Tạo Phiếu Nhập Kho')
+@section('title', 'Cập nhật Phiếu Nhập Kho')
 
 @push('styles')
-    {{-- CSS Styles --}}
     <style>
         .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
         [x-cloak] { display: none !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
         input[type=number] { -moz-appearance: textfield; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .status-badge { display: inline-flex; align-items: center; padding: 0.25em 0.6em; font-size: 0.875rem; font-weight: 600; line-height: 1; border-radius: 0.375rem; }
+        .status-pending { background-color: #FEF3C7; color: #92400E; }
+        .status-completed { background-color: #D1FAE5; color: #065F46; }
+        .status-cancelled { background-color: #FEE2E2; color: #991B1B; }
+        .disabled-ui { pointer-events: none; opacity: 0.6; background-color: #f9fafb; }
         @keyframes flash-border {
             0%, 100% { border-color: #10b981; }
             50% { border-color: #34d399; box-shadow: 0 0 10px #34d399; }
@@ -26,66 +29,75 @@
     suppliersData: {{ Js::from($suppliers) }},
     provincesData: {{ Js::from($provinces) }},
     districtsData: {{ Js::from($districts) }},
-    locationsData: {{ Js::from($locations) }}
+    locationsData: {{ Js::from($locations) }},
+    purchaseOrder: {{ Js::from($purchaseOrder) }}
 })">
 
     <div class="container mx-auto max-w-full">
-        <form id="purchase-order-form" @submit.prevent="submitForm" method="POST" action="{{ route('admin.purchase-orders.store') }}">
+        <form id="purchase-order-form" @submit.prevent="submitForm" method="POST" action="{{ route('admin.purchase-orders.update', $purchaseOrder->id) }}">
             @csrf
-            <!-- Header -->
+            @method('PUT')
+            
             <header class="mb-8 flex flex-col sm:flex-row items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-800">Tạo Phiếu Nhập Kho</h1>
-                    <p class="text-gray-600 mt-1">Tạo đơn hàng mới để nhập sản phẩm từ nhà cung cấp.</p>
+                    <h1 class="text-3xl font-bold text-gray-800">Cập nhật Phiếu Nhập Kho #{{ $purchaseOrder->po_code }}</h1>
+                    <p class="text-gray-600 mt-1">Chỉnh sửa thông tin chi tiết của phiếu nhập.</p>
                 </div>
                 <div class="mt-4 sm:mt-0 flex space-x-2">
                     <a href="{{ route('admin.purchase-orders.index') }}" class="w-full sm:w-auto flex items-center justify-center bg-white text-gray-700 font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 border border-gray-300 transition-colors">
                         Hủy Bỏ
                     </a>
-                    <button type="submit" class="w-full sm:w-auto flex items-center justify-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                    <button type="submit" :disabled="isLocked"
+                            class="w-full sm:w-auto flex items-center justify-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors"
+                            :class="{'opacity-50 cursor-not-allowed': isLocked }">
                         <i class="fas fa-save mr-2"></i>
-                        Tạo Phiếu Nhập
+                        Lưu Thay Đổi
                     </button>
                 </div>
             </header>
 
-            <!-- Main Grid Layout -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Left Column: Product Details -->
-                <div class="lg:col-span-2 space-y-8">
+                {{-- Cột trái --}}
+                <div class="lg:col-span-2 space-y-8" :class="{ 'disabled-ui': isLocked }">
                     <div class="card">
                         <div class="p-6">
                             <label for="product-search" class="block text-lg font-semibold text-gray-800 mb-2">Tìm & Thêm Sản Phẩm</label>
                             <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <i class="fas fa-search text-gray-400"></i>
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-search text-gray-400"></i></div>
+                                <input type="text" id="product-search" placeholder="Gõ tên sản phẩm hoặc SKU..." class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                <div @click="openBarcodeScanner()" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" title="Quét mã vạch"><i class="fas fa-barcode text-gray-400 hover:text-gray-600 transition-colors"></i></div>
+                                <div id="search-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-2 shadow-lg max-h-80 overflow-y-auto hidden custom-scrollbar"></div>
+                            </div>
+                        </div>
+                    </div>
+                    @include('admin.purchase_orders.partials._product_list')
+                </div>
+
+                {{-- Cột phải --}}
+                <div class="lg:col-span-1 space-y-8">
+                    <div class="card">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Thông tin Phiếu nhập</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-gray-600">Mã phiếu:</span>
+                                    <span class="font-mono text-gray-900">{{ $purchaseOrder->po_code }}</span>
                                 </div>
-                                <input type="text" id="product-search" placeholder="Gõ tên sản phẩm hoặc SKU..."
-                                       class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
-                                
-                                <div @click="openBarcodeScanner()" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" title="Quét mã vạch">
-                                    <i class="fas fa-barcode text-gray-400 hover:text-gray-600 transition-colors"></i>
-                                </div>
-                        
-                                <div id="search-suggestions"
-                                     class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-2 shadow-lg max-h-80 overflow-y-auto hidden custom-scrollbar">
-                                    <!-- Search results will be displayed here by JS -->
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-gray-600">Trạng thái:</span>
+                                    <span class="status-badge" :class="statusInfo.class" x-text="statusInfo.text"></span>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    @include('admin.purchase_orders.partials._product_list')
-                </div>
-
-                <!-- Right Column: General Info -->
-                <div class="lg:col-span-1 space-y-8">
-                    @include('admin.purchase_orders.partials._general_info')
+                    {{-- Khối thông tin chung và ghi chú được bao bọc bởi div để áp dụng disabled-ui --}}
+                    <div class="space-y-8" :class="{ 'disabled-ui': isLocked }">
+                        @include('admin.purchase_orders.partials._general_info')
+                    </div>
                 </div>
             </div>
         </form>
 
-        <!-- Modals -->
         @include('admin.purchase_orders.partials._modals')
         @include('admin.purchase_orders.partials._barcode_scanner_modal')
     </div>
@@ -93,9 +105,7 @@
 @endsection
 
 @push('scripts')
-{{-- Thư viện quét mã vạch --}}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-{{-- Thư viện âm thanh Howler.js --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
 
 <script>
@@ -109,62 +119,97 @@
             beepSound: null, soundInitialized: false,
 
             // Initial Data
-            provinces: initialData.provincesData,
-            districts: initialData.districtsData,
-            allSuppliers: initialData.suppliersData,
-            allLocations: initialData.locationsData,
-            
+            provinces: initialData.provincesData, districts: initialData.districtsData, allSuppliers: initialData.suppliersData, allLocations: initialData.locationsData,
+            purchaseOrder: initialData.purchaseOrder,
+            isLocked: initialData.purchaseOrder.status !== 'pending',
+            statusInfo: {},
+
             init() {
                 this.$watch('modalSelectedProvince', () => { this.modalSelectedDistrict = ''; });
-                document.getElementById('order-date').valueAsDate = new Date();
                 
                 window.addEventListener('barcode-scanned', (event) => {
                     const scannedCode = event.detail.code;
                     document.getElementById('product-search').value = scannedCode;
                     document.getElementById('product-search').dispatchEvent(new Event('input'));
                 });
-
+                
                 this.initializeProductSearch();
-                this.initializeSound(); // Tải âm thanh sẵn sàng
+                this.populateInitialForm();
+                this.initializeSound();
             },
             
-            // --- SOUND METHODS ---
             initializeSound() {
                 if (this.soundInitialized || typeof Howl === 'undefined') return;
                 this.beepSound = new Howl({
                     src: ['{{ asset('sounds/shop-scanner-beeps.mp3') }}'],
                     volume: 0.8,
-                    onload: () => { 
-                        this.soundInitialized = true; 
-                        console.log('Sound loaded successfully.');
-                    },
-                    onloaderror: (id, err) => { 
-                        console.error('Failed to load beep sound:', err); 
-                    }
+                    onload: () => { this.soundInitialized = true; },
+                    onloaderror: (id, err) => { console.error('Failed to load beep sound:', err); }
                 });
             },
 
             playBeep() {
-                if (this.soundInitialized && this.beepSound) {
-                    this.beepSound.play();
-                } else {
-                    console.warn('Sound not ready or failed to load.');
+                if (this.soundInitialized && this.beepSound) this.beepSound.play();
+            },
+
+            populateInitialForm() {
+                const statuses = {
+                    pending: { text: 'Đang chờ', class: 'status-pending' },
+                    completed: { text: 'Hoàn thành', class: 'status-completed' },
+                    cancelled: { text: 'Đã hủy', class: 'status-cancelled' }
+                };
+                this.statusInfo = statuses[this.purchaseOrder.status] || { text: this.purchaseOrder.status, class: '' };
+
+                if (this.purchaseOrder.supplier) {
+                    this.selectedSupplier = {
+                        name: this.purchaseOrder.supplier.name,
+                        address: this.purchaseOrder.supplier.full_address,
+                        addressId: this.purchaseOrder.supplier.id,
+                    };
+                }
+                if (this.purchaseOrder.store_location) {
+                    this.selectedLocation = {
+                        name: this.purchaseOrder.store_location.name,
+                        address: this.purchaseOrder.store_location.full_address,
+                        id: this.purchaseOrder.store_location.id,
+                    };
+                }
+                
+                const orderDateEl = document.getElementById('order-date');
+                const notesEl = document.getElementById('notes');
+                if(orderDateEl) orderDateEl.value = this.purchaseOrder.order_date;
+                if(notesEl) notesEl.value = this.purchaseOrder.notes || ''; // SỬA LỖI: Xử lý giá trị null
+
+                if (this.purchaseOrder.items && this.purchaseOrder.items.length > 0) {
+                    this.purchaseOrder.items.forEach(item => {
+                        const variant = item.product_variant;
+                        if (!variant) return;
+
+                        const productForTable = {
+                            id: variant.id,
+                            name: `${variant.product.name} - ${variant.attribute_values.map(av => av.value).join(' - ')}`,
+                            sku: variant.sku,
+                            image_url: variant.primary_image ? `/storage/${variant.primary_image.path}` : '{{ asset('assets/admin/img/placeholder-image.png') }}',
+                            stock: variant.inventories ? variant.inventories.reduce((sum, inv) => sum + inv.quantity, 0) : 0,
+                            cost_price: variant.cost_price || 0
+                        };
+                        
+                        this.addProductToTable(productForTable, {
+                            quantity: item.quantity,
+                            cost_price: item.cost_price
+                        });
+                    });
                 }
             },
 
-            // --- MODAL METHODS ---
             get filteredDistricts() {
                 if (!this.modalSelectedProvince) return [];
                 return this.districts.filter(d => d.parent_code == this.modalSelectedProvince);
             },
 
             get modalSourceData() {
-                if (this.modalType === 'supplier') {
-                    return this.allSuppliers.flatMap(s => s.addresses.map(addr => ({ ...addr, name: s.name })));
-                }
-                if (this.modalType === 'location') {
-                    return this.allLocations;
-                }
+                if (this.modalType === 'supplier') return this.allSuppliers.flatMap(s => s.addresses.map(addr => ({ ...addr, name: s.name })));
+                if (this.modalType === 'location') return this.allLocations;
                 return [];
             },
             
@@ -184,45 +229,35 @@
             },
 
             openModal(type) {
+                if(this.isLocked) return;
                 this.modalType = type;
                 this.modalTitle = type === 'supplier' ? 'Chọn địa chỉ nhà cung cấp' : 'Chọn kho nhận hàng';
                 this.isModalOpen = true;
-                this.modalSelectedProvince = '';
-                this.modalSelectedDistrict = '';
-                this.modalSearchTerm = '';
+                this.modalSelectedProvince = ''; this.modalSelectedDistrict = ''; this.modalSearchTerm = '';
             },
 
             selectModalItem(item) {
-                if (this.modalType === 'supplier') {
-                    this.selectedSupplier.name = item.name;
-                    this.selectedSupplier.address = item.fullAddress;
-                    this.selectedSupplier.addressId = item.id;
-                }
-                 if (this.modalType === 'location') {
-                    this.selectedLocation.name = item.name;
-                    this.selectedLocation.address = item.fullAddress;
-                    this.selectedLocation.id = item.id;
-                }
+                if (this.modalType === 'supplier') this.selectedSupplier = { name: item.name, address: item.fullAddress, addressId: item.id };
+                else if (this.modalType === 'location') this.selectedLocation = { name: item.name, address: item.fullAddress, id: item.id };
                 this.isModalOpen = false;
             },
 
             submitForm() {
-                if (!this.selectedSupplier.addressId || !this.selectedLocation.id) {
-                    alert('Vui lòng chọn đầy đủ Nhà cung cấp và Kho nhận hàng.');
-                    return;
-                }
+                if(this.isLocked) return alert('Phiếu nhập đã ở trạng thái không thể chỉnh sửa.');
+                if (!this.selectedSupplier.addressId || !this.selectedLocation.id) return alert('Vui lòng chọn đầy đủ Nhà cung cấp và Kho nhận hàng.');
                 document.getElementById('purchase-order-form').submit();
             },
             
-            // --- BARCODE SCANNER METHODS ---
-            openBarcodeScanner() {
-                this.isScannerOpen = true;
-                this.$nextTick(() => { this.startScanning(); });
+            openBarcodeScanner() { 
+                if(this.isLocked) return; 
+                this.isScannerOpen = true; 
+                this.$nextTick(() => this.startScanning()); 
             },
-            closeBarcodeScanner() {
+            closeBarcodeScanner() { 
                 this.stopScanning();
-                this.isScannerOpen = false;
+                this.isScannerOpen = false; 
             },
+            
             startScanning() {
                 const readerElement = document.getElementById('reader');
                 const loadingMessage = document.getElementById('loading-message');
@@ -271,31 +306,28 @@
                     errorMessage.classList.remove('hidden');
                 });
             },
+
             stopScanning() {
                 if (this.html5QrCode && this.html5QrCode.isScanning) {
-                    this.html5QrCode.stop().catch(err => console.error("Lỗi khi dừng camera:", err));
+                    this.html5QrCode.stop().catch(err => { console.error("Lỗi khi dừng camera:", err); });
                 }
             },
 
-            // --- PRODUCT SEARCH & TABLE LOGIC ---
             initializeProductSearch() {
                 const searchInput = document.getElementById('product-search');
                 const suggestionsContainer = document.getElementById('search-suggestions');
                 const purchaseItemsTableBody = document.getElementById('purchase-items-table');
-                const noItemsRow = document.getElementById('no-items-row');
-                const grandTotalEl = document.getElementById('grand-total');
                 let allProductVariants = [];
 
                 const fetchProducts = async (term) => {
                     try {
                         const response = await fetch(`{{ route('admin.purchase-orders.search-products') }}?search=${term}`);
-                        if (!response.ok) throw new Error('Network response was not ok');
                         const data = await response.json();
                         allProductVariants = data.allVariants;
                         displaySuggestions(data.groupedProducts);
                     } catch (error) {
-                        console.error("Lỗi khi tìm sản phẩm:", error);
-                        suggestionsContainer.innerHTML = `<div class="p-3 text-center text-red-500">Có lỗi xảy ra khi tìm kiếm.</div>`;
+                        console.error("Error fetching products:", error);
+                        suggestionsContainer.innerHTML = `<div class="p-3 text-center text-red-500">Có lỗi xảy ra.</div>`;
                         suggestionsContainer.classList.remove('hidden');
                     }
                 };
@@ -315,29 +347,25 @@
                                                 <div class="font-semibold text-gray-800">${v.variantName}</div>
                                                 <div class="text-xs text-gray-500">SKU: ${v.sku} | Tồn kho: <span class="font-bold">${v.stock}</span></div>
                                             </div>
-                                        </div>
-                                    `).join('')}
+                                        </div>`).join('')}
                                 </div>
-                            </div>
-                        `).join('');
+                            </div>`).join('');
                     }
                     suggestionsContainer.classList.remove('hidden');
                 };
+                
+                this.addProductToTable = (product, itemData = null) => {
+                    if (!product || !product.id) return;
+                    if (purchaseItemsTableBody.querySelector(`tr[data-variant-id="${product.id}"]`)) return;
 
-                const addProductToTable = (productId) => {
-                    if (purchaseItemsTableBody.querySelector(`tr[data-variant-id="${productId}"]`)) {
-                        const existingRow = purchaseItemsTableBody.querySelector(`tr[data-variant-id="${productId}"]`);
-                        existingRow.classList.add('bg-yellow-100');
-                        setTimeout(() => { existingRow.classList.remove('bg-yellow-100'); }, 1500);
-                        return;
-                    }
-                    const product = allProductVariants.find(p => p.id === productId);
-                    if (!product) return;
-
-                    noItemsRow.style.display = 'none';
+                    document.getElementById('no-items-row').style.display = 'none';
                     const newRow = document.createElement('tr');
-                    newRow.className = 'bg-white border-b purchase-item-row transition-colors';
+                    newRow.className = 'bg-white border-b purchase-item-row';
                     newRow.dataset.variantId = product.id;
+                    
+                    const quantity = itemData ? itemData.quantity : 1;
+                    const costPrice = itemData ? itemData.cost_price : (product.cost_price || 0);
+
                     newRow.innerHTML = `
                         <td class="px-4 py-3">
                             <div class="flex items-center">
@@ -350,51 +378,35 @@
                             </div>
                         </td>
                         <td class="px-4 py-3 text-center font-bold text-blue-600">${product.stock}</td>
-                        <td class="px-4 py-3">
-                            <input type="number" name="items[${product.id}][quantity]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-center quantity-input" value="1" min="1">
-                        </td>
-                        <td class="px-4 py-3">
-                            <input type="number" name="items[${product.id}][cost_price]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-right cost-price-input" value="${product.cost_price}" min="0">
-                        </td>
-                        <td class="px-4 py-3 text-right font-medium text-gray-900 subtotal">${formatCurrency(product.cost_price)}</td>
-                        <td class="px-4 py-3 text-center">
-                            <button type="button" class="text-red-500 hover:text-red-700 remove-item-btn font-bold text-xl">&times;</button>
-                        </td>
+                        <td class="px-4 py-3"><input type="number" name="items[${product.id}][quantity]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-center quantity-input" value="${quantity}" min="1"></td>
+                        <td class="px-4 py-3"><input type="number" name="items[${product.id}][cost_price]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-right cost-price-input" value="${costPrice}" min="0"></td>
+                        <td class="px-4 py-3 text-right font-medium subtotal">${this.formatCurrency(quantity * costPrice)}</td>
+                        <td class="px-4 py-3 text-center"><button type="button" class="text-red-500 hover:text-red-700 remove-item-btn font-bold text-xl">&times;</button></td>
                     `;
                     purchaseItemsTableBody.appendChild(newRow);
-                    updateGrandTotal();
+                    this.updateGrandTotal();
                 };
 
-                const updateGrandTotal = () => {
+                this.updateGrandTotal = () => {
                     let total = 0;
-                    const rows = purchaseItemsTableBody.querySelectorAll('.purchase-item-row');
-                    rows.forEach(row => {
+                    purchaseItemsTableBody.querySelectorAll('.purchase-item-row').forEach(row => {
                         const quantity = parseInt(row.querySelector('.quantity-input').value) || 0;
                         const costPrice = parseFloat(row.querySelector('.cost-price-input').value) || 0;
                         const subtotal = quantity * costPrice;
-                        row.querySelector('.subtotal').textContent = formatCurrency(subtotal);
+                        row.querySelector('.subtotal').textContent = this.formatCurrency(subtotal);
                         total += subtotal;
                     });
-                    grandTotalEl.textContent = formatCurrency(total);
+                    document.getElementById('grand-total').textContent = this.formatCurrency(total);
                 };
 
-                const formatCurrency = (number) => {
-                    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
-                };
+                this.formatCurrency = (number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
 
                 let debounceTimer;
                 searchInput.addEventListener('input', () => {
                     clearTimeout(debounceTimer);
-                    debounceTimer = setTimeout(() => {
-                        fetchProducts(searchInput.value);
-                    }, 300);
+                    debounceTimer = setTimeout(() => { fetchProducts(searchInput.value); }, 300);
                 });
-                
-                searchInput.addEventListener('focus', () => {
-                    if(!searchInput.value) {
-                        fetchProducts('');
-                    }
-                });
+                searchInput.addEventListener('focus', () => { if(!searchInput.value) fetchProducts(''); });
 
                 document.addEventListener('click', (e) => {
                     if (!suggestionsContainer.contains(e.target) && e.target !== searchInput) {
@@ -406,7 +418,8 @@
                     const item = e.target.closest('.suggestion-item');
                     if (item) {
                         const productId = parseInt(item.dataset.productId);
-                        addProductToTable(productId);
+                        const productToAdd = allProductVariants.find(p => p.id === productId);
+                        this.addProductToTable(productToAdd);
                         searchInput.value = '';
                         suggestionsContainer.classList.add('hidden');
                     }
@@ -416,19 +429,19 @@
                     if (e.target.classList.contains('remove-item-btn')) {
                         e.target.closest('tr').remove();
                         if (purchaseItemsTableBody.querySelectorAll('.purchase-item-row').length === 0) {
-                            noItemsRow.style.display = 'table-row';
+                            document.getElementById('no-items-row').style.display = 'table-row';
                         }
-                        updateGrandTotal();
+                        this.updateGrandTotal();
                     }
                 });
 
                 purchaseItemsTableBody.addEventListener('input', (e) => {
                     if(e.target.classList.contains('quantity-input') || e.target.classList.contains('cost-price-input')) {
-                        updateGrandTotal();
+                        this.updateGrandTotal();
                     }
                 });
             }
         }
     }
 </script>
-@endpush
+@endp
