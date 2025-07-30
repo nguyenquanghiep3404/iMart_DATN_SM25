@@ -1,11 +1,16 @@
 <?php
 
+use App\Models\AbandonedCart;
+use App\Mail\AbandonedCartMail;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\LocationController;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\GuestOrderConfirmation;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
@@ -13,23 +18,29 @@ use App\Http\Controllers\Users\BlogController;
 use App\Http\Controllers\Users\CartController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\GuestReviewController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Users\CarOffController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Users\TradeInPublicController;
 use App\Http\Controllers\Users\CommentController;
 use App\Http\Controllers\Users\PaymentController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\HomepageController;
+use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Users\WishlistController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Shipper\ShipperController;
 use App\Http\Controllers\Users\UserOrderController;
+use App\Http\Controllers\Admin\TradeInItemController;
 use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
+use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\Admin\AbandonedCartController;
 use App\Http\Controllers\Admin\BundleProductController;
 use App\Http\Controllers\Admin\SpecificationController;
 use App\Http\Controllers\Admin\DashboardAdminController;
@@ -38,16 +49,6 @@ use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
-use App\Http\Controllers\Admin\AbandonedCartController;
-use App\Http\Controllers\Admin\TradeInItemController;
-use App\Notifications\GuestOrderConfirmation;
-use Illuminate\Support\Facades\Notification;
-use App\Http\Controllers\GuestReviewController;
-use App\Http\Controllers\Admin\SupplierController;
-use App\Mail\AbandonedCartMail;
-use Illuminate\Support\Facades\Mail;
-use App\Models\AbandonedCart;
-use App\Http\Controllers\Users\CartRecoveryController;
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -93,6 +94,20 @@ Route::get('/san-pham/{slug}', [HomeController::class, 'show'])->name('users.pro
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/danh-muc-san-pham/{id}-{slug}', [HomeController::class, 'allProducts'])->name('products.byCategory');
 Route::get('/danh-muc-san-pham', [HomeController::class, 'allProducts'])->name('users.products.all');
+Route::get('/hang-doi-tra/{category}/{product}', [TradeInPublicController::class, 'show'])
+    ->name('public.trade-in.show');
+Route::get('/hang-doi-tra/{slug}', [TradeInPublicController::class, 'category'])
+    ->name('public.trade-in.category');
+Route::get('/hang-doi-tra', [TradeInPublicController::class, 'index'])
+    ->name('public.trade-in.index');
+Route::get('/hang-doi-tra/{category}/{product}/detail', [TradeInPublicController::class, 'detail'])
+    ->name('public.trade-in.detail');
+
+
+
+
+
+
 Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestions'])->name('products.compare_suggestions');
 Route::post('/api/compare-suggestions', [HomeController::class, 'compareSuggestions']);
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');

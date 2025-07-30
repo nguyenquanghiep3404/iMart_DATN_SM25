@@ -144,6 +144,12 @@ public function bundleSuggestedProducts()
     return $this->hasMany(BundleSuggestedProduct::class, 'product_variant_id');
 }
 
+public function tradeInItems()
+{
+    return $this->hasMany(TradeInItem::class);
+}
+
+
 
 
 }
