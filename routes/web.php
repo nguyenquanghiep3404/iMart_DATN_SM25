@@ -417,6 +417,11 @@ Route::prefix('admin')
 
 
 
+        // Quản Lý Nhân Viên Bán Hàng - POS
+        
+
+
+
 
 
 
