@@ -5,58 +5,180 @@
 
 <div class="mt-10 md:mt-12 space-y-10 md:space-y-12">
     <!-- Mua Kèm Deal Sốc / Cheaper Together -->
-    <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Mua Kèm Deal Sốc</h2>
-        <div class="flex flex-col lg:flex-row items-center justify-center gap-4" id="bundle-deal-container">
-            <!-- Wrapper for scrollable items -->
-            <div
-                class="w-full flex items-center gap-4 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 lg:w-auto carousel">
-                <!-- Main Product -->
-                <div
-                    class="flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg flex-shrink-0 w-44 sm:w-48">
-                    <img src="https://placehold.co/150x150/f0f0f0/333?text=iPhone+15"
-                        class="w-32 h-32 object-contain mb-2">
-                    <p class="font-semibold text-sm">iPhone 15 Pro Max</p>
-                    <p class="font-bold text-red-600">30.490.000₫</p>
+    @if ($productBundles->isNotEmpty())
+        @foreach ($productBundles as $bundle)
+            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">{{ $bundle['display_title'] }}</h2>
+                <div class="flex flex-col lg:flex-row items-center justify-center gap-4"
+                    id="bundle-deal-container-{{ $bundle['id'] }}">
+                    <!-- Wrapper for scrollable items -->
+                    <div
+                        class="w-full flex items-center gap-4 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 lg:w-auto carousel">
+                        <!-- Main Product -->
+                        <div
+                            class="flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg flex-shrink-0 w-44 sm:w-48">
+                            <img src="{{ $bundle['main_product']['image'] }}" class="w-32 h-32 object-contain mb-2"
+                                alt="{{ $bundle['main_product']['name'] }}">
+                            <p class="font-semibold text-sm">{{ $bundle['main_product']['name'] }}</p>
+                            <p class="font-bold text-red-600">
+                                {{ number_format($bundle['main_product']['display_price']) }}₫
+                                @if ($bundle['main_product']['original_price'])
+                                    <span
+                                        class="text-gray-500 line-through text-xs">{{ number_format($bundle['main_product']['original_price']) }}₫</span>
+                                @endif
+                            </p>
+                        </div>
+                        <div class="text-3xl font-light text-gray-400">+</div>
+                        <!-- Suggested Products -->
+                        @foreach ($bundle['suggested_products'] as $suggested)
+                            <div
+                                class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
+                                <input type="checkbox" data-price="{{ $suggested['bundle_price'] }}"
+                                    data-variant-id="{{ $suggested['variant_id'] }}"
+                                    class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+                                    @if ($suggested['is_preselected']) checked @endif>
+                                <img src="{{ $suggested['image'] }}" class="w-32 h-32 object-contain mb-2"
+                                    alt="{{ $suggested['name'] }}">
+                                <p class="font-semibold text-sm">{{ $suggested['name'] }}</p>
+                                <p class="font-bold text-red-600">{{ number_format($suggested['bundle_price']) }}₫
+                                    @if ($suggested['original_price'])
+                                        <span
+                                            class="text-gray-500 line-through text-xs">{{ number_format($suggested['original_price']) }}₫</span>
+                                    @endif
+                                </p>
+                            </div>
+                            @if (!$loop->last)
+                                <div class="text-3xl font-light text-gray-400">+</div>
+                            @endif
+                        @endforeach
+                    </div>
+                    <div class="text-3xl font-light text-gray-400 hidden lg:block">=</div>
+                    <!-- Total Price -->
+                    <div
+                        class="w-full max-w-xs sm:w-auto lg:w-auto lg:max-w-none mt-4 lg:mt-0 lg:ml-4 p-4 border-2 border-red-500 rounded-lg text-center">
+                        <p class="font-semibold">Tổng giá trị:</p>
+                        <p id="bundle-total-price-{{ $bundle['id'] }}" class="text-2xl font-bold text-red-600 my-2">
+                            {{ number_format($bundle['total_bundle_price']) }}₫</p>
+                        <button class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700"
+                            onclick="addBundleToCart({{ $bundle['id'] }})">Thêm tất cả vào giỏ</button>
+                    </div>
                 </div>
-                <div class="text-3xl font-light text-gray-400">+</div>
-                <!-- Bundle Item 1 -->
-                <div
-                    class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
-                    <input type="checkbox" data-price="4490000"
-                        class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
-                        checked>
-                    <img src="https://placehold.co/150x150/e0e0e0/333?text=AirPods"
-                        class="w-32 h-32 object-contain mb-2">
-                    <p class="font-semibold text-sm">AirPods Pro 2</p>
-                    <p class="font-bold text-red-600">4.490.000₫ <span
-                            class="text-gray-500 line-through text-xs">5.990.000₫</span></p>
-                </div>
-                <div class="text-3xl font-light text-gray-400">+</div>
-                <!-- Bundle Item 2 -->
-                <div
-                    class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
-                    <input type="checkbox" data-price="890000"
-                        class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500">
-                    <img src="https://placehold.co/150x150/d0d0d0/333?text=Sạc" class="w-32 h-32 object-contain mb-2">
-                    <p class="font-semibold text-sm">Sạc nhanh 20W</p>
-                    <p class="font-bold text-red-600">890.000₫ <span
-                            class="text-gray-500 line-through text-xs">1.200.000₫</span></p>
-                </div>
-            </div>
+            </section>
+        @endforeach
 
-            <div class="text-3xl font-light text-gray-400 hidden lg:block">=</div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                @foreach ($productBundles as $bundle)
+                    const container{{ $bundle['id'] }} = document.getElementById(
+                        'bundle-deal-container-{{ $bundle['id'] }}');
+                    const checkboxes{{ $bundle['id'] }} = container{{ $bundle['id'] }}.querySelectorAll(
+                        '.bundle-checkbox');
+                    const totalPriceElement{{ $bundle['id'] }} = document.getElementById(
+                        'bundle-total-price-{{ $bundle['id'] }}');
+                    let totalPrice{{ $bundle['id'] }} = {{ $bundle['total_bundle_price'] }};
 
-            <!-- Total Price -->
-            <div
-                class="w-full max-w-xs sm:w-auto lg:w-auto lg:max-w-none mt-4 lg:mt-0 lg:ml-4 p-4 border-2 border-red-500 rounded-lg text-center">
-                <p class="font-semibold">Tổng giá trị:</p>
-                <p id="bundle-total-price" class="text-2xl font-bold text-red-600 my-2">35.870.000₫</p>
-                <button class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">Thêm
-                    tất cả vào giỏ</button>
-            </div>
-        </div>
-    </section>
+                    checkboxes{{ $bundle['id'] }}.forEach(checkbox => {
+                        checkbox.addEventListener('change', function() {
+                            const price = parseFloat(this.getAttribute('data-price'));
+                            if (this.checked) {
+                                totalPrice{{ $bundle['id'] }} += price;
+                            } else {
+                                totalPrice{{ $bundle['id'] }} -= price;
+                            }
+                            totalPriceElement{{ $bundle['id'] }}.textContent = new Intl.NumberFormat(
+                                'vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND'
+                                }
+                            ).format(totalPrice{{ $bundle['id'] }});
+                        });
+                    });
+                @endforeach
+
+                window.addBundleToCart = function(bundleId) {
+                    const container = document.getElementById(`bundle-deal-container-${bundleId}`);
+                    const quantityInput = document.getElementById(`bundle-quantity-${bundleId}`) || {
+                        value: 1
+                    };
+                    const quantity = parseInt(quantityInput.value) || 1;
+
+                    // Thu thập danh sách sản phẩm (chính và gợi ý)
+                    const products = [];
+
+                    // Sản phẩm chính
+                    products.push({
+                        product_variant_id: {{ $bundle['main_product']['variant_id'] }},
+                        quantity: quantity,
+                        price: {{ $bundle['main_product']['display_price'] }} // Giá hiển thị của sản phẩm chính
+                    });
+
+                    // Sản phẩm gợi ý
+                    const selectedVariants = Array.from(container.querySelectorAll('.bundle-checkbox:checked'))
+                        .map(checkbox => ({
+                            product_variant_id: parseInt(checkbox.getAttribute('data-variant-id')),
+                            quantity: quantity,
+                            price: parseFloat(checkbox.getAttribute(
+                                'data-price')) // Giá ưu đãi từ bundle_suggested_products
+                        }));
+
+                    products.push(...selectedVariants);
+
+                    // Gửi yêu cầu AJAX
+                    fetch("{{ route('cart.addCombo') }}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Accept": "application/json",
+                                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({
+                                products: products,
+                                product_bundle_id: {{ $bundle['id'] }} // Gửi ID bundle
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) return response.json().then(err => Promise.reject(err));
+                            return response.json();
+                        })
+                        .then(data => {
+                            toastr.options = {
+                                closeButton: true,
+                                progressBar: true,
+                                escapeHtml: false,
+                                timeOut: 3000,
+                                positionClass: 'toast-bottom-right'
+                            };
+
+                            if (data.success) {
+                                const cartUrl = "{{ route('cart.index') }}";
+                                const message =
+                                    `${data.success} <br><a href="${cartUrl}" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>`;
+                                toastr.success(message);
+
+                                // Cập nhật số lượng mục trong giỏ hàng
+                                const cartBadge = document.getElementById('cart-badge');
+                                if (cartBadge) {
+                                    if (data.cartItemCount > 0) {
+                                        cartBadge.textContent = data.cartItemCount;
+                                        cartBadge.style.display = 'flex';
+                                    } else {
+                                        cartBadge.style.display = 'none';
+                                    }
+                                }
+                            } else if (data.errors) {
+                                data.errors.forEach(error => toastr.error(error));
+                            } else {
+                                toastr.error(data.error || 'Có lỗi xảy ra khi thêm gói vào giỏ hàng.');
+                            }
+                        })
+                        .catch(err => {
+                            toastr.error(err.error || 'Có lỗi xảy ra khi thêm gói vào giỏ hàng.');
+                            console.error('Lỗi AJAX:', err);
+                        });
+                };
+            });
+        </script>
+    @endif
 
     <!-- PHẦN 2 & 3: TABS - BÀI VIẾT & THÔNG SỐ -->
     <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
@@ -88,37 +210,38 @@
             <div id="tab-specs-content" class="tab-content">
                 <div class="space-y-3" id="specs-accordion">
                     @if (!empty($specGroupsData))
-                    <div class="space-y-3">
-                        @foreach ($specGroupsData as $groupName => $specs)
-                        <div>
-                            <button
-                                class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                                onclick="this.nextElementSibling.classList.toggle('hidden')">
-                                <span class="font-semibold text-gray-800">{{ $groupName }}</span>
-                                <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            <div class="accordion-content hidden">
-                                <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
-                                    <dl class="divide-y divide-gray-100">
-                                        @foreach ($specs as $specName => $value)
-                                        <div class="px-1 py-2 grid grid-cols-3 gap-4">
-                                            <dt class="text-sm font-medium text-gray-600">
-                                                {{ $specName }}
-                                            </dt>
-                                            <dd class="text-sm text-gray-800 col-span-2">{{ $value }}
-                                            </dd>
+                        <div class="space-y-3">
+                            @foreach ($specGroupsData as $groupName => $specs)
+                                <div>
+                                    <button
+                                        class="accordion-button w-full flex justify-between items-center p-4 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                                        onclick="this.nextElementSibling.classList.toggle('hidden')">
+                                        <span class="font-semibold text-gray-800">{{ $groupName }}</span>
+                                        <svg class="accordion-icon w-5 h-5 text-gray-600" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+                                    <div class="accordion-content hidden">
+                                        <div class="p-4 border border-t-0 border-gray-200 rounded-b-lg">
+                                            <dl class="divide-y divide-gray-100">
+                                                @foreach ($specs as $specName => $value)
+                                                    <div class="px-1 py-2 grid grid-cols-3 gap-4">
+                                                        <dt class="text-sm font-medium text-gray-600">
+                                                            {{ $specName }}
+                                                        </dt>
+                                                        <dd class="text-sm text-gray-800 col-span-2">
+                                                            {{ $value }}
+                                                        </dd>
+                                                    </div>
+                                                @endforeach
+                                            </dl>
                                         </div>
-                                        @endforeach
-                                    </dl>
+                                    </div>
                                 </div>
-                            </div>
+                            @endforeach
                         </div>
-                        @endforeach
-                    </div>
                     @endif
                 </div>
             </div>

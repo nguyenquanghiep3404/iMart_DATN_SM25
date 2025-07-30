@@ -20,14 +20,23 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
         Schema::create('purchase_orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('supplier_id')->constrained('suppliers');
+            $table->foreignId('store_location_id')->nullable()->constrained('store_locations');
             $table->string('po_code')->unique();
-            $table->string('status')->default('pending'); // pending, completed
+            $table->enum('status', [
+                'pending',          // Chờ xử lý, đang chờ hàng về
+                'waiting_for_scan', // Chờ nhận hàng, sẵn sàng để quét
+                'completed',        // Hoàn thành, đã nhập kho
+                'cancelled'         // Đã hủy
+            ])->default('pending');
+
             $table->date('order_date');
             $table->timestamps();
         });
+
         Schema::create('purchase_order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('purchase_order_id')->constrained('purchase_orders')->onDelete('cascade');

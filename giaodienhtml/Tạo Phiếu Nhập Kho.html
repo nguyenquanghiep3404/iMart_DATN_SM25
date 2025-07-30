@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Phiếu Nhập Kho</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        [x-cloak] { display: none !important; }
+
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        
+        /* Disable arrow spinners on number inputs */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+</head>
+
+<body class="antialiased" x-data="pageData()">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <form id="purchase-order-form" @submit.prevent="submitForm">
+            <header class="mb-8 flex flex-col sm:flex-row items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Tạo Phiếu Nhập Kho</h1>
+                    <p class="text-gray-600 mt-1">Tạo đơn hàng mới để nhập sản phẩm từ nhà cung cấp.</p>
+                </div>
+                <div class="mt-4 sm:mt-0 flex space-x-2">
+                    <a href="#" class="w-full sm:w-auto flex items-center justify-center bg-white text-gray-700 font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 border border-gray-300 transition-colors">
+                        Hủy Bỏ
+                    </a>
+                    <button type="submit" class="w-full sm:w-auto flex items-center justify-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>
+                        Tạo Phiếu Nhập
+                    </button>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="card">
+                        <div class="p-6">
+                            <label for="product-search" class="block text-lg font-semibold text-gray-800 mb-2">Tìm & Thêm Sản Phẩm</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input type="text" id="product-search" placeholder="Gõ tên sản phẩm hoặc SKU..." class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer">
+                                    <i class="fas fa-barcode text-gray-400 hover:text-gray-600 transition-colors"></i>
+                                </div>
+                                <div id="search-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-2 shadow-lg max-h-80 overflow-y-auto hidden custom-scrollbar">
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="p-6">
+                             <h3 class="text-lg font-semibold text-gray-800 mb-4">Chi Tiết Phiếu Nhập</h3>
+                             <div class="overflow-x-auto">
+                                 <table class="w-full text-sm text-left">
+                                     <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                         <tr>
+                                             <th scope="col" class="px-4 py-3 w-[40%]">Sản Phẩm</th>
+                                             <th scope="col" class="px-4 py-3 text-center">Tồn Kho</th>
+                                             <th scope="col" class="px-4 py-3 w-[15%]">Số Lượng Nhập</th>
+                                             <th scope="col" class="px-4 py-3 w-[20%]">Giá Nhập (VNĐ)</th>
+                                             <th scope="col" class="px-4 py-3 text-right">Thành Tiền</th>
+                                             <th scope="col" class="px-4 py-3"></th>
+                                         </tr>
+                                     </thead>
+                                     <tbody id="purchase-items-table">
+                                         <tr id="no-items-row">
+                                             <td colspan="6" class="text-center py-10 text-gray-500">
+                                                 Chưa có sản phẩm nào được thêm.
+                                             </td>
+                                         </tr>
+                                     </tbody>
+                                     <tfoot>
+                                         <tr class="font-semibold text-gray-900">
+                                             <th scope="row" colspan="4" class="px-4 py-3 text-base text-right">Tổng cộng</th>
+                                             <td id="grand-total" class="px-4 py-3 text-base text-right">0 ₫</td>
+                                             <td></td>
+                                         </tr>
+                                     </tfoot>
+                                 </table>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-1 space-y-8">
+                    <div class="card">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-4">Thông tin chung</h3>
+                            <div class="space-y-6">
+                                
+                                <div class="space-y-4 border border-gray-200 rounded-lg p-4">
+                                    <h4 class="text-md font-semibold text-gray-800">Thông tin nhà cung cấp</h4>
+                                    <div>
+                                        <label class="block mb-1 text-sm font-medium text-gray-700">Địa chỉ NCC <span class="text-red-500">*</span></label>
+                                         <input type="hidden" name="supplier_address_id" x-model="selectedSupplier.addressId">
+                                        <div @click="openModal('supplier')" class="w-full p-2.5 bg-white border border-gray-300 rounded-lg cursor-pointer min-h-[42px] flex items-center">
+                                            <span x-show="!selectedSupplier.name" class="text-gray-500">Chọn địa chỉ...</span>
+                                            <div x-show="selectedSupplier.name" class="text-sm">
+                                                <p class="font-semibold text-gray-800" x-text="selectedSupplier.name"></p>
+                                                <p class="text-gray-600" x-text="selectedSupplier.address"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="space-y-4 border border-gray-200 rounded-lg p-4">
+                                    <h4 class="text-md font-semibold text-gray-800">Thông tin kho nhận</h4>
+                                    <div>
+                                         <label class="block mb-1 text-sm font-medium text-gray-700">Nhập về kho <span class="text-red-500">*</span></label>
+                                         <input type="hidden" name="store_location_id" x-model="selectedLocation.id">
+                                         <div @click="openModal('location')" class="w-full p-2.5 bg-white border border-gray-300 rounded-lg cursor-pointer min-h-[42px] flex items-center">
+                                             <span x-show="!selectedLocation.name" class="text-gray-500">Chọn kho nhận hàng...</span>
+                                             <div x-show="selectedLocation.name" class="text-sm">
+                                                 <p class="font-semibold text-gray-800" x-text="selectedLocation.name"></p>
+                                                 <p class="text-gray-600" x-text="selectedLocation.address"></p>
+                                             </div>
+                                         </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label for="order-date" class="block mb-1 text-sm font-medium text-gray-700">Ngày đặt hàng</label>
+                                    <input type="date" id="order-date" name="order_date" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" style="color-scheme: light;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="card">
+                         <div class="p-6">
+                              <h3 class="text-lg font-semibold text-gray-800 mb-4">Ghi chú</h3>
+                              <textarea name="notes" rows="4" class="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Thêm ghi chú cho phiếu nhập kho..."></textarea>
+                         </div>
+                     </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div x-show="isModalOpen" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div @click.outside="isModalOpen = false" class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <header class="p-4 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800" x-text="modalTitle"></h3>
+                <button @click="isModalOpen = false" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </header>
+            <div class="p-5 bg-gray-50">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700">Tỉnh/Thành</label>
+                        <select x-model="modalSelectedProvince" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Tất cả tỉnh thành</option>
+                            <template x-for="province in provinces" :key="province.id">
+                                <option :value="province.id" x-text="province.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700">Quận/Huyện</label>
+                        <select x-model="modalSelectedDistrict" :disabled="!modalSelectedProvince" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200">
+                            <option value="">Tất cả quận huyện</option>
+                            <template x-for="district in filteredDistricts" :key="district.id">
+                                <option :value="district.id" x-text="district.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                     <div>
+                        <label class="block mb-1 text-sm font-medium text-gray-700">Tìm kiếm</label>
+                        <input type="text" x-model="modalSearchTerm" placeholder="Tên, địa chỉ, SĐT..." class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+            </div>
+            <main class="flex-1 p-5 overflow-y-auto custom-scrollbar">
+                <div class="space-y-3">
+                    <template x-if="filteredModalItems.length === 0">
+                        <div class="text-center py-10 text-gray-500">Không có kết quả nào phù hợp.</div>
+                    </template>
+                     <template x-for="item in filteredModalItems" :key="item.id">
+                         <div @click="selectModalItem(item)" class="p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-400 cursor-pointer transition-colors">
+                             <p class="font-bold text-gray-800" x-text="item.name"></p>
+                             <p class="text-sm text-gray-600" x-text="item.fullAddress"></p>
+                             <p x-show="item.phone" class="text-sm text-gray-500 mt-1"><i class="fas fa-phone-alt mr-2"></i><span x-text="item.phone"></span></p>
+                         </div>
+                     </template>
+                </div>
+            </main>
+        </div>
+    </div>
+
+
+    <script>
+        function pageData() {
+            return {
+                // --- MODAL STATE ---
+                isModalOpen: false,
+                modalType: '', // 'supplier' or 'location'
+                modalTitle: '',
+                modalSelectedProvince: '',
+                modalSelectedDistrict: '',
+                modalSearchTerm: '',
+
+                // --- FORM STATE ---
+                selectedSupplier: { name: null, address: null, addressId: null },
+                selectedLocation: { name: null, address: null, id: null },
+
+                // --- MOCK DATA: Replace with data from your backend ---
+                provinces: [
+                    { id: 1, name: 'Hà Nội' }, { id: 2, name: 'TP. Hồ Chí Minh' }, { id: 3, name: 'Đà Nẵng' }
+                ],
+                districts: [
+                    { id: 11, province_id: 1, name: 'Hoàn Kiếm' }, { id: 12, province_id: 1, name: 'Cầu Giấy' }, { id: 13, province_id: 1, name: 'Ba Đình' },
+                    { id: 21, province_id: 2, name: 'Quận 1' }, { id: 22, province_id: 2, name: 'Quận 3' }, { id: 23, province_id: 2, name: 'Bình Thạnh' },
+                    { id: 31, province_id: 3, name: 'Hải Châu' }, { id: 32, province_id: 3, name: 'Sơn Trà' }
+                ],
+                allSuppliers: [
+                    { id: 1, name: 'Công ty TNHH Apple Việt Nam', addresses: [
+                        { id: 101, fullAddress: '2 Ngô Quyền, Tràng Tiền, Hoàn Kiếm, Hà Nội', province_id: 1, district_id: 11, phone: '02412345678' },
+                        { id: 102, fullAddress: '72 Lê Thánh Tôn, Bến Nghé, Quận 1, TP. Hồ Chí Minh', province_id: 2, district_id: 21, phone: '02887654321' }
+                    ]},
+                    { id: 2, name: 'Synnex FPT', addresses: [
+                        { id: 201, fullAddress: 'Tòa nhà FPT, 17 Duy Tân, Cầu Giấy, Hà Nội', province_id: 1, district_id: 12, phone: '02473006666' }
+                    ]},
+                     { id: 3, name: 'Digiworld', addresses: [
+                        { id: 301, fullAddress: '16 Hàng Bài, Hoàn Kiếm, Hà Nội', province_id: 1, district_id: 11, phone: '0987654321' },
+                        { id: 302, fullAddress: '20 Tôn Đức Thắng, Bến Nghé, Quận 1, TP.HCM', province_id: 2, district_id: 21, phone: '0912345678' }
+                    ]}
+                ],
+                allLocations: [
+                    { id: 1, name: 'Kho Tổng - Hà Nội', province_id: 1, district_id: 12, fullAddress: '123 Đường A, Dịch Vọng Hậu, Cầu Giấy, Hà Nội' },
+                    { id: 2, name: 'Kho Hoàn Kiếm', province_id: 1, district_id: 11, fullAddress: '456 Phố B, Hàng Bạc, Hoàn Kiếm, Hà Nội' },
+                    { id: 3, name: 'Kho Chi Nhánh - TP.HCM', province_id: 2, district_id: 23, fullAddress: '789 Đường C, Phường 25, Bình Thạnh, TP.HCM' },
+                    { id: 4, name: 'Cửa Hàng - Đà Nẵng', province_id: 3, district_id: 31, fullAddress: '101 Đường D, Hải Châu 1, Hải Châu, Đà Nẵng' },
+                ],
+
+                init() {
+                    this.$watch('modalSelectedProvince', () => { this.modalSelectedDistrict = ''; });
+                },
+
+                get filteredDistricts() {
+                    if (!this.modalSelectedProvince) return [];
+                    return this.districts.filter(d => d.province_id == this.modalSelectedProvince);
+                },
+
+                get modalSourceData() {
+                    if (this.modalType === 'supplier') {
+                        return this.allSuppliers.flatMap(s => s.addresses.map(addr => ({ ...addr, id: addr.id, name: s.name })));
+                    }
+                    if (this.modalType === 'location') {
+                        return this.allLocations;
+                    }
+                    return [];
+                },
+                
+                get filteredModalItems() {
+                    let items = this.modalSourceData;
+                    if (this.modalSelectedProvince) {
+                        items = items.filter(i => i.province_id == this.modalSelectedProvince);
+                    }
+                    if (this.modalSelectedDistrict) {
+                         items = items.filter(i => i.district_id == this.modalSelectedDistrict);
+                    }
+                    if (this.modalSearchTerm.trim()) {
+                        const search = this.modalSearchTerm.toLowerCase();
+                        items = items.filter(i => i.name.toLowerCase().includes(search) || i.fullAddress.toLowerCase().includes(search) || (i.phone && i.phone.includes(search)));
+                    }
+                    return items;
+                },
+
+                openModal(type) {
+                    this.modalType = type;
+                    this.modalTitle = type === 'supplier' ? 'Chọn địa chỉ nhà cung cấp' : 'Chọn kho nhận hàng';
+                    this.isModalOpen = true;
+                    this.modalSelectedProvince = '';
+                    this.modalSelectedDistrict = '';
+                    this.modalSearchTerm = '';
+                },
+
+                selectModalItem(item) {
+                    if (this.modalType === 'supplier') {
+                        this.selectedSupplier.name = item.name;
+                        this.selectedSupplier.address = item.fullAddress;
+                        this.selectedSupplier.addressId = item.id;
+                    }
+                     if (this.modalType === 'location') {
+                        this.selectedLocation.name = item.name;
+                        this.selectedLocation.address = item.fullAddress;
+                        this.selectedLocation.id = item.id;
+                    }
+                    this.isModalOpen = false;
+                },
+
+                submitForm() {
+                    if (!this.selectedSupplier.addressId || !this.selectedLocation.id) {
+                        alert('Vui lòng chọn đầy đủ Nhà cung cấp và Kho nhận hàng.');
+                        return;
+                    }
+                    const formData = new FormData(document.getElementById('purchase-order-form'));
+                    console.log("Form Data Submitted:", Object.fromEntries(formData.entries()));
+                    alert('Phiếu nhập kho đã được tạo (xem console để xem dữ liệu).');
+                }
+            }
+        }
+
+        // --- SCRIPT FOR PRODUCT SEARCH AND TABLE ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- NEW: Grouped product data structure ---
+            const groupedProducts = [
+                {
+                    parentName: 'iPhone 15 Pro',
+                    variants: [
+                        { id: 101, variantName: '256GB - Titan Tự Nhiên', sku: 'IP15P-256-NAT', image_url: 'https://placehold.co/40x40/E2E8F0/4A5568?text=IP15P', stock: 75, cost_price: 25000000 },
+                        { id: 102, variantName: '512GB - Titan Xanh', sku: 'IP15P-512-BLU', image_url: 'https://placehold.co/40x40/BFDBFE/1E40AF?text=IP15P', stock: 45, cost_price: 29500000 },
+                    ]
+                },
+                {
+                    parentName: 'iPhone 15',
+                    variants: [
+                         { id: 103, variantName: '128GB - Đen', sku: 'IP15-128-BLK', image_url: 'https://placehold.co/40x40/333/FFF?text=IP15', stock: 185, cost_price: 18900000 },
+                    ]
+                },
+                {
+                    parentName: 'MacBook Air M3',
+                    variants: [
+                        { id: 201, variantName: '13-inch - 8GB/256GB', sku: 'MBA-M3-13-8-256', image_url: 'https://placehold.co/40x40/9CA3AF/1F2937?text=MBA', stock: 37, cost_price: 26500000 },
+                    ]
+                },
+                {
+                    parentName: 'AirPods',
+                    variants: [
+                         { id: 301, variantName: 'Pro 2 (USB-C)', sku: 'APP2-USBC', image_url: 'https://placehold.co/40x40/F9FAFB/4B5563?text=Pods', stock: 370, cost_price: 5200000 },
+                    ]
+                }
+            ];
+
+            // Create a flat list of all variants with full names for easy lookup
+            const allProductVariants = groupedProducts.flatMap(p => 
+                p.variants.map(v => ({
+                    ...v,
+                    name: `${p.parentName} - ${v.variantName}` // Full name for table display
+                }))
+            );
+
+            const searchInput = document.getElementById('product-search');
+            const suggestionsContainer = document.getElementById('search-suggestions');
+            const purchaseItemsTableBody = document.getElementById('purchase-items-table');
+            const noItemsRow = document.getElementById('no-items-row');
+            const grandTotalEl = document.getElementById('grand-total');
+
+            function displaySuggestions(products) {
+                if (products.length === 0) {
+                    suggestionsContainer.innerHTML = `<div class="p-3 text-center text-gray-500">Không tìm thấy sản phẩm.</div>`;
+                } else {
+                    suggestionsContainer.innerHTML = products.map(p => `
+                        <div class="p-2 border-b border-gray-100">
+                            <h4 class="px-2 py-1 font-bold text-gray-800 text-sm">${p.parentName}</h4>
+                            <div class="pl-2">
+                                ${p.variants.map(v => `
+                                    <div class="flex items-center p-2 hover:bg-blue-50 cursor-pointer rounded-md suggestion-item" data-product-id="${v.id}">
+                                        <img src="${v.image_url}" alt="${v.variantName}" class="w-10 h-10 object-cover rounded-md mr-3">
+                                        <div>
+                                            <div class="font-semibold text-gray-800">${v.variantName}</div>
+                                            <div class="text-xs text-gray-500">SKU: ${v.sku} | Tồn kho: <span class="font-bold">${v.stock}</span></div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                suggestionsContainer.classList.remove('hidden');
+            }
+
+            function handleSearch() {
+                const searchTerm = searchInput.value.toLowerCase();
+                if (!searchTerm) {
+                    // Show top 3 products if search is empty
+                    displaySuggestions(groupedProducts.slice(0, 3));
+                    return;
+                }
+                
+                const filtered = groupedProducts.map(p => {
+                    // Check if parent name matches
+                    const parentMatch = p.parentName.toLowerCase().includes(searchTerm);
+                    // Filter variants that match
+                    const matchingVariants = p.variants.filter(v => 
+                        v.variantName.toLowerCase().includes(searchTerm) || v.sku.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    if (parentMatch || matchingVariants.length > 0) {
+                        return {
+                            ...p,
+                            // If parent matched, show all variants, otherwise show only matching variants
+                            variants: parentMatch ? p.variants : matchingVariants
+                        };
+                    }
+                    return null;
+                }).filter(Boolean); // Remove null entries
+
+                displaySuggestions(filtered);
+            }
+            
+            searchInput.addEventListener('focus', handleSearch);
+            searchInput.addEventListener('input', handleSearch);
+
+            document.addEventListener('click', (e) => {
+                if (!suggestionsContainer.contains(e.target) && e.target !== searchInput) {
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+
+            suggestionsContainer.addEventListener('click', function(e) {
+                const item = e.target.closest('.suggestion-item');
+                if (item) {
+                    const productId = parseInt(item.dataset.productId);
+                    addProductToTable(productId);
+                    searchInput.value = '';
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+
+            function addProductToTable(productId) {
+                 if (purchaseItemsTableBody.querySelector(`tr[data-variant-id="${productId}"]`)) {
+                    const existingRow = purchaseItemsTableBody.querySelector(`tr[data-variant-id="${productId}"]`);
+                    existingRow.classList.add('bg-yellow-100');
+                    setTimeout(() => { existingRow.classList.remove('bg-yellow-100'); }, 1500);
+                     return;
+                }
+                
+                // Find product from the flat list
+                const product = allProductVariants.find(p => p.id === productId);
+                if (!product) return;
+
+                noItemsRow.style.display = 'none';
+                const newRow = document.createElement('tr');
+                newRow.className = 'bg-white border-b purchase-item-row transition-colors';
+                newRow.dataset.variantId = product.id;
+                newRow.innerHTML = `
+                    <td class="px-4 py-3">
+                        <div class="flex items-center">
+                            <img src="${product.image_url}" alt="${product.name}" class="w-10 h-10 object-cover rounded-md mr-3">
+                            <div>
+                                <div class="font-medium text-gray-800">${product.name}</div>
+                                <div class="text-xs text-gray-500">SKU: ${product.sku}</div>
+                                <input type="hidden" name="items[${product.id}][product_variant_id]" value="${product.id}">
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-center font-bold text-blue-600">${product.stock}</td>
+                    <td class="px-4 py-3">
+                        <input type="number" name="items[${product.id}][quantity]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-center quantity-input" value="1" min="1">
+                    </td>
+                    <td class="px-4 py-3">
+                        <input type="number" name="items[${product.id}][cost_price]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-right cost-price-input" value="${product.cost_price}" min="0">
+                    </td>
+                    <td class="px-4 py-3 text-right font-medium text-gray-900 subtotal">
+                        ${formatCurrency(product.cost_price)}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <button type="button" class="text-red-500 hover:text-red-700 remove-item-btn font-bold text-xl">&times;</button>
+                    </td>
+                `;
+                purchaseItemsTableBody.appendChild(newRow);
+                updateGrandTotal();
+            }
+
+            purchaseItemsTableBody.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-item-btn')) {
+                    e.target.closest('tr').remove();
+                    if (purchaseItemsTableBody.querySelectorAll('.purchase-item-row').length === 0) {
+                        noItemsRow.style.display = 'table-row';
+                    }
+                    updateGrandTotal();
+                }
+            });
+
+            purchaseItemsTableBody.addEventListener('input', function(e) {
+                if(e.target.classList.contains('quantity-input') || e.target.classList.contains('cost-price-input')) {
+                    updateGrandTotal();
+                }
+            });
+
+            function updateGrandTotal() {
+                let total = 0;
+                const rows = purchaseItemsTableBody.querySelectorAll('.purchase-item-row');
+                rows.forEach(row => {
+                    const quantity = parseInt(row.querySelector('.quantity-input').value) || 0;
+                    const costPrice = parseFloat(row.querySelector('.cost-price-input').value) || 0;
+                    const subtotal = quantity * costPrice;
+                    row.querySelector('.subtotal').textContent = formatCurrency(subtotal);
+                    total += subtotal;
+                });
+                grandTotalEl.textContent = formatCurrency(total);
+            }
+
+            function formatCurrency(number) {
+                return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
+            }
+            
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = (today.getMonth() + 1).toString().padStart(2, '0');
+            const day = today.getDate().toString().padStart(2, '0');
+            document.getElementById('order-date').value = `${year}-${month}-${day}`;
+        });
+    </script>
+
+</body>
+</html>

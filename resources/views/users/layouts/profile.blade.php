@@ -35,7 +35,7 @@
     {{-- THÊM DÒNG NÀY VÀO ĐÂY ĐỂ NHÚNG CSS CỦA CROPPER.JS --}}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
     <script src="{{ asset ('assets/users/js/customizer.min.js') }}"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @yield('styles')
@@ -71,6 +71,10 @@
     <script src="{{ asset('assets/users/vendor/swiper/swiper-bundle.min.js') }}"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="{{ asset('assets/vendor/choices.js/choices.min.js') }}"></script>
+    <script src="{{ asset('assets/js/theme.min.js') }}"></script>
+
 
     <script src="{{ asset('assets/users/js/theme.min.js') }}"></script>
 
