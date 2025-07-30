@@ -26,7 +26,7 @@
             <select name="location_id" id="location" x-model="locationFilter" class="form-select">
                 <option value="all">Tất cả cửa hàng</option>
                 @foreach ($locations as $location)
-                    <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    <option value="{{ $location['id'] }}">{{ $location['name'] }}</option>
                 @endforeach
             </select>
         </div>

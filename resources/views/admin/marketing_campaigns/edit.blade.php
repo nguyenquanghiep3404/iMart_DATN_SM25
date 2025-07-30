@@ -1,3 +1,4 @@
+@php($disableMainCss = true)
 @extends('admin.layouts.app')
 @section('content')
     @include('admin.marketing_campaigns.layouts.css')

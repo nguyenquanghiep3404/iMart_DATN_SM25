@@ -2,9 +2,18 @@
 <script>
     document.addEventListener('alpine:init', () => {
         Alpine.data('posManager', (registersData, locationsData) => ({
+            // Máy POS
             registers: [],
-            locations: locationsData,
             filteredRegisters: [],
+
+            // Cửa hàng
+            locations: locationsData,
+            locationSearch: '',
+            provinceFilter: 'all',
+            districtFilter: 'all',
+            isLocationDropdownOpen: false,
+
+            // Form
             formData: {
                 id: null,
                 name: '',
@@ -16,8 +25,8 @@
             isEditMode: false,
             isActive: true,
 
+            // --- INIT ---
             init() {
-                // Gắn thêm tên cửa hàng vào từng register nếu chưa có
                 this.registers = registersData.map(reg => ({
                     ...reg,
                     store_location_name: reg.store_location_name || this
@@ -26,6 +35,44 @@
                 this.filteredRegisters = this.registers;
             },
 
+            // --- Dropdown Location ---
+            get uniqueProvinces() {
+                const provinces = this.locations.map(loc => loc.province_name);
+                return [...new Set(provinces)];
+            },
+
+            get uniqueDistricts() {
+                if (this.provinceFilter === 'all') return [];
+                const districts = this.locations
+                    .filter(loc => loc.province_name === this.provinceFilter)
+                    .map(loc => loc.district_name);
+                return [...new Set(districts)];
+            },
+
+            get filteredLocations() {
+                return this.locations.filter(loc => {
+                    const matchSearch = loc.name.toLowerCase().includes(this
+                        .locationSearch.toLowerCase());
+                    const matchProvince = this.provinceFilter === 'all' || loc
+                        .province_name === this.provinceFilter;
+                    const matchDistrict = this.districtFilter === 'all' || loc
+                        .district_name === this.districtFilter;
+                    return matchSearch && matchProvince && matchDistrict;
+                });
+            },
+
+            getSelectedLocationName() {
+                const selected = this.locations.find(loc => loc.id == this.formData
+                    .store_location_id);
+                return selected ? selected.name : 'Chọn cửa hàng';
+            },
+
+            selectLocation(location) {
+                this.formData.store_location_id = location.id;
+                this.isLocationDropdownOpen = false;
+            },
+
+            // --- Modal ---
             openModal(register = null) {
                 this.isModalOpen = true;
                 if (register) {
@@ -54,6 +101,10 @@
                     status: 'active',
                 };
                 this.isActive = true;
+                this.locationSearch = '';
+                this.provinceFilter = 'all';
+                this.districtFilter = 'all';
+                this.isLocationDropdownOpen = false;
             },
 
             getLocationName(id) {
@@ -61,6 +112,7 @@
                 return location ? location.name : 'N/A';
             },
 
+            // --- Lưu ---
             saveRegister() {
                 this.formData.status = this.isActive ? 'active' : 'inactive';
 
@@ -70,7 +122,7 @@
                         title: 'Lỗi',
                         text: 'Device UID phải là số!'
                     });
-                    return; // Dừng lại nếu sai
+                    return;
                 }
 
                 fetch(`{{ route('admin.registers.save') }}`, {
@@ -79,7 +131,7 @@
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
                                 .content,
-                            'Accept': 'application/json' // Thêm để Laravel trả về JSON lỗi validation
+                            'Accept': 'application/json'
                         },
                         body: JSON.stringify(this.formData)
                     })
@@ -88,7 +140,6 @@
                         return res.json();
                     })
                     .then(data => {
-                        // Nếu API chưa trả về store_location_name thì gán fallback
                         if (!data.data.store_location_name) {
                             data.data.store_location_name = this.getLocationName(data.data
                                 .store_location_id);
@@ -99,7 +150,7 @@
                             if (index !== -1) {
                                 this.registers[index] = {
                                     ...data.data
-                                }; // đảm bảo reactive
+                                };
                             }
                         } else {
                             this.registers.push(data.data);
@@ -121,8 +172,7 @@
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'Lỗi',
-                                    text: err.errors.name[
-                                        0] // Thông báo lỗi trùng tên máy
+                                    text: err.errors.name[0]
                                 });
                             } else {
                                 Object.values(err.errors).forEach(e => {
@@ -149,12 +199,12 @@
                     });
             },
 
-
-
+            // --- Sửa ---
             editRegister(register) {
                 this.openModal(register);
             },
 
+            // --- Xoá ---
             deleteRegister(register) {
                 Swal.fire({
                     title: 'Xác nhận xoá',
@@ -301,6 +351,7 @@
             },
         }));
     });
+
     document.addEventListener('alpine:init', () => {
         Alpine.data('registerManager', () => ({
             deleteRegister(register) {

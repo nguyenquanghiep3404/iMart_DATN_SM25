@@ -34,7 +34,18 @@ class RegisterController extends Controller
         }
 
         $registers = $query->get();
-        $locations = StoreLocation::all();
+        $locations = StoreLocation::with(['province', 'district'])->get()->map(function ($location) {
+            return [
+                'id' => $location->id,
+                'name' => $location->name,
+                'store_location_name' => $location->name,
+                'province_name' => $location->province?->name_with_type ?? null,
+                'district_name' => $location->district?->name_with_type ?? null,
+            ];
+        });
+        
+        
+        // dd($locations);
 
         return view('admin.registers.index', [
             'registers' => $registers,
