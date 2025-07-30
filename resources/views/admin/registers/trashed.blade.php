@@ -13,7 +13,8 @@
                 <div class="card-custom">
                     <div class="card-custom-header">
                         <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center w-full">
-                            <h3 class="card-custom-title">Danh sách máy POS (<span x-text="registers.length"></span>)</h3>
+                            <h3 class="card-custom-title">Danh sách máy POS đã xóa (<span x-text="registers.length"></span>)
+                            </h3>
                             <button @click="openModal()" type="button" class="btn btn-primary">
                                 <i class="fas fa-plus mr-2"></i>Thêm máy POS
                             </button>
@@ -50,12 +51,14 @@
                                             </td>
                                             <td class="text-center">
                                                 <div class="inline-flex space-x-1">
-                                                    <button @click="editRegister(register)" type="button"
-                                                        class="btn btn-primary btn-sm" title="Chỉnh sửa"><i
-                                                            class="fas fa-edit"></i></button>
-                                                    <button @click="deleteRegister(register)" type="button"
-                                                        class="btn btn-danger btn-sm" title="Xóa"><i
-                                                            class="fas fa-trash"></i></button>
+                                                    <button @click="restoreRegister(register)" type="button"
+                                                        class="btn btn-success btn-sm" title="Khôi phục">
+                                                        <i class="fas fa-undo-alt"></i>
+                                                    </button>
+                                                    <button @click="deleteRegisterPermanently(register)" type="button"
+                                                        class="btn btn-danger btn-sm" title="Xóa vĩnh viễn">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -68,6 +71,7 @@
                                         </tr>
                                     </template>
                                 </tbody>
+
                             </table>
                         </div>
                     </div>

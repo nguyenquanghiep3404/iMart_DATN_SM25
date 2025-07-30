@@ -55,7 +55,10 @@ use App\Http\Controllers\Users\CartRecoveryController;
 use App\Http\Controllers\OrderRefundController;
 use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\CustomerGroupController;
+use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\PackingStationController;
+
 
 
 // router khôi phục giỏ hàng
@@ -409,18 +412,35 @@ Route::prefix('admin')
         
         // quản lý máy pos
         Route::get('/registers', [RegisterController::class, 'index'])->name('registers.index');
+        Route::get('registers/trashed', [RegisterController::class, 'trashed'])->name('registers.trashed');
         Route::post('/registers/save', [RegisterController::class, 'save'])->name('registers.save');
         Route::delete('/registers/{id}', [RegisterController::class, 'destroy'])->name('registers.destroy');
+        Route::post('/registers/{id}/restore', [RegisterController::class, 'restore'])->name('registers.restore');
+        Route::delete('/registers/{register}/force-delete', [RegisterController::class, 'forceDelete'])->name('registers.force-delete');
+            
 
-        Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
-            $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
+        // quản lý khách hàng 
+        Route::get('customer-groups', [CustomerGroupController::class, 'index'])->name('customer-groups.index');
+        Route::post('/customer-groups', [CustomerGroupController::class, 'save']);
+        Route::put('/customer-groups/{id}', [CustomerGroupController::class, 'save']);
+        Route::delete('/customer-groups/{id}', [CustomerGroupController::class, 'destroy']);
+        Route::get('/trashed', [CustomerGroupController::class, 'trashed'])->name('trashed');
+        Route::post('/customer-groups/{id}/restore', [CustomerGroupController::class, 'restore'])->name('customer-groups.restore');
+        Route::post('/customer-groups/{id}/restore', [CustomerGroupController::class, 'restore'])->name('customer-groups.restore');
+        Route::delete('/customer-groups/{id}/force-delete', [CustomerGroupController::class, 'forceDelete'])->name('customer-groups.forceDelete');
 
-            $email = $abandonedCart->user->email ?? $abandonedCart->guest_email;
-
-            Mail::to($email)->send(new AbandonedCartMail($abandonedCart));
-
-            return 'Email đã được gửi.';
-        });
+        // chiến dịch marketing
+        Route::get('marketing-campaigns', [MarketingCampaignController::class, 'index'])->name('marketing_campaigns.index');
+        Route::get('/campaigns/create', [MarketingCampaignController::class, 'create'])->name('campaigns.create');
+        Route::post('/campaigns', [MarketingCampaignController::class, 'store'])->name('marketing_campaigns.store');
+        Route::post('/marketing-campaigns/draft', [MarketingCampaignController::class, 'storeDraft'])->name('marketing_campaigns.storeDraft');
+        Route::delete('marketing_campaigns/{id}', [MarketingCampaignController::class, 'destroy'])->name('marketing_campaigns.destroy');
+        Route::get('/marketing_campaigns/trash', [MarketingCampaignController::class, 'trash'])->name('marketing_campaigns.trash');
+        Route::post('marketing_campaigns/{id}/restore', [MarketingCampaignController::class, 'restore'])->name('marketing_campaigns.restore');
+        Route::delete('marketing_campaigns/{id}/force-delete', [MarketingCampaignController::class, 'forceDelete'])->name('marketing_campaigns.forceDelete');
+        Route::get('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'show'])->name('marketing_campaigns.show');
+        Route::get('/marketing_campaigns/{id}/edit', [MarketingCampaignController::class, 'edit'])->name('marketing_campaigns.edit');
+        Route::put('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'update'])->name('marketing_campaigns.update');
 
         // Banner routes
 

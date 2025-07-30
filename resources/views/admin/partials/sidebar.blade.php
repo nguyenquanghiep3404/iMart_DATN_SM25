@@ -6,12 +6,7 @@
     // Define navigation sections with their corresponding route prefixes for active state detection.
     $navSections = [
         'dashboard' => ['admin.dashboard'],
-        'sales' => [
-            'admin.orders.',
-            'admin.purchase-orders.',
-            'admin.packing-station.',
-            'admin.abandoned-carts.',
-        ],
+        'sales' => ['admin.orders.', 'admin.purchase-orders.', 'admin.packing-station.', 'admin.abandoned-carts.'],
         'stores' => ['admin.store-locations.', 'admin.chat.'],
         'catalog' => [
             'admin.products.',
@@ -23,26 +18,10 @@
             'admin.trade-in-items.',
             'admin.suppliers.',
         ],
-        'marketing' => [
-            'admin.coupons.',
-            'admin.flash-sales.',
-            'admin.homepage.',
-            'admin.banners.',
-        ],
-        'content' => [
-            'admin.posts.',
-            'admin.categories_post.',
-            'admin.post-tags.',
-            'admin.comment.',
-            'admin.reviews.',
-        ],
+        'marketing' => ['admin.coupons.', 'admin.flash-sales.', 'admin.homepage.', 'admin.banners.'],
+        'content' => ['admin.posts.', 'admin.categories_post.', 'admin.post-tags.', 'admin.comment.', 'admin.reviews.'],
         'customers' => ['admin.users.'],
-        'employees' => [
-            'admin.shippers.',
-            'admin.content-staffs.',
-            'admin.order-manager.',
-            'admin.roles.',
-        ],
+        'employees' => ['admin.shippers.', 'admin.content-staffs.', 'admin.order-manager.', 'admin.roles.'],
         'media' => ['admin.media.'],
         // Note: I'm assuming 'settings' is handled differently as it's in a separate section below.
     ];
@@ -60,15 +39,12 @@
 
 <aside id="adminSidebar"
     class="w-[300px] border-r border-slate-200 overflow-y-auto sidebar-scrollbar fixed left-0 top-0 h-full bg-white z-40 transition-transform duration-300 print:hidden flex flex-col"
-    {{-- Updated x-show and :class logic for responsive behavior and persistence --}}
-    x-show="(window.innerWidth >= 1024) ? true : sideMenu"
-    :class="(window.innerWidth >= 1024 && !sideMenu) ? '-translate-x-full lg:-translate-x-full' : ((sideMenu || window.innerWidth >= 1024) ? 'translate-x-0' : '-translate-x-full')"
-    x-transition:enter="transition ease-out duration-300"
-    x-transition:enter-start="-translate-x-full"
-    x-transition:enter-end="translate-x-0"
-    x-transition:leave="transition ease-in duration-200"
-    x-transition:leave-start="translate-x-0"
-    x-transition:leave-end="-translate-x-full">
+    {{-- Updated x-show and :class logic for responsive behavior and persistence --}} x-show="(window.innerWidth >= 1024) ? true : sideMenu"
+    :class="(window.innerWidth >= 1024 && !sideMenu) ? '-translate-x-full lg:-translate-x-full' : ((sideMenu || window
+        .innerWidth >= 1024) ? 'translate-x-0' : '-translate-x-full')"
+    x-transition:enter="transition ease-out duration-300" x-transition:enter-start="-translate-x-full"
+    x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full">
     <div class="flex flex-col h-full" x-data="{ openNav: '{{ $activeParentNav }}' }">
         {{-- SIDEBAR HEADER --}}
         <div class="flex h-[65px] items-center justify-center border-b border-slate-200 px-3 lg:px-6 py-4">
@@ -97,7 +73,8 @@
                                 <!-- Heroicon name: mini/home -->
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
                                     height="18" fill="currentColor">
-                                     <path d="M20,8h-3V5.66a2,2,0,0,0-2-2H9a2,2,0,0,0-2,2V8H4a2,2,0,0,0-2,2v9a2,2,0,0,0,2,2H20a2,2,0,0,0,2-2V10A2,2,0,0,0,20,8ZM9,5.66a.34.34,0,0,1,.33-.33h5.34a.34.34,0,0,1,.33.33V8H9ZM20.33,19a.34.34,0,0,1-.33.33H4a.34.34,0,0,1-.33-.33V10a.34.34,0,0,1,.33-.33H20a.34.34,0,0,1,.33.33Z"/>
+                                    <path
+                                        d="M20,8h-3V5.66a2,2,0,0,0-2-2H9a2,2,0,0,0-2,2V8H4a2,2,0,0,0-2,2v9a2,2,0,0,0,2,2H20a2,2,0,0,0,2-2V10A2,2,0,0,0,20,8ZM9,5.66a.34.34,0,0,1,.33-.33h5.34a.34.34,0,0,1,.33.33V8H9ZM20.33,19a.34.34,0,0,1-.33.33H4a.34.34,0,0,1-.33-.33V10a.34.34,0,0,1,.33-.33H20a.34.34,0,0,1,.33.33Z" />
                                 </svg>
                             </span>
                             Trang chủ
@@ -114,9 +91,10 @@
                                 <!-- Icon: Shopping Cart -->
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
                                     height="18" fill="currentColor">
-                                    <path d="M21.08,7a2,2,0,0,0-1.7-1H6.58L6,3.74A1,1,0,0,0,5,3H3A1,1,0,0,0,3,5H4.24L7,15.26A1,1,0,0,0,8,16H18a1,1,0,0,0,.93-.66L21.23,9.34A2,2,0,0,0,21.08,7Zm-2.39,7H8.74L7.22,7H19.38Z"/>
-                                    <circle cx="8.5" cy="19.5" r="1.5"/>
-                                    <circle cx="17.5" cy="19.5" r="1.5"/>
+                                    <path
+                                        d="M21.08,7a2,2,0,0,0-1.7-1H6.58L6,3.74A1,1,0,0,0,5,3H3A1,1,0,0,0,3,5H4.24L7,15.26A1,1,0,0,0,8,16H18a1,1,0,0,0,.93-.66L21.23,9.34A2,2,0,0,0,21.08,7Zm-2.39,7H8.74L7.22,7H19.38Z" />
+                                    <circle cx="8.5" cy="19.5" r="1.5" />
+                                    <circle cx="17.5" cy="19.5" r="1.5" />
                                 </svg>
                             </span>
                             Quản lý Bán hàng
@@ -136,8 +114,8 @@
                                     hàng</a>
                             </li>
                             <li><a href="{{ route('admin.purchase-orders.index') }}"
-                                class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.purchase-orders.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Nhập
-                                kho</a>
+                                    class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.purchase-orders.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Nhập
+                                    kho</a>
                             </li>
                             {{-- ADDED: Packing Station Route --}}
                             <li><a href="{{ route('admin.packing-station.index') }}"
@@ -196,7 +174,11 @@
                             <span
                                 class="mr-3 text-lg {{ $activeParentNav === 'catalog' ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-500' }}">
                                 <!-- Icon: Book Open -->
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19,2H5A3,3,0,0,0,2,5V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V5A3,3,0,0,0,19,2Zm-7,2h5V19H12Zm-2,0h1V19H10ZM5,4H9V19H5a1,1,0,0,1-1-1V5A1,1,0,0,1,5,4Z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                    height="18" fill="currentColor">
+                                    <path
+                                        d="M19,2H5A3,3,0,0,0,2,5V19a3,3,0,0,0,3,3H19a3,3,0,0,0,3-3V5A3,3,0,0,0,19,2Zm-7,2h5V19H12Zm-2,0h1V19H10ZM5,4H9V19H5a1,1,0,0,1-1-1V5A1,1,0,0,1,5,4Z" />
+                                </svg>
                             </span>
                             Quản lý Catalogue
                             <span class="ml-auto transition-transform duration-200"
@@ -209,7 +191,8 @@
                                 </svg>
                             </span>
                         </button>
-                        <ul x-show="openNav === 'catalog'" class="pl-8 pr-2 py-1 space-y-1 mt-1" style="display: none;">
+                        <ul x-show="openNav === 'catalog'" class="pl-8 pr-2 py-1 space-y-1 mt-1"
+                            style="display: none;">
                             <li><a href="{{ route('admin.products.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.products.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Sản
                                     phẩm</a>
@@ -218,7 +201,7 @@
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.bundle-products.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Gói
                                     sản phẩm</a>
                             </li>
-                             <li><a href="{{ route('admin.trade-in-items.index') }}"
+                            <li><a href="{{ route('admin.trade-in-items.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.trade-in-items.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Thu
                                     cũ & Mở hộp</a>
                             </li>
@@ -235,7 +218,7 @@
                                     số</a>
                             </li>
                             {{-- MOVED: Supplier Route --}}
-                             <li><a href="{{ route('admin.suppliers.index') }}"
+                            <li><a href="{{ route('admin.suppliers.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.suppliers.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Nhà
                                     cung cấp</a>
                             </li>
@@ -250,7 +233,12 @@
                             <span
                                 class="mr-3 text-lg {{ $activeParentNav === 'marketing' ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-500' }}">
                                 <!-- Icon: Megaphone -->
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.2,6.2a1,1,0,0,0-1.1.2L14.9,9.6A4.47,4.47,0,0,0,8,7.5,4.5,4.5,0,0,0,3.5,12,4.5,4.5,0,0,0,8,16.5a4.47,4.47,0,0,0,6.9-2.1l4.2,3.2a1,1,0,0,0,1.3-.2,1,1,0,0,0-.2-1.3L16,13.2a4.49,4.49,0,0,0-1-.7V10.1l5.4-4.1a1,1,0,0,0,.2-1.4A.87.87,0,0,0,20.2,6.2ZM8,14.5a2.5,2.5,0,1,1,2.5-2.5A2.5,2.5,0,0,1,8,14.5Z"/><path d="M8,13a1,1,0,0,0,1-1V8a1,1,0,0,0-2,0v4A1,1,0,0,0,8,13Z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                    height="18" fill="currentColor">
+                                    <path
+                                        d="M20.2,6.2a1,1,0,0,0-1.1.2L14.9,9.6A4.47,4.47,0,0,0,8,7.5,4.5,4.5,0,0,0,3.5,12,4.5,4.5,0,0,0,8,16.5a4.47,4.47,0,0,0,6.9-2.1l4.2,3.2a1,1,0,0,0,1.3-.2,1,1,0,0,0-.2-1.3L16,13.2a4.49,4.49,0,0,0-1-.7V10.1l5.4-4.1a1,1,0,0,0,.2-1.4A.87.87,0,0,0,20.2,6.2ZM8,14.5a2.5,2.5,0,1,1,2.5-2.5A2.5,2.5,0,0,1,8,14.5Z" />
+                                    <path d="M8,13a1,1,0,0,0,1-1V8a1,1,0,0,0-2,0v4A1,1,0,0,0,8,13Z" />
+                                </svg>
                             </span>
                             Quản lý Marketing
                             <span class="ml-auto transition-transform duration-200"
@@ -263,7 +251,8 @@
                                 </svg>
                             </span>
                         </button>
-                        <ul x-show="openNav === 'marketing'" class="pl-8 pr-2 py-1 space-y-1 mt-1" style="display: none;">
+                        <ul x-show="openNav === 'marketing'" class="pl-8 pr-2 py-1 space-y-1 mt-1"
+                            style="display: none;">
                             <li><a href="{{ route('admin.coupons.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.coupons.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Mã
                                     giảm giá</a>
@@ -310,7 +299,8 @@
                                 </svg>
                             </span>
                         </button>
-                        <ul x-show="openNav === 'content'" class="pl-8 pr-2 py-1 space-y-1 mt-1" style="display: none;">
+                        <ul x-show="openNav === 'content'" class="pl-8 pr-2 py-1 space-y-1 mt-1"
+                            style="display: none;">
                             <li><a href="{{ route('admin.posts.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.posts.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Bài
                                     viết</a>
@@ -361,7 +351,8 @@
                                 </svg>
                             </span>
                         </button>
-                        <ul x-show="openNav === 'customers'" class="pl-8 pr-2 py-1 space-y-1 mt-1" style="display: none;">
+                        <ul x-show="openNav === 'customers'" class="pl-8 pr-2 py-1 space-y-1 mt-1"
+                            style="display: none;">
                             <li><a href="{{ route('admin.users.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.users.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Danh
                                     sách khách hàng</a>
@@ -377,7 +368,11 @@
                             <span
                                 class="mr-3 text-lg {{ $activeParentNav === 'employees' ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-500' }}">
                                 <!-- Icon: Briefcase -->
-                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20,6H18V5a3,3,0,0,0-3-3H9A3,3,0,0,0,6,5V6H4A3,3,0,0,0,1,9v9a3,3,0,0,0,3,3H20a3,3,0,0,0,3-3V9A3,3,0,0,0,20,6ZM8,5A1,1,0,0,1,9,4h6a1,1,0,0,1,1,1V6H8ZM21,18a1,1,0,0,1-1,1H4a1,1,0,0,1-1-1V9A1,1,0,0,1,4,8H20a1,1,0,0,1,1,1Z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                    height="18" fill="currentColor">
+                                    <path
+                                        d="M20,6H18V5a3,3,0,0,0-3-3H9A3,3,0,0,0,6,5V6H4A3,3,0,0,0,1,9v9a3,3,0,0,0,3,3H20a3,3,0,0,0,3-3V9A3,3,0,0,0,20,6ZM8,5A1,1,0,0,1,9,4h6a1,1,0,0,1,1,1V6H8ZM21,18a1,1,0,0,1-1,1H4a1,1,0,0,1-1-1V9A1,1,0,0,1,4,8H20a1,1,0,0,1,1,1Z" />
+                                </svg>
                             </span>
                             Quản lý Nhân viên
                             <span class="ml-auto transition-transform duration-200"
@@ -390,7 +385,8 @@
                                 </svg>
                             </span>
                         </button>
-                        <ul x-show="openNav === 'employees'" class="pl-8 pr-2 py-1 space-y-1 mt-1" style="display: none;">
+                        <ul x-show="openNav === 'employees'" class="pl-8 pr-2 py-1 space-y-1 mt-1"
+                            style="display: none;">
                             <li><a href="{{ route('admin.shippers.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.shippers.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">NV
                                     Giao hàng</a>

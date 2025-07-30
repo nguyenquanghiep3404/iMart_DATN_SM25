@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -26,6 +27,7 @@
     @stack('styles')
 </head>
 {{-- Updated body with Alpine.js data for sidebar toggle and persistence --}}
+
 <body x-data="{
     sideMenu: localStorage.getItem('sideMenu') === 'true', // Load state from localStorage
     toggleSideMenu() {
@@ -37,15 +39,13 @@
         @include('admin.partials.sidebar')
 
         <!-- Overlay for mobile -->
-        <div class="fixed inset-0 bg-black/70 z-30 transition-all duration-300 print:hidden lg:hidden"
-             x-show="sideMenu"
-             x-transition.opacity
-             @click="sideMenu = false">
+        <div class="fixed inset-0 bg-black/70 z-30 transition-all duration-300 print:hidden lg:hidden" x-show="sideMenu"
+            x-transition.opacity @click="sideMenu = false">
         </div>
 
         <div class="tp-main-content flex-1 transition-all duration-300 min-h-screen"
-             :class="sideMenu && window.innerWidth < 1024 ? 'overflow-hidden' : ''"
-             :style="window.innerWidth >= 1024 ? (sideMenu ? 'margin-left: 300px;' : 'margin-left: 0;') : ''">
+            :class="sideMenu && window.innerWidth < 1024 ? 'overflow-hidden' : ''"
+            :style="window.innerWidth >= 1024 ? (sideMenu ? 'margin-left: 300px;' : 'margin-left: 0;') : ''">
             @include('admin.partials.header')
             <main class="p-4 sm:p-6 lg:p-8"> {{-- Added padding for main content --}}
                 @yield('content')
@@ -64,4 +64,5 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     @stack('scripts')
 </body>
+
 </html>
