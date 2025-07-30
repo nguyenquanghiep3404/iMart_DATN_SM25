@@ -43,18 +43,32 @@ class MarketingCampaignController extends Controller
     // lưu nháp
     public function storeDraft(Request $request)
     {
-        \Log::info('Request data:', $request->all());
-    
         $validated = $request->validate([
-            'name'              => 'required|string|max:255',
-            'subject'           => 'nullable|string|max:255',
-            'content'           => 'nullable|string',
-            'customer_group_id'  => 'nullable|exists:customer_groups,id',
+            'name'              => 'required|string|max:255|unique:marketing_campaigns,name',
+            'subject'           => 'required|string|max:255',
+            'content'           => 'required|string',
+            'customer_group_id' => 'required|exists:customer_groups,id',
             'type'              => 'required|in:email,sms',
-            'coupon'            => 'nullable|string|max:255',
-            'coupon_id' => 'nullable|exists:coupons,id',
-        ]);
+            'coupon_id'         => 'required|exists:coupons,id',
+        ], [
+            'name.required' => 'Tên chiến dịch là bắt buộc.',
+            'name.max' => 'Tên chiến dịch không được vượt quá 255 ký tự.',
+            'name.unique' => 'Tên chiến dịch này đã tồn tại, vui lòng chọn tên khác.',
         
+            'subject.required' => 'Tiêu đề Email là bắt buộc.',
+            'subject.max' => 'Tiêu đề Email không được vượt quá 255 ký tự.',
+        
+            'content.required' => 'Nội dung Email là bắt buộc.',
+        
+            'customer_group_id.required' => 'Vui lòng chọn nhóm khách hàng.',
+            'customer_group_id.exists' => 'Nhóm khách hàng không hợp lệ.',
+        
+            'type.required' => 'Kênh gửi là bắt buộc.',
+            'type.in' => 'Kênh gửi không hợp lệ.',
+        
+            'coupon_id.required' => 'Vui lòng chọn mã giảm giá.',
+            'coupon_id.exists' => 'Mã giảm giá không hợp lệ.',
+        ]);
         $campaign = new MarketingCampaign();
         $campaign->name = $validated['name'];
         $campaign->email_subject = $validated['subject'] ?? null;
@@ -182,15 +196,33 @@ class MarketingCampaignController extends Controller
     {
         $campaign = MarketingCampaign::findOrFail($id);
 
-        // Validate dữ liệu đầu vào
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'subject' => 'required|string|max:255',
-            'content' => 'required|string',
+        $validated = $request->validate([
+            'name'              => "required|string|max:255|unique:marketing_campaigns,name,{$id}",
+            'subject'           => 'required|string|max:255',
+            'content'           => 'required|string',
             'customer_group_id' => 'required|exists:customer_groups,id',
-            'type' => 'required|in:email,sms',
-            'coupon_id' => 'nullable|exists:coupons,id',
+            'type'              => 'required|in:email,sms',
+            'coupon_id'         => 'required|exists:coupons,id',
+        ], [
+            'name.required' => 'Tên chiến dịch là bắt buộc.',
+            'name.max' => 'Tên chiến dịch không được vượt quá 255 ký tự.',
+            'name.unique' => 'Tên chiến dịch này đã tồn tại, vui lòng chọn tên khác.',
+        
+            'subject.required' => 'Tiêu đề Email là bắt buộc.',
+            'subject.max' => 'Tiêu đề Email không được vượt quá 255 ký tự.',
+        
+            'content.required' => 'Nội dung Email là bắt buộc.',
+        
+            'customer_group_id.required' => 'Vui lòng chọn nhóm khách hàng.',
+            'customer_group_id.exists' => 'Nhóm khách hàng không hợp lệ.',
+        
+            'type.required' => 'Kênh gửi là bắt buộc.',
+            'type.in' => 'Kênh gửi không hợp lệ.',
+        
+            'coupon_id.required' => 'Vui lòng chọn mã giảm giá.',
+            'coupon_id.exists' => 'Mã giảm giá không hợp lệ.',
         ]);
+        
 
         // Cập nhật dữ liệu
         $campaign->name = $request->input('name');

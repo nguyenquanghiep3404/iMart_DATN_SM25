@@ -169,19 +169,25 @@
                     return data;
                 };
 
-                // Handle Save Draft button click
                 saveDraftBtn.addEventListener('click', function() {
                     const campaignData = getCampaignData();
-
-                    // Lấy id campaign từ biến blade hoặc attribute data-...
-                    // const campaignId = "{{ $campaign->id ?? 0 }}";
                     const campaignId = "{{ $campaign->id ?? '' }}";
-                    console.log('campaignId:', campaignId);
+
+                    if (!campaignId) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi',
+                            text: 'Campaign ID không hợp lệ hoặc không tồn tại.',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
 
                     fetch(`/admin/marketing_campaigns/${campaignId}`, {
-                            method: "PUT", // PUT vì update
+                            method: "PUT",
                             headers: {
                                 "Content-Type": "application/json",
+                                "Accept": "application/json",
                                 "X-CSRF-TOKEN": "{{ csrf_token() }}"
                             },
                             body: JSON.stringify({
@@ -189,8 +195,29 @@
                                 status: "draft"
                             })
                         })
-                        .then(res => res.json())
+                        .then(async res => {
+                            if (!res.ok) {
+                                const errorData = await res.json();
+                                if (res.status === 422 && errorData.errors) {
+                                    const messages = Object.values(errorData.errors)
+                                        .flat()
+                                        .map(msg => `<p>${msg}</p>`)
+                                        .join('');
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Lỗi xác thực',
+                                        html: messages,
+                                        confirmButtonText: 'Đóng'
+                                    });
+                                } else {
+                                    throw new Error(errorData.message || 'Có lỗi xảy ra.');
+                                }
+                                return;
+                            }
+                            return res.json();
+                        })
                         .then(data => {
+                            if (!data) return;
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Thành công',
@@ -205,13 +232,13 @@
                             console.error(err);
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Lỗi',
-
-                                text: 'Campaign ID không hợp lệ!',
-                                confirmButtonText: 'Thử lại'
+                                title: 'Lỗi hệ thống',
+                                text: err.message || 'Vui lòng thử lại.',
+                                confirmButtonText: 'OK'
                             });
                         });
                 });
+
                 // Handle form submission (Send Campaign)
                 form.addEventListener('submit', function(event) {
                     event.preventDefault(); // Prevent default form submission

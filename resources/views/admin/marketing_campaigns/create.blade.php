@@ -161,6 +161,43 @@
                 };
 
                 // Handle Save Draft button click
+                // saveDraftBtn.addEventListener('click', function() {
+                //     const campaignData = getCampaignData();
+
+                //     fetch("{{ route('admin.marketing_campaigns.storeDraft') }}", {
+                //             method: "POST",
+                //             headers: {
+                //                 "Content-Type": "application/json",
+                //                 "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                //             },
+                //             body: JSON.stringify({
+                //                 ...campaignData,
+                //                 status: "draft"
+                //             })
+                //         })
+                //         .then(res => res.json())
+                //         .then(data => {
+                //             Swal.fire({
+                //                 icon: 'success',
+                //                 title: 'Thành công',
+                //                 text: data.message || 'Đã lưu nháp thành công.',
+                //                 confirmButtonText: 'OK'
+                //             }).then(() => {
+                //                 // Điều hướng sau khi người dùng bấm "OK"
+                //                 window.location.href =
+                //                     "{{ route('admin.marketing_campaigns.index') }}";
+                //             });
+                //         })
+                //         .catch(err => {
+                //             console.error(err);
+                //             Swal.fire({
+                //                 icon: 'error',
+                //                 title: 'Lỗi',
+                //                 text: 'Vui lòng điền đầy đủ các trường.',
+                //                 confirmButtonText: 'Thử lại'
+                //             });
+                //         });
+                // });
                 saveDraftBtn.addEventListener('click', function() {
                     const campaignData = getCampaignData();
 
@@ -168,6 +205,7 @@
                             method: "POST",
                             headers: {
                                 "Content-Type": "application/json",
+                                "Accept": "application/json", // Thêm dòng này
                                 "X-CSRF-TOKEN": "{{ csrf_token() }}"
                             },
                             body: JSON.stringify({
@@ -175,15 +213,40 @@
                                 status: "draft"
                             })
                         })
-                        .then(res => res.json())
+                        .then(async res => {
+                            if (!res.ok) {
+                                const errorData = await res.json();
+                                // Xử lý lỗi 422 (Validation)
+                                if (res.status === 422 && errorData.errors) {
+                                    const messages = Object.values(errorData.errors)
+                                        .flat()
+                                        .map(msg => `<p>${msg}</p>`)
+                                        .join('');
+
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Lỗi xác thực',
+                                        html: messages,
+                                        confirmButtonText: 'Đóng'
+                                    });
+                                } else {
+                                    // Lỗi khác
+                                    throw new Error(errorData.message || 'Có lỗi xảy ra.');
+                                }
+                                return;
+                            }
+
+                            return res.json();
+                        })
                         .then(data => {
+                            if (!data) return; // Nếu có lỗi thì dừng tại đây
+
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Thành công',
                                 text: data.message || 'Đã lưu nháp thành công.',
                                 confirmButtonText: 'OK'
                             }).then(() => {
-                                // Điều hướng sau khi người dùng bấm "OK"
                                 window.location.href =
                                     "{{ route('admin.marketing_campaigns.index') }}";
                             });
@@ -192,12 +255,13 @@
                             console.error(err);
                             Swal.fire({
                                 icon: 'error',
-                                title: 'Lỗi',
-                                text: 'Có lỗi xảy ra khi lưu nháp.',
-                                confirmButtonText: 'Thử lại'
+                                title: 'Lỗi hệ thống',
+                                text: err.message || 'Vui lòng thử lại.',
+                                confirmButtonText: 'OK'
                             });
                         });
                 });
+
 
                 // Handle form submission (Send Campaign)
                 form.addEventListener('submit', function(event) {

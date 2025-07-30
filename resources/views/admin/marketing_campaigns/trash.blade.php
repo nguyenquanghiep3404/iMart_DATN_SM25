@@ -8,7 +8,7 @@
             <!-- Page Header -->
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
                 <div>
-                    <h1 class="text-3xl font-bold text-slate-800">Danh Sách Chiến Dịch</h1>
+                    <h1 class="text-3xl font-bold text-slate-800">Danh Sách Chiến Dịch Đã Xóa</h1>
                     <p class="mt-1 text-slate-500">Theo dõi và quản lý tất cả các chiến dịch marketing của bạn.</p>
                 </div>
                 <div class="flex items-center space-x-3 mt-4 sm:mt-0">
@@ -111,11 +111,10 @@
                                 <td class="px-6 py-4">${campaign.sentDate || 'Chưa gửi'}</td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex items-center justify-center space-x-2">
-                                        <button class="p-2.5 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors duration-200" title="Xem chi tiết">${icons.eye}</button>
                                         <button class="btn-restore p-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200"
                                             title="Khôi phục"
                                             data-id="${campaign.id}">🔄</button>
-                                    <button class="btn-force-delete p-2.5 bg-red-700 text-white rounded-lg hover:bg-red-800 transition-colors duration-200"
+                                    <button class="btn-force-delete p-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200"
                                         title="Xóa vĩnh viễn"
                                         data-id="${campaign.id}">${icons.trash}</button>
                                     </div>
