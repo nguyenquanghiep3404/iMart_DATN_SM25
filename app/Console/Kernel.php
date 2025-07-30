@@ -10,6 +10,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('app:detect-abandoned-carts')->everyMinute();
+        $schedule->command('customers:update-groups')->daily();
     }
 
     protected function commands()
@@ -18,4 +19,5 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+    
 }

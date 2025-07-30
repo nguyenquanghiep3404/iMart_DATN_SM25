@@ -198,6 +198,107 @@
                         });
                 });
             },
+            // khôi phục
+            restoreRegister(register) {
+                Swal.fire({
+                    title: `Bạn có chắc muốn khôi phục máy POS "${register.name}" không?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Khôi phục',
+                    cancelButtonText: 'Hủy',
+                    reverseButtons: true,
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    fetch(`/admin/registers/${register.id}/restore`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').getAttribute(
+                                    'content'),
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                            },
+                        })
+                        .then(res => {
+                            if (!res.ok) throw new Error('HTTP status ' + res.status);
+                            return res.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Thành công',
+                                    text: data.message ||
+                                        'Khôi phục thành công.'
+                                });
+                                this.registers = this.registers.filter(r => r.id !==
+                                    register.id);
+                                this.filteredRegisters = this.registers;
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Lỗi',
+                                    text: data.message ||
+                                        'Có lỗi xảy ra khi khôi phục.'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Lỗi khôi phục:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: 'Lỗi kết nối hoặc lỗi server.'
+                            });
+                        });
+                });
+            },
+            deleteRegisterPermanently(register) {
+                Swal.fire({
+                    title: 'Xác nhận xóa vĩnh viễn',
+                    text: `Bạn có chắc chắn muốn xóa vĩnh viễn máy POS "${register.name}"? Hành động này không thể hoàn tác!`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Xóa vĩnh viễn',
+                    cancelButtonText: 'Hủy',
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+
+                    fetch(`/admin/registers/${register.id}/force-delete`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                        })
+                        .then(res => {
+                            if (!res.ok) return res.json().then(err => Promise.reject(
+                                err));
+                            return res.json();
+                        })
+                        .then(data => {
+                            this.registers = this.registers.filter(r => r.id !==
+                                register.id);
+                            this.filteredRegisters = this.registers;
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Đã xóa vĩnh viễn',
+                                text: data.message ||
+                                    'Xóa vĩnh viễn thành công!',
+                            });
+                        })
+                        .catch(() => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: 'Không thể xóa vĩnh viễn máy POS!',
+                            });
+                        });
+                });
+            },
         }));
     });
     document.addEventListener('alpine:init', () => {

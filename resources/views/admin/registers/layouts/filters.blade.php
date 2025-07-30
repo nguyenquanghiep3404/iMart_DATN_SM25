@@ -1,3 +1,12 @@
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-2 sm:space-y-0">
+    <div class="flex space-x-2">
+        <a href="{{ route('admin.registers.index') }}" class="btn btn-primary">Danh sách</a>
+        <a href="{{ route('admin.registers.trashed') }}" class="btn btn-danger flex items-center">
+            <i class="fas fa-trash-alt mr-2"></i>Thùng rác
+        </a>
+    </div>
+</div>
+
 <form action="{{ route('admin.registers.index') }}" method="GET">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4" x-data="{
         searchQuery: '{{ request('search') }}',
