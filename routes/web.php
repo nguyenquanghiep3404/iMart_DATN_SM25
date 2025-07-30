@@ -55,7 +55,7 @@ use App\Http\Controllers\Users\CartRecoveryController;
 use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\PackingStationController;
-
+use App\Http\Controllers\Admin\StockTransferController;
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -71,12 +71,8 @@ Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name('cart.addMultiple');
 Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
 
-
 // cart_offcanvas
 Route::get('/cart/offcanvas', [CarOffController::class, 'index']);
-// Route::post('/vnpay/payment', [VNPayController::class, 'createPayment'])->name('vnpay.payment');
-// Route::get('/vnpay/return', [VNPayController::class, 'handleReturn'])->name('vnpay.return');
-
 
 Route::prefix('payments')->name('payments.')->group(function () {
     Route::get('/', [PaymentController::class, 'index'])->name('index');
@@ -619,7 +615,12 @@ Route::prefix('admin')
         
         // Route để xác nhận hoàn tất đóng gói
         Route::post('/orders/{orderId}/confirm-packing', [PackingStationController::class, 'confirmPacking'])->name('confirm-packing');
-    });
+        });
+        // QUẢN LÝ CHUYỂN KHO (STOCK TRANSFERS)
+        Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
+            Route::get('/search-products', [StockTransferController::class, 'searchProducts'])->name('search-products');
+        });
+        Route::resource('stock-transfers', StockTransferController::class);
 
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
