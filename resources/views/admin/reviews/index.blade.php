@@ -95,8 +95,8 @@
                             <div class="flex items-center">
                                 <img src="{{ $review->user->avatar_url ?? 'https://placehold.co/40x40' }}" alt="Avatar" class="w-10 h-10 rounded-full mr-4">
                                 <div>
-                                    <div class="font-semibold text-gray-900">{{ $review->user->name ?? 'Khách vãng lai' }}</div>
-                                    <div class="text-xs text-gray-500">{{ $review->user->email ?? '' }}</div>
+                                    <div class="font-semibold text-gray-900">{{ $review->user->name ?? $review->orderItem->order->customer_name }}</div>
+                                    <div class="text-xs text-gray-500">{{ $review->user->email ?? $review->orderItem->order->customer_email }}</div>
                                 </div>
                             </div>
                         </td>
