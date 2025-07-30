@@ -24,7 +24,7 @@ class ReviewController extends Controller
         $user = Auth::user();
 
         // Lấy tất cả review của user, key theo product_variant_id để tra cứu nhanh
-        $userReviews = Review::where('user_id', $user->id)
+        $userReviews = Review::where('user_id','orderItem.order', $user->id)
             ->get()
             ->keyBy('product_variant_id');
 

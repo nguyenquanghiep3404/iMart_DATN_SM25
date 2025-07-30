@@ -58,4 +58,8 @@ class Review extends Model
     {
         return $this->belongsTo(\App\Models\ProductVariant::class, 'product_variant_id');
     }
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
 }
