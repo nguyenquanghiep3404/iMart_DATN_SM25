@@ -47,6 +47,7 @@ use App\Mail\AbandonedCartMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\OrderRefundController;
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -141,8 +142,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
         Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
     });
-});
 
+    Route::get('/refunds/{code}', [OrderRefundController::class, 'showuser'])->name('refunds.show');
+});
+// Tách riêng route hoàn tiền ra ngoài
+Route::post('/orders/refund-request', [OrderRefundController::class, 'store'])
+    ->middleware(['auth']) // KHÔNG dùng 'verified'
+    ->name('orders.refund.request');
 // Hiển thị trang wishlist cho khách vãng lai và user
 Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
 Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
@@ -360,24 +366,24 @@ Route::prefix('admin')
         // quản lý giỏ hàng lãng quên
         Route::get('/abandoned-carts', [AbandonedCartController::class, 'index'])->name('abandoned-carts.index');
         Route::get('/admin/abandoned-carts/{id}', [AbandonedCartController::class, 'show'])
-        ->name('abandoned_carts.show');
+            ->name('abandoned_carts.show');
         Route::post('abandoned-carts/send-inapp/{cart}', [AbandonedCartController::class, 'sendInApp'])
-        ->name('abandoned_carts.send_inapp');
+            ->name('abandoned_carts.send_inapp');
         Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
-        ->name('abandoned_carts.send_email');
+            ->name('abandoned_carts.send_email');
         Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
             $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
-        
+
             $email = $abandonedCart->user->email ?? $abandonedCart->guest_email;
-        
+
             Mail::to($email)->send(new AbandonedCartMail($abandonedCart));
-        
+
             return 'Email đã được gửi.';
         });
-        
-        
-        
-        
+
+
+
+
 
         // Banner routes
 
@@ -504,7 +510,12 @@ Route::prefix('admin')
             Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
             Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
         });
-
+        Route::prefix('refunds')->name('refunds.')->group(function () {
+            Route::get('/', [OrderRefundController::class, 'index'])->name('index');
+            Route::get('/{id}', [OrderRefundController::class, 'show'])->name('show');
+            Route::put('/{id}/note', [OrderRefundController::class, 'updateNote'])->name('note');
+            Route::put('/{id}/status', [OrderRefundController::class, 'updateStatus'])->name('update_status');
+        });
 
         // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });

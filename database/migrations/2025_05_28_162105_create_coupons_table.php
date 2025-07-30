@@ -24,6 +24,7 @@ return new class extends Migration
             $table->timestamp('end_date')->nullable();
             $table->enum('status', ['active', 'inactive', 'expired'])->default('active');
             $table->boolean('is_public')->default(true);
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null')->after('is_public');
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
