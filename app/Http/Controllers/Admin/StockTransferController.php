@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use App\Models\ProvinceOld;
+use App\Models\DistrictOld;
 
 class StockTransferController extends Controller
 {
@@ -77,10 +79,18 @@ class StockTransferController extends Controller
      * @return \Illuminate\View\View
      */
     public function create()
-    {
-        $locations = StoreLocation::where('is_active', true)->orderBy('name')->get();
-        return view('admin.stock_transfers.create', compact('locations'));
-    }
+{
+    $locations = StoreLocation::where('is_active', true)->orderBy('name')->get();
+    
+    // START: THÊM 2 DÒNG NÀY
+    $provinces = ProvinceOld::orderBy('name')->get();
+    $districts = DistrictOld::orderBy('name')->get();
+    // END: THÊM 2 DÒNG NÀY
+
+    // Cập nhật lại hàm compact() để truyền biến mới sang view
+    return view('admin.stock_transfers.create', compact('locations', 'provinces', 'districts'));
+}
+
 
     /**
      * Store a newly created resource in storage.
