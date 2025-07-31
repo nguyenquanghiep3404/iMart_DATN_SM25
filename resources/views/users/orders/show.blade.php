@@ -73,46 +73,60 @@
                     <div class="row">
                         <div class="col-md-6">
                             <h6>Địa chỉ nhận hàng</h6>
-                            <p>{{ $order->customer_name }}</p>
-                            <p>{{ $order->customer_phone }}</p>
-                            <p>{{ $order->shipping_address_line1 }}</p>
+                            <p><strong>Tên người nhận:</strong> {{ $order->customer_name }}</p>
+                            <p><strong>SĐT của người nhận:</strong> {{ $order->customer_phone }}</p>
+                            <p><strong>Địa chỉ chi tiết:</strong> {{ $order->shipping_address_line1 }}</p>
                             @if($order->shipping_address_line2)
-                            <p>{{ $order->shipping_address_line2 }}</p>
+                                <p>{{ $order->shipping_address_line2 }}</p>
                             @endif
+
                             <p>
+                                <strong>Phường/Xã:</strong>
                                 @if($order->shippingWard)
-                                {{ $order->shippingWard->name }},
+                                    {{ $order->shippingWard->name }}
                                 @else
-                                {{ $order->shipping_ward_code }},
-                                @endif
-                                @if($order->shippingProvince)
-                                {{ $order->shippingProvince->name }}
-                                @else
-                                {{ $order->shipping_province_code }}
+                                    {{ $order->shipping_ward_code }}
                                 @endif
                             </p>
+
+                            <p>
+                                <strong>Tỉnh/Thành:</strong>
+                                @if($order->shippingProvince)
+                                    {{ $order->shippingProvince->name }}
+                                @else
+                                    {{ $order->shipping_province_code }}
+                                @endif
+                            </p>
+
                         </div>
 
                         @if($order->billing_address_line1)
                         <div class="col-md-6">
                             <h6>Địa chỉ thanh toán</h6>
-                            <p>{{ $order->customer_name }}</p>
-                            <p>{{ $order->billing_address_line1 }}</p>
+                            <p><strong>Tên người thanh toán:</strong> {{ $order->customer_name }}</p>
+                            <p><strong>Địa chỉ chi tiết:</strong> {{ $order->billing_address_line1 }}</p>
                             @if($order->billing_address_line2)
-                            <p>{{ $order->billing_address_line2 }}</p>
+                            <p><strong>Địa chỉ:</strong> {{ $order->billing_address_line2 }}</p>
+                        @endif
+
+                        <p>
+                            <strong>Phường/Xã:</strong>
+                            @if($order->billingWard)
+                                {{ $order->billingWard->name }}
+                            @else
+                                {{ $order->billing_ward_code }}
                             @endif
-                            <p>
-                                @if($order->billingWard)
-                                {{ $order->billingWard->name }},
-                                @else
-                                {{ $order->billing_ward_code }},
-                                @endif
-                                @if($order->billingProvince)
+                        </p>
+
+                        <p>
+                            <strong>Tỉnh/Thành:</strong>
+                            @if($order->billingProvince)
                                 {{ $order->billingProvince->name }}
-                                @else
+                            @else
                                 {{ $order->billing_province_code }}
-                                @endif
-                            </p>
+                            @endif
+                        </p>
+
                         </div>
                         @endif
                     </div>
@@ -132,7 +146,10 @@
                                     <th>Đơn giá</th>
                                     <th>Số lượng</th>
                                     <th>Thành tiền</th>
+                                    @if ($order->status === 'delivered')
                                     <td>Đánh giá</td>
+                                    <td>Hoàn tiền</td>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -143,6 +160,7 @@
                                             @if($item->image_url)
                                             <img src="{{ $item->image_url }}" alt="{{ $item->product_name }}" class="img-thumbnail me-3" style="width: 60px;">
                                             @else
+                                            
                                             <div class="bg-light d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
                                                 <i class="fas fa-box-open text-muted"></i>
                                             </div>
@@ -184,6 +202,28 @@
                                         @else
                                         @endif
 
+                                    </td>
+                                    <td>
+                                        @if ($order->status === 'delivered')
+                                        @if ($item->returnItem)
+                                        {{-- Nếu đã có phiếu trả hàng --}}
+                                        <a href="{{ route('refunds.show', $item->returnItem->id) }}"
+                                            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
+                                            Xem chi tiết
+                                        </a>
+                                        @else
+                                        {{-- Nếu chưa có phiếu trả hàng --}}
+                                        <button class="open-return-modal bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition"
+                                            data-name="{{ $item->product_name }}"
+                                            data-sku="{{ 'SKU: '. $item->sku }}"
+                                            data-image="{{ $item->image_url }}"
+                                            data-price="{{ $item->price }}" {{-- Dạng số để JS tính toán --}}
+                                            data-price-formatted="{{ number_format($item->price, 0, ',', '.') }} ₫" {{-- Dùng để hiển thị --}}
+                                            data-order-item-id="{{ $item->id }}">
+                                            Trả hàng
+                                        </button>
+                                        @endif
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach
@@ -282,6 +322,7 @@
                         <div>
                             <label class="font-semibold text-gray-700">Thêm hình ảnh/video</label>
                             <input id="file-upload" name="media[]" type="file" accept="image/*,video/*" multiple class="form-control">
+                            <div id="preview" class="mt-4 grid grid-cols-3 gap-4"></div>
                         </div>
                         <div class="text-right">
                             <button id="submit-review-btn" class="bg-blue-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-700 transition-colors">Gửi đánh giá</button>
@@ -293,10 +334,188 @@
         </div>
     </div>
 </div>
+<!-- Modal Trả hàng -->
+<div id="return-request-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex justify-center items-start overflow-auto">
+    <div class="relative bg-white max-w-4xl w-full mt-10 mx-4 p-6 rounded-lg shadow-xl">
+        <button id="close-return-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl">×</button>
+        <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
+            <!-- Tiêu đề -->
+            <div class="text-center">
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Yêu cầu Trả hàng / Hoàn tiền</h1>
+                <p class="text-gray-500 mt-2">Hoàn thành biểu mẫu dưới đây để gửi yêu cầu của bạn.</p>
+            </div>
+
+            <hr class="border-gray-200">
+
+            <!-- Phần 1: Thông tin sản phẩm -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-700">1. Sản phẩm cần trả</h2>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 border border-gray-200 rounded-lg p-4">
+                    <img class="product-image w-24 h-24 object-cover rounded-md flex-shrink-0 border" src="..." ...>
+                    <div class="flex-grow">
+                        <p class="product-name font-bold text-lg text-gray-800"></p>
+                        <p class="product-sku text-sm text-gray-500"></p>
+                        <p class="product-price text-xl font-semibold text-red-600 mt-2"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phần 2: Chi tiết yêu cầu -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-semibold text-gray-700">2. Chi tiết yêu cầu</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Số lượng trả</label>
+                        <input
+                            type="number"
+                            id="quantity"
+                            name="quantity"
+                            value="1"
+                            min="1"
+                            max=""
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                            placeholder="Nhập số lượng muốn trả">
+                        <small id="quantity-note" class="text-xs text-gray-500 mt-1">Số lượng tối đa: <span id="max-qty-text">-</span></small>
+                    </div>
+                    <div>
+                        <label for="return_reason" class="block text-sm font-medium text-gray-700 mb-1">Lý do trả hàng</label>
+                        <select id="return_reason" name="reason" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
+                            <option value="">-- Chọn lý do --</option>
+                            <option value="Sản phẩm bị lỗi do nhà sản xuất">Sản phẩm bị lỗi do nhà sản xuất</option>
+                            <option value="Sản phẩm không đúng như mô tả">Sản phẩm không đúng như mô tả</option>
+                            <option value="Giao sai sản phẩm">Giao sai sản phẩm</option>
+                            <option value="Sản phẩm bị hư hỏng khi vận chuyển">Sản phẩm bị hư hỏng khi vận chuyển</option>
+                            <option value="Thay đổi ý định">Thay đổi ý định (có thể áp dụng phí)</option>
+                            <option value="Khác">Khác...</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label for="reason_details" class="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết (nếu cần)</label>
+                    <textarea id="reason_details" name="reason_details" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Vui lòng mô tả rõ hơn về tình trạng sản phẩm..."></textarea>
+                </div>
+
+                <!-- Chức năng tải lên hình ảnh/video -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Hình ảnh/Video đính kèm (Tùy chọn)</label>
+                    <div id="dropzone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md transition-colors duration-300">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <div class="flex text-sm text-gray-600">
+                                <label for="return-file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
+                                    <span>Tải lên tệp</span>
+                                    <input id="return-file-upload" name="file-upload" type="file" class="sr-only" multiple>
+                                </label>
+                                <p class="pl-1">hoặc kéo và thả</p>
+                            </div>
+                            <p class="text-xs text-gray-500">PNG, JPG tới 10MB; MP4 tới 50MB</p>
+                        </div>
+                    </div>
+                    <div id="file-list-preview" class="mt-3 grid grid-cols-3 gap-4"></div>
+                </div>
+            </div>
+
+            <!-- Phần 3: Phương thức hoàn tiền -->
+            <div class="space-y-4">
+                <h2 class="text-xl font-semibold text-gray-700">3. Chọn phương thức hoàn tiền</h2>
+                <div id="refund-options" class="space-y-3">
+
+                    <!-- Lựa chọn 1: Điểm thưởng -->
+                    <label for="refund-points" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
+                        <div class="flex items-center">
+                            <input type="radio" id="refund-points" name="refund_method" value="points" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <div class="ml-3">
+                                <p class="font-semibold text-gray-800">Hoàn tiền bằng Điểm thưởng</p>
+                                <p class="text-sm text-gray-500">Số điểm dự kiến được hoàn: <span id="expected-refund-points" class="font-bold text-green-600"></span>. Dùng để mua sắm cho lần sau.</p>
+                            </div>
+                        </div>
+                    </label>
+
+                    <!-- Lựa chọn 2: Chuyển khoản -->
+                    <label for="refund-bank" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
+                        <div class="flex items-center">
+                            <input type="radio" id="refund-bank" name="refund_method" value="bank" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <div class="ml-3">
+                                <p class="font-semibold text-gray-800">Hoàn tiền qua Chuyển khoản Ngân hàng</p>
+                                <p class="text-sm text-gray-500">Nhận tiền trực tiếp vào tài khoản của bạn sau 2-3 ngày làm việc.</p>
+                            </div>
+                        </div>
+                    </label>
+                    <div id="bank-details" class="hidden ml-4 md:ml-8 mt-2 p-4 bg-gray-50 border border-dashed border-gray-300 rounded-lg space-y-3">
+                        <div>
+                            <label for="bank_name" class="block text-sm font-medium text-gray-700">Tên ngân hàng</label>
+                            <input type="text" id="bank_name" name="bank_name" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500" placeholder="VD: Vietcombank">
+                        </div>
+                        <div>
+                            <label for="bank_account_name" class="block text-sm font-medium text-gray-700">Tên chủ tài khoản</label>
+                            <input type="text" id="bank_account_name" name="bank_account_name" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500" placeholder="NGUYEN VAN A">
+                        </div>
+                        <div>
+                            <label for="bank_account_number" class="block text-sm font-medium text-gray-700">Số tài khoản</label>
+                            <input type="text" id="bank_account_number" name="bank_account_number" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Lựa chọn 3: Mã giảm giá -->
+                    <label for="refund-coupon" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
+                        <div class="flex items-center">
+                            <input type="radio" id="refund-coupon" name="refund_method" value="coupon" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <div class="ml-3">
+                                <p class="font-semibold text-gray-800">Nhận Mã giảm giá</p>
+                                <p class="text-sm text-gray-500">Bạn sẽ nhận được mã giảm giá trị giá <span class="product-price font-bold text-green-600"></span>, chỉ áp dụng một lần cho tài khoản này.</p>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Phần 4: Tóm tắt và Gửi -->
+            <div class="border-t border-gray-200 pt-8 space-y-6">
+                <div class="flex justify-between items-center">
+                    <p class="text-lg font-semibold text-gray-700">Tổng tiền dự kiến hoàn:</p>
+                    <p class="product-price text-2xl font-bold text-red-600"></p>
+                </div>
+
+                <!-- Điều khoản & Chính sách -->
+                <div class="flex items-start">
+                    <div class="flex items-center h-5">
+                        <input id="terms" name="terms" type="checkbox" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                    </div>
+                    <div class="ml-3 text-sm">
+                        <label for="terms" class="font-medium text-gray-700">Tôi đã đọc và đồng ý với <a href="#" class="text-blue-600 hover:underline">Chính sách Trả hàng & Hoàn tiền</a> của iMart.</label>
+                    </div>
+                </div>
+
+                <!-- Ghi chú hướng dẫn -->
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">Sau khi yêu cầu được phê duyệt, chúng tôi sẽ gửi hướng dẫn chi tiết về địa chỉ nhận hàng qua email của bạn.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="submit-button" type="submit" class="w-full bg-red-600 text-white font-bold text-lg py-3 px-6 rounded-lg hover:bg-red-700 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none">
+                    Gửi Yêu Cầu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    window.selectedOrderItemId = null;
     document.addEventListener('DOMContentLoaded', () => {
         initReviewModal();
     });
+
 
     function initReviewModal() {
         const modal = document.getElementById('review-modal');
@@ -425,6 +644,203 @@
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
     }
+    let unitPrice = 0;
+    let quantityInput = null;
+
+    function updateRefundDisplay() {
+        const qty = parseInt(quantityInput.value || 1);
+        const total = unitPrice * qty;
+        const expectedPoints = Math.floor(total / 1000);
+
+        // Format giá VNĐ
+        const formattedTotal = total.toLocaleString('vi-VN') + ' ₫';
+
+        document.querySelectorAll('.product-price').forEach(el => {
+            el.textContent = formattedTotal;
+        });
+
+        document.getElementById('expected-refund-points').textContent = expectedPoints.toLocaleString('vi-VN') + ' điểm';
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('return-request-modal');
+        const closeBtn = document.getElementById('close-return-modal');
+        const openBtns = document.querySelectorAll('.open-return-modal');
+
+        // Các phần cần thay đổi
+        const nameEl = modal.querySelector('.product-name'); // thêm class này vào thẻ tên
+        const skuEl = modal.querySelector('.product-sku'); // thêm class này vào thẻ sku
+        const priceEl = modal.querySelector('.product-price'); // thêm class này vào thẻ giá
+        const imageEl = modal.querySelector('.product-image'); // thêm class này vào thẻ <img>
+        openBtns.forEach(button => {
+            button.addEventListener('click', () => {
+                // Lấy dữ liệu từ data attribute
+                const name = button.dataset.name;
+                const sku = button.dataset.sku;
+                const price = button.dataset.price;
+                const priceFormatted = button.dataset.priceFormatted;
+                const image = button.dataset.image;
+                const maxQty = parseInt(button.dataset.max || '1');
+                unitPrice = parseInt(price);
+                quantityInput = document.getElementById('quantity')
+
+                quantityInput.value = 1;
+                quantityInput.max = maxQty;
+                quantityInput.min = 1;
+                updateRefundDisplay(); // Gọi tính toán lần đầu
+                quantityInput.addEventListener('input', updateRefundDisplay);
+
+                selectedOrderItemId = button.dataset.orderItemId
+                // Gán vào modal
+                nameEl.textContent = name;
+                skuEl.textContent = sku;
+                document.querySelectorAll('.product-price').forEach(el => {
+                    el.textContent = priceFormatted;
+                });
+                imageEl.src = image;
+
+                const refundAmount = parseInt(price.replace(/[^\d]/g, '') || '0');
+                const expectedPoints = Math.floor(refundAmount / 1000);
+                document.getElementById('expected-refund-points').textContent = expectedPoints.toLocaleString('vi-VN') + ' điểm';
+                const input = document.getElementById('return-file-upload');
+                const preview = document.getElementById('file-list-preview');
+
+                if (input) {
+                    input.addEventListener('change', function(e) {
+                        console.log('File selected:', e.target.files);
+                        preview.innerHTML = '';
+                        const files = e.target.files;
+
+                        Array.from(files).forEach(file => {
+                            const reader = new FileReader();
+                            reader.onload = function(event) {
+                                const src = event.target.result;
+                                let element;
+
+                                if (file.type.startsWith('image/')) {
+                                    element = document.createElement('img');
+                                    element.src = src;
+                                    element.className = "w-full h-32 object-cover rounded border";
+                                } else if (file.type.startsWith('video/')) {
+                                    element = document.createElement('video');
+                                    element.src = src;
+                                    element.controls = true;
+                                    element.className = "w-full h-32 object-cover rounded border";
+                                }
+
+                                preview.appendChild(element);
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                    });
+                }
+
+                // Hiện modal
+                modal.classList.remove('hidden');
+            });
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        const refundOptions = document.querySelectorAll('input[name="refund_method"]');
+        const bankDetails = document.getElementById('bank-details');
+        const submitButton = document.getElementById('submit-button');
+        const fileUploadInput = document.getElementById('return-file-upload');
+        const termsCheckbox = document.getElementById('terms');
+
+        // Toggle hiển thị thông tin ngân hàng
+        refundOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                if (this.value === 'bank') {
+                    bankDetails.classList.remove('hidden');
+                } else {
+                    bankDetails.classList.add('hidden');
+                }
+            });
+        });
+
+        // Submit form
+        submitButton.addEventListener('click', () => {
+            const refundMethod = document.querySelector('input[name="refund_method"]:checked')?.value;
+            const quantity = document.getElementById('quantity').value;
+            const reason = document.getElementById('return_reason').value;
+            const reasonDetails = document.getElementById('reason_details').value;
+            const bankName = document.getElementById('bank_name')?.value;
+            const bankAccountName = document.getElementById('bank_account_name')?.value;
+            const bankAccountNumber = document.getElementById('bank_account_number')?.value;
+            const files = fileUploadInput.files;
+
+            if (!refundMethod) {
+                return toastr.warning('Vui lòng chọn phương thức hoàn tiền');
+            }
+
+            if (!termsCheckbox.checked) {
+                return toastr.warning('Vui lòng đồng ý với chính sách hoàn tiền');
+            }
+
+            const formData = new FormData();
+            formData.append('refund_method', refundMethod);
+            formData.append('quantity', quantity);
+            formData.append('reason', reason);
+            formData.append('reason_details', reasonDetails);
+            formData.append('order_item_id', selectedOrderItemId);
+
+
+            if (refundMethod === 'bank') {
+                if (!bankName || !bankAccountName || !bankAccountNumber) {
+                    return toastr.warning('Vui lòng nhập đầy đủ thông tin ngân hàng');
+                }
+                formData.append('bank_name', bankName);
+                formData.append('bank_account_name', bankAccountName);
+                formData.append('bank_account_number', bankAccountNumber);
+            }
+
+            for (let i = 0; i < files.length && i < 5; i++) {
+                formData.append('media[]', files[i]);
+            }
+            console.log([...formData.entries()]);
+
+            fetch('/orders/refund-request', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json', // ✅ BẮT BUỘC
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: formData
+                })
+                .then(async res => {
+                    if (!res.ok) {
+                        const error = await res.text();
+                        console.error('❌ Lỗi phản hồi:', error);
+                        throw new Error('Phản hồi không hợp lệ');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    setTimeout(() => {
+                        location.reload(); // 👉 Reload lại trang sau khi toastr hiển thị
+                    }, 50);
+                    console.log('✅ Thành công:', data);
+                    // toastr.success(data.message);
+                })
+                .catch(error => {
+                    console.error('❌ Lỗi:', error);
+                    // toastr.error(error.message);
+                });
+
+
+        });
+    });
 </script>
 
 @endsection

@@ -26,6 +26,9 @@ use App\Models\Order;
 use App\Observers\OrderObserver;
 use App\Models\ProductVariant;
 use App\Observers\ProductVariantObserver;
+use Illuminate\Support\Facades\Request;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Address;
 
 
 
@@ -56,11 +59,16 @@ class AppServiceProvider extends ServiceProvider
         ProductVariant::observe(ProductVariantObserver::class);
         Order::observe(OrderObserver::class);
         Paginator::useTailwind();
-        $layout = (auth()->check() && auth()->user()->role === 'admin')
-            ? 'admin.layouts.app'
-            : 'users.layouts.app';
+        // Xác định layout tự động cho mọi view (kể cả lỗi)
+        View::composer('*', function ($view) {
+            $prefix = request()->route()?->getPrefix();
 
-        View::share('layout', $layout);
+            $layout = str_contains($prefix, 'admin')
+                ? 'admin.layouts.app'
+                : 'users.layouts.app';
+
+            $view->with('layout', $layout);
+        });
 
         // Đăng ký listener cho sự kiện Verified
         Event::listen(
@@ -79,6 +87,9 @@ class AppServiceProvider extends ServiceProvider
             Gate::define('access_shipper_dashboard', function (User $user) {
                 // Chỉ những người dùng có vai trò 'shipper' mới được phép
                 return $user->hasRole('shipper');
+            });
+            Gate::define('manage_chat', function (User $user) {
+                return $user->hasRole('admin') || $user->hasRole('order_manager');
             });
 
             // Không còn các Gate như 'manage-users', 'manage-roles' ở đây nữa
@@ -134,5 +145,15 @@ class AppServiceProvider extends ServiceProvider
             }
             $view->with('cartItemCount', $totalQuantity);
         });
+
+        // Quy tắc xác thực tùy chỉnh cho quyền sở hữu địa chỉ
+        Validator::extend('address_ownership', function ($attribute, $value, $parameters, $validator) {
+            if (!auth()->check()) {
+                return false;
+            }
+
+            $address = Address::find($value);
+            return $address && $address->user_id === auth()->id();
+        }, 'Bạn không có quyền sử dụng địa chỉ này.');
     }
 }

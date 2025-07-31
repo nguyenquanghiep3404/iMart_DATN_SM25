@@ -19,17 +19,17 @@ class ShipperController extends Controller
 
         // Lấy các đơn hàng được gán cho shipper này để xử lý trong ngày
         $ordersToPickup = Order::where('shipped_by', $shipper->id)
-                               ->where('status', 'awaiting_shipment')
-                               ->orderBy('created_at', 'desc')->get();
+            ->where('status', 'awaiting_shipment')
+            ->orderBy('created_at', 'desc')->get();
 
         $ordersInTransit = Order::where('shipped_by', $shipper->id)
-                                ->whereIn('status', ['shipped', 'out_for_delivery'])
-                                ->orderBy('updated_at', 'desc')->get();
+            ->whereIn('status', ['shipped', 'out_for_delivery'])
+            ->orderBy('updated_at', 'desc')->get();
 
         return view('shipper.dashboard', compact('shipper', 'ordersToPickup', 'ordersInTransit'));
     }
 
-        /**
+    /**
      * Trang Thống kê: Tính toán KPI và chuẩn bị dữ liệu cho biểu đồ.
      */
     public function stats(Request $request)
@@ -57,9 +57,9 @@ class ShipperController extends Controller
 
         // Lấy các đơn hàng đã hoàn tất trong khoảng thời gian đã chọn
         $finishedOrders = Order::where('shipped_by', $shipper->id)
-                                ->whereIn('status', ['delivered', 'failed_delivery'])
-                                ->whereBetween('delivered_at', [$startDate, $endDate])
-                                ->get();
+            ->whereIn('status', ['delivered', 'failed_delivery'])
+            ->whereBetween('delivered_at', [$startDate, $endDate])
+            ->get();
 
         $deliveredOrders = $finishedOrders->where('status', 'delivered');
         $failedOrders = $finishedOrders->where('status', 'failed_delivery');
@@ -73,9 +73,9 @@ class ShipperController extends Controller
         ];
 
         // Chuẩn bị dữ liệu cho biểu đồ
-        $chartData = $deliveredOrders->groupBy(function($date) {
+        $chartData = $deliveredOrders->groupBy(function ($date) {
             return Carbon::parse($date->delivered_at)->format('d/m'); // Nhóm theo ngày
-        })->map(function($group) {
+        })->map(function ($group) {
             return $group->count(); // Đếm số đơn mỗi ngày
         });
 
@@ -92,9 +92,9 @@ class ShipperController extends Controller
     {
         $shipper = Auth::user();
         $ordersHistory = Order::where('shipped_by', $shipper->id)
-                              ->whereIn('status', ['delivered', 'cancelled', 'returned', 'failed_delivery'])
-                              ->orderBy('updated_at', 'desc')
-                              ->paginate(15); // Phân trang, mỗi trang 15 đơn
+            ->whereIn('status', ['delivered', 'cancelled', 'returned', 'failed_delivery'])
+            ->orderBy('updated_at', 'desc')
+            ->paginate(15); // Phân trang, mỗi trang 15 đơn
 
         return view('shipper.history', compact('shipper', 'ordersHistory'));
     }
@@ -138,6 +138,14 @@ class ShipperController extends Controller
 
         if ($validated['status'] === 'delivered') {
             $order->delivered_at = now();
+
+            // === BẮT ĐẦU THAY ĐỔI ===
+            // Kiểm tra nếu phương thức thanh toán là COD (không phân biệt chữ hoa, chữ thường)
+            // thì cập nhật trạng thái thanh toán là 'paid'.
+            if (strtolower($order->payment_method) === 'cod') {
+                $order->payment_status = 'paid';
+            }
+            // === KẾT THÚC THAY ĐỔI ===
         }
 
         if ($validated['status'] === 'failed_delivery') {

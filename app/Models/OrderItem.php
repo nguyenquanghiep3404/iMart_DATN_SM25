@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\ProductVariant;
+use App\Models\ReturnItem;
 
 class OrderItem extends Model
 {
@@ -72,5 +73,9 @@ class OrderItem extends Model
             ? $value
             : json_encode($value);
     }
-     
+    // OrderItem model
+    public function returnItem()
+    {
+        return $this->hasOne(ReturnItem::class);
+    }
 }
