@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giao diện cửa hàng</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+    /* Tùy chỉnh để ẩn thanh cuộn ngang */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      /* IE and Edge */
+      scrollbar-width: none;
+      /* Firefox */
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100">
+
+  <div class="container mx-auto p-4">
+
+    <header class="bg-white rounded-lg shadow p-4 mb-6">
+      <nav class="flex items-center justify-center text-center text-gray-600 gap-6 md:gap-12">
+        <a href="#" class="flex flex-col items-center hover:text-blue-600">
+          <span class="text-xs font-medium">Điện thoại</span>
+        </a>
+        <a href="#" class="flex flex-col items-center hover:text-blue-600">
+          <span class="text-xs font-medium">Tablet</span>
+        </a>
+        <a href="#" class="flex flex-col items-center hover:text-blue-600">
+          <span class="text-xs font-medium">Laptop</span>
+        </a>
+        <a href="#" class="flex flex-col items-center hover:text-blue-600">
+          <span class="text-xs font-medium">Đồng hồ</span>
+        </a>
+        <a href="#" class="flex flex-col items-center hover:text-blue-600">
+          <span class="text-xs font-medium">Phụ kiện</span>
+        </a>
+      </nav>
+    </header>
+
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-800 rounded-lg text-white text-center p-8 mb-6 shadow-lg">
+      <h2 class="text-4xl font-extrabold mb-2">MÁY CŨ TIẾT KIỆM ĐẾN 45%</h2>
+      <p class="text-lg font-medium">TRẢ CHẬM 0% LÃI SUẤT - SỞ HỮU NGAY!</p>
+    </div>
+
+
+    <main class="bg-white rounded-lg shadow p-6 mb-6">
+      <div class="flex items-center space-x-2 sm:space-x-4 mb-6 border-b pb-4">
+        <button class="bg-blue-600 text-white px-4 py-2 rounded-full text-sm sm:text-base font-semibold shadow">Điện
+          thoại, Tablet</button>
+        <button
+          class="bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm sm:text-base font-semibold hover:bg-gray-300">Laptop</button>
+        <button
+          class="bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm sm:text-base font-semibold hover:bg-gray-300">Đồng
+          hồ</button>
+        <button
+          class="bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm sm:text-base font-semibold hover:bg-gray-300">Phụ
+          kiện</button>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+          <span class="bg-gray-200 text-gray-800 text-xs font-semibold px-2 py-1 rounded-full self-start mb-2">Trả chậm
+            0%</span>
+          <img src="https://cdn.tgdd.vn/Products/Images/42/322521/samsung-galaxy-z-fold6-xanh-1-200x200.jpg"
+            alt="Galaxy Z Fold6" class="w-full h-40 object-contain mx-auto mb-4">
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại Samsung Galaxy Z Fold6 5G 128GB/256GB
+          </h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ 24.280.000₫ <span
+                class="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">-44%</span></p>
+            <p class="text-gray-500 text-xs line-through">43.190.000₫</p>
+          </div>
+        </div>
+
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+          <span class="bg-gray-200 text-gray-800 text-xs font-semibold px-2 py-1 rounded-full self-start mb-2">Trả chậm
+            0%</span>
+          <img src="https://cdn.tgdd.vn/Products/Images/42/299244/oppo-a5-pro-1-200x200.jpg" alt="OPPO A5 Pro"
+            class="w-full h-40 object-contain mx-auto mb-4">
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại OPPO A5 Pro 8GB/256GB</h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ 4.510.000₫ <span
+                class="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">-34%</span></p>
+            <p class="text-gray-500 text-xs line-through">6.870.000₫</p>
+          </div>
+        </div>
+
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+          <span class="bg-gray-200 text-gray-800 text-xs font-semibold px-2 py-1 rounded-full self-start mb-2">Trả chậm
+            0%</span>
+          <img src="https://cdn.tgdd.vn/Products/Images/42/305658/oppo-reno11-f-5g-xanh-den-1-200x200.jpg"
+            alt="Reno11 F 5G" class="w-full h-40 object-contain mx-auto mb-4">
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại OPPO Reno11 F 5G 8GB/256GB</h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ 5.720.000₫ <span
+                class="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">-42%</span></p>
+            <p class="text-gray-500 text-xs line-through">9.810.000₫</p>
+          </div>
+        </div>
+
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+          <span class="bg-gray-200 text-gray-800 text-xs font-semibold px-2 py-1 rounded-full self-start mb-2">Trả chậm
+            0%</span>
+          <img src="https://cdn.tgdd.vn/Products/Images/42/251192/iphone-13-1-200x200.jpg" alt="iPhone 13"
+            class="w-full h-40 object-contain mx-auto mb-4">
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại iPhone 13 128GB</h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ 8.480.000₫ <span
+                class="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">-42%</span></p>
+            <p class="text-gray-500 text-xs line-through">14.690.000₫</p>
+          </div>
+        </div>
+
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+          <span class="bg-gray-200 text-gray-800 text-xs font-semibold px-2 py-1 rounded-full self-start mb-2">Trả chậm
+            0%</span>
+          <img src="https://cdn.tgdd.vn/Products/Images/42/303891/iphone-15-plus-1-200x200.jpg" alt="iPhone 15 Plus"
+            class="w-full h-40 object-contain mx-auto mb-4">
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại iPhone 15 Plus 128GB</h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ 14.510.000₫ <span
+                class="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">-35%</span></p>
+            <p class="text-gray-500 text-xs line-through">22.490.000₫</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+
+
+
+
+    <section class="bg-white rounded-lg shadow p-6">
+      <div class="bg-blue-600 rounded-xl p-2 mb-6">
+        <div class="bg-yellow-400 rounded-lg">
+          <h2 class="text-center text-blue-900 text-2xl font-bold py-2 uppercase">Điện thoại đã sử dụng</h2>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+
+        <!-- iPhone 15 Pro Max -->
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+
+          <img src="https://cdn.tgdd.vn/Products/Images/42/305658/oppo-reno11-f-5g-xanh-den-1-200x200.jpg"
+            alt="iPhone 15 Pro Max" class="w-full h-40 object-contain mx-auto mb-4">
+          <p class="text-xs text-gray-400 mb-1">9 sản phẩm</p>
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại iPhone 15 Pro Max 256GB</h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ: 23.580.000₫</p>
+            <p class="text-gray-500 text-xs">Giá sản phẩm mới: 30.390.000₫</p>
+            <p class="text-gray-500 text-xs">Tiết kiệm: 6.810.000₫</p>
+          </div>
+        </div>
+
+        <!-- Xiaomi 14T -->
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+          <img src="https://cdn.tgdd.vn/Products/Images/42/299244/oppo-a5-pro-1-200x200.jpg" alt="Xiaomi 14T"
+            class="w-full h-40 object-contain mx-auto mb-4">
+          <p class="text-xs text-gray-400 mb-1">13 sản phẩm</p>
+
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại Xiaomi 14T 5G 12GB/256GB</h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ: 7.410.000₫ <span
+                class="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">-42%</span></p>
+            <p class="text-gray-500 text-xs">Giá sản phẩm mới: 12.760.000₫</p>
+            <p class="text-gray-500 text-xs">Tiết kiệm: 5.350.000₫</p>
+          </div>
+        </div>
+
+        <!-- Vivo Y28 -->
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+          <img src="https://cdn.tgdd.vn/Products/Images/42/322521/samsung-galaxy-z-fold6-xanh-1-200x200.jpg"
+            alt="Vivo Y28" class="w-full h-40 object-contain mx-auto mb-4">
+          <p class="text-xs text-gray-400 mb-1">113 sản phẩm</p>
+
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại Vivo Y28 8GB/128GB</h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ: 3.240.000₫ <span
+                class="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">-43%</span></p>
+            <p class="text-gray-500 text-xs">Giá sản phẩm mới: 5.690.000₫</p>
+            <p class="text-gray-500 text-xs">Tiết kiệm: 2.450.000₫</p>
+          </div>
+        </div>
+
+        <!-- Vivo Y28 -->
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+          <img src="https://cdn.tgdd.vn/Products/Images/42/322521/samsung-galaxy-z-fold6-xanh-1-200x200.jpg"
+            alt="Vivo Y28" class="w-full h-40 object-contain mx-auto mb-4">
+          <p class="text-xs text-gray-400 mb-1">113 sản phẩm</p>
+
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại Vivo Y28 8GB/128GB</h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ: 3.240.000₫ <span
+                class="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">-43%</span></p>
+            <p class="text-gray-500 text-xs">Giá sản phẩm mới: 5.690.000₫</p>
+            <p class="text-gray-500 text-xs">Tiết kiệm: 2.450.000₫</p>
+          </div>
+        </div>
+
+        <!-- Vivo Y28 -->
+        <div class="border rounded-lg p-4 flex flex-col hover:shadow-xl transition-shadow">
+          <img src="https://cdn.tgdd.vn/Products/Images/42/322521/samsung-galaxy-z-fold6-xanh-1-200x200.jpg"
+            alt="Vivo Y28" class="w-full h-40 object-contain mx-auto mb-4">
+          <p class="text-xs text-gray-400 mb-1">113 sản phẩm</p>
+
+          <h3 class="font-bold text-sm text-gray-800 mb-2 flex-grow">Điện thoại Vivo Y28 8GB/128GB</h3>
+          <div class="mt-auto">
+            <p class="text-red-600 font-bold text-base">Từ: 3.240.000₫ <span
+                class="text-xs bg-red-100 text-red-600 font-semibold px-1.5 py-0.5 rounded">-43%</span></p>
+            <p class="text-gray-500 text-xs">Giá sản phẩm mới: 5.690.000₫</p>
+            <p class="text-gray-500 text-xs">Tiết kiệm: 2.450.000₫</p>
+          </div>
+        </div>
+
+
+
+      </div>
+    </section>
+
+
+
+  </div>
+
+</body>
+
+</html>
