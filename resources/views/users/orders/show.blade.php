@@ -28,6 +28,7 @@
     .tracker-dot.active { background-color: #10b981; }
     .tracker-label { font-size: 0.75rem; margin-top: 0.5rem; color: #6b7280;}
     .tracker-label.active { color: #dc2626; font-weight: bold; }
+    .status-dot-cancelled { background-color: #dc2626 !important; }
 
     .info-box { background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; }
 
@@ -45,7 +46,6 @@
         background-color: #fff; color: #374151; border: 1px solid #d1d5db;
     }
     .btn-action-secondary:hover { background-color: #f3f4f6; }
-    .status-dot-cancelled { background-color: #dc2626 !important; }
 </style>
 @endsection
 
@@ -99,25 +99,24 @@
         </header>
 
         <main class="details-main">
-           <div class="mb-5">
+            <div class="mb-5">
                 <h5 class="fw-bold mb-4">Trạng thái đơn hàng</h5>
                 @if($order->status == 'cancelled')
-                {{-- Giao diện đặc biệt cho đơn hàng BỊ HỦY --}}
-                <div class="tracker-container">
-                    <div class="tracker-item">
-                        <div class="tracker-dot active status-dot-cancelled">
-                            <i class="fas fa-times"></i>
+                    {{-- Giao diện đặc biệt cho đơn hàng BỊ HỦY --}}
+                    <div class="tracker-container">
+                        <div class="tracker-item">
+                            <div class="tracker-dot active status-dot-cancelled">
+                                <i class="fas fa-times"></i>
+                            </div>
+                            <p class="tracker-label active">Đã hủy</p>
                         </div>
-                        <p class="tracker-label active">Đã hủy</p>
+                        <div class="tracker-line-container"><div class="tracker-line"></div></div>
+                        <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang xử lý</p></div>
+                        <div class="tracker-line-container"><div class="tracker-line"></div></div>
+                        <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang giao</p></div>
+                        <div class="tracker-line-container"><div class="tracker-line"></div></div>
+                        <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Hoàn tất</p></div>
                     </div>
-                    {{-- Các item sau được thêm chữ nhưng làm mờ đi --}}
-                    <div class="tracker-line-container"><div class="tracker-line"></div></div>
-                    <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang xử lý</p></div>
-                    <div class="tracker-line-container"><div class="tracker-line"></div></div>
-                    <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang giao</p></div>
-                    <div class="tracker-line-container"><div class="tracker-line"></div></div>
-                    <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Hoàn tất</p></div>
-                </div>
                 @elseif($currentStep > 0)
                     {{-- Giao diện cho các trạng thái khác --}}
                     <div class="tracker-container">
@@ -129,149 +128,6 @@
                         <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 4 ? 'tracker-line-filled' : '' }}"></div></div>
                         <div class="tracker-item"><div class="tracker-dot {{ $currentStep >= 4 ? 'active' : '' }}">@if($currentStep >= 4) ✓ @else 4 @endif</div><p class="tracker-label {{ $currentStep == 4 ? 'active' : '' }}">Hoàn tất</p></div>
                     </div>
-
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Sản phẩm đã đặt</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Sản phẩm</th>
-                                    <th>Đơn giá</th>
-                                    <th>Số lượng</th>
-                                    <th>Thành tiền</th>
-                                    @if ($order->status === 'delivered')
-                                    <td>Đánh giá</td>
-                                    <td>Hoàn tiền</td>
-                                    @endif
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($order->items as $item)
-                                <tr>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            @if($item->image_url)
-                                            <img src="{{ $item->image_url }}" alt="{{ $item->product_name }}" class="img-thumbnail me-3" style="width: 60px;">
-                                            @else
-
-                                            <div class="bg-light d-flex align-items-center justify-content-center me-3" style="width: 60px; height: 60px;">
-                                                <i class="fas fa-box-open text-muted"></i>
-                                            </div>
-                                            @endif
-                                            <div>
-                                                <h6 class="mb-1">{{ $item->product_name }}</h6>
-                                                <small class="text-muted">SKU: {{ $item->sku }}</small>
-                                                @if(!empty($item->variant_attributes))
-                                                <div class="mt-1">
-                                                    @foreach($item->variant_attributes as $key => $value)
-                                                    <small class="text-muted">{{ $key }}: {{ $value }}</small><br>
-                                                    @endforeach
-                                                </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td>{{ number_format($item->price, 0, ',', '.') }} ₫</td>
-                                    <td>{{ $item->quantity }}</td>
-                                    <td>{{ number_format($item->total_price, 0, ',', '.') }} ₫</td>
-                                    <td>
-                                        @if(
-                                        $order->status === 'delivered' &&
-                                        !$item->has_reviewed &&
-                                        $item->product_variant_id &&
-                                        $item->product_name
-                                        )
-                                        <button type="button"
-                                            class="btn btn-sm btn-outline-primary write-review-btn"
-                                            data-order-item-id="{{ $item->id }}"
-                                            data-product-variant-id="{{ $item->product_variant_id }}"
-                                            data-product-name="{{ $item->product_name }}">
-                                            <i class="fas fa-star me-1"></i> Viết đánh giá
-                                        </button>
-                                        @elseif($item->has_reviewed)
-                                        <span class="text-success">
-                                            <i class="fas fa-check-circle me-1"></i> Đã đánh giá
-                                        </span>
-                                        @else
-                                        @endif
-
-                                    </td>
-                                    <td>
-                                        @if ($order->status === 'delivered')
-                                        @if ($item->returnItem)
-                                        {{-- Nếu đã có phiếu trả hàng --}}
-                                        <a href="{{ route('refunds.show', $item->returnItem->id) }}"
-                                            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
-                                            Xem chi tiết
-                                        </a>
-                                        @else
-                                        {{-- Nếu chưa có phiếu trả hàng --}}
-                                        <button class="open-return-modal bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition"
-                                            data-name="{{ $item->product_name }}"
-                                            data-sku="{{ 'SKU: '. $item->sku }}"
-                                            data-image="{{ $item->image_url }}"
-                                            data-price="{{ $item->price }}" {{-- Dạng số để JS tính toán --}}
-                                            data-price-formatted="{{ number_format($item->price, 0, ',', '.') }} ₫" {{-- Dùng để hiển thị --}}
-                                            data-order-item-id="{{ $item->id }}">
-                                            Trả hàng
-                                        </button>
-                                        @endif
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="3" class="text-end"><strong>Tạm tính:</strong></td>
-                                    <td>{{ number_format($order->sub_total, 0, ',', '.') }} ₫</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3" class="text-end"><strong>Phí vận chuyển:</strong></td>
-                                    <td>{{ number_format($order->shipping_fee, 0, ',', '.') }} ₫</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3" class="text-end"><strong>Giảm giá:</strong></td>
-                                    <td>-{{ number_format($order->discount_amount, 0, ',', '.') }} ₫</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="3" class="text-end"><strong>Tổng cộng:</strong></td>
-                                    <td class="text-danger fw-bold">{{ number_format($order->grand_total, 0, ',', '.') }} ₫</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            @if($order->notes_from_customer)
-            <div class="card mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Ghi chú từ khách hàng</h5>
-                </div>
-                <div class="card-body">
-                    <p>{{ $order->notes_from_customer }}</p>
-                </div>
-            </div>
-            @endif
-
-            <div class="d-flex justify-content-between">
-                <a href="{{ route('orders.index') }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left"></i> Quay lại
-                </a>
-
-                @if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
-                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
-                    <i class="fas fa-times"></i> Hủy đơn hàng
-                </button>
-
                 @endif
             </div>
 
@@ -289,7 +145,7 @@
                                         <p class="text-muted small mb-0">{{ $key }}: {{ $value }}</p>
                                     @endforeach
                                 @endif
-                                <p class="text-muted small mb-1">SL: {{ $item->quantity }}</p>
+                                <p class="text-muted small mt-1 mb-1">SL: {{ $item->quantity }}</p>
                             </div>
                             <div class="text-end">
                                 <p class="fw-semibold text-dark">{{ number_format($item->total_price, 0, ',', '.') }} VNĐ</p>
@@ -301,26 +157,19 @@
 
                 <div class="col-lg-5">
                     <div class="d-flex flex-column" style="gap: 1rem;">
-
                         {{-- Box 1: Thời gian nhận hàng / Thông tin vận chuyển --}}
                         @if($isPickupOrder)
                             <div class="info-box">
                                 <h6 class="fw-bold mb-3">Thời gian nhận hàng</h6>
                                 <p class="small mb-1"><strong>Ngày nhận:</strong> {{ renderDeliveryDate($order->desired_delivery_date) }}</p>
-                                @if($order->desired_delivery_time_slot)
-                                     <p class="small mb-0"><strong>Khung giờ:</strong> {{ $order->desired_delivery_time_slot }}</p>
-                                @endif
+                                @if($order->desired_delivery_time_slot)<p class="small mb-0"><strong>Khung giờ:</strong> {{ $order->desired_delivery_time_slot }}</p>@endif
                             </div>
                         @else
                             <div class="info-box">
                                 <h6 class="fw-bold mb-3">Thông tin vận chuyển</h6>
-                                @if($order->shipping_method)
-                                    <p class="small mb-1"><strong>Đơn vị:</strong> {{ $order->shipping_method }}</p>
-                                @endif
+                                @if($order->shipping_method)<p class="small mb-1"><strong>Đơn vị:</strong> {{ $order->shipping_method }}</p>@endif
                                 <p class="small mb-1"><strong>Ngày giao dự kiến:</strong> {{ renderDeliveryDate($order->desired_delivery_date) }}</p>
-                                @if($order->desired_delivery_time_slot)
-                                    <p class="small mb-0"><strong>Khung giờ giao:</strong> {{ $order->desired_delivery_time_slot }}</p>
-                                @endif
+                                @if($order->desired_delivery_time_slot)<p class="small mb-0"><strong>Khung giờ giao:</strong> {{ $order->desired_delivery_time_slot }}</p>@endif
                             </div>
                         @endif
 
@@ -367,43 +216,6 @@
                                     <span class="fw-bold text-danger fs-5">{{ number_format($order->grand_total, 0, ',', '.') }} ₫</span>
                                 </div>
                             </div>
-
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                                <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div id="review-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4 transition-opacity duration-300">
-                <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-transform duration-300 scale-95">
-                    <div class="flex justify-between items-center p-4 border-b border-gray-200">
-                        <h3 class="text-xl font-bold text-gray-900" id="product-review-title">Viết đánh giá</h3>
-                        <button id="close-review-modal-btn" class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <input type="hidden" id="order_item_id">
-                        <input type="hidden" id="product_variant_id">
-
-                        <div>
-                            <label class="font-semibold text-gray-700">Đánh giá của bạn</label>
-                            <div id="review-stars-container" class="flex items-center gap-1 text-4xl mt-1">
-                                <!-- stars render JS -->
-                            </div>
-                        </div>
-                        <div>
-                            <label class="font-semibold text-gray-700">Bình luận</label>
-                            <textarea id="review-text" class="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" rows="4"></textarea>
-                        </div>
-                        <div>
-                            <label class="font-semibold text-gray-700">Thêm hình ảnh/video</label>
-                            <input id="file-upload" name="media[]" type="file" accept="image/*,video/*" multiple class="form-control">
-                            <div id="preview" class="mt-4 grid grid-cols-3 gap-4"></div>
-                        </div>
-                        <div class="text-right">
-                            <button id="submit-review-btn" class="bg-blue-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-700 transition-colors">Gửi đánh giá</button>
-
                         </div>
                     </div>
                 </div>
@@ -412,15 +224,11 @@
 
         <footer class="details-footer">
             @if($order->status == 'delivered')
-                {{-- Lấy thông tin sản phẩm đầu tiên trong đơn hàng --}}
                 @php
                     $firstItem = $order->items->first();
                     $canReview = $firstItem && !$firstItem->has_reviewed && $firstItem->product_variant_id;
                 @endphp
-
                 <a href="#" class="btn-action btn-action-secondary">Yêu cầu trả hàng</a>
-
-                {{-- Nút "Viết đánh giá" sẽ xuất hiện nếu có thể đánh giá sản phẩm đầu tiên --}}
                 @if($canReview)
                     <button type="button" class="btn-action write-review-btn"
                         data-order-item-id="{{ $firstItem->id }}"
@@ -430,186 +238,10 @@
                     </button>
                 @endif
             @endif
-
             @if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
                 <button class="btn-action" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn hàng</button>
             @endif
         </footer>
-    </div>
-</div>
-<!-- Modal Trả hàng -->
-<div id="return-request-modal" class="fixed inset-0 z-50 hidden bg-black bg-opacity-40 flex justify-center items-start overflow-auto">
-    <div class="relative bg-white max-w-4xl w-full mt-10 mx-4 p-6 rounded-lg shadow-xl">
-        <button id="close-return-modal" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl">×</button>
-        <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-            <!-- Tiêu đề -->
-            <div class="text-center">
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Yêu cầu Trả hàng / Hoàn tiền</h1>
-                <p class="text-gray-500 mt-2">Hoàn thành biểu mẫu dưới đây để gửi yêu cầu của bạn.</p>
-            </div>
-
-            <hr class="border-gray-200">
-
-            <!-- Phần 1: Thông tin sản phẩm -->
-            <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-700">1. Sản phẩm cần trả</h2>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 border border-gray-200 rounded-lg p-4">
-                    <img class="product-image w-24 h-24 object-cover rounded-md flex-shrink-0 border" src="..." ...>
-                    <div class="flex-grow">
-                        <p class="product-name font-bold text-lg text-gray-800"></p>
-                        <p class="product-sku text-sm text-gray-500"></p>
-                        <p class="product-price text-xl font-semibold text-red-600 mt-2"></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Phần 2: Chi tiết yêu cầu -->
-            <div class="space-y-6">
-                <h2 class="text-xl font-semibold text-gray-700">2. Chi tiết yêu cầu</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Số lượng trả</label>
-                        <input
-                            type="number"
-                            id="quantity"
-                            name="quantity"
-                            value="1"
-                            min="1"
-                            max=""
-                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                            placeholder="Nhập số lượng muốn trả">
-                        <small id="quantity-note" class="text-xs text-gray-500 mt-1">Số lượng tối đa: <span id="max-qty-text">-</span></small>
-                    </div>
-                    <div>
-                        <label for="return_reason" class="block text-sm font-medium text-gray-700 mb-1">Lý do trả hàng</label>
-                        <select id="return_reason" name="reason" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
-                            <option value="">-- Chọn lý do --</option>
-                            <option value="Sản phẩm bị lỗi do nhà sản xuất">Sản phẩm bị lỗi do nhà sản xuất</option>
-                            <option value="Sản phẩm không đúng như mô tả">Sản phẩm không đúng như mô tả</option>
-                            <option value="Giao sai sản phẩm">Giao sai sản phẩm</option>
-                            <option value="Sản phẩm bị hư hỏng khi vận chuyển">Sản phẩm bị hư hỏng khi vận chuyển</option>
-                            <option value="Thay đổi ý định">Thay đổi ý định (có thể áp dụng phí)</option>
-                            <option value="Khác">Khác...</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label for="reason_details" class="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết (nếu cần)</label>
-                    <textarea id="reason_details" name="reason_details" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Vui lòng mô tả rõ hơn về tình trạng sản phẩm..."></textarea>
-                </div>
-
-                <!-- Chức năng tải lên hình ảnh/video -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Hình ảnh/Video đính kèm (Tùy chọn)</label>
-                    <div id="dropzone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md transition-colors duration-300">
-                        <div class="space-y-1 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                            <div class="flex text-sm text-gray-600">
-                                <label for="return-file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                    <span>Tải lên tệp</span>
-                                    <input id="return-file-upload" name="file-upload" type="file" class="sr-only" multiple>
-                                </label>
-                                <p class="pl-1">hoặc kéo và thả</p>
-                            </div>
-                            <p class="text-xs text-gray-500">PNG, JPG tới 10MB; MP4 tới 50MB</p>
-                        </div>
-                    </div>
-                    <div id="file-list-preview" class="mt-3 grid grid-cols-3 gap-4"></div>
-                </div>
-            </div>
-
-            <!-- Phần 3: Phương thức hoàn tiền -->
-            <div class="space-y-4">
-                <h2 class="text-xl font-semibold text-gray-700">3. Chọn phương thức hoàn tiền</h2>
-                <div id="refund-options" class="space-y-3">
-
-                    <!-- Lựa chọn 1: Điểm thưởng -->
-                    <label for="refund-points" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
-                        <div class="flex items-center">
-                            <input type="radio" id="refund-points" name="refund_method" value="points" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                            <div class="ml-3">
-                                <p class="font-semibold text-gray-800">Hoàn tiền bằng Điểm thưởng</p>
-                                <p class="text-sm text-gray-500">Số điểm dự kiến được hoàn: <span id="expected-refund-points" class="font-bold text-green-600"></span>. Dùng để mua sắm cho lần sau.</p>
-                            </div>
-                        </div>
-                    </label>
-
-                    <!-- Lựa chọn 2: Chuyển khoản -->
-                    <label for="refund-bank" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
-                        <div class="flex items-center">
-                            <input type="radio" id="refund-bank" name="refund_method" value="bank" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                            <div class="ml-3">
-                                <p class="font-semibold text-gray-800">Hoàn tiền qua Chuyển khoản Ngân hàng</p>
-                                <p class="text-sm text-gray-500">Nhận tiền trực tiếp vào tài khoản của bạn sau 2-3 ngày làm việc.</p>
-                            </div>
-                        </div>
-                    </label>
-                    <div id="bank-details" class="hidden ml-4 md:ml-8 mt-2 p-4 bg-gray-50 border border-dashed border-gray-300 rounded-lg space-y-3">
-                        <div>
-                            <label for="bank_name" class="block text-sm font-medium text-gray-700">Tên ngân hàng</label>
-                            <input type="text" id="bank_name" name="bank_name" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500" placeholder="VD: Vietcombank">
-                        </div>
-                        <div>
-                            <label for="bank_account_name" class="block text-sm font-medium text-gray-700">Tên chủ tài khoản</label>
-                            <input type="text" id="bank_account_name" name="bank_account_name" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500" placeholder="NGUYEN VAN A">
-                        </div>
-                        <div>
-                            <label for="bank_account_number" class="block text-sm font-medium text-gray-700">Số tài khoản</label>
-                            <input type="text" id="bank_account_number" name="bank_account_number" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500">
-                        </div>
-                    </div>
-
-                    <!-- Lựa chọn 3: Mã giảm giá -->
-                    <label for="refund-coupon" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
-                        <div class="flex items-center">
-                            <input type="radio" id="refund-coupon" name="refund_method" value="coupon" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                            <div class="ml-3">
-                                <p class="font-semibold text-gray-800">Nhận Mã giảm giá</p>
-                                <p class="text-sm text-gray-500">Bạn sẽ nhận được mã giảm giá trị giá <span class="product-price font-bold text-green-600"></span>, chỉ áp dụng một lần cho tài khoản này.</p>
-                            </div>
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Phần 4: Tóm tắt và Gửi -->
-            <div class="border-t border-gray-200 pt-8 space-y-6">
-                <div class="flex justify-between items-center">
-                    <p class="text-lg font-semibold text-gray-700">Tổng tiền dự kiến hoàn:</p>
-                    <p class="product-price text-2xl font-bold text-red-600"></p>
-                </div>
-
-                <!-- Điều khoản & Chính sách -->
-                <div class="flex items-start">
-                    <div class="flex items-center h-5">
-                        <input id="terms" name="terms" type="checkbox" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
-                    </div>
-                    <div class="ml-3 text-sm">
-                        <label for="terms" class="font-medium text-gray-700">Tôi đã đọc và đồng ý với <a href="#" class="text-blue-600 hover:underline">Chính sách Trả hàng & Hoàn tiền</a> của iMart.</label>
-                    </div>
-                </div>
-
-                <!-- Ghi chú hướng dẫn -->
-                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm text-blue-700">Sau khi yêu cầu được phê duyệt, chúng tôi sẽ gửi hướng dẫn chi tiết về địa chỉ nhận hàng qua email của bạn.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <button id="submit-button" type="submit" class="w-full bg-red-600 text-white font-bold text-lg py-3 px-6 rounded-lg hover:bg-red-700 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none">
-                    Gửi Yêu Cầu
-                </button>
-            </div>
-        </div>
     </div>
 </div>
 
