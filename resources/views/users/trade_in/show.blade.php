@@ -10,11 +10,33 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        .breadcrumb-item:not(:last-child)::after {
+            content: '/';
+            /* Use a slash as a separator */
+            margin: 0 0.75rem;
+            /* Adjust horizontal spacing */
+            color: #d1d5db;
+            /* Light gray color for separator */
+        }
     </style>
 @endpush
 
 @section('content')
     <div class="container mx-auto p-4">
+        {{-- Breadcrumbs (Đường dẫn điều hướng) --}}
+        <nav class="text-sm text-gray-500 mb-6" aria-label="breadcrumb">
+            <div class="flex items-center space-x-2 text-base font-semibold">
+                <a href="{{ url('/') }}" class="text-blue-600 hover:underline">Trang chủ</a>
+                <span class="text-gray-400">/</span>
+                <a href="{{ route('public.trade-in.index') }}" class="text-blue-600 hover:underline">Sản phẩm cũ</a>
+                <span class="text-gray-400">/</span>
+                <a href="{{ route('public.trade-in.category', $category->slug) }}"
+                    class="text-blue-600 hover:underline">{{ $category->name }}</a>
+                <span class="text-gray-400">/</span>
+                <span class="text-gray-700">{{ $productName }}</span>
+            </div>
+        </nav>
 
         <!-- Banner khuyến mãi đầu trang -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white mb-6 rounded-lg shadow">
@@ -24,26 +46,6 @@
                 class="rounded-lg shadow-md w-full object-cover">
         </div>
 
-        <!-- Bộ lọc vị trí -->
-        <header class="bg-white rounded-lg shadow p-4 mb-6">
-            <div class="flex items-center mb-4">
-                <span class="mr-2 text-base text-gray-700">Đang xem tại:</span>
-                <div class="relative">
-                    <select
-                        class="border border-gray-300 rounded-md py-2 px-4 pr-10 text-base appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                        <option selected>Toàn quốc</option>
-                        <option>Hà Nội</option>
-                        <option>TP. Hồ Chí Minh</option>
-                        <option>Đà Nẵng</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                        <svg class="fill-current h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                            <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </header>
 
         <!-- Danh sách sản phẩm thu cũ/mở hộp -->
         <div class="bg-white rounded-lg shadow p-6">
@@ -57,7 +59,8 @@
                 <p class="text-base text-gray-600">
                     Giá sản phẩm mới:
                     <span class="text-red-600 font-semibold">{{ number_format($originalPrice) }}₫</span>
-                    <a href="#" class="text-blue-600 hover:underline ml-2">Xem sản phẩm mới</a>
+                    <a href="{{ route('users.products.show', ['slug' => $tradeInItems->first()->productVariant->product->slug]) }}"
+           class="text-blue-600 hover:underline ml-2">Xem sản phẩm mới</a>
                 </p>
             @endif
             <div class="mb-3"></div>

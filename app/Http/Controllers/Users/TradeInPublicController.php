@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\TradeInItem;
 use Illuminate\Http\Request;
+use App\Models\ProductVariant;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Http\Controllers\Controller; // <<-- THÊM DÒNG NÀY
 
@@ -165,7 +166,7 @@ class TradeInPublicController extends Controller
     }
 
 
-     public function show($categorySlug, $productSlug)
+    public function show($categorySlug, $productSlug)
     {
         // Tìm danh mục theo slug
         $category = Category::where('slug', $categorySlug)->firstOrFail();
@@ -223,7 +224,7 @@ class TradeInPublicController extends Controller
         return view('users.trade_in.show', compact('tradeInItems', 'productName', 'category', 'categorySlug', 'productSlug'));
     }
 
-   public function detail($category, $product, Request $request)
+    public function detail($category, $product, Request $request)
     {
         $tradeInId = $request->query('oldid');
 
@@ -268,7 +269,7 @@ class TradeInPublicController extends Controller
             abort(404, 'Không tìm thấy sản phẩm cũ.');
         }
 
-        // Nhóm thông số theo SpecificationGroup
+        // Format specifications
         $specifications = $tradeInItem->productVariant->specifications
             ->groupBy(fn($spec) => $spec->group->name)
             ->map(fn($group) => $group->sortBy('order')->map(fn($spec) => [
@@ -280,6 +281,7 @@ class TradeInPublicController extends Controller
 
         // Lấy mô tả chi tiết từ cột description
         $description = $tradeInItem->productVariant->product->description;
+        $productName = $product->name;
 
         \Log::info('Detail Request', [
             'category' => $category->slug,
@@ -289,7 +291,9 @@ class TradeInPublicController extends Controller
             'specifications' => $specifications->toArray(),
             'description' => $description,
         ]);
-
-        return view('users.trade_in.detail', compact('tradeInItem', 'specifications', 'description'));
+        
+        return view('users.trade_in.detail', compact('tradeInItem', 'specifications', 'description', 'category', 'productName'))
+            ->with('categorySlug', $category->slug)
+            ->with('productSlug', $product->slug);
     }
 }

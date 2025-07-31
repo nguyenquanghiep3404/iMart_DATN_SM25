@@ -190,11 +190,18 @@
         <!-- Main Product Section -->
         <main class="bg-white p-4 sm:p-6 md:p-8 rounded-xl shadow-sm">
             <!-- Breadcrumb -->
-            <nav class="text-sm text-gray-500 mb-4">
-                <a href="#" class="hover:underline">Trang chủ</a> &gt;
-                <a href="#" class="hover:underline">Điện thoại</a> &gt;
-                <a href="#" class="hover:underline">Apple</a> &gt;
-                <span class="font-medium text-gray-700">iPhone 15 Pro Max 256GB (Đã qua sử dụng)</span>
+            {{-- Breadcrumbs (Đường dẫn điều hướng) --}}
+            <nav class="text-sm text-gray-500 mb-6" aria-label="breadcrumb">
+                <div class="flex items-center space-x-2 text-base font-semibold">
+                    <a href="{{ url('/') }}" class="text-blue-600 hover:underline">Trang chủ</a>
+                    <span class="text-gray-400">/</span>
+                    <a href="{{ route('public.trade-in.index') }}" class="text-blue-600 hover:underline">Sản phẩm cũ</a>
+                    <span class="text-gray-400">/</span>
+                    <a href="{{ route('public.trade-in.category', $category->slug) }}"
+                        class="text-blue-600 hover:underline">{{ $category->name }}</a>
+                    <span class="text-gray-400">/</span>
+                    <span class="text-gray-700">{{ $productName }}</span>
+                </div>
             </nav>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 lg:items-start">
@@ -275,14 +282,14 @@
                             class="inline-flex items-center border border-blue-500 text-blue-600 text-xs font-semibold px-2.5 py-1 rounded-full w-fit">
                             {{ $tradeInItem->type === 'used' ? 'Sản phẩm đã qua sử dụng' : 'New 99%' }}
                         </span>
-                        <button id="compare-btn"
+                        {{-- <button id="compare-btn"
                             class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-gray-800">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                 <path
                                     d="M5 4a1 1 0 00-2 0v7.268a2 2 0 000 3.464V16a1 1 0 102 0v-1.268a2 2 0 000-3.464V4zM11 4a1 1 0 10-2 0v1.268a2 2 0 000 3.464V16a1 1 0 102 0V8.732a2 2 0 000-3.464V4zM16 3a1 1 0 011 1v7.268a2 2 0 010 3.464V16a1 1 0 11-2 0v-1.268a2 2 0 010-3.464V4a1 1 0 011-1z" />
                             </svg>
                             So sánh
-                        </button>
+                        </button> --}}
                         <button id="favorite-btn"
                             class="flex items-center gap-1.5 text-sm font-semibold text-gray-500 hover:text-red-500 transition-colors">
                             <span id="favorite-icon-container">
@@ -359,9 +366,12 @@
                                     | Tiết kiệm: <span
                                         class="font-bold text-red-600">{{ number_format($tradeInItem->productVariant->price - $tradeInItem->selling_price) }}₫</span>
                                 </p>
-                                <a href="#"
-                                    class="text-blue-600 font-semibold hover:underline mt-1 inline-block text-sm">Xem sản
-                                    phẩm mới &gt;</a>
+                               @if ($tradeInItem->productVariant->product->slug)
+    <a href="{{ route('users.products.show', ['slug' => $tradeInItem->productVariant->product->slug]) }}"
+       class="text-blue-600 font-semibold hover:underline mt-1 inline-block text-sm">Xem sản phẩm mới &gt;</a>
+@else
+    <span class="text-gray-600 mt-1 inline-block text-sm">Sản phẩm mới không khả dụng</span>
+@endif
                             @endif
                         </div>
                     </div>
@@ -752,17 +762,34 @@
         class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-5xl bg-white/80 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-2xl transform translate-y-full transition-transform duration-300 z-40">
         <div class="flex items-center justify-between gap-4 w-full">
             <div class="flex items-center gap-4 overflow-hidden">
-                <img src="https://placehold.co/50x50/f0f0f0/333?text=i15" alt="iPhone 15 Pro Max"
+                <img src="{{ $tradeInItem->productVariant->primaryImage?->url ?? asset('assets/admin/img/placeholder-image.png') }}"
+                    alt="{{ $tradeInItem->productVariant->product->name ?? 'Sản phẩm' }}"
                     class="w-12 h-12 rounded-lg object-cover flex-shrink-0">
                 <div class="hidden sm:block">
-                    <p class="font-semibold text-sm text-gray-900 truncate">iPhone 15 Pro Max (Cũ)</p>
-                    <p id="sticky-bar-variant-info" class="text-xs text-gray-600">Phân loại: 256GB, Titan Tự nhiên</p>
+                    <p class="font-semibold text-sm text-gray-900 truncate">
+                        {{ $tradeInItem->productVariant->product->name ?? 'Không rõ tên' }}
+                        ({{ $tradeInItem->type === 'used' ? 'Cũ' : 'New 99%' }})
+                    </p>
+                    <p id="sticky-bar-variant-info" class="text-xs text-gray-600">
+                        @foreach ($tradeInItem->productVariant->attributeValues as $attributeValue)
+                            {{ $attributeValue->value }}{{ $loop->last ? '' : ', ' }}
+                        @endforeach
+                        @if ($tradeInItem->productVariant->attributeValues->isEmpty())
+                            Không có thông tin phân loại
+                        @endif
+                    </p>
                 </div>
             </div>
             <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
                 <div class="hidden lg:block text-right">
-                    <p class="font-bold text-red-600 text-lg">25.170.000₫</p>
-                    <p class="text-xs text-gray-500 line-through">30.390.000₫</p>
+                    <p class="font-bold text-red-600 text-lg">
+                        {{ number_format($tradeInItem->selling_price) }}₫
+                    </p>
+                    @if ($tradeInItem->productVariant->price)
+                        <p class="text-xs text-gray-500 line-through">
+                            {{ number_format($tradeInItem->productVariant->price) }}₫
+                        </p>
+                    @endif
                 </div>
                 <button
                     class="hidden sm:flex items-center justify-center p-3 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
@@ -1026,17 +1053,6 @@
                 if (e.key === 'Escape') closeLightbox();
             });
 
-            function updateStickyBarInfo() {
-                const selectedStorage = @json($tradeInItem->productVariant?->attributeValues?->firstWhere('attribute.name', 'Dung lượng')?->value ?? '256GB');
-                const selectedColor = @json(
-                    $tradeInItem->productVariant?->attributeValues?->firstWhere('attribute.name', 'Màu sắc')?->value ??
-                        'Titan Tự nhiên');
-                const stickyInfoEl = document.getElementById('sticky-bar-variant-info');
-                if (stickyInfoEl) {
-                    stickyInfoEl.textContent = `Phân loại: ${selectedStorage}, ${selectedColor}`;
-                }
-            }
-
             const accordionButtons = document.querySelectorAll('.accordion-button');
             console.log('Accordion buttons found:', accordionButtons.length);
 
@@ -1128,10 +1144,10 @@
                     'Thu gọn';
             });
 
-            const compareBtn = document.getElementById('compare-btn');
-            compareBtn.addEventListener('click', () => {
-                alert('Chức năng so sánh sẽ được tích hợp sau!');
-            });
+            // const compareBtn = document.getElementById('compare-btn');
+            // compareBtn.addEventListener('click', () => {
+            //     alert('Chức năng so sánh sẽ được tích hợp sau!');
+            // });
 
             const favoriteBtn = document.getElementById('favorite-btn');
             const favoriteIconContainer = document.getElementById('favorite-icon-container');
