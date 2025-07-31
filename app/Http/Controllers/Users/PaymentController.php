@@ -25,6 +25,37 @@ use App\Models\StoreLocation;
 
 class PaymentController extends Controller
 {
+    // public function index()
+    // {
+    //     // Kiểm tra giỏ hàng có sản phẩm không
+    //     $cartData = $this->getCartData();
+
+    //     if ($cartData['items']->isEmpty()) {
+    //         return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
+    //     }
+    //     // Tính tổng khối lượng và kích thước
+    //     $items = $cartData['items'];
+    //     $totalWeight = $items->sum(function ($item) {
+    //         return ($item->productVariant->weight ?? 0) * $item->quantity;
+    //     });
+    //     $maxLength = $items->max(function ($item) {
+    //         return $item->productVariant->dimensions_length ?? 0;
+    //     });
+    //     $maxWidth = $items->max(function ($item) {
+    //         return $item->productVariant->dimensions_width ?? 0;
+    //     });
+    //     $totalHeight = $items->sum(function ($item) {
+    //         return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
+    //     });
+    //     // $availableCoupons = Coupon::where('status', 'active')->get();
+    //     return view('users.payments.information', array_merge($cartData, [
+    //         'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
+    //         'baseLength' => $maxLength > 0 ? $maxLength : 20,
+    //         'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
+    //         'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
+    //         // 'availableCoupons' => $availableCoupons, 
+    //     ]));
+    // }
     public function index()
     {
         // Kiểm tra giỏ hàng có sản phẩm không
@@ -47,11 +78,20 @@ class PaymentController extends Controller
         $totalHeight = $items->sum(function ($item) {
             return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
         });
+        $availableCoupons = Coupon::where('status', 'active')->get();
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+        $appliedCoupon = session('applied_coupon');
+        $discount = $appliedCoupon['discount'] ?? 0;
+        $voucherCode = $appliedCoupon['code'] ?? null;
+        $total = max(0, $subtotal - $discount);
         return view('users.payments.information', array_merge($cartData, [
             'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
             'baseLength' => $maxLength > 0 ? $maxLength : 20,
             'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
             'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
+            'availableCoupons' => $availableCoupons, 
+            'total'=> $total,
+            'discount'=>$discount
         ]));
     }
     /**

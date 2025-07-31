@@ -4,7 +4,7 @@
 @section('content')
     @include('admin.registers.layouts.css')
 
-    <body x-data="posManager({{ $registers->toJson() }}, {{ $locations->toJson() }})">
+    <div x-data='posManager(@json($registers), @json($locations))'>
         <div class="px-4 sm:px-6 md:px-8 py-8">
             <div class="container mx-auto max-w-full">
 
