@@ -22,11 +22,14 @@ class SalesStaffManagement extends Controller
     /**
      * Hiển thị trang quản lý nhân viên bán hàng - Danh sách cửa hàng
      */
-    public function index(): View
+    public function index(Request $request): View
     {
+        $perPage = $request->get('per_page', 10); // Số item trên mỗi trang, mặc định 10
+        
         $stores = StoreLocation::with(['assignedUsers', 'province', 'district'])
             ->where('is_active', true)
-            ->get();
+            ->orderBy('name')
+            ->paginate($perPage);
 
         $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
 
@@ -36,24 +39,42 @@ class SalesStaffManagement extends Controller
     /**
      * Hiển thị danh sách nhân viên của một cửa hàng
      */
-    public function showEmployees(int $storeId): View
+    public function showEmployees(int $storeId, Request $request): View
     {
         $store = StoreLocation::with(['province', 'district'])->findOrFail($storeId);
         
-        $employees = UserStoreLocation::with(['user'])
+        $perPage = $request->get('per_page', 10); // Số item trên mỗi trang, mặc định 10
+        
+        // Lấy danh sách nhân viên với phân trang
+        $employeeAssignments = UserStoreLocation::with(['user'])
             ->where('store_location_id', $storeId)
-            ->get()
-            ->map(function ($assignment) {
-                $user = $assignment->user;
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone_number,
-                    'position' => $user->position ?? 'Nhân viên POS',
-                    'status' => $user->status,
-                ];
-            });
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+        
+        // Chuyển đổi dữ liệu cho view
+        $employees = $employeeAssignments->getCollection()->map(function ($assignment) {
+            $user = $assignment->user;
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone_number,
+                'position' => $user->position ?? 'Nhân viên POS',
+                'status' => $user->status,
+            ];
+        });
+        
+        // Tạo paginator mới với dữ liệu đã chuyển đổi
+        $employees = new \Illuminate\Pagination\LengthAwarePaginator(
+            $employees,
+            $employeeAssignments->total(),
+            $employeeAssignments->perPage(),
+            $employeeAssignments->currentPage(),
+            [
+                'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+                'pageName' => 'page',
+            ]
+        );
 
         $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
 
@@ -100,6 +121,8 @@ class SalesStaffManagement extends Controller
      */
     public function getStores(Request $request): JsonResponse
     {
+        $perPage = $request->get('per_page', 10);
+        
         $query = StoreLocation::with(['assignedUsers', 'province', 'district'])
             ->where('is_active', true);
 
@@ -118,7 +141,9 @@ class SalesStaffManagement extends Controller
             $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        $stores = $query->get()->map(function ($store) {
+        $stores = $query->orderBy('name')->paginate($perPage);
+        
+        $storesData = $stores->getCollection()->map(function ($store) {
             return [
                 'id' => $store->id,
                 'name' => $store->name,
@@ -128,7 +153,17 @@ class SalesStaffManagement extends Controller
             ];
         });
 
-        return response()->json(['stores' => $stores]);
+        return response()->json([
+            'stores' => $storesData,
+            'pagination' => [
+                'current_page' => $stores->currentPage(),
+                'last_page' => $stores->lastPage(),
+                'per_page' => $stores->perPage(),
+                'total' => $stores->total(),
+                'from' => $stores->firstItem(),
+                'to' => $stores->lastItem(),
+            ]
+        ]);
     }
 
     /**
@@ -136,6 +171,8 @@ class SalesStaffManagement extends Controller
      */
     public function getStoreEmployees(int $storeId, Request $request): JsonResponse
     {
+        $perPage = $request->get('per_page', 10);
+        
         $query = UserStoreLocation::with(['user'])
             ->where('store_location_id', $storeId);
 
@@ -149,7 +186,9 @@ class SalesStaffManagement extends Controller
             });
         }
 
-        $employees = $query->get()->map(function ($assignment) {
+        $employeeAssignments = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        
+        $employees = $employeeAssignments->getCollection()->map(function ($assignment) {
             $user = $assignment->user;
             return [
                 'id' => $user->id,
@@ -161,7 +200,47 @@ class SalesStaffManagement extends Controller
             ];
         });
 
-        return response()->json(['employees' => $employees]);
+        return response()->json([
+            'employees' => $employees,
+            'pagination' => [
+                'current_page' => $employeeAssignments->currentPage(),
+                'last_page' => $employeeAssignments->lastPage(),
+                'per_page' => $employeeAssignments->perPage(),
+                'total' => $employeeAssignments->total(),
+                'from' => $employeeAssignments->firstItem(),
+                'to' => $employeeAssignments->lastItem(),
+            ]
+        ]);
+    }
+
+    /**
+     * API: Lấy thông tin một nhân viên cụ thể
+     */
+    public function getEmployee(int $storeId, int $employeeId): JsonResponse
+    {
+        $employee = UserStoreLocation::with(['user'])
+            ->where('store_location_id', $storeId)
+            ->where('user_id', $employeeId)
+            ->first();
+
+        if (!$employee) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy nhân viên'
+            ], 404);
+        }
+
+        $user = $employee->user;
+        return response()->json([
+            'success' => true,
+            'employee' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone_number,
+                'status' => $user->status,
+            ]
+        ]);
     }
 
     /**
@@ -176,7 +255,7 @@ class SalesStaffManagement extends Controller
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'phone_number' => $data['phone'],
-                'status' => $data['status'],
+                'status' => $data['status'] ?? 'active',
                 'password' => bcrypt('password123'),
             ]);
             UserStoreLocation::ganNhanVienVaoCuaHang($user->id, $data['store_location_id']);
@@ -203,7 +282,7 @@ class SalesStaffManagement extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'phone_number' => $data['phone'],
-            'status' => $data['status'],
+            'status' => $data['status'] ?? 'active',
         ]);
 
         return response()->json([

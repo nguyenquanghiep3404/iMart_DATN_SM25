@@ -2,6 +2,57 @@
 
 @section('title', 'Quản Lý Nhân Viên Bán Hàng - POS')
 
+@push('styles')
+<style>
+/* Custom pagination styles */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.pagination > * {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    height: 2.5rem;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    background-color: white;
+    color: #374151;
+    text-decoration: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.pagination > *:hover {
+    background-color: #f3f4f6;
+    border-color: #9ca3af;
+}
+
+.pagination .active {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.pagination .disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination .disabled:hover {
+    background-color: white;
+    border-color: #d1d5db;
+}
+</style>
+@endpush
+
 @section('content')
 <div class="w-full">
     <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
@@ -39,6 +90,16 @@
                 </div>
             </div>
             <div class="flex items-center gap-3">
+                <!-- Per Page Selector -->
+                <div class="flex items-center gap-2">
+                    <label for="per-page-select" class="text-sm font-medium text-gray-700">Hiển thị:</label>
+                    <select id="per-page-select" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
+                        <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                        <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                    </select>
+                </div>
                 <button id="view-trash-btn" class="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 font-semibold px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     <span>Thùng rác</span>
@@ -95,6 +156,28 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- Pagination -->
+        @if($stores->hasPages())
+            <div class="bg-gray-50 px-4 py-3 border-t border-gray-200 flex items-center justify-between sm:px-6">
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-start">
+                    <p class="text-sm text-gray-700 leading-5">
+                        Hiển thị từ
+                        <span class="font-medium">{{ $stores->firstItem() }}</span>
+                        đến
+                        <span class="font-medium">{{ $stores->lastItem() }}</span>
+                        trên tổng số
+                        <span class="font-medium">{{ $stores->total() }}</span>
+                        cửa hàng
+                    </p>
+                </div>
+                <div>
+                    {!! $stores->appends([
+                        'per_page' => request('per_page'),
+                    ])->links() !!}
+                </div>
+            </div>
+        @endif
     </div>
 </div>
 
@@ -106,6 +189,18 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Per page selector functionality
+    const perPageSelect = document.getElementById('per-page-select');
+    if (perPageSelect) {
+        perPageSelect.addEventListener('change', function() {
+            const perPage = this.value;
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('per_page', perPage);
+            currentUrl.searchParams.delete('page'); // Reset to first page
+            window.location.href = currentUrl.toString();
+        });
+    }
+    
     // Filter functionality
     const provinceFilter = document.getElementById('province-filter');
     const districtFilter = document.getElementById('district-filter');
@@ -140,13 +235,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const province = provinceFilter.value;
         const district = districtFilter.value;
         const search = storeSearchInput.value;
+        const perPage = perPageSelect ? perPageSelect.value : 10;
         
         // Show loading state
         const tbody = document.getElementById('store-table-body');
         tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center">Đang tải...</td></tr>';
         
         // Fetch filtered data
-        fetch(`{{ route('admin.sales-staff.api.stores') }}?province=${province}&district=${district}&search=${search}`)
+        fetch(`{{ route('admin.sales-staff.api.stores') }}?province=${province}&district=${district}&search=${search}&per_page=${perPage}`)
             .then(response => response.json())
             .then(data => {
                 if (data.stores.length === 0) {
@@ -182,7 +278,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         </tr>
                     `).join('');
                 }
+                
+                // Update pagination info if available
+                if (data.pagination) {
+                    updatePaginationInfo(data.pagination);
+                }
             });
+    }
+    
+    function updatePaginationInfo(pagination) {
+        // This function can be used to update pagination display if needed
+        console.log('Pagination info:', pagination);
     }
     
     // Xóa toàn bộ đoạn JS modal cũ

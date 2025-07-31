@@ -20,22 +20,41 @@ class SalesStaffRequest extends FormRequest
     public function rules(): array
     {
         $userId = $this->route('userId');
-        $isDetail = $this->has('store_location_id') && $this->has('province') && $this->has('district');
-        return [
+        $isUpdate = !empty($userId); // Nếu có userId thì đang update
+        
+
+        
+        $rules = [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email' . ($userId ? ',' . $userId : ''),
+            'email' => 'required|email',
             'phone' => [
                 'required',
                 'string',
-                'max:10',
+                'max:11',
                 'regex:/^(0[1-9][0-9]{8,9})$/',
-                'unique:users,phone_number' . ($userId ? ',' . $userId : ''),
             ],
-            'status' => 'required|in:active,inactive,banned',
-            'province' => $isDetail ? 'nullable' : 'required',
-            'district' => $isDetail ? 'nullable' : 'required',
-            'store_location_id' => $isDetail ? 'nullable' : 'required|exists:store_locations,id',
+            'status' => 'nullable|in:active,inactive,banned',
         ];
+        
+        // Thêm unique validation chỉ khi cần thiết
+        if ($userId) {
+            // Khi update, kiểm tra unique trừ user hiện tại
+            $rules['email'] .= '|unique:users,email,' . $userId;
+            $rules['phone'][] = 'unique:users,phone_number,' . $userId;
+        } else {
+            // Khi thêm mới, kiểm tra unique bình thường
+            $rules['email'] .= '|unique:users,email';
+            $rules['phone'][] = 'unique:users,phone_number';
+        }
+        
+        // Chỉ thêm validation cho location fields khi thêm mới
+        if (!$isUpdate) {
+            $rules['province'] = 'required';
+            $rules['district'] = 'required';
+            $rules['store_location_id'] = 'required|exists:store_locations,id';
+        }
+        
+        return $rules;
     }
 
     public function messages()

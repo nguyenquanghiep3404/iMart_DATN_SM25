@@ -434,6 +434,7 @@ Route::prefix('admin')
                 Route::get('/stores', [SalesStaffManagement::class, 'getStores'])->name('stores');
                 // API nhân viên
                 Route::get('/stores/{storeId}/employees', [SalesStaffManagement::class, 'getStoreEmployees'])->name('stores.employees');
+                Route::get('/stores/{storeId}/employees/{employeeId}', [SalesStaffManagement::class, 'getEmployee'])->name('stores.employees.show');
                 Route::post('/employees', [SalesStaffManagement::class, 'addEmployee'])->name('employees.store');
                 Route::put('/employees/{userId}', [SalesStaffManagement::class, 'updateEmployee'])->name('employees.update');
                 Route::delete('/stores/{storeId}/employees/{userId}', [SalesStaffManagement::class, 'removeEmployee'])->name('employees.remove');
