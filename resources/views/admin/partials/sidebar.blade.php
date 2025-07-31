@@ -4,9 +4,11 @@
     $activeParentNav = null; // Initialize active nav variable
 
     // Define navigation sections with their corresponding route prefixes for active state detection.
+    // I've created a new 'inventory' section for better organization.
     $navSections = [
         'dashboard' => ['admin.dashboard'],
-        'sales' => ['admin.orders.', 'admin.purchase-orders.', 'admin.packing-station.', 'admin.abandoned-carts.'],
+        'sales' => ['admin.orders.', 'admin.packing-station.', 'admin.abandoned-carts.'],
+        'inventory' => ['admin.purchase-orders.', 'admin.stock-transfers.'], // New Inventory Section
         'stores' => ['admin.store-locations.', 'admin.chat.'],
         'catalog' => [
             'admin.products.',
@@ -23,7 +25,7 @@
         'customers' => ['admin.users.'],
         'employees' => ['admin.shippers.', 'admin.content-staffs.', 'admin.order-manager.', 'admin.roles.'],
         'media' => ['admin.media.'],
-        // Note: I'm assuming 'settings' is handled differently as it's in a separate section below.
+        // Note: 'settings' is handled separately below.
     ];
 
     // Determine the currently active parent navigation section.
@@ -67,7 +69,7 @@
                         @php $isDashboardActive = request()->routeIs('admin.dashboard'); @endphp
                         <a href="{{ route('admin.dashboard') }}"
                             class="group flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out
-                                       {{ $isDashboardActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                                        {{ $isDashboardActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
                             <span
                                 class="mr-3 text-lg {{ $isDashboardActive ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-500' }}">
                                 <!-- Heroicon name: mini/home -->
@@ -113,11 +115,6 @@
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.orders.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Đơn
                                     hàng</a>
                             </li>
-                            <li><a href="{{ route('admin.purchase-orders.index') }}"
-                                    class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.purchase-orders.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Nhập
-                                    kho</a>
-                            </li>
-                            {{-- ADDED: Packing Station Route --}}
                             <li><a href="{{ route('admin.packing-station.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.packing-station.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Trạm
                                     đóng gói</a>
@@ -125,6 +122,54 @@
                             <li><a href="{{ route('admin.abandoned-carts.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.abandoned-carts.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Giỏ
                                     hàng bỏ lỡ</a>
+                            </li>
+                        </ul>
+                    </li>
+                    {{-- NEW: Inventory Management --}}
+                    <li>
+                        <button @click="openNav !== 'inventory' ? openNav = 'inventory' : openNav = null"
+                            :class="openNav === 'inventory' ? 'bg-indigo-50 text-indigo-600 font-semibold' :
+                                'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium'"
+                            class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out">
+                            <span
+                                class="mr-3 text-lg {{ $activeParentNav === 'inventory' ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-500' }}">
+                                <!-- Icon: Archive Box -->
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18"
+                                    height="18" fill="currentColor">
+                                    <path
+                                        d="M20.54,5.23l-1.39-1.39A3,3,0,0,0,17,3H7A3,3,0,0,0,4.85,3.84L3.46,5.23A3,3,0,0,0,3,7.35V19a3,3,0,0,0,3,3H18a3,3,0,0,0,3-3V7.35A3,3,0,0,0,20.54,5.23ZM5.41,5H18.59l.6,0.6V7H5V5.6ZM19,19a1,1,0,0,1-1,1H6a1,1,0,0,1-1-1V9H19Z" />
+                                    <path d="M10.5,13.5h3a1,1,0,0,0,0-2h-3a1,1,0,0,0,0,2Z" />
+                                </svg>
+                            </span>
+                            Quản lý Kho
+                            <span class="ml-auto transition-transform duration-200"
+                                :class="openNav === 'inventory' ? 'rotate-90' : ''">
+                                <!-- Heroicon name: mini/chevron-right -->
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16"
+                                    height="16" fill="currentColor">
+                                    <path
+                                        d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" />
+                                </svg>
+                            </span>
+                        </button>
+                        <ul x-show="openNav === 'inventory'" class="pl-8 pr-2 py-1 space-y-1 mt-1"
+                            style="display: none;">
+                            <li><a href="{{ route('admin.purchase-orders.index') }}"
+                                    class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.purchase-orders.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Nhập
+                                    kho</a>
+                            </li>
+                            <li><a href="{{ route('admin.stock-transfers.index') }}"
+                                    class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.stock-transfers.index') || request()->routeIs('admin.stock-transfers.create') || request()->routeIs('admin.stock-transfers.edit') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Phiếu
+                                    chuyển kho</a>
+                            </li>
+                            <li><a href="{{ route('admin.stock-transfers.dispatch.index') }}"
+                                    class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.stock-transfers.dispatch.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Xuất
+                                    kho</a>
+                            </li>
+                            {{-- Assuming you will create a route named 'admin.stock-transfers.receive.index' for this --}}
+                            <li><a href="#" {{-- href="{{ route('admin.stock-transfers.receive.index') }}" --}}
+                                    class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.stock-transfers.receive.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Nhận
+                                    kho</a>
                             </li>
                         </ul>
                     </li>
@@ -154,7 +199,8 @@
                                 </svg>
                             </span>
                         </button>
-                        <ul x-show="openNav === 'stores'" class="pl-8 pr-2 py-1 space-y-1 mt-1" style="display: none;">
+                        <ul x-show="openNav === 'stores'" class="pl-8 pr-2 py-1 space-y-1 mt-1"
+                            style="display: none;">
                             <li><a href="{{ route('admin.store-locations.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.store-locations.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Địa
                                     điểm Cửa hàng</a>
@@ -217,7 +263,6 @@
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.specifications.*') || request()->routeIs('admin.specification-groups.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Thông
                                     số</a>
                             </li>
-                            {{-- MOVED: Supplier Route --}}
                             <li><a href="{{ route('admin.suppliers.index') }}"
                                     class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.suppliers.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Nhà
                                     cung cấp</a>
@@ -410,7 +455,7 @@
                         @php $isMediaActive = request()->routeIs('admin.media.*'); @endphp
                         <a href="{{ route('admin.media.index') }}"
                             class="group flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out
-                                       {{ $isMediaActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                                        {{ $isMediaActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
                             <span
                                 class="mr-3 text-lg {{ $isMediaActive ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-500' }}">
                                 <!-- Heroicon name: mini/photo -->
@@ -458,7 +503,8 @@
                             </svg>
                         </span>
                     </button>
-                    <ul x-show="openNav === 'settings'" class="pl-8 pr-2 py-1 space-y-1 mt-1" style="display: none;">
+                    <ul x-show="openNav === 'settings'" class="pl-8 pr-2 py-1 space-y-1 mt-1"
+                        style="display: none;">
                         <li><a href="#"
                                 class="block w-full py-1.5 px-3 text-sm rounded-md text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50">Cài
                                 đặt chung</a>

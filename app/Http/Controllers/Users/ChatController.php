@@ -2,206 +2,122 @@
 
 namespace App\Http\Controllers\Users;
 
+use App\Events\NewConversationCreated;
+use App\Events\NewMessageSent;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
-use App\Models\User;
 use App\Models\ChatConversation;
 use App\Models\ChatMessage;
 use App\Models\ChatParticipant;
-use App\Events\NewMessageSent;
-use App\Events\NewConversationCreated;
-use Illuminate\Http\Response; // Import Response để đặt cookie
-use Illuminate\Validation\Rule; // Import Rule cho validation
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB; // Quan trọng: Thêm import cho Transaction
+use Illuminate\Support\Facades\Log; // Quan trọng: Thêm import để ghi log lỗi
+use Illuminate\Support\Str;
 
 class ChatController extends Controller
 {
-    // Hiển thị giao diện chat chính cho người dùng
+    /**
+     * Hiển thị giao diện chat chính.
+     * Logic này sẽ được hoàn thiện để tải các cuộc hội thoại của người dùng/khách.
+     */
     public function index(Request $request)
     {
-        $conversations = collect(); // Khởi tạo Collection rỗng
-        $guestUserId = null; // ID của guest user hiện tại (nếu là guest)
-        $initialConversation = null; // Cuộc hội thoại ban đầu để hiển thị
+        // Giữ nguyên logic debug để đảm bảo view hoạt động
+        $conversations = collect();
+        $greeting = "Chào bạn!";
+        $guestUserId = null;
 
-        if (Auth::check()) {
-            // Người dùng đã đăng nhập
-            $currentUserId = Auth::id();
-            // Lấy cuộc hội thoại hỗ trợ gần nhất của user này
-            $initialConversation = ChatConversation::with('messages')
-                                    ->where('user_id', $currentUserId)
-                                    ->where('type', 'support')
-                                    ->orderByDesc('updated_at')
-                                    ->first();
-            if ($initialConversation) {
-                $conversations->push($initialConversation);
-            } else {
-                // Tạo cuộc hội thoại mới nếu chưa có
-                $newConversation = ChatConversation::create([
-                    'type' => 'support',
-                    'user_id' => $currentUserId,
-                    'status' => 'open',
-                    'last_message_at' => now(),
-                ]);
-                ChatParticipant::create([
-                    'conversation_id' => $newConversation->id,
-                    'user_id' => $currentUserId,
-                ]);
-                $conversations->push($newConversation);
-                event(new NewConversationCreated($newConversation));
-                $initialConversation = $newConversation; // Gán để truyền xuống JS
-            }
-        } else {
-            // Xử lý khách vãng lai
-            $guestUserIdFromCookie = $request->cookie('guest_user_id'); // Lấy từ cookie
-            $guestUser = null;
-
-            if ($guestUserIdFromCookie) {
-                $guestUser = User::where('id', $guestUserIdFromCookie)->where('is_guest', true)->first();
-            }
-
-            if ($guestUser) {
-                $guestUserId = $guestUser->id; // Gán ID guest hợp lệ
-                // Tìm cuộc hội thoại hỗ trợ gần nhất của guest này
-                $initialConversation = ChatConversation::with('messages')
-                                        ->where('user_id', $guestUser->id)
-                                        ->where('type', 'support')
-                                        ->orderByDesc('updated_at')
-                                        ->first();
-                if ($initialConversation) {
-                    $conversations->push($initialConversation);
-                } else {
-                    // Tạo cuộc hội thoại mới nếu guest có ID nhưng chưa có conversation
-                    $newConversation = ChatConversation::create([
-                        'type' => 'support',
-                        'user_id' => $guestUser->id,
-                        'status' => 'open',
-                        'last_message_at' => now(),
-                    ]);
-                    ChatParticipant::create([
-                        'conversation_id' => $newConversation->id,
-                        'user_id' => $guestUser->id,
-                    ]);
-                    $conversations->push($newConversation);
-                    event(new NewConversationCreated($newConversation));
-                    $initialConversation = $newConversation; // Gán để truyền xuống JS
-                }
-            }
-            // Nếu không tìm thấy guestUser hợp lệ, $guestUserId vẫn là null, welcomeScreen sẽ hiện
-        }
-
-        // Truyền biến cho Blade view
-        return view('users.partials.ai_chatbot', compact('conversations', 'guestUserId'));
+        return view('users.partials.ai_chatbot', compact('conversations', 'greeting', 'guestUserId'));
     }
 
-    // Xử lý đăng ký người dùng khách (khi họ bắt đầu chat lần đầu)
-    // THAY ĐỔI: CÁCH 3 - Tìm guest cũ theo SĐT, nếu có thì tải lại conversation
+    /**
+     * Đăng ký người dùng khách khi họ bắt đầu chat.
+     */
     public function registerGuest(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'phone_number' => 'required|string|max:20', // Bỏ rule 'unique' ở đây
+            'phone_number' => 'required|string|max:20|unique:users,phone_number',
         ]);
 
-        // Tìm kiếm khách vãng lai hiện có với số điện thoại này
-        $guestUser = User::where('phone_number', $request->phone_number)
-                         ->where('is_guest', true) // Chỉ tìm user là guest
-                         ->first();
+        $guestUser = User::create([
+            'name' => $request->name,
+            'phone_number' => $request->phone_number,
+            'email' => 'guest_'.Str::uuid().'@example.com', // Email giả
+            'password' => bcrypt(Str::random(16)), // Mật khẩu giả
+            'is_guest' => true,
+            'status' => 'active',
+        ]);
 
-        $conversation = null;
-        $isNewGuest = false;
+        // Tạo cuộc hội thoại ban đầu
+        $conversation = ChatConversation::create([
+            'type' => 'support',
+            'user_id' => $guestUser->id,
+            'status' => 'open',
+            'last_message_at' => now(),
+        ]);
 
-        if ($guestUser) {
-            // Nếu tìm thấy khách vãng lai cũ, cập nhật tên nếu có thay đổi
-            $guestUser->update(['name' => $request->name]);
-            // Tìm cuộc hội thoại gần nhất của guest này
-            $conversation = ChatConversation::with('messages') // eager load messages để trả về frontend
-                                ->where('user_id', $guestUser->id)
-                                ->where('type', 'support')
-                                ->orderByDesc('updated_at')
-                                ->first();
-            if (!$conversation) {
-                // Nếu guest cũ nhưng chưa có conversation nào (hoặc đã bị xóa), tạo mới
-                $conversation = ChatConversation::create([
-                    'type' => 'support',
-                    'user_id' => $guestUser->id,
-                    'status' => 'open',
-                    'last_message_at' => now(),
-                ]);
-                ChatParticipant::create([
-                    'conversation_id' => $conversation->id,
-                    'user_id' => $guestUser->id,
-                ]);
-                event(new NewConversationCreated($conversation));
-            }
-        } else {
-            // Nếu không tìm thấy, tạo khách vãng lai mới
-            $isNewGuest = true;
-            $guestUser = User::create([
-                'name' => $request->name,
-                'phone_number' => $request->phone_number,
-                'email' => 'guest_' . Str::uuid() . '@example.com', // Email giả duy nhất
-                'password' => bcrypt(Str::random(16)), // Mật khẩu giả
-                'is_guest' => true, // Đánh dấu là khách
-                'status' => 'active', // Trạng thái mặc định
-            ]);
+        ChatParticipant::create([
+            'conversation_id' => $conversation->id,
+            'user_id' => $guestUser->id,
+        ]);
 
-            // Tạo một cuộc hội thoại ban đầu ngay khi khách đăng ký
-            $conversation = ChatConversation::create([
-                'type' => 'support',
-                'user_id' => $guestUser->id,
-                'status' => 'open',
-                'last_message_at' => now(),
-            ]);
+        // Phát sóng sự kiện có cuộc hội thoại mới
+        event(new NewConversationCreated($conversation));
 
-            ChatParticipant::create([
-                'conversation_id' => $conversation->id,
-                'user_id' => $guestUser->id,
-            ]);
-
-            // Phát sóng cuộc hội thoại mới tới các quản trị viên
-            event(new NewConversationCreated($conversation));
-        }
-
-        // Trả về user_id và conversation_id cùng với tin nhắn chào mừng
         $response = response()->json([
-            'message' => $isNewGuest ? 'Guest registered successfully.' : 'Guest recognized, conversation loaded.',
+            'message' => 'Guest registered successfully.',
             'user_id' => $guestUser->id,
             'conversation_id' => $conversation->id,
-            'conversation_messages' => $conversation->messages->map(function($msg) use ($guestUser) { // Dùng map để định dạng tin nhắn
-                return [
-                    'content' => $msg->content,
-                    'sender_id' => $msg->sender_id,
-                    'created_at' => $msg->created_at,
-                    'is_sent_by_current_user' => ($msg->sender_id == $guestUser->id), // Để frontend biết tin nhắn của ai
-                ];
-            })->toArray(),
-            'is_new_guest' => $isNewGuest,
         ]);
 
-        // Đặt cookie để duy trì guest_user_id
-        return $response->cookie('guest_user_id', $guestUser->id, 60*24*30); // Cookie 30 ngày
+        // Đặt cookie để duy trì trạng thái khách
+        return $response->cookie('guest_user_id', $guestUser->id, 60 * 24 * 30); // 30 ngày
     }
 
-    // Gửi tin nhắn
+    /**
+     * Gửi tin nhắn mới.
+     * *** ĐÃ CẬP NHẬT LOGIC BẢO MẬT ***
+     */
     public function sendMessage(Request $request)
     {
         $request->validate([
             'conversation_id' => 'nullable|exists:chat_conversations,id',
             'content' => 'required|string',
             'type' => 'in:text,image,file,system',
-            'sender_id' => 'required|exists:users,id', // sender_id phải được cung cấp từ frontend
+            'sender_id' => 'required|exists:users,id',
         ]);
 
-        $sender = User::find($request->sender_id);
+        $sender = null;
 
-        if (!$sender || (!$sender->is_guest && $sender->id !== Auth::id())) {
-            return response()->json(['message' => 'Invalid sender or unauthorized.'], 403);
+        // --- Bắt đầu logic bảo mật đã được siết chặt ---
+        if (Auth::check()) {
+            // Nếu đã đăng nhập, người gửi BẮT BUỘC phải là người dùng hiện tại.
+            $user = Auth::user();
+            if ((int) $request->sender_id !== $user->id) {
+                return response()->json(['message' => 'Sender ID mismatch.'], 403);
+            }
+            $sender = $user;
+        } else {
+            // Nếu là khách, xác thực sender_id từ request với cookie.
+            $guestUserIdFromCookie = $request->cookie('guest_user_id');
+            if (! $guestUserIdFromCookie || (int) $request->sender_id !== (int) $guestUserIdFromCookie) {
+                return response()->json(['message' => 'Guest session mismatch or invalid sender.'], 403);
+            }
+
+            $sender = User::find($request->sender_id);
+            // Kiểm tra thêm để chắc chắn ID này là của một tài khoản khách hợp lệ
+            if (! $sender || ! $sender->is_guest) {
+                return response()->json(['message' => 'Invalid guest user.'], 403);
+            }
         }
+        // --- Kết thúc logic bảo mật ---
+
+        // Từ đây, biến $sender đã được xác thực và đáng tin cậy.
 
         $conversation = null;
-
-        if (!$request->conversation_id) {
+        if (! $request->conversation_id) {
             $conversation = ChatConversation::create([
                 'type' => 'support',
                 'user_id' => $sender->id,
@@ -215,7 +131,7 @@ class ChatController extends Controller
             event(new NewConversationCreated($conversation));
         } else {
             $conversation = ChatConversation::find($request->conversation_id);
-            if (!$conversation) {
+            if (! $conversation) {
                 return response()->json(['message' => 'Conversation not found.'], 404);
             }
             $conversation->update(['last_message_at' => now()]);
@@ -228,12 +144,16 @@ class ChatController extends Controller
             'type' => $request->type ?? 'text',
         ]);
 
-        event(new NewMessageSent($message, $conversation));
+        // Phát sóng tin nhắn mới
+        broadcast(new NewMessageSent($message, $conversation))->toOthers();
 
-        return response()->json(['message' => 'Message sent!', 'conversation_id' => $conversation->id]);
+        return response()->json(['message' => 'Message sent!', 'data' => ['conversation_id' => $conversation->id]]);
     }
 
-    // Xử lý khi khách đăng nhập (hợp nhất tài khoản)
+    /**
+     * Hợp nhất tài khoản khách vào tài khoản thật khi đăng nhập.
+     * *** ĐÃ CẬP NHẬT ĐỂ SỬ DỤNG DATABASE TRANSACTION ***
+     */
     public function guestLogin(Request $request)
     {
         $request->validate([
@@ -243,21 +163,40 @@ class ChatController extends Controller
         ]);
 
         $guestUser = User::find($request->guest_user_id);
-        if (!$guestUser) {
+        if (! $guestUser) {
             return response()->json(['message' => 'Guest user not found.'], 404);
         }
 
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $realUser = Auth::user();
 
-            ChatConversation::where('user_id', $guestUser->id)->update(['user_id' => $realUser->id]);
-            ChatMessage::where('sender_id', $guestUser->id)->update(['sender_id' => $realUser->id]);
-            ChatParticipant::where('user_id', $guestUser->id)->update(['user_id' => $realUser->id]);
+            // Bắt đầu Transaction
+            DB::beginTransaction();
+            try {
+                // Hợp nhất dữ liệu: Cập nhật user_id trong các bảng liên quan
+                ChatConversation::where('user_id', $guestUser->id)->update(['user_id' => $realUser->id]);
+                ChatMessage::where('sender_id', $guestUser->id)->update(['sender_id' => $realUser->id]);
+                ChatParticipant::where('user_id', $guestUser->id)->update(['user_id' => $realUser->id]);
 
-            $guestUser->delete();
+                // Xóa tài khoản khách
+                $guestUser->delete();
 
+                // Nếu tất cả các thao tác thành công, commit transaction
+                DB::commit();
+
+            } catch (\Exception $e) {
+                // Nếu có bất kỳ lỗi nào, rollback tất cả các thay đổi
+                DB::rollBack();
+
+                // Ghi log lỗi để debug
+                Log::error('Failed to merge guest account: '.$e->getMessage());
+
+                return response()->json(['message' => 'An error occurred during account merge.'], 500);
+            }
+
+            // Xóa cookie guest_user_id sau khi hợp nhất thành công
             return response()->json(['message' => 'Login successful, accounts merged.'])
-                             ->withoutCookie('guest_user_id');
+                ->withoutCookie('guest_user_id');
         }
 
         return response()->json(['message' => 'Invalid credentials.'], 401);
