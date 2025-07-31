@@ -3,61 +3,68 @@
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
-use App\Models\ChatConversation; // Đảm bảo import
-use App\Models\ChatParticipant; // Đảm bảo import
-
-/*
-|--------------------------------------------------------------------------
-| Broadcast Channels
-|--------------------------------------------------------------------------
-|
-| Here you may register all of the event broadcasting channels that your
-| application supports. The given channel authorization callbacks are
-| used to check if an authenticated user can listen to the channel.
-|
-*/
+use App\Models\ChatConversation;
+use App\Models\ChatParticipant;
+use Illuminate\Support\Facades\Log; // Thêm dòng này để sử dụng Log
 
 // Kênh riêng tư cho cuộc hội thoại chat
 Broadcast::channel('chat.conversation.{conversationId}', function ($user, $conversationId) {
-    // $user là người dùng đã đăng nhập (admin hiện tại)
-    // Lấy cuộc hội thoại
+    // --- BẮT ĐẦU GỠ LỖI ---
+    // Ghi lại userId và conversationId để đảm bảo chúng chính xác
+    Log::info("Channel Auth: User ID - " . ($user ? $user->id : 'NULL') . ", Conv ID - " . $conversationId);
+
+    if (!$user) {
+        Log::warning("Channel Auth: User not authenticated for conversation " . $conversationId);
+        return false; // Người dùng chưa xác thực
+    }
+
+    // Thử trả về true trực tiếp để xem lỗi JSON có còn không
+    // Nếu điều này hoạt động, vấn đề nằm trong logic ủy quyền chi tiết của bạn bên dưới.
+    // return true; // <-- BỎ GHI CHÚ DÒNG NÀY ĐỂ KIỂM TRA NHANH
+
+    // Nếu `return true;` ở trên KHÔNG khắc phục được lỗi JSON,
+    // vấn đề có thể nằm ngoài closure này, ví dụ: một lệnh `echo` ở nơi khác.
+
     $conversation = ChatConversation::find($conversationId);
 
     if (!$conversation) {
-        return false; // Cuộc hội thoại không tồn tại
+        Log::warning("Channel Auth: Conversation " . $conversationId . " not found.");
+        return false; // Không tìm thấy cuộc hội thoại
     }
 
-    // --- Logic xác thực cho Admin ---
-    // 1. Nếu admin là người được gán cuộc hội thoại hỗ trợ
-    if ($conversation->type === 'support' && $conversation->assigned_to === $user->id) {
-        return true;
+    $isAuthorized = false; // Mặc định là false
+
+    if ($conversation->type === 'support') {
+        $hasAdminRole = $user->hasAnyRole(['admin', 'support_staff']);
+        $isCustomer = ($conversation->user_id === (int)$user->id);
+        $isAuthorized = $hasAdminRole || $isCustomer;
+        Log::info("Channel Auth: Support chat. User is admin/support: " . var_export($hasAdminRole, true) . ", User is customer: " . var_export($isCustomer, true) . ". Authorized: " . var_export($isAuthorized, true));
+    } elseif ($conversation->type === 'internal') {
+        $isParticipant = $conversation->participants->contains('user_id', (int)$user->id);
+        $isAuthorized = $isParticipant;
+        Log::info("Channel Auth: Internal chat. User is participant: " . var_export($isParticipant, true) . ". Authorized: " . var_export($isAuthorized, true));
+    } else {
+        Log::info("Channel Auth: Unknown conversation type for " . $conversationId);
     }
 
-    // 2. Nếu admin là người tham gia cuộc hội thoại nội bộ
-    if ($conversation->type === 'internal') {
-        // Kiểm tra xem $user có trong danh sách participants của cuộc hội thoại không
-        return ChatParticipant::where('conversation_id', $conversationId)
-                              ->where('user_id', $user->id)
-                              ->exists();
-    }
-
-    // 3. Nếu admin có quyền 'manage_chat' tổng thể
-    // Đây là cách phổ biến và đơn giản nhất để admin có thể xem tất cả chat
-    if ($user->can('manage_chat')) { // Hoặc permission khác như 'access_admin_chat'
-        return true;
-    }
-
-    // Nếu không thỏa mãn bất kỳ điều kiện nào, không có quyền
-    return false;
+    return $isAuthorized;
 });
 
-// Kênh riêng tư cho từng người dùng (dùng cho thông báo cá nhân, ví dụ: có chat mới được giao)
+// Kênh riêng tư cho từng người dùng
 Broadcast::channel('users.{userId}', function ($user, $userId) {
+    if (!$user) {
+        return false;
+    }
+    Log::info("Channel Auth: Private User Channel. User ID: {$user->id}, Target User ID: {$userId}. Authorized: " . var_export(((int)$user->id === (int)$userId), true));
     return (int) $user->id === (int) $userId;
 });
 
 // Kênh công khai hoặc thông báo chung cho admin
 Broadcast::channel('admin.notifications', function ($user) {
-    // Chỉ cho phép người dùng có quyền 'manage_chat' (hoặc admin role) lắng nghe kênh này
-    return $user->can('manage_chat'); // Hoặc $user->hasRole('admin');
+    if (!$user) {
+        return false;
+    }
+    $hasAdminOrSupportRole = $user->hasAnyRole(['admin', 'support_staff']);
+    Log::info("Channel Auth: Admin Notifications. User ID: {$user->id}, Has Admin/Support Role: " . var_export($hasAdminOrSupportRole, true) . ". Authorized: " . var_export($hasAdminOrSupportRole, true));
+    return $hasAdminOrSupportRole;
 });

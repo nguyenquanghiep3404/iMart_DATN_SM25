@@ -20,11 +20,10 @@ class StoreLocationController extends Controller
     public function index()
     {
         $storeLocations = StoreLocation::with(['province', 'district', 'ward'])
-                                ->orderBy('id', 'desc')
-                                ->get();
+                                       ->orderBy('id', 'desc')
+                                       ->get();
 
         $provinces = ProvinceOld::all();
-
 
         return view('admin.store_locations.index', compact('storeLocations', 'provinces'));
     }
@@ -73,19 +72,29 @@ class StoreLocationController extends Controller
             'is_active' => 'boolean',
         ];
 
-        $validatedData = $request->validate($rules);
+        try {
+            $validatedData = $request->validate($rules);
 
-        if ($id) {
-            $storeLocation = StoreLocation::findOrFail($id);
-            $storeLocation->update($validatedData);
-            $message = 'Cửa hàng đã được cập nhật thành công!';
-        } else {
-            $storeLocation = StoreLocation::create($validatedData);
-            $message = 'Cửa hàng đã được thêm mới thành công!';
+            if ($id) {
+                $storeLocation = StoreLocation::findOrFail($id);
+                $storeLocation->update($validatedData);
+                $message = 'Cửa hàng đã được cập nhật thành công!';
+            } else {
+                $storeLocation = StoreLocation::create($validatedData);
+                $message = 'Cửa hàng đã được thêm mới thành công!';
+            }
+
+            // Trả về JSON thay vì redirect
+            return response()->json(['message' => $message, 'status' => 'success', 'location' => $storeLocation]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => 'Lỗi xác thực dữ liệu.',
+                'errors' => $e->errors(),
+                'status' => 'error'
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Đã xảy ra lỗi server: ' . $e->getMessage(), 'status' => 'error'], 500);
         }
-
-        Session::flash('success', $message);
-        return redirect()->route('admin.store-locations.index');
     }
 
     /**
@@ -93,6 +102,9 @@ class StoreLocationController extends Controller
      */
     public function update(Request $request, StoreLocation $storeLocation)
     {
+        // Khi sử dụng AJAX PUT, $storeLocation sẽ được tự động resolve.
+        // Cập nhật trường 'id' trong request để phương thức 'store' có thể xử lý.
+        $request->merge(['id' => $storeLocation->id]);
         return $this->store($request);
     }
 
@@ -101,8 +113,12 @@ class StoreLocationController extends Controller
      */
     public function destroy(StoreLocation $storeLocation)
     {
-        $storeLocation->delete();
-        return response()->json(['message' => 'Cửa hàng đã được xóa mềm thành công!']);
+        try {
+            $storeLocation->delete();
+            return response()->json(['message' => 'Cửa hàng đã được xóa mềm thành công!', 'status' => 'success']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Lỗi khi xóa mềm địa điểm: ' . $e->getMessage(), 'status' => 'error'], 500);
+        }
     }
 
     /**
@@ -110,13 +126,18 @@ class StoreLocationController extends Controller
      */
     public function toggleActive(Request $request, StoreLocation $storeLocation)
     {
-        $storeLocation->is_active = !$storeLocation->is_active;
-        $storeLocation->save();
+        try {
+            $storeLocation->is_active = !$storeLocation->is_active;
+            $storeLocation->save();
 
-        return response()->json([
-            'message' => 'Trạng thái cửa hàng đã được cập nhật.',
-            'is_active' => $storeLocation->is_active
-        ]);
+            return response()->json([
+                'message' => 'Trạng thái cửa hàng đã được cập nhật.',
+                'is_active' => $storeLocation->is_active,
+                'status' => 'success'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Lỗi khi cập nhật trạng thái: ' . $e->getMessage(), 'status' => 'error'], 500);
+        }
     }
 
     /**
@@ -124,27 +145,28 @@ class StoreLocationController extends Controller
      */
     public function edit(StoreLocation $storeLocation)
     {
-        // Hãy thử cách này trước:
-    $data = $storeLocation->toArray();
-
-    // Nếu bạn muốn bao gồm tên của Tỉnh/Huyện/Xã cho mục đích hiển thị khác
-    // mà không phải chỉ là code:
-    $data['province'] = $storeLocation->province ? $storeLocation->province->toArray() : null;
-    $data['district'] = $storeLocation->district ? $storeLocation->district->toArray() : null;
-    $data['ward'] = $storeLocation->ward ? $storeLocation->ward->toArray() : null;
-
-    return response()->json($data);
+        $storeLocation->load(['province', 'district', 'ward']);
+        return response()->json($storeLocation);
     }
+
+    /**
+     * Lấy danh sách các cửa hàng (không bao gồm các cửa hàng đã xóa mềm) cho API.
+     */
+    public function apiIndex()
+    {
+        $storeLocations = StoreLocation::with(['province', 'district', 'ward'])->get();
+        return response()->json($storeLocations);
+    }
+
     /**
      * Lấy danh sách các cửa hàng đã bị xóa mềm.
      */
     public function trashed()
     {
         $trashedLocations = StoreLocation::onlyTrashed() // Chỉ lấy các bản ghi đã xóa mềm
-                                        ->with(['province', 'district', 'ward'])
-                                        ->orderBy('deleted_at', 'desc')
-                                        ->get();
-                                        //  dd($trashedLocations->toArray());
+                                         ->with(['province', 'district', 'ward'])
+                                         ->orderBy('deleted_at', 'desc')
+                                         ->get();
 
         return view('admin.store_locations.trashed', compact('trashedLocations'));
     }
@@ -154,11 +176,15 @@ class StoreLocationController extends Controller
      */
     public function restore($id)
     {
-        $storeLocation = StoreLocation::onlyTrashed()->findOrFail($id);
-        $storeLocation->restore(); // Khôi phục bản ghi
+        try {
+            $storeLocation = StoreLocation::onlyTrashed()->findOrFail($id);
+            $storeLocation->restore(); // Khôi phục bản ghi
 
-        Session::flash('success', 'Cửa hàng đã được khôi phục thành công!');
-        return redirect()->route('admin.store-locations.trashed');
+            // Trả về JSON thay vì redirect
+            return response()->json(['message' => 'Cửa hàng đã được khôi phục thành công!', 'status' => 'success']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Lỗi khi khôi phục địa điểm: ' . $e->getMessage(), 'status' => 'error'], 500);
+        }
     }
 
     /**
@@ -166,25 +192,14 @@ class StoreLocationController extends Controller
      */
     public function forceDelete($id)
     {
-        $storeLocation = StoreLocation::onlyTrashed()->findOrFail($id);
-        $storeLocation->forceDelete(); // Xóa vĩnh viễn bản ghi khỏi database
+        try {
+            $storeLocation = StoreLocation::onlyTrashed()->findOrFail($id);
+            $storeLocation->forceDelete(); // Xóa vĩnh viễn bản ghi khỏi database
 
-        Session::flash('success', 'Cửa hàng đã được xóa vĩnh viễn thành công!');
-        return redirect()->route('admin.store-locations.trashed');
+            // Trả về JSON thay vì redirect
+            return response()->json(['message' => 'Cửa hàng đã được xóa vĩnh viễn thành công!', 'status' => 'success']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Lỗi khi xóa vĩnh viễn địa điểm: ' . $e->getMessage(), 'status' => 'error'], 500);
+        }
     }
-
-    // ... (Bạn có thể bỏ qua phần này, nó đã được đề cập trong các giải thích trước)
-    /**
-     * Lấy thông tin chi tiết một cửa hàng để điền vào form chỉnh sửa.
-     */
-    // public function edit(StoreLocation $storeLocation)
-    // {
-    //     // Đảm bảo các code địa chỉ được bao gồm trong response JSON
-    //     $data = $storeLocation->toArray();
-    //     $data['province'] = $storeLocation->province ? $storeLocation->province->toArray() : null;
-    //     $data['district'] = $storeLocation->district ? $storeLocation->district->toArray() : null;
-    //     $data['ward'] = $storeLocation->ward ? $storeLocation->ward->toArray() : null;
-
-    //     return response()->json($data);
-    // }
 }
