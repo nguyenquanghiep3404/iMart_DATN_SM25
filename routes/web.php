@@ -52,10 +52,14 @@ use App\Mail\AbandonedCartMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\OrderRefundController;
 use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\CustomerGroupController;
+use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\PackingStationController;
 use App\Http\Controllers\Admin\StockTransferController;
+
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -150,8 +154,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
         Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
     });
-});
 
+    Route::get('/refunds/{code}', [OrderRefundController::class, 'showuser'])->name('refunds.show');
+});
+// Tách riêng route hoàn tiền ra ngoài
+Route::post('/orders/refund-request', [OrderRefundController::class, 'store'])
+    ->middleware(['auth']) // KHÔNG dùng 'verified'
+    ->name('orders.refund.request');
 // Hiển thị trang wishlist cho khách vãng lai và user
 Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
 Route::get('/shop/product/{id}', [ProductController::class, 'show'])->name('shop.product.show');
@@ -384,9 +393,9 @@ Route::prefix('admin')
         // quản lý giỏ hàng lãng quên
         Route::get('/abandoned-carts', [AbandonedCartController::class, 'index'])->name('abandoned-carts.index');
         Route::get('/admin/abandoned-carts/{id}', [AbandonedCartController::class, 'show'])
-        ->name('abandoned_carts.show');
+            ->name('abandoned_carts.show');
         Route::post('abandoned-carts/send-inapp/{cart}', [AbandonedCartController::class, 'sendInApp'])
-        ->name('abandoned_carts.send_inapp');
+            ->name('abandoned_carts.send_inapp');
         Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
         ->name('abandoned_carts.send_email');
 
@@ -399,23 +408,35 @@ Route::prefix('admin')
         
         // quản lý máy pos
         Route::get('/registers', [RegisterController::class, 'index'])->name('registers.index');
+        Route::get('registers/trashed', [RegisterController::class, 'trashed'])->name('registers.trashed');
         Route::post('/registers/save', [RegisterController::class, 'save'])->name('registers.save');
         Route::delete('/registers/{id}', [RegisterController::class, 'destroy'])->name('registers.destroy');
+        Route::post('/registers/{id}/restore', [RegisterController::class, 'restore'])->name('registers.restore');
+        Route::delete('/registers/{register}/force-delete', [RegisterController::class, 'forceDelete'])->name('registers.force-delete');
+            
 
-        Route::get('/test-send-abandoned-cart-email/{id}', function ($id) {
-            $abandonedCart = AbandonedCart::with(['cart.items.cartable', 'user'])->findOrFail($id);
+        // quản lý khách hàng 
+        Route::get('customer-groups', [CustomerGroupController::class, 'index'])->name('customer-groups.index');
+        Route::post('/customer-groups', [CustomerGroupController::class, 'save']);
+        Route::put('/customer-groups/{id}', [CustomerGroupController::class, 'save']);
+        Route::delete('/customer-groups/{id}', [CustomerGroupController::class, 'destroy']);
+        Route::get('/trashed', [CustomerGroupController::class, 'trashed'])->name('trashed');
+        Route::post('/customer-groups/{id}/restore', [CustomerGroupController::class, 'restore'])->name('customer-groups.restore');
+        Route::post('/customer-groups/{id}/restore', [CustomerGroupController::class, 'restore'])->name('customer-groups.restore');
+        Route::delete('/customer-groups/{id}/force-delete', [CustomerGroupController::class, 'forceDelete'])->name('customer-groups.forceDelete');
 
-            $email = $abandonedCart->user->email ?? $abandonedCart->guest_email;
-
-            Mail::to($email)->send(new AbandonedCartMail($abandonedCart));
-
-            return 'Email đã được gửi.';
-        });
-
-
-
-
-
+        // chiến dịch marketing
+        Route::get('marketing-campaigns', [MarketingCampaignController::class, 'index'])->name('marketing_campaigns.index');
+        Route::get('/campaigns/create', [MarketingCampaignController::class, 'create'])->name('campaigns.create');
+        Route::post('/campaigns', [MarketingCampaignController::class, 'store'])->name('marketing_campaigns.store');
+        Route::post('/marketing-campaigns/draft', [MarketingCampaignController::class, 'storeDraft'])->name('marketing_campaigns.storeDraft');
+        Route::delete('marketing_campaigns/{id}', [MarketingCampaignController::class, 'destroy'])->name('marketing_campaigns.destroy');
+        Route::get('/marketing_campaigns/trash', [MarketingCampaignController::class, 'trash'])->name('marketing_campaigns.trash');
+        Route::post('marketing_campaigns/{id}/restore', [MarketingCampaignController::class, 'restore'])->name('marketing_campaigns.restore');
+        Route::delete('marketing_campaigns/{id}/force-delete', [MarketingCampaignController::class, 'forceDelete'])->name('marketing_campaigns.forceDelete');
+        Route::get('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'show'])->name('marketing_campaigns.show');
+        Route::get('/marketing_campaigns/{id}/edit', [MarketingCampaignController::class, 'edit'])->name('marketing_campaigns.edit');
+        Route::put('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'update'])->name('marketing_campaigns.update');
 
         // Banner routes
 
@@ -584,6 +605,12 @@ Route::prefix('admin')
             Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
             Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
         });
+        Route::prefix('refunds')->name('refunds.')->group(function () {
+            Route::get('/', [OrderRefundController::class, 'index'])->name('index');
+            Route::get('/{id}', [OrderRefundController::class, 'show'])->name('show');
+            Route::put('/{id}/note', [OrderRefundController::class, 'updateNote'])->name('note');
+            Route::put('/{id}/status', [OrderRefundController::class, 'updateStatus'])->name('update_status');
+        });
         // QUẢN LÝ NHẬP KHO (PURCHASE ORDERS)
        Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
             // Route để tìm kiếm sản phẩm (dùng cho AJAX khi thêm sản phẩm vào phiếu)
@@ -626,8 +653,6 @@ Route::prefix('admin')
         });
         Route::resource('stock-transfers', StockTransferController::class);
 
-
-        // Route::resource('orders', OrderController::class)->except(['create', 'store']);
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')

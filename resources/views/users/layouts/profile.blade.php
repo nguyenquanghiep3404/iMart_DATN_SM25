@@ -30,6 +30,7 @@
     <link rel="preload" href="{{ asset ('assets/users/css/theme.rtl.min.css') }}" as="style">
     <link rel="stylesheet" href="{{ asset ('assets/users/css/theme.min.css') }}" id="theme-styles">
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     {{-- THÊM DÒNG NÀY VÀO ĐÂY ĐỂ NHÚNG CSS CỦA CROPPER.JS --}}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
@@ -79,6 +80,8 @@
 
     {{-- KHI NHÚNG CROPPER.JS Ở ĐÂY, HÃY XÓA NÓ TRONG menu_profile.blade.php NẾU ĐÃ CÓ --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+
 
     @stack('scripts') {{-- Cho phép các trang con thêm JS cụ thể --}}
 </body>

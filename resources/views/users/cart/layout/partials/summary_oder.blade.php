@@ -1,74 +1,76 @@
 <aside class="col-lg-4" style="margin-top: -100px">
-    <div class="position-sticky top-0" style="padding-top: 100px">
-        <div class="bg-body-tertiary rounded-5 p-4 mb-3">
-            <div class="p-sm-2 p-lg-0 p-xl-2">
-                <h5 class="border-bottom pb-4 mb-4">Tóm tắt đơn hàng</h5>
-                <ul class="list-unstyled fs-sm gap-3 mb-0">
-                    <li class="d-flex justify-content-between">
-                        <span>
-                            Tổng (<span id="total-quantity">{{ $items->sum('quantity') }}</span> sản phẩm):
-                        </span>
-                        <span id="cart-subtotal" class="text-dark-emphasis fw-medium">
-                            {{ number_format($subtotal, 0, ',', '.') }}₫
-                        </span>
-                    </li>
+    <div class="order-summary-sticky">
+        <div class="bg-white rounded shadow-sm p-4">
+            <!-- Always visible promotion section -->
+            <div class="mb-3">
+                <!-- Nút mở modal chọn mã khuyến mãi, với giao diện giống giao diện đầu -->
+                <button type="button"
+                    class="d-flex justify-content-between align-items-center p-3 border rounded bg-light mb-3 w-100 text-start"
+                    data-bs-toggle="modal" data-bs-target="#couponModal" style="background-color: #f8f9fa;">
+                    <span class="fw-medium text-danger">Chọn hoặc nhập ưu đãi</span>
+                    <i class="ci-chevron-right text-muted"></i>
+                </button>
 
-                    <li class="d-flex justify-content-between">
-                        Giảm giá:
-                        <span id="cart-discount" class="text-danger fw-medium">
-                            {{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
-                        </span>
-                    </li>
-                </ul>
-                <div class="border-top pt-4 mt-4">
-                    <div class="d-flex justify-content-between mb-3">
-                        <span class="fs-sm">Tổng Tiền:</span>
-                        <span id="cart-total" class="h5 mb-0">
-                            {{ number_format($total, 0, ',', '.') }}₫
-                        </span>
-                    </div>
-                    <a class="btn btn-lg btn-primary w-100" href="{{ route('payments.information') }}">
+
+                <div class="d-flex align-items-center p-3 border rounded bg-warning bg-opacity-10 mb-3">
+                    <i class="ci-gift text-warning me-2"></i>
+                    <span class="fw-medium text-warning small">Đăng nhập để sử dụng điểm thưởng</span>
+                </div>
+            </div>
+
+            <!-- Scrollable order information -->
+            <div class="border-top pt-4">
+                <h4 class="h6 mb-3">Thông tin đơn hàng</h4>
+
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted small">Tổng (<span id="total-quantity">{{ $items->sum('quantity') }}</span>
+                        sản phẩm):</span>
+                    <span id="cart-subtotal" class="text-dark-emphasis fw-medium">
+                        {{ number_format($subtotal, 0, ',', '.') }}₫
+                    </span>
+                </div>
+
+                <li class="d-flex justify-content-between mb-2">
+                    Giảm giá:
+                    <span id="cart-discount" class="text-danger fw-medium">
+                        {{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
+                    </span>
+                </li>
+
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted small">Phí vận chuyển:</span>
+                    <span id="shipping-fee-summary" class="fw-medium">Chưa xác định</span>
+                </div>
+
+                <div class="d-flex justify-content-between border-top pt-3 mb-3">
+                    <span class="fw-bold">Cần thanh toán:</span>
+                    <span id="cart-total"
+                        class="fw-bold text-danger h6">{{ number_format($total, 0, ',', '.') }}₫</span>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted small">Điểm thưởng</span>
+                    <span id="points-summary" class="fw-medium text-warning small">
+                        <i class="ci-star-filled"></i> +4,095
+                    </span>
+                </div>
+                <a href="#" class="text-decoration-none small">Xem chi tiết</a>
+
+                <!-- Order Button -->
+                <div class="mt-4 pt-3 border-top" style="margin-bottom: 20px;">
+                    <a class="btn btn-lg btn-primary w-100 mb-3" href="{{ route('payments.information') }}">
                         Tiến hành thanh toán
                         <i class="ci-chevron-right fs-lg ms-1 me-n1"></i>
                     </a>
-                    {{-- <div class="nav justify-content-center fs-sm mt-3">
-                        <a class="nav-link text-decoration-underline p-0 me-1" href="#authForm"
-                            data-bs-toggle="offcanvas" role="button">Create an account</a>
-                        and get
-                        <span class="text-dark-emphasis fw-medium ms-1">239 bonuses</span>
-                    </div> --}}
+                    <p class="text-muted small text-center mb-0" style="font-size: 0.75rem; line-height: 1.3;">
+                        Bằng việc tiến hành đặt mua hàng, bạn đồng ý với
+                        <a href="#" class="text-decoration-none">Điều khoản dịch vụ</a> và
+                        <a href="#" class="text-decoration-none">Chính sách xử lý dữ liệu cá nhân</a> của chúng
+                        tôi.
+                    </p>
                 </div>
             </div>
-        </div>
-        <div class="accordion bg-body-tertiary rounded-5 p-4">
-            <div class="accordion-item border-0">
-                <h3 class="accordion-header" id="promoCodeHeading">
-                    <button type="button"
-                        class="accordion-button animate-underline collapsed py-0 ps-sm-2 ps-lg-0 ps-xl-2"
-                        data-bs-toggle="collapse" data-bs-target="#promoCode" aria-expanded="false"
-                        aria-controls="promoCode">
-                        <i class="ci-percent fs-xl me-2"></i>
-                        <span class="animate-target me-2">Nhập mã khuyến mãi(nếu có)</span>
-                    </button>
-                </h3>
-                <div class="accordion-collapse collapse" id="promoCode" aria-labelledby="promoCodeHeading">
-                    <div class="accordion-body pt-3 pb-2 ps-sm-2 px-lg-0 px-xl-2">
-                        <form id="voucher-form" class="needs-validation d-flex gap-2" novalidate>
-                            @csrf
-                            <div class="position-relative w-100">
-                                <input type="text" name="voucher_code" class="form-control"
-                                    placeholder="Enter promo code" required>
-                                <div class="invalid-tooltip bg-transparent py-0">Enter a valid promo code!</div>
-                            </div>
-                            <button type="submit" class="btn btn-dark">Áp dụng</button>
-                        </form>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-outline-secondary w-100 mt-3" data-bs-toggle="modal"
-                    data-bs-target="#couponModal">
-                    <i class="ci-percent me-2"></i> Chọn mã khuyến mãi
-                </button>
-            </div>
+
         </div>
     </div>
 </aside>
@@ -76,58 +78,90 @@
 <div class="modal fade" id="couponModal" tabindex="-1" aria-labelledby="couponModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content rounded-4">
-            <div class="modal-header bg-light text-dark">
-                <h5 class="modal-title" id="couponModalLabel">🎁 Chọn mã khuyến mãi</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            <div class="flex items-center justify-between p-5 border-b border-gray-200">
+                <div class="flex items-center gap-3 w-100">
+                    <i class="fa-solid fa-ticket text-xl text-red-500"></i>
+                    <h2 class="text-xl font-semibold text-gray-800">Chọn mã khuyến mãi</h2>
+                </div>
+                <button id="closeModalBtn" data-bs-dismiss="modal"
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fa-solid fa-times text-2xl"></i>
+                </button>
             </div>
-            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-                @php
-                    $now = \Carbon\Carbon::now();
-                @endphp
 
-                @if ($availableCoupons->count())
-                    <div class="list-group">
-                        @foreach ($availableCoupons as $coupon)
-                            @php
-                                $startDate = \Carbon\Carbon::parse($coupon->start_date);
-                                $endDate = \Carbon\Carbon::parse($coupon->end_date);
-                                $isDisabled = $now->lt($startDate) || $now->gt($endDate);
-                                $discount =
-                                    $coupon->type === 'percentage'
-                                        ? "Giảm {$coupon->value}%"
-                                        : 'Giảm ' . number_format($coupon->value, 0, ',', '.') . '₫';
-                            @endphp
+            <div class="modal-body max-h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+                <div class="p-5 space-y-5">
+                    <!-- Input field for promo code -->
+                    <div class="w-full">
+                        <form id="voucher-form" class="needs-validation d-flex gap-2" novalidate>
+                            @csrf
+                            <input type="text" id="promoInput" name="voucher_code"
+                                placeholder="Nhập mã khuyến mãi của bạn"
+                                class="flex-grow w-full px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-red-500 transition-colors">
+                            <button id="applyInputBtn"
+                                class="px-6 py-2.5 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">
+                                Áp dụng
+                            </button>
+                        </form>
+                    </div>
 
-                            <label
-                                class="list-group-item d-flex justify-between align-items-center {{ $isDisabled ? 'opacity-50' : '' }}"
-                                style="cursor: {{ $isDisabled ? 'not-allowed' : 'pointer' }};">
-                                <div>
-                                    <strong>{{ $coupon->code }}</strong>
-                                    <div class="text-muted small">
-                                        {{ $coupon->description ?? $discount }}<br>
-                                        Thời gian áp dụng: {{ $startDate->format('d/m/Y') }} -
-                                        {{ $endDate->format('d/m/Y') }}<br>
-                                        Đơn tối thiểu:
-                                        {{ $coupon->min_order_amount ? number_format($coupon->min_order_amount, 0, ',', '.') . '₫' : 'Không' }}
+                    <!-- Separator -->
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-gray-200"></div>
+                        <span class="flex-shrink mx-4 text-gray-400 text-sm">Hoặc chọn mã có sẵn</span>
+                        <div class="flex-grow border-t border-gray-200"></div>
+                    </div>
+
+                    <!-- List of available promos -->
+                    <div id="promoList" class="space-y-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+                        @php
+                            $now = \Carbon\Carbon::now();
+                        @endphp
+
+                        @if ($availableCoupons->count())
+                            @foreach ($availableCoupons as $coupon)
+                                @php
+                                    $startDate = \Carbon\Carbon::parse($coupon->start_date);
+                                    $endDate = \Carbon\Carbon::parse($coupon->end_date);
+                                    $isDisabled = $now->lt($startDate) || $now->gt($endDate);
+                                @endphp
+
+                                <div class="promo-item border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
+                                    {{ $isDisabled ? 'border-gray-200 opacity-50 cursor-not-allowed' : 'border-gray-200 hover:border-red-500' }}"
+                                    data-code="{{ $coupon->code }}">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div class="flex-grow">
+                                            <p class="font-bold text-gray-800 text-lg">{{ $coupon->code }}</p>
+                                            <p class="text-gray-600 text-sm mt-1">
+                                                {{ $coupon->description ?? ($coupon->type === 'percentage' ? "Giảm {$coupon->value}%" : 'Giảm ' . number_format($coupon->value, 0, ',', '.') . '₫') }}
+                                            </p>
+                                            <p
+                                                class="text-xs {{ $isDisabled ? 'text-gray-400' : 'text-gray-500' }} mt-2">
+                                                <i class="fa-regular fa-calendar-alt mr-1"></i>
+                                                HSD: {{ $endDate->format('d/m/Y') }}
+                                            </p>
+                                        </div>
+                                        <input type="radio" name="selected_coupon" value="{{ $coupon->code }}"
+                                            class="custom-radio mt-1" {{ $isDisabled ? 'disabled' : '' }}>
                                     </div>
                                 </div>
-                                <input type="radio" class="form-check-input mt-0 coupon-radio" name="selected_coupon"
-                                    value="{{ $coupon->code }}" data-disabled="{{ $isDisabled ? '1' : '0' }}"
-                                    {{ $isDisabled ? 'disabled' : '' }}>
-                            </label>
-                        @endforeach
+                            @endforeach
+                        @else
+                            <p>Hiện không có mã khuyến mãi nào khả dụng.</p>
+                        @endif
                     </div>
-                @else
-                    <p>Hiện không có mã khuyến mãi nào khả dụng.</p>
-                @endif
+                </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" id="applySelectedCouponBtn">Áp dụng mã</button>
+
+            <div class="modal-footer w-full">
+                <button type="button"
+                    class="btn btn-primary w-100 px-6 py-2.5 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors"
+                    id="applySelectedCouponBtn">Áp dụng mã</button>
             </div>
         </div>
     </div>
 </div>
+
 <script>
     $(document).ready(function() {
         // Cấu hình toastr
@@ -194,92 +228,97 @@
             applyVoucher(selectedCode);
         });
     });
-</script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Khi click vào promo-item, chọn radio bên trong nếu không bị disabled
+        document.querySelectorAll('.promo-item').forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                // Nếu click đúng radio thì không xử lý thêm nữa
+                if (e.target.tagName.toLowerCase() === 'input' && e.target.type === 'radio')
+                    return;
 
-{{-- <script>
-    $(document).ready(function() {
-        // Cấu hình toastr
-        toastr.options = {
-            closeButton: true,
-            progressBar: true,
-            positionClass: "toast-top-right",
-            timeOut: "3000",
-            showDuration: "300",
-            hideDuration: "1000",
-            showMethod: "slideDown",
-            hideMethod: "slideUp"
-        };
-
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-        });
-
-        $('#voucher-form').on('submit', function(e) {
-            e.preventDefault();
-
-            const form = $(this);
-            const voucherCode = form.find('input[name="voucher_code"]').val();
-
-            $.ajax({
-                url: '{{ route('cart.applyVoucherAjax') }}',
-                method: 'POST',
-                data: {
-                    voucher_code: voucherCode
-                },
-                success: function(response) {
-                    if (response.success) {
-                        toastr.success(response.message);
-
-                        const formatMoney = (amount) => amount.toLocaleString('vi-VN') +
-                            '₫';
-
-                        $('#cart-discount').text('-' + formatMoney(response.discount));
-                        $('#cart-total').text(formatMoney(response.total_after_discount));
-                    } else {
-                        toastr.error(response.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Lỗi AJAX:', error);
-                    toastr.error('Đã có lỗi xảy ra. Vui lòng thử lại!');
+                const radio = item.querySelector('input[type="radio"]');
+                if (radio && !radio.disabled) {
+                    radio.checked = true;
                 }
             });
         });
     });
-    $('#applySelectedCouponBtn').on('click', function() {
-        const selectedCode = $('input[name="selected_coupon"]:checked').val();
+    document.addEventListener('DOMContentLoaded', function() {
+        const promoItems = document.querySelectorAll('.promo-item');
+        const messageBox = document.getElementById('messageBox');
+        const promoInput = document.getElementById('promoInput');
 
-        if (!selectedCode) {
-            toastr.warning('Vui lòng chọn một mã khuyến mãi trước khi áp dụng.');
-            return;
-        }
+        // Handle selection from the list
+        promoItems.forEach(item => {
+            item.addEventListener('click', () => {
+                // Remove selection style from all items
+                promoItems.forEach(i => i.classList.remove('selected', 'border-red-500'));
 
-        $.ajax({
-            url: '{{ route('cart.applyVoucherAjax') }}',
-            method: 'POST',
-            data: {
-                voucher_code: selectedCode
-            },
-            success: function(response) {
-                if (response.success) {
-                    toastr.success(response.message);
+                // Add selection style to the clicked item
+                item.classList.add('selected', 'border-red-500');
 
-                    const formatMoney = (amount) => amount.toLocaleString('vi-VN') + '₫';
-                    $('#cart-discount').text('-' + formatMoney(response.discount));
-                    $('#cart-total').text(formatMoney(response.total_after_discount));
+                // Check the radio button inside the clicked item
+                const radio = item.querySelector('input[type="radio"]');
+                radio.checked = true;
 
-                    // ❌ Không ẩn modal nữa
-                    // => Người dùng có thể thử các mã khác nếu muốn
-                } else {
-                    toastr.error(response.message);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Lỗi AJAX:', error);
-                toastr.error('Đã có lỗi xảy ra. Vui lòng thử lại!');
+                // Clear input field if user selects from list
+                promoInput.value = '';
+                messageBox.textContent = '';
+            });
+        });
+
+        // Clear list selection if user types in the input
+        promoInput.addEventListener('input', () => {
+            if (promoInput.value.trim() !== '') {
+                promoItems.forEach(i => {
+                    i.classList.remove('selected', 'border-red-500');
+                    i.querySelector('input[type="radio"]').checked = false;
+                });
+                messageBox.textContent = '';
             }
         });
+
+        // Handle "Apply" button for the selected item in the list
+        document.getElementById('applySelectedBtn').addEventListener('click', function() {
+            const selectedRadio = document.querySelector('input[name="promo_code"]:checked');
+            const enteredCode = promoInput.value.trim().toUpperCase();
+
+            let codeToApply = '';
+
+            if (enteredCode) {
+                codeToApply = enteredCode;
+            } else if (selectedRadio) {
+                codeToApply = selectedRadio.value;
+            }
+
+            if (codeToApply) {
+                messageBox.textContent = `Đã áp dụng mã: ${codeToApply}`;
+                messageBox.className = 'text-center mt-3 text-sm font-medium h-5 text-green-600';
+                console.log(`Applying code: ${codeToApply}`);
+                // You can add logic here to close the modal and apply the code to the cart
+            } else {
+                messageBox.textContent = 'Vui lòng chọn hoặc nhập một mã khuyến mãi.';
+                messageBox.className = 'text-center mt-3 text-sm font-medium h-5 text-red-500';
+            }
+        });
+
+        // Handle "Apply" button next to the input field
+        document.getElementById('applyInputBtn').addEventListener('click', function() {
+            const enteredCode = promoInput.value.trim().toUpperCase();
+            if (enteredCode) {
+                messageBox.textContent = `Đã áp dụng mã: ${enteredCode}`;
+                messageBox.className = 'text-center mt-3 text-sm font-medium h-5 text-green-600';
+                console.log(`Applying code from input: ${enteredCode}`);
+            } else {
+                messageBox.textContent = 'Vui lòng nhập mã khuyến mãi.';
+                messageBox.className = 'text-center mt-3 text-sm font-medium h-5 text-red-500';
+            }
+        });
+
+        // Logic to close the modal (for demonstration)
+        const modal = document.querySelector('.fixed.inset-0');
+        document.getElementById('closeModalBtn').addEventListener('click', () => {
+            modal.style.display = 'none'; // In a real app, you would manage this with state
+        });
     });
-</script> --}}
+</script>
