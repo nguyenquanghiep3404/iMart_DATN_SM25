@@ -54,6 +54,7 @@ use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
 use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\SalesStaffManagement;
 
 
 // router khôi phục giỏ hàng
@@ -418,12 +419,37 @@ Route::prefix('admin')
 
 
         // Quản Lý Nhân Viên Bán Hàng - POS
-        
-
-
-
-
-
+        Route::prefix('sales-staff')->name('sales-staff.')->group(function () {
+            // Trang chính - Danh sách cửa hàng
+            Route::get('/', [SalesStaffManagement::class, 'index'])->name('index');
+            // Quản lý nhân viên theo cửa hàng
+            Route::get('/stores/{storeId}/employees', [SalesStaffManagement::class, 'showEmployees'])->name('stores.employees');
+            // Quản lý lịch làm việc
+            Route::get('/stores/{storeId}/schedule', [SalesStaffManagement::class, 'showSchedule'])->name('stores.schedule');
+            // Quản lý ca làm việc
+            Route::get('/work-shifts', [SalesStaffManagement::class, 'showWorkShifts'])->name('work-shifts.index');
+            // API Routes
+            Route::prefix('api')->name('api.')->group(function () {
+                // API cửa hàng
+                Route::get('/stores', [SalesStaffManagement::class, 'getStores'])->name('stores');
+                // API nhân viên
+                Route::get('/stores/{storeId}/employees', [SalesStaffManagement::class, 'getStoreEmployees'])->name('stores.employees');
+                Route::post('/employees', [SalesStaffManagement::class, 'addEmployee'])->name('employees.store');
+                Route::put('/employees/{userId}', [SalesStaffManagement::class, 'updateEmployee'])->name('employees.update');
+                Route::delete('/stores/{storeId}/employees/{userId}', [SalesStaffManagement::class, 'removeEmployee'])->name('employees.remove');
+                // API lịch làm việc
+                Route::get('/stores/{storeId}/schedule/weekly', [SalesStaffManagement::class, 'getWeeklySchedule'])->name('schedule.weekly');
+                Route::post('/schedule/assign-shift', [SalesStaffManagement::class, 'assignShift'])->name('schedule.assign-shift');
+                // API ca làm việc
+                Route::get('/work-shifts', [SalesStaffManagement::class, 'getWorkShifts'])->name('work-shifts.list');
+                Route::post('/work-shifts', [SalesStaffManagement::class, 'addWorkShift'])->name('work-shifts.store');
+                Route::put('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'updateWorkShift'])->name('work-shifts.update');
+                Route::delete('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'deleteWorkShift'])->name('work-shifts.destroy');
+                Route::post('/work-shifts/create-default', [SalesStaffManagement::class, 'createDefaultWorkShifts'])->name('work-shifts.create-default');
+                // API thống kê
+                Route::get('/statistics', [SalesStaffManagement::class, 'getStaffStatistics'])->name('statistics');
+            });
+        });
 
         // Banner routes
 

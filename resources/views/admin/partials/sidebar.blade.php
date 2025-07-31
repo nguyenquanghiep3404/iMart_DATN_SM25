@@ -70,6 +70,7 @@
         }
     }
 @endphp
+@php if (!isset($activeParentNav)) $activeParentNav = ''; @endphp
 
 <aside
     class="w-[300px] lg:w-[250px] xl:w-[300px] border-r border-slate-200 overflow-y-auto sidebar-scrollbar fixed left-0 top-0 h-full bg-white z-40 transition-transform duration-300 print:hidden"
@@ -242,6 +243,7 @@
                         <li><a href="{{ route('admin.shippers.index') }}" class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.shippers.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">NV Giao hàng</a></li>
                         <li><a href="{{ route('admin.content-staffs.index') }}" class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.content-staffs.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">NV Nội dung</a></li>
                         <li><a href="{{ route('admin.order-manager.index') }}" class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.order-manager.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">NV Đơn hàng</a></li>
+                        <li><a href="{{ route('admin.sales-staff.index') }}" class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.sales-staff.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">NV Bán hàng</a></li>
                         <li><a href="{{ route('admin.roles.index') }}" class="block w-full py-1.5 px-3 text-sm rounded-md {{ request()->routeIs('admin.roles.*') ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">Vai trò & Quyền</a></li>
                     </ul>
                 </li>
