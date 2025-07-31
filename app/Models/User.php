@@ -175,5 +175,8 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(LoyaltyPointLog::class);
     }
 
-
+    public function customerGroups()
+    {
+        return $this->belongsToMany(CustomerGroup::class, 'customer_group_user');
+    }
 }

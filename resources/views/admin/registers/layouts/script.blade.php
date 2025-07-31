@@ -1,0 +1,401 @@
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('posManager', (registersData, locationsData) => ({
+            // Máy POS
+            registers: [],
+            filteredRegisters: [],
+
+            // Cửa hàng
+            locations: locationsData,
+            locationSearch: '',
+            provinceFilter: 'all',
+            districtFilter: 'all',
+            isLocationDropdownOpen: false,
+
+            // Form
+            formData: {
+                id: null,
+                name: '',
+                store_location_id: '',
+                device_uid: '',
+                status: 'active',
+            },
+            isModalOpen: false,
+            isEditMode: false,
+            isActive: true,
+
+            // --- INIT ---
+            init() {
+                this.registers = registersData.map(reg => ({
+                    ...reg,
+                    store_location_name: reg.store_location_name || this
+                        .getLocationName(reg.store_location_id)
+                }));
+                this.filteredRegisters = this.registers;
+            },
+
+            // --- Dropdown Location ---
+            get uniqueProvinces() {
+                const provinces = this.locations.map(loc => loc.province_name);
+                return [...new Set(provinces)];
+            },
+
+            get uniqueDistricts() {
+                if (this.provinceFilter === 'all') return [];
+                const districts = this.locations
+                    .filter(loc => loc.province_name === this.provinceFilter)
+                    .map(loc => loc.district_name);
+                return [...new Set(districts)];
+            },
+
+            get filteredLocations() {
+                return this.locations.filter(loc => {
+                    const matchSearch = loc.name.toLowerCase().includes(this
+                        .locationSearch.toLowerCase());
+                    const matchProvince = this.provinceFilter === 'all' || loc
+                        .province_name === this.provinceFilter;
+                    const matchDistrict = this.districtFilter === 'all' || loc
+                        .district_name === this.districtFilter;
+                    return matchSearch && matchProvince && matchDistrict;
+                });
+            },
+
+            getSelectedLocationName() {
+                const selected = this.locations.find(loc => loc.id == this.formData
+                    .store_location_id);
+                return selected ? selected.name : 'Chọn cửa hàng';
+            },
+
+            selectLocation(location) {
+                this.formData.store_location_id = location.id;
+                this.isLocationDropdownOpen = false;
+            },
+
+            // --- Modal ---
+            openModal(register = null) {
+                this.isModalOpen = true;
+                if (register) {
+                    this.isEditMode = true;
+                    this.formData = {
+                        ...register
+                    };
+                    this.isActive = register.status === 'active';
+                } else {
+                    this.isEditMode = false;
+                    this.resetForm();
+                }
+            },
+
+            closeModal() {
+                this.isModalOpen = false;
+                this.resetForm();
+            },
+
+            resetForm() {
+                this.formData = {
+                    id: null,
+                    name: '',
+                    store_location_id: '',
+                    device_uid: '',
+                    status: 'active',
+                };
+                this.isActive = true;
+                this.locationSearch = '';
+                this.provinceFilter = 'all';
+                this.districtFilter = 'all';
+                this.isLocationDropdownOpen = false;
+            },
+
+            getLocationName(id) {
+                const location = this.locations.find(loc => loc.id === id);
+                return location ? location.name : 'N/A';
+            },
+
+            // --- Lưu ---
+            saveRegister() {
+                this.formData.status = this.isActive ? 'active' : 'inactive';
+
+                if (this.formData.device_uid && isNaN(this.formData.device_uid)) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi',
+                        text: 'Device UID phải là số!'
+                    });
+                    return;
+                }
+
+                fetch(`{{ route('admin.registers.save') }}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                .content,
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(this.formData)
+                    })
+                    .then(res => {
+                        if (!res.ok) return res.json().then(err => Promise.reject(err));
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (!data.data.store_location_name) {
+                            data.data.store_location_name = this.getLocationName(data.data
+                                .store_location_id);
+                        }
+
+                        if (this.isEditMode) {
+                            const index = this.registers.findIndex(r => r.id === data.data.id);
+                            if (index !== -1) {
+                                this.registers[index] = {
+                                    ...data.data
+                                };
+                            }
+                        } else {
+                            this.registers.push(data.data);
+                        }
+
+                        this.filteredRegisters = this.registers;
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thành công',
+                            text: data.message || 'Đã lưu máy POS thành công!'
+                        });
+
+                        this.closeModal();
+                    })
+                    .catch(err => {
+                        if (err.errors) {
+                            if (err.errors.name) {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Lỗi',
+                                    text: err.errors.name[0]
+                                });
+                            } else {
+                                Object.values(err.errors).forEach(e => {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Lỗi',
+                                        text: e[0]
+                                    });
+                                });
+                            }
+                        } else if (err.message) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: err.message
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: 'Đã xảy ra lỗi khi lưu!'
+                            });
+                        }
+                    });
+            },
+
+            // --- Sửa ---
+            editRegister(register) {
+                this.openModal(register);
+            },
+
+            // --- Xoá ---
+            deleteRegister(register) {
+                Swal.fire({
+                    title: 'Xác nhận xoá',
+                    text: 'Bạn có chắc chắn muốn xoá máy POS này không?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Xoá',
+                    cancelButtonText: 'Hủy',
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    fetch(`/admin/registers/${register.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').content
+                            }
+                        })
+                        .then(res => {
+                            if (!res.ok) return res.json().then(err => Promise.reject(
+                                err));
+                            return res.json();
+                        })
+                        .then(data => {
+                            this.registers = this.registers.filter(r => r.id !==
+                                register.id);
+                            this.filteredRegisters = this.registers;
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Đã xoá',
+                                text: data.message || 'Xoá thành công!'
+                            });
+                        })
+                        .catch(() => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: 'Không thể xoá máy POS!'
+                            });
+                        });
+                });
+            },
+            // khôi phục
+            restoreRegister(register) {
+                Swal.fire({
+                    title: `Bạn có chắc muốn khôi phục máy POS "${register.name}" không?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Khôi phục',
+                    cancelButtonText: 'Hủy',
+                    reverseButtons: true,
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    fetch(`/admin/registers/${register.id}/restore`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').getAttribute(
+                                    'content'),
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                            },
+                        })
+                        .then(res => {
+                            if (!res.ok) throw new Error('HTTP status ' + res.status);
+                            return res.json();
+                        })
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Thành công',
+                                    text: data.message ||
+                                        'Khôi phục thành công.'
+                                });
+                                this.registers = this.registers.filter(r => r.id !==
+                                    register.id);
+                                this.filteredRegisters = this.registers;
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Lỗi',
+                                    text: data.message ||
+                                        'Có lỗi xảy ra khi khôi phục.'
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Lỗi khôi phục:', error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: 'Lỗi kết nối hoặc lỗi server.'
+                            });
+                        });
+                });
+            },
+            deleteRegisterPermanently(register) {
+                Swal.fire({
+                    title: 'Xác nhận xóa vĩnh viễn',
+                    text: `Bạn có chắc chắn muốn xóa vĩnh viễn máy POS "${register.name}"? Hành động này không thể hoàn tác!`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Xóa vĩnh viễn',
+                    cancelButtonText: 'Hủy',
+                }).then(result => {
+                    if (!result.isConfirmed) return;
+
+                    fetch(`/admin/registers/${register.id}/force-delete`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                        })
+                        .then(res => {
+                            if (!res.ok) return res.json().then(err => Promise.reject(
+                                err));
+                            return res.json();
+                        })
+                        .then(data => {
+                            this.registers = this.registers.filter(r => r.id !==
+                                register.id);
+                            this.filteredRegisters = this.registers;
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Đã xóa vĩnh viễn',
+                                text: data.message ||
+                                    'Xóa vĩnh viễn thành công!',
+                            });
+                        })
+                        .catch(() => {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi',
+                                text: 'Không thể xóa vĩnh viễn máy POS!',
+                            });
+                        });
+                });
+            },
+        }));
+    });
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('registerManager', () => ({
+            deleteRegister(register) {
+                Swal.fire({
+                    title: 'Bạn có chắc?',
+                    text: `Bạn có chắc muốn xóa máy POS: "${register.name}"?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Xóa',
+                    cancelButtonText: 'Hủy',
+                }).then((result) => {
+                    if (!result.isConfirmed) return;
+
+                    fetch(`{{ route('admin.registers.destroy', ':id') }}`.replace(':id',
+                            register.id), {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector(
+                                    'meta[name="csrf-token"]').getAttribute(
+                                    'content'),
+                                'Accept': 'application/json',
+                            },
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            Swal.fire({
+                                icon: data.success ? 'success' : 'error',
+                                title: data.success ? 'Thành công' : 'Lỗi',
+                                text: data.message,
+                            });
+
+                            if (data.success) {
+                                // Nếu dùng mảng danh sách: this.registers = this.registers.filter(...)
+                                location
+                                    .reload(); // Hoặc cập nhật UI nếu không muốn reload
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Lỗi khi xoá:', error);
+                            Swal.fire('Lỗi', 'Có lỗi xảy ra khi xoá máy POS.', 'error');
+                        });
+                });
+            }
+        }));
+    });
+</script>

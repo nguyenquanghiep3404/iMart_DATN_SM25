@@ -16,7 +16,9 @@ return new class extends Migration {
             $table->foreignId('user_id')->constrained('users');
             $table->string('return_code')->unique();
             $table->text('reason')->nullable();
+            $table->text('reason_details')->nullable();
             $table->string('status')->default('pending_review');
+            $table->text('rejection_reason')->nullable();
             $table->decimal('refund_amount', 15, 2)->nullable();
             $table->integer('refunded_points')->nullable();
             $table->string('bank_name')->nullable();
@@ -46,6 +48,7 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('return_requests_and_items_tables');
+        Schema::dropIfExists('return_items');
+        Schema::dropIfExists('return_requests');
     }
 };
