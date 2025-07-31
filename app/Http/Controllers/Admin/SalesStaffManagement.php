@@ -294,22 +294,42 @@ class SalesStaffManagement extends Controller
     /**
      * API: Xóa nhân viên khỏi cửa hàng
      */
-    public function removeEmployee(int $userId, int $storeId): JsonResponse
+    public function removeEmployee(int $storeId, int $userId): JsonResponse
     {
-        // Kiểm tra nhân viên có thuộc cửa hàng không
-        if (!UserStoreLocation::nhanVienThuocCuaHang($userId, $storeId)) {
-            return response()->json(['message' => 'Nhân viên không thuộc cửa hàng này'], 404);
+        try {
+            // Debug: Log thông tin để kiểm tra
+            \Log::info('Removing employee', [
+                'storeId' => $storeId,
+                'userId' => $userId,
+                'userExists' => User::find($userId) ? 'Yes' : 'No',
+                'storeExists' => StoreLocation::find($storeId) ? 'Yes' : 'No',
+                'assignmentExists' => UserStoreLocation::where('user_id', $userId)
+                    ->where('store_location_id', $storeId)
+                    ->exists(),
+                'nhanVienThuocCuaHang' => UserStoreLocation::nhanVienThuocCuaHang($userId, $storeId)
+            ]);
+            
+            // Kiểm tra nhân viên có thuộc cửa hàng không
+            $assignmentExists = UserStoreLocation::where('user_id', $userId)
+                ->where('store_location_id', $storeId)
+                ->exists();
+                
+            if (!$assignmentExists) {
+                return response()->json(['message' => 'Nhân viên không thuộc cửa hàng này'], 404);
+            }
+
+            // Xóa lịch làm việc của nhân viên tại cửa hàng này
+            EmployeeSchedule::where('user_id', $userId)
+                ->where('store_location_id', $storeId)
+                ->delete();
+
+            // Xóa liên kết nhân viên với cửa hàng
+            UserStoreLocation::xoaNhanVienKhoiCuaHang($userId, $storeId);
+
+            return response()->json(['message' => 'Xóa nhân viên khỏi cửa hàng thành công']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Có lỗi xảy ra khi xóa nhân viên: ' . $e->getMessage()], 500);
         }
-
-        // Xóa lịch làm việc của nhân viên tại cửa hàng này
-        EmployeeSchedule::where('user_id', $userId)
-            ->where('store_location_id', $storeId)
-            ->delete();
-
-        // Xóa liên kết nhân viên với cửa hàng
-        UserStoreLocation::xoaNhanVienKhoiCuaHang($userId, $storeId);
-
-        return response()->json(['message' => 'Xóa nhân viên khỏi cửa hàng thành công']);
     }
 
     /**

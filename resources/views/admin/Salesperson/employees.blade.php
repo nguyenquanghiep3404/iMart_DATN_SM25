@@ -345,6 +345,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Kiểm tra và hiển thị thông báo từ session storage
     const successMessage = sessionStorage.getItem('staff_success_message');
+    const deleteSuccessMessage = sessionStorage.getItem('employee_delete_success_message');
+    
     // console.log('DEBUG: Checking session storage for success message:', successMessage);
     if (successMessage) {
         // console.log('DEBUG: Found success message in session storage:', successMessage);
@@ -354,6 +356,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // console.log('DEBUG: Success message removed from session storage');
     } else {
         // console.log('DEBUG: No success message found in session storage');
+    }
+    
+    // Kiểm tra và hiển thị thông báo xóa thành công
+    if (deleteSuccessMessage) {
+        toastr.success(deleteSuccessMessage);
+        sessionStorage.removeItem('employee_delete_success_message'); // Xóa thông báo sau khi hiển thị
     }
     
     const employeeSearchInput = document.getElementById('employee-search-input');
@@ -448,15 +456,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 fetch(`/admin/sales-staff/api/stores/{{ $store->id }}/employees/${employeeId}`, {
                     method: 'DELETE',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
                     }
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.message) {
-                        alert(data.message);
+                        // Lưu thông báo vào session storage để hiển thị sau khi reload
+                        sessionStorage.setItem('employee_delete_success_message', data.message);
+                        // Reload ngay lập tức
                         location.reload();
                     }
+                })
+                .catch(error => {
+                    console.error('Error deleting employee:', error);
+                    toastr.error('Có lỗi xảy ra khi xóa nhân viên. Vui lòng thử lại.');
                 });
             }
         }
