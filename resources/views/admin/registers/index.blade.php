@@ -1,9 +1,10 @@
+@php($disableMainCss = true)
 @extends('admin.layouts.app')
 
 @section('content')
     @include('admin.registers.layouts.css')
 
-    <body x-data="posManager({{ $registers->toJson() }}, {{ $locations->toJson() }})">
+    <div x-data='posManager(@json($registers), @json($locations))'>
         <div class="px-4 sm:px-6 md:px-8 py-8">
             <div class="container mx-auto max-w-full">
 
@@ -124,16 +125,57 @@
                                             placeholder="Ví dụ: Máy POS 1 - Quận 1">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Thuộc cửa hàng</label>
-                                        <select x-model="formData.store_location_id" class="form-select mt-1">
-                                            <option value="">Chọn cửa hàng</option>
-                                            <template x-for="location in locations" :key="location.id">
-                                                <option :value="location.id" x-text="location.name"></option>
-                                            </template>
-                                        </select>
+                                        <label for="store_location_id" class="block text-sm font-medium text-gray-700">Thuộc
+                                            cửa hàng</label>
+                                        <div class="relative mt-1" @click.away="isLocationDropdownOpen = false">
+                                            <button @click="isLocationDropdownOpen = !isLocationDropdownOpen" type="button"
+                                                class="form-input text-left flex justify-between items-center">
+                                                <span x-text="getSelectedLocationName()"></span>
+                                                <i class="fas fa-chevron-down text-gray-400"></i>
+                                            </button>
+                                            <div x-show="isLocationDropdownOpen" x-transition
+                                                class="absolute z-10 mt-1 w-full bg-white shadow-lg rounded-md border border-gray-200">
+                                                <div class="p-2 space-y-2 border-b">
+                                                    <input type="text" x-model="locationSearch"
+                                                        placeholder="Tìm kiếm tên cửa hàng..." class="form-input">
+                                                    <div class="grid grid-cols-2 gap-2">
+                                                        <select x-model="provinceFilter" @change="districtFilter = 'all'"
+                                                            class="form-select">
+                                                            <option value="all">Tất cả tỉnh/thành</option>
+                                                            <template x-for="province in uniqueProvinces"
+                                                                :key="province">
+                                                                <option :value="province" x-text="province"></option>
+                                                            </template>
+                                                        </select>
+                                                        <select x-model="districtFilter" class="form-select"
+                                                            :disabled="provinceFilter === 'all'">
+                                                            <option value="all">Tất cả quận/huyện</option>
+                                                            <template x-for="district in uniqueDistricts"
+                                                                :key="district">
+                                                                <option :value="district" x-text="district"></option>
+                                                            </template>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <ul class="max-h-60 overflow-y-auto p-1">
+                                                    <template x-for="location in filteredLocations" :key="location.id">
+                                                        <li>
+                                                            <a href="#" @click.prevent="selectLocation(location)"
+                                                                class="block px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-indigo-50"
+                                                                x-text="location.name"></a>
+                                                        </li>
+                                                    </template>
+                                                    <template x-if="filteredLocations.length === 0">
+                                                        <li class="px-3 py-2 text-sm text-center text-gray-500">Không tìm
+                                                            thấy cửa hàng.</li>
+                                                    </template>
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700">Device UID (tùy chọn)</label>
+                                        <label class="block text-sm font-medium text-gray-700">Device UID (tùy
+                                            chọn)</label>
                                         <input type="text" x-model="formData.device_uid" class="form-input mt-1"
                                             placeholder="Mã định danh duy nhất của thiết bị">
                                     </div>

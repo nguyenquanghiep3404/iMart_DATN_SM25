@@ -3,278 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yêu cầu Trả hàng / Hoàn tiền</title>
-    <!-- Tailwind CSS -->
+    <title>Tài khoản của tôi - Tạo Yêu Cầu Trả Hàng</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Sử dụng font Inter cho toàn bộ trang */
         body {
             font-family: 'Inter', sans-serif;
-            scroll-behavior: smooth;
+            background-color: #f9fafb;
         }
-        /* Style cho radio button được chọn để có viền nổi bật */
-        .checked-border {
-            border-color: #3b82f6; /* blue-500 */
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s, color 0.2s;
+            color: #374151;
+        }
+        .sidebar-link:hover {
+            background-color: #f3f4f6;
+        }
+        .sidebar-link.active {
+            background-color: #fee2e2;
+            color: #dc2626;
+            font-weight: 600;
+        }
+        .interactive-card {
+             border: 2px solid #e5e7eb;
+             transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .interactive-card.selected {
+            border-color: #ef4444;
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
         }
     </style>
 </head>
-<body class="bg-white">
+<body class="p-4 md:p-6">
 
-    <!-- Container chính: Giới hạn chiều rộng trên màn hình lớn và căn giữa, padding cho các màn hình khác nhau -->
-    <div class="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-        <!-- Tiêu đề -->
-        <div class="text-center">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800">Yêu cầu Trả hàng / Hoàn tiền</h1>
-            <p class="text-gray-500 mt-2">Hoàn thành biểu mẫu dưới đây để gửi yêu cầu của bạn.</p>
-        </div>
-
-        <hr class="border-gray-200">
-
-        <!-- Phần 1: Thông tin sản phẩm -->
-        <div class="space-y-4">
-            <h2 class="text-xl font-semibold text-gray-700">1. Sản phẩm cần trả</h2>
-            <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 border border-gray-200 rounded-lg p-4">
-                <img src="https://placehold.co/100x100/e2e8f0/334155?text=iPhone+15" alt="Hình ảnh sản phẩm" class="w-24 h-24 object-cover rounded-md flex-shrink-0 border">
-                <div class="flex-grow">
-                    <p class="font-bold text-lg text-gray-800">iPhone 15 Pro Max 256GB - Titan Tự Nhiên</p>
-                    <p class="text-sm text-gray-500">SKU: APL-IP15PM-256-NT</p>
-                    <p class="text-xl font-semibold text-red-600 mt-2">29.990.000 VNĐ</p>
+    <div class="max-w-screen-xl mx-auto flex space-x-8">
+        <!-- Sidebar -->
+        <aside class="w-1/4 xl:w-1/5 flex-shrink-0">
+            <div class="p-4">
+                <div class="flex items-center space-x-3 mb-8">
+                    <img src="https://placehold.co/48x48/e2e8f0/e2e8f0?text=A" alt="Avatar" class="w-12 h-12 rounded-full">
+                    <div>
+                        <p class="font-bold text-gray-800">Super Admin</p>
+                        <a href="#" class="text-sm text-gray-500 hover:text-red-600">Chỉnh sửa</a>
+                    </div>
                 </div>
+                <nav class="space-y-2">
+                    <a href="#" class="sidebar-link active">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        <span>Đơn hàng của tôi</span>
+                        <span class="ml-auto bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">3</span>
+                    </a>
+                    <!-- Other sidebar links -->
+                </nav>
             </div>
-        </div>
-        
-        <!-- Phần 2: Chi tiết yêu cầu -->
-        <div class="space-y-6">
-            <h2 class="text-xl font-semibold text-gray-700">2. Chi tiết yêu cầu</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-1">Số lượng trả</label>
-                    <input type="number" id="quantity" name="quantity" value="1" min="1" max="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                </div>
-                <div>
-                    <label for="reason" class="block text-sm font-medium text-gray-700 mb-1">Lý do trả hàng</label>
-                    <select id="reason" name="reason" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white">
-                        <option>Sản phẩm bị lỗi do nhà sản xuất</option>
-                        <option>Sản phẩm không đúng như mô tả</option>
-                        <option>Giao sai sản phẩm</option>
-                        <option>Sản phẩm bị hư hỏng khi vận chuyển</option>
-                        <option>Thay đổi ý định (có thể áp dụng phí)</option>
-                        <option>Khác...</option>
-                    </select>
-                </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="w-3/4 xl:w-4/5">
+            <div class="mb-6">
+                <a href="#" class="text-sm font-medium text-gray-600 hover:text-red-600 transition-colors flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Quay lại chi tiết đơn hàng
+                </a>
             </div>
-            <div>
+            
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <header class="p-6 border-b">
+                    <h1 class="text-xl font-bold text-gray-900">Tạo Yêu Cầu Trả Hàng</h1>
+                    <p class="text-sm text-gray-500 mt-1">Đối với đơn hàng <a href="#" class="font-medium text-red-600 hover:underline">#DH987654321</a></p>
+                </header>
+
+                <form id="return-request-form">
+                    <div class="p-6 md:p-8 space-y-8">
+                        <!-- Step 1: Select Products -->
+                        <div>
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4">1. Chọn sản phẩm cần trả</h2>
+                            <div class="space-y-4">
+                                <!-- Product 1 -->
+                                <div class="interactive-card rounded-lg p-4">
+                                    <div class="flex items-start space-x-4">
+                                        <input type="checkbox" name="product_ids[]" value="1" class="h-5 w-5 mt-1 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                                        <img src="https://placehold.co/80x80/e2e8f0/e2e8f0?text=Sản+phẩm" alt="Product Image" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
+                                        <div class="flex-1">
+                                            <p class="font-semibold text-gray-800">iPhone 15 Pro Max 256GB</p>
+                                            <p class="text-sm text-gray-500">Màu: Titan Tự nhiên</p>
+                                            <p class="text-sm text-gray-500">Giá: 30.490.000 VNĐ</p>
+                                        </div>
+                                        <div class="w-24">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
+                                            <input type="number" name="quantity[1]" value="1" min="1" max="1" class="w-full border-gray-300 rounded-md shadow-sm text-center" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Product 2 -->
+                                <div class="interactive-card rounded-lg p-4">
+                                    <div class="flex items-start space-x-4">
+                                        <input type="checkbox" name="product_ids[]" value="2" class="h-5 w-5 mt-1 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                                        <img src="https://placehold.co/80x80/e2e8f0/e2e8f0?text=Sản+phẩm" alt="Product Image" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
+                                        <div class="flex-1">
+                                            <p class="font-semibold text-gray-800">Ốp lưng Silicon MagSafe</p>
+                                            <p class="text-sm text-gray-500">Màu: Xanh Dương</p>
+                                            <p class="text-sm text-gray-500">Giá: 1.250.000 VNĐ</p>
+                                        </div>
+                                        <div class="w-24">
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
+                                            <input type="number" name="quantity[2]" value="1" min="1" max="1" class="w-full border-gray-300 rounded-md shadow-sm text-center" disabled>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 & 3: Details Section (hidden by default) -->
+                        <div id="return-details-section" class="hidden">
+                            <hr>
+                            <h2 class="text-xl font-semibold text-gray-800 my-6">2. Lý do trả hàng</h2>
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="return-reason" class="block text-base font-medium text-gray-800 mb-2">Lý do trả hàng</label>
+                                    <select id="return-reason" name="return_reason" class="mt-1 block w-full text-base p-3 border-2 border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500" required>
+                                        <option value="">-- Chọn lý do --</option>
+                                        <option value="defective">Sản phẩm bị lỗi do nhà sản xuất</option>
+                                        <option value="wrong_item">Giao sai sản phẩm</option>
+                                        <option value="not_as_described">Không đúng như mô tả</option>
+                                        <option value="changed_mind">Thay đổi ý định (có thể áp dụng phí)</option>
+                                        <option value="other">Lý do khác</option>
+                                    </select>
+                                </div>
+                                <div>
                 <label for="reason_details" class="block text-sm font-medium text-gray-700 mb-1">Mô tả chi tiết (nếu cần)</label>
-                <textarea id="reason_details" name="reason_details" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Vui lòng mô tả rõ hơn về tình trạng sản phẩm..."></textarea>
+                <textarea id="reason_details" name="reason_details" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Vui lòng mô tả rõ hơn về tình trạng sản phẩm..."></textarea>
             </div>
-            
-            <!-- Chức năng tải lên hình ảnh/video -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Hình ảnh/Video đính kèm (Tùy chọn)</label>
-                <div id="dropzone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md transition-colors duration-300">
-                    <div class="space-y-1 text-center">
-                        <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <div class="flex text-sm text-gray-600">
-                            <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
-                                <span>Tải lên tệp</span>
-                                <input id="file-upload" name="file-upload" type="file" class="sr-only" multiple>
-                            </label>
-                            <p class="pl-1">hoặc kéo và thả</p>
-                        </div>
-                        <p class="text-xs text-gray-500">PNG, JPG tới 10MB; MP4 tới 50MB</p>
-                    </div>
-                </div>
-                <div id="file-list" class="mt-3 text-sm text-gray-600"></div>
-            </div>
-        </div>
+                                <div>
+                                    <label class="block text-base font-medium text-gray-800 mb-2">Tải lên hình ảnh/video</label>
+                                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                                        <div class="space-y-1 text-center">
+                                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                            </svg>
+                                            <div class="flex text-sm text-gray-600">
+                                                <label for="file-upload" class="relative cursor-pointer bg-white rounded-md font-medium text-red-600 hover:text-red-500 focus-within:outline-none">
+                                                    <span>Tải lên một file</span>
+                                                    <input id="file-upload" name="attachments[]" type="file" class="sr-only" multiple>
+                                                </label>
+                                                <p class="pl-1">hoặc kéo và thả</p>
+                                            </div>
+                                            <p class="text-xs text-gray-500">PNG, JPG, MP4 tối đa 10MB</p>
+                                        </div>
+                                    </div>
+                                    <div id="file-list" class="mt-2 text-sm text-gray-600"></div>
+                                </div>
+                            </div>
+                            
+                            <hr class="mt-8">
+                            <h2 class="text-xl font-semibold text-gray-800 my-6">3. Chọn phương thức hoàn tiền</h2>
+                            <div id="refund-options" class="space-y-3">
+                                <label for="refund-bank" class="interactive-card block rounded-lg p-4 cursor-pointer">
+                                    <div class="flex items-center">
+                                        <input type="radio" id="refund-bank" name="refund_method" value="bank" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
+                                        <div class="ml-3">
+                                            <p class="font-semibold text-gray-800">Hoàn tiền qua Chuyển khoản Ngân hàng</p>
+                                            <p class="text-sm text-gray-500">Nhận tiền trực tiếp vào tài khoản của bạn sau 2-3 ngày làm việc.</p>
+                                        </div>
+                                    </div>
+                                </label>
+                                <div id="bank-details" class="hidden ml-8 mt-2 p-4 bg-gray-50 border border-dashed border-gray-300 rounded-lg space-y-3">
+                                    <div>
+                                        <label for="bank_name" class="block text-sm font-medium text-gray-700">Tên ngân hàng</label>
+                                        <input type="text" id="bank_name" name="bank_name" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-red-500" placeholder="VD: Vietcombank">
+                                    </div>
+                                    <div>
+                                        <label for="bank_account_name" class="block text-sm font-medium text-gray-700">Tên chủ tài khoản</label>
+                                        <input type="text" id="bank_account_name" name="bank_account_name" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-red-500" placeholder="NGUYEN VAN A">
+                                    </div>
+                                    <div>
+                                        <label for="bank_account_number" class="block text-sm font-medium text-gray-700">Số tài khoản</label>
+                                        <input type="text" id="bank_account_number" name="bank_account_number" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-red-500">
+                                    </div>
+                                </div>
+                            </div>
 
-        <!-- Phần 3: Phương thức hoàn tiền -->
-        <div class="space-y-4">
-            <h2 class="text-xl font-semibold text-gray-700">3. Chọn phương thức hoàn tiền</h2>
-            <div id="refund-options" class="space-y-3">
-                
-                <!-- Lựa chọn 1: Điểm thưởng -->
-                <label for="refund-points" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
-                    <div class="flex items-center">
-                        <input type="radio" id="refund-points" name="refund_method" value="points" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <div class="ml-3">
-                            <p class="font-semibold text-gray-800">Hoàn tiền bằng Điểm thưởng</p>
-                            <p class="text-sm text-gray-500">Số điểm dự kiến được hoàn: <span class="font-bold text-green-600">29,990 điểm</span>. Dùng để mua sắm cho lần sau.</p>
-                        </div>
-                    </div>
-                </label>
-
-                <!-- Lựa chọn 2: Chuyển khoản -->
-                <label for="refund-bank" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
-                    <div class="flex items-center">
-                        <input type="radio" id="refund-bank" name="refund_method" value="bank" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <div class="ml-3">
-                            <p class="font-semibold text-gray-800">Hoàn tiền qua Chuyển khoản Ngân hàng</p>
-                            <p class="text-sm text-gray-500">Nhận tiền trực tiếp vào tài khoản của bạn sau 2-3 ngày làm việc.</p>
-                        </div>
-                    </div>
-                </label>
-                <div id="bank-details" class="hidden ml-4 md:ml-8 mt-2 p-4 bg-gray-50 border border-dashed border-gray-300 rounded-lg space-y-3">
-                     <div>
-                         <label for="bank_name" class="block text-sm font-medium text-gray-700">Tên ngân hàng</label>
-                         <input type="text" id="bank_name" name="bank_name" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500" placeholder="VD: Vietcombank">
-                     </div>
-                     <div>
-                         <label for="bank_account_name" class="block text-sm font-medium text-gray-700">Tên chủ tài khoản</label>
-                         <input type="text" id="bank_account_name" name="bank_account_name" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500" placeholder="NGUYEN VAN A">
-                     </div>
-                     <div>
-                         <label for="bank_account_number" class="block text-sm font-medium text-gray-700">Số tài khoản</label>
-                         <input type="text" id="bank_account_number" name="bank_account_number" class="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-1 focus:ring-blue-500">
-                     </div>
-                </div>
-
-                <!-- Lựa chọn 3: Mã giảm giá -->
-                <label for="refund-coupon" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
-                    <div class="flex items-center">
-                        <input type="radio" id="refund-coupon" name="refund_method" value="coupon" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
-                        <div class="ml-3">
-                            <p class="font-semibold text-gray-800">Nhận Mã giảm giá</p>
-                            <p class="text-sm text-gray-500">Bạn sẽ nhận được mã giảm giá trị giá <span class="font-bold text-green-600">29.990.000 VNĐ</span>, chỉ áp dụng một lần cho tài khoản này.</p>
+                            <hr class="mt-8">
+                            <h2 class="text-xl font-semibold text-gray-800 my-6">4. Tóm tắt hoàn tiền</h2>
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <div class="space-y-3">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-gray-600">Tổng giá trị sản phẩm trả:</span>
+                                        <span id="refund-subtotal" class="font-medium text-gray-800">0 VNĐ</span>
+                                    </div>
+                                    <div class="flex justify-between items-center pt-2 border-t mt-2">
+                                        <span class="text-base font-bold text-gray-900">Số tiền dự kiến hoàn lại:</span>
+                                        <span id="refund-total" class="text-xl font-bold text-green-600">0 VNĐ</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </label>
-            </div>
-        </div>
-
-        <!-- Phần 4: Tóm tắt và Gửi -->
-        <div class="border-t border-gray-200 pt-8 space-y-6">
-            <div class="flex justify-between items-center">
-                <p class="text-lg font-semibold text-gray-700">Tổng tiền dự kiến hoàn:</p>
-                <p class="text-2xl font-bold text-red-600">29.990.000 VNĐ</p>
-            </div>
-            
-            <!-- Điều khoản & Chính sách -->
-            <div class="flex items-start">
-                <div class="flex items-center h-5">
-                    <input id="terms" name="terms" type="checkbox" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
-                </div>
-                <div class="ml-3 text-sm">
-                    <label for="terms" class="font-medium text-gray-700">Tôi đã đọc và đồng ý với <a href="#" class="text-blue-600 hover:underline">Chính sách Trả hàng & Hoàn tiền</a> của iMart.</label>
-                </div>
-            </div>
-
-            <!-- Ghi chú hướng dẫn -->
-            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
-                        </svg>
+                    <div class="p-6 bg-gray-50">
+                        <div class="flex items-start mb-4">
+                            <div class="flex items-center h-5">
+                                <input id="terms" name="terms" type="checkbox" class="focus:ring-red-500 h-4 w-4 text-red-600 border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="terms" class="font-medium text-gray-700">Tôi đã đọc và đồng ý với <a href="#" class="text-red-600 hover:underline">Chính sách Trả hàng & Hoàn tiền</a> của cửa hàng.</label>
+                            </div>
+                        </div>
+                        <button type="submit" id="submit-return-btn" class="w-full bg-red-600 text-white font-bold text-lg py-3 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            Gửi yêu cầu
+                        </button>
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm text-blue-700">Sau khi yêu cầu được phê duyệt, chúng tôi sẽ gửi hướng dẫn chi tiết về địa chỉ nhận hàng qua email của bạn.</p>
-                    </div>
-                </div>
+                </form>
             </div>
-            
-            <button id="submit-button" type="submit" class="w-full bg-red-600 text-white font-bold text-lg py-3 px-6 rounded-lg hover:bg-red-700 transition-all duration-300 ease-in-out shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:shadow-none">
-                Gửi Yêu Cầu
-            </button>
-        </div>
+        </main>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // --- Logic cho việc chọn phương thức hoàn tiền ---
+            const productCheckboxes = document.querySelectorAll('input[name="product_ids[]"]');
+            const returnDetailsSection = document.getElementById('return-details-section');
+            const submitBtn = document.getElementById('submit-return-btn');
+            const refundSubtotalEl = document.getElementById('refund-subtotal');
+            const refundTotalEl = document.getElementById('refund-total');
             const refundRadios = document.querySelectorAll('input[name="refund_method"]');
             const bankDetailsDiv = document.getElementById('bank-details');
-            const refundOptionDivs = document.querySelectorAll('.refund-option');
+            const refundOptionDivs = document.querySelectorAll('.interactive-card[for^="refund-"]');
+            const fileUploadInput = document.getElementById('file-upload');
+            const fileListDiv = document.getElementById('file-list');
+            const termsCheckbox = document.getElementById('terms');
+
+            const productData = {
+                '1': { price: 30490000, maxQty: 1 },
+                '2': { price: 1250000, maxQty: 1 }
+            };
+
+            function updateFormState() {
+                let anySelected = false;
+                let totalRefund = 0;
+
+                productCheckboxes.forEach(checkbox => {
+                    const card = checkbox.closest('.interactive-card');
+                    const quantityInput = card.querySelector('input[type="number"]');
+                    
+                    if (checkbox.checked) {
+                        anySelected = true;
+                        card.classList.add('selected');
+                        quantityInput.disabled = false;
+                        
+                        const productId = checkbox.value;
+                        const quantity = parseInt(quantityInput.value, 10);
+                        const price = productData[productId].price;
+                        totalRefund += price * quantity;
+
+                    } else {
+                        card.classList.remove('selected');
+                        quantityInput.disabled = true;
+                    }
+                });
+
+                if (anySelected) {
+                    returnDetailsSection.classList.remove('hidden');
+                } else {
+                    returnDetailsSection.classList.add('hidden');
+                }
+                
+                const formattedTotal = new Intl.NumberFormat('vi-VN').format(totalRefund) + ' VNĐ';
+                refundSubtotalEl.textContent = formattedTotal;
+                refundTotalEl.textContent = formattedTotal;
+                
+                toggleSubmitButton();
+            }
 
             function updateRefundSelection() {
-                // Bỏ hết viền đã chọn
-                refundOptionDivs.forEach(div => {
-                    div.classList.remove('checked-border');
+                document.querySelectorAll('label.interactive-card[for^="refund-"]').forEach(div => {
+                    div.classList.remove('selected');
                 });
-                
                 const selectedRadio = document.querySelector('input[name="refund_method"]:checked');
                 if (selectedRadio) {
-                    // Thêm viền cho lựa chọn hiện tại
-                    selectedRadio.closest('.refund-option').classList.add('checked-border');
-                    
-                    // Hiển thị hoặc ẩn ô nhập thông tin ngân hàng
+                    selectedRadio.closest('label').classList.add('selected');
                     bankDetailsDiv.classList.toggle('hidden', selectedRadio.value !== 'bank');
-                } else {
-                    // Nếu không có gì được chọn, ẩn ô ngân hàng
-                    bankDetailsDiv.classList.add('hidden');
                 }
             }
+
+            function toggleSubmitButton() {
+                const anyProductSelected = Array.from(productCheckboxes).some(cb => cb.checked);
+                submitBtn.disabled = !termsCheckbox.checked || !anyProductSelected;
+            }
+
+            productCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateFormState);
+                const quantityInput = checkbox.closest('.interactive-card').querySelector('input[type="number"]');
+                quantityInput.addEventListener('input', updateFormState);
+            });
             
             refundRadios.forEach(radio => {
                 radio.addEventListener('change', updateRefundSelection);
             });
-            // Cập nhật giao diện khi tải trang
-            updateRefundSelection();
-            
-            // --- Logic cho việc tải lên tệp ---
-            const fileUploadInput = document.getElementById('file-upload');
-            const fileListDiv = document.getElementById('file-list');
-            const dropzone = document.getElementById('dropzone');
 
-            // Hiển thị danh sách file đã chọn
-            function handleFiles(files) {
-                fileListDiv.innerHTML = ''; // Xóa danh sách cũ
+            termsCheckbox.addEventListener('change', toggleSubmitButton);
+
+            fileUploadInput.addEventListener('change', (event) => {
+                fileListDiv.innerHTML = ''; 
+                const files = event.target.files;
                 if (files.length > 0) {
                     const list = document.createElement('ul');
                     list.className = 'list-disc list-inside space-y-1';
                     for (let i = 0; i < files.length; i++) {
                         const li = document.createElement('li');
-                        li.textContent = `${files[i].name} (${(files[i].size / 1024 / 1024).toFixed(2)} MB)`;
+                        li.textContent = files[i].name;
                         list.appendChild(li);
                     }
                     fileListDiv.appendChild(list);
                 }
-            }
-            
-            fileUploadInput.addEventListener('change', (event) => {
-                handleFiles(event.target.files);
-            });
-
-            // Logic kéo thả
-            dropzone.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                dropzone.classList.add('border-blue-500', 'bg-blue-50');
-            });
-
-            dropzone.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                dropzone.classList.remove('border-blue-500', 'bg-blue-50');
             });
             
-            dropzone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropzone.classList.remove('border-blue-500', 'bg-blue-50');
-                const files = e.dataTransfer.files;
-                fileUploadInput.files = files; // Gán file đã thả vào input
-                handleFiles(files);
-            });
-
-
-            // --- Logic cho nút gửi ---
-            const termsCheckbox = document.getElementById('terms');
-            const submitButton = document.getElementById('submit-button');
-
-            // Bật/tắt nút gửi dựa trên checkbox điều khoản
-            function toggleSubmitButton() {
-                submitButton.disabled = !termsCheckbox.checked;
-            }
-
-            termsCheckbox.addEventListener('change', toggleSubmitButton);
-
-            // Khởi tạo trạng thái ban đầu của nút là bị vô hiệu hóa
-            toggleSubmitButton();
+            // Initial state
+            updateFormState();
+            updateRefundSelection();
         });
     </script>
 </body>

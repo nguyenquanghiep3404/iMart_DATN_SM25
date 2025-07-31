@@ -35,6 +35,8 @@ class DatabaseSeeder extends Seeder
             // Thêm các seeder cho hệ thống địa chỉ kép
             NewAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ MỚI
             OldAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ CŨ
+            CustomerGroupSeeder::class,
+            MarketingCampaignSeeder::class,
         ]);
         $this->command->info('All seeders ran successfully!');
     }

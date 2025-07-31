@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra Cứu Đơn Hàng - iMart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Animation for the result display */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        /* Styles for the order timeline */
+        .timeline {
+            display: flex;
+            justify-content: space-between;
+            list-style: none;
+            padding: 0;
+            position: relative;
+        }
+        /* The connecting line */
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 12px; /* Center the line with the dots */
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: #e5e7eb; /* gray-200 */
+            z-index: 1;
+        }
+        .timeline-item {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            width: 25%;
+        }
+        .timeline-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #e5e7eb; /* gray-200 */
+            border: 2px solid #e5e7eb;
+            margin: 0 auto 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6b7280; /* gray-500 */
+        }
+        .timeline-label {
+            font-size: 0.8rem;
+            color: #6b7280; /* gray-500 */
+        }
+        .timeline-date {
+            font-size: 0.7rem;
+            color: #9ca3af; /* gray-400 */
+            min-height: 1.05rem; /* Reserve space for date */
+        }
+
+        /* Completed state */
+        .timeline-item.completed .timeline-dot {
+            background-color: #dc2626; /* red-600 */
+            border-color: #dc2626;
+            color: white;
+        }
+        .timeline-item.completed .timeline-label {
+            font-weight: 600;
+            color: #374151; /* gray-700 */
+        }
+        .timeline-item.completed .timeline-date {
+            color: #4b5563; /* gray-600 */
+        }
+
+        /* Current state */
+        .timeline-item.current .timeline-dot {
+            border-color: #dc2626;
+            background-color: #fff;
+            transform: scale(1.2);
+        }
+        .timeline-item.current .timeline-dot::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #dc2626;
+            display: block;
+        }
+        .timeline-item.current .timeline-label {
+            font-weight: 600;
+            color: #111827; /* gray-900 */
+        }
+        
+        @media (max-width: 640px) {
+            .timeline-label { font-size: 0.7rem; }
+        }
+        
+        /* Print styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #order-details-card, #order-details-card * {
+                visibility: visible;
+            }
+            #order-details-card {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            #action-buttons {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8 max-w-4xl">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Tra Cứu Thông Tin Đơn Hàng</h1>
+            <p class="mt-2 text-gray-600">Dành cho khách hàng mua sắm không cần tài khoản.</p>
+        </header>
+
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <form id="order-lookup-form">
+                <label for="order_code" class="block text-sm font-medium text-gray-700 mb-2">Nhập mã đơn hàng của bạn</label>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="order_code" name="order_code" class="flex-grow w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-red-500 focus:border-red-500 transition" placeholder="Ví dụ: IMART1001, IMART1002, IMART1003" required>
+                    <button type="submit" id="lookup-button" class="w-full sm:w-auto bg-red-600 text-white font-semibold px-6 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition duration-150 ease-in-out">
+                        <span id="button-text">Tra cứu</span>
+                        <span id="button-spinner" class="hidden">
+                            <svg class="animate-spin h-5 w-5 text-white mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="order-result" class="hidden">
+            <div id="order-details-card" class="bg-white p-6 sm:p-8 rounded-lg shadow-md fade-in">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Chi tiết đơn hàng: <span id="display-order-code" class="text-red-600"></span></h2>
+                
+                <div class="mb-8">
+                    <h3 class="font-semibold text-lg mb-4">Lịch sử đơn hàng</h3>
+                    <ol id="order-timeline" class="timeline"></ol>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8 pt-6 border-t">
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2">Thông tin khách hàng</h3>
+                        <div class="space-y-1 text-gray-600">
+                            <p><strong>Họ tên:</strong> <span id="customer-name"></span></p>
+                            <p><strong>Email:</strong> <span id="customer-email"></span></p>
+                            <p><strong>Điện thoại:</strong> <span id="customer-phone"></span></p>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 id="shipping-address-title" class="font-semibold text-lg mb-2">Địa chỉ giao hàng</h3>
+                        <p class="text-gray-600" id="shipping-address"></p>
+                    </div>
+                </div>
+
+                <!-- Delivery/Pickup Information -->
+                <div id="delivery-info-section" class="mt-6 hidden">
+                    <h3 class="font-semibold text-lg mb-2" id="delivery-info-title">Thông tin giao/nhận hàng</h3>
+                    <div class="text-gray-600 space-y-1">
+                        <p><strong>Ngày nhận dự kiến:</strong> <span id="delivery-date"></span></p>
+                        <p><strong>Khung giờ:</strong> <span id="delivery-time-slot"></span></p>
+                    </div>
+                    <div id="pickup-warning" class="hidden mt-2 p-3 bg-yellow-50 border border-yellow-300 text-yellow-800 rounded-md text-sm">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Đơn hàng của quý khách đã quá hẹn lấy. Đơn hàng sẽ được giữ thêm 3 ngày trước khi tự động hủy.
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h3 class="font-semibold text-lg mb-4">Sản phẩm đã mua</h3>
+                    <div class="flow-root">
+                        <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                            <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+                                <table class="min-w-full divide-y divide-gray-300">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Sản phẩm</th>
+                                            <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold text-gray-900">Số lượng</th>
+                                            <th scope="col" class="px-3 py-3.5 text-right text-sm font-semibold text-gray-900">Đơn giá</th>
+                                            <th scope="col" class="py-3.5 pl-3 pr-4 text-right text-sm font-semibold text-gray-900 sm:pr-0">Thành tiền</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="order-items-table" class="divide-y divide-gray-200"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 border-t pt-6">
+                    <dl class="space-y-2 text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <dt>Tạm tính</dt>
+                            <dd class="font-medium" id="sub-total"></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt>Phí vận chuyển</dt>
+                            <dd class="font-medium" id="shipping-fee"></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt>Giảm giá</dt>
+                            <dd class="font-medium text-red-500" id="discount-amount"></dd>
+                        </div>
+                        <div class="flex justify-between text-base font-bold text-gray-900">
+                            <dt>Tổng cộng</dt>
+                            <dd id="grand-total"></dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div id="action-buttons" class="mt-8 pt-6 border-t flex flex-col sm:flex-row gap-3 justify-end">
+                    <a href="mailto:support@imart.com" class="w-full sm:w-auto text-center px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition">
+                        <i class="fas fa-headset mr-2"></i>Yêu cầu hỗ trợ
+                    </a>
+                    <button id="print-button" class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition">
+                        <i class="fas fa-print mr-2"></i>In đơn hàng
+                    </button>
+                    <button id="reorder-button" class="w-full sm:w-auto px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-md hover:bg-red-700 transition">
+                        <i class="fas fa-redo mr-2"></i>Đặt lại đơn hàng
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative fade-in" role="alert">
+            <strong class="font-bold">Lỗi!</strong>
+            <span class="block sm:inline" id="error-text"></span>
+        </div>
+    </div>
+
+    <script>
+        // --- MOCK DATA ---
+        const mockDatabase = {
+            "orders": [
+                {
+                    "id": 1, "order_code": "IMART1001", "customer_name": "Nguyễn Văn An", "customer_email": "an.nguyen@example.com", "customer_phone": "0901234567",
+                    "shipping_address_line1": "123 Đường ABC, Phường 4", "shipping_address_line2": "Quận 3, TP. Hồ Chí Minh",
+                    "sub_total": 25000000.00, "shipping_fee": 50000.00, "discount_amount": 100000.00, "grand_total": 25050000.00,
+                    "payment_status": "paid", "status": "delivered", "shipping_method": "delivery",
+                    "desired_delivery_date": null, "desired_delivery_time_slot": null,
+                    "timestamps": {
+                        "created_at": "2025-07-28T10:00:00Z", "processed_at": "2025-07-28T14:30:00Z",
+                        "shipped_at": "2025-07-29T09:00:00Z", "delivered_at": "2025-07-30T11:45:00Z"
+                    }
+                },
+                {
+                    "id": 2, "order_code": "IMART1002", "customer_name": "Trần Thị Bình", "customer_email": "binh.tran@example.com", "customer_phone": "0987654321",
+                    "shipping_address_line1": "456 Đường XYZ, Phường Bến Nghé", "shipping_address_line2": "Quận 1, TP. Hồ Chí Minh",
+                    "sub_total": 1250000.00, "shipping_fee": 30000.00, "discount_amount": 0.00, "grand_total": 1280000.00,
+                    "payment_status": "pending", "status": "processing", "shipping_method": "delivery",
+                    "desired_delivery_date": "2025-08-02", "desired_delivery_time_slot": "Sáng (08:00 - 12:00)",
+                    "timestamps": {
+                        "created_at": "2025-07-30T15:00:00Z", "processed_at": "2025-07-31T09:15:00Z",
+                        "shipped_at": null, "delivered_at": null
+                    }
+                },
+                {
+                    "id": 3, "order_code": "IMART1003", "customer_name": "Lê Minh Cường", "customer_email": "cuong.le@example.com", "customer_phone": "0912345678",
+                    "shipping_address_line1": "Nhận tại cửa hàng: 100 Nguyễn Trãi", "shipping_address_line2": "Quận Thanh Xuân, Hà Nội",
+                    "sub_total": 550000.00, "shipping_fee": 0.00, "discount_amount": 50000.00, "grand_total": 500000.00,
+                    "payment_status": "paid", "status": "awaiting_shipment",
+                    "shipping_method": "pickup_at_store",
+                    "desired_delivery_date": "2025-07-30",
+                    "desired_delivery_time_slot": "Chiều (14:00 - 18:00)",
+                    "timestamps": {
+                        "created_at": "2025-07-29T11:00:00Z", "processed_at": "2025-07-29T16:00:00Z",
+                        "shipped_at": null, "delivered_at": null
+                    }
+                }
+            ],
+            "order_items": [
+                { "order_id": 1, "product_name": "iPhone 15 Pro Max 256GB", "quantity": 1, "price": 25000000.00 },
+                { "order_id": 2, "product_name": "Sạc dự phòng Anker", "quantity": 1, "price": 800000.00 },
+                { "order_id": 2, "product_name": "Cáp sạc USB-C", "quantity": 1, "price": 450000.00 },
+                { "order_id": 3, "product_name": "Tai nghe Bluetooth Sony", "quantity": 1, "price": 550000.00 }
+            ]
+        };
+
+        const form = document.getElementById('order-lookup-form');
+        const orderCodeInput = document.getElementById('order_code');
+        const resultDiv = document.getElementById('order-result');
+        const errorDiv = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const lookupButton = document.getElementById('lookup-button');
+        const buttonText = document.getElementById('button-text');
+        const buttonSpinner = document.getElementById('button-spinner');
+
+        function fetchOrderData(code) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const order = mockDatabase.orders.find(o => o.order_code.toLowerCase() === code.toLowerCase());
+                    if (order) {
+                        const items = mockDatabase.order_items.filter(item => item.order_id === order.id);
+                        resolve({ ...order, items });
+                    } else {
+                        resolve(null);
+                    }
+                }, 1000);
+            });
+        }
+        
+        function formatCurrency(number) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(number);
+        }
+
+        function formatTimelineDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes} ${day}/${month}`;
+        }
+
+        function renderOrderTimeline(status, timestamps, shippingMethod) {
+            const timelineContainer = document.getElementById('order-timeline');
+            timelineContainer.innerHTML = ''; 
+
+            const isPickup = shippingMethod === 'pickup_at_store';
+            
+            const statusToStageMap = {
+                pending_confirmation: 'pending_confirmation',
+                processing: 'processing',
+                awaiting_shipment: 'shipped',
+                shipped: 'shipped',
+                out_for_delivery: 'shipped',
+                delivered: 'delivered'
+            };
+
+            const stages = [
+                { id: 'pending_confirmation', label: 'Đã xác nhận', icon: 'fa-check', time: timestamps.created_at },
+                { id: 'processing', label: 'Đang xử lý', icon: 'fa-box-open', time: timestamps.processed_at },
+                { id: 'shipped', label: isPickup ? 'Sẵn sàng để nhận' : 'Đang giao', icon: isPickup ? 'fa-store' : 'fa-truck', time: timestamps.shipped_at },
+                { id: 'delivered', label: isPickup ? 'Đã nhận hàng' : 'Đã giao', icon: 'fa-house-chimney', time: timestamps.delivered_at }
+            ];
+
+            const currentStageId = statusToStageMap[status];
+            const currentStageIndex = stages.findIndex(s => s.id === currentStageId);
+
+            stages.forEach((stage, index) => {
+                const item = document.createElement('li');
+                item.classList.add('timeline-item');
+                
+                if (index < currentStageIndex) {
+                    item.classList.add('completed');
+                } else if (index === currentStageIndex) {
+                    item.classList.add('completed', 'current');
+                }
+
+                item.innerHTML = `
+                    <div class="timeline-dot">
+                        <i class="fas ${stage.icon}"></i>
+                    </div>
+                    <div class="timeline-label">${stage.label}</div>
+                    <div class="timeline-date">${formatTimelineDate(stage.time)}</div>
+                `;
+                timelineContainer.appendChild(item);
+            });
+        }
+
+        function displayOrderDetails(orderData) {
+            document.getElementById('display-order-code').textContent = orderData.order_code;
+            document.getElementById('customer-name').textContent = orderData.customer_name;
+            document.getElementById('customer-email').textContent = orderData.customer_email;
+            document.getElementById('customer-phone').textContent = orderData.customer_phone;
+            document.getElementById('shipping-address').textContent = `${orderData.shipping_address_line1}, ${orderData.shipping_address_line2}`;
+            
+            renderOrderTimeline(orderData.status, orderData.timestamps, orderData.shipping_method);
+
+            const deliveryInfoSection = document.getElementById('delivery-info-section');
+            const deliveryInfoTitle = document.getElementById('delivery-info-title');
+            const deliveryDateEl = document.getElementById('delivery-date');
+            const deliveryTimeSlotEl = document.getElementById('delivery-time-slot');
+            const pickupWarningEl = document.getElementById('pickup-warning');
+            const shippingAddressTitle = document.getElementById('shipping-address-title');
+
+            if (orderData.desired_delivery_date) {
+                deliveryDateEl.textContent = new Date(orderData.desired_delivery_date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                deliveryTimeSlotEl.textContent = orderData.desired_delivery_time_slot;
+                deliveryInfoSection.classList.remove('hidden');
+
+                if (orderData.shipping_method === 'pickup_at_store') {
+                    deliveryInfoTitle.textContent = 'Thông tin nhận hàng';
+                    shippingAddressTitle.textContent = 'Địa điểm nhận hàng';
+                    
+                    const pickupDate = new Date(orderData.desired_delivery_date);
+                    const today = new Date();
+                    
+                    pickupDate.setHours(0,0,0,0);
+                    today.setHours(0,0,0,0);
+
+                    if (today > pickupDate && orderData.status !== 'delivered' && orderData.status !== 'cancelled') {
+                        pickupWarningEl.classList.remove('hidden');
+                    } else {
+                        pickupWarningEl.classList.add('hidden');
+                    }
+                } else {
+                    deliveryInfoTitle.textContent = 'Thông tin giao hàng';
+                    shippingAddressTitle.textContent = 'Địa chỉ giao hàng';
+                    pickupWarningEl.classList.add('hidden');
+                }
+            } else {
+                deliveryInfoSection.classList.add('hidden');
+                pickupWarningEl.classList.add('hidden');
+            }
+
+            const itemsTable = document.getElementById('order-items-table');
+            itemsTable.innerHTML = '';
+            orderData.items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="py-4 pl-4 pr-3 text-sm sm:pl-0"><div class="font-medium text-gray-900">${item.product_name}</div></td>
+                    <td class="px-3 py-4 text-sm text-center text-gray-500">${item.quantity}</td>
+                    <td class="px-3 py-4 text-sm text-right text-gray-500">${formatCurrency(item.price)}</td>
+                    <td class="py-4 pl-3 pr-4 text-sm text-right font-medium text-gray-900 sm:pr-0">${formatCurrency(item.price * item.quantity)}</td>
+                `;
+                itemsTable.appendChild(row);
+            });
+
+            document.getElementById('sub-total').textContent = formatCurrency(orderData.sub_total);
+            document.getElementById('shipping-fee').textContent = formatCurrency(orderData.shipping_fee);
+            document.getElementById('discount-amount').textContent = `- ${formatCurrency(orderData.discount_amount)}`;
+            document.getElementById('grand-total').textContent = formatCurrency(orderData.grand_total);
+
+            errorDiv.classList.add('hidden');
+            resultDiv.classList.remove('hidden');
+        }
+        
+        function displayError(message) {
+            errorText.textContent = message;
+            resultDiv.classList.add('hidden');
+            errorDiv.classList.remove('hidden');
+        }
+
+        function toggleLoading(isLoading) {
+            lookupButton.disabled = isLoading;
+            buttonText.classList.toggle('hidden', isLoading);
+            buttonSpinner.classList.toggle('hidden', !isLoading);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const orderCode = orderCodeInput.value.trim();
+            if (!orderCode) {
+                displayError("Vui lòng nhập mã đơn hàng.");
+                return;
+            }
+            toggleLoading(true);
+            try {
+                const orderData = await fetchOrderData(orderCode);
+                if (orderData) {
+                    displayOrderDetails(orderData);
+                } else {
+                    displayError(`Không tìm thấy đơn hàng với mã "${orderCode}". Vui lòng kiểm tra lại.`);
+                }
+            } catch (err) {
+                console.error("Lookup failed:", err);
+                displayError("Đã có lỗi xảy ra trong quá trình tra cứu. Vui lòng thử lại sau.");
+            } finally {
+                toggleLoading(false);
+            }
+        });
+
+        document.getElementById('print-button').addEventListener('click', () => { window.print(); });
+        document.getElementById('reorder-button').addEventListener('click', () => { alert('Trong ứng dụng thực tế, chức năng này sẽ thêm các sản phẩm của đơn hàng vào lại giỏ hàng của bạn.'); });
+    </script>
+</body>
+</html>
