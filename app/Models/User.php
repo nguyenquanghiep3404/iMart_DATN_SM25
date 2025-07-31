@@ -23,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_guest',
         'password',
         'avatar_path',
+        'loyalty_points_balance',
     ];
 
     protected $hidden = [
@@ -168,6 +169,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function chatParticipants()
     {
         return $this->hasMany(ChatParticipant::class, 'user_id');
+    }
+    public function loyaltyPointLogs()
+    {
+        return $this->hasMany(LoyaltyPointLog::class);
     }
 
 

@@ -115,6 +115,11 @@
                 <i class="ci-star fs-base opacity-75 me-2"></i>
                 Đánh giá của tôi
             </a>
+            <a class="list-group-item list-group-item-action d-flex align-items-center"
+                href="{{ route('loyalty.history') }}">
+                <i class="ci-star fs-base opacity-75 me-2"></i>
+                Lịch sử điểm thưởng
+            </a>
         </nav>
         <h6 class="pt-4 ps-2 ms-1">Manage account</h6>
         <nav class="list-group list-group-borderless">

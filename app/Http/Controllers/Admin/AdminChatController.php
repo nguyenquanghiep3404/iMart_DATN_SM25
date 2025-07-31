@@ -167,7 +167,7 @@ class AdminChatController extends Controller
     return view('admin.chat.dashboard', [
         // ...
         'admins' => $admins->toArray(), // Đảm bảo roles được serialize vào array
-        'authUser' => Auth::user()->toArray(),
+        'authUser' => optional(Auth::user())->toArray(),
     ]);
 }
 }

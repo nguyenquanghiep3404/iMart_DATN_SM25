@@ -890,6 +890,7 @@
                 </div>
               </div> --}}
                         <div class="bg-body-tertiary rounded-5 p-4">
+                            @if(isset($totalPointsToEarn) && $totalPointsToEarn > 0 && Auth::check())
                             <div class="d-flex align-items-center px-sm-2 px-lg-0 px-xl-2">
                                 <svg class="text-warning flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="16"
                                     height="16" fill="currentColor">
@@ -903,8 +904,12 @@
                                         d="M8.001 5.363c-4.598 0-6.667-2.094-6.667-3.58 0-.836.641-1.812 2.448-1.812 3.165 0 4.467 3.153 4.713 4.819a.5.5 0 0 1-.495.573zM3.782.971c-.7 0-1.448.213-1.448.812 0 .851 1.489 2.403 5.042 2.566C7.076 3.241 6.169.971 3.782.971z">
                                     </path>
                                 </svg>
-                                <div class="text-dark-emphasis fs-sm ps-2 ms-1">Chúc mừng! Bạn đã tích được <span
-                                        class="fw-semibold">240 điểm thưởng</span></div>
+                               <div class="text-dark-emphasis fs-sm ps-2 ms-1">
+                    Chúc mừng! Bạn đã tích được
+                    <span class="fw-semibold">{{ number_format($totalPointsToEarn) }} điểm thưởng</span>
+                    cho đơn hàng này.
+                </div>
+                @endif
                             </div>
                         </div>
                     </div>
@@ -1025,7 +1030,7 @@
             provinceSelect.addEventListener('change', function() {
                 const provinceCode = this.value;
                 const isNewSystem = addressSystemNew.checked;
-                
+
                 if (provinceCode) {
                     if (isNewSystem) {
                         loadWards(provinceCode);
@@ -1249,7 +1254,7 @@
                     if (province.selectedIndex > 0 && ward.selectedIndex > 0) {
                         const provinceText = province.options[province.selectedIndex].textContent;
                         const wardText = ward.options[ward.selectedIndex].textContent;
-                        
+
                         let locationText;
                         if (isNewSystem) {
                             locationText = `${wardText}, ${provinceText}`;
@@ -1383,7 +1388,7 @@
                 // Tự động điền địa chỉ ở bước 2
                 const provinceText = province.options[province.selectedIndex].textContent;
                 const wardText = ward.options[ward.selectedIndex].textContent;
-                
+
                 let fullAddress;
                 if (isNewSystem) {
                     fullAddress = `${wardText}, ${provinceText}`;
@@ -1587,7 +1592,7 @@
                 });
             });
 
-            // Cập nhật tóm tắt giao hàng khi địa chỉ thay đổi 
+            // Cập nhật tóm tắt giao hàng khi địa chỉ thay đổi
             // Lưu ý: người nghe thay đổi tỉnh và phường đã được thêm vào ở trên
 
             // Khởi tạo giao diện - hiển thị step 1

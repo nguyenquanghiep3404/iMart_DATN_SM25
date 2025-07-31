@@ -51,6 +51,7 @@ use App\Mail\AbandonedCartMail;
 use Illuminate\Support\Facades\Mail;
 use App\Models\AbandonedCart;
 use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\Users\LoyaltyPointController;
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -65,6 +66,8 @@ Route::post('/cart/apply-voucher-ajax', [CartController::class, 'applyVoucherAja
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name('cart.addMultiple');
 Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
+
+Route::post('/cart/apply-points', [CartController::class, 'applyPoints'])->name('cart.applyPoints')->middleware('auth');
 
 
 // cart_offcanvas
@@ -145,6 +148,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
         Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
     });
+
+    // Route lịch sử điểm thưởng
+    Route::get('/my-points', [LoyaltyPointController::class, 'history'])->name('loyalty.history');
 });
 
 // Hiển thị trang wishlist cho khách vãng lai và user
@@ -536,19 +542,31 @@ Route::prefix('admin')
         Route::resource('trade-in-items', TradeInItemController::class);
 
         // Quản lí địa điểm cử hàng
-       Route::resource('store-locations', StoreLocationController::class)->except(['create', 'show']);
+        // Bắt đầu với route index, nó vẫn trả về view với dữ liệu ban đầu
+        Route::get('store-locations', [StoreLocationController::class, 'index'])->name('store-locations.index');
 
-        // Các route AJAX riêng biệt vẫn giữ nguyên để tương tác động
-        Route::get('store-locations/{storeLocation}/edit-data', [StoreLocationController::class, 'edit'])->name('store-locations.edit-data');
-        Route::delete('store-locations/{storeLocation}/soft-delete', [StoreLocationController::class, 'destroy'])->name('store-locations.soft-delete');
+        // Các routes AJAX cho việc thêm, sửa, xóa, lấy dữ liệu chỉnh sửa
+        // POST để tạo mới
+        Route::post('store-locations', [StoreLocationController::class, 'store'])->name('store-locations.store');
+        // PUT/PATCH để cập nhật
+        Route::put('store-locations/{storeLocation}', [StoreLocationController::class, 'update'])->name('store-locations.update');
+        // DELETE để xóa mềm (destroy)
+        Route::delete('store-locations/{storeLocation}', [StoreLocationController::class, 'destroy'])->name('store-locations.destroy');
+        // GET để lấy dữ liệu cho modal chỉnh sửa
+        Route::get('store-locations/{storeLocation}/edit', [StoreLocationController::class, 'edit'])->name('store-locations.edit');
+        // PATCH để bật/tắt trạng thái
+        Route::patch('store-locations/{storeLocation}/toggle-active', [StoreLocationController::class, 'toggleActive'])->name('store-locations.toggle-active');
+
+        // Routes cho thùng rác (trashed items), khôi phục, và xóa vĩnh viễn
         Route::get('store-locations/trashed', [StoreLocationController::class, 'trashed'])->name('store-locations.trashed');
         Route::post('store-locations/{id}/restore', [StoreLocationController::class, 'restore'])->name('store-locations.restore');
         Route::delete('store-locations/{id}/force-delete', [StoreLocationController::class, 'forceDelete'])->name('store-locations.force-delete');
-        Route::patch('store-locations/{storeLocation}/toggle-active', [StoreLocationController::class, 'toggleActive'])->name('store-locations.toggle-active');
 
-        // Routes API cho địa chỉ (vẫn dùng AJAX)
+        // Các routes API cho địa chỉ động (quận/huyện, phường/xã)
         Route::get('api/districts', [StoreLocationController::class, 'getDistrictsByProvince'])->name('api.districts');
         Route::get('api/wards', [StoreLocationController::class, 'getWardsByDistrict'])->name('api.wards');
+        // API mới để lấy tất cả store locations cho Alpine.js
+        Route::get('api/store-locations', [StoreLocationController::class, 'apiIndex'])->name('api.store-locations.index');
         // Quản lý nhà cung cấp
         // Quản lý nhà cung cấp
         Route::prefix('suppliers')->name('suppliers.')->group(function () {
@@ -561,6 +579,10 @@ Route::prefix('admin')
             Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
             Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
         });
+
+        // --- ROUTES QUẢN LÝ ĐIỂM THƯỞNG ---
+        Route::get('/loyalty-points', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'index'])->name('loyalty.index');
+        Route::post('/loyalty-points/adjust', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'adjust'])->name('loyalty.adjust');
 
 
 

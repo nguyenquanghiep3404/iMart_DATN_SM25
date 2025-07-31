@@ -23,6 +23,8 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
 
+    
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 

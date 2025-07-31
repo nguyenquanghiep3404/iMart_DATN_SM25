@@ -1,6 +1,6 @@
 import './bootstrap';
-import './chat';
-import './admin_chat'; 
+// import './chat';
+import './admin_chat';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
