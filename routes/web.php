@@ -619,6 +619,10 @@ Route::prefix('admin')
         // QUẢN LÝ CHUYỂN KHO (STOCK TRANSFERS)
         Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
             Route::get('/search-products', [StockTransferController::class, 'searchProducts'])->name('search-products');
+            Route::get('/dispatch', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.index');
+            Route::get('/{stockTransfer}/dispatch', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.show');
+            Route::get('/api/pending', [StockTransferController::class, 'getPendingTransfers'])->name('api.pending');
+            Route::post('/{stockTransfer}/dispatch', [StockTransferController::class, 'processDispatch'])->name('dispatch.process');
         });
         Route::resource('stock-transfers', StockTransferController::class);
 

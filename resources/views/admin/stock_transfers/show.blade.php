@@ -36,8 +36,8 @@
         }
         /* Status Styles */
         .status-pending { background-color: #FEF9C3; color: #713F12; } /* yellow-200, amber-800 */
-        .status-waiting_for_scan { background-color: #DBEAFE; color: #1E40AF; } /* blue-200, blue-800 */
-        .status-completed { background-color: #D1FAE5; color: #065F46; } /* green-200, green-800 */
+        .status-shipped { background-color: #DBEAFE; color: #1E40AF; } /* blue-200, blue-800 */
+        .status-received { background-color: #D1FAE5; color: #065F46; } /* green-200, green-800 */
         .status-cancelled { background-color: #FEE2E2; color: #991B1B; } /* red-200, red-800 */
 
     </style>
@@ -71,18 +71,18 @@
                 </button>
 
                 @if($stockTransfer->status == 'pending')
-                    <a href="{{-- {{ route('admin.stock-transfers.edit', $stockTransfer->id) }} --}}" class="flex items-center bg-white text-gray-700 font-semibold py-2 px-4 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-100 transition-colors">
+                    <a href="{{ route('admin.stock-transfers.edit', $stockTransfer->id) }}" class="flex items-center bg-white text-gray-700 font-semibold py-2 px-4 rounded-lg shadow-sm border border-gray-300 hover:bg-gray-100 transition-colors">
                         <i class="fas fa-pencil-alt mr-2 text-gray-500"></i>
                         Sửa Phiếu
                     </a>
-                    <a href="{{-- {{ route('admin.stock-transfers.dispatch', $stockTransfer->id) }} --}}" class="flex items-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                    <a href="{{ route('admin.stock-transfers.dispatch.show', $stockTransfer->id) }}" class="flex items-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
                         <i class="fas fa-box-open mr-2"></i>
                         Xuất Kho
                     </a>
                 @endif
                 
                 @if($stockTransfer->status == 'shipped')
-                     <a href="{{-- {{ route('admin.stock-transfers.receive', $stockTransfer->id) }} --}}" class="flex items-center bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">
+                     <a href="{{-- {{ route('admin.stock-transfers.receive.index', $stockTransfer->id) }} --}}" class="flex items-center bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">
                         <i class="fas fa-dolly-flatbed mr-2"></i>
                         Nhận Kho
                     </a>

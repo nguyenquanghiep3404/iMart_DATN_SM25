@@ -83,7 +83,7 @@
                 <p class="text-gray-600 mt-1">Theo dõi và quản lý tất cả các phiếu chuyển kho giữa các chi nhánh.</p>
             </div>
             <div class="flex items-center space-x-2 mt-4 sm:mt-0">
-                <a href="{{-- {{ route('admin.stock-transfers.create') }} --}}" class="btn btn-primary w-full sm:w-auto">
+                <a href="{{ route('admin.stock-transfers.create') }}" class="btn btn-primary w-full sm:w-auto">
                     <i class="fas fa-plus mr-2"></i>
                     Tạo Phiếu Chuyển Mới
                 </a>
@@ -175,10 +175,10 @@
                             </td>
                             <td class="text-center">
                                 <div class="flex items-center justify-center gap-x-2">
-                                    <a href="{{-- {{ route('admin.stock-transfers.show', $transfer->id) }} --}}" class="btn btn-primary btn-sm" title="Xem chi tiết">
+                                    <a href="{{ route('admin.stock-transfers.show', $transfer->id) }}" class="btn btn-primary btn-sm" title="Xem chi tiết">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{-- {{ route('admin.stock-transfers.edit', $transfer->id) }} --}}" class="btn btn-secondary btn-sm" title="Sửa phiếu">
+                                    <a href="{{ route('admin.stock-transfers.edit', $transfer->id) }}" class="btn btn-secondary btn-sm" title="Sửa phiếu">
                                         <i class="fas fa-pencil-alt"></i>
                                     </a>
                                 </div>
@@ -190,7 +190,7 @@
                                 <div class="flex flex-col items-center">
                                     <i class="fas fa-exchange-alt fa-3x mb-3 text-gray-400"></i>
                                     <p class="text-lg font-medium">Không tìm thấy phiếu chuyển kho nào.</p>
-                                    <p class="text-sm">Hãy thử điều chỉnh bộ lọc hoặc <a href="{{-- {{ route('admin.stock-transfers.create') }} --}}" class="text-indigo-600 hover:underline">tạo một phiếu chuyển mới</a>.</p>
+                                    <p class="text-sm">Hãy thử điều chỉnh bộ lọc hoặc <a href="{{ route('admin.stock-transfers.create') }}" class="text-indigo-600 hover:underline">tạo một phiếu chuyển mới</a>.</p>
                                 </div>
                             </td>
                         </tr>
