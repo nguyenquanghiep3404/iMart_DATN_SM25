@@ -1,80 +1,3 @@
-<aside class="col-lg-4" style="margin-top: -100px">
-    <div class="order-summary-sticky">
-        <div class="bg-white rounded shadow-sm p-4">
-            <!-- Always visible promotion section -->
-            <div class="mb-3">
-                <!-- Nút mở modal chọn mã khuyến mãi, với giao diện giống giao diện đầu -->
-                <button type="button"
-                    class="d-flex justify-content-between align-items-center p-3 border rounded bg-light mb-3 w-100 text-start"
-                    data-bs-toggle="modal" data-bs-target="#couponModal" style="background-color: #f8f9fa;">
-                    <span class="fw-medium text-danger">Chọn hoặc nhập ưu đãi</span>
-                    <i class="ci-chevron-right text-muted"></i>
-                </button>
-
-
-                <div class="d-flex align-items-center p-3 border rounded bg-warning bg-opacity-10 mb-3">
-                    <i class="ci-gift text-warning me-2"></i>
-                    <span class="fw-medium text-warning small">Đăng nhập để sử dụng điểm thưởng</span>
-                </div>
-            </div>
-
-            <!-- Scrollable order information -->
-            <div class="border-top pt-4">
-                <h4 class="h6 mb-3">Thông tin đơn hàng</h4>
-
-                <div class="d-flex justify-content-between mb-2">
-                    <span class="text-muted small">Tổng (<span id="total-quantity">{{ $items->sum('quantity') }}</span>
-                        sản phẩm):</span>
-                    <span id="cart-subtotal" class="text-dark-emphasis fw-medium">
-                        {{ number_format($subtotal, 0, ',', '.') }}₫
-                    </span>
-                </div>
-
-                <li class="d-flex justify-content-between mb-2">
-                    Giảm giá:
-                    <span id="cart-discount" class="text-danger fw-medium">
-                        {{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
-                    </span>
-                </li>
-
-                <div class="d-flex justify-content-between mb-3">
-                    <span class="text-muted small">Phí vận chuyển:</span>
-                    <span id="shipping-fee-summary" class="fw-medium">Chưa xác định</span>
-                </div>
-
-                <div class="d-flex justify-content-between border-top pt-3 mb-3">
-                    <span class="fw-bold">Cần thanh toán:</span>
-                    <span id="cart-total"
-                        class="fw-bold text-danger h6">{{ number_format($total, 0, ',', '.') }}₫</span>
-                </div>
-
-                <div class="d-flex justify-content-between">
-                    <span class="text-muted small">Điểm thưởng</span>
-                    <span id="points-summary" class="fw-medium text-warning small">
-                        <i class="ci-star-filled"></i> +4,095
-                    </span>
-                </div>
-                <a href="#" class="text-decoration-none small">Xem chi tiết</a>
-
-                <!-- Order Button -->
-                <div class="mt-4 pt-3 border-top" style="margin-bottom: 20px;">
-                    <a class="btn btn-lg btn-primary w-100 mb-3" href="{{ route('payments.information') }}">
-                        Tiến hành thanh toán
-                        <i class="ci-chevron-right fs-lg ms-1 me-n1"></i>
-                    </a>
-                    <p class="text-muted small text-center mb-0" style="font-size: 0.75rem; line-height: 1.3;">
-                        Bằng việc tiến hành đặt mua hàng, bạn đồng ý với
-                        <a href="#" class="text-decoration-none">Điều khoản dịch vụ</a> và
-                        <a href="#" class="text-decoration-none">Chính sách xử lý dữ liệu cá nhân</a> của chúng
-                        tôi.
-                    </p>
-                </div>
-            </div>
-
-        </div>
-    </div>
-</aside>
-<!-- Modal chọn mã khuyến mãi -->
 <div class="modal fade" id="couponModal" tabindex="-1" aria-labelledby="couponModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content rounded-4">
@@ -161,7 +84,6 @@
         </div>
     </div>
 </div>
-
 <script>
     $(document).ready(function() {
         // Cấu hình toastr

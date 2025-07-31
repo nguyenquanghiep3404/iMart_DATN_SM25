@@ -45,7 +45,7 @@ class RegisterController extends Controller
         });
         
         
-        // dd($locations);
+        // dd($locations->toArray());
 
         return view('admin.registers.index', [
             'registers' => $registers,
