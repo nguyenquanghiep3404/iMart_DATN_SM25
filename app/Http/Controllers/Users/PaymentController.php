@@ -21,7 +21,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
+
+use App\Models\LoyaltyPointLog;
+use Illuminate\Support\Facades\Log;
+
 use App\Models\StoreLocation;
+
 
 class PaymentController extends Controller
 {
@@ -53,10 +58,10 @@ class PaymentController extends Controller
     //         'baseLength' => $maxLength > 0 ? $maxLength : 20,
     //         'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
     //         'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
-    //         // 'availableCoupons' => $availableCoupons, 
+    //         // 'availableCoupons' => $availableCoupons,
     //     ]));
     // }
-    public function index()
+     public function index()
     {
         // Kiểm tra giỏ hàng có sản phẩm không
         $cartData = $this->getCartData();
@@ -64,8 +69,23 @@ class PaymentController extends Controller
         if ($cartData['items']->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
         }
-        // Tính tổng khối lượng và kích thước
+
+        // <<< PHẦN NÀY ĐÃ ĐƯỢC GỘP TỪ getCartData(), BẠN KHÔNG CẦN THÊM VÀO getCartData() NỮA >>>
         $items = $cartData['items'];
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+
+        // Lấy giảm giá từ coupon
+        $couponDiscount = session('applied_coupon.discount', 0);
+
+        // <<< THAY ĐỔI QUAN TRỌNG 1: Lấy thông tin giảm giá từ điểm >>>
+        $pointsInfo = session('applied_points', ['discount_amount' => 0]);
+        $pointsDiscount = $pointsInfo['discount_amount'];
+
+        // <<< THAY ĐỔI QUAN TRỌNG 2: Tính lại tổng tiền cuối cùng >>>
+        $total = $subtotal - $couponDiscount - $pointsDiscount;
+        $total = max(0, $total); // Đảm bảo tổng tiền không bị âm
+
+        // Tính tổng khối lượng và kích thước (giữ nguyên)
         $totalWeight = $items->sum(function ($item) {
             return ($item->productVariant->weight ?? 0) * $item->quantity;
         });
@@ -78,21 +98,21 @@ class PaymentController extends Controller
         $totalHeight = $items->sum(function ($item) {
             return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
         });
+
         $availableCoupons = Coupon::where('status', 'active')->get();
-        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
-        $appliedCoupon = session('applied_coupon');
-        $discount = $appliedCoupon['discount'] ?? 0;
-        $voucherCode = $appliedCoupon['code'] ?? null;
-        $total = max(0, $subtotal - $discount);
-        return view('users.payments.information', array_merge($cartData, [
+
+        return view('users.payments.information', [
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'discount' => $couponDiscount,
+            'pointsDiscount' => $pointsDiscount, // <<< THAY ĐỔI QUAN TRỌNG 3: Truyền biến này sang view
+            'total' => $total,
+            'availableCoupons' => $availableCoupons,
             'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
             'baseLength' => $maxLength > 0 ? $maxLength : 20,
             'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
             'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
-            'availableCoupons' => $availableCoupons, 
-            'total'=> $total,
-            'discount'=>$discount
-        ]));
+        ]);
     }
     /**
      * Xử lý đặt hàng COD
@@ -131,6 +151,15 @@ class PaymentController extends Controller
                 // Tính toán shipping fee dựa vào phương thức
                 $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
 
+                // Format delivery date/time
+                $deliveryInfo = $this->formatDeliveryDateTime(
+                    $request->shipping_method,
+                    $request->shipping_time
+                );
+
+                // Chuẩn bị dữ liệu địa chỉ
+                $addressData = $this->prepareAddressData($request);
+
                 // Chuẩn bị dữ liệu địa chỉ và thông tin khách hàng
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
@@ -141,6 +170,16 @@ class PaymentController extends Controller
                     'user_id' => Auth::id(),
                     'guest_id' => !Auth::check() ? session()->getId() : null,
                     'order_code' => $orderCode,
+
+                    'customer_name' => $request->full_name,
+                    'customer_email' => $request->email,
+                    'customer_phone' => $request->phone,
+                    'shipping_address_line1' => $request->address,
+                    'shipping_zip_code' => $request->postcode,
+                    'shipping_country' => 'Vietnam',
+                    // Địa chỉ giao hàng
+                    'shipping_address_system' => $request->address_system,
+
                     'customer_name' => $customerInfo['customer_name'],
                     'customer_email' => $customerInfo['customer_email'],
                     'customer_phone' => $customerInfo['customer_phone'],
@@ -158,10 +197,17 @@ class PaymentController extends Controller
                     'ghn_district_id' => $ghnDistrictId,
                     'ghn_ward_code' => $ghnWardCode,
                     // Địa chỉ thanh toán (mặc định giống địa chỉ giao hàng)
+
+                    'billing_address_line1' => $request->address,
+                    'billing_zip_code' => $request->postcode,
+                    'billing_country' => 'Vietnam',
+                    'billing_address_system' => $request->address_system,
+
                     'billing_address_line1' => $customerInfo['shipping_address_line1'],
                     'billing_zip_code' => $customerInfo['shipping_zip_code'] ?? null,
                     'billing_country' => 'Vietnam',
                     'billing_address_system' => $addressData['shipping_address_system'],
+
                     'billing_new_province_code' => $addressData['shipping_new_province_code'],
                     'billing_new_ward_code' => $addressData['shipping_new_ward_code'],
                     'billing_old_province_code' => $addressData['shipping_old_province_code'],
@@ -178,6 +224,8 @@ class PaymentController extends Controller
                     'notes_from_customer' => $request->notes,
                     'desired_delivery_date' => $deliveryInfo['date'],
                     'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
+
+
                     'store_location_id' => $customerInfo['store_location_id'] ?? null,
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->userAgent(),
@@ -205,6 +253,7 @@ class PaymentController extends Controller
                     ]);
                 }
 
+
                 // Lưu địa chỉ mới vào sổ địa chỉ nếu người dùng chọn
                 if (Auth::check() && $request->save_address && !$request->address_id) {
                     $this->saveNewAddress($request);
@@ -219,15 +268,44 @@ class PaymentController extends Controller
                     'success' => true,
                     'redirect_url' => route('payments.bank_transfer_qr', ['order' => $order->id])
                 ]);
+
             } catch (\Exception $e) {
                 DB::rollback();
                 return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
             }
         }
+
+        // Xử lý cho các phương thức còn lại (COD, bank_transfer)
         try {
             DB::beginTransaction();
+            $user = Auth::user();
+
+            // --- TÍCH HỢP ĐIỂM THƯỞNG ---
+            $pointsApplied = session('points_applied');
+            $pointsUsed = 0;
+            $discountFromPoints = 0;
+            $adminNote = $request->input('notes', '');
+
+            if ($user && $pointsApplied) {
+                $pointsUsed = $pointsApplied['points'];
+                $discountFromPoints = $pointsApplied['discount'];
+                if ($pointsUsed > $user->loyalty_points_balance) {
+                    throw new \Exception('Số dư điểm không đủ để thực hiện giao dịch này.');
+                }
+                $pointsNote = "Đơn hàng áp dụng giảm giá từ " . number_format($pointsUsed) . " điểm (giảm " . number_format($discountFromPoints) . "đ).";
+                $adminNote = trim($adminNote . "\n\n--- Ghi chú Điểm thưởng ---\n" . $pointsNote);
+            }
+
+            // --- TÍNH TOÁN LẠI GIÁ TRỊ CUỐI CÙNG ---
+            $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+            $totalDiscount = $cartData['discount'] + $discountFromPoints;
+            $grandTotal = $cartData['subtotal'] + $shippingFee - $totalDiscount;
+
             // Tạo mã đơn hàng
             $orderCode = 'DH-' . strtoupper(Str::random(10));
+            // Format delivery date/time
+            $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->shipping_time);
+            // Chuẩn bị dữ liệu địa chỉ
             // Tính toán shipping fee dựa vào phương thức
             $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
 
@@ -246,6 +324,10 @@ class PaymentController extends Controller
                 'user_id' => Auth::id(),
                 'guest_id' => !Auth::check() ? session()->getId() : null,
                 'order_code' => $orderCode,
+                'customer_name' => $request->full_name,
+                'customer_email' => $request->email,
+                'customer_phone' => $request->phone,
+                'shipping_address_line1' => $request->address,
                 'customer_name' => $customerInfo['customer_name'],
                 'customer_email' => $customerInfo['customer_email'],
                 'customer_phone' => $customerInfo['customer_phone'],
@@ -260,6 +342,8 @@ class PaymentController extends Controller
                 'shipping_old_province_code' => $addressData['shipping_old_province_code'],
                 'shipping_old_district_code' => $addressData['shipping_old_district_code'],
                 'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
+                'billing_address_line1' => $request->address,
+                'billing_zip_code' => $request->postcode,
                 // Địa chỉ thanh toán (mặc định giống địa chỉ giao hàng)
                 'billing_address_line1' => $customerInfo['shipping_address_line1'],
                 'billing_zip_code' => $customerInfo['shipping_zip_code'] ?? null,
@@ -270,36 +354,36 @@ class PaymentController extends Controller
                 'billing_old_province_code' => $addressData['shipping_old_province_code'],
                 'billing_old_district_code' => $addressData['shipping_old_district_code'],
                 'billing_old_ward_code' => $addressData['shipping_old_ward_code'],
-                // Thông tin tài chính
                 'sub_total' => $cartData['subtotal'],
                 'shipping_fee' => $shippingFee,
-                'discount_amount' => $cartData['discount'],
-                'tax_amount' => 0, // Có thể tính sau
-                'grand_total' => $cartData['subtotal'] + $shippingFee - $cartData['discount'],
-                // Phương thức thanh toán và vận chuyển
+                'discount_amount' => $totalDiscount,
+                'tax_amount' => 0,
+                'grand_total' => $grandTotal,
                 'payment_method' => $request->payment_method,
                 'payment_status' => $request->payment_method === 'cod' ? Order::PAYMENT_PENDING : Order::PAYMENT_PENDING,
                 'shipping_method' => $request->shipping_method,
                 'status' => Order::STATUS_PENDING_CONFIRMATION,
-                // Ghi chú và thông tin khác
-                'notes_from_customer' => $request->notes,
+                'notes_from_customer' => $request->notes, // Ghi chú gốc
+                'admin_note' => $adminNote, // Ghi chú mới bao gồm thông tin điểm
                 'desired_delivery_date' => $deliveryInfo['date'],
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
+
             // Tạo order items
             foreach ($cartData['items'] as $item) {
                 $cartable = $item->productVariant ?? $item->cartable;
                 $cartableType = $item->cartable_type ?? ProductVariant::class;
-
                 // Chỉ kiểm tra và trừ tồn kho cho sản phẩm mới (ProductVariant)
                 if ($cartableType === ProductVariant::class) {
-                    // Kiểm tra tồn kho
                     if (!$this->checkStockAvailability($cartable, $item->quantity)) {
                         $availableStock = $this->getSellableStock($cartable);
                         throw new \Exception("Sản phẩm {$cartable->product->name} không đủ hàng. Hiện chỉ còn {$availableStock} sản phẩm.");
                     }
+                    $variantAttributes = $cartable->attributeValues->mapWithKeys(function ($attrValue) {
+                        return [$attrValue->attribute->name => $attrValue->value];
+                    })->toArray();
 
                     // Lấy thông tin thuộc tính của variant
                     $variantAttributes = $cartable->attributeValues->mapWithKeys(function ($attrValue) {
@@ -316,25 +400,34 @@ class PaymentController extends Controller
                         'price' => $item->price,
                         'total_price' => $item->price * $item->quantity,
                     ]);
-
-                    // Trừ tồn kho cho sản phẩm mới
                     $this->decrementInventoryStock($cartable, $item->quantity);
                 } else {
-                    // Sản phẩm cũ hoặc loại khác - không trừ tồn kho
                     OrderItem::create([
                         'order_id' => $order->id,
-                        'product_variant_id' => null, // Hoặc logic khác tùy theo loại sản phẩm
+                        'product_variant_id' => null,
                         'sku' => $cartable->sku ?? 'OLD-' . $cartable->id,
                         'product_name' => $cartable->product->name,
-                        'variant_attributes' => [], // Hoặc logic khác
+                        'variant_attributes' => [],
                         'quantity' => $item->quantity,
                         'price' => $item->price,
                         'total_price' => $item->price * $item->quantity,
                     ]);
                 }
             }
-            // Lưu thông tin sử dụng coupon nếu có
-            if ($cartData['voucher']) {
+
+            // --- XỬ LÝ TRỪ ĐIỂM VÀ GHI LOG ---
+            if ($user && $pointsUsed > 0) {
+                $user->decrement('loyalty_points_balance', $pointsUsed);
+                LoyaltyPointLog::create([
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'points' => -$pointsUsed,
+                    'type' => 'spend',
+                    'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
+                ]);
+            }
+
+            if ($cartData['voucher'] && isset($cartData['voucher']['id'])) {
                 CouponUsage::create([
                     'coupon_id' => $cartData['voucher']['id'],
                     'user_id' => Auth::id(),
@@ -351,7 +444,7 @@ class PaymentController extends Controller
             // Xóa giỏ hàng
             $this->clearCart();
             DB::commit();
-            // Trả về thông tin đơn hàng
+
             return response()->json([
                 'success' => true,
                 'message' => 'Đặt hàng thành công!',
@@ -368,6 +461,7 @@ class PaymentController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollback();
+            Log::error("Lỗi khi xử lý đơn hàng: " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
@@ -378,10 +472,31 @@ class PaymentController extends Controller
     {
         DB::beginTransaction();
         try {
-            $orderCode = 'DH-' . strtoupper(Str::random(10));
-            $shippingFee = $this->calculateShippingFee($request->shipping_method);
-            $grandTotal = $cartData['subtotal'] + $shippingFee - $cartData['discount'];
+            $user = Auth::user();
 
+
+            // --- TÍCH HỢP ĐIỂM THƯỞNG ---
+            $pointsApplied = session('points_applied');
+            $pointsUsed = 0;
+            $discountFromPoints = 0;
+            $adminNote = $request->input('notes', '');
+
+            if ($user && $pointsApplied) {
+                $pointsUsed = $pointsApplied['points'];
+                $discountFromPoints = $pointsApplied['discount'];
+                if ($pointsUsed > $user->loyalty_points_balance) {
+                    throw new \Exception('Số dư điểm không đủ.');
+                }
+                $pointsNote = "Đơn hàng áp dụng giảm giá từ " . number_format($pointsUsed) . " điểm (giảm " . number_format($discountFromPoints) . "đ).";
+                $adminNote = trim($adminNote . "\n\n--- Ghi chú Điểm thưởng ---\n" . $pointsNote);
+            }
+
+            // --- TÍNH TOÁN LẠI GIÁ TRỊ ---
+            $shippingFee = $this->calculateShippingFee($request->shipping_method);
+            $totalDiscount = $cartData['discount'] + $discountFromPoints;
+            $grandTotal = $cartData['subtotal'] + $shippingFee - $totalDiscount;
+
+            $orderCode = 'DH-' . strtoupper(Str::random(10));
             // Chuẩn bị dữ liệu địa chỉ và thông tin khách hàng
             $customerInfo = $this->prepareCustomerInfo($request);
             $addressData = $this->prepareAddressData($request);
@@ -405,12 +520,13 @@ class PaymentController extends Controller
                 'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
                 'sub_total' => $cartData['subtotal'],
                 'shipping_fee' => $shippingFee,
-                'discount_amount' => $cartData['discount'],
+                'discount_amount' => $totalDiscount,
                 'grand_total' => $grandTotal,
                 'payment_method' => 'vnpay',
                 'payment_status' => Order::PAYMENT_PENDING,
                 'status' => Order::STATUS_PENDING_CONFIRMATION,
                 'notes_from_customer' => $request->notes,
+                'admin_note' => $adminNote,
                 'desired_delivery_date' => $deliveryInfo['date'],
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
                 'store_location_id' => $customerInfo['store_location_id'] ?? null,
@@ -426,13 +542,10 @@ class PaymentController extends Controller
                     throw new \Exception("Không tìm thấy sản phẩm cho một mục trong giỏ hàng.");
                 }
 
-                // Xử lý dựa trên loại sản phẩm
                 if ($cartableType === ProductVariant::class) {
-                    // Sản phẩm mới
                     $variantAttributes = $cartable->attributeValues->mapWithKeys(function ($attrValue) {
                         return [$attrValue->attribute->name => $attrValue->value];
                     })->toArray();
-
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_variant_id' => $cartable->id,
@@ -444,7 +557,6 @@ class PaymentController extends Controller
                         'total_price' => $item->price * $item->quantity,
                     ]);
                 } else {
-                    // Sản phẩm cũ hoặc loại khác
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_variant_id' => null,
@@ -458,6 +570,18 @@ class PaymentController extends Controller
                 }
             }
 
+            // --- XỬ LÝ TRỪ ĐIỂM ---
+            if ($user && $pointsUsed > 0) {
+                $user->decrement('loyalty_points_balance', $pointsUsed);
+                LoyaltyPointLog::create([
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'points' => -$pointsUsed,
+                    'type' => 'spend',
+                    'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
+                ]);
+            }
+
             $vnp_Url = config('vnpay.url');
             $vnp_Returnurl = url(config('vnpay.return_url'));
             $vnp_TmnCode = config('vnpay.tmn_code');
@@ -465,7 +589,7 @@ class PaymentController extends Controller
             $vnp_TxnRef = $order->order_code;
             $vnp_OrderInfo = "Thanh toan don hang " . $order->order_code;
             $vnp_OrderType = 'billpayment';
-            $vnp_Amount = $order->grand_total * 100;
+            $vnp_Amount = $grandTotal * 100; // SỬA Ở ĐÂY
             $vnp_Locale = 'vn';
             $vnp_BankCode = '';
             $vnp_IpAddr = $request->ip();
@@ -523,6 +647,7 @@ class PaymentController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollback();
+            Log::error("Lỗi khi tạo thanh toán VNPAY: " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi tạo thanh toán: ' . $e->getMessage()
@@ -653,10 +778,29 @@ class PaymentController extends Controller
     {
         DB::beginTransaction();
         try {
-            $orderCode = 'DH-' . strtoupper(Str::random(10));
-            $shippingFee = $this->calculateShippingFee($request->shipping_method);
-            $grandTotal = $cartData['subtotal'] + $shippingFee - $cartData['discount'];
+            $user = Auth::user();
+            // --- TÍCH HỢP ĐIỂM THƯỞNG ---
+            $pointsApplied = session('points_applied');
+            $pointsUsed = 0;
+            $discountFromPoints = 0;
+            $adminNote = $request->input('notes', '');
 
+            if ($user && $pointsApplied) {
+                $pointsUsed = $pointsApplied['points'];
+                $discountFromPoints = $pointsApplied['discount'];
+                if ($pointsUsed > $user->loyalty_points_balance) {
+                    throw new \Exception('Số dư điểm không đủ.');
+                }
+                $pointsNote = "Đơn hàng áp dụng giảm giá từ " . number_format($pointsUsed) . " điểm (giảm " . number_format($discountFromPoints) . "đ).";
+                $adminNote = trim($adminNote . "\n\n--- Ghi chú Điểm thưởng ---\n" . $pointsNote);
+            }
+
+            // --- TÍNH TOÁN LẠI GIÁ TRỊ ---
+            $shippingFee = $this->calculateShippingFee($request->shipping_method);
+            $totalDiscount = $cartData['discount'] + $discountFromPoints;
+            $grandTotal = $cartData['subtotal'] + $shippingFee - $totalDiscount;
+
+            $orderCode = 'DH-' . strtoupper(Str::random(10));
             // Chuẩn bị dữ liệu địa chỉ và thông tin khách hàng
             $customerInfo = $this->prepareCustomerInfo($request);
             $addressData = $this->prepareAddressData($request);
@@ -680,12 +824,13 @@ class PaymentController extends Controller
                 'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
                 'sub_total' => $cartData['subtotal'],
                 'shipping_fee' => $shippingFee,
-                'discount_amount' => $cartData['discount'],
+                'discount_amount' => $totalDiscount,
                 'grand_total' => $grandTotal,
                 'payment_method' => 'momo',
                 'payment_status' => Order::PAYMENT_PENDING,
                 'status' => Order::STATUS_PENDING_CONFIRMATION,
                 'notes_from_customer' => $request->notes,
+                'admin_note' => $adminNote,
                 'desired_delivery_date' => $deliveryInfo['date'],
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
                 'store_location_id' => $customerInfo['store_location_id'] ?? null,
@@ -700,13 +845,10 @@ class PaymentController extends Controller
                     throw new \Exception("Không tìm thấy sản phẩm cho một mục trong giỏ hàng.");
                 }
 
-                // Xử lý dựa trên loại sản phẩm
                 if ($cartableType === ProductVariant::class) {
-                    // Sản phẩm mới
                     $variantAttributes = $cartable->attributeValues->mapWithKeys(function ($attrValue) {
                         return [$attrValue->attribute->name => $attrValue->value];
                     })->toArray();
-
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_variant_id' => $cartable->id,
@@ -718,7 +860,6 @@ class PaymentController extends Controller
                         'total_price' => $item->price * $item->quantity,
                     ]);
                 } else {
-                    // Sản phẩm cũ hoặc loại khác
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_variant_id' => null,
@@ -732,12 +873,24 @@ class PaymentController extends Controller
                 }
             }
 
+            // --- XỬ LÝ TRỪ ĐIỂM ---
+            if ($user && $pointsUsed > 0) {
+                 $user->decrement('loyalty_points_balance', $pointsUsed);
+                 LoyaltyPointLog::create([
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'points' => -$pointsUsed,
+                    'type' => 'spend',
+                    'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
+                ]);
+            }
+
             $endpoint = config('momo.endpoint');
             $partnerCode = config('momo.partner_code');
             $accessKey = config('momo.access_key');
             $secretKey = config('momo.secret_key');
-            $orderInfo = "Thanh toan don hang " . $order->order_code; // <-- SỬA LẠI Ở ĐÂY
-            $amount = (string) (int) $order->grand_total;
+            $orderInfo = "Thanh toan don hang " . $order->order_code;
+            $amount = (string)(int)$grandTotal; // SỬA Ở ĐÂY
             $orderId = $order->order_code . "_" . time();
             $requestId = (string) Str::uuid();
             $redirectUrl = config('momo.redirect_url');
@@ -762,9 +915,7 @@ class PaymentController extends Controller
                 'signature' => $signature,
             ];
 
-            // Ghi log trước khi gửi để kiểm tra
-            \Illuminate\Support\Facades\Log::info('Final MoMo Request Data:', $data);
-
+            Log::info('Final MoMo Request Data:', $data);
             $response = Http::post($endpoint, $data);
             $jsonResponse = $response->json();
 
@@ -781,15 +932,13 @@ class PaymentController extends Controller
                     'payment_url' => $jsonResponse['payUrl']
                 ]);
             } else {
-                \Illuminate\Support\Facades\Log::error('MoMo Creation Error: ', $jsonResponse ?? []);
+                Log::error('MoMo Creation Error: ', $jsonResponse ?? []);
                 throw new \Exception('Lỗi từ MoMo: ' . ($jsonResponse['message'] ?? 'Không xác định'));
             }
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra khi tạo thanh toán: ' . $e->getMessage()
-            ], 500);
+            Log::error("Lỗi khi tạo thanh toán MoMo: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra khi tạo thanh toán: ' . $e->getMessage()], 500);
         }
     }
     public function momoReturn(Request $request)
@@ -970,7 +1119,15 @@ class PaymentController extends Controller
                     ->first();
             }
         }
-        return view('users.payments.success', compact('order'));
+        $totalPointsEarned = 0;
+        if ($order) {
+            // Tính tổng điểm thưởng từ tất cả các sản phẩm trong đơn hàng
+            $totalPointsEarned = $order->items->sum(function ($item) {
+                // Lấy điểm từ productVariant và nhân với số lượng
+                return ($item->productVariant->points_awarded_on_purchase ?? 0) * $item->quantity;
+            });
+        }
+        return view('users.payments.success', compact('order', 'totalPointsEarned'));
     }
     /**
      * Lấy dữ liệu giỏ hàng
@@ -979,36 +1136,39 @@ class PaymentController extends Controller
     {
         $user = auth()->user();
         $items = collect();
+        $voucher = session('applied_coupon'); // Đảm bảo dùng đúng key session 'applied_coupon'
         $subtotal = 0;
         $voucher = session('applied_voucher');
         $discount = 0;
 
         if ($user && $user->cart) {
-            // User đã đăng nhập - lấy từ database với polymorphic relationship
             $items = $user->cart->items()
                 ->with('cartable.product', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
                 ->get()
                 ->filter(fn($item) => $item->cartable && $item->cartable->product)
                 ->map(function ($item) {
-                    // Xử lý dựa trên loại sản phẩm
                     if ($item->cartable_type === ProductVariant::class) {
-                        // Sản phẩm mới - có thể trừ tồn kho
                         $item->stock_quantity = $this->getSellableStock($item->cartable) ?? 0;
-                        $item->productVariant = $item->cartable; // Để tương thích với code cũ
+                        $item->productVariant = $item->cartable;
+                        $item->points_to_earn = $item->cartable->points_awarded_on_purchase ?? 0;
                     } else {
-                        // Sản phẩm cũ hoặc loại khác - không trừ tồn kho
-                        $item->stock_quantity = 999; // Hoặc logic khác tùy theo loại sản phẩm
-                        $item->productVariant = $item->cartable; // Để tương thích với code cũ
+                        $item->stock_quantity = 999;
+                        $item->productVariant = $item->cartable;
+                        $item->points_to_earn = 0;
                     }
                     return $item;
                 });
         } else {
-            // Khách vãng lai - lấy từ session
             $sessionCart = session('cart', []);
             $items = collect($sessionCart)->map(function ($data) {
-                // Kiểm tra loại sản phẩm từ session
                 $cartableType = $data['cartable_type'] ?? ProductVariant::class;
                 $cartableId = $data['cartable_id'] ?? $data['variant_id'] ?? null;
+                if (!$cartableId) return null;
+
+                $cartable = ProductVariant::with('product', 'attributeValues.attribute', 'primaryImage')->find($cartableId);
+                if (!$cartable || !$cartable->product) return null;
+
+                $stockQuantity = ($cartableType === ProductVariant::class) ? $this->getSellableStock($cartable) : 999;
 
                 if (!$cartableId) {
                     return null;
@@ -1046,7 +1206,9 @@ class PaymentController extends Controller
                     'quantity' => $data['quantity'],
                     'stock_quantity' => $stockQuantity,
                     'cartable_type' => $cartableType,
+                    'points_to_earn' => $cartable->points_awarded_on_purchase ?? 0,
                 ];
+            // })->filter();
             })->filter(fn($item) => $item && $item->productVariant && $item->productVariant->product);
         }
 
@@ -1059,15 +1221,38 @@ class PaymentController extends Controller
                 : min($voucher['value'], $subtotal);
         }
 
-        $total = max(0, $subtotal - $discount);
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+
+        $discountFromCoupon = 0;
+        if ($voucher) {
+            $discountFromCoupon = $voucher['discount'] ?? 0;
+        }
+
+        $pointsApplied = session('points_applied');
+        $discountFromPoints = 0;
+        if ($pointsApplied && Auth::check()) {
+            $discountFromPoints = $pointsApplied['discount'] ?? 0;
+        }
+
+        $totalDiscount = $discountFromCoupon + $discountFromPoints;
+        $total = max(0, $subtotal - $totalDiscount);
+
+        // --- TÍNH TOÁN VÀ THÊM TỔNG ĐIỂM THƯỞNG ---
+        $totalPointsToEarn = $items->sum(function($item) {
+            return ($item->points_to_earn ?? 0) * $item->quantity;
+        });
+
         return [
             'items' => $items,
             'subtotal' => $subtotal,
-            'discount' => $discount,
+            'discount' => $totalDiscount,
+            'discount_from_coupon' => $discountFromCoupon,
+            'discount_from_points' => $discountFromPoints,
             'total' => $total,
             'voucher' => $voucher,
             'items_count' => $items->count(),
-            'total_quantity' => $items->sum('quantity')
+            'total_quantity' => $items->sum('quantity'),
+            'totalPointsToEarn' => $totalPointsToEarn, // <-- Gửi biến này đi
         ];
     }
     /**
@@ -1316,6 +1501,11 @@ class PaymentController extends Controller
      */
     public function processBuyNowOrder(PaymentRequest $request)
     {
+        // Validate dữ liệu
+        $request->validate([
+            'address_system' => 'required|string|in:new,old',
+            // ... các validate khác
+        ]);
         // Validation đã được xử lý trong PaymentRequest
         // Kiểm tra session Buy Now
         if (!session()->has('buy_now_session')) {
@@ -1325,12 +1515,34 @@ class PaymentController extends Controller
         if (!$buyNowData['items'] || $buyNowData['items']->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Không tìm thấy sản phẩm.'], 400);
         }
+
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-            // Tạo mã đơn hàng
-            $orderCode = 'DH-' . strtoupper(Str::random(10));
-            // Tính toán shipping fee
+            $user = Auth::user();
+
+            // --- TÍCH HỢP ĐIỂM THƯỞNG ---
+            $pointsApplied = session('points_applied');
+            $pointsUsed = 0;
+            $discountFromPoints = 0;
+            $adminNote = $request->input('notes', '');
+
+            if ($user && $pointsApplied) {
+                $pointsUsed = $pointsApplied['points'];
+                $discountFromPoints = $pointsApplied['discount'];
+                if ($pointsUsed > $user->loyalty_points_balance) {
+                    throw new \Exception('Số dư điểm không đủ.');
+                }
+                $pointsNote = "Đơn hàng áp dụng giảm giá từ " . number_format($pointsUsed) . " điểm (giảm " . number_format($discountFromPoints) . "đ).";
+                $adminNote = trim($adminNote . "\n\n--- Ghi chú Điểm thưởng ---\n" . $pointsNote);
+            }
+
+            // --- TÍNH TOÁN LẠI GIÁ TRỊ (Buy Now không có coupon) ---
             $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+            $totalDiscount = $discountFromPoints;
+            $grandTotal = $buyNowData['subtotal'] + $shippingFee - $totalDiscount;
+
+            $orderCode = 'DH-' . strtoupper(Str::random(10));
+            $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->shipping_time);
 
             // Chuẩn bị dữ liệu địa chỉ và thông tin khách hàng
             $customerInfo = $this->prepareCustomerInfo($request);
@@ -1342,11 +1554,12 @@ class PaymentController extends Controller
                 throw new \Exception('Tên khách hàng không được để trống.');
             }
 
-            // Tạo đơn hàng
             $order = Order::create([
                 'user_id' => Auth::id(),
                 'guest_id' => !Auth::check() ? session()->getId() : null,
                 'order_code' => $orderCode,
+                'customer_name' => $request->full_name,
+                // ...
                 'customer_name' => $customerInfo['customer_name'],
                 'customer_email' => $customerInfo['customer_email'],
                 'customer_phone' => $customerInfo['customer_phone'],
@@ -1374,31 +1587,24 @@ class PaymentController extends Controller
                 // Thông tin tài chính
                 'sub_total' => $buyNowData['subtotal'],
                 'shipping_fee' => $shippingFee,
-                'discount_amount' => 0, // Buy Now không áp dụng voucher
-                'tax_amount' => 0,
-                'grand_total' => $buyNowData['subtotal'] + $shippingFee,
-                // Phương thức thanh toán và vận chuyển
-                'payment_method' => $request->payment_method,
-                'payment_status' => $request->payment_method === 'cod' ? Order::PAYMENT_PENDING : Order::PAYMENT_PENDING,
-                'shipping_method' => $request->shipping_method,
-                'status' => Order::STATUS_PENDING_CONFIRMATION,
-                // Ghi chú và thông tin khác
+                'discount_amount' => $totalDiscount,
+                'grand_total' => $grandTotal,
                 'notes_from_customer' => $request->notes,
+                'admin_note' => $adminNote,
+                // ... (Các trường khác từ code gốc của bạn)
                 'desired_delivery_date' => $deliveryInfo['date'],
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
                 'store_location_id' => $customerInfo['store_location_id'] ?? null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
             ]);
-            // Tạo order item (chỉ có 1 sản phẩm trong Buy Now)
+
             $item = $buyNowData['items']->first();
             $variant = $item->productVariant;
-            // Kiểm tra tồn kho lần cuối
             if (!$this->checkStockAvailability($variant, $item->quantity)) {
                 $availableStock = $this->getSellableStock($variant);
                 throw new \Exception("Sản phẩm {$variant->product->name} không đủ hàng. Hiện chỉ còn {$availableStock} sản phẩm.");
             }
-            // Lấy thông tin thuộc tính của variant
             $variantAttributes = $variant->attributeValues->mapWithKeys(function ($attrValue) {
                 return [$attrValue->attribute->name => $attrValue->value];
             })->toArray();
@@ -1412,8 +1618,19 @@ class PaymentController extends Controller
                 'price' => $item->price,
                 'total_price' => $item->price * $item->quantity,
             ]);
-            // Trừ tồn kho nếu có quản lý kho
+
             $this->decrementInventoryStock($variant, $item->quantity);
+            // --- XỬ LÝ TRỪ ĐIỂM ---
+            if ($user && $pointsUsed > 0) {
+                 $user->decrement('loyalty_points_balance', $pointsUsed);
+                 LoyaltyPointLog::create([
+                    'user_id' => $user->id,
+                    'order_id' => $order->id,
+                    'points' => -$pointsUsed,
+                    'type' => 'spend',
+                    'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
+                ]);
+            }
 
             // Lưu địa chỉ mới vào sổ địa chỉ nếu người dùng chọn
             if (Auth::check() && $request->save_address && !$request->address_id) {
@@ -1423,27 +1640,21 @@ class PaymentController extends Controller
             // Xóa session Buy Now
             $this->clearBuyNowSession();
             DB::commit();
-            // Trả về thông tin đơn hàng
+
             return response()->json([
                 'success' => true,
                 'message' => 'Đặt hàng thành công!',
                 'order' => [
                     'id' => $order->id,
                     'order_code' => $order->order_code,
-                    'grand_total' => $order->grand_total,
-                    'payment_method' => $order->payment_method,
-                    'shipping_method' => $order->shipping_method,
-                    'customer_name' => $order->customer_name,
-                    'customer_phone' => $order->customer_phone,
-                    'shipping_address' => $order->shipping_full_address_with_type,
+                    // ...
                 ]
             ]);
+
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json([
-                'success' => false,
-                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
-            ], 500);
+            Log::error("Lỗi khi xử lý đơn hàng Buy Now: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
         }
     }
     /**
@@ -1884,4 +2095,5 @@ class PaymentController extends Controller
             'data' => $districts
         ]);
     }
+
 }

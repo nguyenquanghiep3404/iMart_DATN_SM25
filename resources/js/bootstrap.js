@@ -32,3 +32,13 @@ window.Echo = new Echo({
 
 console.log('bootstrap.js executed: window.Pusher and window.Echo should be defined.');
 console.log('Echo instance:', window.Echo); // Kiểm tra đối tượng Echo đã được tạo
+// Gỡ lỗi kết nối Echo
+window.Echo.connector.pusher.connection.bind('connected', () => {
+    console.log('Echo đã kết nối!');
+});
+window.Echo.connector.pusher.connection.bind('disconnected', () => {
+    console.log('Echo đã ngắt kết nối!');
+});
+window.Echo.connector.pusher.connection.bind('error', (err) => {
+    console.error('Lỗi kết nối Echo:', err);
+});

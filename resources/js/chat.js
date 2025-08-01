@@ -1,8 +1,7 @@
 // chat.js
 // Các biến Blade được truyền vào đối tượng window từ Blade view
 const AUTH_ID = window.APP_AUTH_ID;
-const GUEST_USER_ID = window.APP_GUEST_USER_ID; // Đổi tên để tránh nhầm lẫn với biến cục bộ guestUserIdFromBlade
-const INITIAL_CONVERSATIONS = window.APP_CONVERSATIONS_DATA;
+const INITIAL_CONVERSATIONS = window.APP_CONVERSATIONS_DATA; // Bao gồm messages
 
 // --- LẤY CÁC PHẦN TỬ DOM ---
 const chatBubble = document.getElementById('chatBubble');
@@ -38,7 +37,8 @@ function displayMessage(container, text, type, timestamp = null) {
 
     const time = timestamp ? new Date(timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
 
-    const renderedText = marked.parse(text);
+    // Kiểm tra nếu marked.parse không tồn tại, sử dụng text thuần
+    const renderedText = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(text) : text;
 
     messageElement.innerHTML = `
         <div class="content">${renderedText}</div>
@@ -60,15 +60,7 @@ function openModal() {
     chatBubble.style.visibility = 'hidden';
     chatBubble.style.transform = 'scale(0)';
 
-    let activeGuestId = localStorage.getItem('guest_user_id') || GUEST_USER_ID;
-
-    // Kiểm tra xem đã đăng nhập hoặc có ID khách chưa
-    if (AUTH_ID !== null || activeGuestId !== null) {
-        showMainChat();
-    } else {
-        welcomeScreen.style.display = 'flex';
-        mainChatInterface.style.display = 'none';
-    }
+    initializeChatState(); // Kiểm tra trạng thái và hiển thị đúng màn hình
 }
 
 function closeModal() {
@@ -84,21 +76,65 @@ function subscribeToConversation(convId, currentUserId) {
         console.error('Warning: Echo is not initialized. Cannot subscribe to channel.');
         return;
     }
+    // Hủy đăng ký kênh cũ nếu có để tránh trùng lặp listener
+    if (window.Echo.connector.channels[`private-chat.conversation.${convId}`]) {
+        window.Echo.leave(`chat.conversation.${convId}`);
+        console.log(`Unsubscribed from chat.conversation.${convId}`);
+    }
+
     window.Echo.private(`chat.conversation.${convId}`)
         .listen('.message.sent', (e) => {
+            console.log('Message received:', e.message);
             const messageType = (e.message.sender_id == currentUserId) ? 'sent' : 'received';
             displayMessage(humanChatBody, e.message.content, messageType, e.message.created_at);
         });
+    console.log(`Subscribed to chat.conversation.${convId} for user ${currentUserId}`);
 }
 
 
-// --- GÁN SỰ KIỆN ---
-// Chỉ gán sự kiện sau khi DOM đã sẵn sàng
+// --- GÁN SỰ KIỆN VÀ KHỞI TẠO LOGIC ---
 document.addEventListener('DOMContentLoaded', function() {
     console.log('chat.js: DOMContentLoaded event fired.');
-    // Kiểm tra xem các phần tử DOM đã tồn tại chưa trước khi gán sự kiện
+
+    // Gán sự kiện cho các phần tử chính
     if (chatBubble) chatBubble.addEventListener('click', openModal);
     if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+
+    // Hàm khởi tạo trạng thái chat (gọi khi DOM sẵn sàng và khi mở modal)
+    function initializeChatState() {
+        const guestIdFromLocalStorage = localStorage.getItem('guest_user_id');
+        const currentSenderId = AUTH_ID || guestIdFromLocalStorage;
+
+        humanChatBody.innerHTML = ''; // Xóa tin nhắn cũ/mặc định
+
+        if (INITIAL_CONVERSATIONS && INITIAL_CONVERSATIONS.length > 0) {
+            const firstConv = INITIAL_CONVERSATIONS[0];
+            currentConversationId = firstConv.id;
+
+            showMainChat();
+            if (currentConversationId && currentSenderId) {
+                subscribeToConversation(currentConversationId, currentSenderId);
+            }
+
+            firstConv.messages.forEach(msg => {
+                const messageType = (msg.sender_id == currentSenderId) ? 'sent' : 'received';
+                displayMessage(humanChatBody, msg.content, messageType, msg.created_at);
+            });
+            humanChatBody.scrollTop = humanChatBody.scrollHeight;
+        } else if (currentSenderId) {
+            // Có ID người dùng (đã đăng nhập hoặc guest cũ), nhưng không có cuộc hội thoại nào từ server
+            showMainChat();
+            displayMessage(humanChatBody, `Xin chào! Tôi có thể giúp gì cho bạn?`, 'received');
+            // Logic để tạo conversation mới hoặc fetch conversation nếu cần thiết
+            // Hiện tại, tin nhắn đầu tiên gửi sẽ tạo conversation
+        } else {
+            // Không có ID nào, hiển thị màn hình chào mừng
+            welcomeScreen.style.display = 'flex';
+            mainChatInterface.style.display = 'none';
+        }
+    }
+
+    initializeChatState(); // Gọi lần đầu khi DOMContentLoaded
 
     if (welcomeForm) {
         welcomeForm.addEventListener('submit', async function(event) {
@@ -121,27 +157,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify({ name, phone_number })
                 });
                 const data = await response.json();
+
                 if (response.ok) {
                     localStorage.setItem('guest_user_id', data.user_id);
-                    // Cập nhật biến GUEST_USER_ID cục bộ để sử dụng
-                    // Không cần gán lại GUEST_USER_ID vì nó là const, chỉ cần cập nhật logic sử dụng nó
-                    // openModal sẽ lấy từ localStorage nếu có
+                    currentConversationId = data.conversation_id;
+                    const currentSenderId = data.user_id;
+
                     showMainChat();
-
-                    // Hiển thị tin nhắn chào mừng cho khách mới đăng ký
                     humanChatBody.innerHTML = '';
-                    displayMessage(humanChatBody, `Xin chào ${name}! Tôi có thể giúp gì cho bạn?`, 'received');
 
-
-                    if (data.conversation_id) {
-                        currentConversationId = data.conversation_id;
-                        subscribeToConversation(currentConversationId, data.user_id); // Dùng user_id mới
+                    if (data.conversation_messages && data.conversation_messages.length > 0) {
+                        data.conversation_messages.forEach(msg => {
+                            const messageType = (msg.sender_id == currentSenderId) ? 'sent' : 'received';
+                            displayMessage(humanChatBody, msg.content, messageType, msg.created_at);
+                        });
+                    } else {
+                        displayMessage(humanChatBody, `Xin chào ${name}! Tôi có thể giúp gì cho bạn?`, 'received');
                     }
+
+                    if (currentConversationId && currentSenderId) {
+                        subscribeToConversation(currentConversationId, currentSenderId);
+                    }
+
                 } else {
-                    alert(data.message || 'Lỗi khi đăng ký khách.');
+                    let errorMessage = 'Đăng ký khách thất bại.';
+                    if (response.status === 422 && data.errors) {
+                        errorMessage += '\n' + Object.values(data.errors).flat().join('\n');
+                    } else if (data.message) {
+                        errorMessage = data.message;
+                    }
+                    alert(errorMessage);
                 }
             } catch (error) {
-                console.error('Lỗi:', error);
+                console.error('Lỗi khi đăng ký khách:', error);
                 alert('Đã xảy ra lỗi trong quá trình đăng ký khách.');
             }
         });
@@ -161,8 +209,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (humanSendButton && humanMessageInput) {
         humanSendButton.addEventListener('click', async () => {
             const content = humanMessageInput.value.trim();
-            if (content === '' || (AUTH_ID === null && (localStorage.getItem('guest_user_id') === null && GUEST_USER_ID === null))) {
-                alert('Vui lòng đăng nhập hoặc cung cấp thông tin khách để gửi tin nhắn.');
+            const senderId = AUTH_ID || localStorage.getItem('guest_user_id');
+
+            if (content === '') {
+                alert('Vui lòng nhập tin nhắn.');
+                return;
+            }
+            if (!senderId) {
+                alert('Không thể xác định người gửi tin nhắn. Vui lòng đăng nhập hoặc cung cấp thông tin khách.');
                 return;
             }
 
@@ -171,18 +225,13 @@ document.addEventListener('DOMContentLoaded', function() {
             humanMessageInput.focus();
 
             try {
-                const payload = { content: content };
+                const payload = {
+                    content: content,
+                    sender_id: senderId
+                };
+
                 if (currentConversationId) {
                     payload.conversation_id = currentConversationId;
-                }
-                const senderId = AUTH_ID || localStorage.getItem('guest_user_id') || GUEST_USER_ID;
-
-                if (senderId) {
-                     payload.sender_id = senderId;
-                } else {
-                    console.error('Sender ID not determined.');
-                    alert('Không thể xác định người gửi tin nhắn.');
-                    return;
                 }
 
                 const response = await fetch('/chat/send-message', {
@@ -213,7 +262,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Xử lý gửi tin nhắn cho Chat với AI (mô phỏng)
     if (aiSendButton && aiMessageInput) {
         aiSendButton.addEventListener('click', () => {
             const messageText = aiMessageInput.value.trim();
@@ -228,7 +276,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') aiSendButton.click();
         });
     }
-
 
     function simulateAiResponse(container, userMessage) {
         setTimeout(() => {
@@ -245,24 +292,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
             displayMessage(container, aiReply, 'received');
         }, 1000);
-    }
-
-    // Khởi tạo đăng ký kênh Reverb khi tải trang, nếu có cuộc hội thoại và guestUserId hợp lệ
-    // Lấy dữ liệu hội thoại ban đầu từ biến Blade
-    if (INITIAL_CONVERSATIONS && INITIAL_CONVERSATIONS.length > 0) {
-        const firstConversation = INITIAL_CONVERSATIONS[0];
-        currentConversationId = firstConversation.id;
-
-        // Xác định người gửi hiện tại (ưu tiên AUTH_ID, sau đó là từ localStorage, cuối cùng là từ GUEST_USER_ID ban đầu)
-        const currentSenderId = AUTH_ID || localStorage.getItem('guest_user_id') || GUEST_USER_ID;
-
-        if (currentConversationId && currentSenderId) {
-            subscribeToConversation(currentConversationId, currentSenderId);
-        }
-        // Cuộn xuống tin nhắn cuối cùng nếu có cuộc hội thoại ban đầu
-        if (humanChatBody) {
-             humanChatBody.scrollTop = humanChatBody.scrollHeight;
-        }
-
     }
 });

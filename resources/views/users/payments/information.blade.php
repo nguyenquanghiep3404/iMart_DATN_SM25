@@ -640,10 +640,7 @@
                                     <i class="ci-chevron-right text-muted"></i>
                                 </button>
 
-                                <div class="d-flex align-items-center p-3 border rounded bg-warning bg-opacity-10 mb-3">
-                                    <i class="ci-gift text-warning me-2"></i>
-                                    <span class="fw-medium text-warning small">Đăng nhập để sử dụng điểm thưởng</span>
-                                </div>
+                            
                             </div>
 
                             <!-- Scrollable order information -->
@@ -655,12 +652,23 @@
                                         {{ number_format($subtotal, 0, ',', '.') }}₫
                                     </span>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted small">Tổng khuyến mãi:</span>
+                               <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted small">Giảm từ voucher:</span>
                                     <span id="cart-discount" class="text-danger fw-medium">
                                         {{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
                                     </span>
                                 </div>
+
+                                {{-- <<< THAY ĐỔI 1: HIỂN THỊ GIẢM GIÁ TỪ ĐIỂM >>> --}}
+                                @if(isset($pointsDiscount) && $pointsDiscount > 0)
+                                    <div class="d-flex justify-content-between mb-2" id="points-discount-row">
+                                        <span class="text-muted small">Giảm từ điểm:</span>
+                                        <span id="points-discount-amount" class="text-danger fw-medium">
+                                            -{{ number_format($pointsDiscount, 0, ',', '.') }}₫
+                                        </span>
+                                    </div>
+                                @endif
+                            </div>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span class="text-muted small">Phí vận chuyển:</span>
                                     <span id="shipping-fee-summary" class="fw-medium">Chưa xác định</span>
@@ -837,6 +845,7 @@
             // Dữ liệu thực từ Laravel
             const baseSubtotal = {{ $subtotal }};
             const baseDiscount = {{ $discount }};
+            const basePointsDiscount = {{ $pointsDiscount ?? 0 }};
             const baseWeight = {{ $baseWeight ?? 1000 }};
             const baseLength = {{ $baseLength ?? 20 }};
             const baseWidth = {{ $baseWidth ?? 10 }};
@@ -1341,7 +1350,7 @@
             // Trích xuất thông tin địa chỉ từ địa chỉ đã lưu cho GHN
             function extractAddressInfoFromSaved(addressFull) {
                 // Phân tích địa chỉ đầy đủ để trích xuất tỉnh, huyện, xã
-                // Ví dụ: 
+                // Ví dụ:
                 // "Phường Ba Láng, Quận Cái Răng, Thành phố Cần Thơ"
                 // "Xã Hòa Quang Nam, Huyện Phú Hoà, Tỉnh Phú Yên"
                 // "Ba Láng, Cái Răng, Cần Thơ" (không có tiền tố)
@@ -1614,49 +1623,41 @@
                 });
             }
 
-            function updateOrderInformation({
-                shippingFee
-            }) {
-                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked').value;
-                if (deliveryMethod === 'pickup') {
-                    shippingFee = 0;
-                }
+           function updateOrderInformation({ shippingFee }) {
+    const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked').value;
+    if (deliveryMethod === 'pickup') {
+        shippingFee = 0;
+    }
 
-                subtotalSummary.textContent = new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND'
-                }).format(baseSubtotal);
-                promotionSummary.textContent =
-                    `-${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(baseDiscount)}`;
+    // Lấy các element để cập nhật
+    const shippingFeeSummary = document.getElementById('shipping-fee-summary');
+    const grandTotalSummary = document.getElementById('cart-total'); // ID này phải khớp với HTML của bạn
 
-                if (shippingFee === null || shippingFee === undefined) {
-                    // Kiểm tra xem phương thức vận chuyển hiện tại có được GHN hỗ trợ không
-                    const selectedShippingMethod = document.querySelector('input[name="shipping_method"]:checked');
-                    if (selectedShippingMethod && selectedShippingMethod.dataset.fee === 'unsupported') {
-                        shippingFeeSummary.textContent = 'Không hỗ trợ';
-                    } else {
-                        shippingFeeSummary.textContent = 'Chưa xác định';
-                    }
-                    grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND'
-                    }).format(baseSubtotal - baseDiscount);
-                } else {
-                    if (shippingFee === 0) {
-                        shippingFeeSummary.textContent = 'Miễn phí';
-                    } else {
-                        shippingFeeSummary.textContent = new Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND'
-                        }).format(shippingFee);
-                    }
-                    const grandTotal = baseSubtotal - baseDiscount + shippingFee;
-                    grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND'
-                    }).format(grandTotal);
-                }
-            }
+    let finalTotal;
+
+    if (shippingFee === null || shippingFee === undefined) {
+        shippingFeeSummary.textContent = 'Chưa xác định';
+        // Tổng tiền tạm thời khi chưa có phí ship
+        finalTotal = baseSubtotal - baseDiscount - basePointsDiscount;
+    } else {
+        shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(shippingFee);
+
+        // <<< ĐÂY LÀ DÒNG THAY ĐỔI QUAN TRỌNG >>>
+        // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
+        finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
+    }
+
+    // Cập nhật hiển thị tổng tiền
+    if (grandTotalSummary) {
+        grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(finalTotal > 0 ? finalTotal : 0);
+    }
+}
 
             // Điền sẵn thông tin người dùng cho người dùng đã đăng nhập
             function prefillUserInfo() {

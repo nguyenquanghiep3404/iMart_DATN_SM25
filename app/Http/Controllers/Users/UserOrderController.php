@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\ReturnRequest;
 
 class UserOrderController extends Controller
 {
@@ -20,31 +21,38 @@ class UserOrderController extends Controller
     {
         $user = Auth::user();
 
+        if ($status === 'returned') {
+            $refunds = ReturnRequest::with(['order:id,order_code', 'orderItem.variant.product.coverImage'])
+                ->whereHas('order', fn($q) => $q->where('user_id', $user->id))
+                ->latest()
+                ->paginate(10);
+
+            return view('users.orders.index', [
+                'orders' => collect([]),
+                'status' => $status,
+                'refunds' => $refunds
+            ]);
+        }
+
         $ordersQuery = Order::where('user_id', $user->id)
-            ->with(['items' => function ($query) {
-                $query->with('productVariant');
-            }]);
+            ->with(['items' => fn($q) => $q->with('productVariant')]);
 
         if ($status) {
             $ordersQuery->where('status', $this->mapStatus($status));
         }
 
-        // Thêm tìm kiếm nếu có
         if ($request->has('search')) {
             $search = $request->input('search');
             $ordersQuery->where(function ($query) use ($search) {
                 $query->where('order_code', 'like', "%$search%")
-                    ->orWhereHas('items', function ($q) use ($search) {
-                        $q->where('product_name', 'like', "%$search%");
-                    });
+                    ->orWhereHas('items', fn($q) => $q->where('product_name', 'like', "%$search%"));
             });
         }
 
-        $orders = $ordersQuery->orderBy('created_at', 'desc')->paginate(10);
+        $orders = $ordersQuery->latest()->paginate(10);
 
         return view('users.orders.index', compact('orders', 'status'));
     }
-
     /**
      * Hiển thị chi tiết đơn hàng
      */

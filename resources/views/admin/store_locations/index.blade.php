@@ -39,7 +39,7 @@
                         <div>
                             <label for="filterType" class="block text-sm font-medium text-gray-700">Phân loại</label>
                             <select id="filterType" x-model="filterType" @change="currentPage = 1"
-                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1">
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1">
                                 <option value="">Tất cả</option>
                                 <option value="store">Cửa hàng</option>
                                 <option value="warehouse">Kho</option>
@@ -49,7 +49,7 @@
                         <div>
                             <label for="filterStatus" class="block text-sm font-medium text-gray-700">Trạng thái</label>
                             <select id="filterStatus" x-model="filterStatus" @change="currentPage = 1"
-                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1">
+                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1">
                                 <option value="">Tất cả</option>
                                 <option value="true">Đang hoạt động</option>
                                 <option value="false">Ngưng hoạt động</option>
@@ -57,9 +57,9 @@
                         </div>
                     </div>
                     <div class="flex-shrink-0 flex items-center gap-2">
-                         <button @click="clearFilters()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <i class="fas fa-times mr-2"></i>Xoá bộ lọc
-                        </button>
+                           <button @click="clearFilters()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <i class="fas fa-times mr-2"></i>Xoá bộ lọc
+                            </button>
                     </div>
                 </div>
 
@@ -153,6 +153,7 @@
         </div>
     </div>
 
+    {{-- Modal Thêm/Sửa --}}
     <div x-show="isModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="isModalOpen" @click="closeModal()" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
@@ -164,12 +165,7 @@
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title" x-text="isEditMode ? 'Chỉnh sửa Địa điểm' : 'Thêm Địa điểm mới'"></h3>
 
-                    <form id="storeFormTraditional" :action="isEditMode ? '/admin/store-locations/' + formData.id : '/admin/store-locations'" method="POST">
-                        @csrf
-                        <template x-if="isEditMode">
-                            @method('PUT')
-                        </template>
-
+                    <form @submit.prevent="saveLocation()">
                         <input type="hidden" name="id" x-model="formData.id">
                         <input type="hidden" name="province_code" x-model="formData.province_code">
                         <input type="hidden" name="district_code" x-model="formData.district_code">
@@ -191,7 +187,7 @@
                             <div>
                                 <label for="province_code_display" class="block text-sm font-medium text-gray-700">Tỉnh/Thành phố*</label>
                                 <select id="province_code_display" x-model="formData.province_code" @change="updateDistricts()"
-                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1" required>
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1" required>
                                     <option value="">Chọn Tỉnh/Thành phố</option>
                                     <template x-for="province in provinces" :key="province.code">
                                         <option :value="province.code" x-text="province.name"></option>
@@ -201,7 +197,7 @@
                             <div>
                                 <label for="district_code_display" class="block text-sm font-medium text-gray-700">Quận/Huyện*</label>
                                 <select id="district_code_display" x-model="formData.district_code" @change="updateWards()"
-                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1" :disabled="!formData.province_code" required>
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1" :disabled="!formData.province_code" required>
                                     <option value="">Chọn Quận/Huyện</option>
                                     <template x-for="district in districts" :key="district.code">
                                         <option :value="district.code" x-text="district.name"></option>
@@ -211,7 +207,7 @@
                             <div>
                                 <label for="type_display" class="block text-sm font-medium text-gray-700">Phân loại địa điểm*</label>
                                 <select id="type_display" x-model="formData.type"
-                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1" required>
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1" required>
                                     <option value="store">Cửa hàng</option>
                                     <option value="warehouse">Kho</option>
                                     <option value="service_center">Trung tâm bảo hành</option>
@@ -220,7 +216,7 @@
                             <div>
                                 <label for="ward_code_display" class="block text-sm font-medium text-gray-700">Phường/Xã*</label>
                                 <select id="ward_code_display" x-model="formData.ward_code"
-                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1" :disabled="!formData.district_code" required>
+                                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1" :disabled="!formData.district_code" required>
                                     <option value="">Chọn Phường/Xã</option>
                                     <template x-for="ward in wards" :key="ward.code">
                                         <option :value="ward.code" x-text="ward.name"></option>
@@ -258,6 +254,7 @@
         </div>
     </div>
 
+    {{-- Modal Xóa --}}
     <div x-show="isDeleteModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="delete-modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="isDeleteModalOpen" @click="closeDeleteModal()" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
@@ -295,14 +292,10 @@
         </div>
     </div>
 
-    {{-- Bắt đầu phần script Alpine.js (ĐÃ DI CHUYỂN ĐẾN ĐÂY) --}}
+    {{-- Script Alpine.js --}}
     <script>
-        // Đảm bảo Alpine.js đã được tải TRƯỚC khi đoạn script này chạy
-        // Nếu bạn đang sử dụng Laravel Mix/Vite, Alpine.js nên được import trong file app.js hoặc file tương tự.
-
         document.addEventListener('alpine:init', () => {
-            Alpine.data('storeLocationManager', () => ({ // Đăng ký component tại đây
-                // Các trạng thái
+            Alpine.data('storeLocationManager', () => ({
                 isModalOpen: false,
                 isDeleteModalOpen: false,
                 isEditMode: false,
@@ -317,15 +310,12 @@
                 currentPage: 1,
                 itemsPerPage: 5,
 
-                // Dữ liệu từ backend Laravel
                 allLocations: @json($storeLocations),
                 provinces: @json($provinces),
 
-                // Dữ liệu địa chỉ động cục bộ (được lấy qua AJAX)
                 districts: [],
-                words: [], // Đã sửa lỗi chính tả ở đây, tên biến phải là `wards` như bên dưới
+                wards: [], // Sửa lỗi chính tả từ 'words' thành 'wards'
 
-                // Dữ liệu form liên kết với các input
                 formData: {
                     id: null,
                     name: '',
@@ -334,11 +324,10 @@
                     is_active: true,
                     province_code: '',
                     district_code: '',
-                    ward_code: '', // Đã sửa lỗi chính tả ở đây
+                    ward_code: '',
                     address: '',
                 },
 
-                // Các thuộc tính tính toán để lọc và phân trang
                 get filteredLocations() {
                     const searchTerm = this.searchQuery.toLowerCase().trim();
                     return this.allLocations
@@ -377,16 +366,16 @@
                     return pagesArray;
                 },
 
-                // Các phương thức
                 init() {
                     this.resetForm();
-                    // Kiểm tra nếu có tin nhắn session, sau đó hiển thị chúng
-                    @if(Session::has('success'))
-                        this.showMessage('{{ Session::get('success') }}', 'success');
-                    @endif
-                    @if(Session::has('error'))
-                        this.showMessage('{{ Session::get('error') }}', 'error');
-                    @endif
+                    // Nếu bạn đã chuyển hoàn toàn sang AJAX, bạn có thể xóa phần này
+                    // để tránh flash message xuất hiện khi refresh thủ công.
+                    // @if(Session::has('success'))
+                    //     this.showMessage('{{ Session::get('success') }}', 'success');
+                    // @endif
+                    // @if(Session::has('error'))
+                    //     this.showMessage('{{ Session::get('error') }}', 'error');
+                    // @endif
                     this.currentPage = 1;
                 },
 
@@ -442,51 +431,53 @@
                     this.resetForm();
                 },
 
-               async editLocation(location) {
-    this.isEditMode = true;
-    try {
-        const response = await fetch(`/admin/store-locations/${location.id}/edit`);
-        // ... (code hiện tại) ...
-        const fullLocation = await response.json();
-        console.log('Full location data for edit:', fullLocation); // KIỂM TRA ĐẦU TIÊN
+                async editLocation(location) {
+                    this.isEditMode = true;
+                    this.resetForm(); // Reset form trước để tránh lỗi hiển thị tạm thời
+                    try {
+                        const response = await fetch(`/admin/store-locations/${location.id}/edit`);
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Không thể lấy dữ liệu địa điểm. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
+                        }
+                        const fullLocation = await response.json();
 
-        this.formData = {
-            id: fullLocation.id,
-            name: fullLocation.name,
-            phone: fullLocation.phone || '',
-            type: fullLocation.type,
-            is_active: fullLocation.is_active,
-            province_code: fullLocation.province_code || '',
-            district_code: fullLocation.district_code || '',
-            ward_code: fullLocation.ward_code || '',
-            address: fullLocation.address || '',
-        };
-        console.log('formData after assignment:', this.formData); // KIỂM TRA THỨ HAI
+                        this.formData = {
+                            id: fullLocation.id,
+                            name: fullLocation.name,
+                            phone: fullLocation.phone || '',
+                            type: fullLocation.type,
+                            is_active: fullLocation.is_active,
+                            province_code: fullLocation.province_code || '',
+                            district_code: fullLocation.district_code || '',
+                            ward_code: fullLocation.ward_code || '',
+                            address: fullLocation.address || '',
+                        };
 
-        if (this.formData.province_code) {
-            await this.updateDistricts(true);
-            console.log('Districts after updateDistricts:', this.districts); // KIỂM TRA THỨ BA
-        }
-        if (this.formData.district_code) {
-            await this.updateWards(true);
-            console.log('Wards after updateWards:', this.wards); // KIỂM TRA THỨ TƯ
-        }
+                        // Tải lại các dropdown địa chỉ
+                        if (this.formData.province_code) {
+                            await this.updateDistricts(true); // true để giữ lại district_code
+                        }
+                        if (this.formData.district_code) {
+                            await this.updateWards(true); // true để giữ lại ward_code
+                        }
 
-        this.isModalOpen = true;
-    } catch (error) {
-        console.error('Lỗi khi lấy địa điểm để chỉnh sửa:', error);
-        this.showMessage(error.message || 'Lỗi khi tải thông tin cửa hàng để sửa.', 'error');
-    }
-},
+                        this.isModalOpen = true;
+                    } catch (error) {
+                        console.error('Lỗi khi lấy địa điểm để chỉnh sửa:', error);
+                        this.showMessage(error.message || 'Lỗi khi tải thông tin cửa hàng để sửa.', 'error');
+                    }
+                },
 
                 async updateDistricts(isInitialLoad = false) {
                     const provinceCode = this.formData.province_code;
                     this.districts = [];
+                    this.wards = []; // Đặt lại wards khi tỉnh thay đổi
+
                     if (!isInitialLoad) {
                         this.formData.district_code = '';
                         this.formData.ward_code = '';
                     }
-                    this.wards = [];
 
                     if (!provinceCode) return;
 
@@ -498,9 +489,11 @@
                         }
                         this.districts = await response.json();
 
+                        // Nếu là tải ban đầu và district_code không hợp lệ, đặt lại
                         if (isInitialLoad && this.formData.district_code) {
                             if (!this.districts.some(d => d.code === this.formData.district_code)) {
                                 this.formData.district_code = '';
+                                this.formData.ward_code = ''; // Đặt lại ward nếu district không hợp lệ
                             }
                         }
                     } catch (error) {
@@ -512,6 +505,7 @@
                 async updateWards(isInitialLoad = false) {
                     const districtCode = this.formData.district_code;
                     this.wards = [];
+
                     if (!isInitialLoad) {
                         this.formData.ward_code = '';
                     }
@@ -526,6 +520,7 @@
                         }
                         this.wards = await response.json();
 
+                        // Nếu là tải ban đầu và ward_code không hợp lệ, đặt lại
                         if (isInitialLoad && this.formData.ward_code) {
                             if (!this.wards.some(w => w.code === this.formData.ward_code)) {
                                 this.formData.ward_code = '';
@@ -553,13 +548,48 @@
                     return [location.address, wardName, districtName, provinceName].filter(Boolean).join(', ');
                 },
 
-                saveLocation() {
+                async saveLocation() {
                     if (!this.formData.name || !this.formData.address || !this.formData.phone ||
                         !this.formData.province_code || !this.formData.district_code || !this.formData.ward_code) {
                         this.showMessage('Vui lòng điền đầy đủ các trường bắt buộc có dấu *', 'error');
                         return;
                     }
-                    document.getElementById('storeFormTraditional').submit();
+
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    const method = this.isEditMode ? 'PUT' : 'POST';
+                    const url = this.isEditMode ? `/admin/store-locations/${this.formData.id}` : '/admin/store-locations';
+
+                    try {
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json' // Yêu cầu phản hồi JSON
+                            },
+                            body: JSON.stringify(this.formData)
+                        });
+
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            // Xử lý lỗi validation từ Laravel nếu có
+                            if (response.status === 422 && data.errors) {
+                                let errorMessages = Object.values(data.errors).map(e => e.join('<br>')).join('<br>');
+                                this.showMessage(`Lỗi nhập liệu:<br>${errorMessages}`, 'error');
+                            } else {
+                                throw new Error(data.message || `Lỗi server: ${response.status}`);
+                            }
+                            return; // Dừng lại nếu có lỗi
+                        }
+
+                        this.showMessage(data.message || (this.isEditMode ? 'Cập nhật thành công!' : 'Thêm mới thành công!'), 'success');
+                        this.closeModal();
+                        await this.fetchLocations(); // Fetch lại danh sách để cập nhật bảng
+                    } catch (error) {
+                        console.error('Lỗi khi lưu địa điểm:', error);
+                        this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server.', 'error');
+                    }
                 },
 
                 openDeleteModal(id) {
@@ -578,18 +608,19 @@
                             method: 'DELETE',
                             headers: {
                                 'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json'
                             }
                         });
                         if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(`Không thể xóa địa điểm. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.message || `Không thể xóa địa điểm. Trạng thái: ${response.status}`);
                         }
-                        const data = await response.json().catch(() => ({ message: 'Xóa thành công nhưng phản hồi không phải JSON.' }));
+                        const data = await response.json();
 
                         this.showMessage(data.message || 'Xóa địa điểm thành công!', 'success');
                         this.closeDeleteModal();
-                        const updatedLocations = this.allLocations.filter(loc => loc.id !== this.locationToDeleteId);
-                        this.allLocations = [...updatedLocations]; // Tạo một bản sao mới để kích hoạt reactivity
+                        await this.fetchLocations(); // Fetch lại danh sách để cập nhật bảng sau khi xóa
+
                         if (this.paginatedLocations.length === 0 && this.currentPage > 1) {
                             this.currentPage--;
                         }
@@ -606,40 +637,40 @@
                             method: 'PATCH',
                             headers: {
                                 'X-CSRF-TOKEN': csrfToken,
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
                             },
                             body: JSON.stringify({ is_active: !currentStatus })
                         });
                         if (!response.ok) {
                             const errorData = await response.json().catch(() => ({}));
-                            const errorMessage = errorData.message || 'Lỗi không xác định.';
-                            throw new Error(`Không thể thay đổi trạng thái. Trạng thái: ${response.status}. Phản hồi: ${errorData}`);
+                            throw new Error(errorData.message || `Không thể thay đổi trạng thái. Trạng thái: ${response.status}`);
                         }
                         const data = await response.json();
-                        if (response.ok) {
-                            this.showMessage(data.message, 'success');
-                            const index = this.allLocations.findIndex(loc => loc.id === locationId);
-                            if (index !== -1) {
-                                this.allLocations[index].is_active = data.is_active;
-                                this.allLocations = [...this.allLocations]; // Kích hoạt lại tính năng reactive
-                            }
-                        } else {
-                            this.showMessage(data.message || 'Lỗi khi cập nhật trạng thái.', 'error');
-                        }
+                        this.showMessage(data.message, 'success');
+                        await this.fetchLocations(); // Fetch lại danh sách để cập nhật bảng sau khi thay đổi trạng thái
                     } catch (error) {
                         console.error('Lỗi khi thay đổi trạng thái hoạt động:', error);
                         this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server.', 'error');
-                        const checkbox = document.querySelector(`.toggle-active[data-id="${locationId}"]`);
-                        if (checkbox) checkbox.checked = currentStatus;
+                    }
+                },
+
+                // Phương thức mới để lấy lại tất cả dữ liệu từ server
+                async fetchLocations() {
+                    try {
+                        const response = await fetch('/admin/api/store-locations'); // Sử dụng route API mới
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Không thể tải danh sách cửa hàng. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
+                        }
+                        this.allLocations = await response.json();
+                    } catch (error) {
+                        console.error('Lỗi khi tải danh sách cửa hàng:', error);
+                        this.showMessage('Lỗi khi tải danh sách cửa hàng.', 'error');
                     }
                 }
             }));
         });
     </script>
-    {{-- Kết thúc phần script Alpine.js (ĐÃ DI CHUYỂN ĐẾN ĐÂY) --}}
 </div>
 @endsection
-
-{{-- Xóa phần này, vì script đã ở trong div --}}
-{{-- @section('scripts') --}}
-{{-- @endsection --}}
