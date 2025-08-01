@@ -571,7 +571,7 @@
                                 <div class="col-md-6">
                                     <div class="border rounded p-3">
                                         <div class="form-check">
-                                            <input id="qrcode" name="payment_method" type="radio" value="qrcode"
+                                            <input id="qrcode" name="payment_method" type="radio" value="bank_transfer_qr"
                                                 class="form-check-input">
                                             <label for="qrcode" class="form-check-label">
                                                 <div class="d-flex align-items-center">
@@ -1932,6 +1932,7 @@
                 const isBuyNow = {{ isset($is_buy_now) && $is_buy_now ? 'true' : 'false' }};
                 const processUrl = isBuyNow ? '{{ route('buy-now.process') }}' :
                     '{{ route('payments.process') }}';
+                console.log('Dữ liệu gửi đi:', JSON.stringify(orderData, null, 2));
 
                 // Gửi đơn hàng qua AJAX
                 fetch(processUrl, {
