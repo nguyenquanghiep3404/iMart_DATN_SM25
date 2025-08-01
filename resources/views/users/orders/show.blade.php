@@ -244,6 +244,30 @@
         </footer>
     </div>
 </div>
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelOrderModalLabel">Xác nhận hủy đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('orders.cancel', $order->id) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn hủy đơn hàng <strong>#{{ $order->order_code }}</strong>?</p>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Lý do hủy (bắt buộc)</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Không</button>
+                    <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <script>
     window.selectedOrderItemId = null;
