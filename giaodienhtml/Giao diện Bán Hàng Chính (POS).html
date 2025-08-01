@@ -10,7 +10,6 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom scrollbar styles */
         .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -36,6 +35,13 @@
             background-color: white;
             border-radius: 0.75rem; /* 12px */
             box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        }
+        .imei-tag {
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
     </style>
 </head>
@@ -78,11 +84,16 @@
                         <div class="card flex-1 flex flex-col overflow-hidden" style="height: calc(100vh - 120px);">
                             <!-- Search & Filter -->
                             <div class="p-4 border-b border-gray-200">
-                                <div class="relative">
-                                     <input type="text" id="product-search" placeholder="Tìm sản phẩm (Tên hoặc SKU)..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <div class="relative flex items-center">
                                      <div class="absolute top-0 left-0 pl-3 pt-2 pointer-events-none">
                                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                      </div>
+                                     <input type="text" id="product-search" placeholder="Tìm sản phẩm hoặc quét IMEI/SKU..." class="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                     <button id="barcode-scan-button" class="absolute top-0 right-0 p-2 text-gray-500 hover:text-blue-600" title="Quét mã vạch">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6.5 2H12M4 12d0 1.5.5 3 1.5 4.5M20 12d0 1.5-.5 3-1.5 4.5M4 12V6a2 2 0 012-2h12a2 2 0 012 2v6M4 12h16" />
+                                        </svg>
+                                     </button>
                                 </div>
                                 <div class="mt-3 flex space-x-2 overflow-x-auto custom-scrollbar pb-2">
                                     <button class="px-3 py-1 text-sm font-semibold bg-blue-600 text-white rounded-full whitespace-nowrap">Tất cả</button>
@@ -92,8 +103,8 @@
                                     <button class="px-3 py-1 text-sm font-semibold bg-gray-200 text-gray-700 rounded-full whitespace-nowrap hover:bg-gray-300">Phụ kiện</button>
                                 </div>
                             </div>
-                            <!-- Product Grid -->
-                            <div id="product-grid" class="p-4 flex-1 overflow-y-auto custom-scrollbar grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <!-- Product List -->
+                            <div id="product-grid" class="p-4 flex-1 overflow-y-auto custom-scrollbar flex flex-col space-y-3">
                                 <!-- Product items will be populated by JS -->
                             </div>
                         </div>
@@ -110,7 +121,7 @@
                                 </button>
                             </div>
                             <!-- Cart Items -->
-                            <div id="cart-items" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                            <div id="cart-items" class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
                                 <div id="empty-cart-message" class="flex flex-col items-center justify-center h-full text-gray-400">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -209,6 +220,26 @@
         </div>
     </div>
 
+    <!-- IMEI Input Modal -->
+    <div id="imei-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
+        <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-sm transform opacity-0 -translate-y-10">
+            <div class="p-6">
+                <h3 class="text-lg font-medium leading-6 text-gray-900" id="imei-modal-title">Nhập IMEI/Serial Number</h3>
+                <div class="mt-4">
+                    <input type="text" id="imei-input" placeholder="Quét hoặc nhập IMEI..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p id="imei-error" class="text-red-500 text-sm mt-1 hidden">IMEI không hợp lệ hoặc đã tồn tại.</p>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-xl">
+                <button id="imei-modal-confirm-btn" type="button" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                    Xác nhận
+                </button>
+                <button id="imei-modal-cancel-btn" type="button" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm">
+                    Hủy bỏ
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Payment Modal -->
     <div id="payment-modal" class="modal fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50 opacity-0 pointer-events-none">
@@ -253,8 +284,9 @@
             const emptyCartMessage = document.getElementById('empty-cart-message');
             const checkoutButton = document.getElementById('checkout-button');
             const clearCartButton = document.getElementById('clear-cart-button');
+            const barcodeScanButton = document.getElementById('barcode-scan-button');
             
-            // Payment Modal Elements
+            // Payment Modal
             const paymentModal = document.getElementById('payment-modal');
             const paymentModalContent = paymentModal.querySelector('.modal-content');
             const cashReceivedInput = document.getElementById('cash-received');
@@ -264,7 +296,7 @@
             const cashPaymentSection = document.getElementById('cash-payment-section');
             const paymentModalCancelBtn = document.getElementById('payment-modal-cancel-btn');
 
-            // Confirmation Modal Elements
+            // Confirmation Modal
             const confirmModal = document.getElementById('confirm-modal');
             const confirmModalContent = confirmModal.querySelector('.modal-content');
             const confirmModalMessage = document.getElementById('confirm-modal-message');
@@ -272,22 +304,28 @@
             const confirmModalCancelBtn = document.getElementById('confirm-modal-cancel-btn');
             let confirmCallback = null;
 
+            // IMEI Modal
+            const imeiModal = document.getElementById('imei-modal');
+            const imeiModalContent = imeiModal.querySelector('.modal-content');
+            const imeiModalTitle = document.getElementById('imei-modal-title');
+            const imeiInput = document.getElementById('imei-input');
+            const imeiError = document.getElementById('imei-error');
+            const imeiModalConfirmBtn = document.getElementById('imei-modal-confirm-btn');
+            const imeiModalCancelBtn = document.getElementById('imei-modal-cancel-btn');
+            let imeiConfirmCallback = null;
+
 
             // --- STATE ---
-            let cart = []; // Array of { product: {}, quantity: 1 }
+            let cart = []; // Array of { product: {}, quantity: 1, imeis: [] }
 
             // --- MOCK DATA ---
             const mockProducts = [
-                { id: 101, name: 'iPhone 15 Pro - 256GB - Titan Tự Nhiên', sku: 'IP15P-256-NAT', price: 32000000, image_url: 'https://placehold.co/150x150/E2E8F0/4A5568?text=IP15P' },
-                { id: 102, name: 'iPhone 15 Pro - 512GB - Titan Xanh', sku: 'IP15P-512-BLU', price: 38000000, image_url: 'https://placehold.co/150x150/BFDBFE/1E40AF?text=IP15P' },
-                { id: 103, name: 'iPhone 15 - 128GB - Đen', sku: 'IP15-128-BLK', price: 21500000, image_url: 'https://placehold.co/150x150/333/FFF?text=IP15' },
-                { id: 201, name: 'MacBook Air M3 13-inch - 8GB/256GB', sku: 'MBA-M3-13-8-256', price: 28000000, image_url: 'https://placehold.co/150x150/9CA3AF/1F2937?text=MBA' },
-                { id: 301, name: 'AirPods Pro 2 (USB-C)', sku: 'APP2-USBC', price: 5800000, image_url: 'https://placehold.co/150x150/F9FAFB/4B5563?text=Pods' },
-                { id: 401, name: 'Ốp lưng Silicone cho iPhone 15', sku: 'CASE-SIL-IP15', price: 1200000, image_url: 'https://placehold.co/150x150/FBCFE8/831843?text=Case' },
-                { id: 402, name: 'Sạc 20W USB-C', sku: 'ADP-20W-USBC', price: 550000, image_url: 'https://placehold.co/150x150/E0E7FF/3730A3?text=Sạc' },
-                { id: 501, name: 'Apple Watch Series 9 GPS 41mm', sku: 'AW9-GPS-41', price: 9500000, image_url: 'https://placehold.co/150x150/F5D0FE/701A75?text=AW9' },
-                { id: 502, name: 'iPad Air M2 11-inch 128GB', sku: 'IPA-M2-11-128', price: 16990000, image_url: 'https://placehold.co/150x150/CCFBF1/0F766E?text=iPad' },
-                { id: 503, name: 'Magic Keyboard cho iPad Pro', sku: 'MK-IPAD-PRO', price: 8990000, image_url: 'https://placehold.co/150x150/4A5568/E2E8F0?text=MK' },
+                { id: 101, name: 'iPhone 15 Pro - 256GB - Titan Tự Nhiên', sku: 'IP15P-256-NAT', price: 32000000, image_url: 'https://placehold.co/150x150/E2E8F0/4A5568?text=IP15P', requiresImei: true, imeiPrefix: '351234567' },
+                { id: 102, name: 'iPhone 15 Pro - 512GB - Titan Xanh', sku: 'IP15P-512-BLU', price: 38000000, image_url: 'https://placehold.co/150x150/BFDBFE/1E40AF?text=IP15P', requiresImei: true, imeiPrefix: '352234567' },
+                { id: 201, name: 'MacBook Air M3 13-inch - 8GB/256GB', sku: 'MBA-M3-13-8-256', price: 28000000, image_url: 'https://placehold.co/150x150/9CA3AF/1F2937?text=MBA', requiresImei: true, imeiPrefix: 'C02X' },
+                { id: 301, name: 'AirPods Pro 2 (USB-C)', sku: 'APP2-USBC', price: 5800000, image_url: 'https://placehold.co/150x150/F9FAFB/4B5563?text=Pods', requiresImei: false },
+                { id: 401, name: 'Ốp lưng Silicone cho iPhone 15', sku: 'CASE-SIL-IP15', price: 1200000, image_url: 'https://placehold.co/150x150/FBCFE8/831843?text=Case', requiresImei: false },
+                { id: 402, name: 'Sạc 20W USB-C', sku: 'ADP-20W-USBC', price: 550000, image_url: 'https://placehold.co/150x150/E0E7FF/3730A3?text=Sạc', requiresImei: false },
             ];
 
             // --- FUNCTIONS ---
@@ -295,15 +333,24 @@
                 return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
             }
 
+            function isCartValid() {
+                if (cart.length === 0) return false;
+                for (const item of cart) {
+                    if (item.product.requiresImei && item.imeis.length !== item.quantity) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
             function renderProducts() {
                 productGrid.innerHTML = mockProducts.map(p => `
-                    <div class="card p-2 cursor-pointer hover:shadow-xl hover:-translate-y-1 transition-all product-item" data-product-id="${p.id}">
-                        <div class="aspect-square w-full bg-gray-100 rounded-lg overflow-hidden">
-                             <img src="${p.image_url}" alt="${p.name}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='https://placehold.co/150x150/ccc/fff?text=Error';">
-                        </div>
-                        <div class="pt-2 px-1">
-                            <h4 class="text-sm font-semibold text-gray-800 truncate" title="${p.name}">${p.name}</h4>
-                            <p class="text-sm font-bold text-blue-600">${formatCurrency(p.price)}</p>
+                    <div class="card p-3 cursor-pointer hover:bg-gray-50 hover:shadow-md transition-all product-item flex items-center space-x-4" data-product-id="${p.id}">
+                        <img src="${p.image_url}" alt="${p.name}" class="w-16 h-16 object-cover rounded-lg flex-shrink-0" onerror="this.onerror=null;this.src='https://placehold.co/64x64/ccc/fff?text=Error';">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-gray-800 text-sm" title="${p.name}">${p.name}</h4>
+                            <p class="text-xs text-gray-500 font-mono">${p.sku}</p>
+                            <p class="text-base font-semibold text-blue-600 mt-1">${formatCurrency(p.price)}</p>
                         </div>
                     </div>
                 `).join('');
@@ -313,38 +360,68 @@
                 if (cart.length === 0) {
                     cartItemsContainer.innerHTML = '';
                     emptyCartMessage.classList.remove('hidden');
-                    checkoutButton.disabled = true;
                 } else {
                     emptyCartMessage.classList.add('hidden');
-                    checkoutButton.disabled = false;
-                    cartItemsContainer.innerHTML = cart.map((item, index) => `
-                        <div class="grid grid-cols-12 gap-2 items-center p-2 bg-gray-50 rounded-lg cart-item" data-product-id="${item.product.id}">
-                            <!-- Image + Name/SKU: 5 columns -->
-                            <div class="col-span-5 flex items-center min-w-0">
-                                <img src="${item.product.image_url}" class="w-12 h-12 rounded-md object-cover mr-3 flex-shrink-0" onerror="this.onerror=null;this.src='https://placehold.co/48x48/ccc/fff?text=Err';">
-                                <div class="flex-1 min-w-0">
-                                    <p class="text-sm font-semibold text-gray-800 truncate" title="${item.product.name}">${item.product.name}</p>
-                                    <p class="text-xs text-gray-500">${formatCurrency(item.product.price)}</p>
+                    cartItemsContainer.innerHTML = cart.map((item, index) => {
+                        const needsImei = item.product.requiresImei;
+                        const imeiComplete = !needsImei || item.imeis.length === item.quantity;
+
+                        let imeiSection = '';
+                        if (needsImei) {
+                            const imeiList = item.imeis.map((imei, imeiIndex) => `
+                                <div class="imei-tag flex items-center justify-between bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                    <span>${imei}</span>
+                                    <button class="remove-imei-btn ml-2 text-blue-500 hover:text-blue-800" data-cart-index="${index}" data-imei-index="${imeiIndex}">&times;</button>
                                 </div>
-                            </div>
-                            <!-- Quantity controls: 3 columns -->
-                            <div class="col-span-3 flex items-center justify-center space-x-1">
-                                <button class="quantity-change w-7 h-7 bg-gray-200 rounded-full text-lg font-bold hover:bg-gray-300 flex items-center justify-center flex-shrink-0" data-index="${index}" data-change="-1">-</button>
-                                <input type="text" value="${item.quantity}" class="w-8 text-center font-semibold border-none bg-transparent p-0" readonly>
-                                <button class="quantity-change w-7 h-7 bg-gray-200 rounded-full text-lg font-bold hover:bg-gray-300 flex items-center justify-center flex-shrink-0" data-index="${index}" data-change="1">+</button>
-                            </div>
-                            <!-- Subtotal: 3 columns -->
-                            <div class="col-span-3 text-right">
-                                <p class="font-bold text-gray-900 text-sm">${formatCurrency(item.product.price * item.quantity)}</p>
-                            </div>
-                            <!-- Remove button: 1 column -->
-                            <div class="col-span-1 text-right">
-                                <button class="remove-item p-1 rounded-full hover:bg-red-100" data-index="${index}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                </button>
+                            `).join('');
+                            
+                            const addImeiButton = imeiComplete ? '' : `
+                                <button class="add-imei-btn w-full text-left text-sm text-blue-600 font-semibold bg-blue-50 hover:bg-blue-100 px-3 py-2 rounded-lg mt-2" data-cart-index="${index}">
+                                    + Thêm IMEI (${item.imeis.length}/${item.quantity})
+                                </button>`;
+
+                            imeiSection = `
+                                <div class="col-span-12 mt-2 p-3 rounded-lg ${imeiComplete ? 'bg-green-50' : 'bg-yellow-50 border border-yellow-300'}">
+                                    <div class="flex flex-wrap gap-2">
+                                        ${imeiList}
+                                    </div>
+                                    ${addImeiButton}
+                                    ${!imeiComplete ? `<p class="text-xs text-yellow-800 font-semibold mt-2">Cần nhập đủ ${item.quantity - item.imeis.length} IMEI/Serial cho sản phẩm này.</p>` : ''}
+                                </div>
+                            `;
+                        }
+
+                        return `
+                        <div class="p-3 rounded-lg cart-item bg-gray-50 border ${imeiComplete ? 'border-transparent' : 'border-yellow-400'}">
+                            <div class="grid grid-cols-12 gap-2 items-center">
+                                <!-- Image + Name/SKU: 5 columns -->
+                                <div class="col-span-5 flex items-center min-w-0">
+                                    <img src="${item.product.image_url}" class="w-12 h-12 rounded-md object-cover mr-3 flex-shrink-0" onerror="this.onerror=null;this.src='https://placehold.co/48x48/ccc/fff?text=Err';">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-semibold text-gray-800 truncate" title="${item.product.name}">${item.product.name}</p>
+                                        <p class="text-xs text-gray-500">${formatCurrency(item.product.price)}</p>
+                                    </div>
+                                </div>
+                                <!-- Quantity controls: 3 columns -->
+                                <div class="col-span-3 flex items-center justify-center space-x-1">
+                                    <button class="quantity-change w-7 h-7 bg-gray-200 rounded-full text-lg font-bold hover:bg-gray-300 flex items-center justify-center flex-shrink-0" data-index="${index}" data-change="-1">-</button>
+                                    <input type="text" value="${item.quantity}" class="w-8 text-center font-semibold border-none bg-transparent p-0" readonly>
+                                    <button class="quantity-change w-7 h-7 bg-gray-200 rounded-full text-lg font-bold hover:bg-gray-300 flex items-center justify-center flex-shrink-0" data-index="${index}" data-change="1">+</button>
+                                </div>
+                                <!-- Subtotal: 3 columns -->
+                                <div class="col-span-3 text-right">
+                                    <p class="font-bold text-gray-900 text-sm">${formatCurrency(item.product.price * item.quantity)}</p>
+                                </div>
+                                <!-- Remove button: 1 column -->
+                                <div class="col-span-1 text-right">
+                                    <button class="remove-item p-1 rounded-full hover:bg-red-100" data-index="${index}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </div>
+                                ${imeiSection}
                             </div>
                         </div>
-                    `).join('');
+                    `}).join('');
                 }
                 updateSummary();
             }
@@ -359,27 +436,50 @@
                 document.getElementById('summary-tax').textContent = formatCurrency(tax);
                 document.getElementById('summary-discount').textContent = `- ${formatCurrency(discount)}`;
                 document.getElementById('summary-grand-total').textContent = formatCurrency(grandTotal);
+
+                checkoutButton.disabled = !isCartValid();
             }
 
-            function addToCart(productId) {
+            function addToCart(productId, imei = null) {
+                const product = mockProducts.find(p => p.id === productId);
+                if (!product) return;
+
                 const existingItem = cart.find(item => item.product.id === productId);
+
                 if (existingItem) {
                     existingItem.quantity++;
-                } else {
-                    const product = mockProducts.find(p => p.id === productId);
-                    if (product) {
-                        cart.push({ product: product, quantity: 1 });
+                    if (imei) {
+                        if (!existingItem.imeis.includes(imei)) {
+                           existingItem.imeis.push(imei);
+                        }
                     }
+                } else {
+                    cart.push({ 
+                        product: product, 
+                        quantity: 1, 
+                        imeis: imei ? [imei] : [] 
+                    });
                 }
                 renderCart();
             }
             
             function changeQuantity(index, change) {
                 if (!cart[index]) return;
-                cart[index].quantity += change;
-                if (cart[index].quantity <= 0) {
-                    cart.splice(index, 1);
+                
+                const newQuantity = cart[index].quantity + change;
+                
+                if (newQuantity <= 0) {
+                    removeItem(index);
+                    return;
                 }
+
+                // Don't allow reducing quantity below number of scanned IMEIs
+                if (newQuantity < cart[index].imeis.length) {
+                    openConfirmModal(`Bạn phải xóa bớt IMEI trước khi giảm số lượng.`, () => { closeConfirmModal(); });
+                    return;
+                }
+
+                cart[index].quantity = newQuantity;
                 renderCart();
             }
             
@@ -400,10 +500,7 @@
             }
             
             function openPaymentModal() {
-                const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-                const tax = subtotal * 0.08;
-                const grandTotal = subtotal + tax;
-
+                const grandTotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0) * 1.08;
                 modalTotalAmountEl.textContent = formatCurrency(grandTotal);
                 cashReceivedInput.value = '';
                 changeAmountEl.textContent = formatCurrency(0);
@@ -426,14 +523,64 @@
                 confirmCallback = null;
             }
 
-            function calculateChange() {
-                const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-                const tax = subtotal * 0.08;
-                const grandTotal = subtotal + tax;
-                const cashReceived = parseFloat(cashReceivedInput.value.replace(/[^0-9]/g, '')) || 0;
-                const change = cashReceived - grandTotal;
-                changeAmountEl.textContent = formatCurrency(change > 0 ? change : 0);
+            function openImeiModal(title, onConfirm) {
+                imeiModalTitle.textContent = title;
+                imeiConfirmCallback = onConfirm;
+                imeiInput.value = '';
+                imeiError.classList.add('hidden');
+                openModal(imeiModal, imeiModalContent);
+                setTimeout(() => imeiInput.focus(), 300);
             }
+
+            function closeImeiModal() {
+                closeModal(imeiModal, imeiModalContent);
+                imeiConfirmCallback = null;
+            }
+
+            // --- IMEI Logic ---
+            function handleGlobalScan() {
+                openImeiModal('Quét hoặc nhập IMEI/SKU', (inputValue) => {
+                    // Mock finding product by IMEI
+                    const product = mockProducts.find(p => p.requiresImei && inputValue.startsWith(p.imeiPrefix));
+                    if (product) {
+                        addToCart(product.id, inputValue);
+                        closeImeiModal();
+                    } else {
+                        imeiError.textContent = 'Không tìm thấy sản phẩm với mã này.';
+                        imeiError.classList.remove('hidden');
+                    }
+                });
+            }
+
+            function handleAddImeiToCartItem(cartIndex) {
+                const item = cart[cartIndex];
+                if (!item) return;
+
+                openImeiModal(`Thêm IMEI cho ${item.product.name}`, (imei) => {
+                    // Check for duplicates
+                    const isDuplicate = cart.some(cartItem => cartItem.imeis.includes(imei));
+                    if (isDuplicate) {
+                        imeiError.textContent = 'IMEI này đã được thêm vào giỏ hàng.';
+                        imeiError.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    if (item.imeis.length < item.quantity) {
+                        item.imeis.push(imei);
+                        renderCart();
+                        closeImeiModal();
+                    }
+                });
+            }
+            
+            function removeImeiFromCartItem(cartIndex, imeiIndex) {
+                const item = cart[cartIndex];
+                if (item && item.imeis[imeiIndex]) {
+                    item.imeis.splice(imeiIndex, 1);
+                    renderCart();
+                }
+            }
+
 
             // --- EVENT LISTENERS ---
             productGrid.addEventListener('click', (e) => {
@@ -447,6 +594,9 @@
             cartItemsContainer.addEventListener('click', (e) => {
                 const quantityButton = e.target.closest('.quantity-change');
                 const removeButton = e.target.closest('.remove-item');
+                const addImeiButton = e.target.closest('.add-imei-btn');
+                const removeImeiButton = e.target.closest('.remove-imei-btn');
+
                 if (quantityButton) {
                     const index = parseInt(quantityButton.dataset.index);
                     const change = parseInt(quantityButton.dataset.change);
@@ -456,7 +606,18 @@
                     const index = parseInt(removeButton.dataset.index);
                     removeItem(index);
                 }
+                if (addImeiButton) {
+                    const index = parseInt(addImeiButton.dataset.cartIndex);
+                    handleAddImeiToCartItem(index);
+                }
+                if (removeImeiButton) {
+                    const cartIndex = parseInt(removeImeiButton.dataset.cartIndex);
+                    const imeiIndex = parseInt(removeImeiButton.dataset.imeiIndex);
+                    removeImeiFromCartItem(cartIndex, imeiIndex);
+                }
             });
+            
+            barcodeScanButton.addEventListener('click', handleGlobalScan);
 
             clearCartButton.addEventListener('click', () => {
                 openConfirmModal('Bạn có chắc chắn muốn xóa toàn bộ sản phẩm trong giỏ hàng?', () => {
@@ -469,6 +630,7 @@
             checkoutButton.addEventListener('click', openPaymentModal);
             paymentModalCancelBtn.addEventListener('click', closePaymentModal);
             
+            // Confirm Modal Buttons
             confirmModalConfirmBtn.addEventListener('click', () => {
                 if (typeof confirmCallback === 'function') {
                     confirmCallback();
@@ -476,18 +638,34 @@
             });
             confirmModalCancelBtn.addEventListener('click', closeConfirmModal);
 
+            // IMEI Modal Buttons
+            imeiModalConfirmBtn.addEventListener('click', () => {
+                if (typeof imeiConfirmCallback === 'function') {
+                    const value = imeiInput.value.trim();
+                    if (value) {
+                         imeiConfirmCallback(value);
+                    } else {
+                        imeiError.textContent = 'Vui lòng nhập một giá trị.';
+                        imeiError.classList.remove('hidden');
+                    }
+                }
+            });
+            imeiModalCancelBtn.addEventListener('click', closeImeiModal);
+            imeiInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    imeiModalConfirmBtn.click();
+                }
+            });
+
+
             paymentMethodSelect.addEventListener('change', (e) => {
                 cashPaymentSection.style.display = e.target.value === 'cash' ? 'block' : 'none';
             });
             
             cashReceivedInput.addEventListener('input', (e) => {
                 let value = e.target.value.replace(/[^0-9]/g, '');
-                if (value) {
-                    e.target.value = new Intl.NumberFormat('de-DE').format(value);
-                } else {
-                    e.target.value = '';
-                }
-                calculateChange();
+                e.target.value = value ? new Intl.NumberFormat('de-DE').format(value) : '';
+                // calculateChange(); // Logic for change can be added here
             });
 
             // --- INITIALIZATION ---
