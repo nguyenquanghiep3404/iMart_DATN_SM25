@@ -837,7 +837,7 @@
                         quantity: {{ $item->quantity }},
                         price: {{ $item->price }},
                         originalPrice: {{ $item->price }},
-                        image: '{{ $item->productVariant->primaryImage->file_url ?? asset('assets/users/img/no-image.png') }}'
+                        image: '{{ $item->productVariant->image_url ?? asset('assets/users/img/no-image.png') }}'
                     },
                 @endforeach
             ];
