@@ -779,13 +779,13 @@
                             <option value="">-- Chọn trạng thái --</option>
                             <option value="pending_confirmation">Chờ xác nhận</option>
                             <option value="processing">Đang xử lý</option>
-                            <option value="awaiting_shipment">Chờ giao hàng</option>
-                            <option value="shipped">Đã xuất kho</option>
-                            <option value="out_for_delivery">Đang giao hàng</option>
+                            <option value="awaiting_shipment" class="delivery-only">Chờ giao hàng</option>
+                            <option value="shipped" class="delivery-only">Đã xuất kho</option>
+                            <option value="out_for_delivery" class="delivery-only">Đang giao hàng</option>
                             <option value="delivered">Giao thành công</option>
                             <option value="cancelled">Đã hủy</option>
                             <option value="returned">Đã trả hàng</option>
-                            <option value="failed_delivery">Giao hàng thất bại</option>
+                            <option value="failed_delivery" class="delivery-only">Giao hàng thất bại</option>
                         </select>
                     </div>
                     <div>
@@ -1049,9 +1049,10 @@
             shipperDisplay = `<span class="text-gray-700 font-medium">${order.shipper.name}</span>`;
         }
         
-        // Chỉ hiển thị nút gán shipper cho trạng thái "chờ giao hàng"
+        // Chỉ hiển thị nút gán shipper cho đơn hàng giao tận nơi (không phải nhận tại cửa hàng)
         let assignShipperButton = '';
-        if (order.status === 'awaiting_shipment') {
+        if (order.status === 'awaiting_shipment' && 
+            isDeliveryOrderNeedShipper(order)) {
             assignShipperButton = `
                 <button onclick='showAssignShipperModal(${order.id}, "${order.order_code}")' 
                         class="text-blue-600 hover:text-blue-900 font-medium text-lg ml-4" 
@@ -1681,20 +1682,40 @@
     function showUpdateStatusModal(orderId, currentStatus) {
         currentOrderId = orderId;
         
-        // Tìm dữ liệu đơn hàng để lấy mã đơn
-        const orderRows = document.querySelectorAll('#orders-tbody tr');
+        // Tìm dữ liệu đơn hàng từ sessionStorage
+        const currentData = JSON.parse(sessionStorage.getItem('currentOrdersData') || '[]');
+        const orderData = currentData.find(order => order.id == orderId);
+        
         let orderCode = '';
-        orderRows.forEach(row => {
-            const button = row.querySelector(`button[onclick*="${orderId}"]`);
-            if (button) {
-                orderCode = row.querySelector('td').textContent.trim();
-            }
-        });
+        let isPickup = false;
+        let hasShipper = false;
+        
+        if (orderData) {
+            orderCode = orderData.order_code;
+            isPickup = isPickupOrder(orderData);
+            hasShipper = orderData.shipper && orderData.shipper.name;
+        } else {
+            // Fallback: tìm từ DOM
+            const orderRows = document.querySelectorAll('#orders-tbody tr');
+            orderRows.forEach(row => {
+                const button = row.querySelector(`button[onclick*="${orderId}"]`);
+                if (button) {
+                    orderCode = row.querySelector('td').textContent.trim();
+                }
+            });
+        }
 
         document.getElementById('update-order-code').textContent = orderCode;
         document.getElementById('new-status').value = currentStatus;
         document.getElementById('admin-note').value = '';
         document.getElementById('cancellation-reason').value = '';
+        
+        // Điều chỉnh dropdown dựa trên loại đơn hàng
+        adjustStatusDropdownByOrderType(isPickup);
+        
+        // Lưu thông tin để validation
+        updateStatusModal.dataset.isPickup = isPickup;
+        updateStatusModal.dataset.hasShipper = hasShipper;
         
         // Hiện/ẩn trường lý do hủy
         toggleCancellationField(currentStatus);
@@ -1707,6 +1728,36 @@
         updateStatusModal.classList.remove('is-open');
         updateStatusModal.querySelector('div').classList.add('scale-95');
         currentOrderId = null;
+    }
+
+    // Helper function để kiểm tra đơn hàng nhận tại cửa hàng dựa trên store_location_id
+    function isPickupOrder(order) {
+        // Đơn hàng nhận tại cửa hàng sẽ có store_location_id
+        return order.store_location_id !== null && order.store_location_id !== undefined;
+    }
+
+    // Helper function để kiểm tra đơn hàng giao tận nơi cần shipper
+    function isDeliveryOrderNeedShipper(order) {
+        // Đơn hàng giao tận nơi sẽ không có store_location_id
+        return !isPickupOrder(order);
+    }
+
+    // Điều chỉnh dropdown trạng thái dựa trên loại đơn hàng
+    function adjustStatusDropdownByOrderType(isPickup) {
+        const statusSelect = document.getElementById('new-status');
+        const deliveryOnlyOptions = statusSelect.querySelectorAll('.delivery-only');
+        
+        if (isPickup) {
+            // Ẩn các trạng thái chỉ dành cho giao hàng
+            deliveryOnlyOptions.forEach(option => {
+                option.style.display = 'none';
+            });
+        } else {
+            // Hiện tất cả trạng thái cho giao hàng tận nơi
+            deliveryOnlyOptions.forEach(option => {
+                option.style.display = 'block';
+            });
+        }
     }
 
     function toggleCancellationField(status) {
@@ -1735,16 +1786,32 @@
     // Kiểm tra form trước khi gửi
     function validateStatusForm() {
         const newStatus = document.getElementById('new-status').value;
+        const isPickup = updateStatusModal.dataset.isPickup === 'true';
+        const hasShipper = updateStatusModal.dataset.hasShipper === 'true';
         
         if (!newStatus) {
-            showToast('Vui lòng chọn trạng thái mới cho đơn hàng.', 'warning', 'Thiếu thông tin');
+            showToast('Vui lòng chọn trạng thái hợp lệ', 'error');
+            return false;
+        }
+        
+        // Kiểm tra shipper cho đơn hàng giao tận nơi (không phải pickup)
+        if (!isPickup && newStatus === 'shipped' && !hasShipper) {
+            showToast('Vui lòng gán shipper trước khi chuyển sang trạng thái "Đã xuất kho"', 'error');
             return false;
         }
         
         if (newStatus === 'cancelled') {
             const cancellationReason = document.getElementById('cancellation-reason').value;
             if (!cancellationReason.trim()) {
-                showToast('Vui lòng nhập lý do hủy đơn hàng.', 'warning', 'Thiếu thông tin');
+                showToast('Vui lòng nhập lý do hủy đơn hàng', 'error');
+                return false;
+            }
+        }
+        
+        if (newStatus === 'failed_delivery') {
+            const cancellationReason = document.getElementById('cancellation-reason').value;
+            if (!cancellationReason.trim()) {
+                showToast('Vui lòng nhập lý do giao hàng thất bại', 'error');
                 return false;
             }
         }
