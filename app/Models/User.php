@@ -252,4 +252,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(CustomerGroup::class, 'customer_group_user');
     }
+    public function storeLocations()
+    {
+        return $this->belongsToMany(StoreLocation::class, 'user_store_location');
+    }
+
 }

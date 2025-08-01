@@ -138,18 +138,13 @@ class ShipperController extends Controller
 
         if ($validated['status'] === 'delivered') {
             $order->delivered_at = now();
-
-            // === BẮT ĐẦU THAY ĐỔI ===
-            // Kiểm tra nếu phương thức thanh toán là COD (không phân biệt chữ hoa, chữ thường)
-            // thì cập nhật trạng thái thanh toán là 'paid'.
+            // Kiểm tra nếu phương thức thanh toán là COD thì cập nhật trạng thái thanh toán là 'paid'.
             if (strtolower($order->payment_method) === 'cod') {
                 $order->payment_status = 'paid';
             }
-            // === KẾT THÚC THAY ĐỔI ===
         }
 
         if ($validated['status'] === 'failed_delivery') {
-            // Logic mới để xử lý lý do thất bại từ modal
             $reason = $validated['reason'];
             if ($reason === 'other' && !empty($validated['notes'])) {
                 $reason = $validated['notes'];
