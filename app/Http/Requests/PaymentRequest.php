@@ -68,6 +68,11 @@ class PaymentRequest extends FormRequest
                     'province_code' => 'required|string',
                     'district_code' => 'nullable|string',
                     'ward_code' => 'required|string',
+                    
+                    // Validation cho tỉnh/huyện/xã (form gửi dưới dạng _id)
+                    'province_id' => 'required|string',
+                    'district_id' => 'required|string',
+                    'ward_id' => 'required|string',
                     'address_line1' => 'required|string|min:5|max:500',
                     'address' => 'nullable|string|min:5|max:500', // Cũng chấp nhận 'address' để tương thích
                     'postcode' => 'nullable|string|max:10',
@@ -173,6 +178,11 @@ class PaymentRequest extends FormRequest
             'district_code.exists' => 'Quận/Huyện không tồn tại',
 
             'ward_code.required' => 'Vui lòng chọn Phường/Xã',
+
+            // Messages cho province_id, district_id, ward_id
+            'province_id.required' => 'Vui lòng chọn Tỉnh/Thành phố',
+            'district_id.required' => 'Vui lòng chọn Quận/Huyện', 
+            'ward_id.required' => 'Vui lòng chọn Phường/Xã',
             'ward_code.exists' => 'Phường/Xã không tồn tại',
 
             'address_line1.required' => 'Vui lòng nhập số nhà, tên đường',
