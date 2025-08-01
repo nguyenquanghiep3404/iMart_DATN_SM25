@@ -1,4 +1,3 @@
-{{-- resources/views/users/payments/bank_transfer_qr.blade.php --}}
 <!DOCTYPE html>
 <html lang="vi">
 <head>

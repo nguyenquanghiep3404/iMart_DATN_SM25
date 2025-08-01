@@ -61,6 +61,9 @@ use App\Http\Controllers\Admin\CustomerGroupController;
 use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\PackingStationController;
 use App\Http\Controllers\Admin\StockTransferController;
+use Telegram\Bot\Laravel\Facades\Telegram;
+
+
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
 Route::get('/cart/recover-result', function () {
@@ -725,3 +728,9 @@ Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippin
 // Route::get('api/old-provinces', [AddressesController::class, 'getOldProvinces']);
 // Route::get('api/old-districts/{province_code}', [AddressesController::class, 'getOldDistricts']);
 // Route::get('api/old-wards/{district_code}', [AddressesController::class, 'getOldWards']);
+// Route::get('/bot/register-webhook', function () {
+//     $url = config('app.url') . '/api/bot/webhook';
+//     $response = Telegram::setWebhook(['url' => $url]);
+//     return 'Webhook setup: ' . $response->getDescription();
+// });
+Route::get('/payments/confirm/{token}', [PaymentController::class, 'confirmPaymentByToken'])->name('payments.confirm');

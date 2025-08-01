@@ -26,6 +26,7 @@ use App\Models\LoyaltyPointLog;
 use Illuminate\Support\Facades\Log;
 
 use App\Models\StoreLocation;
+use Telegram\Bot\Laravel\Facades\Telegram;
 
 
 class PaymentController extends Controller
@@ -66,8 +67,41 @@ class PaymentController extends Controller
     // 1. Lấy toàn bộ dữ liệu giỏ hàng đã được tính toán chính xác từ hàm getCartData()
     $cartData = $this->getCartData();
 
+        if ($cartData['items']->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
+        }
+        // Tính tổng khối lượng và kích thước
+        $items = $cartData['items'];
+        $totalWeight = $items->sum(function ($item) {
+            return ($item->productVariant->weight ?? 0) * $item->quantity;
+        });
+        $maxLength = $items->max(function ($item) {
+            return $item->productVariant->dimensions_length ?? 0;
+        });
+        $maxWidth = $items->max(function ($item) {
+            return $item->productVariant->dimensions_width ?? 0;
+        });
+        $totalHeight = $items->sum(function ($item) {
+            return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
+        });
+        $availableCoupons = Coupon::where('status', 'active')->get();
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+        $appliedCoupon = session('applied_coupon');
+        $discount = $appliedCoupon['discount'] ?? 0;
+        $voucherCode = $appliedCoupon['code'] ?? null;
+        $total = max(0, $subtotal - $discount);
+        return view('users.payments.information', array_merge($cartData, [
+            'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
+            'baseLength' => $maxLength > 0 ? $maxLength : 20,
+            'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
+            'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
+            'availableCoupons' => $availableCoupons,
+            'total' => $total,
+            'discount' => $discount
+        ]));
     if ($cartData['items']->isEmpty()) {
         return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
+
     }
 
     // 2. Lấy các giá trị đã được tính toán đúng từ $cartData
@@ -144,7 +178,7 @@ class PaymentController extends Controller
                 // Tạo mã đơn hàng
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
                 // Tính toán shipping fee dựa vào phương thức
-                $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
 
                 // Format delivery date/time
                 $deliveryInfo = $this->formatDeliveryDateTime(
@@ -216,6 +250,7 @@ class PaymentController extends Controller
                     'payment_status' => Order::PAYMENT_PENDING, // Đặt trạng thái chờ thanh toán
                     'shipping_method' => $request->shipping_method,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
+                    'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
                     'desired_delivery_date' => $deliveryInfo['date'],
                     'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
@@ -247,6 +282,27 @@ class PaymentController extends Controller
                         'total_price' => $item->price * $item->quantity,
                     ]);
                 }
+                $confirmationUrl = route('payments.confirm', ['token' => $order->confirmation_token]);
+                $text = sprintf(
+                    "🔔 *Đơn hàng QR mới!*\n\n*Mã ĐH:* `%s`\n*Khách hàng:* %s\n*Tổng tiền:* %s VNĐ",
+                    $order->order_code,
+                    $order->customer_name,
+                    number_format($order->grand_total)
+                );
+
+                Telegram::sendMessage([
+                    'chat_id' => env('TELEGRAM_ADMIN_CHAT_ID'),
+                    'text' => $text,
+                    'parse_mode' => 'Markdown',
+                    'reply_markup' => json_encode([
+                        'inline_keyboard' => [
+                            [
+                                ['text' => '✅ Xác nhận đã thanh toán', 'url' => $confirmationUrl]
+                            ]
+                        ]
+                    ])
+                ]);
+
 
 
                 // Lưu địa chỉ mới vào sổ địa chỉ nếu người dùng chọn
@@ -302,7 +358,7 @@ class PaymentController extends Controller
             $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->shipping_time);
             // Chuẩn bị dữ liệu địa chỉ
             // Tính toán shipping fee dựa vào phương thức
-            $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
 
             // Chuẩn bị dữ liệu địa chỉ và thông tin khách hàng
             $customerInfo = $this->prepareCustomerInfo($request);
@@ -1071,8 +1127,8 @@ class PaymentController extends Controller
 
     private function clearPurchaseSession()
     {
-        if (session()->has('buy_now_item')) {
-            session()->forget('buy_now_item');
+        if (session()->has('buy_now_session')) {
+            session()->forget('buy_now_session');
         } else {
             if (Auth::check() && Auth::user()->cart) {
                 Auth::user()->cart->items()->delete();
@@ -1468,6 +1524,112 @@ private function getCartData()
         if (!$buyNowData['items'] || $buyNowData['items']->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Không tìm thấy sản phẩm.'], 400);
         }
+        if ($request->payment_method === 'vnpay') {
+            return $this->createVnpayPayment($request, $buyNowData);
+        }
+
+        // Nếu là thanh toán MoMo
+        if ($request->payment_method === 'momo') {
+            return $this->createMomoPayment($request, $buyNowData);
+        }
+        if ($request->payment_method === 'bank_transfer_qr') {
+            try {
+                DB::beginTransaction();
+
+                $orderCode = 'DH-' . strtoupper(Str::random(10));
+                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+                $customerInfo = $this->prepareCustomerInfo($request);
+                $addressData = $this->prepareAddressData($request);
+                $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
+
+                // Tạo đơn hàng ngay lập tức với trạng thái "Chờ thanh toán"
+                $order = Order::create([
+                    'user_id' => Auth::id(),
+                    'guest_id' => !Auth::check() ? session()->getId() : null,
+                    'order_code' => $orderCode,
+                    'customer_name' => $customerInfo['customer_name'],
+                    'customer_email' => $customerInfo['customer_email'],
+                    'customer_phone' => $customerInfo['customer_phone'],
+                    'shipping_address_line1' => $customerInfo['shipping_address_line1'],
+                    'shipping_zip_code' => $customerInfo['shipping_zip_code'] ?? null,
+                    'shipping_country' => 'Vietnam',
+                    'shipping_address_system' => $addressData['shipping_address_system'],
+                    'shipping_new_province_code' => $addressData['shipping_new_province_code'],
+                    'shipping_new_ward_code' => $addressData['shipping_new_ward_code'],
+                    'shipping_old_province_code' => $addressData['shipping_old_province_code'],
+                    'shipping_old_district_code' => $addressData['shipping_old_district_code'],
+                    'shipping_old_ward_code' => $addressData['shipping_old_ward_code'],
+                    'sub_total' => $buyNowData['subtotal'], // SỬA: Dùng buyNowData
+                    'shipping_fee' => $shippingFee,
+                    'discount_amount' => $buyNowData['discount'], // SỬA: Dùng buyNowData
+                    'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'], // SỬA: Dùng buyNowData
+                    'payment_method' => 'bank_transfer_qr',
+                    'payment_status' => Order::PAYMENT_PENDING,
+                    'shipping_method' => $request->shipping_method,
+                    'status' => Order::STATUS_PENDING_CONFIRMATION,
+                    'confirmation_token' => Str::random(40),
+                    'notes_from_customer' => $request->notes,
+                    'desired_delivery_date' => $deliveryInfo['date'],
+                    'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
+                    'store_location_id' => $customerInfo['store_location_id'] ?? null,
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+
+                // Tạo order item từ dữ liệu "Mua Ngay"
+                $item = $buyNowData['items']->first();
+                $variant = $item->productVariant;
+                $variantAttributes = $variant->attributeValues->mapWithKeys(fn($attrValue) => [$attrValue->attribute->name => $attrValue->value])->toArray();
+
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_variant_id' => $variant->id,
+                    'sku' => $variant->sku,
+                    'product_name' => $variant->product->name,
+                    'variant_attributes' => $variantAttributes,
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'total_price' => $item->price * $item->quantity,
+                ]);
+
+                // Gửi thông báo Telegram
+                $confirmationUrl = route('payments.confirm', ['token' => $order->confirmation_token]);
+                $text = sprintf(
+                    "🔔 *Đơn hàng QR mới (Mua Ngay)!*\n\n*Mã ĐH:* `%s`\n*Khách hàng:* %s\n*Tổng tiền:* %s VNĐ",
+                    $order->order_code,
+                    $order->customer_name,
+                    number_format($order->grand_total)
+                );
+                Telegram::sendMessage([
+                    'chat_id' => env('TELEGRAM_ADMIN_CHAT_ID'),
+                    'text' => $text,
+                    'parse_mode' => 'Markdown',
+                    'reply_markup' => json_encode(['inline_keyboard' => [[['text' => '✅ Xác nhận đã thanh toán', 'url' => $confirmationUrl]]]])
+                ]);
+
+                if (Auth::check() && $request->save_address && !$request->address_id) {
+                    $this->saveNewAddress($request);
+                }
+
+                // SỬA: Xóa session "Mua Ngay"
+                $this->clearPurchaseSession();
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'redirect_url' => route('payments.bank_transfer_qr', ['order' => $order->id])
+                ]);
+            } catch (\Exception $e) {
+                DB::rollback();
+                return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
+            }
+        }
+        try {
+            DB::beginTransaction();
+            // Tạo mã đơn hàng
+            $orderCode = 'DH-' . strtoupper(Str::random(10));
+            // Tính toán shipping fee
+            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
 
         DB::beginTransaction();
         try {
@@ -1496,6 +1658,7 @@ private function getCartData()
 
             $orderCode = 'DH-' . strtoupper(Str::random(10));
             $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->shipping_time);
+>>>>>>> 2667d55900bf648a63be14e1c1a8b53ae0bc35c2
 
             // Chuẩn bị dữ liệu địa chỉ và thông tin khách hàng
             $customerInfo = $this->prepareCustomerInfo($request);
@@ -1622,7 +1785,7 @@ private function getCartData()
         $product = Product::findOrFail($buyNowSession['product_id']);
         $variant = ProductVariant::findOrFail($buyNowSession['variant_id']);
         $items = collect([
-            (object)[
+            (object) [
                 'id' => $variant->id,
                 'productVariant' => $variant,
                 'cartable' => $variant, // Để tương thích với logic đa hình
@@ -1937,7 +2100,7 @@ private function getCartData()
         $length = $request->input('length', 20);
         $width = $request->input('width', 10);
         $height = $request->input('height', 10);
-        $fee = $ghn->calculateShippingFee((int)$districtId, (string)$wardCode, (int)$request->weight, (int)$length, (int)$width, (int)$height);
+        $fee = $ghn->calculateShippingFee((int) $districtId, (string) $wardCode, (int) $request->weight, (int) $length, (int) $width, (int) $height);
         // Nếu $fee là instance của JsonResponse thì lấy giá trị fee thực sự
         if ($fee instanceof \Illuminate\Http\JsonResponse) {
             // \Log::info('GHN API - Phí ship trả về (unwrap)', ['fee' => $data['fee']]);
@@ -2048,4 +2211,47 @@ private function getCartData()
             'data' => $districts
         ]);
     }
+    public function confirmPaymentByToken($token)
+    {
+        // Tìm đơn hàng với token hợp lệ và đang chờ xác nhận
+        $order = Order::where('confirmation_token', $token)
+            ->where('status', Order::STATUS_PENDING_CONFIRMATION) // Sử dụng hằng số nếu có
+            ->first();
+
+        if (!$order) {
+            // Có thể đơn hàng đã được xác nhận hoặc token không tồn tại
+            return response('<h1>Link không hợp lệ hoặc đơn hàng đã được xử lý.</h1>', 404);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Cập nhật trạng thái
+            $order->status = 'processing'; // Chuyển sang "Đang xử lý"
+            $order->payment_status = Order::PAYMENT_PAID; // Sử dụng hằng số nếu có
+            $order->paid_at = now();
+            $order->save();
+
+            // Trừ tồn kho
+            foreach ($order->items as $item) {
+                if ($item->product_variant_id) {
+                    $variant = ProductVariant::find($item->product_variant_id);
+                    if ($variant) {
+                        $this->decrementInventoryStock($variant, $item->quantity);
+                    }
+                }
+            }
+
+            // Kích hoạt gửi email sản phẩm cho khách (sẽ làm ở bước sau)
+            // \Mail::to($order->customer_email)->send(new \App\Mail\ProductLinkMail($order));
+
+            DB::commit();
+
+            return response("<h1>Xác nhận thành công!</h1><p>Đơn hàng <strong>{$order->order_code}</strong> đã được cập nhật.</p>");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('Lỗi xác nhận thanh toán: ' . $e->getMessage());
+            return response('<h1>Đã có lỗi xảy ra!</h1><p>Vui lòng thử lại hoặc liên hệ quản trị viên.</p>', 500);
+        }
+    }
+
 }
