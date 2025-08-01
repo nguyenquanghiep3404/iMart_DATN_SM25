@@ -49,7 +49,6 @@ class MarketingCampaignController extends Controller
             'content'           => 'required|string',
             'customer_group_id' => 'required|exists:customer_groups,id',
             'type'              => 'required|in:email,sms',
-            'coupon_id'         => 'required|exists:coupons,id',
         ], [
             'name.required' => 'Tên chiến dịch là bắt buộc.',
             'name.max' => 'Tên chiến dịch không được vượt quá 255 ký tự.',
@@ -65,8 +64,6 @@ class MarketingCampaignController extends Controller
         
             'type.required' => 'Kênh gửi là bắt buộc.',
             'type.in' => 'Kênh gửi không hợp lệ.',
-        
-            'coupon_id.required' => 'Vui lòng chọn mã giảm giá.',
             'coupon_id.exists' => 'Mã giảm giá không hợp lệ.',
         ]);
         $campaign = new MarketingCampaign();
@@ -202,7 +199,6 @@ class MarketingCampaignController extends Controller
             'content'           => 'required|string',
             'customer_group_id' => 'required|exists:customer_groups,id',
             'type'              => 'required|in:email,sms',
-            'coupon_id'         => 'required|exists:coupons,id',
         ], [
             'name.required' => 'Tên chiến dịch là bắt buộc.',
             'name.max' => 'Tên chiến dịch không được vượt quá 255 ký tự.',
@@ -218,8 +214,6 @@ class MarketingCampaignController extends Controller
         
             'type.required' => 'Kênh gửi là bắt buộc.',
             'type.in' => 'Kênh gửi không hợp lệ.',
-        
-            'coupon_id.required' => 'Vui lòng chọn mã giảm giá.',
             'coupon_id.exists' => 'Mã giảm giá không hợp lệ.',
         ]);
         
