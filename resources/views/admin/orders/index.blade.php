@@ -629,6 +629,22 @@
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Địa chỉ giao hàng</h3>
                             <address class="not-italic text-gray-700 leading-relaxed" id="modal-shipping-address"></address>
                         </div>
+                        
+                        <!-- Thông tin cửa hàng nhận hàng -->
+                        <div id="modal-store-info" class="hidden">
+                            <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Cửa hàng nhận hàng</h3>
+                            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                                <div class="flex items-center space-x-2 mb-3">
+                                    <i class="fas fa-store text-green-600"></i>
+                                    <span class="font-medium text-green-800">Thông tin cửa hàng:</span>
+                                </div>
+                                <div class="space-y-2 text-sm">
+                                    <p><strong>Tên cửa hàng:</strong> <span id="modal-store-name"></span></p>
+                                    <p><strong>Địa chỉ:</strong> <span id="modal-store-address"></span></p>
+                                    <p><strong>Số điện thoại:</strong> <span id="modal-store-phone"></span></p>
+                                </div>
+                            </div>
+                        </div>
                         <div id="modal-shipper-info" class="hidden">
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Thông tin shipper</h3>
                             <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
@@ -662,6 +678,11 @@
                                         <p class="text-sm text-gray-500 mb-1">Trạng thái đơn hàng</p>
                                     <span id="modal-order-status" class="status-badge"></span>
                                     </div>
+                                    <!-- Thông tin thời gian giao hàng -->
+                                    <div id="modal-delivery-time-info" class="hidden">
+                                        <p class="text-sm text-gray-500 mb-1">Ngày nhận hàng mong muốn</p>
+                                        <p class="font-semibold text-gray-800" id="modal-desired-date"></p>
+                                    </div>
                                 </div>
                                 <div class="space-y-4">
                                 <div>
@@ -671,6 +692,11 @@
                                 <div>
                                         <p class="text-sm text-gray-500 mb-1">Phương thức thanh toán</p>
                                     <p class="font-semibold text-gray-800" id="modal-payment-method"></p>
+                                    </div>
+                                    <!-- Thông tin khung giờ giao hàng -->
+                                    <div id="modal-delivery-slot-info" class="hidden">
+                                        <p class="text-sm text-gray-500 mb-1">Khung giờ nhận hàng</p>
+                                        <p class="font-semibold text-gray-800" id="modal-desired-time-slot"></p>
                                     </div>
                                 </div>
                             </div>
@@ -969,6 +995,28 @@
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit'
+        });
+    };
+
+    const formatDeliveryDate = (dateString) => {
+        // Xử lý trường hợp ngày có thể là string hoặc date
+        if (!dateString) return 'N/A';
+        
+        // Nếu đã là định dạng dd/mm/yyyy thì trả về luôn
+        if (typeof dateString === 'string' && dateString.includes('/')) {
+            return dateString;
+        }
+        
+        // Nếu là ISO date hoặc timestamp thì format lại
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return dateString; // Trả về nguyên bản nếu không parse được
+        }
+        
+        return date.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
         });
     };
 
@@ -1293,6 +1341,36 @@
         document.getElementById('modal-shipping-address').innerHTML = 
             addressParts.length > 0 ? addressParts.join('<br>') : 'Không có thông tin địa chỉ';
 
+        // Hiển thị thông tin cửa hàng nếu là đơn hàng nhận tại cửa hàng
+        const storeInfo = document.getElementById('modal-store-info');
+        if (order.store_location && order.store_location.id) {
+            const store = order.store_location;
+            document.getElementById('modal-store-name').textContent = store.name || 'N/A';
+            document.getElementById('modal-store-phone').textContent = store.phone || 'N/A';
+            
+            // Tạo địa chỉ đầy đủ của cửa hàng
+            let storeAddressParts = [];
+            if (store.address) {
+                storeAddressParts.push(store.address);
+            }
+            if (store.ward && store.ward.name_with_type) {
+                storeAddressParts.push(store.ward.name_with_type);
+            }
+            if (store.district && store.district.name_with_type) {
+                storeAddressParts.push(store.district.name_with_type);
+            }
+            if (store.province && store.province.name_with_type) {
+                storeAddressParts.push(store.province.name_with_type);
+            }
+            
+            document.getElementById('modal-store-address').textContent = 
+                storeAddressParts.length > 0 ? storeAddressParts.join(', ') : 'N/A';
+            
+            storeInfo.classList.remove('hidden');
+        } else {
+            storeInfo.classList.add('hidden');
+        }
+
         // Hiển thị thông tin shipper nếu có
         const shipperInfo = document.getElementById('modal-shipper-info');
         if (order.shipper && order.shipper.name) {
@@ -1319,6 +1397,24 @@
         modalPaymentStatusEl.className = `status-badge ${paymentStatus.class}`;
 
         document.getElementById('modal-payment-method').textContent = order.payment_method || 'N/A';
+
+        // Hiển thị thông tin thời gian giao hàng nếu có
+        const deliveryTimeInfo = document.getElementById('modal-delivery-time-info');
+        const deliverySlotInfo = document.getElementById('modal-delivery-slot-info');
+        
+        if (order.desired_delivery_date) {
+            document.getElementById('modal-desired-date').textContent = formatDeliveryDate(order.desired_delivery_date);
+            deliveryTimeInfo.classList.remove('hidden');
+        } else {
+            deliveryTimeInfo.classList.add('hidden');
+        }
+        
+        if (order.desired_delivery_time_slot) {
+            document.getElementById('modal-desired-time-slot').textContent = order.desired_delivery_time_slot;
+            deliverySlotInfo.classList.remove('hidden');
+        } else {
+            deliverySlotInfo.classList.add('hidden');
+        }
 
         // Hiển thị progress bar trạng thái đơn hàng
         const progressBarContainer = document.getElementById('order-progress-bar');

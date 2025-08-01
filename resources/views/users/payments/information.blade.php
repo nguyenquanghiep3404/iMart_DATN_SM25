@@ -427,7 +427,7 @@
                                     </div>
                                 </div>
                                 <hr class="my-4">
-                                <h4 class="h6 mb-3">Chọn cửa hàng để nhận hàng</h4>
+                                <h4 class="h6 mb-3">Chọn cửa hàng để nhận hàng <span class="text-danger">*</span></h4>
                                 <!-- Button chọn cửa hàng -->
                                 <div class="mb-3">
                                     <button type="button" id="select-store-btn"
