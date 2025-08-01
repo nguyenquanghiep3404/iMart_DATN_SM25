@@ -1658,7 +1658,6 @@ private function getCartData()
 
             $orderCode = 'DH-' . strtoupper(Str::random(10));
             $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->shipping_time);
->>>>>>> 2667d55900bf648a63be14e1c1a8b53ae0bc35c2
 
             // Chuẩn bị dữ liệu địa chỉ và thông tin khách hàng
             $customerInfo = $this->prepareCustomerInfo($request);
@@ -2255,3 +2254,4 @@ private function getCartData()
     }
 
 }
+
