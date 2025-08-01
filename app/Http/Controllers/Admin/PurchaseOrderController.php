@@ -11,6 +11,12 @@ use App\Models\ProvinceOld;
 use App\Models\DistrictOld;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\PurchaseOrderItem;
+use App\Models\InventoryLot;
+use App\Models\InventoryLotLocation;
+use App\Models\InventorySerial;
+use App\Models\ProductInventory;
+use App\Models\InventoryMovement;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -24,10 +30,8 @@ class PurchaseOrderController extends Controller
      */
     public function index(Request $request)
     {
-        // Start query with eager loading for optimization
         $query = PurchaseOrder::with(['supplier', 'storeLocation', 'items']);
 
-        // 1. Filter by keyword (PO code or supplier name)
         if ($request->filled('search')) {
             $searchTerm = $request->input('search');
             $query->where(function ($q) use ($searchTerm) {
@@ -38,29 +42,24 @@ class PurchaseOrderController extends Controller
             });
         }
 
-        // 2. Filter by receiving location
         if ($request->filled('location_id')) {
             $query->where('store_location_id', $request->input('location_id'));
         }
 
-        // 3. Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
 
-        // Sorting
-        $query->orderBy($request->input('sort_by', 'order_date'), $request->input('sort_dir', 'desc'));
+        $query->orderBy($request->input('sort_by', 'created_at'), $request->input('sort_dir', 'desc'));
 
-        // Pagination
         $purchaseOrders = $query->paginate(15)->withQueryString();
 
-        // Get data for filter dropdowns
         $locations = StoreLocation::where('is_active', true)->orderBy('name')->get();
 
-        // Note: Your DB schema only has 'pending' for status. 
-        // You might want to add more statuses like 'completed', 'cancelled'.
+        // === CHANGE HERE: Updated status list for filtering ===
         $statuses = [
-            'pending' => 'Đang chờ',
+            'pending' => 'Chờ xử lý',
+            'waiting_for_scan' => 'Chờ nhận hàng',
             'completed' => 'Hoàn thành',
             'cancelled' => 'Đã hủy',
         ];
@@ -75,9 +74,6 @@ class PurchaseOrderController extends Controller
     {
         $provinces = ProvinceOld::orderBy('name')->get();
         $districts = DistrictOld::orderBy('name')->get();
-
-        // To make this work, add a `getFullAddressAttribute` accessor to your StoreLocation model.
-        // See the "Required Model Accessors" section below.
         $locations = StoreLocation::with(['province', 'district', 'ward'])
             ->where('is_active', true)
             ->get()
@@ -85,21 +81,17 @@ class PurchaseOrderController extends Controller
                 return [
                     'id' => $location->id,
                     'name' => $location->name,
-                    'fullAddress' => $location->full_address, // Uses accessor
+                    'fullAddress' => $location->full_address,
                     'province_id' => $location->province_code,
                     'district_id' => $location->district_code,
                 ];
             });
-        
-        // To make this work, add a `getFullAddressAttribute` accessor to your Supplier model.
-        // See the "Required Model Accessors" section below.
         $suppliers = Supplier::with(['province', 'district', 'ward'])->get()->map(function ($supplier) {
             return [
                 'id' => $supplier->id,
                 'name' => $supplier->name,
-                // The supplier itself is the address
                 'addresses' => [[
-                    'id' => $supplier->id, // Use supplier ID as the address ID
+                    'id' => $supplier->id,
                     'fullAddress' => $supplier->full_address,
                     'province_id' => $supplier->province_code,
                     'district_id' => $supplier->district_code,
@@ -107,7 +99,6 @@ class PurchaseOrderController extends Controller
                 ]]
             ];
         });
-
         return view('admin.purchase_orders.create', compact('provinces', 'districts', 'locations', 'suppliers'));
     }
 
@@ -133,20 +124,17 @@ class PurchaseOrderController extends Controller
 
         try {
             DB::beginTransaction();
-
-            // Generate a unique PO code
             $poCode = 'PO-' . Carbon::now()->format('Ymd') . '-' . strtoupper(uniqid());
-
             $purchaseOrder = PurchaseOrder::create([
                 'po_code' => $poCode,
                 'supplier_id' => $request->input('supplier_id'),
                 'store_location_id' => $request->input('store_location_id'),
                 'order_date' => $request->input('order_date'),
                 'notes' => $request->input('notes'),
-                'status' => 'pending', // Default status
+                'status' => 'pending',
             ]);
 
-            foreach ($request->input('items') as $variantId => $itemData) {
+            foreach ($request->input('items') as $itemData) {
                 $purchaseOrder->items()->create([
                     'product_variant_id' => $itemData['product_variant_id'],
                     'quantity' => $itemData['quantity'],
@@ -155,10 +143,8 @@ class PurchaseOrderController extends Controller
             }
 
             DB::commit();
-
             return redirect()->route('admin.purchase-orders.show', $purchaseOrder->id)
                              ->with('success', "Phiếu nhập kho {$purchaseOrder->po_code} đã được tạo thành công.");
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to create purchase order: ' . $e->getMessage());
@@ -179,8 +165,6 @@ class PurchaseOrderController extends Controller
             'storeLocation.province', 'storeLocation.district', 'storeLocation.ward',
             'items.productVariant.product', 'items.productVariant.primaryImage', 'items.productVariant.attributeValues.attribute'
         ]);
-
-        // You will need to create a `show.blade.php` view for this method.
         return view('admin.purchase_orders.show', compact('purchaseOrder'));
     }
 
@@ -189,11 +173,15 @@ class PurchaseOrderController extends Controller
      */
     public function edit(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->load('items.productVariant.product', 'items.productVariant.primaryImage', 'items.productVariant.attributeValues.attribute');
-        
+        $purchaseOrder->load([
+            'supplier',
+            'storeLocation',
+            'items.productVariant' => function ($query) {
+                $query->with(['product', 'primaryImage', 'attributeValues.attribute', 'inventories']);
+            }
+        ]);
         $provinces = ProvinceOld::orderBy('name')->get();
         $districts = DistrictOld::orderBy('name')->get();
-
         $locations = StoreLocation::with(['province', 'district', 'ward'])
             ->where('is_active', true)
             ->get()
@@ -206,7 +194,6 @@ class PurchaseOrderController extends Controller
                     'district_id' => $location->district_code,
                 ];
             });
-        
         $suppliers = Supplier::with(['province', 'district', 'ward'])->get()->map(function ($supplier) {
             return [
                 'id' => $supplier->id,
@@ -220,8 +207,6 @@ class PurchaseOrderController extends Controller
                 ]]
             ];
         });
-
-        // You will need to create an `edit.blade.php` view, which can be very similar to `create.blade.php`
         return view('admin.purchase_orders.edit', compact('purchaseOrder', 'provinces', 'districts', 'locations', 'suppliers'));
     }
 
@@ -231,18 +216,19 @@ class PurchaseOrderController extends Controller
      */
     public function update(Request $request, PurchaseOrder $purchaseOrder)
     {
-        // Add business logic: prevent editing if the PO is already 'completed' or 'cancelled'
-        if (in_array($purchaseOrder->status, ['completed', 'cancelled'])) {
+        // === CHANGE HERE: Prevent editing if the PO is waiting for scan, completed, or cancelled ===
+        if (in_array($purchaseOrder->status, ['waiting_for_scan', 'completed', 'cancelled'])) {
              return redirect()->route('admin.purchase-orders.show', $purchaseOrder->id)
-                              ->with('error', 'Không thể cập nhật phiếu nhập đã hoàn thành hoặc đã hủy.');
+                              ->with('error', 'Không thể cập nhật phiếu nhập ở trạng thái này.');
         }
 
+        // === CHANGE HERE: Update validation to include the new statuses ===
         $validator = Validator::make($request->all(), [
             'supplier_id' => 'required|exists:suppliers,id',
             'store_location_id' => 'required|exists:store_locations,id',
             'order_date' => 'required|date',
             'notes' => 'nullable|string|max:2000',
-            'status' => 'required|in:pending,completed,cancelled', // Add statuses as needed
+            'status' => 'required|in:pending,waiting_for_scan,cancelled', // Admin can manually set to waiting or cancel
             'items' => 'required|array|min:1',
             'items.*.product_variant_id' => 'required|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -255,25 +241,18 @@ class PurchaseOrderController extends Controller
 
         try {
             DB::beginTransaction();
-
             $purchaseOrder->update($request->only(['supplier_id', 'store_location_id', 'order_date', 'notes', 'status']));
-
-            // Simple approach: Delete old items and create new ones
             $purchaseOrder->items()->delete();
-
-            foreach ($request->input('items') as $variantId => $itemData) {
+            foreach ($request->input('items') as $itemData) {
                 $purchaseOrder->items()->create([
                     'product_variant_id' => $itemData['product_variant_id'],
                     'quantity' => $itemData['quantity'],
                     'cost_price' => $itemData['cost_price'],
                 ]);
             }
-
             DB::commit();
-
             return redirect()->route('admin.purchase-orders.show', $purchaseOrder->id)
                              ->with('success', "Phiếu nhập kho {$purchaseOrder->po_code} đã được cập nhật thành công.");
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to update purchase order: ' . $e->getMessage());
@@ -288,14 +267,12 @@ class PurchaseOrderController extends Controller
      */
     public function destroy(PurchaseOrder $purchaseOrder)
     {
-        // Business logic: prevent deletion of completed orders.
-        if ($purchaseOrder->status === 'completed') {
+        // === CHANGE HERE: Prevent deletion of completed or in-progress orders ===
+        if (in_array($purchaseOrder->status, ['waiting_for_scan', 'completed'])) {
             return redirect()->route('admin.purchase-orders.index')
-                             ->with('error', 'Không thể xóa phiếu nhập đã hoàn thành.');
+                             ->with('error', 'Không thể xóa phiếu nhập đã hoàn thành hoặc đang xử lý.');
         }
-
         try {
-            // The database schema has ON DELETE CASCADE for items, so they will be deleted automatically.
             $purchaseOrder->delete();
             return redirect()->route('admin.purchase-orders.index')
                              ->with('success', "Đã xóa thành công phiếu nhập kho {$purchaseOrder->po_code}.");
@@ -312,18 +289,11 @@ class PurchaseOrderController extends Controller
     public function searchProducts(Request $request)
     {
         $searchTerm = $request->input('search', '');
-
         $productsQuery = Product::query()
             ->where('status', 'published')
             ->with([
                 'variants' => function ($query) {
-                    // Eager load all necessary relationships for the variant
-                    $query->with([
-                        'primaryImage', 
-                        'inventories', 
-                        // Optimize attribute loading to prevent N+1 queries
-                        'attributeValues.attribute' 
-                    ]); 
+                    $query->with(['primaryImage', 'inventories', 'attributeValues.attribute']);
                 }
             ]);
 
@@ -335,10 +305,7 @@ class PurchaseOrderController extends Controller
                       });
             });
         }
-        
         $products = $productsQuery->take(10)->get();
-
-        // Grouped for display with parent product headers
         $groupedProducts = $products->map(function ($product) {
             return [
                 'parentName' => $product->name,
@@ -349,20 +316,17 @@ class PurchaseOrderController extends Controller
                         'variantName' => $variantName,
                         'sku' => $variant->sku,
                         'image_url' => optional($variant->primaryImage)->path ? Storage::url($variant->primaryImage->path) : asset('assets/admin/img/placeholder-image.png'),
-                        'stock' => $variant->inventories->sum('quantity'), // Assumes inventories table sums up stock
+                        'stock' => $variant->inventories->sum('quantity'),
                         'cost_price' => $variant->cost_price ?? 0,
                     ];
                 })
             ];
         });
-        
-        // A flat list of all variants for easy lookup in JS after selection
         $allVariants = $products->flatMap(function ($product) {
             return $product->variants->map(function ($variant) use ($product) {
                 $variantName = $variant->attributeValues->map(function ($attrValue) {
                     return $attrValue->value;
                 })->implode(' - ');
-
                 return [
                    'id' => $variant->id,
                    'name' => $product->name . ' - ' . $variantName,
@@ -373,10 +337,138 @@ class PurchaseOrderController extends Controller
                 ];
             });
         });
+        return response()->json(['groupedProducts' => $groupedProducts, 'allVariants' => $allVariants]);
+    }
 
-        return response()->json([
-            'groupedProducts' => $groupedProducts,
-            'allVariants' => $allVariants,
+    /**
+     * Display the goods receiving page.
+     */
+    public function showReceivingPage()
+    {
+        return view('admin.purchase_orders.receiving');
+    }
+
+    /**
+     * API: Get POs that are ready to be received.
+     */
+    public function getPendingPurchaseOrders()
+    {
+        // === CHANGE HERE: Fetch orders that are pending OR waiting for scan ===
+        $purchaseOrders = PurchaseOrder::whereIn('status', ['pending', 'waiting_for_scan'])
+            ->with(['supplier', 'items.productVariant.product', 'storeLocation'])
+            ->latest()
+            ->get();
+
+        $formattedData = $purchaseOrders->map(function ($po) {
+            return [
+                'id' => $po->id,
+                'po_code' => $po->po_code,
+                // === CHANGE HERE: Pass status and status text to the frontend ===
+                'status' => $po->status,
+                'status_text' => match ($po->status) {
+                    'pending' => 'Chờ xử lý',
+                    'waiting_for_scan' => 'Chờ nhận hàng',
+                    default => ucfirst($po->status),
+                },
+                'supplier_name' => $po->supplier->name,
+                'order_date' => $po->order_date,
+                'store_location_id' => $po->store_location_id,
+                'store_location_name' => $po->storeLocation->name ?? 'N/A',
+                'items' => $po->items->map(function ($item) {
+                    $variant = $item->productVariant;
+                    $productName = $variant->product->name ?? 'Sản phẩm không xác định';
+                    $variantName = $variant->attributeValues->pluck('value')->implode(' - ');
+                    return [
+                        'id' => $item->id,
+                        'product_variant_id' => $item->product_variant_id,
+                        'name' => $productName . ($variantName ? " ({$variantName})" : ''),
+                        'sku' => $variant->sku,
+                        'quantity' => $item->quantity,
+                    ];
+                }),
+            ];
+        });
+        return response()->json($formattedData);
+    }
+
+
+    /**
+     * Process item reception and serial scanning.
+     */
+    public function receiveItems(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        $validated = $request->validate([
+            'scanned_serials' => 'required|array',
+            'scanned_serials.*' => 'present|array',
         ]);
+
+        DB::beginTransaction();
+        try {
+            $storeLocationId = $purchaseOrder->store_location_id;
+            if (!$storeLocationId) {
+                throw new \Exception('Phiếu nhập hàng không có thông tin kho nhận.');
+            }
+
+            foreach ($validated['scanned_serials'] as $poItemId => $serials) {
+                $poItem = PurchaseOrderItem::findOrFail($poItemId);
+                $productVariantId = $poItem->product_variant_id;
+                $quantity = $poItem->quantity;
+
+                if (count($serials) !== $quantity) {
+                    throw new \Exception("Số lượng serial cho sản phẩm SKU {$poItem->productVariant->sku} không khớp.");
+                }
+
+                $lot = InventoryLot::create([
+                    'lot_code' => "PO-{$purchaseOrder->po_code}-V-{$productVariantId}-" . time(),
+                    'product_variant_id' => $productVariantId,
+                    'purchase_order_item_id' => $poItem->id,
+                    'cost_price' => $poItem->cost_price,
+                    'initial_quantity' => $quantity,
+                    'quantity_on_hand' => $quantity,
+                ]);
+
+                InventoryLotLocation::create([
+                    'lot_id' => $lot->id,
+                    'store_location_id' => $storeLocationId,
+                    'quantity' => $quantity,
+                ]);
+
+                $serialData = [];
+                foreach ($serials as $serialNumber) {
+                    $serialData[] = [
+                        'product_variant_id' => $productVariantId, 'lot_id' => $lot->id,
+                        'store_location_id' => $storeLocationId, 'serial_number' => $serialNumber,
+                        'status' => 'available', 'created_at' => now(), 'updated_at' => now(),
+                    ];
+                }
+                InventorySerial::insert($serialData);
+
+                $inventory = ProductInventory::firstOrCreate(
+                    ['product_variant_id' => $productVariantId, 'store_location_id' => $storeLocationId, 'inventory_type' => 'new'],
+                    ['quantity' => 0]
+                );
+                $inventory->increment('quantity', $quantity);
+
+                InventoryMovement::create([
+                    'product_variant_id' => $productVariantId, 'store_location_id' => $storeLocationId,
+                    'lot_id' => $lot->id, 'inventory_type' => 'new',
+                    'quantity_change' => $quantity, 'quantity_after_change' => $inventory->quantity,
+                    'reason' => 'Nhập hàng từ NCC', 'reference_type' => PurchaseOrder::class,
+                    'reference_id' => $purchaseOrder->id, 'user_id' => auth()->id(),
+                ]);
+            }
+
+            // === CHANGE HERE: Set final status to 'completed' ===
+            $purchaseOrder->status = 'completed';
+            $purchaseOrder->save();
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Nhập kho thành công!']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Lỗi khi nhập kho cho PO #{$purchaseOrder->id}: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Đã xảy ra lỗi: ' . $e->getMessage()], 500);
+        }
     }
 }

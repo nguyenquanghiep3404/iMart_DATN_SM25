@@ -43,8 +43,8 @@ class PaymentRequest extends FormRequest
                 $rules['shipping_method'] = 'required|string';
 
                 // Validation khung giờ giao hàng cho giao hàng tại cửa hàng
-                $rules['delivery_date'] = 'nullable|date|after_or_equal:today';
-                $rules['delivery_time_slot'] = 'nullable|string|in:8-11,11-14,14-17,17-20,20-22';
+                $rules['delivery_date'] = 'nullable|string';
+                $rules['delivery_time_slot'] = 'nullable|string';
             } else {
                 // Sử dụng form địa chỉ mới - validation đầy đủ
                 $rules = array_merge($rules, [
@@ -75,8 +75,8 @@ class PaymentRequest extends FormRequest
                     'shipping_method' => 'required|string',
 
                     // Validation khung giờ giao hàng cho giao hàng tại cửa hàng
-                    'delivery_date' => 'nullable|date|after_or_equal:today',
-                    'delivery_time_slot' => 'nullable|string|in:8-11,11-14,14-17,17-20,20-22',
+                    'delivery_date' => 'nullable|string',
+                    'delivery_time_slot' => 'nullable|string',
                 ]);
 
                 // Validation hệ thống địa chỉ (cũ vs mới)
@@ -109,8 +109,8 @@ class PaymentRequest extends FormRequest
                 ],
                 'pickup_email' => 'required|email|max:255',
                 'store_location_id' => 'required|integer|exists:store_locations,id',
-                'pickup_date' => 'nullable|date|after_or_equal:today',
-                'pickup_time_slot' => 'nullable|string|in:8-11,11-14,14-17,17-20,20-22',
+                'pickup_date' => 'nullable|string',
+                'pickup_time_slot' => 'nullable|string',
                 'shipping_method' => 'nullable|string', // Cho phép null khi pickup
 
                 // Loại trừ các trường liên quan đến giao hàng khỏi validation khi sử dụng phương thức pickup

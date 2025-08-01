@@ -1,20 +1,17 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Quản lý Cửa hàng đã xóa mềm') {{-- Tiêu đề trang --}}
+@section('title', 'Quản lý Cửa hàng đã xóa mềm')
 
 @section('content')
-{{-- Đảm bảo x-data trỏ đến 'trashedStoreLocationManager()' --}}
 <div class="px-4 sm:px-6 md:px-8 py-8" x-data="trashedStoreLocationManager()" x-init="init()">
     <div class="container mx-auto max-w-7xl">
         <header class="mb-8 flex items-center justify-between">
             <h1 class="text-3xl font-bold text-gray-800">Cửa hàng đã xóa mềm</h1>
-            {{-- Nút quay lại trang quản lý cửa hàng chính --}}
             <a href="{{ route('admin.store-locations.index') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                 <i class="fas fa-arrow-left mr-2"></i>Quay lại quản lý cửa hàng
             </a>
         </header>
 
-        {{-- Phần hiển thị thông báo (giữ nguyên) --}}
         <div x-show="message" x-cloak
              :class="{'bg-green-100 border-green-400 text-green-700': messageType === 'success', 'bg-red-100 border-red-400 text-red-700': messageType === 'error'}"
              class="border px-4 py-3 rounded relative mb-4" role="alert">
@@ -32,7 +29,6 @@
             </div>
 
             <div class="p-6">
-                {{-- Phần bộ lọc --}}
                 <div class="flex flex-col md:flex-row gap-4 mb-6 md:items-end">
                     <div class="flex-grow grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
@@ -43,32 +39,21 @@
                         <div>
                             <label for="filterType" class="block text-sm font-medium text-gray-700">Phân loại</label>
                             <select id="filterType" x-model="filterType" @change="currentPage = 1"
-                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1">
+                                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1">
                                 <option value="">Tất cả</option>
                                 <option value="store">Cửa hàng</option>
                                 <option value="warehouse">Kho</option>
                                 <option value="service_center">Trung tâm bảo hành</option>
                             </select>
                         </div>
-                        {{-- XÓA BỎ LỌC TRẠNG THÁI (filterStatus) nếu bạn chỉ hiển thị mục đã xóa mềm --}}
-                        {{-- <div>
-                            <label for="filterStatus" class="block text-sm font-medium text-gray-700">Trạng thái</label>
-                            <select id="filterStatus" x-model="filterStatus" @change="currentPage = 1"
-                                     class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1">
-                                <option value="">Tất cả</option>
-                                <option value="true">Đang hoạt động</option>
-                                <option value="false">Ngưng hoạt động</option>
-                            </select>
-                        </div> --}}
                     </div>
                     <div class="flex-shrink-0 flex items-center gap-2">
-                         <button @click="clearFilters()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            <i class="fas fa-times mr-2"></i>Xoá bộ lọc
-                        </button>
+                           <button @click="clearFilters()" class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <i class="fas fa-times mr-2"></i>Xoá bộ lọc
+                            </button>
                     </div>
                 </div>
 
-                {{-- Bảng dữ liệu --}}
                 <div class="overflow-x-auto border border-gray-200 rounded-lg">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -78,7 +63,7 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-3/12">Địa chỉ</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Số điện thoại</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Phân loại</th>
-                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Ngày xóa</th> {{-- CẬP NHẬT TIÊU ĐỀ CỘT --}}
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-1/12">Ngày xóa</th>
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-2/12">Thao tác</th>
                             </tr>
                         </thead>
@@ -102,11 +87,9 @@
                                     </td>
                                     <td x-text="location.phone || 'N/A'" class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"></td>
                                     <td x-text="getTypeName(location.type)" class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"></td>
-                                    {{-- Cột Ngày xóa (thay cho Trạng thái/Toggle từ trang chính) --}}
                                     <td x-text="formatDate(location.deleted_at)" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600"></td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                         <div class="inline-flex space-x-2">
-                                            {{-- CHỈ HIỂN THỊ NÚT KHÔI PHỤC VÀ XÓA VĨNH VIỄN --}}
                                             <button @click="openRestoreModal(location.id)" type="button" class="text-green-600 hover:text-green-900" title="Khôi phục">
                                                 <i class="fas fa-undo-alt"></i>
                                             </button>
@@ -121,7 +104,6 @@
                     </table>
                 </div>
 
-                {{-- Phần phân trang (giữ nguyên) --}}
                 <div class="mt-6 flex flex-col md:flex-row justify-between items-center" x-show="totalPages > 1">
                     <div class="text-sm text-gray-700 mb-2 md:mb-0">
                         Hiển thị <span x-text="startItem"></span> đến <span x-text="endItem"></span> trong tổng số <span x-text="totalItems"></span> mục
@@ -151,7 +133,7 @@
         </div>
     </div>
 
-    {{-- Modal Khôi phục (giữ nguyên) --}}
+    {{-- Modal Khôi phục --}}
     <div x-show="isRestoreModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="restore-modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="isRestoreModalOpen" @click="closeRestoreModal()" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
@@ -189,7 +171,7 @@
         </div>
     </div>
 
-    {{-- Modal Xóa vĩnh viễn (giữ nguyên) --}}
+    {{-- Modal Xóa vĩnh viễn --}}
     <div x-show="isForceDeleteModalOpen" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="force-delete-modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div x-show="isForceDeleteModalOpen" @click="closeForceDeleteModal()" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
@@ -227,11 +209,9 @@
         </div>
     </div>
 
-    {{-- KHỐI SCRIPT ALPINE.JS CỦA TRANG TRASHED --}}
     <script>
         document.addEventListener('alpine:init', () => {
-            Alpine.data('trashedStoreLocationManager', () => ({ // Đảm bảo tên component là 'trashedStoreLocationManager'
-                // States
+            Alpine.data('trashedStoreLocationManager', () => ({
                 isRestoreModalOpen: false,
                 isForceDeleteModalOpen: false,
                 locationToRestoreId: null,
@@ -241,22 +221,15 @@
 
                 searchQuery: '',
                 filterType: '',
-                // filterStatus không cần ở đây vì chỉ hiển thị mục đã xóa
 
                 currentPage: 1,
                 itemsPerPage: 5,
 
-                // Dữ liệu từ backend Laravel
-                allLocations: @json($trashedLocations), // QUAN TRỌNG: $trashedLocations từ Controller
-                // provinces không cần ở đây nếu không có form thêm/sửa
+                allLocations: @json($trashedLocations),
 
-                // Dữ liệu địa chỉ động (không cần thiết nếu không có form sửa)
                 districts: [],
                 wards: [],
 
-                // formData không cần ở đây
-
-                // Các thuộc tính tính toán để lọc và phân trang
                 get filteredLocations() {
                     const searchTerm = this.searchQuery.toLowerCase().trim();
                     return this.allLocations
@@ -294,15 +267,16 @@
                     return pagesArray;
                 },
 
-                // Methods
+                // *** ĐIỀU CHỈNH CHÍNH Ở ĐÂY ***
                 init() {
+                    this.currentPage = 1;
+                    // Flash messages từ Laravel Session vẫn có thể được hiển thị ở đây
                     @if(Session::has('success'))
                         this.showMessage('{{ Session::get('success') }}', 'success');
                     @endif
                     @if(Session::has('error'))
                         this.showMessage('{{ Session::get('error') }}', 'error');
                     @endif
-                    this.currentPage = 1;
                 },
 
                 showMessage(msg, type = 'success') {
@@ -348,12 +322,10 @@
 
                 formatDate(dateString) {
                     if (!dateString) return 'N/A';
-                    // Sử dụng toLocaleString để định dạng theo ngôn ngữ và múi giờ cục bộ của người dùng
                     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
                     return new Date(dateString).toLocaleString('vi-VN', options);
                 },
 
-                // Restore Modal Methods
                 openRestoreModal(id) {
                     this.locationToRestoreId = id;
                     this.isRestoreModalOpen = true;
@@ -366,20 +338,22 @@
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     try {
                         const response = await fetch(`/admin/store-locations/${this.locationToRestoreId}/restore`, {
-                            method: 'POST',
+                            method: 'POST', // Phương thức POST cho restore
                             headers: {
                                 'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json'
                             }
                         });
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(`Không thể khôi phục địa điểm. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
-                        }
-                        const data = await response.json().catch(() => ({ message: 'Khôi phục thành công nhưng phản hồi không phải JSON.' }));
 
-                        this.showMessage(data.message || 'Khôi phục địa điểm thành công!', data.status || 'success');
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                            throw new Error(data.message || `Không thể khôi phục địa điểm. Trạng thái: ${response.status}`);
+                        }
+
+                        this.showMessage(data.message || 'Khôi phục địa điểm thành công!', 'success');
                         this.closeRestoreModal();
-                        // Loại bỏ mục đã khôi phục khỏi danh sách
+                        // Loại bỏ mục đã khôi phục khỏi danh sách hiển thị NGAY LẬP TỨC
                         const updatedLocations = this.allLocations.filter(loc => loc.id !== this.locationToRestoreId);
                         this.allLocations = [...updatedLocations]; // Kích hoạt reactivity
 
@@ -392,7 +366,6 @@
                     }
                 },
 
-                // Force Delete Modal Methods
                 openForceDeleteModal(id) {
                     this.locationToForceDeleteId = id;
                     this.isForceDeleteModalOpen = true;
@@ -405,20 +378,22 @@
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     try {
                         const response = await fetch(`/admin/store-locations/${this.locationToForceDeleteId}/force-delete`, {
-                            method: 'DELETE',
+                            method: 'DELETE', // Phương thức DELETE cho force-delete
                             headers: {
                                 'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json'
                             }
                         });
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(`Không thể xóa vĩnh viễn địa điểm. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
-                        }
-                        const data = await response.json().catch(() => ({ message: 'Xóa vĩnh viễn thành công nhưng phản hồi không phải JSON.' }));
 
-                        this.showMessage(data.message || 'Xóa vĩnh viễn địa điểm thành công!', data.status || 'success');
+                        const data = await response.json();
+
+                        if (!response.ok) {
+                             throw new Error(data.message || `Không thể xóa vĩnh viễn địa điểm. Trạng thái: ${response.status}`);
+                        }
+
+                        this.showMessage(data.message || 'Xóa vĩnh viễn địa điểm thành công!', 'success');
                         this.closeForceDeleteModal();
-                        // Loại bỏ mục đã xóa vĩnh viễn khỏi danh sách
+                        // Loại bỏ mục đã xóa vĩnh viễn khỏi danh sách NGAY LẬP TỨC
                         const updatedLocations = this.allLocations.filter(loc => loc.id !== this.locationToForceDeleteId);
                         this.allLocations = [...updatedLocations]; // Kích hoạt reactivity
 

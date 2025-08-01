@@ -164,6 +164,12 @@ class OrderController extends Controller
             // BƯỚC 5: Cập nhật database một lần duy nhất
             $order->update($updateData);
 
+            // Kích hoạt cộng điểm thưởng
+            if ($order->status === Order::STATUS_DELIVERED) {
+            \Log::info("Kích hoạt sự kiện OrderDelivered cho đơn hàng #{$order->order_code}");
+            event(new \App\Events\OrderDelivered($order));
+        }
+
             // BƯỚC 6: Ghi log để theo dõi
             \Log::info('Order status updated', [
                 'order_id' => $order->id,

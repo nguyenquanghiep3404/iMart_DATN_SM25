@@ -39,7 +39,7 @@
                     <p class="text-gray-600 mt-1">Tạo đơn hàng mới để nhập sản phẩm từ nhà cung cấp.</p>
                 </div>
                 <div class="mt-4 sm:mt-0 flex space-x-2">
-                     <a href="{{ route('admin.purchase-orders.index') }}" class="w-full sm:w-auto flex items-center justify-center bg-white text-gray-700 font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 border border-gray-300 transition-colors">
+                    <a href="{{ route('admin.purchase-orders.index') }}" class="w-full sm:w-auto flex items-center justify-center bg-white text-gray-700 font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 border border-gray-300 transition-colors">
                         Hủy Bỏ
                     </a>
                     <button type="submit" class="w-full sm:w-auto flex items-center justify-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors">
@@ -53,7 +53,6 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Left Column: Product Details -->
                 <div class="lg:col-span-2 space-y-8">
-                    {{-- From: admin.purchase_orders.partials._product_search --}}
                     <div class="card">
                         <div class="p-6">
                             <label for="product-search" class="block text-lg font-semibold text-gray-800 mb-2">Tìm & Thêm Sản Phẩm</label>
@@ -64,14 +63,13 @@
                                 <input type="text" id="product-search" placeholder="Gõ tên sản phẩm hoặc SKU..."
                                        class="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
                                 
-                                {{-- Icon quét barcode --}}
                                 <div @click="openBarcodeScanner()" class="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer" title="Quét mã vạch">
                                     <i class="fas fa-barcode text-gray-400 hover:text-gray-600 transition-colors"></i>
                                 </div>
-                    
+                        
                                 <div id="search-suggestions"
                                      class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-2 shadow-lg max-h-80 overflow-y-auto hidden custom-scrollbar">
-                                    <!-- Kết quả tìm kiếm sẽ được hiển thị ở đây bởi JS -->
+                                    <!-- Search results will be displayed here by JS -->
                                 </div>
                             </div>
                         </div>
@@ -95,63 +93,76 @@
 @endsection
 
 @push('scripts')
+{{-- Thư viện quét mã vạch --}}
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+{{-- Thư viện âm thanh Howler.js --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+
 <script>
     function pageData(initialData) {
         return {
-            // --- MODAL STATE ---
-            isModalOpen: false,
-            modalType: '',
-            modalTitle: '',
-            modalSelectedProvince: '',
-            modalSelectedDistrict: '',
-            modalSearchTerm: '',
-
-            // --- FORM STATE ---
+            // State
+            isModalOpen: false, modalType: '', modalTitle: '', modalSelectedProvince: '', modalSelectedDistrict: '', modalSearchTerm: '',
             selectedSupplier: { name: null, address: null, addressId: null },
             selectedLocation: { name: null, address: null, id: null },
+            isScannerOpen: false, html5QrCode: null,
+            beepSound: null, soundInitialized: false,
 
-            // --- INITIAL DATA from Controller ---
+            // Initial Data
             provinces: initialData.provincesData,
             districts: initialData.districtsData,
             allSuppliers: initialData.suppliersData,
             allLocations: initialData.locationsData,
             
-            // --- BARCODE SCANNER STATE ---
-            isScannerOpen: false,
-            html5QrCode: null,
-
             init() {
                 this.$watch('modalSelectedProvince', () => { this.modalSelectedDistrict = ''; });
                 document.getElementById('order-date').valueAsDate = new Date();
                 
-                // Listener để nhận mã vạch từ modal
                 window.addEventListener('barcode-scanned', (event) => {
                     const scannedCode = event.detail.code;
                     document.getElementById('product-search').value = scannedCode;
-                    // Tự động kích hoạt sự kiện tìm kiếm
                     document.getElementById('product-search').dispatchEvent(new Event('input'));
                 });
 
-                // Khởi tạo logic tìm kiếm sản phẩm
                 this.initializeProductSearch();
+                this.initializeSound(); // Tải âm thanh sẵn sàng
             },
             
+            // --- SOUND METHODS ---
+            initializeSound() {
+                if (this.soundInitialized || typeof Howl === 'undefined') return;
+                this.beepSound = new Howl({
+                    src: ['{{ asset('sounds/shop-scanner-beeps.mp3') }}'],
+                    volume: 0.8,
+                    onload: () => { 
+                        this.soundInitialized = true; 
+                        console.log('Sound loaded successfully.');
+                    },
+                    onloaderror: (id, err) => { 
+                        console.error('Failed to load beep sound:', err); 
+                    }
+                });
+            },
+
+            playBeep() {
+                if (this.soundInitialized && this.beepSound) {
+                    this.beepSound.play();
+                } else {
+                    console.warn('Sound not ready or failed to load.');
+                }
+            },
+
+            // --- MODAL METHODS ---
             get filteredDistricts() {
                 if (!this.modalSelectedProvince) return [];
-                // Sử dụng 'parent_code' và 'code' từ dữ liệu thực tế
                 return this.districts.filter(d => d.parent_code == this.modalSelectedProvince);
             },
 
             get modalSourceData() {
                 if (this.modalType === 'supplier') {
-                    // Dữ liệu NCC đã được định dạng sẵn từ controller
-                    return this.allSuppliers.flatMap(s => s.addresses.map(addr => ({
-                        ...addr,
-                        name: s.name
-                    })));
+                    return this.allSuppliers.flatMap(s => s.addresses.map(addr => ({ ...addr, name: s.name })));
                 }
                 if (this.modalType === 'location') {
-                     // Dữ liệu kho hàng đã có sẵn full_address
                     return this.allLocations;
                 }
                 return [];
@@ -159,12 +170,8 @@
             
             get filteredModalItems() {
                 let items = this.modalSourceData;
-                if (this.modalSelectedProvince) {
-                    items = items.filter(i => i.province_id == this.modalSelectedProvince);
-                }
-                if (this.modalSelectedDistrict) {
-                    items = items.filter(i => i.district_id == this.modalSelectedDistrict);
-                }
+                if (this.modalSelectedProvince) items = items.filter(i => i.province_id == this.modalSelectedProvince);
+                if (this.modalSelectedDistrict) items = items.filter(i => i.district_id == this.modalSelectedDistrict);
                 if (this.modalSearchTerm.trim()) {
                     const search = this.modalSearchTerm.toLowerCase();
                     items = items.filter(i => 
@@ -213,34 +220,54 @@
                 this.$nextTick(() => { this.startScanning(); });
             },
             closeBarcodeScanner() {
-                this.isScannerOpen = false;
                 this.stopScanning();
+                this.isScannerOpen = false;
             },
             startScanning() {
                 const readerElement = document.getElementById('reader');
                 const loadingMessage = document.getElementById('loading-message');
                 const errorMessage = document.getElementById('scan-error-message');
+
+                if (typeof Html5Qrcode === "undefined") {
+                    errorMessage.textContent = "Lỗi: Thư viện quét mã vạch chưa được tải.";
+                    errorMessage.classList.remove('hidden');
+                    return;
+                }
                 if (!readerElement) return;
+
                 loadingMessage.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
+                document.getElementById('scan-result-container').classList.add('hidden');
+
                 this.html5QrCode = new Html5Qrcode("reader");
                 const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-                this.html5QrCode.start({ facingMode: "environment" }, config, 
-                    (decodedText, decodedResult) => {
-                        loadingMessage.classList.add('hidden');
-                        document.getElementById('scan-result-text').textContent = decodedText;
-                        document.getElementById('scan-result-container').classList.remove('hidden');
-                        document.getElementById('reader').classList.add('flash-success');
-                        window.dispatchEvent(new CustomEvent('barcode-scanned', { detail: { code: decodedText } }));
-                        setTimeout(() => {
-                            document.getElementById('reader').classList.remove('flash-success');
-                            this.closeBarcodeScanner();
-                        }, 800);
-                    }, 
-                    (error) => {}
-                ).catch(err => {
+
+                const onScanSuccess = (decodedText, decodedResult) => {
+                    if (!this.isScannerOpen) return;
+                    
+                    this.playBeep();
+                    readerElement.classList.add('flash-success');
+                    try { if (navigator.vibrate) navigator.vibrate(100); } catch (e) {}
+                    
+                    window.dispatchEvent(new CustomEvent('barcode-scanned', { detail: { code: decodedText } }));
+                    
+                    this.stopScanning();
+                    setTimeout(() => { this.isScannerOpen = false; }, 300); 
+                };
+
+                this.html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, (error) => {})
+                .then(() => {
                     loadingMessage.classList.add('hidden');
-                    errorMessage.textContent = `Lỗi camera: ${err}`;
+                })
+                .catch(err => {
+                    loadingMessage.classList.add('hidden');
+                    let friendlyError = `Lỗi camera: ${err}.`;
+                    if (String(err).includes("Permission denied")) {
+                        friendlyError = "Bạn đã từ chối quyền truy cập camera. Vui lòng cấp quyền trong cài đặt trình duyệt.";
+                    } else if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                         friendlyError += " Việc truy cập camera yêu cầu kết nối an toàn (HTTPS).";
+                    }
+                    errorMessage.textContent = friendlyError;
                     errorMessage.classList.remove('hidden');
                 });
             },
@@ -264,7 +291,7 @@
                         const response = await fetch(`{{ route('admin.purchase-orders.search-products') }}?search=${term}`);
                         if (!response.ok) throw new Error('Network response was not ok');
                         const data = await response.json();
-                        allProductVariants = data.allVariants; // Lưu danh sách phẳng
+                        allProductVariants = data.allVariants;
                         displaySuggestions(data.groupedProducts);
                     } catch (error) {
                         console.error("Lỗi khi tìm sản phẩm:", error);
@@ -360,13 +387,12 @@
                     clearTimeout(debounceTimer);
                     debounceTimer = setTimeout(() => {
                         fetchProducts(searchInput.value);
-                    }, 300); // Đợi 300ms sau khi người dùng ngừng gõ
+                    }, 300);
                 });
                 
-                // Hiển thị gợi ý khi focus
                 searchInput.addEventListener('focus', () => {
                     if(!searchInput.value) {
-                         fetchProducts('');
+                        fetchProducts('');
                     }
                 });
 

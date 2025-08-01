@@ -106,14 +106,19 @@ function subscribeToConversation(convId, currentUserId) {
         currentChannel = null;
     }
 
-    console.log(`Subscribing to private-chat.conversation.${convId} with currentUserId: ${currentUserId}`);
+    // Sửa lại log cho đúng với tên kênh
+    console.log(`Subscribing to chat.conversation.${convId} with currentUserId: ${currentUserId}`);
     // Đảm bảo tên event khớp với broadcastAs() trong Event class
     currentChannel = window.Echo.private(`chat.conversation.${convId}`)
         .listen('.message.sent', (e) => { // Tên event là .message.sent
             console.log('Received message event for current channel:', e);
             // Kiểm tra xem tin nhắn có đúng cho cuộc hội thoại đang mở không
             if (e.conversation && e.conversation.id == convId) {
-                displayMessage(e.message);
+                // Chỉ hiển thị tin nhắn nếu người gửi không phải là admin hiện tại
+                // vì tin nhắn của admin đã được hiển thị bằng Optimistic UI
+                if (e.message.sender_id != AUTH_ID) {
+                    displayMessage(e.message);
+                }
             } else {
                 console.warn('Received message for a different conversation than active one:', e.conversation ? e.conversation.id : 'N/A', 'Expected:', convId);
             }
@@ -205,7 +210,6 @@ async function loadConversation(conversationId, type) {
                 </div>
             `;
             // Bạn sẽ cần một API hoặc mối quan hệ để lấy Order History của User
-            // For now, it's static as in your HTML
             if (orderHistoryList) orderHistoryList.innerHTML = `
                 <div class="order-item">
                     <div class="order-id">Đơn hàng #12345</div>
@@ -225,425 +229,431 @@ async function loadConversation(conversationId, type) {
         } else { // internal chat
             if (inviteAdminBtn) inviteAdminBtn.style.display = 'block'; // Vẫn cho phép mời admin khác vào nhóm nội bộ
             if (customerInfoList) customerInfoList.innerHTML = `
-                   <div class="info-item">
-                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.963A3.75 3.75 0 1012 6v2.75m-3.75 0A3.75 3.75 0 016 10.5v.75a3.75 3.75 0 01-7.5 0v-.75A3.75 3.75 0 016 6.75v2.75m0 0v-.25m0 0c0-.966.784-1.75 1.75-1.75h.5c.966 0 1.75.784 1.75 1.75v.25m0 0c0 .966-.784 1.75-1.75 1.75h-.5A1.75 1.75 0 016 13.25v-.25m0 0c0-1.105.895-2 2-2h.5c1.105 0 2 .895 2 2v.25m-2.5 0c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m-4.5 0c.23.02.428.037.601.055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25m2.5 0c-.69-.02-.823-.037-1-.055a3.75 3.75 0 01-3.44-3.44c-.018-.177-.035-.31-.055-.478m-1.5 5.25c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25" /></svg>
-                       <span>Chủ đề: ${conversation.subject || 'Trò chuyện nội bộ'}</span>
-                   </div>
-                   <div class="info-item">
-                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.963A3.75 3.75 0 1012 6v2.75m-3.75 0A3.75 3.75 0 016 10.5v.75a3.75 3.75 0 01-7.5 0v-.75A3.75 3.75 0 016 6.75v2.75m0 0v-.25m0 0c0-.966.784-1.75 1.75-1.75h.5c.966 0 1.75.784 1.75 1.75v.25m0 0c0 .966-.784 1.75-1.75 1.75h-.5A1.75 1.75 0 016 13.25v-.25m0 0c0-1.105.895-2 2-2h.5c1.105 0 2 .895 2 2v.25m-2.5 0c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m-4.5 0c.23.02.428.037.601.055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25m2.5 0c-.69-.02-.823-.037-1-.055a3.75 3.75 0 01-3.44-3.44c-.018-.177-.035-.31-.055-.478m-1.5 5.25c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25" /></svg>
-                       <span>Người tạo: ${conversation.assigned_to ? conversation.assigned_to.name : 'N/A'}</span>
-                   </div>
-                   <div class="info-item">
-                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                       <span>Tham gia: ${conversation.participants.map(p => p.user?.name).join(', ')}</span>
-                   </div>
+                    <div class="info-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.963A3.75 3.75 0 1012 6v2.75m-3.75 0A3.75 3.75 0 016 10.5v.75a3.75 3.75 0 01-7.5 0v-.75A3.75 3.75 0 016 6.75v2.75m0 0v-.25m0 0c0-.966.784-1.75 1.75-1.75h.5c.966 0 1.75.784 1.75 1.75v.25m0 0c0 .966-.784 1.75-1.75 1.75h-.5A1.75 1.75 0 016 13.25v-.25m0 0c0-1.105.895-2 2-2h.5c1.105 0 2 .895 2 2v.25m-2.5 0c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m-4.5 0c.23.02.428.037.601.055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25m2.5 0c-.69-.02-.823-.037-1-.055a3.75 3.75 0 01-3.44-3.44c-.018-.177-.035-.31-.055-.478m-1.5 5.25c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25" /></svg>
+                        <span>Chủ đề: ${conversation.subject || 'Trò chuyện nội bộ'}</span>
+                    </div>
+                    <div class="info-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.963A3.75 3.75 0 1012 6v2.75m-3.75 0A3.75 3.75 0 016 10.5v.75a3.75 3.75 0 01-7.5 0v-.75A3.75 3.75 0 016 6.75v2.75m0 0v-.25m0 0c0-.966.784-1.75 1.75-1.75h.5c.966 0 1.75.784 1.75 1.75v.25m0 0c0 .966-.784 1.75-1.75 1.75h-.5A1.75 1.75 0 016 13.25v-.25m0 0c0-1.105.895-2 2-2h.5c1.105 0 2 .895 2 2v.25m-2.5 0c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m-4.5 0c.23.02.428.037.601.055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25m2.5 0c-.69-.02-.823-.037-1-.055a3.75 3.75 0 01-3.44-3.44c-.018-.177-.035-.31-.055-.478m-1.5 5.25c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25" /></svg>
+                        <span>Người tạo: ${conversation.assigned_to ? conversation.assigned_to.name : 'N/A'}</span>
+                    </div>
+                    <div class="info-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span>Tham gia: ${conversation.participants.map(p => p.user?.name).join(', ')}</span>
+                    </div>
             `;
-            if (orderHistoryList) orderHistoryList.innerHTML = '<p style="color: var(--text-secondary);">Không có lịch sử mua hàng cho cuộc trò chuyện nội bộ.</p>';
-        }
+            if (orderHistoryList) orderHistoryList.innerHTML = '<p style="color: var(--text-secondary);">Không có lịch sử mua hàng cho cuộc trò chuyện nội bộ.</p>';
+        }
 
-        // Hiển thị tin nhắn
-        if (messageContainer) messageContainer.innerHTML = ''; // Xóa thông báo "Đang tải tin nhắn..."
-        if (conversation.messages && conversation.messages.length > 0) {
-            conversation.messages.forEach(message => {
-                displayMessage(message);
-            });
-        } else {
-            if (messageContainer) messageContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); margin-top: 20px;">Chưa có tin nhắn trong cuộc hội thoại này.</p>';
-        }
+        // Hiển thị tin nhắn
+        if (messageContainer) messageContainer.innerHTML = ''; // Xóa thông báo "Đang tải tin nhắn..."
+        if (conversation.messages && conversation.messages.length > 0) {
+            conversation.messages.forEach(message => {
+                displayMessage(message);
+            });
+        } else {
+            if (messageContainer) messageContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); margin-top: 20px;">Chưa có tin nhắn trong cuộc hội thoại này.</p>';
+        }
 
-        if (messageContainer) messageContainer.scrollTop = messageContainer.scrollHeight; // Cuộn xuống dưới cùng
+        if (messageContainer) messageContainer.scrollTop = messageContainer.scrollHeight; // Cuộn xuống dưới cùng
 
-        // Đăng ký kênh riêng tư cho cuộc hội thoại này (sau khi đã leave kênh cũ)
-        subscribeToConversation(activeConversationId, AUTH_ID); // Dùng AUTH_ID của admin
+        // Đăng ký kênh riêng tư cho cuộc hội thoại này (sau khi đã leave kênh cũ)
+        subscribeToConversation(activeConversationId, AUTH_ID); // Dùng AUTH_ID của admin
 
-    } catch (error) {
-        console.error('Lỗi khi tải cuộc hội thoại:', error);
-        alert('Không thể tải cuộc hội thoại. Vui lòng kiểm tra console để biết chi tiết.');
-        if (inputArea) inputArea.style.display = 'none'; // Ẩn khung nhập nếu có lỗi
-        if (messageContainer) messageContainer.innerHTML = '<p style="text-align: center; color: #dc3545; margin-top: 20px;">Đã xảy ra lỗi khi tải cuộc hội thoại.</p>';
-        if (chatUserName) chatUserName.textContent = 'Lỗi tải cuộc hội thoại';
-    }
+    } catch (error) {
+        console.error('Lỗi khi tải cuộc hội thoại:', error);
+        alert('Không thể tải cuộc hội thoại. Vui lòng kiểm tra console để biết chi tiết.');
+        if (inputArea) inputArea.style.display = 'none'; // Ẩn khung nhập nếu có lỗi
+        if (messageContainer) messageContainer.innerHTML = '<p style="text-align: center; color: #dc3545; margin-top: 20px;">Đã xảy ra lỗi khi tải cuộc hội thoại.</p>';
+        if (chatUserName) chatUserName.textContent = 'Lỗi tải cuộc hội thoại';
+    }
 }
 
 // --- GÁN SỰ KIỆN ---
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('admin_chat.js: DOMContentLoaded event fired.');
+    console.log('admin_chat.js: DOMContentLoaded event fired.');
 
-    // Gán sự kiện cho các item hội thoại
-    document.querySelectorAll('.conversation-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const conversationId = item.dataset.conversationId;
-            const type = item.dataset.type;
-            console.log(`Conversation item clicked. ID: ${conversationId}, Type: ${type}`);
-            loadConversation(conversationId, type);
-        });
-    });
+    // Gán sự kiện cho các item hội thoại
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const conversationId = item.dataset.conversationId;
+            const type = item.dataset.type;
+            console.log(`Conversation item clicked. ID: ${conversationId}, Type: ${type}`);
+            loadConversation(conversationId, type);
+        });
+    });
 
-    // Gán sự kiện cho nút Gửi tin nhắn
-    if (sendMessageBtn && messageInput) {
-        sendMessageBtn.addEventListener('click', async () => {
-            const content = messageInput.value.trim();
-            if (content === '' || !activeConversationId) return;
+    // --- *** LOGIC GỬI TIN NHẮN ĐÃ ĐƯỢC CẬP NHẬT *** ---
+    if (sendMessageBtn && messageInput) {
+        const handleSendMessage = async () => {
+            const content = messageInput.value.trim();
+            if (content === '' || !activeConversationId) return;
 
-            try {
-                const payload = { content: content };
-                if (activeConversationId) {
-                    payload.conversation_id = activeConversationId;
-                }
-                payload.sender_id = AUTH_ID; // Người gửi là admin hiện tại
+            // 1. Tạo tin nhắn tạm thời để hiển thị ngay lập tức (Optimistic UI)
+            const optimisticMessage = {
+                content: content,
+                sender_id: AUTH_ID,
+                sender: { name: 'Bạn' } // Dữ liệu giả định cho người gửi là chính mình
+            };
 
-                const response = await fetch(`/admin/chat/${activeConversationId}/send-message`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    messageInput.value = ''; // Xóa nội dung input
-                    // Tin nhắn sẽ được hiển thị qua sự kiện broadcast, không cần gọi displayMessage trực tiếp
-                } else {
-                    alert(data.message || 'Lỗi khi gửi tin nhắn.');
-                }
-            } catch (error) {
-                console.error('Lỗi:', error);
-                alert('Đã xảy ra lỗi khi gửi tin nhắn.');
-            }
-        });
+            // 2. Hiển thị tin nhắn tạm thời lên giao diện
+            displayMessage(optimisticMessage);
 
-        // Gửi tin nhắn khi nhấn Enter trong input
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessageBtn.click();
-            }
-        });
-    }
+            // 3. Xóa input và focus lại để người dùng có thể gõ tiếp
+            messageInput.value = '';
+            messageInput.focus();
+
+            // 4. Gửi request tới server trong nền
+            try {
+                const payload = {
+                    content: content,
+                    conversation_id: activeConversationId,
+                    sender_id: AUTH_ID
+                };
+
+                const response = await fetch(`/admin/chat/${activeConversationId}/send-message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    alert(data.message || 'Lỗi khi gửi tin nhắn.');
+                    // Tùy chọn: tìm tin nhắn tạm thời và đánh dấu là gửi lỗi
+                    console.error('Failed to send message:', data);
+                }
+                // Nếu thành công, không cần làm gì cả vì tin nhắn đã hiển thị rồi.
+                // Sự kiện broadcast từ server sẽ được gửi tới những người khác.
+
+            } catch (error) {
+                console.error('Lỗi khi gửi tin nhắn:', error);
+                alert('Đã xảy ra lỗi mạng khi gửi tin nhắn.');
+                 // Tùy chọn: tìm tin nhắn tạm thời và đánh dấu là gửi lỗi
+            }
+        };
+
+        sendMessageBtn.addEventListener('click', handleSendMessage);
+
+        // Gửi tin nhắn khi nhấn Enter trong input
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { // Gửi khi nhấn Enter, không gửi khi Shift + Enter
+                e.preventDefault(); // Ngăn không cho xuống dòng
+                handleSendMessage();
+            }
+        });
+    }
 
 
-    // --- Lắng nghe sự kiện Broadcast từ Laravel (cho Admin) ---
-    if (typeof window.Echo !== 'undefined') {
-        window.Echo.channel('admin.notifications')
-            .listen('.conversation.created', (e) => {
-                console.log('New conversation created event (admin.notifications):', e);
-                if (e.conversation.type === 'support') {
-                    const newConversationItem = document.createElement('li');
-                    newConversationItem.classList.add('conversation-item');
-                    newConversationItem.dataset.conversationId = e.conversation.id;
-                    newConversationItem.dataset.type = 'support';
-                    newConversationItem.innerHTML = `
-                        <div class="avatar">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
-                        </div>
-                        <div class="details">
-                            <p class="name">${e.conversation.user?.name || 'Khách vãng lai'}</p>
-                            <p class="last-message">${e.conversation.messages && e.conversation.messages.length > 0 ? e.conversation.messages[e.conversation.messages.length - 1].content : 'Chưa có tin nhắn'}</p>
-                        </div>
-                    `;
-                    newConversationItem.addEventListener('click', () => loadConversation(e.conversation.id, 'support'));
-                    if (customerConversationsList) customerConversationsList.prepend(newConversationItem); // Thêm vào đầu danh sách
-                    alert('Có cuộc trò chuyện hỗ trợ mới từ ' + (e.conversation.user?.name || 'khách vãng lai') + '!');
-                }
-            });
+    // --- Lắng nghe sự kiện Broadcast từ Laravel (cho Admin) ---
+    if (typeof window.Echo !== 'undefined') {
+        window.Echo.channel('admin.notifications')
+            .listen('.conversation.created', (e) => {
+                console.log('New conversation created event (admin.notifications):', e);
+                if (e.conversation.type === 'support') {
+                    const newConversationItem = document.createElement('li');
+                    newConversationItem.classList.add('conversation-item');
+                    newConversationItem.dataset.conversationId = e.conversation.id;
+                    newConversationItem.dataset.type = 'support';
+                    newConversationItem.innerHTML = `
+                        <div class="avatar">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                        </div>
+                        <div class="details">
+                            <p class="name">${e.conversation.user?.name || 'Khách vãng lai'}</p>
+                            <p class="last-message">${e.conversation.messages && e.conversation.messages.length > 0 ? e.conversation.messages[e.conversation.messages.length - 1].content : 'Chưa có tin nhắn'}</p>
+                        </div>
+                    `;
+                    newConversationItem.addEventListener('click', () => loadConversation(e.conversation.id, 'support'));
+                    if (customerConversationsList) customerConversationsList.prepend(newConversationItem); // Thêm vào đầu danh sách
+                    alert('Có cuộc trò chuyện hỗ trợ mới từ ' + (e.conversation.user?.name || 'khách vãng lai') + '!');
+                }
+            });
 
-        // Lắng nghe kênh riêng tư của admin để nhận thông báo về chat nội bộ
-        window.Echo.private(`users.${AUTH_ID}`)
-            .listen('.conversation.created', (e) => {
-                console.log('Internal conversation created event (private users channel):', e);
-                if (e.conversation.type === 'internal') {
-                    const newConversationItem = document.createElement('li');
-                    newConversationItem.classList.add('conversation-item');
-                    newConversationItem.dataset.conversationId = e.conversation.id;
-                    newConversationItem.dataset.type = 'internal';
-                    newConversationItem.innerHTML = `
-                        <div class="avatar">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.963A3.75 3.75 0 1012 6v2.75m-3.75 0A3.75 3.75 0 016 10.5v.75a3.75 3.75 0 01-7.5 0v-.75A3.75 3.75 0 016 6.75v2.75m0 0v-.25m0 0c0-.966.784-1.75 1.75-1.75h.5c.966 0 1.75.784 1.75 1.75v.25m0 0c0 .966-.784 1.75-1.75 1.75h-.5A1.75 1.75 0 016 13.25v-.25m0 0c0-1.105.895-2 2-2h.5c1.105 0 2 .895 2 2v.25m-2.5 0c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m-4.5 0c.23.02.428.037.601.055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25m2.5 0c-.69-.02-.823-.037-1-.055a3.75 3.75 0 01-3.44-3.44c-.018-.177-.035-.31-.055-.478m-1.5 5.25c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25" /></svg>
-                        </div>
-                        <div class="details">
-                            <p class="name">${e.conversation.subject || 'Trò chuyện nội bộ'}</p>
-                            <p class="last-message">${e.conversation.messages && e.conversation.messages.length > 0 ? e.conversation.messages[e.conversation.messages.length - 1].content : 'Chưa có tin nhắn'}</p>
-                        </div>
-                    `;
-                    newConversationItem.addEventListener('click', () => loadConversation(e.conversation.id, 'internal'));
-                    if (internalConversationsList) internalConversationsList.prepend(newConversationItem); // Thêm vào đầu danh sách
-                    alert('Bạn có một cuộc trò chuyện nội bộ mới với chủ đề: ' + (e.conversation.subject || 'Trò chuyện nội bộ') + '!');
-                }
-            });
-    }
+        // Lắng nghe kênh riêng tư của admin để nhận thông báo về chat nội bộ
+        window.Echo.private(`users.${AUTH_ID}`)
+            .listen('.conversation.created', (e) => {
+                console.log('Internal conversation created event (private users channel):', e);
+                if (e.conversation.type === 'internal') {
+                    const newConversationItem = document.createElement('li');
+                    newConversationItem.classList.add('conversation-item');
+                    newConversationItem.dataset.conversationId = e.conversation.id;
+                    newConversationItem.dataset.type = 'internal';
+                    newConversationItem.innerHTML = `
+                        <div class="avatar">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.963A3.75 3.75 0 1012 6v2.75m-3.75 0A3.75 3.75 0 016 10.5v.75a3.75 3.75 0 01-7.5 0v-.75A3.75 3.75 0 016 6.75v2.75m0 0v-.25m0 0c0-.966.784-1.75 1.75-1.75h.5c.966 0 1.75.784 1.75 1.75v.25m0 0c0 .966-.784 1.75-1.75 1.75h-.5A1.75 1.75 0 016 13.25v-.25m0 0c0-1.105.895-2 2-2h.5c1.105 0 2 .895 2 2v.25m-2.5 0c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m-4.5 0c.23.02.428.037.601.055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25m2.5 0c-.69-.02-.823-.037-1-.055a3.75 3.75 0 01-3.44-3.44c-.018-.177-.035-.31-.055-.478m-1.5 5.25c.69.02.823.037 1 .055a3.75 3.75 0 013.44 3.44c.018.177.035.31.055.478m0 0c0 1.105-.895 2-2 2h-.5c-1.105 0-2-.895-2-2v-.25" /></svg>
+                        </div>
+                        <div class="details">
+                            <p class="name">${e.conversation.subject || 'Trò chuyện nội bộ'}</p>
+                            <p class="last-message">${e.conversation.messages && e.conversation.messages.length > 0 ? e.conversation.messages[e.conversation.messages.length - 1].content : 'Chưa có tin nhắn'}</p>
+                        </div>
+                    `;
+                    newConversationItem.addEventListener('click', () => loadConversation(e.conversation.id, 'internal'));
+                    if (internalConversationsList) internalConversationsList.prepend(newConversationItem); // Thêm vào đầu danh sách
+                    alert('Bạn có một cuộc trò chuyện nội bộ mới với chủ đề: ' + (e.conversation.subject || 'Trò chuyện nội bộ') + '!');
+                }
+            });
+    }
 
-    // --- Logic cho các Tabs (Khách hàng / Nội bộ) ---
-    tabLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            tabLinks.forEach(l => l.classList.remove('active'));
-            tabPanes.forEach(p => p.classList.remove('active'));
+    // --- Logic cho các Tabs (Khách hàng / Nội bộ) ---
+    tabLinks.forEach(link => {
+        link.addEventListener('click', function() {
+            tabLinks.forEach(l => l.classList.remove('active'));
+            tabPanes.forEach(p => p.classList.remove('active'));
 
-            this.classList.add('active');
-            const targetPane = document.querySelector(this.dataset.target);
-            if (targetPane) {
-                targetPane.classList.add('active');
-            }
-            // Reset chat panel khi đổi tab
-            activeConversationId = null;
-            activeConversationType = null;
-            if (chatUserName) chatUserName.textContent = '';
-            if (messageContainer) messageContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); margin-top: 20px;">Chọn một cuộc hội thoại để bắt đầu chat.</p>';
-            if (customerInfoList) customerInfoList.innerHTML = '<p style="color: var(--text-secondary);">Chọn một cuộc hội thoại để xem thông tin chi tiết.</p>';
-            if (orderHistoryList) orderHistoryList.innerHTML = '';
-            if (inputArea) inputArea.style.display = 'none';
-            if (closeConversationBtn) closeConversationBtn.style.display = 'none';
-            if (inviteAdminBtn) inviteAdminBtn.style.display = 'none';
-            // Hủy đăng ký kênh cũ khi đổi tab
-            if (currentChannel) {
-                window.Echo.leave(currentChannel.name);
-                console.log(`Left channel ${currentChannel.name} on tab switch.`);
-                currentChannel = null;
-            }
-        });
-    });
+            this.classList.add('active');
+            const targetPane = document.querySelector(this.dataset.target);
+            if (targetPane) {
+                targetPane.classList.add('active');
+            }
+            // Reset chat panel khi đổi tab
+            activeConversationId = null;
+            activeConversationType = null;
+            if (chatUserName) chatUserName.textContent = '';
+            if (messageContainer) messageContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); margin-top: 20px;">Chọn một cuộc hội thoại để bắt đầu chat.</p>';
+            if (customerInfoList) customerInfoList.innerHTML = '<p style="color: var(--text-secondary);">Chọn một cuộc hội thoại để xem thông tin chi tiết.</p>';
+            if (orderHistoryList) orderHistoryList.innerHTML = '';
+            if (inputArea) inputArea.style.display = 'none';
+            if (closeConversationBtn) closeConversationBtn.style.display = 'none';
+            if (inviteAdminBtn) inviteAdminBtn.style.display = 'none';
+            // Hủy đăng ký kênh cũ khi đổi tab
+            if (currentChannel) {
+                window.Echo.leave(currentChannel.name);
+                console.log(`Left channel ${currentChannel.name} on tab switch.`);
+                currentChannel = null;
+            }
+        });
+    });
 
-    // --- Xử lý nút Đóng Hội Thoại ---
-    if (closeConversationBtn) {
-        closeConversationBtn.addEventListener('click', async () => {
-            if (!activeConversationId) return;
+    // --- Xử lý nút Đóng Hội Thoại ---
+    if (closeConversationBtn) {
+        closeConversationBtn.addEventListener('click', async () => {
+            if (!activeConversationId) return;
 
-            if (confirm('Bạn có chắc chắn muốn đóng cuộc hội thoại này không?')) {
-                try {
-                    const response = await fetch(`/admin/chat/${activeConversationId}/close`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        }
-                    });
-                    const data = await response.json();
-                    if (response.ok) {
-                        alert(data.message);
-                        // Xóa cuộc hội thoại khỏi danh sách
-                        const convItemToRemove = document.querySelector(`.conversation-item[data-conversation-id="${activeConversationId}"]`);
-                        if(convItemToRemove) convItemToRemove.remove();
+            if (confirm('Bạn có chắc chắn muốn đóng cuộc hội thoại này không?')) {
+                try {
+                    const response = await fetch(`/admin/chat/${activeConversationId}/close`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        }
+                    });
+                    const data = await response.json();
+                    if (response.ok) {
+                        alert(data.message);
+                        // Xóa cuộc hội thoại khỏi danh sách
+                        const convItemToRemove = document.querySelector(`.conversation-item[data-conversation-id="${activeConversationId}"]`);
+                        if(convItemToRemove) convItemToRemove.remove();
 
-                        // Reset giao diện chat
-                        activeConversationId = null;
-                        activeConversationType = null;
-                        if (chatUserName) chatUserName.textContent = '';
-                        if (messageContainer) messageContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); margin-top: 20px;">Chọn một cuộc hội thoại để bắt đầu chat.</p>';
-                        if (customerInfoList) customerInfoList.innerHTML = '<p style="color: var(--text-secondary);">Chọn một cuộc hội thoại để xem thông tin chi tiết.</p>';
-                        if (orderHistoryList) orderHistoryList.innerHTML = '';
-                        if (inputArea) inputArea.style.display = 'none';
-                        if (closeConversationBtn) closeConversationBtn.style.display = 'none';
-                        if (inviteAdminBtn) inviteAdminBtn.style.display = 'none';
-                        // Hủy đăng ký kênh sau khi đóng cuộc hội thoại
-                        if (currentChannel) {
-                            window.Echo.leave(currentChannel.name);
-                            console.log(`Left channel ${currentChannel.name} after close.`);
-                            currentChannel = null;
-                        }
-                    } else {
-                        alert(data.message || 'Lỗi khi đóng cuộc hội thoại.');
-                    }
-                } catch (error) {
-                    console.error('Lỗi:', error);
-                    alert('Đã xảy ra lỗi khi đóng cuộc hội thoại.');
-                }
-            }
-        });
-    }
+                        // Reset giao diện chat
+                        activeConversationId = null;
+                        activeConversationType = null;
+                        if (chatUserName) chatUserName.textContent = '';
+                        if (messageContainer) messageContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); margin-top: 20px;">Chọn một cuộc hội thoại để bắt đầu chat.</p>';
+                        if (customerInfoList) customerInfoList.innerHTML = '<p style="color: var(--text-secondary);">Chọn một cuộc hội thoại để xem thông tin chi tiết.</p>';
+                        if (orderHistoryList) orderHistoryList.innerHTML = '';
+                        if (inputArea) inputArea.style.display = 'none';
+                        if (closeConversationBtn) closeConversationBtn.style.display = 'none';
+                        if (inviteAdminBtn) inviteAdminBtn.style.display = 'none';
+                        // Hủy đăng ký kênh sau khi đóng cuộc hội thoại
+                        if (currentChannel) {
+                            window.Echo.leave(currentChannel.name);
+                            console.log(`Left channel ${currentChannel.name} after close.`);
+                            currentChannel = null;
+                        }
+                    } else {
+                        alert(data.message || 'Lỗi khi đóng cuộc hội thoại.');
+                    }
+                } catch (error) {
+                    console.error('Lỗi:', error);
+                    alert('Đã xảy ra lỗi khi đóng cuộc hội thoại.');
+                }
+            }
+        });
+    }
 
-    // --- Logic Modal Mời Admin ---
-    if (inviteAdminBtn) {
-        inviteAdminBtn.addEventListener('click', () => {
-            // Cập nhật danh sách admins cho select box trong modal
-            // Di chuyển logic hiển thị modal vào trong hàm để đảm bảo select được điền trước
-            if (adminSelect && INITIAL_ADMINS_DATA) {
-                adminSelect.innerHTML = ''; // Xóa các option cũ
-                let optionsAdded = 0; // Biến đếm số option được thêm
+    // --- Logic Modal Mời Admin ---
+    if (inviteAdminBtn) {
+        inviteAdminBtn.addEventListener('click', () => {
+            if (adminSelect && INITIAL_ADMINS_DATA) {
+                adminSelect.innerHTML = ''; // Xóa các option cũ
+                let optionsAdded = 0;
 
-                INITIAL_ADMINS_DATA.forEach(admin => {
-                    // Bỏ qua chính người dùng đang đăng nhập
-                    if (admin.id === AUTH_ID) {
-                        console.log(`Skipping current user: ${admin.name} (ID: ${admin.id})`);
-                        return; // Bỏ qua admin hiện tại và chuyển sang admin tiếp theo
-                    }
+                INITIAL_ADMINS_DATA.forEach(admin => {
+                    if (admin.id === AUTH_ID) {
+                        console.log(`Skipping current user: ${admin.name} (ID: ${admin.id})`);
+                        return;
+                    }
 
-                    let shouldAdd = false;
+                    let shouldAdd = false;
+                    if (activeConversationType === 'support') {
+                        shouldAdd = true;
+                        console.log(`Conversation Type: Support. Admin ${admin.name} is eligible.`);
+                    } else if (activeConversationType === 'internal') {
+                        if (admin.roles && Array.isArray(admin.roles)) {
+                            const roleNames = admin.roles.map(role => role.name || role);
+                            if (roleNames.includes('order_manager')) {
+                                shouldAdd = true;
+                                console.log(`Conversation Type: Internal. Admin ${admin.name} has 'order_manager' role and is eligible.`);
+                            } else {
+                                console.log(`Conversation Type: Internal. Admin ${admin.name} does NOT have 'order_manager' role. Skipping.`);
+                            }
+                        } else {
+                            console.warn(`Admin ${admin.name} has no roles or roles is not an array. Skipping for internal chat.`);
+                        }
+                    } else {
+                        console.warn(`Undefined activeConversationType (${activeConversationType}). Admin ${admin.name} is eligible.`);
+                        shouldAdd = true;
+                    }
 
-                    // Logic lọc dựa trên loại cuộc trò chuyện (activeConversationType)
-                    if (activeConversationType === 'support') {
-                        // Nếu là chat khách hàng (support chat), thêm tất cả admin (trừ người đang đăng nhập)
-                        shouldAdd = true;
-                        console.log(`Conversation Type: Support. Admin ${admin.name} is eligible.`);
-                    } else if (activeConversationType === 'internal') {
-                        // Nếu là chat nội bộ, chỉ thêm admin có vai trò 'order_manager'
-                        // Đảm bảo admin.roles tồn tại và là một mảng
-                        if (admin.roles && Array.isArray(admin.roles)) {
-                            const roleNames = admin.roles.map(role => role.name || role); // Lấy tên vai trò
-                            if (roleNames.includes('order_manager')) {
-                                shouldAdd = true;
-                                console.log(`Conversation Type: Internal. Admin ${admin.name} has 'order_manager' role and is eligible.`);
-                            } else {
-                                console.log(`Conversation Type: Internal. Admin ${admin.name} does NOT have 'order_manager' role. Skipping.`);
-                            }
-                        } else {
-                            console.warn(`Admin ${admin.name} has no roles or roles is not an array. Skipping for internal chat.`);
-                        }
-                    } else {
-                        // Trường hợp activeConversationType không xác định (chưa click vào cuộc hội thoại nào)
-                        console.warn(`Undefined activeConversationType (${activeConversationType}). Admin ${admin.name} is eligible.`);
-                        shouldAdd = true; // Mặc định hiển thị nếu không có loại cụ thể được chọn
-                    }
+                    if (shouldAdd) {
+                        const option = document.createElement('option');
+                        option.value = admin.id;
+                        option.textContent = admin.name;
+                        adminSelect.appendChild(option);
+                        optionsAdded++;
+                        console.log(`Added option for: ${admin.name} (ID: ${admin.id})`);
+                    }
+                });
 
-                    if (shouldAdd) {
-                        const option = document.createElement('option');
-                        option.value = admin.id;
-                        option.textContent = admin.name;
-                        adminSelect.appendChild(option);
-                        optionsAdded++;
-                        console.log(`Added option for: ${admin.name} (ID: ${admin.id})`);
-                    }
-                });
+                if (optionsAdded === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Không có người dùng nào để mời';
+                    option.disabled = true;
+                    adminSelect.appendChild(option);
+                    console.log('No other eligible users available to invite based on conversation type and roles.');
+                }
+            } else {
+                console.warn('adminSelect or INITIAL_ADMINS_DATA is missing/empty for Invite Admin modal. adminSelect:', adminSelect, 'INITIAL_ADMINS_DATA:', INITIAL_ADMINS_DATA);
+            }
+            if (inviteAdminModal) inviteAdminModal.style.display = 'block';
+        });
+    }
 
-                if (optionsAdded === 0) {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'Không có người dùng nào để mời';
-                    option.disabled = true;
-                    adminSelect.appendChild(option);
-                    console.log('No other eligible users available to invite based on conversation type and roles.');
-                }
-            } else {
-                console.warn('adminSelect or INITIAL_ADMINS_DATA is missing/empty for Invite Admin modal. adminSelect:', adminSelect, 'INITIAL_ADMINS_DATA:', INITIAL_ADMINS_DATA);
-            }
-            if (inviteAdminModal) inviteAdminModal.style.display = 'block'; // Di chuyển vào cuối hàm
-        });
-    }
+    if (confirmInviteBtn && adminSelect) {
+        confirmInviteBtn.addEventListener('click', async () => {
+            const adminId = adminSelect.value;
+            if (!activeConversationId || !adminId) return;
 
-    if (confirmInviteBtn && adminSelect) {
-        confirmInviteBtn.addEventListener('click', async () => {
-            const adminId = adminSelect.value;
-            if (!activeConversationId || !adminId) return;
+            try {
+                const response = await fetch(`/admin/chat/${activeConversationId}/invite-admin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ admin_id: adminId })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    if (inviteAdminModal) inviteAdminModal.style.display = 'none';
+                    // loadConversation(activeConversationId, activeConversationType);
+                } else {
+                    alert(data.message || 'Lỗi khi mời admin.');
+                }
+            } catch (error) {
+                console.error('Lỗi:', error);
+                alert('Đã xảy ra lỗi khi mời admin.');
+            }
+        });
+    }
 
-            try {
-                const response = await fetch(`/admin/chat/${activeConversationId}/invite-admin`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ admin_id: adminId })
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    alert(data.message);
-                    if (inviteAdminModal) inviteAdminModal.style.display = 'none';
-                    // Có thể cần tải lại thông tin cuộc hội thoại để cập nhật danh sách người tham gia
-                    // loadConversation(activeConversationId, activeConversationType);
-                } else {
-                    alert(data.message || 'Lỗi khi mời admin.');
-                }
-            } catch (error) {
-                console.error('Lỗi:', error);
-                alert('Đã xảy ra lỗi khi mời admin.');
-            }
-        });
-    }
+    if (cancelInviteBtn) {
+        cancelInviteBtn.addEventListener('click', () => {
+            if (inviteAdminModal) inviteAdminModal.style.display = 'none';
+        });
+    }
 
-    if (cancelInviteBtn) {
-        cancelInviteBtn.addEventListener('click', () => {
-            if (inviteAdminModal) inviteAdminModal.style.display = 'none';
-        });
-    }
+    // --- Logic Modal Tạo Chat Nội Bộ Mới ---
+    if (createInternalChatBtn) {
+        createInternalChatBtn.addEventListener('click', () => {
+            if (createInternalChatModal) createInternalChatModal.style.display = 'block';
+            if (internalChatRecipients && INITIAL_ADMINS_DATA) {
+                internalChatRecipients.innerHTML = '';
+                let optionsAdded = 0;
+                INITIAL_ADMINS_DATA.forEach(admin => {
+                    if (admin.id === AUTH_ID) {
+                        return;
+                    }
+                    const option = document.createElement('option');
+                    option.value = admin.id;
+                    option.textContent = admin.name;
+                    internalChatRecipients.appendChild(option);
+                    optionsAdded++;
+                });
+                if (optionsAdded === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Không có người dùng nào để mời';
+                    option.disabled = true;
+                    internalChatRecipients.appendChild(option);
+                }
+            }
+        });
+    }
 
-    // --- Logic Modal Tạo Chat Nội Bộ Mới ---
-    if (createInternalChatBtn) {
-        createInternalChatBtn.addEventListener('click', () => {
-            if (createInternalChatModal) createInternalChatModal.style.display = 'block';
-            // Cập nhật danh sách admins cho select box trong modal
-            if (internalChatRecipients && INITIAL_ADMINS_DATA) {
-                internalChatRecipients.innerHTML = ''; // Xóa các option cũ
-                let optionsAdded = 0;
-                INITIAL_ADMINS_DATA.forEach(admin => {
-                    // Loại bỏ admin hiện tại khỏi danh sách để mời
-                    if (admin.id === AUTH_ID) {
-                        return;
-                    }
-                   
-                    // Cho phép tất cả admin được mời vào chat nội bộ (nếu không có yêu cầu lọc)
-                    // Nếu bạn muốn lọc cả ở đây, bạn sẽ cần logic tương tự như inviteAdminBtn
-                    const option = document.createElement('option');
-                    option.value = admin.id;
-                    option.textContent = admin.name;
-                    internalChatRecipients.appendChild(option);
-                    optionsAdded++;
-                });
-                if (optionsAdded === 0) {
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'Không có người dùng nào để mời';
-                    option.disabled = true;
-                    internalChatRecipients.appendChild(option);
-                }
-            }
-        });
-    }
+    if (internalChatForm && internalChatRecipients && firstMessage) {
+        internalChatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const subject = internalChatSubject.value.trim();
+            const recipients = Array.from(internalChatRecipients.selectedOptions).map(option => option.value);
+            const firstMsg = firstMessage.value.trim();
 
-    if (internalChatForm && internalChatRecipients && firstMessage) {
-        internalChatForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const subject = internalChatSubject.value.trim();
-            const recipients = Array.from(internalChatRecipients.selectedOptions).map(option => option.value);
-            const firstMsg = firstMessage.value.trim();
+            if (recipients.length === 0 || firstMsg === '') {
+                alert('Vui lòng chọn người nhận và nhập tin nhắn.');
+                return;
+            }
 
-            if (recipients.length === 0 || firstMsg === '') {
-                alert('Vui lòng chọn người nhận và nhập tin nhắn.');
-                return;
-            }
+            try {
+                const response = await fetch('/admin/chat/create-internal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        subject: subject,
+                        recipient_ids: recipients,
+                        first_message: firstMsg
+                    })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    alert(data.message);
+                    if (createInternalChatModal) createInternalChatModal.style.display = 'none';
+                    internalChatForm.reset();
+                    location.reload();
+                } else {
+                    alert(data.message || 'Lỗi khi tạo chat nội bộ.');
+                }
+            } catch (error) {
+                console.error('Lỗi:', error);
+                alert('Đã xảy ra lỗi khi tạo chat nội bộ.');
+            }
+        });
+    }
 
-            try {
-                const response = await fetch('/admin/chat/create-internal', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({
-                        subject: subject,
-                        recipient_ids: recipients,
-                        first_message: firstMsg
-                    })
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    alert(data.message);
-                    if (createInternalChatModal) createInternalChatModal.style.display = 'none';
-                    internalChatForm.reset(); // Reset form
-                    // Tải lại toàn bộ danh sách hội thoại để hiển thị chat mới
-                    location.reload();
-                } else {
-                    alert(data.message || 'Lỗi khi tạo chat nội bộ.');
-                }
-            } catch (error) {
-                console.error('Lỗi:', error);
-                alert('Đã xảy ra lỗi khi tạo chat nội bộ.');
-            }
-        });
-    }
+    if (cancelCreateInternalChatBtn) {
+        cancelCreateInternalChatBtn.addEventListener('click', () => {
+            if (createInternalChatModal) createInternalChatModal.style.display = 'none';
+            internalChatForm.reset();
+        });
+    }
 
-    if (cancelCreateInternalChatBtn) {
-        cancelCreateInternalChatBtn.addEventListener('click', () => {
-            if (createInternalChatModal) createInternalChatModal.style.display = 'none';
-            internalChatForm.reset();
-        });
-    }
-
-    // Tự động tải cuộc hội thoại đầu tiên nếu có khi trang tải
-    if (INITIAL_SUPPORT_CONVERSATIONS && INITIAL_SUPPORT_CONVERSATIONS.length > 0) {
-        console.log('Attempting to load first support conversation:', INITIAL_SUPPORT_CONVERSATIONS[0].id);
-        loadConversation(INITIAL_SUPPORT_CONVERSATIONS[0].id, "support");
-    } else if (INITIAL_INTERNAL_CONVERSATIONS && INITIAL_INTERNAL_CONVERSATIONS.length > 0) {
-        console.log('Attempting to load first internal conversation:', INITIAL_INTERNAL_CONVERSATIONS[0].id);
-        loadConversation(INITIAL_INTERNAL_CONVERSATIONS[0].id, "internal");
-    } else {
-        console.log('No initial conversations to load.');
-    }
+    // Tự động tải cuộc hội thoại đầu tiên nếu có khi trang tải
+    if (INITIAL_SUPPORT_CONVERSATIONS && INITIAL_SUPPORT_CONVERSATIONS.length > 0) {
+        console.log('Attempting to load first support conversation:', INITIAL_SUPPORT_CONVERSATIONS[0].id);
+        loadConversation(INITIAL_SUPPORT_CONVERSATIONS[0].id, "support");
+    } else if (INITIAL_INTERNAL_CONVERSATIONS && INITIAL_INTERNAL_CONVERSATIONS.length > 0) {
+        console.log('Attempting to load first internal conversation:', INITIAL_INTERNAL_CONVERSATIONS[0].id);
+        loadConversation(INITIAL_INTERNAL_CONVERSATIONS[0].id, "internal");
+    } else {
+        console.log('No initial conversations to load.');
+    }
 });
