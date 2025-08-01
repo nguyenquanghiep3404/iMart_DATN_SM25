@@ -74,6 +74,10 @@ class OrderController extends Controller
             'shipper:id,name,email,phone_number',
             'shippingProvince:code,name,name_with_type',
             'shippingWard:code,name,name_with_type,path_with_type',
+            'storeLocation:id,name,address,phone,province_code,district_code,ward_code',
+            'storeLocation.province:code,name,name_with_type',
+            'storeLocation.district:code,name,name_with_type',
+            'storeLocation.ward:code,name,name_with_type',
         ]);
 
         return response()->json([

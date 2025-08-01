@@ -2,30 +2,31 @@
 
 namespace App\Http\Controllers\Users;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use App\Http\Requests\PaymentRequest;
 use App\Models\Cart;
-use App\Models\CartItem;
-use App\Models\Product;
-use App\Models\ProductVariant;
-use App\Models\ProductInventory;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Coupon;
-use App\Models\CouponUsage;
-use App\Models\Province;
 use App\Models\Ward;
+use App\Models\Order;
+use App\Models\Coupon;
 use App\Models\Address;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
+use App\Models\Product;
+use App\Models\CartItem;
+use App\Models\Province;
+use App\Models\OrderItem;
+use App\Models\CouponUsage;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use App\Models\StoreLocation;
+use App\Models\ProductVariant;
+use App\Models\LoyaltyPointLog;
+use App\Models\ProductInventory;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\Controller;
+
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 
-use App\Models\LoyaltyPointLog;
-use Illuminate\Support\Facades\Log;
-
-use App\Models\StoreLocation;
+use Illuminate\Support\Facades\Mail;
+use App\Http\Requests\PaymentRequest;
 use Telegram\Bot\Laravel\Facades\Telegram;
 
 
@@ -63,9 +64,9 @@ class PaymentController extends Controller
     //     ]));
     // }
     public function index()
-{
-    // 1. Lấy toàn bộ dữ liệu giỏ hàng đã được tính toán chính xác từ hàm getCartData()
-    $cartData = $this->getCartData();
+    {
+        // 1. Lấy toàn bộ dữ liệu giỏ hàng đã được tính toán chính xác từ hàm getCartData()
+        $cartData = $this->getCartData();
 
         if ($cartData['items']->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
@@ -99,50 +100,49 @@ class PaymentController extends Controller
             'total' => $total,
             'discount' => $discount
         ]));
-    if ($cartData['items']->isEmpty()) {
-        return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
+        if ($cartData['items']->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
+        }
 
+        // 2. Lấy các giá trị đã được tính toán đúng từ $cartData
+        $items = $cartData['items'];
+        $subtotal = $cartData['subtotal'];
+        $couponDiscount = $cartData['discount_from_coupon']; // Chỉ lấy giảm giá từ coupon
+        $pointsDiscount = $cartData['discount_from_points']; // Lấy giảm giá từ điểm
+        $total = $cartData['total']; // Lấy tổng tiền cuối cùng đã được tính đúng
+        $totalPointsToEarn = $cartData['totalPointsToEarn'];
+
+        // 3. Tính toán các thông số vận chuyển
+        $totalWeight = $items->sum(function ($item) {
+            return ($item->productVariant->weight ?? 0) * $item->quantity;
+        });
+        $maxLength = $items->max(function ($item) {
+            return $item->productVariant->dimensions_length ?? 0;
+        });
+        $maxWidth = $items->max(function ($item) {
+            return $item->productVariant->dimensions_width ?? 0;
+        });
+        $totalHeight = $items->sum(function ($item) {
+            return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
+        });
+
+        $availableCoupons = Coupon::where('status', 'active')->get();
+
+        // 4. Trả về view với toàn bộ dữ liệu chính xác
+        return view('users.payments.information', [
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'discount' => $couponDiscount,      // Chỉ giảm giá từ coupon
+            'pointsDiscount' => $pointsDiscount,  // Biến mới cho giảm giá từ điểm
+            'total' => $total,                  // Tổng cuối cùng đã tính đúng
+            'totalPointsToEarn' => $totalPointsToEarn,
+            'availableCoupons' => $availableCoupons,
+            'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
+            'baseLength' => $maxLength > 0 ? $maxLength : 20,
+            'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
+            'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
+        ]);
     }
-
-    // 2. Lấy các giá trị đã được tính toán đúng từ $cartData
-    $items = $cartData['items'];
-    $subtotal = $cartData['subtotal'];
-    $couponDiscount = $cartData['discount_from_coupon']; // Chỉ lấy giảm giá từ coupon
-    $pointsDiscount = $cartData['discount_from_points']; // Lấy giảm giá từ điểm
-    $total = $cartData['total']; // Lấy tổng tiền cuối cùng đã được tính đúng
-    $totalPointsToEarn = $cartData['totalPointsToEarn'];
-
-    // 3. Tính toán các thông số vận chuyển (giữ nguyên logic cũ của bạn)
-    $totalWeight = $items->sum(function ($item) {
-        return ($item->productVariant->weight ?? 0) * $item->quantity;
-    });
-    $maxLength = $items->max(function ($item) {
-        return $item->productVariant->dimensions_length ?? 0;
-    });
-    $maxWidth = $items->max(function ($item) {
-        return $item->productVariant->dimensions_width ?? 0;
-    });
-    $totalHeight = $items->sum(function ($item) {
-        return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
-    });
-
-    $availableCoupons = Coupon::where('status', 'active')->get();
-
-    // 4. Trả về view với toàn bộ dữ liệu chính xác
-    return view('users.payments.information', [
-        'items' => $items,
-        'subtotal' => $subtotal,
-        'discount' => $couponDiscount,      // Chỉ giảm giá từ coupon
-        'pointsDiscount' => $pointsDiscount,  // Biến mới cho giảm giá từ điểm
-        'total' => $total,                  // Tổng cuối cùng đã tính đúng
-        'totalPointsToEarn' => $totalPointsToEarn,
-        'availableCoupons' => $availableCoupons,
-        'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
-        'baseLength' => $maxLength > 0 ? $maxLength : 20,
-        'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
-        'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
-    ]);
-}
     /**
      * Xử lý đặt hàng COD
      */
@@ -303,8 +303,6 @@ class PaymentController extends Controller
                     ])
                 ]);
 
-
-
                 // Lưu địa chỉ mới vào sổ địa chỉ nếu người dùng chọn
                 if (Auth::check() && $request->save_address && !$request->address_id) {
                     $this->saveNewAddress($request);
@@ -319,7 +317,6 @@ class PaymentController extends Controller
                     'success' => true,
                     'redirect_url' => route('payments.bank_transfer_qr', ['order' => $order->id])
                 ]);
-
             } catch (\Exception $e) {
                 DB::rollback();
                 return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
@@ -926,8 +923,8 @@ class PaymentController extends Controller
 
             // --- XỬ LÝ TRỪ ĐIỂM ---
             if ($user && $pointsUsed > 0) {
-                 $user->decrement('loyalty_points_balance', $pointsUsed);
-                 LoyaltyPointLog::create([
+                $user->decrement('loyalty_points_balance', $pointsUsed);
+                LoyaltyPointLog::create([
                     'user_id' => $user->id,
                     'order_id' => $order->id,
                     'points' => -$pointsUsed,
@@ -1185,85 +1182,85 @@ class PaymentController extends Controller
      */
     // Trong file app/Http/Controllers/Users/PaymentController.php
 
-private function getCartData()
-{
-    $user = auth()->user();
-    $items = collect();
+    private function getCartData()
+    {
+        $user = auth()->user();
+        $items = collect();
 
-    // 1. Lấy danh sách sản phẩm (logic này của bạn đã đúng)
-    if ($user && $user->cart) {
-        $items = $user->cart->items()
-            ->with('cartable.product', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
-            ->get()
-            ->filter(fn($item) => $item->cartable && $item->cartable->product)
-            ->map(function ($item) {
-                if ($item->cartable_type === ProductVariant::class) {
-                    $item->stock_quantity = $this->getSellableStock($item->cartable) ?? 0;
-                    $item->productVariant = $item->cartable;
-                    $item->points_to_earn = $item->cartable->points_awarded_on_purchase ?? 0;
-                } else {
-                    $item->stock_quantity = 999;
-                    $item->productVariant = $item->cartable;
-                    $item->points_to_earn = 0;
-                }
-                return $item;
-            });
-    } else {
-        $sessionCart = session('cart', []);
-        $items = collect($sessionCart)->map(function ($data) {
-            $cartableId = $data['cartable_id'] ?? $data['variant_id'] ?? null;
-            if (!$cartableId) return null;
+        // 1. Lấy danh sách sản phẩm (logic này của bạn đã đúng)
+        if ($user && $user->cart) {
+            $items = $user->cart->items()
+                ->with('cartable.product', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
+                ->get()
+                ->filter(fn($item) => $item->cartable && $item->cartable->product)
+                ->map(function ($item) {
+                    if ($item->cartable_type === ProductVariant::class) {
+                        $item->stock_quantity = $this->getSellableStock($item->cartable) ?? 0;
+                        $item->productVariant = $item->cartable;
+                        $item->points_to_earn = $item->cartable->points_awarded_on_purchase ?? 0;
+                    } else {
+                        $item->stock_quantity = 999;
+                        $item->productVariant = $item->cartable;
+                        $item->points_to_earn = 0;
+                    }
+                    return $item;
+                });
+        } else {
+            $sessionCart = session('cart', []);
+            $items = collect($sessionCart)->map(function ($data) {
+                $cartableId = $data['cartable_id'] ?? $data['variant_id'] ?? null;
+                if (!$cartableId) return null;
 
-            $cartable = ProductVariant::with('product', 'attributeValues.attribute', 'primaryImage')->find($cartableId);
-            if (!$cartable || !$cartable->product) return null;
+                $cartable = ProductVariant::with('product', 'attributeValues.attribute', 'primaryImage')->find($cartableId);
+                if (!$cartable || !$cartable->product) return null;
 
-            return (object) [
-                'id' => $cartableId,
-                'productVariant' => $cartable,
-                'price' => $data['price'],
-                'quantity' => $data['quantity'],
-                'stock_quantity' => $this->getSellableStock($cartable),
-                'cartable_type' => ProductVariant::class,
-                'points_to_earn' => $cartable->points_awarded_on_purchase ?? 0,
-            ];
-        })->filter();
+                return (object) [
+                    'id' => $cartableId,
+                    'productVariant' => $cartable,
+                    'price' => $data['price'],
+                    'quantity' => $data['quantity'],
+                    'stock_quantity' => $this->getSellableStock($cartable),
+                    'cartable_type' => ProductVariant::class,
+                    'points_to_earn' => $cartable->points_awarded_on_purchase ?? 0,
+                ];
+            })->filter();
+        }
+
+        // 2. Tính toán các giá trị tài chính MỘT LẦN DUY NHẤT
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+
+        // Lấy giảm giá từ coupon
+        $couponDiscount = session('applied_coupon.discount', 0);
+
+        // Lấy giảm giá từ điểm thưởng
+        $pointsDiscount = 0;
+        if (Auth::check()) {
+            $pointsDiscount = session('points_applied.discount', 0);
+        }
+
+        // Tính tổng giảm giá và tổng tiền cuối cùng
+        $totalDiscount = $couponDiscount + $pointsDiscount;
+        $total = max(0, $subtotal - $totalDiscount);
+
+        // Tính tổng điểm thưởng sẽ nhận được
+        $totalPointsToEarn = $items->sum(function ($item) {
+            return ($item->points_to_earn ?? 0) * $item->quantity;
+        });
+
+        // 3. Trả về kết quả cuối cùng
+        return [
+            'items' => $items,
+            'subtotal' => $subtotal,
+            'discount' => $couponDiscount, //  Chỉ trả về discount của coupon
+            'discount_from_coupon' => $couponDiscount, // Để rõ ràng hơn
+            'discount_from_points' => $pointsDiscount, // Để rõ ràng hơn
+            'total' => $total, // Tổng tiền cuối cùng đã chính xác
+            'voucher' => session('applied_coupon'), // Giữ nguyên để có thể dùng ở nơi khác
+            'items_count' => $items->count(),
+            'total_quantity' => $items->sum('quantity'),
+            'totalPointsToEarn' => $totalPointsToEarn,
+        ];
     }
-
-    // 2. Tính toán các giá trị tài chính MỘT LẦN DUY NHẤT
-    $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
-
-    // Lấy giảm giá từ coupon
-    $couponDiscount = session('applied_coupon.discount', 0);
-
-    // Lấy giảm giá từ điểm thưởng
-    $pointsDiscount = 0;
-    if (Auth::check()) {
-        $pointsDiscount = session('points_applied.discount', 0);
-    }
-
-    // Tính tổng giảm giá và tổng tiền cuối cùng
-    $totalDiscount = $couponDiscount + $pointsDiscount;
-    $total = max(0, $subtotal - $totalDiscount);
-
-    // Tính tổng điểm thưởng sẽ nhận được
-    $totalPointsToEarn = $items->sum(function($item) {
-        return ($item->points_to_earn ?? 0) * $item->quantity;
-    });
-
-    // 3. Trả về kết quả cuối cùng
-    return [
-        'items' => $items,
-        'subtotal' => $subtotal,
-        'discount' => $couponDiscount, // <<< Chỉ trả về discount của coupon
-        'discount_from_coupon' => $couponDiscount, // Để rõ ràng hơn
-        'discount_from_points' => $pointsDiscount, // Để rõ ràng hơn
-        'total' => $total, // Tổng tiền cuối cùng đã chính xác
-        'voucher' => session('applied_coupon'), // Giữ nguyên để có thể dùng ở nơi khác
-        'items_count' => $items->count(),
-        'total_quantity' => $items->sum('quantity'),
-        'totalPointsToEarn' => $totalPointsToEarn,
-    ];
-}
     /**
      * Tính phí vận chuyển
      */
@@ -1510,11 +1507,6 @@ private function getCartData()
      */
     public function processBuyNowOrder(PaymentRequest $request)
     {
-        // Validate dữ liệu
-        $request->validate([
-            'address_system' => 'required|string|in:new,old',
-            // ... các validate khác
-        ]);
         // Validation đã được xử lý trong PaymentRequest
         // Kiểm tra session Buy Now
         if (!session()->has('buy_now_session')) {
@@ -1611,8 +1603,8 @@ private function getCartData()
                     $this->saveNewAddress($request);
                 }
 
-                // SỬA: Xóa session "Mua Ngay"
-                $this->clearPurchaseSession();
+                // Xóa session "Mua Ngay"
+                $this->clearBuyNowSession();
                 DB::commit();
 
                 return response()->json([
@@ -1624,17 +1616,10 @@ private function getCartData()
                 return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
             }
         }
+        // Xử lý các phương thức thanh toán khác
         try {
             DB::beginTransaction();
-            // Tạo mã đơn hàng
-            $orderCode = 'DH-' . strtoupper(Str::random(10));
-            // Tính toán shipping fee
-            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
-
-        DB::beginTransaction();
-        try {
             $user = Auth::user();
-
             // --- TÍCH HỢP ĐIỂM THƯỞNG ---
             $pointsApplied = session('points_applied');
             $pointsUsed = 0;
@@ -1651,14 +1636,14 @@ private function getCartData()
                 $adminNote = trim($adminNote . "\n\n--- Ghi chú Điểm thưởng ---\n" . $pointsNote);
             }
 
-            // --- TÍNH TOÁN LẠI GIÁ TRỊ (Buy Now không có coupon) ---
+            // --- TÍNH TOÁN LẠI GIÁ TRỊ CUỐI CÙNG ---
             $shippingFee = $request->has('shipping_fee') ? (int)$request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
-            $totalDiscount = $discountFromPoints;
+            $totalDiscount = $buyNowData['discount'] + $discountFromPoints;
             $grandTotal = $buyNowData['subtotal'] + $shippingFee - $totalDiscount;
 
             $orderCode = 'DH-' . strtoupper(Str::random(10));
             $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->shipping_time);
->>>>>>> 2667d55900bf648a63be14e1c1a8b53ae0bc35c2
+
 
             // Chuẩn bị dữ liệu địa chỉ và thông tin khách hàng
             $customerInfo = $this->prepareCustomerInfo($request);
@@ -1705,9 +1690,12 @@ private function getCartData()
                 'shipping_fee' => $shippingFee,
                 'discount_amount' => $totalDiscount,
                 'grand_total' => $grandTotal,
+                'payment_method' => $request->payment_method,
+                'payment_status' => $request->payment_method === 'cod' ? Order::PAYMENT_PENDING : Order::PAYMENT_PENDING,
+                'shipping_method' => $request->shipping_method,
+                'status' => Order::STATUS_PENDING_CONFIRMATION,
                 'notes_from_customer' => $request->notes,
                 'admin_note' => $adminNote,
-                // ... (Các trường khác từ code gốc của bạn)
                 'desired_delivery_date' => $deliveryInfo['date'],
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
                 'store_location_id' => $customerInfo['store_location_id'] ?? null,
@@ -1738,8 +1726,8 @@ private function getCartData()
             $this->decrementInventoryStock($variant, $item->quantity);
             // --- XỬ LÝ TRỪ ĐIỂM ---
             if ($user && $pointsUsed > 0) {
-                 $user->decrement('loyalty_points_balance', $pointsUsed);
-                 LoyaltyPointLog::create([
+                $user->decrement('loyalty_points_balance', $pointsUsed);
+                LoyaltyPointLog::create([
                     'user_id' => $user->id,
                     'order_id' => $order->id,
                     'points' => -$pointsUsed,
@@ -1766,13 +1754,13 @@ private function getCartData()
                     // ...
                 ]
             ]);
-
         } catch (\Exception $e) {
             DB::rollback();
             Log::error("Lỗi khi xử lý đơn hàng Buy Now: " . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
         }
     }
+
     /**
      * Lấy dữ liệu giỏ hàng cho Buy Now
      */
@@ -1793,19 +1781,53 @@ private function getCartData()
                 'price' => $buyNowSession['price'],
                 'quantity' => $buyNowSession['quantity'],
                 'stock_quantity' => $this->getSellableStock($variant),
+                'points_to_earn' => $variant->points_awarded_on_purchase ?? 0, // Để tương thích với getCartData()
             ]
         ]);
         $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
-        $discount = 0; // Buy Now không áp dụng voucher
-        $total = max(0, $subtotal - $discount);
+        $discount = session('applied_coupon.discount', 0);
+        $pointsDiscount = 0;
+        if (Auth::check()) {
+            $pointsDiscount = session('points_applied.discount', 0);
+        }
+        $total = max(0, $subtotal - $discount - $pointsDiscount);
+
+        // Tính tổng điểm thưởng sẽ nhận được
+        $totalPointsToEarn = $items->sum(function ($item) {
+            return ($item->productVariant->points_awarded_on_purchase ?? 0) * $item->quantity;
+        });
+
+        // Tính toán thông số vận chuyển
+        $totalWeight = $items->sum(function ($item) {
+            return ($item->productVariant->weight ?? 0) * $item->quantity;
+        });
+        $maxLength = $items->max(function ($item) {
+            return $item->productVariant->dimensions_length ?? 0;
+        });
+        $maxWidth = $items->max(function ($item) {
+            return $item->productVariant->dimensions_width ?? 0;
+        });
+        $totalHeight = $items->sum(function ($item) {
+            return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
+        });
+
         return [
             'items' => $items,
             'subtotal' => $subtotal,
             'discount' => $discount,
+            'discount_from_coupon' => $discount, // Để rõ ràng hơn
+            'discount_from_points' => $pointsDiscount, // Để rõ ràng hơn
+            'pointsDiscount' => $pointsDiscount,
             'total' => $total,
-            'voucher' => null,
+            'voucher' => session('applied_coupon'), // Giữ nguyên để có thể dùng ở nơi khác
             'items_count' => $items->count(),
-            'total_quantity' => $items->sum('quantity')
+            'total_quantity' => $items->sum('quantity'),
+            'totalPointsToEarn' => $totalPointsToEarn,
+            'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
+            'baseLength' => $maxLength > 0 ? $maxLength : 20,
+            'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
+            'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
+            'availableCoupons' => Coupon::where('status', 'active')->get(), // Buy Now VẪN áp dụng coupon
         ];
     }
     /**
@@ -2253,5 +2275,4 @@ private function getCartData()
             return response('<h1>Đã có lỗi xảy ra!</h1><p>Vui lòng thử lại hoặc liên hệ quản trị viên.</p>', 500);
         }
     }
-
 }

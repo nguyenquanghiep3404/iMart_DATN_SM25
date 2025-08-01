@@ -427,7 +427,7 @@
                                     </div>
                                 </div>
                                 <hr class="my-4">
-                                <h4 class="h6 mb-3">Chọn cửa hàng để nhận hàng</h4>
+                                <h4 class="h6 mb-3">Chọn cửa hàng để nhận hàng <span class="text-danger">*</span></h4>
                                 <!-- Button chọn cửa hàng -->
                                 <div class="mb-3">
                                     <button type="button" id="select-store-btn"
@@ -681,7 +681,7 @@
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted small">Điểm thưởng</span>
                                     <span id="points-summary" class="fw-medium text-warning small">
-                                        <i class="ci-star-filled"></i> +{{ number_format($totalPointsToEarn) }}
+                                        <i class="ci-star-filled"></i> +{{ number_format($totalPointsToEarn ?? 0) }}
                                     </span>
                                 </div>
                                 <a href="#" class="text-decoration-none small">Xem chi tiết</a>
