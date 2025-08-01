@@ -54,26 +54,37 @@
             transform: translateY(-1px);
             shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        /* Kiểu thông báo (toast) */
+        /* Kiểu thông báo (toast) - Giao diện giống mẫu */
         #toast-container {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 9999;
-            max-width: 400px;
+            max-width: 500px;
         }
         .toast {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            background: #10b981;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
             padding: 16px 20px;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
-            transform: translateX(400px);
+            transform: translateX(520px);
             opacity: 0;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-left: 4px solid;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .toast::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(0, 0, 0, 0.1);
         }
         
         .toast.show {
@@ -82,72 +93,110 @@
         }
         
         .toast.success {
-            border-left-color: #10b981;
+            background: #10b981;
         }
         
         .toast.error {
-            border-left-color: #ef4444;
+            background: #ef4444;
         }
         
         .toast.warning {
-            border-left-color: #f59e0b;
+            background: #f59e0b;
         }
         
         .toast-icon {
-            width: 24px;
-            height: 24px;
-            margin-right: 12px;
+            width: 32px;
+            height: 32px;
+            margin-right: 16px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 12px;
+            color: #10b981;
+            font-size: 16px;
+            font-weight: 600;
+            flex-shrink: 0;
+            background: white;
         }
         
         .toast.success .toast-icon {
-            background: #10b981;
+            color: #10b981;
+            background: white;
         }
         
         .toast.error .toast-icon {
-            background: #ef4444;
+            color: #ef4444;
+            background: white;
         }
         
         .toast.warning .toast-icon {
-            background: #f59e0b;
+            color: #f59e0b;
+            background: white;
         }
         
         .toast-content {
             flex: 1;
-        }
-        
-        .toast-title {
-            font-weight: 600;
-            font-size: 14px;
-            color: #1f2937;
-            margin-bottom: 2px;
+            min-width: 0;
         }
         
         .toast-message {
-            font-size: 13px;
-            color: #6b7280;
+            font-size: 15px;
+            color: white;
             line-height: 1.4;
+            font-weight: 500;
         }
         
         .toast-close {
-            margin-left: 12px;
+            margin-left: 16px;
             background: none;
             border: none;
-            color: #9ca3af;
+            color: white;
             cursor: pointer;
             padding: 4px;
             border-radius: 4px;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
         }
         
         .toast-close:hover {
-            color: #6b7280;
-            background: #f3f4f6;
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Animation cho toast */
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes toastSlideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+        
+        .toast.show {
+            animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        
+        .toast.hide {
+            animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
 
         /* Kiểu cho sản phẩm */
@@ -1587,9 +1636,10 @@
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
         toast.innerHTML = `
-            <div class="toast-icon">${icon}</div>
+            <div class="toast-icon">
+                <i class="fas fa-check"></i>
+            </div>
             <div class="toast-content">
-                <div class="toast-title">${toastTitle}</div>
                 <div class="toast-message">${message}</div>
             </div>
             <button class="toast-close" onclick="removeToast(this.parentElement)">
@@ -1615,7 +1665,7 @@
     
     function removeToast(toast) {
         if (toast && toast.parentElement) {
-            toast.classList.remove('show');
+            toast.classList.add('hide');
             setTimeout(() => {
                 if (toast.parentElement) {
                     toast.parentElement.removeChild(toast);
@@ -1741,9 +1791,8 @@
             const result = await response.json();
             
             if (response.ok && result.success) {
-                // Hiển thị thông báo cải thiện
-                const statusText = result.data?.status_text || 'trạng thái mới';
-                showToast(`Đơn hàng đã được cập nhật thành "${statusText}" thành công!`, 'success', 'Cập nhật thành công');
+                // Hiển thị thông báo ngắn gọn
+                showToast('Cập nhật trạng thái thành công', 'success');
                 
                 // Đánh dấu đơn hàng này đã xem (bỏ đánh dấu "mới")
                 markOrderAsViewed(currentOrderId);
@@ -1757,20 +1806,15 @@
                 // Xử lý các loại lỗi khác nhau
                 if (response.status === 422) {
                     // Lỗi xác thực
-                    if (result.errors) {
-                        const errorMessages = Object.values(result.errors).flat();
-                        showToast(errorMessages.join('. '), 'error', 'Dữ liệu không hợp lệ');
-                    } else {
-                        showToast('Dữ liệu gửi lên không hợp lệ. Vui lòng kiểm tra lại.', 'error', 'Validation Error');
-                    }
+                    showToast('Vui lòng chọn trạng thái hợp lệ', 'error');
                 } else if (response.status === 403) {
-                    showToast('Bạn không có quyền thực hiện hành động này.', 'error', 'Không có quyền');
+                    showToast('Bạn không có quyền thực hiện hành động này.', 'error');
                 } else if (response.status === 404) {
-                    showToast('Không tìm thấy đơn hàng. Đơn hàng có thể đã bị xóa.', 'error', 'Không tìm thấy');
+                    showToast('Không tìm thấy đơn hàng. Đơn hàng có thể đã bị xóa.', 'error');
                 } else if (response.status >= 500) {
-                    showToast('Lỗi server. Vui lòng thử lại sau hoặc liên hệ IT Support.', 'error', 'Lỗi server');
+                    showToast('Lỗi server. Vui lòng thử lại sau hoặc liên hệ IT Support.', 'error');
                 } else {
-                    showToast(result.message || 'Không thể cập nhật trạng thái. Vui lòng thử lại.', 'error', 'Cập nhật thất bại');
+                    showToast('Vui lòng chọn trạng thái hợp lệ', 'error');
                 }
             }
         } catch (error) {
@@ -1908,7 +1952,7 @@
             const result = await response.json();
             
             if (response.ok && result.success) {
-                showToast(`Đã gán shipper "${result.data.shipper.name}" cho đơn hàng thành công!`, 'success', 'Gán shipper thành công');
+                showToast('Cập nhật trạng thái thành công', 'success');
                 
                 // Đánh dấu đơn hàng này đã xem (bỏ đánh dấu "mới")
                 markOrderAsViewed(currentAssignOrderId);
@@ -1920,13 +1964,13 @@
                 refreshCurrentPage();
             } else {
                 if (response.status === 422) {
-                    showToast(result.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.', 'error', 'Dữ liệu không hợp lệ');
+                    showToast('Vui lòng chọn trạng thái hợp lệ', 'error');
                 } else if (response.status === 403) {
-                    showToast('Bạn không có quyền thực hiện hành động này.', 'error', 'Không có quyền');
+                    showToast('Bạn không có quyền thực hiện hành động này.', 'error');
                 } else if (response.status === 404) {
-                    showToast('Không tìm thấy đơn hàng hoặc shipper.', 'error', 'Không tìm thấy');
+                    showToast('Không tìm thấy đơn hàng hoặc shipper.', 'error');
                 } else {
-                    showToast(result.message || 'Không thể gán shipper. Vui lòng thử lại.', 'error', 'Gán shipper thất bại');
+                    showToast('Vui lòng chọn trạng thái hợp lệ', 'error');
                 }
             }
         } catch (error) {
