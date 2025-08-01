@@ -640,7 +640,7 @@
                                     <i class="ci-chevron-right text-muted"></i>
                                 </button>
 
-                            
+
                             </div>
 
                             <!-- Scrollable order information -->
@@ -681,7 +681,7 @@
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted small">Điểm thưởng</span>
                                     <span id="points-summary" class="fw-medium text-warning small">
-                                        <i class="ci-star-filled"></i> +4,095
+                                        <i class="ci-star-filled"></i> +{{ number_format($totalPointsToEarn) }}
                                     </span>
                                 </div>
                                 <a href="#" class="text-decoration-none small">Xem chi tiết</a>
@@ -1629,15 +1629,13 @@
         shippingFee = 0;
     }
 
-    // Lấy các element để cập nhật
     const shippingFeeSummary = document.getElementById('shipping-fee-summary');
-    const grandTotalSummary = document.getElementById('cart-total'); // ID này phải khớp với HTML của bạn
+    const grandTotalSummary = document.getElementById('cart-total');
 
     let finalTotal;
 
     if (shippingFee === null || shippingFee === undefined) {
         shippingFeeSummary.textContent = 'Chưa xác định';
-        // Tổng tiền tạm thời khi chưa có phí ship
         finalTotal = baseSubtotal - baseDiscount - basePointsDiscount;
     } else {
         shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat('vi-VN', {
@@ -1645,12 +1643,10 @@
             currency: 'VND'
         }).format(shippingFee);
 
-        // <<< ĐÂY LÀ DÒNG THAY ĐỔI QUAN TRỌNG >>>
         // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
         finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
     }
 
-    // Cập nhật hiển thị tổng tiền
     if (grandTotalSummary) {
         grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', {
             style: 'currency',

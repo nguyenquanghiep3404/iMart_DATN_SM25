@@ -1,4 +1,8 @@
 @extends('admin.layouts.app')
+@php
+    session()->pull('success');
+    session()->pull('error');
+@endphp
 
 @section('title', 'Quản lý Cửa hàng')
 
@@ -368,14 +372,6 @@
 
                 init() {
                     this.resetForm();
-                    // Nếu bạn đã chuyển hoàn toàn sang AJAX, bạn có thể xóa phần này
-                    // để tránh flash message xuất hiện khi refresh thủ công.
-                    // @if(Session::has('success'))
-                    //     this.showMessage('{{ Session::get('success') }}', 'success');
-                    // @endif
-                    // @if(Session::has('error'))
-                    //     this.showMessage('{{ Session::get('error') }}', 'error');
-                    // @endif
                     this.currentPage = 1;
                 },
 
