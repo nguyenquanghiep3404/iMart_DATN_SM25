@@ -5,63 +5,48 @@ namespace App\Events;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel; // Quan trọng: Sử dụng PrivateChannel cho kênh riêng tư
+use Illuminate\Broadcasting\PrivateChannel; // Quan trọng: Đảm bảo sử dụng PrivateChannel
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
-use App\Models\ChatMessage; // Đảm bảo import ChatMessage model
-use App\Models\ChatConversation; // Đảm bảo import ChatConversation model
+use App\Models\ChatMessage;
+use App\Models\ChatConversation;
 
 class NewMessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
-    public $conversation; // Truyền cả cuộc hội thoại nếu cần thông tin của nó ở frontend
+    public $conversation;
 
-    /**
-     * Create a new event instance.
-     *
-     * @return void
-     */
     public function __construct(ChatMessage $message, ChatConversation $conversation)
     {
-        // Load sender relationship để có thể truy cập message.sender.name ở frontend
-        $this->message = $message->load('sender');
+        $this->message = $message;
         $this->conversation = $conversation;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
     public function broadcastOn(): array
     {
-        // Tin nhắn sẽ được phát sóng trên kênh riêng tư của cuộc hội thoại
+        // Kênh riêng tư cho cuộc hội thoại này.
+        // Tên kênh phải khớp với tên lắng nghe của Echo.
         return [
             new PrivateChannel('chat.conversation.' . $this->conversation->id),
-            // Tùy chọn: Phát sóng lên kênh cá nhân của người nhận nếu bạn muốn thông báo real-time
-            // new PrivateChannel('users.' . $this->message->receiver_id), // Nếu có receiver_id trong message
         ];
     }
 
-    /**
-     * The event's broadcast name.
-     * Laravel Echo sẽ lắng nghe event với tên này (ví dụ: .message.sent)
-     */
     public function broadcastAs(): string
     {
+        // Tên sự kiện mà client sẽ lắng nghe.
+        // Phải khớp với .listen('.message.sent', ...)
         return 'message.sent';
     }
 
-    /**
-     * Get the data to broadcast.
-     *
-     * @return array
-     */
+    // Tùy chọn: Chuẩn bị dữ liệu để broadcast
     public function broadcastWith(): array
     {
+        // Eager load sender để client có thông tin người gửi
+        $this->message->load('sender');
+        // Trả về cả message và conversation (ví dụ như bạn đã làm trong show/edit của admin)
         return [
             'message' => $this->message->toArray(),
             'conversation' => $this->conversation->toArray(),

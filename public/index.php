@@ -1,7 +1,11 @@
 <?php
-
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
+// THÊM CÁC DÒNG NÀY ĐỂ DEBUG MẠNH MẼ HƠN
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+// ------------------------------------
 
 define('LARAVEL_START', microtime(true));
 

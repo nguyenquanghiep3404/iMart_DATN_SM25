@@ -8,6 +8,9 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Auth\Events\Verified;
 use App\Listeners\UpdateUserStatusAfterVerification;
+// Import phần tích điểm người dùng
+use App\Events\OrderDelivered;
+use App\Listeners\AwardLoyaltyPoints;
 
 // Import phần phân quyền
 use Illuminate\Support\Facades\Gate;
@@ -73,7 +76,9 @@ class AppServiceProvider extends ServiceProvider
         // Đăng ký listener cho sự kiện Verified
         Event::listen(
             Verified::class,
-            [UpdateUserStatusAfterVerification::class, 'handle']
+            [UpdateUserStatusAfterVerification::class, 'handle'],
+            OrderDelivered::class,
+            [AwardLoyaltyPoints::class, 'handle']
         );
 
         // Phân quyền
