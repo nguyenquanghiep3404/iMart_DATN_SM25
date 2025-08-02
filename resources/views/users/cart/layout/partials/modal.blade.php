@@ -35,44 +35,7 @@
                         <div class="flex-grow border-t border-gray-200"></div>
                     </div>
 
-                    <!-- List of available promos -->
-                    <div id="promoList" class="space-y-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
-                        @php
-                            $now = \Carbon\Carbon::now();
-                        @endphp
-
-                        @if ($availableCoupons->count())
-                            @foreach ($availableCoupons as $coupon)
-                                @php
-                                    $startDate = \Carbon\Carbon::parse($coupon->start_date);
-                                    $endDate = \Carbon\Carbon::parse($coupon->end_date);
-                                    $isDisabled = $now->lt($startDate) || $now->gt($endDate);
-                                @endphp
-
-                                <div class="promo-item border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
-                                    {{ $isDisabled ? 'border-gray-200 opacity-50 cursor-not-allowed' : 'border-gray-200 hover:border-red-500' }}"
-                                    data-code="{{ $coupon->code }}">
-                                    <div class="flex items-start justify-between gap-4">
-                                        <div class="flex-grow">
-                                            <p class="font-bold text-gray-800 text-lg">{{ $coupon->code }}</p>
-                                            <p class="text-gray-600 text-sm mt-1">
-                                                {{ $coupon->description ?? ($coupon->type === 'percentage' ? "Giảm {$coupon->value}%" : 'Giảm ' . number_format($coupon->value, 0, ',', '.') . '₫') }}
-                                            </p>
-                                            <p
-                                                class="text-xs {{ $isDisabled ? 'text-gray-400' : 'text-gray-500' }} mt-2">
-                                                <i class="fa-regular fa-calendar-alt mr-1"></i>
-                                                HSD: {{ $endDate->format('d/m/Y') }}
-                                            </p>
-                                        </div>
-                                        <input type="radio" name="selected_coupon" value="{{ $coupon->code }}"
-                                            class="custom-radio mt-1" {{ $isDisabled ? 'disabled' : '' }}>
-                                    </div>
-                                </div>
-                            @endforeach
-                        @else
-                            <p>Hiện không có mã khuyến mãi nào khả dụng.</p>
-                        @endif
-                    </div>
+                
                 </div>
             </div>
 
