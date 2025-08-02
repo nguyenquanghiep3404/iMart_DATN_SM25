@@ -1298,32 +1298,69 @@
                 if (ghnFeeCache[cacheKey]) return ghnFeeCache[cacheKey];
 
                 try {
+                    // debug
+                    // console.log(' GHN Request:', {
+                    //     province: provinceName,
+                    //     district: districtName,
+                    //     ward: wardName,
+                    //     weight: weight,
+                    //     length: length,
+                    //     width: width,
+                    //     height: height
+                    // });
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    if (!csrfToken) {
+                        console.error(' CSRF token not found');
+                        return {
+                            success: false,
+                            message: 'CSRF token không tìm thấy'
+                        };
+                    }
+
                     const res = await fetch('/ajax/ghn/shipping-fee', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .getAttribute('content')
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json'
                         },
                         body: JSON.stringify({
                             province_name: provinceName,
                             district_name: districtName,
                             ward_name: wardName,
-                            weight: weight,
-                            length: length,
-                            width: width,
-                            height: height
+                            weight: parseInt(weight) || 1000,
+                            length: parseInt(length) || 20,
+                            width: parseInt(width) || 10,
+                            height: parseInt(height) || 10
                         })
                     });
-                    const data = await res.json();
 
-                    // Kiểm tra success từ backend response thay vì chỉ kiểm tra fee
+                    // Debug: Log response status
+                    // console.log('🚚 GHN Response Status:', res.status);
+
+                    // Check if response is JSON
+                    const contentType = res.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        console.error('Response is not JSON:', contentType);
+                        const text = await res.text();
+                        console.error('Response body:', text.substring(0, 200));
+                        return {
+                            success: false,
+                            message: 'Server trả về dữ liệu không hợp lệ'
+                        };
+                    }
+
+                    const data = await res.json();
+                    // Debug: Log response data
+                    // console.log('🚚 GHN Response Data:', data);
+
+                    // Kiểm tra success từ backend response
                     if (data.success === true && data.fee !== null && data.fee !== undefined) {
                         const result = {
                             success: true,
                             fee: data.fee
                         };
-                        ghnFeeCache[cacheKey] = result; // Cache kết quả đầy đủ
+                        ghnFeeCache[cacheKey] = result;
                         return result;
                     } else {
                         console.error('GHN Fee Error:', data.message || 'Không lấy được phí GHN');
@@ -1331,35 +1368,33 @@
                             success: false,
                             message: data.message || 'Địa điểm này không được hỗ trợ giao hàng nhanh'
                         };
-                        ghnFeeCache[cacheKey] = result; // Cache cả kết quả lỗi
+                        ghnFeeCache[cacheKey] = result;
                         return result;
                     }
                 } catch (e) {
-                    console.error('Error calling GHN API:', e);
+                    console.error(' Error calling GHN API:', e);
                     const result = {
                         success: false,
-                        message: 'Lỗi khi tính phí giao hàng nhanh'
+                        message: 'Lỗi khi tính phí giao hàng nhanh: ' + e.message
                     };
-                    // Không cache lỗi mạng vì chúng có thể tạm thời
                     return result;
                 }
             }
-
             // Hàm debug cho việc test GHN (chỉ trong môi trường development)
-            function debugGhnInfo(addressInfo, savedAddress = null) {
-                // if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
-                //     console.log('🚚 GHN Debug Info:', {
-                //         addressInfo,
-                //         savedAddress,
-                //         baseWeight,
-                //         baseLength,
-                //         baseWidth,
-                //         baseHeight,
-                //         selectedAddressId,
-                //         userAddresses: userAddresses.length
-                //     });
-                // }
-            }
+            // function debugGhnInfo(addressInfo, savedAddress = null) {
+            //     if (window.location.hostname === 'localhost' || window.location.hostname.includes('127.0.0.1')) {
+            //         console.log('GHN Debug Info:', {
+            //             addressInfo,
+            //             savedAddress,
+            //             baseWeight,
+            //             baseLength,
+            //             baseWidth,
+            //             baseHeight,
+            //             selectedAddressId,
+            //             userAddresses: userAddresses.length
+            //         });
+            //     }
+            // }
 
             // Trích xuất thông tin địa chỉ từ địa chỉ đã lưu cho GHN
             function extractAddressInfoFromSaved(addressFull) {
@@ -1486,18 +1521,14 @@
                                 }
 
                                 if (provinceText && districtText && wardText) {
-                                    // Thông tin debug cho development
-                                    debugGhnInfo({
-                                            province: provinceText,
-                                            district: districtText,
-                                            ward: wardText
-                                        }, selectedAddressId ? userAddresses.find(
-                                            addr => addr.id === selectedAddressId) :
-                                        null);
+                                    // Đảm bảo các giá trị không undefined
+                                    const weight = baseWeight || 1000;
+                                    const length = baseLength || 20;
+                                    const width = baseWidth || 10;
+                                    const height = baseHeight || 10;
 
                                     const ghnResult = await fetchGhnFee(provinceText,
-                                        districtText, wardText, baseWeight, baseLength,
-                                        baseWidth, baseHeight);
+                                        districtText, wardText, weight, length, width, height);
 
                                     if (ghnResult.success) {
                                         // GHN được hỗ trợ - hiển thị phí
@@ -1908,7 +1939,7 @@
                             .trim(); // Cho tương thích PaymentController
                         orderData.email = document.getElementById('email')?.value.trim();
                         
-                        // ✅ GỬI CẢ _id VÀ _code cho backend validation
+                        // Gửi cả _id VÀ _code cho backend validation
                         orderData.province_id = document.getElementById('province_id')?.value;
                         orderData.district_id = document.getElementById('district_id')?.value;
                         orderData.ward_id = document.getElementById('ward_id')?.value;
@@ -2514,6 +2545,8 @@
             });
             setupUIForUserType();
             setupInputValidation();
+            // Test GHN route khi trang load 
+            // testGhnRoute();
             // Kết thúc
         });
     </script>
