@@ -1008,6 +1008,11 @@
                 addressBook.classList.add('step-hidden');
                 newAddressFormWrapper.classList.remove('step-hidden');
 
+                // Hiển thị checkbox "Lưu địa chỉ này vào sổ địa chỉ" cho người dùng đã đăng nhập
+                if (window.userState.isLoggedIn) {
+                    saveAddressWrapper.classList.remove('step-hidden');
+                }
+
                 // Hiển thị nút quay lại cho người dùng đã đăng nhập có địa chỉ hiện có
                 const backBtn = document.getElementById('back-to-address-book-btn');
                 if (backBtn && userAddresses.length > 0) {
@@ -1769,9 +1774,18 @@
             if (addressSearchInput) addressSearchInput.addEventListener('input', (e) => renderModalAddressList(e
                 .target.value.toLowerCase()));
 
-            if (provinceSelect) provinceSelect.addEventListener('change', (e) => loadDistricts(e.target.value));
-            if (districtSelect) districtSelect.addEventListener('change', (e) => loadWards(e.target.value));
-            if (wardSelect) wardSelect.addEventListener('change', getShippingOptionsFromForm);
+            if (provinceSelect) provinceSelect.addEventListener('change', (e) => {
+                hideAllErrorsForField('province_id');
+                loadDistricts(e.target.value);
+            });
+            if (districtSelect) districtSelect.addEventListener('change', (e) => {
+                hideAllErrorsForField('district_id');
+                loadWards(e.target.value);
+            });
+            if (wardSelect) wardSelect.addEventListener('change', (e) => {
+                hideAllErrorsForField('ward_id');
+                getShippingOptionsFromForm();
+            });
 
             // Event listeners cho việc chọn cửa hàng
             if (selectStoreBtn) {
@@ -1893,9 +1907,15 @@
                         orderData.phone = document.getElementById('phone_number')?.value
                             .trim(); // Cho tương thích PaymentController
                         orderData.email = document.getElementById('email')?.value.trim();
+                        
+                        // ✅ GỬI CẢ _id VÀ _code cho backend validation
+                        orderData.province_id = document.getElementById('province_id')?.value;
+                        orderData.district_id = document.getElementById('district_id')?.value;
+                        orderData.ward_id = document.getElementById('ward_id')?.value;
                         orderData.province_code = document.getElementById('province_id')?.value;
                         orderData.district_code = document.getElementById('district_id')?.value;
                         orderData.ward_code = document.getElementById('ward_id')?.value;
+                        
                         orderData.address_line1 = document.getElementById('address_line1')?.value.trim();
                         orderData.address = document.getElementById('address_line1')?.value
                             .trim(); // Cho tương thích PaymentController
@@ -1938,7 +1958,7 @@
                 const isBuyNow = {{ isset($is_buy_now) && $is_buy_now ? 'true' : 'false' }};
                 const processUrl = isBuyNow ? '{{ route('buy-now.process') }}' :
                     '{{ route('payments.process') }}';
-                console.log('Dữ liệu gửi đi:', JSON.stringify(orderData, null, 2));
+
 
                 // Gửi đơn hàng qua AJAX
                 fetch(processUrl, {
@@ -2352,6 +2372,19 @@
                 }
             }
 
+            // Function để hide cả frontend và backend validation errors
+            function hideAllErrorsForField(fieldId) {
+                hideError(fieldId);
+                
+                // Cũng hide error cho các field khác có thể liên quan
+                if (fieldId === 'province_id') {
+                    hideError('district_id');
+                    hideError('ward_id');
+                } else if (fieldId === 'district_id') {
+                    hideError('ward_id');
+                }
+            }
+
             function setupInputValidation() {
                 // Validation các trường tên
                 const nameFields = ['full_name', 'pickup_full_name'];
@@ -2466,7 +2499,7 @@
                                 const label = this.labels[0]?.textContent.replace(' *', '');
                                 showError(fieldId, `Vui lòng chọn ${label}`);
                             } else {
-                                hideError(fieldId);
+                                hideAllErrorsForField(fieldId);
                             }
                         });
                     }

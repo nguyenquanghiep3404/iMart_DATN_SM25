@@ -66,7 +66,7 @@ class PaymentRequest extends FormRequest
                     ],
                     'email' => 'required|email|max:255',
                     'province_code' => 'required|string',
-                    'district_code' => 'nullable|string',
+                    'district_code' => 'required|string',
                     'ward_code' => 'required|string',
                     
                     // Validation cho tỉnh/huyện/xã (form gửi dưới dạng _id)
@@ -84,17 +84,9 @@ class PaymentRequest extends FormRequest
                     'delivery_time_slot' => 'nullable|string',
                 ]);
 
-                // Validation hệ thống địa chỉ (cũ vs mới)
-                if ($this->input('address_system') === 'new') {
-                    $rules['address_system'] = 'required|string|in:new,old';
-                    $rules['province_code'] = 'required|string|exists:provinces_new,code';
-                    $rules['ward_code'] = 'required|string|exists:wards_new,code';
-                } else {
-                    $rules['address_system'] = 'required|string|in:new,old';
-                    $rules['province_code'] = 'required|string|exists:provinces_old,code';
-                    $rules['district_code'] = 'required|string|exists:districts_old,code';
-                    $rules['ward_code'] = 'required|string|exists:wards_old,code';
-                }
+                // Validation hệ thống địa chỉ (cũ vs mới) - Tạm thời bỏ exists check
+                $rules['address_system'] = 'required|string|in:new,old';
+                
             }
         }
 
