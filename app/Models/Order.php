@@ -281,7 +281,6 @@ class Order extends Model
             $this->shippingWard?->name,
             $this->shipping_address_system === 'old' ? $this->shippingDistrict?->name : null,
             $this->shippingProvince?->name,
-            $this->shipping_country,
         ]);
 
         return implode(', ', $parts);
@@ -295,7 +294,6 @@ class Order extends Model
             $this->shippingWard?->name_with_type,
             $this->shipping_address_system === 'old' ? $this->shippingDistrict?->name_with_type : null,
             $this->shippingProvince?->name_with_type,
-            $this->shipping_country,
         ]);
 
         return implode(', ', $parts);
@@ -313,7 +311,6 @@ class Order extends Model
             $this->billingWard?->name,
             $this->billing_address_system === 'old' ? $this->billingDistrict?->name : null,
             $this->billingProvince?->name,
-            $this->billing_country,
         ]);
 
         return implode(', ', $parts);
@@ -331,7 +328,6 @@ class Order extends Model
             $this->billingWard?->name_with_type,
             $this->billing_address_system === 'old' ? $this->billingDistrict?->name_with_type : null,
             $this->billingProvince?->name_with_type,
-            $this->billing_country,
         ]);
 
         return implode(', ', $parts);
