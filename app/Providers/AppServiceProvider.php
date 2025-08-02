@@ -160,5 +160,34 @@ class AppServiceProvider extends ServiceProvider
             $address = Address::find($value);
             return $address && $address->user_id === auth()->id();
         }, 'Bạn không có quyền sử dụng địa chỉ này.');
+        View::composer('*', function ($view) {
+            $buyNowRoutes = [
+                'payments/*',
+                'payments',
+                'buy-now/*',
+                'thanh-toan/*',
+            ];
+        
+            $cartRoutes = [
+                'cart',
+                'cart/*',
+                'checkout/*',
+            ];
+        
+            $currentRoute = request()->path();
+        
+            $isBuyNowRoute = collect($buyNowRoutes)->contains(fn($pattern) => request()->is($pattern));
+            $isCartRoute = collect($cartRoutes)->contains(fn($pattern) => request()->is($pattern));
+        
+            // Nếu không phải trang mua ngay, xóa session mua ngay
+            if (!$isBuyNowRoute && session()->has('buy_now_session')) {
+                session()->forget(['buy_now_session', 'buy_now_coupon']);
+            }
+        
+            // Nếu không phải trang giỏ hàng, xóa session coupon giỏ hàng
+            if (!$isCartRoute && session()->has('applied_coupon')) {
+                session()->forget('applied_coupon');
+            }
+        });
     }
 }

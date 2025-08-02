@@ -127,12 +127,22 @@
                     </a>
 
                     <div class="flex space-x-4">
-                        <button type="submit" id="sendCampaignBtn"
-                            class="flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 transition-all duration-200">
-                            <i data-lucide="send-horizontal" class="w-5 h-5 mr-2"></i>
-                            Gửi Chiến Dịch
-                        </button>
+                        @if ($campaign->status === 'sent')
+                            <button type="button"
+                                class="flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-gray-400 rounded-lg shadow-md cursor-not-allowed"
+                                disabled title="Chiến dịch đã được gửi">
+                                <i data-lucide="send-horizontal" class="w-5 h-5 mr-2"></i>
+                                Đã Gửi
+                            </button>
+                        @else
+                            <button type="submit" id="sendCampaignBtn"
+                                class="flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 transition-all duration-200">
+                                <i data-lucide="send-horizontal" class="w-5 h-5 mr-2"></i>
+                                Gửi Chiến Dịch
+                            </button>
+                        @endif
                     </div>
+
                 </div>
 
             </form>
