@@ -3,6 +3,29 @@
 
 <div class="mt-8">
     <div class="space-y-6">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="m-0 fw-bold">Yêu cầu trả hàng</h3>
+            <div class="search-bar" style="max-width: 400px; margin-left: auto;">
+                <form action="{{ route('orders.returns') }}" method="GET">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="search" placeholder="Tìm theo mã yêu cầu, đơn hàng..." value="{{ request('search') }}">
+                        <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="border-bottom mb-4">
+            <nav class="d-flex flex-wrap" style="gap: 1.5rem;">
+                <a href="{{ route('orders.index') }}" class="tab-link {{ empty($status) ? 'active' : '' }}">Tất cả</a>
+                <a href="{{ route('orders.index', ['status' => 'pending_confirmation']) }}" class="tab-link {{ $status == 'pending_confirmation' ? 'active' : '' }}">Chờ xác nhận</a>
+                <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="tab-link {{ $status == 'processing' ? 'active' : '' }}">Đang xử lý</a>
+                <a href="{{ route('orders.index', ['status' => 'shipped']) }}" class="tab-link {{ $status == 'shipped' ? 'active' : '' }}">Đang giao</a>
+                <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Hoàn tất</a>
+                <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Đã hủy</a>
+                <a href="{{ route('orders.returns') }}" class="tab-link {{ request()->routeIs('orders.returns') ? 'active' : '' }}">Trả hàng</a>
+            </nav>
+        </div>
         @forelse ($refunds as $refund)
         <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div class="p-4 flex flex-col sm:flex-row justify-between sm:items-center border-b bg-gray-50">

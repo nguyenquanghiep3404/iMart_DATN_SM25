@@ -16,6 +16,14 @@ class UserPolicy
     public function viewAny(User $user) {
         return $user->hasPermissionTo('browse_users');
     }
+    public function view(User $currentUser, User $targetUser)
+    {
+        // Logic này sẽ được bỏ qua cho admin vì có hàm before()
+        // Nhưng nó vẫn cần thiết cho các vai trò khác nếu bạn muốn họ
+        // có quyền xem người dùng (ví dụ: cấp quyền 'browse_users')
+        // hoặc cho phép người dùng tự xem hồ sơ của họ.
+        return $currentUser->hasPermissionTo('browse_users') || $currentUser->id === $targetUser->id;
+    }
     public function create(User $user) {
         return $user->hasPermissionTo('add_users');
     }

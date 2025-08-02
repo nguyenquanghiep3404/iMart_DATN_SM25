@@ -72,16 +72,34 @@
             'processing' => ['text' => 'Đang xử lý', 'class' => 'status-processing'],
             'shipped', 'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
             'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
-            'awaiting_shipment' => ['text' => 'Chờ lấy hàng', 'class' => 'status-awaiting-pickup'],
+            'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-pending_confirmation'],
             'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],
             default => ['text' => ucfirst($order->status), 'class' => 'status-returned'],
         };
         $isPickupOrder = !empty($order->store_location_id);
 
-        function renderDeliveryDate($dateString) {
-            if (empty($dateString)) return 'Chưa xác định';
-            try { return \Carbon\Carbon::parse($dateString)->format('d/m/Y'); } catch (\Exception $e) { return e($dateString); }
+    // LOGIC MỚI: KIỂM TRA ĐƠN HÀNG CÓ BỊ QUÁ HẠN KHÔNG
+    $isOverdue = false;
+    if ($isPickupOrder && $order->status === 'awaiting_shipment' && !empty($order->desired_delivery_date)) {
+        try {
+            // Lấy ngày hẹn nhận hàng từ database
+            $pickupDate = \Carbon\Carbon::parse($order->desired_delivery_date)->startOfDay();
+            $today = \Carbon\Carbon::now()->startOfDay();
+
+            // So sánh ngày hôm nay với ngày hẹn
+            if ($today->gt($pickupDate)) {
+                $isOverdue = true;
+            }
+        } catch (\Exception $e) {
+            // Nếu `desired_delivery_date` không phải ngày tháng hợp lệ, bỏ qua
+            $isOverdue = false;
         }
+    }
+
+    function renderDeliveryDate($dateString) {
+        if (empty($dateString)) return 'Chưa xác định';
+        try { return \Carbon\Carbon::parse($dateString)->format('d/m/Y'); } catch (\Exception $e) { return e($dateString); }
+    }
     @endphp
 
     <div class="details-card">
@@ -130,6 +148,14 @@
                     </div>
                 @endif
             </div>
+            @if($isOverdue)
+                <div class="alert alert-danger d-flex align-items-start mb-4" role="alert">
+                    <i class="fas fa-exclamation-circle me-3 mt-1 fs-5"></i>
+                    <div>
+                        Đã quá ngày hẹn nhận hàng. Đơn hàng của quý khách sẽ được giữ tại cửa hàng thêm <strong>3 ngày</strong> trước khi tự động hủy.
+                    </div>
+                </div>
+            @endif
 
             <div class="row g-4">
                 <div class="col-lg-7">
@@ -242,6 +268,30 @@
                 <button class="btn-action" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn hàng</button>
             @endif
         </footer>
+    </div>
+</div>
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelOrderModalLabel">Xác nhận hủy đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('orders.cancel', $order->id) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn hủy đơn hàng <strong>#{{ $order->order_code }}</strong>?</p>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Lý do hủy (bắt buộc)</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Không</button>
+                    <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 

@@ -36,17 +36,30 @@ class OrderRefundController extends Controller
     public function indexuser(Request $request)
     {
         $user = Auth::user();
+        $status = $request->status;
+        $search = $request->search;
 
         $refunds = ReturnRequest::with([
             'order',
             'returnItems.orderItem.variant.product.coverImage'
         ])
             ->where('user_id', $user->id)
+            ->when($status, function ($query) use ($status) {
+                $query->where('status', $status);
+            })
+            ->when($search, function ($query) use ($search) {
+                $query->where('return_code', 'like', "%$search%")
+                    ->orWhereHas('order', function ($q) use ($search) {
+                        $q->where('order_code', 'like', "%$search%");
+                    });
+            })
             ->orderByDesc('created_at')
-            ->paginate(10);
+            ->paginate(10)
+            ->withQueryString();
 
-        return view('users.refunds.index', compact('refunds'));
+        return view('users.refunds.index', compact('refunds', 'status', 'search'));
     }
+
     public function show($id)
     {
         $returnRequest = ReturnRequest::with([
@@ -115,12 +128,15 @@ class OrderRefundController extends Controller
     {
         $validated = $request->validate([
             'refund_method' => 'required|in:points,bank,coupon',
-            'quantity' => 'required|integer|min:1',
+            'order_item_ids' => 'required|array|min:1',
+            'order_item_ids.*' => 'exists:order_items,id',
+            'quantities' => 'required|array',
+            'quantities.*' => 'integer|min:1',
             'reason' => 'required|string|max:255',
             'reason_details' => 'nullable|string|max:1000',
             'media.*' => 'nullable|file|max:10240',
-            'order_item_id' => 'required|exists:order_items,id',
         ]);
+
 
         if ($request->refund_method === 'bank') {
             $request->validate([
@@ -130,29 +146,44 @@ class OrderRefundController extends Controller
             ]);
         }
 
+
         try {
             DB::beginTransaction();
 
-            $orderItem = OrderItem::with('order')->findOrFail($request->order_item_id);
-            $order = $orderItem->order;
+            $orderItemIds = $validated['order_item_ids'];
+            $quantities = $validated['quantities'];
 
-            $returnCode = 'RR' . strtoupper(Str::random(8));
-            $refundAmount = $orderItem->price * $validated['quantity'];
+            $refundAmount = 0;
+            $orderId = null;
+            $userId = auth()->id();
+
+            foreach ($orderItemIds as $itemId) {
+                $item = OrderItem::findOrFail($itemId);
+                $qty = $quantities[$itemId] ?? 1;
+
+                if ($orderId === null) {
+                    $orderId = $item->order_id;
+                }
+
+                $refundAmount += $item->price * $qty;
+            }
+
 
             $returnRequest = ReturnRequest::create([
-                'order_id' => $order->id,
-                'user_id' => $order->user_id,
-                'return_code' => $returnCode,
+                'order_id' => $orderId,
+                'user_id' => $userId,
+                'return_code' => 'RR' . strtoupper(Str::random(8)),
                 'reason' => $validated['reason'],
                 'reason_details' => $validated['reason_details'] ?? null,
                 'refund_method' => $validated['refund_method'],
                 'status' => 'pending',
                 'refund_amount' => $refundAmount,
-                'refunded_points' => $validated['refund_method'] === 'points' ? floor($refundAmount / 1000) : null,
+                'refunded_points' => $validated['refund_method'] === 'points' ? (int)$refundAmount : null,
                 'bank_name' => $request->bank_name,
                 'bank_account_name' => $request->bank_account_name,
                 'bank_account_number' => $request->bank_account_number,
             ]);
+
 
             if ($request->hasFile('media')) {
                 foreach ($request->file('media') as $file) {
@@ -170,21 +201,25 @@ class OrderRefundController extends Controller
                 }
             }
 
-            ReturnItem::create([
-                'return_request_id' => $returnRequest->id,
-                'order_item_id' => $orderItem->id,
-                'quantity' => $validated['quantity'],
-            ]);
+            foreach ($orderItemIds as $itemId) {
+                ReturnItem::create([
+                    'return_request_id' => $returnRequest->id,
+                    'order_item_id' => $itemId,
+                    'quantity' => $quantities[$itemId] ?? 1,
+                ]);
+            }
+
 
             DB::commit();
             ActivityLog::create([
-                'log_name'     => 'return_request',
-                'description'  => 'Bạn đã gửi yêu cầu trả hàng #' . $returnCode . ' thành công',
+                'log_name' => 'return_request',
+                'description' => 'Bạn đã gửi yêu cầu trả hàng #' . $returnRequest->return_code . ' thành công',
                 'subject_type' => ReturnRequest::class,
-                'subject_id'   => $returnRequest->id,
-                'causer_type'  => get_class(Auth::user()),
-                'causer_id'    => Auth::id(),
+                'subject_id' => $returnRequest->id,
+                'causer_type' => get_class(Auth::user()),
+                'causer_id' => Auth::id(),
             ]);
+
 
 
             return redirect()->route('orders.returns')

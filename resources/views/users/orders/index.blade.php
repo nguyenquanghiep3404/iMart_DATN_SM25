@@ -201,7 +201,7 @@
     <div class="border-bottom mb-4">
         <nav class="d-flex flex-wrap" style="gap: 1.5rem;">
             <a href="{{ route('orders.index') }}" class="tab-link {{ empty($status) ? 'active' : '' }}">Tất cả</a>
-            <a href="{{ route('orders.index', ['status' => 'awaiting_pickup']) }}" class="tab-link {{ $status == 'awaiting_pickup' ? 'active' : '' }}">Chờ lấy hàng</a>
+            <a href="{{ route('orders.index', ['status' => 'pending_confirmation']) }}" class="tab-link {{ $status == 'pending_confirmation' ? 'active' : '' }}">Chờ xác nhận</a>
             <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="tab-link {{ $status == 'processing' ? 'active' : '' }}">Đang xử lý</a>
             <a href="{{ route('orders.index', ['status' => 'shipped']) }}" class="tab-link {{ $status == 'shipped' ? 'active' : '' }}">Đang giao</a>
             <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Hoàn tất</a>

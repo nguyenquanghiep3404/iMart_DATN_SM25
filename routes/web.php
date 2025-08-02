@@ -57,10 +57,16 @@ use App\Http\Controllers\Users\LoyaltyPointController;
 use App\Http\Controllers\OrderRefundController;
 use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\SalesStaffManagement;
+
 use App\Http\Controllers\Admin\CustomerGroupController;
 use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\PackingStationController;
 use App\Http\Controllers\Admin\StockTransferController;
+use Telegram\Bot\Laravel\Facades\Telegram;
+
+
+
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
 Route::get('/cart/recover-result', function () {
@@ -442,6 +448,40 @@ Route::prefix('admin')
         Route::post('/registers/{id}/restore', [RegisterController::class, 'restore'])->name('registers.restore');
         Route::delete('/registers/{register}/force-delete', [RegisterController::class, 'forceDelete'])->name('registers.force-delete');
 
+        // Quản Lý Nhân Viên Bán Hàng - POS
+        Route::prefix('sales-staff')->name('sales-staff.')->group(function () {
+            // Trang chính - Danh sách cửa hàng
+            Route::get('/', [SalesStaffManagement::class, 'index'])->name('index');
+            // Quản lý nhân viên theo cửa hàng
+            Route::get('/stores/{storeId}/employees', [SalesStaffManagement::class, 'showEmployees'])->name('stores.employees');
+            // Quản lý lịch làm việc
+            Route::get('/stores/{storeId}/schedule', [SalesStaffManagement::class, 'showSchedule'])->name('stores.schedule');
+            // Quản lý ca làm việc
+            Route::get('/work-shifts', [SalesStaffManagement::class, 'showWorkShifts'])->name('work-shifts.index');
+            // API Routes
+            Route::prefix('api')->name('api.')->group(function () {
+                // API cửa hàng
+                Route::get('/stores', [SalesStaffManagement::class, 'getStores'])->name('stores');
+                // API nhân viên
+                Route::get('/stores/{storeId}/employees', [SalesStaffManagement::class, 'getStoreEmployees'])->name('stores.employees');
+                Route::get('/stores/{storeId}/employees/{employeeId}', [SalesStaffManagement::class, 'getEmployee'])->name('stores.employees.show');
+                Route::post('/employees', [SalesStaffManagement::class, 'addEmployee'])->name('employees.store');
+                Route::put('/employees/{userId}', [SalesStaffManagement::class, 'updateEmployee'])->name('employees.update');
+                Route::delete('/stores/{storeId}/employees/{userId}', [SalesStaffManagement::class, 'removeEmployee'])->name('employees.remove');
+                // API lịch làm việc
+                Route::get('/stores/{storeId}/schedule/weekly', [SalesStaffManagement::class, 'getWeeklySchedule'])->name('schedule.weekly');
+                Route::post('/schedule/assign-shift', [SalesStaffManagement::class, 'assignShift'])->name('schedule.assign-shift');
+                // API ca làm việc
+                Route::get('/work-shifts', [SalesStaffManagement::class, 'getWorkShifts'])->name('work-shifts.list');
+                Route::post('/work-shifts', [SalesStaffManagement::class, 'addWorkShift'])->name('work-shifts.store');
+                Route::put('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'updateWorkShift'])->name('work-shifts.update');
+                Route::delete('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'deleteWorkShift'])->name('work-shifts.destroy');
+                Route::post('/work-shifts/create-default', [SalesStaffManagement::class, 'createDefaultWorkShifts'])->name('work-shifts.create-default');
+                // API thống kê
+                Route::get('/statistics', [SalesStaffManagement::class, 'getStaffStatistics'])->name('statistics');
+            });
+        });
+
 
         // quản lý khách hàng
         Route::get('customer-groups', [CustomerGroupController::class, 'index'])->name('customer-groups.index');
@@ -465,6 +505,7 @@ Route::prefix('admin')
         Route::get('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'show'])->name('marketing_campaigns.show');
         Route::get('/marketing_campaigns/{id}/edit', [MarketingCampaignController::class, 'edit'])->name('marketing_campaigns.edit');
         Route::put('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'update'])->name('marketing_campaigns.update');
+
 
         // Banner routes
 
@@ -729,3 +770,9 @@ Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippin
 // Route::get('api/old-provinces', [AddressesController::class, 'getOldProvinces']);
 // Route::get('api/old-districts/{province_code}', [AddressesController::class, 'getOldDistricts']);
 // Route::get('api/old-wards/{district_code}', [AddressesController::class, 'getOldWards']);
+// Route::get('/bot/register-webhook', function () {
+//     $url = config('app.url') . '/api/bot/webhook';
+//     $response = Telegram::setWebhook(['url' => $url]);
+//     return 'Webhook setup: ' . $response->getDescription();
+// });
+Route::get('/payments/confirm/{token}', [PaymentController::class, 'confirmPaymentByToken'])->name('payments.confirm');

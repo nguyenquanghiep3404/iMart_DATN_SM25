@@ -427,7 +427,7 @@
                                     </div>
                                 </div>
                                 <hr class="my-4">
-                                <h4 class="h6 mb-3">Chọn cửa hàng để nhận hàng</h4>
+                                <h4 class="h6 mb-3">Chọn cửa hàng để nhận hàng <span class="text-danger">*</span></h4>
                                 <!-- Button chọn cửa hàng -->
                                 <div class="mb-3">
                                     <button type="button" id="select-store-btn"
@@ -571,7 +571,7 @@
                                 <div class="col-md-6">
                                     <div class="border rounded p-3">
                                         <div class="form-check">
-                                            <input id="qrcode" name="payment_method" type="radio" value="qrcode"
+                                            <input id="qrcode" name="payment_method" type="radio" value="bank_transfer_qr"
                                                 class="form-check-input">
                                             <label for="qrcode" class="form-check-label">
                                                 <div class="d-flex align-items-center">
@@ -640,7 +640,7 @@
                                     <i class="ci-chevron-right text-muted"></i>
                                 </button>
 
-                            
+
                             </div>
 
                             <!-- Scrollable order information -->
@@ -681,7 +681,7 @@
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted small">Điểm thưởng</span>
                                     <span id="points-summary" class="fw-medium text-warning small">
-                                        <i class="ci-star-filled"></i> +4,095
+                                        <i class="ci-star-filled"></i> +{{ number_format($totalPointsToEarn ?? 0) }}
                                     </span>
                                 </div>
                                 <a href="#" class="text-decoration-none small">Xem chi tiết</a>
@@ -1629,15 +1629,13 @@
         shippingFee = 0;
     }
 
-    // Lấy các element để cập nhật
     const shippingFeeSummary = document.getElementById('shipping-fee-summary');
-    const grandTotalSummary = document.getElementById('cart-total'); // ID này phải khớp với HTML của bạn
+    const grandTotalSummary = document.getElementById('cart-total');
 
     let finalTotal;
 
     if (shippingFee === null || shippingFee === undefined) {
         shippingFeeSummary.textContent = 'Chưa xác định';
-        // Tổng tiền tạm thời khi chưa có phí ship
         finalTotal = baseSubtotal - baseDiscount - basePointsDiscount;
     } else {
         shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat('vi-VN', {
@@ -1645,12 +1643,10 @@
             currency: 'VND'
         }).format(shippingFee);
 
-        // <<< ĐÂY LÀ DÒNG THAY ĐỔI QUAN TRỌNG >>>
         // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
         finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
     }
 
-    // Cập nhật hiển thị tổng tiền
     if (grandTotalSummary) {
         grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -1933,6 +1929,7 @@
                 const isBuyNow = {{ isset($is_buy_now) && $is_buy_now ? 'true' : 'false' }};
                 const processUrl = isBuyNow ? '{{ route('buy-now.process') }}' :
                     '{{ route('payments.process') }}';
+                console.log('Dữ liệu gửi đi:', JSON.stringify(orderData, null, 2));
 
                 // Gửi đơn hàng qua AJAX
                 fetch(processUrl, {

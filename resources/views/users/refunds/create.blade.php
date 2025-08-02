@@ -57,7 +57,6 @@
         <form id="return-request-form" method="POST" action="{{ route('refunds.store') }}" enctype="multipart/form-data">
             @csrf
             <input type="hidden" id="order-id" value="{{ $order->id }}">
-            <input type="hidden" name="quantity" value="{{ $order->quantity }}">
             <div class="p-6 md:p-8 space-y-8">
                 <!-- Step 1: Select Products -->
                 <div>
@@ -67,7 +66,7 @@
                         @foreach ($orderItems as $item)
                         <div class="interactive-card rounded-lg p-4">
                             <div class="flex items-start space-x-4">
-                                <input type="radio" name="order_item_id" value="{{ $item->id }}" class="h-5 w-5 mt-1 text-red-600 border-gray-300 rounded focus:ring-red-500">
+                                <input type="checkbox" name="order_item_ids[]" value="{{ $item->id }}" class="h-5 w-5 mt-1 text-red-600 border-gray-300 rounded focus:ring-red-500">
                                 <img src="{{ optional($item->variant->product->coverImage)->url ?? 'https://placehold.co/80x80' }}" alt="Ảnh sản phẩm" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
                                 <div class="flex-1">
                                     <p class="font-semibold text-gray-800">{{ $item->variant->product->name }}</p>
@@ -76,7 +75,7 @@
                                 </div>
                                 <div class="w-24">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Số lượng</label>
-                                    <input type="number" name="quantity" value="{{ $item->quantity }}" min="1" max="{{ $item->quantity }}" class="w-full border-gray-300 rounded-md shadow-sm text-center" disabled>
+                                    <input type="number" name="quantities[{{ $item->id }}]" value="{{ $item->quantity }}" min="1" max="{{ $item->quantity }}" class="w-full border-gray-300 rounded-md shadow-sm text-center" disabled>
                                 </div>
                             </div>
                         </div>
@@ -210,7 +209,7 @@
 </main>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const productCheckboxes = document.querySelectorAll('input[name="order_item_id"]');
+        const productCheckboxes = document.querySelectorAll('input[name="order_item_ids[]"]');
         const returnDetailsSection = document.getElementById('return-details-section');
         const submitBtn = document.getElementById('submit-return-btn');
         const refundSubtotalEl = document.getElementById('refund-subtotal');
@@ -225,7 +224,7 @@
         const fileListDiv = document.getElementById('file-list');
         const termsCheckbox = document.getElementById('terms');
 
-         const productData = @json(
+        const productData = @json(
         $orderItems->mapWithKeys(function($item) {
             return [$item->id => [
                 'price' => $item->price,
@@ -240,7 +239,7 @@
 
             productCheckboxes.forEach(checkbox => {
                 const card = checkbox.closest('.interactive-card');
-                const quantityInput = card.querySelector('input[type="number"]');
+                const quantityInput = card.querySelector(`input[name="quantities[${checkbox.value}]"]`);
 
                 if (checkbox.checked) {
                     anySelected = true;
@@ -277,7 +276,7 @@
 
 
             // ✅ Tính và hiển thị số điểm
-            const points = Math.floor(totalRefund / 1000);
+            const points = Math.floor(totalRefund);
             document.getElementById('expected-points').textContent = points.toLocaleString('vi-VN') + ' điểm';
 
             toggleSubmitButton();
