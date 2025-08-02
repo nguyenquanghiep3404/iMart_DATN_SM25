@@ -221,6 +221,15 @@
         .store-modal-header .modal-title {
             color: #212529 !important;
         }
+
+        .address-modal-header {
+            background-color: #ffffff !important;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .address-modal-header .modal-title {
+            color: #212529 !important;
+        }
     </style>
     <!-- Page content -->
     <main class="content-wrapper" style="min-height: 100vh;">
@@ -744,9 +753,9 @@
     <div class="modal fade" id="address-modal" tabindex="-1" aria-labelledby="addressModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header">
+                <div class="modal-header address-modal-header">
                     <h5 class="modal-title" id="addressModalLabel">
-                        <i class="fas fa-map-marker-alt me-2"></i>Chọn địa chỉ giao hàng
+                        <i class="fas fa-map-marker-alt me-2 text-danger"></i>Chọn địa chỉ giao hàng
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
