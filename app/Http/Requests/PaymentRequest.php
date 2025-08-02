@@ -66,8 +66,13 @@ class PaymentRequest extends FormRequest
                     ],
                     'email' => 'required|email|max:255',
                     'province_code' => 'required|string',
-                    'district_code' => 'nullable|string',
+                    'district_code' => 'required|string',
                     'ward_code' => 'required|string',
+                    
+                    // Validation cho tỉnh/huyện/xã (form gửi dưới dạng _id)
+                    'province_id' => 'required|string',
+                    'district_id' => 'required|string',
+                    'ward_id' => 'required|string',
                     'address_line1' => 'required|string|min:5|max:500',
                     'address' => 'nullable|string|min:5|max:500', // Cũng chấp nhận 'address' để tương thích
                     'postcode' => 'nullable|string|max:10',
@@ -79,17 +84,9 @@ class PaymentRequest extends FormRequest
                     'delivery_time_slot' => 'nullable|string',
                 ]);
 
-                // Validation hệ thống địa chỉ (cũ vs mới)
-                if ($this->input('address_system') === 'new') {
-                    $rules['address_system'] = 'required|string|in:new,old';
-                    $rules['province_code'] = 'required|string|exists:provinces_new,code';
-                    $rules['ward_code'] = 'required|string|exists:wards_new,code';
-                } else {
-                    $rules['address_system'] = 'required|string|in:new,old';
-                    $rules['province_code'] = 'required|string|exists:provinces_old,code';
-                    $rules['district_code'] = 'required|string|exists:districts_old,code';
-                    $rules['ward_code'] = 'required|string|exists:wards_old,code';
-                }
+                // Validation hệ thống địa chỉ (cũ vs mới) - Tạm thời bỏ exists check
+                $rules['address_system'] = 'required|string|in:new,old';
+                
             }
         }
 
@@ -173,6 +170,11 @@ class PaymentRequest extends FormRequest
             'district_code.exists' => 'Quận/Huyện không tồn tại',
 
             'ward_code.required' => 'Vui lòng chọn Phường/Xã',
+
+            // Messages cho province_id, district_id, ward_id
+            'province_id.required' => 'Vui lòng chọn Tỉnh/Thành phố',
+            'district_id.required' => 'Vui lòng chọn Quận/Huyện', 
+            'ward_id.required' => 'Vui lòng chọn Phường/Xã',
             'ward_code.exists' => 'Phường/Xã không tồn tại',
 
             'address_line1.required' => 'Vui lòng nhập số nhà, tên đường',

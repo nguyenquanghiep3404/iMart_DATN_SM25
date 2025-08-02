@@ -30,28 +30,31 @@ class GhnService
      * @param string $serviceType
      * @return int|false
      */
-    public function calculateShippingFee($fromDistrictId, $toWardCode, $weight, $length = 20, $width = 10, $height = 10, $insuranceValue = 0)
+    public function calculateShippingFee($toDistrictId, $toWardCode, $weight, $length = 20, $width = 10, $height = 10, $insuranceValue = 0)
     {
         // \Log::info('GHN: Đã vào hàm calculateShippingFee', [
-        //     'fromDistrictId' => $fromDistrictId,
+        //     'toDistrictId' => $toDistrictId,
         //     'toWardCode' => $toWardCode,
         //     'weight' => $weight,
         //     'length' => $length,
         //     'width' => $width,
         //     'height' => $height
         // ]);
-        $serviceId = $this->getServiceId($fromDistrictId, $weight);
+        $serviceId = $this->getServiceId($toDistrictId, $weight);
         if (!$serviceId) {
             // \Log::error('GHN: Không tìm thấy service_id phù hợp', [
-            //     'fromDistrictId' => $fromDistrictId,
+            //     'toDistrictId' => $toDistrictId,
             //     'weight' => $weight
             // ]);
             return false;
         }
+        
+        $fromDistrictId = (int)config('services.ghn.from_district_id', 1485);
+        
         $body = [
-            'from_district_id' => (int)$this->shopId ? (int)config('services.ghn.from_district_id', 1450) : (int)$fromDistrictId,
+            'from_district_id' => $fromDistrictId,
             'service_id' => (int)$serviceId,
-            'to_district_id' => (int)$fromDistrictId,
+            'to_district_id' => (int)$toDistrictId,
             'to_ward_code' => $toWardCode,
             'weight' => (int)$weight,
             'height' => (int)$height,
@@ -70,22 +73,37 @@ class GhnService
             'ShopId' => $this->shopId,
             'Content-Type' => 'application/json',
         ])->post($this->baseUrl . '/v2/shipping-order/fee', $body);
+        
         if (!$response->successful()) {
-            // \Log::error('GHN: API lỗi', ['body' => $response->body(), 'request' => [
-            //     'from_district_id' => $fromDistrictId,
-            //     'service_id' => $serviceId,
-            //     'to_district_id' => $fromDistrictId,
-            //     'to_ward_code' => $toWardCode,
-            //     'weight' => $weight
-            // ]]);
-            return response()->json(['message' => 'Không lấy được phí GHN', 'fee' => null]);
+            // \Log::error('GHN: API lỗi', ['body' => $response->body(), 'status' => $response->status()]);
+            return false;
         }
-        if ($response->successful() && isset($response['data']['total'])) {
-            $fee = $response['data']['total'];
-            // \Log::info('GHN API - Phí ship trả về', ['fee' => $fee]);
-            return response()->json(['fee' => $fee]);
+        
+        $data = $response->json();
+        
+        // Debug: Log full response (đã comment)
+        // \Log::info('GHN API - Full response', [
+        //     'request' => $body,
+        //     'response' => $data,
+        //     'status' => $response->status()
+        // ]);
+        
+        if (isset($data['data']['total']) && is_numeric($data['data']['total'])) {
+            $fee = (int)$data['data']['total'];
+            
+            // Debug: Log phí ship trả về (đã comment)
+            // \Log::info('GHN API - Phí ship trả về', [
+            //     'fee' => $fee,
+            //     'from_district' => $fromDistrictId,
+            //     'to_district' => $toDistrictId,
+            //     'to_ward' => $toWardCode
+            // ]);
+            
+            return $fee;
         }
-        return response()->json(['message' => 'Không lấy được phí GHN', 'fee' => null]);
+        
+        \Log::error('GHN: Response không có data.total', ['response' => $data]);
+        return false;
     }
 
     /**
@@ -125,8 +143,22 @@ class GhnService
         if ($response->successful() && isset($response['data'])) {
             // Lấy service_id đầu tiên hoặc theo loại dịch vụ
             $service = collect($response['data'])->first();
-            return $service['service_id'] ?? null;
+            $serviceId = $service['service_id'] ?? null;
+            
+            // Debug: Log getServiceId result (đã comment)
+            // \Log::info('GHN getServiceId result', [
+            //     'toDistrictId' => $toDistrictId,
+            //     'serviceId' => $serviceId,
+            //     'availableServices' => count($response['data'])
+            // ]);
+            
+            return $serviceId;
         }
+        
+        \Log::error('GHN getServiceId failed', [
+            'toDistrictId' => $toDistrictId,
+            'response' => $response->json()
+        ]);
         return null;
     }
 } 

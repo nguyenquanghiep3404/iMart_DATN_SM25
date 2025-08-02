@@ -38,14 +38,16 @@ class PackingStationController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function getOrdersForPacking()
-    {
-        $orders = Order::where('status', 'awaiting_shipment')
-            ->select('id', 'order_code', 'customer_name', 'created_at')
-            ->orderBy('created_at', 'asc') // Ưu tiên xử lý đơn cũ trước
-            ->get();
+{
+    // Lấy các đơn hàng ở trạng thái 'processing' thay vì 'awaiting_shipment'
+    $orders = Order::where('status', 'processing') 
+        ->select('id', 'order_code', 'customer_name', 'created_at')
+        ->orderBy('created_at', 'asc')
+        ->get();
 
-        return response()->json($orders);
-    }
+    return response()->json($orders);
+}
+
 
     /**
      * Lấy thông tin chi tiết của một đơn hàng.
@@ -123,80 +125,106 @@ class PackingStationController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function confirmPacking(Request $request, $orderId)
-    {
-        $validated = $request->validate([
-            'items' => 'required|array',
-            'items.*.order_item_id' => 'required|integer|exists:order_items,id',
-            'items.*.product_variant_id' => 'required|integer|exists:product_variants,id',
-            'items.*.serial_number' => 'nullable|string', // serial_number có thể là null nếu sản phẩm không yêu cầu
-        ]);
+{
+    $validated = $request->validate([
+        'items' => 'sometimes|array', // 'sometimes' allows it to be empty if no items require IMEI
+        'items.*.order_item_id' => 'required|integer|exists:order_items,id',
+        'items.*.product_variant_id' => 'required|integer|exists:product_variants,id',
+        'items.*.serial_number' => 'required|string', // Only items with serials are sent
+    ]);
 
-        try {
-            DB::transaction(function () use ($validated, $orderId) {
-                $order = Order::findOrFail($orderId);
+    try {
+        DB::transaction(function () use ($validated, $orderId) {
+            $order = Order::with('items.variant.product')->findOrFail($orderId);
+            $packer = auth()->user();
 
-                // 1. Kiểm tra trạng thái đơn hàng
-                if ($order->status !== 'awaiting_shipment') {
-                    throw new \Exception('Đơn hàng không ở trạng thái chờ đóng gói.');
+            // 1. Kiểm tra trạng thái đơn hàng (Nên là 'processing')
+            if ($order->status !== 'processing') { // Sửa từ 'awaiting_shipment' thành 'processing'
+                throw new \Exception('Đơn hàng không ở trạng thái "Đang xử lý".');
+            }
+            
+            // 2. Xác định kho hàng từ người đóng gói (packer)
+            $storeLocation = $packer->storeLocations()->first();
+            if (!$storeLocation) {
+                throw new \Exception('Tài khoản của bạn chưa được gán vào kho nào. Vui lòng liên hệ quản trị viên.');
+            }
+            $storeLocationId = $storeLocation->id;
+
+            // Tạo một map các serial đã quét để dễ truy xuất
+            $scannedSerialsMap = collect($validated['items'] ?? [])->keyBy('order_item_id');
+
+            // 3. Lặp qua TẤT CẢ các sản phẩm trong đơn hàng
+            foreach ($order->items as $orderItem) {
+                // Lấy số lượng tồn kho hiện tại để tính toán `quantity_after_change`
+                $inventory = \App\Models\ProductInventory::where('product_variant_id', $orderItem->product_variant_id)
+                    ->where('store_location_id', $storeLocationId)
+                    ->where('inventory_type', 'new') // Giả sử bán hàng mới
+                    ->first();
+
+                if (!$inventory || $inventory->quantity < $orderItem->quantity) {
+                    throw new \Exception("Sản phẩm '{$orderItem->product_name}' không đủ tồn kho tại kho hiện tại.");
                 }
+                $quantityAfterChange = $inventory->quantity - $orderItem->quantity;
 
-                foreach ($validated['items'] as $itemData) {
-                    $orderItem = OrderItem::find($itemData['order_item_id']);
-                    $product = $orderItem->variant->product;
-                    
-                    // Chỉ xử lý serial cho các sản phẩm yêu cầu
-                    if ($this->productRequiresSerial($product) && !empty($itemData['serial_number'])) {
-                        $serialNumber = $itemData['serial_number'];
-                        
-                        // 2. Cập nhật bảng `inventory_serials`
-                        $inventorySerial = InventorySerial::where('serial_number', $serialNumber)
-                            ->where('product_variant_id', $itemData['product_variant_id'])
-                            ->where('status', 'available')
-                            ->firstOrFail(); // Đảm bảo serial vẫn còn khả dụng
-
-                        $inventorySerial->update(['status' => 'sold']);
-
-                        // 3. Ghi nhận vào bảng `order_item_serials`
-                        OrderItemSerial::create([
-                            'order_item_id' => $itemData['order_item_id'],
-                            'product_variant_id' => $itemData['product_variant_id'],
-                            'serial_number' => $serialNumber,
-                            'status' => 'sold',
-                        ]);
-
-                        // 4. (Tùy chọn) Ghi nhận vào `inventory_movements`
-                        InventoryMovement::create([
-                            'product_variant_id' => $itemData['product_variant_id'],
-                            'store_location_id' => $order->store_location_id, // Giả sử đơn hàng có địa điểm kho
-                            'lot_id' => $inventorySerial->lot_id,
-                            'inventory_type' => 'available',
-                            'quantity_change' => -1,
-                            'quantity_after_change' => 0, // Cần tính toán lại
-                            'reason' => 'Packed for Order',
-                            'reference_type' => Order::class,
-                            'reference_id' => $orderId,
-                            'user_id' => auth()->id(), // Người dùng đang thực hiện
-                        ]);
+                // 4. Xử lý sản phẩm có yêu cầu serial
+                if ($this->productRequiresSerial($orderItem->variant->product)) {
+                    if (!$scannedSerialsMap->has($orderItem->id)) {
+                        throw new \Exception("Sản phẩm '{$orderItem->product_name}' yêu cầu quét serial nhưng không có dữ liệu.");
                     }
+                    $serialNumber = $scannedSerialsMap[$orderItem->id]['serial_number'];
+
+                    // Cập nhật bảng `inventory_serials`
+                    $inventorySerial = InventorySerial::where('serial_number', $serialNumber)
+                        ->where('product_variant_id', $orderItem->product_variant_id)
+                        ->where('status', 'available')
+                        ->firstOrFail(); // Đảm bảo serial hợp lệ và khả dụng
+
+                    $inventorySerial->update(['status' => 'sold']);
+
+                    // Ghi nhận vào bảng `order_item_serials`
+                    OrderItemSerial::create([
+                        'order_item_id' => $orderItem->id,
+                        'product_variant_id' => $orderItem->product_variant_id,
+                        'serial_number' => $serialNumber,
+                        'status' => 'sold',
+                    ]);
                 }
+                
+                // 5. Trừ tồn kho chung và tạo Inventory Movement cho TẤT CẢ sản phẩm
+                $inventory->decrement('quantity', $orderItem->quantity);
 
-                // 5. Cập nhật trạng thái đơn hàng chính
-                $order->update([
-                    'status' => 'shipped', // Hoặc 'packed_ready_for_shipping'
-                    'processed_by' => auth()->id()
+                InventoryMovement::create([
+                    'product_variant_id' => $orderItem->product_variant_id,
+                    'store_location_id' => $storeLocationId, // << FIX: Sử dụng ID kho của người đóng gói
+                    'lot_id' => null, // Cần logic để lấy lot_id nếu bạn quản lý theo lô
+                    'inventory_type' => 'available',
+                    'quantity_change' => -$orderItem->quantity,
+                    'quantity_after_change' => $quantityAfterChange,
+                    'reason' => 'Packed for Order',
+                    'reference_type' => Order::class,
+                    'reference_id' => $orderId,
+                    'user_id' => $packer->id,
                 ]);
-            });
+            }
 
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Lỗi: ' . $e->getMessage()], 500);
-        }
+            // 6. Cập nhật trạng thái đơn hàng chính
+            $order->update([
+                'status' => 'awaiting_shipment', // << FIX: Trạng thái tiếp theo là "Chờ vận chuyển"
+                'processed_by' => $packer->id,
+                'store_location_id' => $storeLocationId // Cập nhật luôn kho xử lý cho đơn hàng
+            ]);
+        });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Đơn hàng đã được xác nhận đóng gói thành công!',
-            // 'shipping_label_url' => route('admin.orders.print_shipping_label', $orderId) // URL để in phiếu
-        ]);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => 'Xác nhận thất bại: ' . $e->getMessage()], 500);
     }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Đơn hàng đã được xác nhận đóng gói thành công!',
+    ]);
+}
+
 
     /**
      * Hàm helper để kiểm tra xem một sản phẩm có cần quét serial hay không.

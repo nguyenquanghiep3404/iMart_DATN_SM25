@@ -48,6 +48,7 @@ class SalesStaffManagement extends Controller
         // Lấy danh sách nhân viên với phân trang
         $employeeAssignments = UserStoreLocation::with(['user'])
             ->where('store_location_id', $storeId)
+            ->whereHas('user') // Chỉ lấy các record có user tồn tại
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
         
@@ -95,6 +96,7 @@ class SalesStaffManagement extends Controller
         // Lấy nhân viên của cửa hàng
         $employees = UserStoreLocation::with(['user'])
             ->where('store_location_id', $storeId)
+            ->whereHas('user') // Chỉ lấy các record có user tồn tại
             ->get()
             ->pluck('user');
 
@@ -174,7 +176,8 @@ class SalesStaffManagement extends Controller
         $perPage = $request->get('per_page', 10);
         
         $query = UserStoreLocation::with(['user'])
-            ->where('store_location_id', $storeId);
+            ->where('store_location_id', $storeId)
+            ->whereHas('user'); // Chỉ lấy các record có user tồn tại
 
         // Search theo tên, email, số điện thoại
         if ($request->filled('search')) {
@@ -221,6 +224,7 @@ class SalesStaffManagement extends Controller
         $employee = UserStoreLocation::with(['user'])
             ->where('store_location_id', $storeId)
             ->where('user_id', $employeeId)
+            ->whereHas('user') // Chỉ lấy các record có user tồn tại
             ->first();
 
         if (!$employee) {
