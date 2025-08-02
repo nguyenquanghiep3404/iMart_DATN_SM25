@@ -32,7 +32,7 @@ class OrderPlacedConfirmation extends Notification implements ShouldQueue
             ->greeting('Xin chào ' . $this->order->customer_name . ',')
             ->line('Đơn hàng #' . $this->order->order_code . ' của bạn đã được đặt thành công.')
             ->line('Chúng tôi sẽ sớm xử lý và thông báo cho bạn.')
-            ->action('Xem chi tiết đơn hàng', route('users.orders.show', $this->order->id))
+            // ->action('Xem chi tiết đơn hàng', route('users.orders.show', $this->order->id))
             ->line('Cảm ơn bạn đã mua sắm tại iMart!');
     }
 
