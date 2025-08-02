@@ -8,6 +8,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Coupon;
 use App\Models\CustomerGroup;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SendMarketingCampaignMail;
 class MarketingCampaignController extends Controller
 {
     public function index()
@@ -276,5 +278,38 @@ class MarketingCampaignController extends Controller
             'message' => 'Cập nhật chiến dịch thành công',
             'campaign' => $campaign,
         ]);
+    }
+    // gửi chiến dịch qua email
+    public function send(Request $request, $id)
+    {
+        $campaign = MarketingCampaign::findOrFail($id);
+
+        if (empty($campaign->email_subject) || empty($campaign->email_content)) {
+            return response()->json(['error' => 'Chiến dịch chưa có tiêu đề hoặc nội dung email'], 422);
+        }
+
+        // Lấy coupon từ chiến dịch nếu có
+        $coupon = null;
+        if ($campaign->coupon_id) {
+            $coupon = Coupon::find($campaign->coupon_id);
+        }
+
+        $emails = $campaign->customerGroup->users()->pluck('email')->toArray();
+
+        foreach ($emails as $email) {
+            Mail::to($email)->queue(new SendMarketingCampaignMail(
+                $campaign->email_subject,
+                $campaign->email_content,
+                $campaign->name,
+                $coupon ? $coupon->code : null
+            ));
+        }
+
+        $campaign->update([
+            'status' => 'sent',
+            'sent_at' => now(),
+        ]);
+
+        return response()->json(['message' => 'Chiến dịch đã được gửi đến khách hàng.']);
     }
 }

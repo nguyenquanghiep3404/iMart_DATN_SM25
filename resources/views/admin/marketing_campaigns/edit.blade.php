@@ -343,59 +343,80 @@
                         return;
                     }
 
-                    const campaignData = getCampaignData();
-
-                    fetch(`/admin/marketing_campaigns/${campaignId}/send`, { // giả sử route gửi campaign
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Accept": "application/json",
-                                "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                            },
-                            body: JSON.stringify({
-                                ...campaignData,
-                                status: "sent"
-                            })
-                        })
-                        .then(async res => {
-                            if (!res.ok) {
-                                const errorData = await res.json();
-                                if (res.status === 422 && errorData.errors) {
-                                    const messages = Object.values(errorData.errors)
-                                        .flat()
-                                        .map(msg => `<p>${msg}</p>`)
-                                        .join('');
+                    // Hiển thị hộp thoại xác nhận trước khi gửi
+                    Swal.fire({
+                        title: 'Bạn có chắc muốn gửi chiến dịch này?',
+                        text: "Hành động này sẽ gửi email đến tất cả khách hàng trong nhóm!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Có, gửi đi!',
+                        cancelButtonText: 'Hủy bỏ',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const campaignData = getCampaignData();
+                            // Hiển thị loading
+                            Swal.fire({
+                                title: 'Đang gửi chiến dịch...',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading()
+                                }
+                            });
+                            fetch(`/admin/marketing_campaigns/${campaignId}/send`, {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        "Accept": "application/json",
+                                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                                    },
+                                    body: JSON.stringify({
+                                        ...campaignData,
+                                        status: "sent"
+                                    })
+                                })
+                                .then(async res => {
+                                    if (!res.ok) {
+                                        const errorData = await res.json();
+                                        if (res.status === 422 && errorData.errors) {
+                                            const messages = Object.values(errorData.errors)
+                                                .flat()
+                                                .map(msg => `<p>${msg}</p>`)
+                                                .join('');
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Lỗi xác thực',
+                                                html: messages,
+                                            });
+                                        } else {
+                                            throw new Error(errorData.message ||
+                                                'Có lỗi xảy ra.');
+                                        }
+                                        return;
+                                    }
+                                    return res.json();
+                                })
+                                .then(data => {
+                                    if (!data) return;
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Đã gửi chiến dịch',
+                                        text: data.message ||
+                                            'Chiến dịch đã được gửi thành công.',
+                                    }).then(() => {
+                                        window.location.href =
+                                            "{{ route('admin.marketing_campaigns.index') }}";
+                                    });
+                                })
+                                .catch(err => {
+                                    console.error(err);
                                     Swal.fire({
                                         icon: 'error',
-                                        title: 'Lỗi xác thực',
-                                        html: messages,
+                                        title: 'Lỗi hệ thống',
+                                        text: err.message || 'Vui lòng thử lại.',
                                     });
-                                } else {
-                                    throw new Error(errorData.message || 'Có lỗi xảy ra.');
-                                }
-                                return;
-                            }
-                            return res.json();
-                        })
-                        .then(data => {
-                            if (!data) return;
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Đã gửi chiến dịch',
-                                text: data.message || 'Chiến dịch đã được gửi thành công.',
-                            }).then(() => {
-                                window.location.href =
-                                    "{{ route('admin.marketing_campaigns.index') }}";
-                            });
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Lỗi hệ thống',
-                                text: err.message || 'Vui lòng thử lại.',
-                            });
-                        });
+                                });
+                        }
+                    });
                 });
             });
         </script>

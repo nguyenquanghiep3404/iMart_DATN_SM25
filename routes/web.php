@@ -500,6 +500,8 @@ Route::prefix('admin')
         Route::get('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'show'])->name('marketing_campaigns.show');
         Route::get('/marketing_campaigns/{id}/edit', [MarketingCampaignController::class, 'edit'])->name('marketing_campaigns.edit');
         Route::put('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'update'])->name('marketing_campaigns.update');
+        Route::post('/marketing_campaigns/{id}/send', [MarketingCampaignController::class, 'send'])->name('marketing_campaigns.send');
+
 
 
         // Banner routes
