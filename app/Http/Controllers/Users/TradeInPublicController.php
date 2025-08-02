@@ -169,21 +169,17 @@ class TradeInPublicController extends Controller
 
     public function show($categorySlug, $productSlug)
     {
-        // Tìm danh mục theo slug
         $category = Category::where('slug', $categorySlug)->firstOrFail();
         $categoryIds = $category->children()->pluck('id')->push($category->id);
 
-        // Lấy giá trị type từ request
         $typeParam = request()->input('type');
+        $excludedAttributes = ['Màu', 'Màu sắc', 'Color']; // thuộc tính được phép khác nhau
 
-        // Các thuộc tính KHÔNG dùng để gom nhóm (màu sắc)
-        $excludedAttributes = ['Màu', 'Màu sắc', 'Color'];
-
-        // Xây dựng truy vấn cơ bản
         $query = TradeInItem::with([
             'productVariant.product.category',
             'productVariant.attributeValues.attribute',
-            'images'
+            'images',
+            'storeLocation'
         ])
             ->where('status', 'available')
             ->whereHas('productVariant.product', function ($q) use ($productSlug, $categoryIds) {
@@ -191,61 +187,41 @@ class TradeInPublicController extends Controller
                     ->whereIn('category_id', $categoryIds);
             });
 
-        // Ánh xạ type từ số sang giá trị của trường type
         $typeMap = [
-            '4' => 'open_box', // tgdd
-            '5' => 'used',     // trade-in
+            '4' => 'open_box',
+            '5' => 'used',
         ];
 
-        // Thêm điều kiện lọc theo type nếu có
         if ($typeParam && array_key_exists($typeParam, $typeMap)) {
             $query->where('type', $typeMap[$typeParam]);
         }
 
-        // Lấy tất cả sản phẩm
         $allItems = $query->latest()->get();
-
-        // Kiểm tra nếu không có sản phẩm
         abort_if($allItems->isEmpty(), 404);
 
-        $grouped = $allItems->groupBy(function ($item) use ($excludedAttributes) {
-            $variant = $item->productVariant;
+        // ✅ Lấy biến thể đầu tiên làm chuẩn so sánh
+        $baseItem = $allItems->first();
+        $baseAttributes = collect($baseItem->productVariant->attributeValues)
+            ->filter(fn($val) => $val->attribute && !in_array($val->attribute->name, $excludedAttributes))
+            ->mapWithKeys(fn($val) => [$val->attribute->name => $val->value]);
 
-            if (!$variant || $variant->attributeValues->isEmpty()) {
-                return null; // Bỏ qua nếu không có thuộc tính
-            }
+        // ✅ Lọc các item giống y như base, trừ thuộc tính màu sắc
+        $filteredItems = $allItems->filter(function ($item) use ($baseAttributes, $excludedAttributes) {
+            $attributes = collect($item->productVariant->attributeValues)
+                ->filter(fn($val) => $val->attribute && !in_array($val->attribute->name, $excludedAttributes))
+                ->mapWithKeys(fn($val) => [$val->attribute->name => $val->value]);
 
-            $productId = $variant->product_id;
-
-            // Gom tất cả thuộc tính (ngoại trừ màu), sắp xếp theo tên thuộc tính để đồng nhất nhóm
-            $filteredAttributes = $variant->attributeValues
-                ->filter(function ($attrValue) use ($excludedAttributes) {
-                    return $attrValue->attribute && !in_array($attrValue->attribute->name, $excludedAttributes);
-                })
-                ->sortBy(fn($val) => $val->attribute->name)
-                ->map(fn($val) => trim($val->attribute->name) . ':' . trim($val->value))
-                ->implode('_');
-
-            return $productId . '_' . $filteredAttributes;
-        });
-
-
-        // Map từng nhóm thành 1 item duy nhất
-        $groupedItems = $grouped->map(function ($group) {
-            $firstItem = $group->first();
-            $firstItem->item_count = $group->count();
-
-            return $firstItem;
+            return $attributes == $baseAttributes;
         })->values();
 
-        // Phân trang thủ công từ Collection
+        // ✅ Phân trang thủ công
         $perPage = 20;
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $pagedItems = $groupedItems->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $pagedItems = $filteredItems->slice(($currentPage - 1) * $perPage, $perPage)->values();
 
         $tradeInItems = new LengthAwarePaginator(
             $pagedItems,
-            $groupedItems->count(),
+            $filteredItems->count(),
             $perPage,
             $currentPage,
             ['path' => request()->url(), 'query' => request()->query()]
@@ -253,10 +229,9 @@ class TradeInPublicController extends Controller
 
         $productName = optional($tradeInItems->first()->productVariant->product)->name;
 
-        Log::info('Category Slug: ' . $categorySlug . ', Product Slug: ' . $productSlug . ', TradeInItems: ', $tradeInItems->toArray());
-
         return view('users.trade_in.show', compact('tradeInItems', 'productName', 'category', 'categorySlug', 'productSlug'));
     }
+
 
     public function detail($category, $product, Request $request)
     {

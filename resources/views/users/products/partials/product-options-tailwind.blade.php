@@ -295,79 +295,108 @@
 
 
 
-    <div class="promotions mt-6">
-        <h3 class="font-semibold text-gray-800 mb-2">Khuyến mãi & Ưu đãi</h3>
-        <ul class="space-y-2 text-sm">
-            <li class="flex items-start gap-2 text-gray-700"><svg xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg><span>Giảm thêm <span class="font-bold">500.000₫</span> khi thanh toán qua VNPAY.</span></li>
-            <li class="flex items-start gap-2 text-gray-700"><svg xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8c1.657 0 3-1.343 3-3S13.657 2 12 2 9 3.343 9 5s1.343 3 3 3zm0 0v1m0-1c-1.657 0-3 1.343-3 3S10.343 11 12 11s3-1.343 3-3-1.343-3-3-3zm0 0c1.657 0 3 1.343 3 3s-1.343 3-3 3m0 0v7m0-7c-1.657 0-3 1.343-3 3s1.343 3 3 3">
-                    </path>
-                </svg><span>Tặng <span class="font-bold">Ốp lưng MagSafe</span> trị giá 1.200.000₫.</span></li>
-            <li class="flex items-start gap-2 text-gray-700"><svg xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
-                    </path>
-                </svg><span>Hỗ trợ <span class="font-bold">trả góp 0%</span> qua thẻ tín dụng.</span></li>
-        </ul>
-    </div>
-
-    <!-- Additional Promotions Section -->
-    <div class="mt-6 p-4 border border-gray-200 rounded-lg">
-        <h3 class="font-bold text-red-600">Khuyến mãi trị giá 500.000₫</h3>
-        <p class="text-sm text-gray-600 mt-1">Giá và khuyến mãi có thể kết thúc sớm hơn dự kiến</p>
-        <div class="mt-4 space-y-2 text-sm text-gray-800">
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">1</span>
-                <span>Phiếu mua hàng AirPods, Apple Watch, Macbook trị giá 500,000đ</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">2</span>
-                <span>Phiếu mua hàng máy lạnh trị giá 300.000đ (<a href="#"
-                        class="text-blue-600 hover:underline">Xem chi tiết tại đây</a>)</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">3</span>
-                <span>Phiếu mua hàng áp dụng mua Sạc dự phòng (trừ hãng AVA+, Hydrus), đồng hồ thông minh (trừ Apple),
-                    Tai nghe và Loa bluetooth (hãng JBL, Marshall, Harman Kardon, Sony) trị giá 100.000đ</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">4</span>
-                <span>Phiếu mua hàng máy lọc nước trị giá 300.000đ</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">5</span>
-                <span>Phiếu mua hàng áp dụng mua tất cả sim có gói Mobi, Itel, Local, Vina và VNMB trị giá 50,000đ. (<a
-                        href="#" class="text-blue-600 hover:underline">Xem chi tiết tại đây</a>)</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">6</span>
-                <span>Trả chậm 0% lãi suất. Đặc biệt giảm đến 10% tối đa 5 triệu khi thanh toán qua Kredivo (<a
-                        href="#" class="text-blue-600 hover:underline">Xem chi tiết tại đây</a>)</span>
-            </div>
+    <!-- Thay đổi hiển thị chi nhánh -->
+    <section class="mt-6 p-4 sm:p-5 bg-gray-50 rounded-xl border border-gray-200">
+        <div>
+            <h3 class="font-semibold text-gray-900">Xem chi nhánh có hàng</h3>
+            <p class="text-sm text-gray-600 mt-1">Có <span id="store-count"
+                    class="font-bold text-blue-600">{{ $storeLocations->count() }}</span> cửa hàng có sản phẩm</p>
         </div>
-        <ul class="mt-4 space-y-1 text-sm text-gray-800 list-inside">
-            <li class="flex items-start gap-2"><span class="text-red-500 mt-1.5 flex-shrink-0">•</span><span>Giao hàng
-                    nhanh chóng (tuỳ khu vực)</span></li>
-            <li class="flex items-start gap-2"><span class="text-red-500 mt-1.5 flex-shrink-0">•</span><span>Mỗi số
-                    điện thoại chỉ mua 3 sản phẩm trong 1 tháng</span></li>
-        </ul>
-    </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+            <select id="province-select"
+                class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Tất cả tỉnh/thành phố</option> {{-- Option mặc định --}}
+                @foreach ($provinces as $province)
+                    <option value="{{ $province->code }}">{{ $province->name }}</option>
+                @endforeach
+            </select>
+            <select id="district-select"
+                class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                disabled>
+                <option value="">Tất cả Quận/Huyện</option> {{-- Option mặc định --}}
+                {{-- Districts sẽ được load động bằng JavaScript --}}
+            </select>
+        </div>
+        <!-- Store List Carousel -->
+        <div class="relative mt-4">
+            <div id="store-swiper" class="swiper -mx-1 px-1 pb-2">
+                <div class="swiper-wrapper">
+                    {{-- Vòng lặp Blade để hiển thị các cửa hàng động --}}
+                    @forelse($storeLocations as $store)
+                        <div class="swiper-slide w-64 sm:w-72">
+                            <div
+                                class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
+                                {{-- Hiển thị địa chỉ của cửa hàng --}}
+                                <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
+                                    {{-- Hiển thị địa chỉ chi tiết --}}
+                                    {{ $store->address }}
+                                    {{-- Thêm xã/phường --}}
+                                    @if ($store->ward)
+                                        , {{ $store->ward->name }}
+                                    @endif
+                                    {{-- Thêm quận/huyện --}}
+                                    @if ($store->district)
+                                        , {{ $store->district->name }}
+                                    @endif
+                                    {{-- Thêm tỉnh/thành phố --}}
+                                    @if ($store->province)
+                                        , {{ $store->province->name }}
+                                    @endif
+                                </p>
+                                <div class="flex gap-2 mt-3 text-center">
+                                    {{-- Kiểm tra nếu có số điện thoại thì mới hiển thị liên kết gọi --}}
+                                    @if ($store->phone)
+                                        <a href="tel:{{ $store->phone }}"
+                                            class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
+                                            <span class="mr-2">📞</span>
+                                            <span>{{ $store->phone }}</span>
+                                        </a>
+                                    @endif
+                                    {{-- Liên kết đến Google Maps --}}
+                                    {{-- Lưu ý: URL của Google Maps cần được xây dựng chuẩn hơn nếu muốn hiển thị chính xác trên bản đồ.
+                                 'https://www.google.com/maps/search/?api=1&query=' không phải là định dạng chuẩn.
+                                 Bạn nên dùng 'https://www.google.com/maps/search/?api=1&query=' và truyền địa chỉ đầy đủ vào.
+                            --}}
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($store->address . ', ' . ($store->ward->name ?? '') . ', ' . ($store->district->name ?? '') . ', ' . ($store->province->name ?? '')) }}"
+                                        target="_blank"
+                                        class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.976 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.757.433.57.57 0 00.281.14l.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                        <span>Bản đồ</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        {{-- Hiển thị thông báo nếu không có cửa hàng nào --}}
+                        <div class="swiper-slide w-full text-center py-4 text-gray-500">
+                            Không có địa điểm cửa hàng nào được tìm thấy.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+            <button id="store-prev-btn"
+                class="absolute top-1/2 -translate-y-1/2 -left-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7">
+                    </path>
+                </svg>
+            </button>
+            <button id="store-next-btn"
+                class="absolute top-1/2 -translate-y-1/2 -right-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+    </section>
+
     <form action="{{ route('cart.add') }}" method="POST" id="add-to-cart-form">
         @csrf
         <input type="hidden" name="product_variant_id" id="wishlist-variant-id">
@@ -996,3 +1025,153 @@
         });
     });
 </script> --}}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Khởi tạo Swiper
+        let swiper = new Swiper('#store-swiper', {
+            slidesPerView: 'auto',
+            spaceBetween: 12,
+            freeMode: true,
+            navigation: {
+                nextEl: '#store-next-btn',
+                prevEl: '#store-prev-btn',
+            },
+            on: {
+                init: function() {
+                    const container = this.el.parentElement;
+                    if (this.isLocked) {
+                        container.classList.add('navigation-hidden');
+                    } else {
+                        container.classList.remove('navigation-hidden');
+                    }
+                },
+                resize: function() {
+                    const container = this.el.parentElement;
+                    if (this.isLocked) {
+                        container.classList.add('navigation-hidden');
+                    } else {
+                        container.classList.remove('navigation-hidden');
+                    }
+                }
+            }
+        });
+
+        const provinceSelect = document.getElementById('province-select');
+        const districtSelect = document.getElementById('district-select');
+        const storeWrapper = document.getElementById('store-swiper').querySelector('.swiper-wrapper');
+        const storeCount = document.getElementById('store-count');
+
+        // Xử lý sự kiện thay đổi tỉnh/thành phố
+        provinceSelect.addEventListener('change', async function() {
+            const provinceCode = this.value;
+            districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
+            districtSelect.disabled = true;
+
+            if (provinceCode) {
+                try {
+                    const response = await fetch(
+                        `/api/districts-by-province?province_code=${encodeURIComponent(provinceCode)}`
+                    );
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const districts = await response.json();
+                    console.log('Districts response:', districts); // Debug phản hồi
+
+                    if (districts.length === 0) {
+                        console.warn('No districts found for province_code:', provinceCode);
+                        districtSelect.innerHTML = '<option value="">Không có quận/huyện</option>';
+                    } else {
+                        districts.forEach(district => {
+                            const option = document.createElement('option');
+                            option.value = district.code;
+                            option.textContent = district.name;
+                            districtSelect.appendChild(option);
+                        });
+                        districtSelect.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Error fetching districts:', error);
+                    districtSelect.innerHTML = '<option value="">Không có quận/huyện</option>';
+                }
+            }
+
+            filterStores(provinceCode, '');
+        });
+
+        // Xử lý sự kiện thay đổi quận/huyện
+        districtSelect.addEventListener('change', async function() {
+            const provinceCode = provinceSelect.value;
+            const districtCode = this.value;
+            filterStores(provinceCode, districtCode);
+        });
+
+        // Hàm lọc cửa hàng
+        async function filterStores(provinceCode, districtCode) {
+            try {
+                const query = new URLSearchParams();
+                if (provinceCode) query.append('province_code', provinceCode);
+                if (districtCode) query.append('district_code', districtCode);
+                const response = await fetch(`/api/filter-stores?${query.toString()}`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const {
+                    stores,
+                    count
+                } = await response.json();
+                console.log('Stores response:', {
+                    stores,
+                    count
+                }); // Debug phản hồi
+
+                storeCount.textContent = count;
+                storeWrapper.innerHTML = '';
+
+                if (stores.length === 0) {
+                    storeWrapper.innerHTML =
+                        '<div class="swiper-slide w-full text-center py-4 text-gray-500">Không có địa điểm cửa hàng nào được tìm thấy.</div>';
+                } else {
+                    stores.forEach(store => {
+                        const slide = document.createElement('div');
+                        slide.className = 'swiper-slide w-64 sm:w-72';
+                        slide.innerHTML = `
+                        <div class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
+                            <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
+                                ${store.address}${store.ward ? `, ${store.ward.name}` : ''}${store.district ? `, ${store.district.name}` : ''}${store.province ? `, ${store.province.name}` : ''}
+                            </p>
+                            <div class="flex gap-2 mt-3 text-center">
+                                ${store.phone ? `
+                                    <a href="tel:${store.phone}" class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
+                                       <span class="mr-2">📞</span>
+                                        <span>${store.phone}</span>
+                                    </a>
+                                ` : ''}
+                                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address + (store.ward ? `, ${store.ward.name}` : '') + (store.district ? `, ${store.district.name}` : '') + (store.province ? `, ${store.province.name}` : ''))}" target="_blank" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.14c.186-.096.446-.24.757-.433.62-.384 1.445-.976 2.274-1.765C15.302 14.988 17 12.493 17 9A7 7 0 103 9c0 3.492 1.698 5.988 3.355 7.584a13.731 13.731 0 002.274 1.765 11.842 11.842 0 00.757.433.57.57 0 00.281.14l.018.008.006.003zM10 11.25a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5z" clip-rule="evenodd" />
+                                    </svg>
+                                    <span>Bản đồ</span>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                        storeWrapper.appendChild(slide);
+                    });
+                }
+
+                swiper.update();
+            } catch (error) {
+                console.error('Error filtering stores:', error);
+                storeWrapper.innerHTML =
+                    '<div class="swiper-slide w-full text-center py-4 text-gray-500">Đã xảy ra lỗi khi tải danh sách cửa hàng.</div>';
+                storeCount.textContent = '0';
+                swiper.update();
+            }
+        }
+    });
+</script>
+</script>

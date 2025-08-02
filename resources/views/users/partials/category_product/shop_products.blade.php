@@ -1,11 +1,12 @@
 <div id="ajax-products-list">
     @php
         $sortOptions = [
-            'noi_bat' => 'Nổi Bật',
-            'moi_nhat' => 'Mới Nhất',
+            'noi_bat' => 'Nổi bật',
+            'moi_nhat' => 'Mới nhất',
+            'gia_thap_den_cao' => 'Giá tăng dần', // Di chuyển vào đây
+            'gia_cao_den_thap' => 'Giá giảm dần', // Di chuyển vào đây
         ];
         $currentSort = request('sort', 'tat_ca');
-        $isPriceSort = in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']);
     @endphp
 
     <div class="sort-section mb-4 shadow-sm">
@@ -18,20 +19,7 @@
                 </a>
             @endforeach
         </nav>
-        <div class="dropdown ms-2">
-            <a class="nav-link dropdown-toggle {{ $isPriceSort ? 'active' : '' }} px-3 py-2 shadow-none" href="#"
-                role="button" id="priceSortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="ci-dollar me-1"></i> Giá
-            </a>
-            <ul class="dropdown-menu" aria-labelledby="priceSortDropdown">
-                <li><a class="dropdown-item {{ $currentSort === 'gia_thap_den_cao' ? 'active' : '' }}"
-                        href="{{ request()->fullUrlWithQuery(['sort' => 'gia_thap_den_cao']) }}">Giá: Thấp đến Cao</a>
-                </li>
-                <li><a class="dropdown-item {{ $currentSort === 'gia_cao_den_thap' ? 'active' : '' }}"
-                        href="{{ request()->fullUrlWithQuery(['sort' => 'gia_cao_den_thap']) }}">Giá: Cao đến Thấp</a>
-                </li>
-            </ul>
-        </div>
+        {{-- Phần dropdown giá đã được loại bỏ --}}
     </div>
 
     <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4 pt-2">
@@ -42,10 +30,15 @@
                 $imageToShow = $displayVariant?->primaryImage ?? $product->coverImage;
                 $mainImage = $imageToShow ? Storage::url($imageToShow->path) : asset('images/placeholder.jpg');
 
-                $onSale = $displayVariant && $displayVariant->sale_price && $displayVariant->sale_price < $displayVariant->price;
+                $onSale =
+                    $displayVariant &&
+                    $displayVariant->sale_price &&
+                    $displayVariant->sale_price < $displayVariant->price;
 
                 if ($onSale) {
-                    $displayVariant->discount_percent = round(100 - ($displayVariant->sale_price / $displayVariant->price) * 100);
+                    $displayVariant->discount_percent = round(
+                        100 - ($displayVariant->sale_price / $displayVariant->price) * 100,
+                    );
                 } else {
                     $displayVariant->discount_percent = 0;
                 }
@@ -56,8 +49,8 @@
                     <div class="position-relative">
                         @if (
                             $onSale &&
-                            $displayVariant->discount_percent > 0 &&
-                            !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
+                                $displayVariant->discount_percent > 0 &&
+                                !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
                             <div class="discount-badge">
                                 Giảm {{ $displayVariant->discount_percent }}%
                             </div>
@@ -77,8 +70,7 @@
                         style="min-height: 100px;">
                         <h3 class="pb-2 mb-3 text-center">
                             <a class="d-block fs-base fw-semibold text-truncate mb-2 no-underline-link"
-                                href="{{ route('users.products.show', $product->slug) }}" 
-                                style="margin-top: 10px;">
+                                href="{{ route('users.products.show', $product->slug) }}" style="margin-top: 10px;">
                                 @php
                                     $storage = $displayVariant?->attributeValues->firstWhere(
                                         'attribute.name',
@@ -94,8 +86,8 @@
                             @if ($displayVariant && $displayVariant->price)
                                 @if (
                                     $onSale &&
-                                    $displayVariant->discount_percent > 0 &&
-                                    !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
+                                        $displayVariant->discount_percent > 0 &&
+                                        !in_array($currentSort, ['gia_thap_den_cao', 'gia_cao_den_thap']))
                                     <span class="text-primary fw-semibold fs-base" style="color: #0d6efd !important;">
                                         {{ number_format($displayVariant->sale_price) }}đ
                                     </span>
@@ -103,7 +95,8 @@
                                         {{ number_format($displayVariant->price) }}đ
                                     </del>
                                 @else
-                                    <span class="fw-semibold fs-base">{{ number_format($displayVariant->price) }}đ</span>
+                                    <span
+                                        class="fw-semibold fs-base">{{ number_format($displayVariant->price) }}đ</span>
                                 @endif
                             @else
                                 <span class="text-muted">Giá không khả dụng</span>
@@ -126,6 +119,89 @@
 
 
 <style>
+    /* --- Sắp xếp theo (Sort Filter) --- */
+.sort-section {
+    background-color: #fcfcfc; /* Consistent with sidebar background (very light off-white) */
+    border-radius: 12px; /* Consistent with sidebar rounded corners */
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06); /* Consistent with sidebar shadow */
+    border: 1px solid #e9ecef; /* Subtle border for definition (light grey) */
+    padding: 15px 25px; /* Adjust padding for better look, similar to sidebar filter sections */
+    display: flex; /* Use flexbox for alignment of label and options */
+    align-items: center; /* Vertically center items */
+    gap: 20px; /* Space between label and sort options */
+}
+
+.sort-section .sort-label {
+    font-size: 1.1rem; /* Clearer heading for filters */
+    font-weight: 600;
+    color: #343a40; /* Consistent with filter section headings (dark grey) */
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between icon and text */
+    white-space: nowrap; /* Prevent label from wrapping */
+}
+
+.sort-section .sort-label i {
+    font-size: 1.3rem; /* Consistent with filter icons */
+    color: #dc3545; /* Consistent with price filter icon (danger red) */
+}
+
+.sort-section .sort-options {
+    display: flex; /* Use flex for the nav links */
+    flex-wrap: wrap; /* Allow options to wrap if space is limited */
+    gap: 8px; /* Space between sort options */
+    margin-bottom: 0; /* Remove default nav margin */
+}
+
+.sort-section .nav-link {
+    padding: 10px 18px; /* More balanced padding for links */
+    color: #495057; /* Consistent dark grey text */
+    text-decoration: none;
+    transition: background-color 0.25s ease-out, color 0.25s ease-out, box-shadow 0.25s ease-out;
+    border-radius: 8px; /* Consistent with sidebar category links */
+    font-size: 1.02rem; /* Slightly larger text */
+    font-weight: 500; /* Medium weight for good readability */
+    border: 1px solid #dee2e6; /* Subtle border for each option (light grey) */
+    background-color: #ffffff; /* White background for inactive options */
+}
+
+.sort-section .nav-link:hover {
+    background-color: #f7f9fb; /* Very light grey-blue on hover (from original sidebar child-category hover) */
+    color: #212529; /* Darker text on hover */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow on hover (reduced intensity, neutral color) */
+    border-color: #d1d9e6; /* Slightly darker grey border on hover */
+}
+
+.sort-section .nav-link.active {
+    background-color: #dc3545; /* **Primary red for active sort option (from your 'danger' color)** */
+    color: #ffffff !important; /* White text for active sort option */
+    font-weight: 600; /* Bolder active */
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25); /* More prominent shadow for active (red based) */
+    transform: translateY(-1px); /* Slight lift effect */
+    border-color: #dc3545; /* Solid red border for active state */
+}
+
+/* Responsive adjustments (optional, but good practice) */
+@media (max-width: 768px) {
+    .sort-section {
+        flex-direction: column; /* Stack label and options on smaller screens */
+        align-items: flex-start; /* Align items to the start when stacked */
+        gap: 10px; /* Reduce gap when stacked */
+        padding: 15px 20px; /* Slightly adjust padding for smaller screens */
+    }
+
+    .sort-section .sort-options {
+        width: 100%; /* Make options take full width */
+        justify-content: center; /* Center options horizontally */
+    }
+
+    .sort-section .nav-link {
+        flex-grow: 1; /* Allow links to grow to fill space */
+        text-align: center; /* Center text within links */
+    }
+}
+
+/* Keep your existing product card styles and discount badge styles as they are separate concerns */
 .discount-badge {
     position: absolute;
     top: 0;
@@ -167,3 +243,4 @@
     --cz-aspect-ratio: calc(200 / 260 * 100%);
 }
 </style>
+

@@ -119,6 +119,13 @@ Route::get('/hang-doi-tra', [TradeInPublicController::class, 'index'])
     ->name('public.trade-in.index');
 Route::get('/hang-doi-tra/{category}/{product}/detail', [TradeInPublicController::class, 'detail'])
     ->name('public.trade-in.detail');
+// --- Routes API cho chức năng lọc ---
+// Route để lấy danh sách quận/huyện theo mã tỉnh
+Route::get('/api/districts-by-province', [HomeController::class, 'getDistrictsByProvince'])->name('api.districts.by.province');
+
+// Route để lọc danh sách cửa hàng dựa trên tỉnh và quận
+Route::get('/api/filter-stores', [HomeController::class, 'filterStoreLocations'])->name('api.stores.filter');
+
 
 
 

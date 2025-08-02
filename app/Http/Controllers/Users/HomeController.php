@@ -9,13 +9,17 @@ use App\Models\Review;
 use App\Models\Comment;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Province;
 use App\Models\FlashSale;
 use App\Models\OrderItem;
+use App\Models\DistrictOld;
+use App\Models\ProvinceOld;
 use Illuminate\Support\Str;
 use App\Models\PostCategory;
 use App\Models\WishlistItem;
 use Illuminate\Http\Request;
 use App\Models\ProductBundle;
+use App\Models\StoreLocation;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -628,6 +632,28 @@ class HomeController extends Controller
 
         // Kết thúc xử lý gói sản phẩm
 
+        // --- Bắt đầu logic THÊM MỚI để lấy Store Locations ---
+        $storeLocations = StoreLocation::with(['province', 'district', 'ward']) // Thêm eager loading
+            ->where('is_active', 1)
+            ->whereNull('deleted_at')
+            ->where('type', 'store') // Chỉ lấy loại cửa hàng
+            ->orderBy('name') // Sắp xếp theo tên cho dễ nhìn
+            ->get();
+
+        // Lấy danh sách các tỉnh/thành phố duy nhất có cửa hàng (để điền vào select box)
+        $provinces = ProvinceOld::whereHas('storeLocations', function ($query) {
+            $query->where('is_active', 1)
+                ->whereNull('deleted_at')
+                ->where('type', 'store'); // Chỉ lấy loại cửa hàng
+        })
+            ->orderBy('name')
+            ->get();
+
+        // Khởi tạo một collection rỗng cho districts ban đầu (sẽ được load động bằng JS)
+        $districts = collect();
+
+        // --- Kết thúc logic THÊM MỚI ---
+
         // // $comments = $product->comments()
         // //     ->whereNull('parent_id')
         // //     ->where(function ($query) {
@@ -803,7 +829,12 @@ class HomeController extends Controller
             'totalReviewsCount',
             'totalCommentsCount',
             'ratingFilter',
-            'productBundles' // Thêm biến mới
+            'productBundles',
+            'storeLocations',
+            'provinces', // Thêm provinces để view có thể dùng
+            'districts', // Districts sẽ được load động bằng JS
+
+            // Thêm biến mới
         ));
     }
 
@@ -866,14 +897,6 @@ class HomeController extends Controller
             $categoryIds = Category::where('parent_id', $currentCategory->id)->pluck('id')->toArray();
             $categoryIds[] = $currentCategory->id;
             $query->whereIn('category_id', $categoryIds);
-        }
-
-        // ⭐ Lọc đánh giá
-        if ($request->filled('rating')) {
-            $rating = (int) $request->rating;
-            $query->whereHas('reviews', fn($q) => $q->where('reviews.status', 'approved'))
-                ->withAvg(['reviews as approved_reviews_avg_rating' => fn($q) => $q->where('reviews.status', 'approved')], 'rating')
-                ->having('approved_reviews_avg_rating', '>=', $rating);
         }
 
         // 💰 Lọc giá
@@ -1221,5 +1244,60 @@ class HomeController extends Controller
             });
 
         return response()->json($products);
+    }
+
+    // API để lấy danh sách quận/huyện theo tỉnh
+    public function getDistrictsByProvince(Request $request)
+    {
+        // Lấy province_code từ request
+        $provinceCode = $request->input('province_code');
+
+        // Debug: Ghi log province_code
+        \Log::info('getDistrictsByProvince called with province_code: ' . $provinceCode);
+
+        try {
+            // Thực hiện truy vấn
+            $districts = DistrictOld::where('parent_code', $provinceCode)
+                ->whereHas('storeLocations', function ($query) {
+                    $query->where('is_active', 1)->whereNull('deleted_at');
+                })
+                ->orderBy('name')
+                ->get(['code', 'name']);
+
+            // Debug: Ghi log kết quả truy vấn
+            \Log::info('Districts found: ' . json_encode($districts));
+
+            return response()->json($districts);
+        } catch (\Exception $e) {
+            // Debug: Ghi log nếu có lỗi
+            \Log::error('Error in getDistrictsByProvince: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
+    }
+
+    // API để lọc cửa hàng theo tỉnh/quận
+    public function filterStoreLocations(Request $request)
+    {
+        $provinceCode = $request->input('province_code');
+        $districtCode = $request->input('district_code');
+
+        $query = StoreLocation::with(['province', 'district', 'ward'])
+            ->where('is_active', 1)
+            ->whereNull('deleted_at');
+
+        if ($provinceCode) {
+            $query->where('province_code', $provinceCode);
+        }
+
+        if ($districtCode) {
+            $query->where('district_code', $districtCode);
+        }
+
+        $filteredStores = $query->orderBy('name')->get();
+
+        return response()->json([
+            'stores' => $filteredStores,
+            'count' => $filteredStores->count()
+        ]);
     }
 }
