@@ -95,7 +95,9 @@
                                         ${statusInfo.icon} ${statusInfo.text}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">${campaign.sentDate || 'Chưa gửi'}</td>
+                                <td class="px-6 py-4">
+                                    ${campaign.sentDate ?? (campaign.scheduledAt ?? 'Chưa gửi')}
+                                </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex items-center justify-center space-x-2">
                                         <a href="/admin/marketing_campaigns/${campaign.id}" 
