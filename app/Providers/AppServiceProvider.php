@@ -183,11 +183,6 @@ class AppServiceProvider extends ServiceProvider
             if (!$isBuyNowRoute && session()->has('buy_now_session')) {
                 session()->forget(['buy_now_session', 'buy_now_coupon']);
             }
-        
-            // Nếu không phải trang giỏ hàng, xóa session coupon giỏ hàng
-            if (!$isCartRoute && session()->has('applied_coupon')) {
-                session()->forget('applied_coupon');
-            }
         });
     }
 }

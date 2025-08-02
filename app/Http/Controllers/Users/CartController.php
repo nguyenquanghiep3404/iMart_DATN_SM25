@@ -25,6 +25,17 @@ class CartController extends Controller
     public function index()
     {
         $user = auth()->user();
+        $hasItems = false;
+    if ($user) {
+        $hasItems = $user->cart && $user->cart->items()->count() > 0;
+    } else {
+        $sessionCart = session('cart', []);
+        $hasItems = !empty($sessionCart);
+    }
+
+    if (!$hasItems && session()->has('applied_coupon')) {
+        session()->forget('applied_coupon');
+    }
         $items = collect();
         $pointsBalance = $user ? $user->loyalty_points_balance : 0;
 
@@ -120,7 +131,6 @@ class CartController extends Controller
         $totalPointsToEarn = $items->sum(function($item) {
             return ($item->points_to_earn ?? 0) * $item->quantity;
         });
-
         // Lấy số dư điểm hiện tại của người dùng
         $pointsBalance = $user ? $user->loyalty_points_balance : 0;
         return view('users.cart.layout.main', compact('items', 'subtotal', 'discount', 'total', 'voucherCode','availableCoupons', 'totalPointsToEarn', 'pointsBalance'));
