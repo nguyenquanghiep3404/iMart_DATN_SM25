@@ -104,6 +104,15 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="space-y-2">
+                                <label for="scheduledAt" class="flex items-center text-sm font-medium text-slate-600">
+                                    <i data-lucide="calendar" class="mr-2 w-4 h-4"></i>
+                                    Thời gian gửi (Lên lịch)
+                                </label>
+                                <input type="datetime-local" id="scheduledAt" name="scheduledAt"
+                                    class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition" />
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -124,6 +133,11 @@
                         <button type="button" id="saveDraftBtn"
                             class="px-6 py-2.5 text-sm font-medium bg-white border border-slate-300 rounded-lg hover:bg-slate-100 focus:ring-4 focus:outline-none focus:ring-slate-200 transition">
                             Lưu nháp
+                        </button>
+                        <button type="button" id="scheduleCampaignBtn"
+                            class="px-6 py-2.5 text-sm font-medium bg-white border border-slate-300 rounded-lg hover:bg-slate-100 focus:ring-4 focus:outline-none focus:ring-slate-200 transition">
+                            <i data-lucide="calendar-clock" class="w-4 h-4 inline-block mr-2"></i>
+                            Lên lịch gửi
                         </button>
                         <button type="submit" id="sendCampaignBtn"
                             class="flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 transition-all duration-200">
@@ -157,48 +171,12 @@
                         type: formData.get('campaignType'),
                         coupon: formData.get('selectedCoupon'),
                         coupon_id: formData.get('coupon_id'),
+                        scheduled_at: formData.get('scheduledAt'),
                     };
                     return data;
                 };
 
                 // Handle Save Draft button click
-                // saveDraftBtn.addEventListener('click', function() {
-                //     const campaignData = getCampaignData();
-
-                //     fetch("{{ route('admin.marketing_campaigns.storeDraft') }}", {
-                //             method: "POST",
-                //             headers: {
-                //                 "Content-Type": "application/json",
-                //                 "X-CSRF-TOKEN": "{{ csrf_token() }}"
-                //             },
-                //             body: JSON.stringify({
-                //                 ...campaignData,
-                //                 status: "draft"
-                //             })
-                //         })
-                //         .then(res => res.json())
-                //         .then(data => {
-                //             Swal.fire({
-                //                 icon: 'success',
-                //                 title: 'Thành công',
-                //                 text: data.message || 'Đã lưu nháp thành công.',
-                //                 confirmButtonText: 'OK'
-                //             }).then(() => {
-                //                 // Điều hướng sau khi người dùng bấm "OK"
-                //                 window.location.href =
-                //                     "{{ route('admin.marketing_campaigns.index') }}";
-                //             });
-                //         })
-                //         .catch(err => {
-                //             console.error(err);
-                //             Swal.fire({
-                //                 icon: 'error',
-                //                 title: 'Lỗi',
-                //                 text: 'Vui lòng điền đầy đủ các trường.',
-                //                 confirmButtonText: 'Thử lại'
-                //             });
-                //         });
-                // });
                 saveDraftBtn.addEventListener('click', function() {
                     const campaignData = getCampaignData();
 
@@ -259,6 +237,75 @@
                                 title: 'Lỗi hệ thống',
                                 text: err.message || 'Vui lòng thử lại.',
                                 confirmButtonText: 'OK'
+                            });
+                        });
+                });
+                const scheduleCampaignBtn = document.getElementById('scheduleCampaignBtn');
+
+                scheduleCampaignBtn.addEventListener('click', function() {
+                    const campaignData = getCampaignData();
+
+                    if (!campaignData.scheduled_at) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Chưa chọn thời gian gửi',
+                            text: 'Vui lòng chọn ngày giờ để lên lịch chiến dịch.',
+                        });
+                        return;
+                    }
+
+                    fetch("{{ route('admin.marketing_campaigns.storeDraft') }}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Accept": "application/json",
+                                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                            },
+                            body: JSON.stringify({
+                                ...campaignData,
+                                status: "scheduled"
+                            })
+                        })
+                        .then(async res => {
+                            if (!res.ok) {
+                                const errorData = await res.json();
+                                if (res.status === 422 && errorData.errors) {
+                                    const messages = Object.values(errorData.errors)
+                                        .flat()
+                                        .map(msg => `<p>${msg}</p>`)
+                                        .join('');
+
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Lỗi xác thực',
+                                        html: messages,
+                                    });
+                                } else {
+                                    throw new Error(errorData.message || 'Có lỗi xảy ra.');
+                                }
+                                return;
+                            }
+                            return res.json();
+                        })
+                        .then(data => {
+                            if (!data) return;
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Đã lên lịch thành công',
+                                text: data.message ||
+                                    'Chiến dịch sẽ được gửi đúng thời gian đã chọn.',
+                            }).then(() => {
+                                window.location.href =
+                                    "{{ route('admin.marketing_campaigns.index') }}";
+                            });
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi hệ thống',
+                                text: err.message || 'Vui lòng thử lại.',
                             });
                         });
                 });
