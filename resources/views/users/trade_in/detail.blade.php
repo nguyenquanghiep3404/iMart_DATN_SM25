@@ -366,12 +366,14 @@
                                     | Tiết kiệm: <span
                                         class="font-bold text-red-600">{{ number_format($tradeInItem->productVariant->price - $tradeInItem->selling_price) }}₫</span>
                                 </p>
-                               @if ($tradeInItem->productVariant->product->slug)
-    <a href="{{ route('users.products.show', ['slug' => $tradeInItem->productVariant->product->slug]) }}"
-       class="text-blue-600 font-semibold hover:underline mt-1 inline-block text-sm">Xem sản phẩm mới &gt;</a>
-@else
-    <span class="text-gray-600 mt-1 inline-block text-sm">Sản phẩm mới không khả dụng</span>
-@endif
+                                @if ($tradeInItem->productVariant->product->slug)
+                                    <a href="{{ route('users.products.show', ['slug' => $tradeInItem->productVariant->product->slug]) }}"
+                                        class="text-blue-600 font-semibold hover:underline mt-1 inline-block text-sm">Xem
+                                        sản phẩm mới &gt;</a>
+                                @else
+                                    <span class="text-gray-600 mt-1 inline-block text-sm">Sản phẩm mới không khả
+                                        dụng</span>
+                                @endif
                             @endif
                         </div>
                     </div>
