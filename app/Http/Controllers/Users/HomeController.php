@@ -458,11 +458,11 @@ class HomeController extends Controller
             }
             $variantKeyStr = implode('_', $variantKey);
 
-            $images = $variant->images->map(fn($image) => Storage::url($image->path))->toArray();
+            $images = $variant->images->map(fn($image) => $image->url)->toArray();
             if (empty($images)) {
                 $images = [asset('images/placeholder.jpg')];
             }
-            $mainImage = $variant->primaryImage ? Storage::url($variant->primaryImage->path) : ($images[0] ?? null);
+            $mainImage = $variant->primaryImage ? $variant->primaryImage->url : ($images[0] ?? null);
 
             $variantData[$variantKeyStr] = [
                 'price' => $originalPrice,

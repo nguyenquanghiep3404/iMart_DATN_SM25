@@ -2115,7 +2115,7 @@
             const result = await response.json();
             
             if (response.ok && result.success) {
-                showToast('Cập nhật trạng thái thành công', 'success');
+                showToast('Gán shipper thành công', 'success');
                 
                 // Đánh dấu đơn hàng này đã xem (bỏ đánh dấu "mới")
                 markOrderAsViewed(currentAssignOrderId);

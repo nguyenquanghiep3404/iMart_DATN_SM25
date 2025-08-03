@@ -1,266 +1,208 @@
 @extends('users.layouts.profile')
 
-@section('content')
+@section('styles')
 <style>
     body {
         font-family: 'Inter', sans-serif;
+        background-color: #f9fafb;
     }
 
-    /* Style cho modal */
-    .modal {
-        transition: opacity 0.25s ease;
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        transition: background-color 0.2s, color 0.2s;
+        color: #374151;
     }
 
-    /* Timeline styles */
-    .timeline-item .timeline-dot {
-        position: absolute;
-        left: -0.43rem;
-        top: 0.5rem;
-        width: 0.875rem;
-        height: 0.875rem;
-        border-radius: 50%;
-        border: 2px solid white;
+    .sidebar-link:hover {
+        background-color: #f3f4f6;
     }
 
-    .timeline-item:last-child .timeline-line {
-        display: none;
+    .sidebar-link.active {
+        background-color: #fee2e2;
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+    .tab-link {
+        padding: 0.5rem 1rem;
+        border-bottom: 2px solid transparent;
+        transition: border-color 0.2s, color 0.2s;
+        color: #6b7280;
+    }
+
+    .tab-link:hover {
+        color: #111827;
+    }
+
+    .tab-link.active {
+        color: #dc2626;
+        border-color: #dc2626;
+        font-weight: 600;
     }
 </style>
-<div class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
-    <!-- Header -->
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Chi tiết yêu cầu trả hàng #{{ $returnRequest->return_code }}</h1>
-        <div class="flex items-center space-x-2 mb-4">
-            <span id="status-badge" class="px-3 py-1 text-sm font-semibold rounded-full"></span>
+@endsection
+
+@section('content')
+<div class="max-w-screen-xl mx-auto flex space-x-8">
+
+    <main class="w-3/4 xl:w-4/5">
+        <div class="flex items-center justify-between mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Chi tiết yêu cầu trả hàng</h1>
+
+            <a href="{{ route('orders.returns') }}" class="text-sm font-medium text-gray-600 hover:text-red-600 transition-colors flex items-center">
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                Quay lại danh sách trả hàng
+            </a>
         </div>
 
-        <!-- Left: Thông tin sản phẩm và lý do -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Column -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Chi tiết sản phẩm trả -->
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Chi tiết sản phẩm trả</h2>
-                    @foreach ($returnRequest->returnItems as $item)
-                    <div class="flex items-start space-x-4">
-                        <img src="{{ $item->orderItem->variant->product->thumbnail_url ?? 'https://placehold.co/100x100' }}" class="w-24 h-24 rounded-md">
-                        <div class="flex-grow">
-                            <p class="font-bold">{{ $item->orderItem->variant->product->name ?? 'Sản phẩm đã xóa' }}</p>
-                            <p class="text-sm text-gray-500">SKU: {{ $item->orderItem->variant->sku ?? 'N/A' }}</p>
 
-                            {{-- ✅ Đây là dòng bạn đang báo lỗi --}}
-                            <p class="text-sm">Số lượng trả: <span class="font-semibold">{{ $item->quantity }}</span></p>
+        <div class="mt-8">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <main class="p-6 md:p-8">
+                    @php
+                    $statusClass = match($returnRequest->status) {
+                    'rejected' => 'bg-red-100 border-red-500 text-red-800',
+                    'completed', 'refunded' => 'bg-green-100 border-green-500 text-green-800',
+                    'pending' => 'bg-yellow-100 border-yellow-500 text-yellow-800',
+                    'approved', 'processing' => 'bg-blue-100 border-blue-500 text-blue-800',
+                    default => 'bg-gray-100 border-gray-500 text-gray-800',
+                    };
+                    @endphp
 
-                            <p class="text-lg font-bold text-red-600 mt-2">
-                                {{ number_format($item->orderItem->price * $item->quantity) }} VNĐ
+                    <div class="{{ $statusClass }} border-l-4 p-4 rounded-md mb-8" role="alert">
+                        <p class="font-bold text-lg">
+                            Yêu cầu trả hàng/hoàn tiền #{{ $returnRequest->return_code }} đã {{ $returnRequest->status_text }}
+                        </p>
+                    </div>
+
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8 text-center">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Mã đơn hàng gốc</h3>
+                            <p class="text-base font-semibold text-red-600 hover:underline">
+                                <a href="{{ route('orders.show', $returnRequest->order->id) }}">
+                                    {{ $returnRequest->order->order_code }}
+                                </a>
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Ngày gửi yêu cầu</h3>
+                            <p class="text-base font-semibold text-gray-800">
+                                {{ $returnRequest->created_at->format('d/m/Y') }}
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider">Ngày hoàn tất</h3>
+                            <p class="text-base font-semibold text-gray-800">
+                                {{ $returnRequest->refunded_at ? \Carbon\Carbon::parse($returnRequest->refunded_at)->format('d/m/Y') : 'Chưa hoàn tất' }}
                             </p>
                         </div>
                     </div>
-                    @endforeach
 
-
-                    <div class="mt-4 border-t pt-4 space-y-2">
-                        <p><strong class="font-semibold">Lý do từ khách hàng:</strong> {{ $returnRequest->reason ?? 'Không có lý do' }}</p>
-                        <p><strong class="font-semibold">Mô tả: </strong>{{ $returnRequest->reason_details }}.</p>
+                    <div class="mb-10">
+                        <h3 class="text-lg font-bold text-gray-900 mb-6">Quá trình xử lý</h3>
+                        <ol class="relative border-l border-gray-300">
+                            @foreach ($returnRequest->logs ?? [] as $log)
+                            <li class="mb-10 ml-8">
+                                <span class="absolute flex items-center justify-center w-6 h-6 bg-green-200 rounded-full -left-3 ring-4 ring-white">
+                                    <svg class="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </span>
+                                <h4 class="font-semibold text-gray-800">{{ $log->action }}</h4>
+                                <time class="block mb-2 text-sm font-normal leading-none text-gray-500">
+                                    {{ $log->created_at->format('d/m/Y - H:i') }}
+                                </time>
+                                <p class="text-sm font-normal text-gray-600">{{ $log->description }}</p>
+                            </li>
+                            @endforeach
+                        </ol>
                     </div>
-                    <div class="mt-4">
-                        <h3 class="font-semibold mb-2">Hình ảnh/Video bằng chứng:</h3>
-                        <div class="flex space-x-2">
-                            @foreach ($returnRequest->files as $file)
-                            <img src="{{ Storage::url($file->path) }}" alt="{{ $file->original_name }}" class="w-24 h-24 rounded-md cursor-pointer hover:opacity-80 transition">
+
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Sản phẩm được hoàn tiền</h3>
+                        <div class="border rounded-lg">
+                            @foreach ($returnRequest->returnItems as $item)
+                            @php
+                            $variant = $item->orderItem->variant;
+                            $product = $variant->product;
+                            $image = $product->coverImage->url ?? 'https://placehold.co/80x80';
+                            @endphp
+                            <div class="flex items-center space-x-4 p-4">
+                                <img src="{{ asset('storage/' . $image) }}" class="w-20 h-20 rounded-md object-cover">
+                                <div class="flex-1">
+                                    <p class="font-semibold text-gray-800">{{ $product->name }}</p>
+                                    <p class="text-sm text-gray-500">Phân loại: {{ $variant->name }}</p>
+                                    <p class="text-sm text-gray-500">Số lượng: {{ $item->quantity }}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="font-semibold text-gray-800">
+                                        {{ number_format($item->orderItem->price * $item->quantity, 0, ',', '.') }} VNĐ
+                                    </p>
+                                </div>
+                            </div>
                             @endforeach
                         </div>
                     </div>
-                </div>
 
-                <!-- Thông tin hoàn tiền -->
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Thông tin hoàn tiền</h2>
-                    <div class="space-y-3">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Phương thức khách chọn:</span>
-                            <span class="font-semibold text-blue-600">{{ $returnRequest->refund_method_text }}</span>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">Chi tiết hoàn tiền</h3>
+                        @if ($returnRequest->status === 'rejected' && $returnRequest->rejection_reason)
+                        <div class="mt-10">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4">Lý do từ chối</h3>
+                            <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded-md">
+                                {{ $returnRequest->rejection_reason }}
+                            </div>
                         </div>
+                        @else
 
-                        @if ($returnRequest->refund_method === 'bank')
-                        {{-- ✅ Chỉ hiển thị nếu là Chuyển khoản --}}
-                        <div id="bank-info-display" class="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p><strong class="font-medium">Ngân hàng:</strong> {{ $returnRequest->bank_name }}</p>
-                            <p><strong class="font-medium">Chủ tài khoản:</strong> {{ $returnRequest->bank_account_name }}</p>
-                            <p><strong class="font-medium">Số tài khoản:</strong> {{ $returnRequest->bank_account_number }}</p>
-                        </div>
-                        @elseif ($returnRequest->refund_method === 'points')
-                        {{-- ✅ Nếu là Hoàn điểm --}}
-                        <p class="text-green-700 text-sm font-medium">
-                            Khách hàng sẽ được hoàn bằng <strong>{{ number_format($returnRequest->refunded_points) }} điểm</strong> vào tài khoản.
-                        </p>
-                        @elseif ($returnRequest->refund_method === 'coupon')
-                        {{-- ✅ Nếu là Mã giảm giá --}}
-                        <p class="text-yellow-600 text-sm font-medium">
-                            Khách sẽ nhận <strong>mã giảm giá trị giá {{ number_format($returnRequest->refund_amount) }} VNĐ</strong> qua email hoặc SMS.
-                        </p>
-                        @endif
-
-                        {{-- Tổng tiền luôn hiển thị --}}
-                        <div class="flex justify-between items-center border-t pt-3">
-                            <span class="text-lg font-semibold text-gray-800">Tổng tiền hoàn trả:</span>
-                            <input type="text" id="refund-amount-input" value="{{ number_format($returnRequest->refund_amount) }}" class="text-right text-lg font-bold text-red-600 border border-gray-300 rounded-md px-2 py-1 w-48" disabled>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- Hành động của Admin -->
-                <div id="actions-panel" class="bg-white p-6 rounded-lg shadow">
-                    <!-- Nội dung hành động sẽ được JS chèn vào đây -->
-                </div>
-            </div>
-
-            <!-- Right Column -->
-            <div class="w-full space-y-6">
-                <!-- Thông tin Khách hàng & Đơn hàng -->
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <div class="mb-4">
-                        <h3 class="font-semibold text-gray-800 mb-2">Khách hàng</h3>
-                        <p class="text-blue-600 font-semibold">
-                            {{ $returnRequest->order->user->name ?? 'Ẩn danh' }}
-                        </p>
-                        <p class="text-sm text-gray-500">
-                            {{ $returnRequest->order->user->email ?? 'Không có email' }}
-                        </p>
-                    </div>
-
-                    <div class="border-t pt-4">
-                        <h3 class="font-semibold text-gray-800 mb-2">Đơn hàng gốc</h3>
-                        <a href="{{ route('admin.orders.show', $returnRequest->order->id) }}" class="text-blue-600 hover:underline font-semibold">
-                            #{{ $returnRequest->order->order_code }}
-                        </a>
-                        <p class="text-sm text-gray-500">
-                            Ngày đặt: {{ $returnRequest->order->created_at->format('d/m/Y') }}
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Ghi chú nội bộ -->
-                <div class="w-full bg-white p-6 rounded-lg shadow">
-                    <h3 class="font-semibold text-gray-800 mb-2">Ghi chú từ hệ thống</h3>
-
-                    @if ($returnRequest->admin_note)
-                    <p class="text-sm text-gray-700 whitespace-pre-line">
-                        {{ $returnRequest->admin_note }}
-                    </p>
-                    @else
-                    <p class="text-sm text-gray-500 italic">Không có ghi chú nào.</p>
-                    @endif
-                </div>
-
-                <!-- Lịch sử hoạt động -->
-                <div class="bg-white p-6 rounded-lg shadow">
-                    <h3 class="font-semibold text-gray-800 mb-4">Lịch sử hoạt động</h3>
-                    <div class="relative pl-4 border-l border-gray-200 space-y-6">
-                        @if ($returnRequest->refunded_at && $returnRequest->refund_processed_by)
-                        <div class="timeline-item">
-                            <div class="timeline-dot bg-purple-500"></div>
-                            <p class="font-semibold text-sm">Đã hoàn tiền</p>
-                            <p class="text-xs text-gray-500">
-                                {{ $returnRequest->refundProcessor->name ?? 'Chưa xác định' }} <strong class="font-medium"></strong> xác nhận vào:
-                                {{ \Carbon\Carbon::parse($returnRequest->refunded_at)->format('d/m/Y H:i') }}
-                            </p>
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Tổng giá trị sản phẩm:</span>
+                                    <span class="font-medium text-gray-800">
+                                        {{ number_format($returnRequest->refund_amount, 0, ',', '.') }} VNĐ
+                                    </span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Phí xử lý/vận chuyển trả hàng:</span>
+                                    <span class="font-medium text-gray-800">- 0 VNĐ</span>
+                                </div>
+                                <hr>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-base font-bold text-gray-900">Tổng số tiền đã hoàn lại:</span>
+                                    <span class="text-xl font-bold text-green-600">
+                                        {{ number_format($returnRequest->refund_amount, 0, ',', '.') }} VNĐ
+                                    </span>
+                                </div>
+                                <div class="flex justify-between text-sm pt-2">
+                                    <span class="text-gray-600">Phương thức hoàn tiền:</span>
+                                    <span class="font-medium text-gray-800">
+                                        @switch($returnRequest->refund_method)
+                                        @case('points') Điểm tích lũy @break
+                                        @case('coupon') Mã giảm giá @break
+                                        @case('bank') {{ $returnRequest->bank_name }} - {{ $returnRequest->bank_account_number }} @break
+                                        @default Khác
+                                        @endswitch
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                         @endif
                     </div>
-                </div>
+                </main>
+                <footer class="p-6 bg-gray-50 text-center">
+                    <a href="/" class="inline-block bg-red-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-red-700 transition-colors">
+                        Tiếp tục mua sắm
+                    </a>
+                </footer>
             </div>
         </div>
-    </div>
+    </main>
 </div>
-<script>
-    const statusBadge = document.getElementById('status-badge');
-    const actionsPanel = document.getElementById('actions-panel');
-    const statusSwitcher = document.getElementById('status-switcher');
-    const refundAmountInput = document.getElementById('refund-amount-input');
-    const rejectionModal = document.getElementById('rejection-modal');
-    const statusConfig = {
-        pending: {
-            text: 'Chờ xử lý',
-            badge: 'bg-yellow-100 text-yellow-800'
-        },
-        approved: {
-            text: 'Đã phê duyệt',
-            badge: 'bg-blue-100 text-blue-800'
-        },
-        processing: {
-            text: 'Đang xử lý',
-            badge: 'bg-orange-100 text-orange-800'
-        },
-        completed: {
-            text: 'Hoàn tất',
-            badge: 'bg-green-100 text-green-800'
-        },
-        rejected: {
-            text: 'Đã từ chối',
-            badge: 'bg-red-100 text-red-800'
-        }
-    };
-
-    // Dữ liệu status từ server
-    const currentStatus = "{{ $returnRequest->status }}";
-
-    renderActions(currentStatus);
-
-    function renderActions(status) {
-        // Cập nhật badge
-        statusBadge.textContent = statusConfig[status].text;
-        statusBadge.className = `px-3 py-1 text-sm font-semibold rounded-full ${statusConfig[status].badge}`;
-
-        let content = `<h2 class="text-xl font-semibold text-gray-800 mb-4">Hành động</h2>`;
-        refundAmountInput.disabled = true; // Vô hiệu hóa input mặc định
-
-        switch (status) {
-            case 'pending':
-                content += `
-            <p class="text-sm text-yellow-700">Yêu cầu đang chờ được xử lý.</p>
-        `;
-                break;
-
-            case 'approved':
-                content += `
-            <p class="text-sm text-blue-700">Yêu cầu đã được phê duyệt. Đang chờ nhận hàng từ khách.</p>
-        `;
-                break;
-
-            case 'processing':
-                content += `
-            <p class="text-sm text-orange-700 mb-2">Đã nhận hàng từ khách. Đang kiểm tra thông tin hoàn tiền.</p>
-        `;
-
-                const method = "{{ $returnRequest->refund_method }}";
-                const amountFormatted = refundAmountInput.value;
-
-                if (method === 'points') {
-                    content += `<p class="text-green-600 font-medium">Sẽ hoàn bằng {{ number_format($returnRequest->refunded_points) }} điểm.</p>`;
-                } else if (method === 'bank') {
-                    content += `<p class="text-blue-600 font-medium">Sẽ hoàn bằng chuyển khoản: ${amountFormatted} VNĐ.</p>`;
-                } else if (method === 'coupon') {
-                    content += `<p class="text-yellow-600 font-medium">Sẽ hoàn bằng mã giảm giá: ${amountFormatted} VNĐ.</p>`;
-                } else {
-                    content += `<p class="text-red-600">Không xác định được phương thức hoàn tiền.</p>`;
-                }
-                break;
-
-            case 'completed':
-                content += `<p class="text-sm text-green-700 text-center font-semibold">Yêu cầu đã được xử lý và hoàn tất.</p>`;
-                break;
-
-            case 'rejected':
-                content += `
-            <p class="text-sm text-red-600 text-center font-semibold">Yêu cầu đã bị từ chối.</p>
-            <p class="text-sm text-gray-600 mt-2"><strong>Lý do:</strong> {{ $returnRequest->rejection_reason }}</p>
-        `;
-                break;
-        }
-
-        actionsPanel.innerHTML = content;
-    }
-</script>
 @endsection

@@ -8,12 +8,12 @@
             <input type="hidden" id="editing-staff-id">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-name">Họ và Tên</label>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-name">Họ và Tên <span class="text-danger">*</span></label>
                     <input id="new-staff-name" name="name" type="text" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Nhập họ và tên">
                     <div id="error-name" class="text-red-500 text-xs mt-1"></div>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-email">Email</label>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-email">Email <span class="text-danger">*</span></label>
                     <input id="new-staff-email" name="email" type="email" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="example@email.com">
                     <div id="error-email" class="text-red-500 text-xs mt-1"></div>
                 </div>
@@ -27,13 +27,13 @@
                     <div id="error-status" class="text-red-500 text-xs mt-1"></div>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-phone">Số Điện Thoại</label>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-phone">Số Điện Thoại <span class="text-danger">*</span></label>
                     <input id="new-staff-phone" name="phone" type="tel" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="09xxxxxxxx">
                     <div id="error-phone" class="text-red-500 text-xs mt-1"></div>
                 </div>
                 @if(!$store)
                 <div>
-                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="modal-province-select">Tỉnh/Thành phố</label>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="modal-province-select">Tỉnh/Thành phố <span class="text-danger">*</span></label>
                     <select id="modal-province-select" name="province" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="">-- Chọn tỉnh/thành --</option>
                         @foreach($provinces as $province)
@@ -43,21 +43,21 @@
                     <div id="error-province" class="text-red-500 text-xs mt-1"></div>
                 </div>
                 <div>
-                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="modal-district-select">Quận/Huyện</label>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="modal-district-select">Quận/Huyện <span class="text-danger">*</span></label>
                     <select id="modal-district-select" name="district" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" disabled>
                         <option value="">-- Chọn quận/huyện --</option>
                     </select>
                     <div id="error-district" class="text-red-500 text-xs mt-1"></div>
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="modal-store-select">Cửa Hàng</label>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="modal-store-select">Cửa Hàng <span class="text-danger">*</span></label>
                     <select id="modal-store-select" name="store_location_id" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" disabled>
                         <option value="">-- Chọn cửa hàng --</option>
                     </select>
                     <div id="error-store_location_id" class="text-red-500 text-xs mt-1"></div>
                 </div>
                 @else
-                <div>
+                {{-- <div>
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Tỉnh/Thành phố</label>
                     <input type="text" class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700" value="{{ $store->province->name_with_type ?? '' }}" disabled>
                     <input type="hidden" name="province" value="{{ $store->province_code }}">
@@ -70,7 +70,7 @@
                 <div class="md:col-span-2">
                     <label class="block text-gray-700 text-sm font-semibold mb-2">Cửa Hàng</label>
                     <input type="text" class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700" value="{{ $store->name }}" disabled>
-                    <input type="hidden" name="store_location_id" value="{{ $store->id }}">
+                    <input type="hidden" name="store_location_id" value="{{ $store->id }}"> --}}
                 </div>
                 @endif
             </div>
