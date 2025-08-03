@@ -200,21 +200,21 @@
                 <!-- Cột trái -->
                 <div class="space-y-4">
                     <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Họ và Tên *</label>
+                        <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Họ và Tên <span class="text-danger">*</span></label>
                         <input type="text" id="name" name="name" placeholder="Nhập họ và tên" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <div id="error-name" class="text-red-600 text-sm mt-1"></div>
                     </div>
                     
                     <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-danger">*</span></label>
                         <input type="email" id="email" name="email" placeholder="example@email.com" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <div id="error-email" class="text-red-600 text-sm mt-1"></div>
                     </div>
                     
                     @if(!$store)
-                        <!-- Trang index: Chọn tỉnh, huyện, cửa hàng -->
+
                         <div>
-                            <label for="modal-province-select" class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành Phố *</label>
+                            <label for="modal-province-select" class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành Phố</label>
                             <select id="modal-province-select" name="province" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="">-- Chọn Tỉnh/Thành Phố --</option>
                                 @foreach($provinces ?? [] as $province)
@@ -224,7 +224,6 @@
                             <div id="error-province" class="text-red-600 text-sm mt-1"></div>
                         </div>
                     @else
-                        <!-- Trang detail: Hiển thị thông tin cửa hàng đã chọn -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành Phố</label>
                             <input type="text" value="{{ $store->province->name_with_type ?? '' }}" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
@@ -232,11 +231,9 @@
                         </div>
                     @endif
                 </div>
-                
-                <!-- Cột phải -->
                 <div class="space-y-4">
                     <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái *</label>
+                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                         <select id="status" name="status" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <option value="active">Đang hoạt động</option>
                             <option value="inactive">Không hoạt động</option>
@@ -246,14 +243,14 @@
                     </div>
                     
                     <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Số Điện Thoại *</label>
+                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Số Điện Thoại <span class="text-danger">*</span></label>
                         <input type="text" id="phone" name="phone" placeholder="09xxxxxxxx" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <div id="error-phone" class="text-red-600 text-sm mt-1"></div>
                     </div>
                     
                     @if(!$store)
                         <div>
-                            <label for="modal-district-select" class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện *</label>
+                            <label for="modal-district-select" class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện</label>
                             <select id="modal-district-select" name="district" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="">-- Chọn Quận/Huyện --</option>
                             </select>

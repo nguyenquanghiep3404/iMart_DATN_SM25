@@ -105,6 +105,7 @@ class UserStoreLocation extends Model
     {
         return static::with('user')
                     ->where('store_location_id', $storeLocationId)
+                    ->whereHas('user') // Chỉ lấy các record có user tồn tại
                     ->get()
                     ->pluck('user');
     }

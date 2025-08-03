@@ -85,6 +85,22 @@
                             'p-2.5 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300 transition-colors duration-200';
                         const editButtonTitle = isSent ? 'Không thể sửa chiến dịch đã gửi' : 'Sửa';
                         const editButtonDisabled = isSent ? 'disabled' : '';
+                        let editButtonHtml = '';
+
+                        if (campaign.status === 'sent') {
+                            editButtonHtml = `
+                                <span class="p-2.5 bg-slate-100 text-slate-400 rounded-lg cursor-not-allowed"
+                                    title="Không thể sửa chiến dịch đã gửi">
+                                    ${icons.pencil}
+                                </span>`;
+                        } else {
+                            editButtonHtml = `
+                            <a href="/admin/marketing_campaigns/${campaign.id}/edit"
+                            class="p-2.5 bg-slate-200 text-slate-600 rounded-lg hover:bg-slate-300 transition-colors duration-200"
+                            title="Sửa">
+                            ${icons.pencil}
+                            </a>`;
+                        }
 
                         const row = `
                             <tr class="bg-white border-b last:border-b-0 border-slate-200 hover:bg-slate-50 transition">
@@ -95,7 +111,9 @@
                                         ${statusInfo.icon} ${statusInfo.text}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4">${campaign.sentDate || 'Chưa gửi'}</td>
+                                <td class="px-6 py-4">
+                                    ${campaign.sentDate ?? (campaign.scheduledAt ?? 'Chưa gửi')}
+                                </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex items-center justify-center space-x-2">
                                         <a href="/admin/marketing_campaigns/${campaign.id}" 
@@ -103,12 +121,7 @@
                                         title="Xem chi tiết">
                                         ${icons.eye}
                                         </a>
-                                        <a href="/admin/marketing_campaigns/${campaign.id}/edit"
-                                            class="${editButtonClass}"
-                                            title="${editButtonTitle}"
-                                            ${editButtonDisabled}>
-                                            ${icons.pencil}
-                                        </a>
+                                         ${editButtonHtml}
                                         <button class="btn-delete p-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200"
                                         title="Xóa"
                                         data-id="${campaign.id}">${icons.trash}</button>
