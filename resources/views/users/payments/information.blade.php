@@ -1669,36 +1669,31 @@
             }
 
            function updateOrderInformation({ shippingFee }) {
-            const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked').value;
-            if (deliveryMethod === 'pickup') {
-                shippingFee = 0;
+                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked').value;
+                if (deliveryMethod === 'pickup') {
+                    shippingFee = 0;
+                }
+                const shippingFeeSummary = document.getElementById('shipping-fee-summary');
+                const grandTotalSummary = document.getElementById('cart-total');
+                let finalTotal;
+                if (shippingFee === null || shippingFee === undefined) {
+                    shippingFeeSummary.textContent = 'Chưa xác định';
+                    finalTotal = baseSubtotal - baseDiscount - basePointsDiscount;
+                } else {
+                    shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND'
+                    }).format(shippingFee);
+                    // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
+                    finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
+                }
+                if (grandTotalSummary) {
+                    grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND'
+                    }).format(finalTotal > 0 ? finalTotal : 0);
+                }
             }
-
-            const shippingFeeSummary = document.getElementById('shipping-fee-summary');
-            const grandTotalSummary = document.getElementById('cart-total');
-
-            let finalTotal;
-
-            if (shippingFee === null || shippingFee === undefined) {
-                shippingFeeSummary.textContent = 'Chưa xác định';
-                finalTotal = baseSubtotal - baseDiscount - basePointsDiscount;
-            } else {
-                shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND'
-                }).format(shippingFee);
-
-                // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
-                finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
-            }
-
-            if (grandTotalSummary) {
-                grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND'
-                }).format(finalTotal > 0 ? finalTotal : 0);
-            }
-        }
 
             // Điền sẵn thông tin người dùng cho người dùng đã đăng nhập
             function prefillUserInfo() {
