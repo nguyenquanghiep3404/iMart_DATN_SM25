@@ -427,7 +427,7 @@
                                     </div>
                                 </div>
                                 <hr class="my-4">
-                                <h4 class="h6 mb-3">Chọn cửa hàng để nhận hàng</h4>
+                                <h4 class="h6 mb-3">Chọn cửa hàng để nhận hàng <span class="text-danger">*</span></h4>
                                 <!-- Button chọn cửa hàng -->
                                 <div class="mb-3">
                                     <button type="button" id="select-store-btn"
@@ -640,6 +640,64 @@
                                     <i class="ci-chevron-right text-muted"></i>
                                 </button>
 
+                               <div class="bg-body-tertiary rounded-5 p-4 mb-3">
+                @guest
+                    {{-- TRƯỜNG HỢP 1: KHÁCH VÃNG LAI (CHƯA ĐĂNG NHẬP) --}}
+                    <a href="{{ route('login') }}" class="d-flex align-items-center text-decoration-none">
+                        <div class="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle flex-shrink-0" style="width: 40px; height: 40px;">
+                            <i class="ci-gift fs-xl text-warning"></i>
+                        </div>
+                        <div class="ps-3">
+                            <div class="fw-medium text-dark">Đăng nhập để dùng điểm</div>
+                            <p class="fs-xs text-muted mb-0">Tích lũy và sử dụng điểm cho mọi đơn hàng.</p>
+                        </div>
+                    </a>
+                @endguest
+
+                @auth
+                    {{-- TRƯỜNG HỢP 2 & 3: NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP --}}
+                    <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle flex-shrink-0" style="width: 40px; height: 40px;">
+                            <i class="ci-gift fs-xl text-primary"></i>
+                        </div>
+                        <div class="ps-3">
+                            <div class="fw-medium text-dark">Điểm thưởng của bạn</div>
+                            <p class="fs-sm text-primary fw-semibold mb-0">{{ number_format(Auth::user()->loyalty_points_balance) }} điểm</p>
+                        </div>
+                    </div>
+
+                    @if(Auth::user()->loyalty_points_balance > 0)
+                        {{-- CÓ ĐIỂM: HIỂN THỊ FORM SỬ DỤNG --}}
+                        <div id="points-form" class="mt-3">
+
+        @if(isset($is_buy_now) && $is_buy_now)
+            {{-- LUỒNG MUA NGAY: Gửi đến chính nó --}}
+            <form action="{{ route('buy-now.information') }}" method="GET">
+                <div class="d-flex gap-2">
+                    <input type="number" name="points" id="points-to-use" class="form-control" placeholder="Nhập số điểm">
+                    <button type="submit" class="btn btn-dark flex-shrink-0">Áp dụng</button>
+                </div>
+            </form>
+        @else
+            {{-- LUỒNG GIỎ HÀNG: Gửi đến CartController --}}
+            <form action="{{ route('cart.applyPoints') }}" method="POST">
+                @csrf
+                <div class="d-flex gap-2">
+                    <input type="number" name="points" id="points-to-use" class="form-control" placeholder="Nhập số điểm">
+                    <button type="submit" class="btn btn-dark flex-shrink-0">Áp dụng</button>
+                </div>
+            </form>
+        @endif
+                            <div id="points-message" class="mt-2 small"></div>
+                        </div>
+                    @else
+                        {{-- KHÔNG CÓ ĐIỂM: HIỂN THỊ THÔNG BÁO --}}
+                        <p class="fs-xs text-muted mb-0 mt-2">
+                            Bạn chưa có điểm thưởng. Hãy mua sắm để tích lũy ngay!
+                        </p>
+                    @endif
+                @endauth
+            </div>
 
                             </div>
 
@@ -681,7 +739,7 @@
                                 <div class="d-flex justify-content-between">
                                     <span class="text-muted small">Điểm thưởng</span>
                                     <span id="points-summary" class="fw-medium text-warning small">
-                                        <i class="ci-star-filled"></i> +{{ number_format($totalPointsToEarn) }}
+                                        <i class="ci-star-filled"></i> +{{ number_format($totalPointsToEarn ?? 0) }}
                                     </span>
                                 </div>
                                 <a href="#" class="text-decoration-none small">Xem chi tiết</a>
@@ -824,6 +882,53 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+         $('#apply-points-btn').on('click', function() {
+            const $btn = $(this);
+            const points = $('#points-to-use').val();
+            const $messageDiv = $('#points-message');
+
+            if (!points || parseInt(points) <= 0) {
+                $messageDiv.html('<span class="text-danger">Vui lòng nhập số điểm hợp lệ.</span>');
+                return;
+            }
+
+            $btn.prop('disabled', true).html('Đang xử lý...');
+            $messageDiv.html('');
+
+            $.ajax({
+                url: "{{ route('cart.applyPoints') }}",
+                method: 'POST',
+                data: {
+                    points: points,
+                    type: 'buy-now',
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(res) {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        $messageDiv.html(`<span class="text-success">${res.message}</span>`);
+
+                        // Cập nhật giao diện tổng tiền
+                        $('#points-discount-row').show();
+                        $('#points-discount-amount').text(`- ${res.discount_amount.toLocaleString('vi-VN')}₫`);
+                        $('#cart-total').text(`${res.new_grand_total.toLocaleString('vi-VN')}₫`);
+                    } else {
+                        toastr.error(res.message);
+                        $messageDiv.html(`<span class="text-danger">${res.message}</span>`);
+                    }
+                },
+                error: function() {
+                    toastr.error('Có lỗi xảy ra, vui lòng thử lại.');
+                    $messageDiv.html('<span class="text-danger">Có lỗi xảy ra, vui lòng thử lại.</span>');
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html('Áp dụng');
+                }
+            });
+        });
+
+
+
             // --- DỮ LIỆU NGƯỜI DÙNG TỪ SERVER ---
             const userAddresses = window.userState.addresses || [];
 

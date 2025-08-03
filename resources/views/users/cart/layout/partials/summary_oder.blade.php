@@ -92,12 +92,12 @@
                         class="fw-bold text-danger h6">{{ number_format($total, 0, ',', '.') }}₫</span>
                 </div>
 
-                <!-- <div class="d-flex justify-content-between">
+                <div class="d-flex justify-content-between">
                     <span class="text-muted small">Điểm thưởng</span>
                     <span id="points-summary" class="fw-medium text-warning small">
-                        <i class="ci-star-filled"></i> +{{ number_format($totalPointsToEarn) }}
+                        <i class="ci-star-filled"></i>+ {{ number_format($totalPointsToEarn) }}
                     </span>
-                </div> -->
+                </div>
                 <a href="#" class="text-decoration-none small">Xem chi tiết</a>
 
                 <!-- Order Button -->
@@ -207,7 +207,36 @@
 </div>
 
 <script>
+    console.log('Script đã chạy');
     $(document).ready(function() {
+
+        function handleQuantityChange(itemId, newQuantity) {
+        $.post("{{ route('cart.updateQuantity') }}", {
+            item_id: itemId,
+            quantity: newQuantity,
+            _token: '{{ csrf_token() }}'
+        }).done(function() {
+            // Reload trang ngay sau khi cập nhật thành công
+            // location.reload();
+        }).fail(function() {
+            alert('Có lỗi xảy ra, vui lòng thử lại');
+        });
+    }
+
+    // Gắn sự kiện click cho nút tăng/giảm
+    $('[data-increment]').click(function() {
+        const itemId = $(this).closest('[data-item-id]').data('item-id');
+        const currentQty = parseInt($(this).siblings('.quantity-input').val());
+        handleQuantityChange(itemId, currentQty + 1);
+    });
+
+    $('[data-decrement]').click(function() {
+        const itemId = $(this).closest('[data-item-id]').data('item-id');
+        const currentQty = parseInt($(this).siblings('.quantity-input').val());
+        if (currentQty > 1) {
+            handleQuantityChange(itemId, currentQty - 1);
+        }
+    });
         $('#apply-points-btn').on('click', function() {
             const $btn = $(this);
             const points = $('#points-to-use').val();
@@ -226,6 +255,7 @@
                 method: 'POST',
                 data: {
                     points: points,
+                    type: 'cart',
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(res) {
@@ -278,45 +308,65 @@
         }
 
         // --- HÀM CẬP NHẬT GIAO DỊCH (QUAN TRỌNG) ---
-        function sendUpdateRequest(itemId, quantity, forceUpdate = false) {
-            // Vô hiệu hóa các nút
-            $('.cart-item [data-increment], .cart-item [data-decrement]').prop('disabled', true);
+        // THAY THẾ HÀM CŨ BẰNG HÀM MỚI NÀY
 
-            $.post("{{ route('cart.updateQuantity') }}", {
-                item_id: itemId,
-                quantity: quantity,
-                force_update: forceUpdate,
-            }).done((res) => {
-                if (res.success) {
-                    // Cập nhật tóm tắt đơn hàng với dữ liệu số thô từ server
-                    $('#cart-subtotal').text(formatPrice(res.subtotal_before_dc));
-                    $('#cart-discount').text(res.discount > 0 ? '-' + formatPrice(res.discount) : '0₫');
-                    $('#cart-total').text(formatPrice(res.total_after_dc));
+// Thay thế hàm cũ bằng hàm này trong file blade của bạn
+// Thay thế hàm cũ bằng hàm này
+function sendUpdateRequest(itemId, quantity) {
+    // Vô hiệu hóa các nút để tránh người dùng click nhiều lần
+    $('.cart-item [data-increment], .cart-item [data-decrement]').prop('disabled', true);
 
-                    // CẬP NHẬT ĐIỂM THƯỞNG
-                    if (res.total_points_earned !== undefined) {
-                        $('#points-summary').html(
-                            `<i class="ci-star-filled"></i> +${res.total_points_earned.toLocaleString('vi-VN')}`
-                        );
-                    }
+    $.post("{{ route('cart.updateQuantity') }}", {
+        item_id: itemId,
+        quantity: quantity,
+        _token: '{{ csrf_token() }}'
+    }).done((res) => {
+        if (res.success) {
+            // Cập nhật lại toàn bộ giao diện với dữ liệu mới từ server
+            console.log($('#points-summary').length);
+            // Định dạng tiền tệ
+            const formatPrice = (num) => (num || 0).toLocaleString('vi-VN') + '₫';
 
-                    if (res.voucher_removed) {
-                        toastr.info('Mã giảm giá đã bị huỷ vì đơn hàng không còn đủ điều kiện.');
-                    }
-                } else {
-                    toastr.error(res.message || 'Không thể cập nhật số lượng.');
-                    revertQuantityInput(itemId);
-                }
-            }).fail(() => {
-                toastr.error('Lỗi kết nối khi cập nhật số lượng.');
-                revertQuantityInput(itemId);
-            }).always(() => {
-                // Kích hoạt lại các nút
-                $('.cart-item [data-increment], .cart-item [data-decrement]').prop('disabled', false);
-                updateButtonState($(`.cart-item[data-item-id="${itemId}"]`));
-            });
+            // Cập nhật các giá trị
+            $('#cart-subtotal').text(formatPrice(res.subtotal_before_dc));
+            $('#cart-discount').text(res.discount > 0 ? '-' + formatPrice(res.discount) : '0₫');
+
+            // Cập nhật giảm giá từ điểm
+            if (res.points_discount > 0) {
+                $('#points-discount-row').show();
+                $('#points-discount-amount').text(`- ${formatPrice(res.points_discount)}`);
+            } else {
+                $('#points-discount-row').hide();
+            }
+
+            // Cập nhật tổng tiền cuối cùng
+            $('#cart-total').text(formatPrice(res.total_after_dc));
+            console.log('Kết quả trả về:', res.total_points_earned);
+
+
+
+            // Cập nhật điểm thưởng sẽ nhận
+
+
+            // Hiển thị thông báo nếu có khuyến mãi bị hủy
+            if (res.voucher_removed) {
+                toastr.warning('Mã giảm giá đã bị huỷ vì giỏ hàng không còn đủ điều kiện.');
+            }
+            if (res.points_removed) {
+                toastr.warning('Điểm thưởng đã bị hủy vì giỏ hàng không còn đủ điều kiện.');
+                $('#points-message').html('<span class="text-danger">Điểm đã bị hủy do thay đổi giỏ hàng.</span>');
+            }
+        } else {
+            toastr.error(res.message || 'Không thể cập nhật số lượng.');
+            // Bạn nên có hàm để hoàn tác lại số lượng trên giao diện nếu có lỗi
         }
-
+    }).fail(() => {
+        toastr.error('Lỗi kết nối khi cập nhật số lượng.');
+    }).always(() => {
+        // Kích hoạt lại các nút
+        $('.cart-item [data-increment], .cart-item [data-decrement]').prop('disabled', false);
+    });
+}
         // Hàm xử lý gọi ajax dùng chung
         function applyVoucher(voucherCode) {
             $.ajax({

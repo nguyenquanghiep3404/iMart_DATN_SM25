@@ -72,4 +72,132 @@ class StoreLocation extends Model
         // Liên kết ward_code của store_locations với code của wards_old
         return $this->belongsTo(WardOld::class, 'ward_code', 'code');
     }
+
+    // --- Quan Hệ Quản Lý Nhân Viên Bán Hàng ---
+
+    /**
+     * Lấy tất cả người dùng được gán vào cửa hàng này.
+     */
+    public function assignedUsers()
+    {
+        return $this->belongsToMany(User::class, 'user_store_location', 'store_location_id', 'user_id');
+    }
+
+    /**
+     * Lấy tất cả lịch làm việc của nhân viên cho cửa hàng này.
+     */
+    public function employeeSchedules()
+    {
+        return $this->hasMany(EmployeeSchedule::class);
+    }
+
+    /**
+     * Lấy tất cả máy POS cho cửa hàng này.
+     */
+    public function registers()
+    {
+        return $this->hasMany(Register::class);
+    }
+
+    /**
+     * Lấy tất cả đơn hàng cho cửa hàng này.
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Lấy tất cả kiểm kê cho cửa hàng này.
+     */
+    public function stocktakes()
+    {
+        return $this->hasMany(Stocktake::class);
+    }
+
+    /**
+     * Lấy tất cả chuyển kho từ cửa hàng này.
+     */
+    public function stockTransfersFrom()
+    {
+        return $this->hasMany(StockTransfer::class, 'from_location_id');
+    }
+
+    /**
+     * Lấy tất cả chuyển kho đến cửa hàng này.
+     */
+    public function stockTransfersTo()
+    {
+        return $this->hasMany(StockTransfer::class, 'to_location_id');
+    }
+
+    /**
+     * Lấy tất cả phiếu nhập cho cửa hàng này.
+     */
+    public function purchaseOrders()
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
+    /**
+     * Lấy tất cả sản phẩm thu đổi cho cửa hàng này.
+     */
+    public function tradeInItems()
+    {
+        return $this->hasMany(TradeInItem::class);
+    }
+
+    /**
+     * Lấy tất cả tồn kho sản phẩm cho cửa hàng này.
+     */
+    public function productInventories()
+    {
+        return $this->hasMany(ProductInventory::class);
+    }
+
+    /**
+     * Lấy lịch làm việc của nhân viên cho một khoảng thời gian cụ thể.
+     */
+    public function layLichLamViecTheoKhoangThoiGian($startDate, $endDate)
+    {
+        return $this->employeeSchedules()
+                    ->with(['user', 'workShift'])
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->orderBy('date')
+                    ->orderBy('user_id')
+                    ->get();
+    }
+
+    /**
+     * Lấy lịch làm việc của nhân viên cho một tuần cụ thể.
+     */
+    public function layLichLamViecTheoTuan($weekStartDate)
+    {
+        $weekEndDate = \Carbon\Carbon::parse($weekStartDate)->addDays(6);
+        return $this->layLichLamViecTheoKhoangThoiGian($weekStartDate, $weekEndDate);
+    }
+
+    /**
+     * Lấy số lượng nhân viên được gán.
+     */
+    public function getSoLuongNhanVienAttribute()
+    {
+        return $this->assignedUsers()->count();
+    }
+
+    /**
+     * Kiểm tra xem cửa hàng có nhân viên được gán không.
+     */
+    public function coNhanVien()
+    {
+        return $this->assignedUsers()->exists();
+    }
+
+    /**
+     * Lấy nhân viên đang hoạt động (người dùng có trạng thái active).
+     */
+    public function layNhanVienDangHoatDong()
+    {
+        return $this->assignedUsers()->where('status', 'active')->get();
+    }
 }
