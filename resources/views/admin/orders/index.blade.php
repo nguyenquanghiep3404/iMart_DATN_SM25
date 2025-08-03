@@ -683,6 +683,14 @@
                                         <p class="text-sm text-gray-500 mb-1">Ngày nhận hàng mong muốn</p>
                                         <p class="font-semibold text-gray-800" id="modal-desired-date"></p>
                                     </div>
+                                    <!-- Thông tin mã giảm giá -->
+                                    <div id="modal-coupon-info" class="hidden">
+                                        <p class="text-sm text-gray-500 mb-1">Mã giảm giá đã sử dụng</p>
+                                        <div class="flex items-center space-x-2">
+                                            <span id="modal-coupon-code" class="font-semibold text-indigo-600"></span>
+                                            <span id="modal-coupon-discount" class="text-sm text-red-600 font-medium"></span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="space-y-4">
                                 <div>
@@ -860,7 +868,10 @@
     let totalPages = 1;
 
     // --- HÀM TIỆN ÍCH ---
-    const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    const formatCurrency = (amount) => {
+        const formatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        return formatted.replace('₫', 'VNĐ');
+    };
     
     // --- HÀM TẠO PROGRESS BAR ---
     function createOrderProgressBar(currentStatus) {
@@ -1414,6 +1425,32 @@
             deliverySlotInfo.classList.remove('hidden');
         } else {
             deliverySlotInfo.classList.add('hidden');
+        }
+
+        // Hiển thị thông tin mã giảm giá nếu có
+        const couponInfo = document.getElementById('modal-coupon-info');
+        if (order.coupon_usages && order.coupon_usages.length > 0) {
+            const couponUsage = order.coupon_usages[0]; // Lấy mã giảm giá đầu tiên
+            const coupon = couponUsage.coupon;
+            
+            if (coupon) {
+                document.getElementById('modal-coupon-code').textContent = coupon.code;
+                
+                // Hiển thị thông tin giảm giá
+                let discountText = '';
+                if (coupon.type === 'percentage') {
+                    discountText = `-${coupon.value}%`;
+                } else {
+                    discountText = `-${formatCurrency(coupon.value)}`;
+                }
+                document.getElementById('modal-coupon-discount').textContent = discountText;
+                
+                couponInfo.classList.remove('hidden');
+            } else {
+                couponInfo.classList.add('hidden');
+            }
+        } else {
+            couponInfo.classList.add('hidden');
         }
 
         // Hiển thị progress bar trạng thái đơn hàng
