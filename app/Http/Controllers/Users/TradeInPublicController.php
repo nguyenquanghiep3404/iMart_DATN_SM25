@@ -8,7 +8,8 @@ use App\Models\TradeInItem;
 use Illuminate\Http\Request;
 use App\Models\ProductVariant;
 use Illuminate\Pagination\LengthAwarePaginator;
-use App\Http\Controllers\Controller; // <<-- THÊM DÒNG NÀY
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 
 
 class TradeInPublicController extends Controller
@@ -168,18 +169,17 @@ class TradeInPublicController extends Controller
 
     public function show($categorySlug, $productSlug)
     {
-        // Tìm danh mục theo slug
         $category = Category::where('slug', $categorySlug)->firstOrFail();
         $categoryIds = $category->children()->pluck('id')->push($category->id);
 
-        // Lấy giá trị type từ request
         $typeParam = request()->input('type');
+        $excludedAttributes = ['Màu', 'Màu sắc', 'Color']; // thuộc tính được phép khác nhau
 
-        // Xây dựng truy vấn cơ bản
         $query = TradeInItem::with([
             'productVariant.product.category',
             'productVariant.attributeValues.attribute',
-            'images'
+            'images',
+            'storeLocation'
         ])
             ->where('status', 'available')
             ->whereHas('productVariant.product', function ($q) use ($productSlug, $categoryIds) {
@@ -187,31 +187,41 @@ class TradeInPublicController extends Controller
                     ->whereIn('category_id', $categoryIds);
             });
 
-        // Ánh xạ type từ số sang giá trị của trường type
         $typeMap = [
-            '4' => 'open_box', // tgdd
-            '5' => 'used',     // trade-in
+            '4' => 'open_box',
+            '5' => 'used',
         ];
 
-        // Thêm điều kiện lọc theo type nếu có
         if ($typeParam && array_key_exists($typeParam, $typeMap)) {
             $query->where('type', $typeMap[$typeParam]);
         }
 
-        // Lấy tất cả sản phẩm
         $allItems = $query->latest()->get();
-
-        // Kiểm tra nếu không có sản phẩm
         abort_if($allItems->isEmpty(), 404);
 
-        // Phân trang thủ công từ Collection
+        // ✅ Lấy biến thể đầu tiên làm chuẩn so sánh
+        $baseItem = $allItems->first();
+        $baseAttributes = collect($baseItem->productVariant->attributeValues)
+            ->filter(fn($val) => $val->attribute && !in_array($val->attribute->name, $excludedAttributes))
+            ->mapWithKeys(fn($val) => [$val->attribute->name => $val->value]);
+
+        // ✅ Lọc các item giống y như base, trừ thuộc tính màu sắc
+        $filteredItems = $allItems->filter(function ($item) use ($baseAttributes, $excludedAttributes) {
+            $attributes = collect($item->productVariant->attributeValues)
+                ->filter(fn($val) => $val->attribute && !in_array($val->attribute->name, $excludedAttributes))
+                ->mapWithKeys(fn($val) => [$val->attribute->name => $val->value]);
+
+            return $attributes == $baseAttributes;
+        })->values();
+
+        // ✅ Phân trang thủ công
         $perPage = 20;
         $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $pagedItems = $allItems->slice(($currentPage - 1) * $perPage, $perPage)->values();
+        $pagedItems = $filteredItems->slice(($currentPage - 1) * $perPage, $perPage)->values();
 
         $tradeInItems = new LengthAwarePaginator(
             $pagedItems,
-            $allItems->count(),
+            $filteredItems->count(),
             $perPage,
             $currentPage,
             ['path' => request()->url(), 'query' => request()->query()]
@@ -219,24 +229,23 @@ class TradeInPublicController extends Controller
 
         $productName = optional($tradeInItems->first()->productVariant->product)->name;
 
-        \Log::info('Category Slug: ' . $categorySlug . ', Product Slug: ' . $productSlug . ', TradeInItems: ', $tradeInItems->toArray());
-
         return view('users.trade_in.show', compact('tradeInItems', 'productName', 'category', 'categorySlug', 'productSlug'));
     }
+
 
     public function detail($category, $product, Request $request)
     {
         $tradeInId = $request->query('oldid');
 
         if (!$tradeInId) {
-            \Log::error('Missing oldid parameter', ['url' => $request->fullUrl()]);
+            Log::error('Missing oldid parameter', ['url' => $request->fullUrl()]);
             abort(404, 'Thiếu tham số oldid.');
         }
 
         // Kiểm tra danh mục (có thể là danh mục cha)
         $category = Category::where('slug', $category)->first();
         if (!$category) {
-            \Log::error('Category not found', ['slug' => $category]);
+            Log::error('Category not found', ['slug' => $category]);
             abort(404, 'Không tìm thấy danh mục.');
         }
 
@@ -248,7 +257,7 @@ class TradeInPublicController extends Controller
             ->whereIn('category_id', $categoryIds)
             ->first();
         if (!$product) {
-            \Log::error('Product not found', ['slug' => $product, 'category_ids' => $categoryIds]);
+            Log::error('Product not found', ['slug' => $product, 'category_ids' => $categoryIds]);
             abort(404, 'Không tìm thấy sản phẩm.');
         }
 
@@ -265,7 +274,7 @@ class TradeInPublicController extends Controller
             })
             ->find($tradeInId);
         if (!$tradeInItem) {
-            \Log::error('TradeInItem not found', ['id' => $tradeInId, 'product_id' => $product->id]);
+            Log::error('TradeInItem not found', ['id' => $tradeInId, 'product_id' => $product->id]);
             abort(404, 'Không tìm thấy sản phẩm cũ.');
         }
 
@@ -283,7 +292,7 @@ class TradeInPublicController extends Controller
         $description = $tradeInItem->productVariant->product->description;
         $productName = $product->name;
 
-        \Log::info('Detail Request', [
+        Log::info('Detail Request', [
             'category' => $category->slug,
             'product' => $product->slug,
             'oldid' => $tradeInId,
@@ -291,7 +300,7 @@ class TradeInPublicController extends Controller
             'specifications' => $specifications->toArray(),
             'description' => $description,
         ]);
-        
+
         return view('users.trade_in.detail', compact('tradeInItem', 'specifications', 'description', 'category', 'productName'))
             ->with('categorySlug', $category->slug)
             ->with('productSlug', $product->slug);
