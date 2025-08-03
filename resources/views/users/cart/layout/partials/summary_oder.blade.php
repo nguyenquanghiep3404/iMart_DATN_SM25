@@ -13,48 +13,53 @@
 
 
                 <div class="bg-body-tertiary rounded-5 p-4 mb-3">
-                @guest
-                    {{-- TRƯỜNG HỢP 1: KHÁCH VÃNG LAI (CHƯA ĐĂNG NHẬP) --}}
-                    <a href="{{ route('login') }}" class="d-flex align-items-center text-decoration-none">
-                        <div class="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle flex-shrink-0" style="width: 40px; height: 40px;">
-                            <i class="ci-gift fs-xl text-warning"></i>
-                        </div>
-                        <div class="ps-3">
-                            <div class="fw-medium text-dark">Đăng nhập để dùng điểm</div>
-                            <p class="fs-xs text-muted mb-0">Tích lũy và sử dụng điểm cho mọi đơn hàng.</p>
-                        </div>
-                    </a>
-                @endguest
-
-                @auth
-                    {{-- TRƯỜNG HỢP 2 & 3: NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP --}}
-                    <div class="d-flex align-items-center">
-                        <div class="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle flex-shrink-0" style="width: 40px; height: 40px;">
-                            <i class="ci-gift fs-xl text-primary"></i>
-                        </div>
-                        <div class="ps-3">
-                            <div class="fw-medium text-dark">Điểm thưởng của bạn</div>
-                            <p class="fs-sm text-primary fw-semibold mb-0">{{ number_format(Auth::user()->loyalty_points_balance) }} điểm</p>
-                        </div>
-                    </div>
-
-                    @if(Auth::user()->loyalty_points_balance > 0)
-                        {{-- CÓ ĐIỂM: HIỂN THỊ FORM SỬ DỤNG --}}
-                        <div id="points-form" class="mt-3">
-                            <div class="d-flex gap-2">
-                                <input type="number" id="points-to-use" class="form-control" placeholder="Nhập số điểm">
-                                <button type="button" id="apply-points-btn" class="btn btn-dark flex-shrink-0">Áp dụng</button>
+                    @guest
+                        {{-- TRƯỜNG HỢP 1: KHÁCH VÃNG LAI (CHƯA ĐĂNG NHẬP) --}}
+                        <a href="{{ route('login') }}" class="d-flex align-items-center text-decoration-none">
+                            <div class="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle flex-shrink-0"
+                                style="width: 40px; height: 40px;">
+                                <i class="ci-gift fs-xl text-warning"></i>
                             </div>
-                            <div id="points-message" class="mt-2 small"></div>
+                            <div class="ps-3">
+                                <div class="fw-medium text-dark">Đăng nhập để dùng điểm</div>
+                                <p class="fs-xs text-muted mb-0">Tích lũy và sử dụng điểm cho mọi đơn hàng.</p>
+                            </div>
+                        </a>
+                    @endguest
+
+                    @auth
+                        {{-- TRƯỜNG HỢP 2 & 3: NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP --}}
+                        <div class="d-flex align-items-center">
+                            <div class="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle flex-shrink-0"
+                                style="width: 40px; height: 40px;">
+                                <i class="ci-gift fs-xl text-primary"></i>
+                            </div>
+                            <div class="ps-3">
+                                <div class="fw-medium text-dark">Điểm thưởng của bạn</div>
+                                <p class="fs-sm text-primary fw-semibold mb-0">
+                                    {{ number_format(Auth::user()->loyalty_points_balance) }} điểm</p>
+                            </div>
                         </div>
-                    @else
-                        {{-- KHÔNG CÓ ĐIỂM: HIỂN THỊ THÔNG BÁO --}}
-                        <p class="fs-xs text-muted mb-0 mt-2">
-                            Bạn chưa có điểm thưởng. Hãy mua sắm để tích lũy ngay!
-                        </p>
-                    @endif
-                @endauth
-            </div>
+
+                        @if (Auth::user()->loyalty_points_balance > 0)
+                            {{-- CÓ ĐIỂM: HIỂN THỊ FORM SỬ DỤNG --}}
+                            <div id="points-form" class="mt-3">
+                                <div class="d-flex gap-2">
+                                    <input type="number" id="points-to-use" class="form-control"
+                                        placeholder="Nhập số điểm">
+                                    <button type="button" id="apply-points-btn" class="btn btn-dark flex-shrink-0">Áp
+                                        dụng</button>
+                                </div>
+                                <div id="points-message" class="mt-2 small"></div>
+                            </div>
+                        @else
+                            {{-- KHÔNG CÓ ĐIỂM: HIỂN THỊ THÔNG BÁO --}}
+                            <p class="fs-xs text-muted mb-0 mt-2">
+                                Bạn chưa có điểm thưởng. Hãy mua sắm để tích lũy ngay!
+                            </p>
+                        @endif
+                    @endauth
+                </div>
             </div>
 
             <!-- Scrollable order information -->
@@ -76,10 +81,10 @@
                     </span>
                 </li>
 
-                 <li class="d-flex justify-content-between mb-2" id="points-discount-row" style="display: none;">
-                        <span class="text-muted small">Giảm từ điểm:</span>
-                        <span id="points-discount-amount" class="text-danger fw-medium"></span>
-                    </li>
+                <li class="d-flex justify-content-between mb-2" id="points-discount-row" style="display: none;">
+                    <span class="text-muted small">Giảm từ điểm:</span>
+                    <span id="points-discount-amount" class="text-danger fw-medium"></span>
+                </li>
 
                 <div class="d-flex justify-content-between mb-3">
                     <span class="text-muted small">Phí vận chuyển:</span>
@@ -231,12 +236,15 @@
                 success: function(res) {
                     if (res.success) {
                         toastr.success(res.message);
-                        $messageDiv.html(`<span class="text-success">${res.message}</span>`);
+                        $messageDiv.html(
+                            `<span class="text-success">${res.message}</span>`);
 
                         // Cập nhật giao diện tổng tiền
                         $('#points-discount-row').show();
-                        $('#points-discount-amount').text(`- ${res.discount_amount.toLocaleString('vi-VN')}₫`);
-                        $('#cart-total').text(`${res.new_grand_total.toLocaleString('vi-VN')}₫`);
+                        $('#points-discount-amount').text(
+                            `- ${res.discount_amount.toLocaleString('vi-VN')}₫`);
+                        $('#cart-total').text(
+                            `${res.new_grand_total.toLocaleString('vi-VN')}₫`);
                     } else {
                         toastr.error(res.message);
                         $messageDiv.html(`<span class="text-danger">${res.message}</span>`);
@@ -244,7 +252,9 @@
                 },
                 error: function() {
                     toastr.error('Có lỗi xảy ra, vui lòng thử lại.');
-                    $messageDiv.html('<span class="text-danger">Có lỗi xảy ra, vui lòng thử lại.</span>');
+                    $messageDiv.html(
+                        '<span class="text-danger">Có lỗi xảy ra, vui lòng thử lại.</span>'
+                    );
                 },
                 complete: function() {
                     $btn.prop('disabled', false).html('Áp dụng');
@@ -323,7 +333,8 @@
                 url: '{{ route('cart.applyVoucherAjax') }}',
                 method: 'POST',
                 data: {
-                    voucher_code: voucherCode
+                    voucher_code: voucherCode,
+                    type: 'cart'
                 },
                 success: function(response) {
                     const formatMoney = (amount) => amount.toLocaleString('vi-VN') + '₫';
@@ -456,5 +467,4 @@
             modal.style.display = 'none'; // In a real app, you would manage this with state
         });
     });
-
 </script>
