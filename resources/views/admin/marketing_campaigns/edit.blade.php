@@ -113,6 +113,15 @@
                                     @endforeach
                                 </select>
                             </div>
+                            <div class="space-y-2">
+                                <label for="scheduledAt" class="flex items-center text-sm font-medium text-slate-600">
+                                    <i data-lucide="calendar" class="mr-2 w-4 h-4"></i>
+                                    Thời gian gửi (Lên lịch)
+                                </label>
+                                <input type="datetime-local" id="scheduledAt" name="scheduledAt"
+                                    value="{{ old('scheduledAt', $scheduledAtValue ?? '') }}"
+                                    class="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition" />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -134,6 +143,11 @@
                             class="px-6 py-2.5 text-sm font-medium bg-white border border-slate-300 rounded-lg hover:bg-slate-100 focus:ring-4 focus:outline-none focus:ring-slate-200 transition">
                             Lưu nháp
                         </button>
+                        <button type="button" id="scheduleCampaignBtn"
+                            class="px-6 py-2.5 text-sm font-medium bg-white border border-slate-300 rounded-lg hover:bg-slate-100 focus:ring-4 focus:outline-none focus:ring-slate-200 transition">
+                            <i data-lucide="calendar-clock" class="w-4 h-4 inline-block mr-2"></i>
+                            Lên lịch gửi
+                        </button>
                         <button type="submit" id="sendCampaignBtn"
                             class="flex items-center justify-center px-6 py-2.5 text-sm font-medium text-white bg-purple-600 rounded-lg shadow-md hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 transition-all duration-200">
                             <i data-lucide="send-horizontal" class="w-5 h-5 mr-2"></i>
@@ -148,32 +162,28 @@
         <script>
             // --- Render Lucide Icons ---
             lucide.createIcons();
-
-            // --- JavaScript Logic ---
             document.addEventListener('DOMContentLoaded', function() {
                 const form = document.getElementById('campaignForm');
                 const saveDraftBtn = document.getElementById('saveDraftBtn');
-                const sendCampaignBtn = form; // The submit button is the form itself for this purpose
+                const scheduleCampaignBtn = document.getElementById('scheduleCampaignBtn');
+                const campaignId = "{{ $campaign->id ?? '' }}";
 
-                // Function to gather form data
+                // Hàm lấy data từ form, bao gồm cả scheduledAt
                 const getCampaignData = () => {
                     const formData = new FormData(form);
-                    const data = {
+                    return {
                         name: formData.get('campaignName'),
                         subject: formData.get('emailSubject'),
                         content: formData.get('emailContent'),
                         customer_group_id: formData.get('customer_group_id'),
                         type: formData.get('campaignType'),
-                        coupon: formData.get('selectedCoupon'),
                         coupon_id: formData.get('coupon_id'),
+                        scheduled_at: formData.get('scheduledAt') || null, // thêm scheduledAt
                     };
-                    return data;
                 };
 
+                // Xử lý nút Lưu nháp
                 saveDraftBtn.addEventListener('click', function() {
-                    const campaignData = getCampaignData();
-                    const campaignId = "{{ $campaign->id ?? '' }}";
-
                     if (!campaignId) {
                         Swal.fire({
                             icon: 'error',
@@ -183,6 +193,8 @@
                         });
                         return;
                     }
+
+                    const campaignData = getCampaignData();
 
                     fetch(`/admin/marketing_campaigns/${campaignId}`, {
                             method: "PUT",
@@ -240,12 +252,171 @@
                         });
                 });
 
-                // Handle form submission (Send Campaign)
-                form.addEventListener('submit', function(event) {
-                    event.preventDefault(); // Prevent default form submission
+                // Xử lý nút Lên lịch gửi
+                scheduleCampaignBtn.addEventListener('click', function() {
+                    if (!campaignId) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi',
+                            text: 'Campaign ID không hợp lệ hoặc không tồn tại.',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+
                     const campaignData = getCampaignData();
-                    campaignData.status = 'sent';
-                    alert(`Đã gửi chiến dịch!\n\n${JSON.stringify(campaignData, null, 2)}`);
+
+                    if (!campaignData.scheduled_at) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Chưa chọn thời gian gửi',
+                            text: 'Vui lòng chọn ngày giờ để lên lịch chiến dịch.',
+                        });
+                        return;
+                    }
+
+                    fetch(`/admin/marketing_campaigns/${campaignId}`, {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Accept": "application/json",
+                                "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                            },
+                            body: JSON.stringify({
+                                ...campaignData,
+                                status: "scheduled"
+                            })
+                        })
+                        .then(async res => {
+                            if (!res.ok) {
+                                const errorData = await res.json();
+                                if (res.status === 422 && errorData.errors) {
+                                    const messages = Object.values(errorData.errors)
+                                        .flat()
+                                        .map(msg => `<p>${msg}</p>`)
+                                        .join('');
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Lỗi xác thực',
+                                        html: messages,
+                                    });
+                                } else {
+                                    throw new Error(errorData.message || 'Có lỗi xảy ra.');
+                                }
+                                return;
+                            }
+                            return res.json();
+                        })
+                        .then(data => {
+                            if (!data) return;
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Đã lên lịch thành công',
+                                text: data.message ||
+                                    'Chiến dịch sẽ được gửi đúng thời gian đã chọn.',
+                            }).then(() => {
+                                window.location.href =
+                                    "{{ route('admin.marketing_campaigns.index') }}";
+                            });
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Lỗi hệ thống',
+                                text: err.message || 'Vui lòng thử lại.',
+                            });
+                        });
+                });
+
+                // Xử lý submit form (Gửi chiến dịch)
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+
+                    if (!campaignId) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi',
+                            text: 'Campaign ID không hợp lệ hoặc không tồn tại.',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+
+                    // Hiển thị hộp thoại xác nhận trước khi gửi
+                    Swal.fire({
+                        title: 'Bạn có chắc muốn gửi chiến dịch này?',
+                        text: "Hành động này sẽ gửi email đến tất cả khách hàng trong nhóm!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Có, gửi đi!',
+                        cancelButtonText: 'Hủy bỏ',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const campaignData = getCampaignData();
+                            // Hiển thị loading
+                            Swal.fire({
+                                title: 'Đang gửi chiến dịch...',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading()
+                                }
+                            });
+                            fetch(`/admin/marketing_campaigns/${campaignId}/send`, {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        "Accept": "application/json",
+                                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                                    },
+                                    body: JSON.stringify({
+                                        ...campaignData,
+                                        status: "sent"
+                                    })
+                                })
+                                .then(async res => {
+                                    if (!res.ok) {
+                                        const errorData = await res.json();
+                                        if (res.status === 422 && errorData.errors) {
+                                            const messages = Object.values(errorData.errors)
+                                                .flat()
+                                                .map(msg => `<p>${msg}</p>`)
+                                                .join('');
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Lỗi xác thực',
+                                                html: messages,
+                                            });
+                                        } else {
+                                            throw new Error(errorData.message ||
+                                                'Có lỗi xảy ra.');
+                                        }
+                                        return;
+                                    }
+                                    return res.json();
+                                })
+                                .then(data => {
+                                    if (!data) return;
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Đã gửi chiến dịch',
+                                        text: data.message ||
+                                            'Chiến dịch đã được gửi thành công.',
+                                    }).then(() => {
+                                        window.location.href =
+                                            "{{ route('admin.marketing_campaigns.index') }}";
+                                    });
+                                })
+                                .catch(err => {
+                                    console.error(err);
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Lỗi hệ thống',
+                                        text: err.message || 'Vui lòng thử lại.',
+                                    });
+                                });
+                        }
+                    });
                 });
             });
         </script>

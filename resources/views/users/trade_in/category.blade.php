@@ -143,11 +143,14 @@
                         <p class="text-base text-gray-400 mb-1">{{ $item->item_count }} sản phẩm</p>
                         <h3 class="font-bold text-lg text-gray-800 mb-2 flex-grow">
                             {{ $item->productVariant->product->name ?? 'Không rõ tên' }}
-                            @if ($item->productVariant->attributeValues)
-                                @foreach ($item->productVariant->attributeValues as $attributeValue)
-                                    {{ $attributeValue->value }}
-                                @endforeach
-                            @endif
+                                        @foreach ($item->productVariant->attributeValues ?? [] as $attributeValue)
+                                            @php
+                                                $attrName = strtolower($attributeValue->attribute->name);
+                                            @endphp
+                                            @if (!in_array($attrName, ['màu', 'màu sắc', 'color']))
+                                                {{ $attributeValue->value }}
+                                            @endif
+                                        @endforeach
                         </h3>
                         <div class="mt-auto">
                             <p class="text-red-600 font-bold text-xl">

@@ -111,7 +111,8 @@
                 url: '{{ route('cart.applyVoucherAjax') }}',
                 method: 'POST',
                 data: {
-                    voucher_code: voucherCode
+                    voucher_code: voucherCode,
+                    type: 'buy-now'
                 },
                 success: function(response) {
                     const formatMoney = (amount) => amount.toLocaleString('vi-VN') + '₫';

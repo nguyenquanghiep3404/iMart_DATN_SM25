@@ -580,8 +580,8 @@
                                 <div class="col-md-6">
                                     <div class="border rounded p-3">
                                         <div class="form-check">
-                                            <input id="qrcode" name="payment_method" type="radio" value="bank_transfer_qr"
-                                                class="form-check-input">
+                                            <input id="qrcode" name="payment_method" type="radio"
+                                                value="bank_transfer_qr" class="form-check-input">
                                             <label for="qrcode" class="form-check-label">
                                                 <div class="d-flex align-items-center">
                                                     <i class="ci-credit-card fs-4 text-muted me-2"></i>
@@ -661,7 +661,7 @@
                                         {{ number_format($subtotal, 0, ',', '.') }}₫
                                     </span>
                                 </div>
-                               <div class="d-flex justify-content-between mb-2">
+                                <div class="d-flex justify-content-between mb-2">
                                     <span class="text-muted small">Giảm từ voucher:</span>
                                     <span id="cart-discount" class="text-danger fw-medium">
                                         {{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
@@ -669,7 +669,7 @@
                                 </div>
 
                                 {{-- <<< THAY ĐỔI 1: HIỂN THỊ GIẢM GIÁ TỪ ĐIỂM >>> --}}
-                                @if(isset($pointsDiscount) && $pointsDiscount > 0)
+                                @if (isset($pointsDiscount) && $pointsDiscount > 0)
                                     <div class="d-flex justify-content-between mb-2" id="points-discount-row">
                                         <span class="text-muted small">Giảm từ điểm:</span>
                                         <span id="points-discount-amount" class="text-danger fw-medium">
@@ -678,41 +678,41 @@
                                     </div>
                                 @endif
                             </div>
-                                <div class="d-flex justify-content-between mb-3">
-                                    <span class="text-muted small">Phí vận chuyển:</span>
-                                    <span id="shipping-fee-summary" class="fw-medium">Chưa xác định</span>
-                                </div>
-                                <div class="d-flex justify-content-between border-top pt-3 mb-3">
-                                    <span class="fw-bold">Cần thanh toán:</span>
-                                    <span id="cart-total"
-                                        class="fw-bold text-danger h6">{{ number_format($total, 0, ',', '.') }}₫</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-muted small">Điểm thưởng</span>
-                                    <span id="points-summary" class="fw-medium text-warning small">
-                                        <i class="ci-star-filled"></i> +{{ number_format($totalPointsToEarn ?? 0) }}
-                                    </span>
-                                </div>
-                                <a href="#" class="text-decoration-none small">Xem chi tiết</a>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="text-muted small">Phí vận chuyển:</span>
+                                <span id="shipping-fee-summary" class="fw-medium">Chưa xác định</span>
+                            </div>
+                            <div class="d-flex justify-content-between border-top pt-3 mb-3">
+                                <span class="fw-bold">Cần thanh toán:</span>
+                                <span id="cart-total"
+                                    class="fw-bold text-danger h6">{{ number_format($total, 0, ',', '.') }}₫</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Điểm thưởng</span>
+                                <span id="points-summary" class="fw-medium text-warning small">
+                                    <i class="ci-star-filled"></i> +{{ number_format($totalPointsToEarn ?? 0) }}
+                                </span>
+                            </div>
+                            <a href="#" class="text-decoration-none small">Xem chi tiết</a>
 
-                                <!-- Order Button -->
-                                <div class="mt-4 pt-3 border-top" style="margin-bottom: 20px;">
-                                    <button type="button" id="place-order-btn" class="btn btn-danger btn-lg w-100 mb-3">
-                                        <i class="ci-card me-2"></i>Đặt hàng
-                                    </button>
-                                    <p class="text-muted small text-center mb-0"
-                                        style="font-size: 0.75rem; line-height: 1.3;">
-                                        Bằng việc tiến hành đặt mua hàng, bạn đồng ý với
-                                        <a href="#" class="text-decoration-none">Điều khoản dịch vụ</a> và
-                                        <a href="#" class="text-decoration-none">Chính sách xử lý dữ liệu cá
-                                            nhân</a> của chúng tôi.
-                                    </p>
-                                </div>
+                            <!-- Order Button -->
+                            <div class="mt-4 pt-3 border-top" style="margin-bottom: 20px;">
+                                <button type="button" id="place-order-btn" class="btn btn-danger btn-lg w-100 mb-3">
+                                    <i class="ci-card me-2"></i>Đặt hàng
+                                </button>
+                                <p class="text-muted small text-center mb-0"
+                                    style="font-size: 0.75rem; line-height: 1.3;">
+                                    Bằng việc tiến hành đặt mua hàng, bạn đồng ý với
+                                    <a href="#" class="text-decoration-none">Điều khoản dịch vụ</a> và
+                                    <a href="#" class="text-decoration-none">Chính sách xử lý dữ liệu cá
+                                        nhân</a> của chúng tôi.
+                                </p>
                             </div>
                         </div>
                     </div>
-                </aside>
             </div>
+            </aside>
+        </div>
         </div>
     </main>
 
@@ -1668,8 +1668,7 @@
                 });
             }
 
-           function updateOrderInformation({ shippingFee }) {
-                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked').value;
+            function updateOrderInformation({ shippingFee }) {
                 if (deliveryMethod === 'pickup') {
                     shippingFee = 0;
                 }
@@ -1684,6 +1683,15 @@
                         style: 'currency',
                         currency: 'VND'
                     }).format(shippingFee);
+                    // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
+                    finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
+                }
+                    shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat(
+                        'vi-VN', {
+                            style: 'currency',
+                            currency: 'VND'
+                        }).format(shippingFee);
+
                     // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
                     finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
                 }

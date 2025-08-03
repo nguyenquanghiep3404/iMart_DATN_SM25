@@ -13,6 +13,8 @@ class AbandonedCartLog extends Model
         'abandoned_cart_id',
         'action',
         'description',
+        'subject_type',
+        'subject_id',
         'causer_type',
         'causer_id',
     ];
