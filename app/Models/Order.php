@@ -398,4 +398,8 @@ class Order extends Model
             return $this->desired_delivery_date;
         }
     }
+    public function returnRequests()
+    {
+        return $this->hasMany(\App\Models\ReturnRequest::class);
+    }
 }

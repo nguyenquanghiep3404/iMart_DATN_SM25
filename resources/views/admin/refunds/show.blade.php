@@ -299,7 +299,7 @@
                     if (method === 'points') {
                         content += `
             <button onclick="updateStatus('completed')" class="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 transition font-bold">
-                Hoàn điểm (${Math.floor({{ $returnRequest->refund_amount }} / 1000 )} điểm)
+                Hoàn điểm (${Math.floor({{ $returnRequest->refund_amount }})} điểm)
             </button>
         `;
                     } else if (method === 'bank') {

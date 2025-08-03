@@ -32,6 +32,7 @@
     @include('users.partials.back_to_top_button')
 
     <!-- Vendor scripts -->
+    <!-- Vendor scripts -->
     <script src="{{ asset('assets/users/vendor/swiper/swiper-bundle.min.js') }}"></script>
 
     <!-- Bootstrap + Theme scripts -->

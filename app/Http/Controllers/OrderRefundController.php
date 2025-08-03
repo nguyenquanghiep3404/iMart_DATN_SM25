@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
+use App\Models\ActivityLog;
 
 class OrderRefundController extends Controller
 {
@@ -32,6 +33,33 @@ class OrderRefundController extends Controller
 
         return view('admin.refunds.index', compact('returnRequests'));
     }
+    public function indexuser(Request $request)
+    {
+        $user = Auth::user();
+        $status = $request->status;
+        $search = $request->search;
+
+        $refunds = ReturnRequest::with([
+            'order',
+            'returnItems.orderItem.variant.product.coverImage'
+        ])
+            ->where('user_id', $user->id)
+            ->when($status, function ($query) use ($status) {
+                $query->where('status', $status);
+            })
+            ->when($search, function ($query) use ($search) {
+                $query->where('return_code', 'like', "%$search%")
+                    ->orWhereHas('order', function ($q) use ($search) {
+                        $q->where('order_code', 'like', "%$search%");
+                    });
+            })
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('users.refunds.index', compact('refunds', 'status', 'search'));
+    }
+
     public function show($id)
     {
         $returnRequest = ReturnRequest::with([
@@ -50,7 +78,8 @@ class OrderRefundController extends Controller
             'returnItems.orderItem.variant.product',
             'files',
             'order.user',
-            'refundProcessor'
+            'refundProcessor',
+            'logs'
         ])->where('id', $code)
             ->whereHas('order', function ($q) {
                 $q->where('user_id', auth()->id());
@@ -99,14 +128,16 @@ class OrderRefundController extends Controller
     {
         $validated = $request->validate([
             'refund_method' => 'required|in:points,bank,coupon',
-            'quantity' => 'required|integer|min:1',
+            'order_item_ids' => 'required|array|min:1',
+            'order_item_ids.*' => 'exists:order_items,id',
+            'quantities' => 'required|array',
+            'quantities.*' => 'integer|min:1',
             'reason' => 'required|string|max:255',
             'reason_details' => 'nullable|string|max:1000',
             'media.*' => 'nullable|file|max:10240',
-            'order_item_id' => 'required|exists:order_items,id',
         ]);
 
-        // Validate thêm nếu là chuyển khoản
+
         if ($request->refund_method === 'bank') {
             $request->validate([
                 'bank_name' => 'required|string|max:100',
@@ -115,36 +146,45 @@ class OrderRefundController extends Controller
             ]);
         }
 
+
         try {
             DB::beginTransaction();
 
-            // Lấy thông tin order từ order_item
-            $orderItem = OrderItem::with('order')->findOrFail($request->order_item_id);
-            $order = $orderItem->order;
+            $orderItemIds = $validated['order_item_ids'];
+            $quantities = $validated['quantities'];
 
-            // Tạo mã return_code
-            $returnCode = 'RR' . strtoupper(Str::random(8));
+            $refundAmount = 0;
+            $orderId = null;
+            $userId = auth()->id();
 
-            // Tính số tiền hoàn: đơn giản lấy theo giá x số lượng
-            $refundAmount = $orderItem->price * $validated['quantity'];
+            foreach ($orderItemIds as $itemId) {
+                $item = OrderItem::findOrFail($itemId);
+                $qty = $quantities[$itemId] ?? 1;
 
-            // Tạo return request
+                if ($orderId === null) {
+                    $orderId = $item->order_id;
+                }
+
+                $refundAmount += $item->price * $qty;
+            }
+
+
             $returnRequest = ReturnRequest::create([
-                'order_id' => $order->id,
-                'user_id' => $order->user_id,
-                'return_code' => $returnCode,
+                'order_id' => $orderId,
+                'user_id' => $userId,
+                'return_code' => 'RR' . strtoupper(Str::random(8)),
                 'reason' => $validated['reason'],
                 'reason_details' => $validated['reason_details'] ?? null,
                 'refund_method' => $validated['refund_method'],
                 'status' => 'pending',
                 'refund_amount' => $refundAmount,
-                'refunded_points' => $validated['refund_method'] === 'points' ? floor($refundAmount / 1000) : null,
+                'refunded_points' => $validated['refund_method'] === 'points' ? (int)$refundAmount : null,
                 'bank_name' => $request->bank_name,
                 'bank_account_name' => $request->bank_account_name,
                 'bank_account_number' => $request->bank_account_number,
-
             ]);
-            // Upload media nếu có
+
+
             if ($request->hasFile('media')) {
                 foreach ($request->file('media') as $file) {
                     $path = $file->store('refunds', 'public');
@@ -161,23 +201,31 @@ class OrderRefundController extends Controller
                 }
             }
 
+            foreach ($orderItemIds as $itemId) {
+                ReturnItem::create([
+                    'return_request_id' => $returnRequest->id,
+                    'order_item_id' => $itemId,
+                    'quantity' => $quantities[$itemId] ?? 1,
+                ]);
+            }
 
-            // Tạo return item
-            ReturnItem::create([
-                'return_request_id' => $returnRequest->id,
-                'order_item_id' => $orderItem->id,
-                'quantity' => $validated['quantity'],
-                'condition' => null, // để admin điền sau
-                'resolution' => null, // để admin điền sau
-            ]);
 
             DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Yêu cầu hoàn tiền đã được gửi.'
+            ActivityLog::create([
+                'log_name' => 'return_request',
+                'description' => 'Bạn đã gửi yêu cầu trả hàng #' . $returnRequest->return_code . ' thành công',
+                'subject_type' => ReturnRequest::class,
+                'subject_id' => $returnRequest->id,
+                'causer_type' => get_class(Auth::user()),
+                'causer_id' => Auth::id(),
             ]);
+
+
+
+            return redirect()->route('orders.returns')
+                ->with('success', 'Yêu cầu hoàn tiền đã được gửi.');
         } catch (\Throwable $e) {
+            DB::rollBack();
             \Log::error('Refund error: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
@@ -185,6 +233,28 @@ class OrderRefundController extends Controller
             ], 500);
         }
     }
+    public function create(OrderItem $orderItem)
+    {
+        // Lấy đơn hàng liên kết
+        $order = $orderItem->order;
+
+        // Kiểm tra quyền của người dùng (chỉ chủ đơn mới được tạo yêu cầu hoàn)
+        if (auth()->id() !== $order->user_id) {
+            abort(403);
+        }
+
+        // Lấy toàn bộ sản phẩm trong đơn
+        $orderItems = $order->items()->with(['variant.product.coverImage'])->get();
+
+        // Truyền toàn bộ orderItems thay vì chỉ 1 item
+        return view('users.refunds.create', [
+            'orderItems' => $orderItems,
+            'order' => $order
+        ]);
+    }
+
+
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -192,6 +262,16 @@ class OrderRefundController extends Controller
             'refund_amount' => 'nullable|numeric',
             'rejection_reason' => 'nullable|string|max:1000'
         ]);
+
+        $statusMap = [
+            'pending'    => 'Chờ xử lý',
+            'approved'   => 'Đã duyệt',
+            'processing' => 'Đang xử lý',
+            'refunded'   => 'Đã hoàn tiền',
+            'rejected'   => 'Bị từ chối',
+            'completed'  => 'Hoàn tất',
+        ];
+
 
         $returnRequest = ReturnRequest::findOrFail($id);
         $returnRequest->status = $request->status;
@@ -242,14 +322,15 @@ class OrderRefundController extends Controller
 
         $returnRequest->save();
 
-        // (Tùy chọn) Ghi log hoạt động
-        if (method_exists($returnRequest, 'logs')) {
-            $returnRequest->logs()->create([
-                'action' => $request->status,
-                'performed_by' => Auth::id(),
-                'description' => 'Admin ' . Auth::user()->name . ' cập nhật trạng thái thành ' . $request->status
-            ]);
-        }
+
+        ActivityLog::create([
+            'log_name'     => 'return_request',
+            'description'  => Auth::user()->name . ' đã cập nhật trạng thái: ' . ($statusMap[$request->status] ?? $request->status),
+            'subject_type' => ReturnRequest::class,
+            'subject_id'   => $returnRequest->id,
+            'causer_type'  => get_class(Auth::user()),
+            'causer_id'    => Auth::id(),
+        ]);
 
         return response()->json([
             'success' => true,

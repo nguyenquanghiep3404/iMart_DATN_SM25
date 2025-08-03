@@ -3,25 +3,27 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-class AbandonedCartLog extends Model
+use Illuminate\Database\Eloquent\Relations\MorphTo;
+
+class ActivityLog extends Model
 {
     use HasFactory;
+
     protected $fillable = [
-        'abandoned_cart_id',
-        'action',
+        'log_name',
         'description',
         'subject_type',
         'subject_id',
         'causer_type',
         'causer_id',
+        'action',
+        'performed_by',
     ];
 
-    public function abandonedCart(): BelongsTo
+    public function subject(): MorphTo
     {
-        return $this->belongsTo(AbandonedCart::class);
+        return $this->morphTo();
     }
 
     public function causer(): MorphTo
