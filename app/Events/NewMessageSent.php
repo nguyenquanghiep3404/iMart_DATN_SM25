@@ -52,4 +52,5 @@ class NewMessageSent implements ShouldBroadcast
             'conversation' => $this->conversation->toArray(),
         ];
     }
+    
 }
