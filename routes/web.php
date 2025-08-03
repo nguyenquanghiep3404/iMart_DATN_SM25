@@ -126,6 +126,9 @@ Route::get('/api/districts-by-province', [HomeController::class, 'getDistrictsBy
 // Route để lọc danh sách cửa hàng dựa trên tỉnh và quận
 Route::get('/api/filter-stores', [HomeController::class, 'filterStoreLocations'])->name('api.stores.filter');
 
+// Route để lấy danh sách tỉnh/thành phố theo biến thể sản phẩm
+Route::get('/api/provinces-by-variant', [HomeController::class, 'getProvincesByVariant'])->name('api.provinces.by.variant');
+
 
 
 
