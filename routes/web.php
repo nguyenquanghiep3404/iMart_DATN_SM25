@@ -156,6 +156,9 @@ Route::prefix('blog')->group(function () {
     Route::get('/', [BlogController::class, 'home'])->name('users.blogs.home');
     Route::get('/tat-ca', [BlogController::class, 'index'])->name('users.blogs.index');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('users.blogs.show');
+    Route::post('/{id}/tang-luot-xem', [BlogController::class, 'increaseViews'])
+        ->name('users.blogs.increaseViews');
+
 });
 // Trang About và Help , terms
 Route::get('/about', [HomeController::class, 'about'])->name('users.about');
