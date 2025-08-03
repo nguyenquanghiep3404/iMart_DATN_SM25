@@ -847,6 +847,12 @@
                         price: {{ $item->price }},
                         originalPrice: {{ $item->price }},
                         image: '{{ $item->productVariant->image_url ?? asset('assets/users/img/no-image.png') }}'
+                        // name: {!! json_encode($item->productVariant->product->name) !!},
+                        // variant: {!! json_encode($item->productVariant->attributeValues->pluck('value')->implode(', ')) !!},
+                        // quantity: {{ $item->quantity }},
+                        // price: {{ $item->price }},
+                        // originalPrice: {{ $item->price }},
+                        // image: {!! json_encode($item->productVariant->image_url ?? asset('assets/users/img/no-image.png')) !!}
                     },
                 @endforeach
             ];
@@ -1669,6 +1675,7 @@
             }
 
             function updateOrderInformation({ shippingFee }) {
+                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked')?.value;
                 if (deliveryMethod === 'pickup') {
                     shippingFee = 0;
                 }
@@ -1683,15 +1690,6 @@
                         style: 'currency',
                         currency: 'VND'
                     }).format(shippingFee);
-                    // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
-                    finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
-                }
-                    shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat(
-                        'vi-VN', {
-                            style: 'currency',
-                            currency: 'VND'
-                        }).format(shippingFee);
-
                     // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
                     finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
                 }
@@ -2540,8 +2538,7 @@
                 });
             }
 
-            document.getElementById('delivery-method-delivery').classList.add('selected');
-
+            document.getElementById('delivery-method-delivery').classList.add('selected');         
             renderMainProductList();
             updateOrderInformation({
                 shippingFee: null
