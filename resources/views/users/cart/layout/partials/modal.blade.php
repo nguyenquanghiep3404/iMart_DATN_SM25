@@ -121,6 +121,9 @@
                         toastr.success(response.message);
                         $('#cart-discount').text('-' + formatMoney(response.discount));
                         $('#cart-total').text(formatMoney(response.total_after_discount));
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
                     } else {
                         toastr.error(response.message);
                     }

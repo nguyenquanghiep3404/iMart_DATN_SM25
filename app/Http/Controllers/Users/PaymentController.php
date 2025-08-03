@@ -54,7 +54,22 @@ class PaymentController extends Controller
         $totalHeight = $items->sum(function ($item) {
             return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
         });
-        $availableCoupons = Coupon::where('status', 'active')->get();
+        $availableCoupons = Coupon::where('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('max_uses')
+                    ->orWhereRaw('
+                        (SELECT COUNT(*) FROM coupon_usages WHERE coupon_usages.coupon_id = coupons.id) < coupons.max_uses
+                    ');
+            })
+            ->get();
         $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
         $appliedCoupon = session('applied_coupon');
         $discount = $appliedCoupon['discount'] ?? 0;
@@ -1403,6 +1418,7 @@ class PaymentController extends Controller
             'variant_key' => 'nullable|string',
             'quantity' => 'required|integer|min:1|max:5',
         ]);
+        session()->forget('applied_coupon');
         $product = Product::findOrFail($request->product_id);
         $variant = null;
         // Tìm variant dựa vào variant_key hoặc lấy variant đầu tiên
