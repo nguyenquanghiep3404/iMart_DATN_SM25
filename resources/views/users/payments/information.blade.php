@@ -847,6 +847,12 @@
                         price: {{ $item->price }},
                         originalPrice: {{ $item->price }},
                         image: '{{ $item->productVariant->image_url ?? asset('assets/users/img/no-image.png') }}'
+                        // name: {!! json_encode($item->productVariant->product->name) !!},
+                        // variant: {!! json_encode($item->productVariant->attributeValues->pluck('value')->implode(', ')) !!},
+                        // quantity: {{ $item->quantity }},
+                        // price: {{ $item->price }},
+                        // originalPrice: {{ $item->price }},
+                        // image: {!! json_encode($item->productVariant->image_url ?? asset('assets/users/img/no-image.png')) !!}
                     },
                 @endforeach
             ];
@@ -1308,7 +1314,8 @@
                     //     width: width,
                     //     height: height
                     // });
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute(
+                        'content');
                     if (!csrfToken) {
                         console.error(' CSRF token not found');
                         return {
@@ -1528,7 +1535,8 @@
                                     const height = baseHeight || 10;
 
                                     const ghnResult = await fetchGhnFee(provinceText,
-                                        districtText, wardText, weight, length, width, height);
+                                        districtText, wardText, weight, length, width,
+                                        height);
 
                                     if (ghnResult.success) {
                                         // GHN được hỗ trợ - hiển thị phí
@@ -1668,33 +1676,25 @@
                 });
             }
 
-            function updateOrderInformation({
-                shippingFee
-            }) {
-                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked').value;
+            function updateOrderInformation({ shippingFee }) {
+                const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked')?.value;
                 if (deliveryMethod === 'pickup') {
                     shippingFee = 0;
                 }
-
                 const shippingFeeSummary = document.getElementById('shipping-fee-summary');
                 const grandTotalSummary = document.getElementById('cart-total');
-
                 let finalTotal;
-
                 if (shippingFee === null || shippingFee === undefined) {
                     shippingFeeSummary.textContent = 'Chưa xác định';
                     finalTotal = baseSubtotal - baseDiscount - basePointsDiscount;
                 } else {
-                    shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat(
-                        'vi-VN', {
-                            style: 'currency',
-                            currency: 'VND'
-                        }).format(shippingFee);
-
+                    shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND'
+                    }).format(shippingFee);
                     // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
                     finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
                 }
-
                 if (grandTotalSummary) {
                     grandTotalSummary.textContent = new Intl.NumberFormat('vi-VN', {
                         style: 'currency',
@@ -1941,7 +1941,7 @@
                         orderData.phone = document.getElementById('phone_number')?.value
                             .trim(); // Cho tương thích PaymentController
                         orderData.email = document.getElementById('email')?.value.trim();
-                        
+
                         // Gửi cả _id VÀ _code cho backend validation
                         orderData.province_id = document.getElementById('province_id')?.value;
                         orderData.district_id = document.getElementById('district_id')?.value;
@@ -1949,7 +1949,7 @@
                         orderData.province_code = document.getElementById('province_id')?.value;
                         orderData.district_code = document.getElementById('district_id')?.value;
                         orderData.ward_code = document.getElementById('ward_id')?.value;
-                        
+
                         orderData.address_line1 = document.getElementById('address_line1')?.value.trim();
                         orderData.address = document.getElementById('address_line1')?.value
                             .trim(); // Cho tương thích PaymentController
@@ -2409,7 +2409,7 @@
             // Function để hide cả frontend và backend validation errors
             function hideAllErrorsForField(fieldId) {
                 hideError(fieldId);
-                
+
                 // Cũng hide error cho các field khác có thể liên quan
                 if (fieldId === 'province_id') {
                     hideError('district_id');
@@ -2540,8 +2540,7 @@
                 });
             }
 
-            document.getElementById('delivery-method-delivery').classList.add('selected');
-
+            document.getElementById('delivery-method-delivery').classList.add('selected');         
             renderMainProductList();
             updateOrderInformation({
                 shippingFee: null

@@ -11,51 +11,71 @@ use App\Models\ChatMessage;
 use App\Models\ChatParticipant;
 use App\Events\NewMessageSent;
 use App\Events\NewConversationCreated;
+use Illuminate\Support\Facades\Gate; // Thêm Gate để kiểm tra quyền
 
 class AdminChatController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('can:manage_chat');
-    }
+    // public function __construct()
+    // {
+    //     // Áp dụng cho toàn bộ controller, hoặc bạn có thể chỉ định riêng
+    //     // $this->middleware('can:manage_chat');
+    // }
 
     public function index()
     {
         $openSupportConversations = ChatConversation::where('type', 'support')
-                                                     ->where('status', 'open')
-                                                     ->with(['user', 'assignedTo', 'messages'])
-                                                     ->orderByDesc('last_message_at')
-                                                     ->get();
+            ->where('status', 'open')
+            ->with(['user', 'assignedTo', 'latestMessage']) // SỬA: Chống N+1 Query
+            ->orderByDesc('last_message_at')
+            ->get();
 
         $internalConversations = ChatConversation::where('type', 'internal')
-                                                 ->where('status', 'open')
-                                                 ->with(['participants.user', 'messages'])
-                                                 ->orderByDesc('last_message_at')
-                                                 ->get();
+            ->where('status', 'open')
+            ->with(['participants.user', 'latestMessage']) // SỬA: Chống N+1 Query
+            ->orderByDesc('last_message_at')
+            ->get();
 
+        // SỬA: Lấy danh sách admin một cách gọn gàng
         $admins = User::whereHas('roles', function ($query) {
-            $query->where('name', 'admin');
-        })->get();
-        // dd($admins->toArray());
+    $query->where('name', 'admin');
+})->get();
+
 
         return view('admin.chat.dashboard', compact('openSupportConversations', 'internalConversations', 'admins'));
     }
 
     public function show(ChatConversation $conversation)
-    {
-        if (!$conversation->assigned_to) {
-            $conversation->assigned_to = Auth::id();
-            $conversation->save();
-        }
+{
+    $adminId = Auth::id();
 
-        $conversation->load(['user', 'assignedTo', 'messages.sender', 'participants.user']);
+    if ($conversation->type === 'support' && !$conversation->assigned_to) {
+        $conversation->update(['assigned_to' => $adminId]);
 
-        return response()->json(['conversation' => $conversation]);
+        // ✅ QUAN TRỌNG: Đảm bảo dòng này đã được thêm vào
+        $conversation->refresh();
     }
+    
+    if ($conversation->assigned_to === $adminId) {
+         ChatParticipant::firstOrCreate([
+            'conversation_id' => $conversation->id,
+            'user_id' => $adminId,
+        ]);
+    }
+
+    $conversation->load(['user', 'assignedTo', 'messages.sender', 'participants.user']);
+
+    return response()->json(['conversation' => $conversation]);
+}
+
+
 
     public function sendMessage(Request $request, ChatConversation $conversation)
     {
-        // dd($request->all());
+        // SỬA: Bắt buộc kiểm tra quyền tham gia
+        if (Gate::denies('participate', $conversation)) {
+            return response()->json(['message' => 'Unauthorized to send message in this conversation.'], 403);
+        }
+        
         $request->validate([
             'content' => 'required|string',
             'type' => 'in:text,image,file,system',
@@ -69,11 +89,12 @@ class AdminChatController extends Controller
         ]);
 
         $conversation->update(['last_message_at' => now()]);
+        
+        $message->load('sender'); // Load trước để gửi đi payload đầy đủ
 
+        broadcast(new NewMessageSent($message, $conversation))->toOthers();
 
-        event(new NewMessageSent($message, $conversation));
-
-        return response()->json(['message' => 'Message sent!']);
+        return response()->json(['message' => 'Message sent!', 'data' => ['message' => $message]]);
     }
 
     public function inviteAdmin(Request $request, ChatConversation $conversation)
@@ -89,8 +110,8 @@ class AdminChatController extends Controller
         }
 
         $exists = ChatParticipant::where('conversation_id', $conversation->id)
-                                 ->where('user_id', $admin->id)
-                                 ->exists();
+                                  ->where('user_id', $admin->id)
+                                  ->exists();
 
         if ($exists) {
             return response()->json(['message' => 'Admin is already a participant.'], 409);
@@ -119,55 +140,35 @@ class AdminChatController extends Controller
             'subject' => 'nullable|string|max:255',
         ]);
 
-        $adminIds = collect($request->recipient_ids)->push(Auth::id())->unique()->toArray();
+        $adminIds = collect($request->recipient_ids)->push(Auth::id())->unique()->all();
 
-        $conversation = ChatConversation::create([
-            'type' => 'internal',
-            'user_id' => null,
-            'assigned_to' => Auth::id(),
-            'subject' => $request->subject ?? 'Internal Chat',
-            'status' => 'open',
-            'last_message_at' => now(),
-        ]);
-
-        foreach ($adminIds as $adminId) {
-            ChatParticipant::create([
-                'conversation_id' => $conversation->id,
-                'user_id' => $adminId,
+        // Sử dụng transaction để đảm bảo toàn vẹn dữ liệu
+        $conversation = \DB::transaction(function () use ($request, $adminIds) {
+            $conversation = ChatConversation::create([
+                'type' => 'internal',
+                'user_id' => null, // Không phải từ khách hàng
+                'assigned_to' => Auth::id(), // Người tạo
+                'subject' => $request->subject ?: 'Internal Chat',
+                'status' => 'open',
+                'last_message_at' => now(),
             ]);
-        }
 
-        $message = ChatMessage::create([
-            'conversation_id' => $conversation->id,
-            'sender_id' => Auth::id(),
-            'content' => $request->first_message,
-            'type' => 'text',
-        ]);
+            $participantsData = array_map(fn($id) => ['user_id' => $id, 'conversation_id' => $conversation->id], $adminIds);
+            ChatParticipant::insert($participantsData);
 
-        event(new NewConversationCreated($conversation, Auth::user())); // Người tạo
-        foreach ($adminIds as $adminId) {
-            if ($adminId != Auth::id()) {
-                $recipient = User::find($adminId);
-                if ($recipient) {
-                    event(new NewConversationCreated($conversation, $recipient));
-                }
-            }
-        }
+            ChatMessage::create([
+                'conversation_id' => $conversation->id,
+                'sender_id' => Auth::id(),
+                'content' => $request->first_message,
+                'type' => 'text',
+            ]);
+            
+            return $conversation;
+        });
 
-        return response()->json(['message' => 'Internal chat created successfully!', 'conversation_id' => $conversation->id]);
+        // SỬA: Chỉ broadcast 1 lần
+        event(new NewConversationCreated($conversation->load('participants.user', 'latestMessage')));
+
+        return response()->json(['message' => 'Internal chat created successfully!', 'conversation' => $conversation]);
     }
-    public function adminChatDashboard()
-{
-    $admins = User::role('admin')->with('roles')->get(); // Lấy tất cả user có vai trò 'admin' và load luôn roles của họ
-    // Hoặc nếu bạn chỉ muốn lấy những người có thể được mời:
-    // $admins = User::permission('invite users')->with('roles')->get();
-
-    // ... các logic khác ...
-
-    return view('admin.chat.dashboard', [
-        // ...
-        'admins' => $admins->toArray(), // Đảm bảo roles được serialize vào array
-        'authUser' => optional(Auth::user())->toArray(),
-    ]);
-}
 }

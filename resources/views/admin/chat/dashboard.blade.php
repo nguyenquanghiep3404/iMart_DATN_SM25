@@ -10,24 +10,26 @@
     {{-- Tải CSS và JS chính của Vite (bao gồm bootstrap.js và admin_chat.js) --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    {{-- marked.js: RẤT QUAN TRỌNG ĐỂ RENDER MARKDOWN. Đảm bảo nó được tải. --}}
-    {{-- Nếu bạn không dùng npm/vite cho marked.js, hãy dùng CDN sau: --}}
+    {{-- marked.js để render Markdown --}}
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
 
-    {{-- Định nghĩa các biến toàn cục cho JavaScript trong admin_chat.js --}}
+    {{-- 
+        Định nghĩa các biến toàn cục cho JavaScript.
+        Lưu ý: Đảm bảo Controller của bạn luôn truyền vào một Collection (kể cả rỗng) thay vì null.
+    --}}
     <script>
-        window.INITIAL_ADMINS_DATA = @json($admins ?? []);
         window.ADMIN_CHAT_AUTH_ID = {{ Auth::id() ?? 'null' }};
-        // SỬA CÁC DÒNG NÀY THÊM "?? []"
-        window.ADMIN_CHAT_SUPPORT_CONVERSATIONS = @json($openSupportConversations->toArray() ?? []);
-        window.ADMIN_CHAT_INTERNAL_CONVERSATIONS = @json($internalConversations->toArray() ?? []);
-        window.ADMIN_CHAT_ADMINS_DATA = @json($admins->toArray() ?? []);
+
+        // ✅ SỬA LỖI: Cú pháp @json($variable ?? []) an toàn hơn.
+        window.ADMIN_CHAT_SUPPORT_CONVERSATIONS = @json($openSupportConversations ?? []);
+        window.ADMIN_CHAT_INTERNAL_CONVERSATIONS = @json($internalConversations ?? []);
+        window.ADMIN_CHAT_ADMINS_DATA = @json($admins ?? []);
 
         console.log('Blade variables initialized for admin_chat.js');
     </script>
 
+    {{-- CSS của bạn không thay đổi, giữ nguyên --}}
     <style>
-        /* CSS gốc của bạn (giữ nguyên) */
         :root {
             --bg-color: #f4f6f9;
             --panel-bg: #ffffff;
@@ -40,7 +42,6 @@
             --received-bg: #e9ecef;
             --font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         }
-
         html, body {
             height: 100%;
             margin: 0;
@@ -48,13 +49,11 @@
             background-color: var(--bg-color);
             overflow: hidden;
         }
-
         .app-container {
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
-
         .main-header {
             height: 60px;
             background-color: var(--panel-bg);
@@ -64,7 +63,6 @@
             padding: 0 24px;
             flex-shrink: 0;
         }
-
         .main-header .logo {
             display: flex;
             align-items: center;
@@ -73,20 +71,16 @@
             font-weight: 600;
             color: var(--text-primary);
         }
-
         .main-header .logo svg {
             width: 28px;
             height: 28px;
             color: var(--accent-color);
         }
-
         .chat-dashboard {
             display: flex;
             height: calc(100vh - 60px);
             width: 100vw;
         }
-
-        /* --- Cột 1: Danh sách hội thoại --- */
         .conversation-list-panel {
             width: 320px;
             border-right: 1px solid var(--border-color);
@@ -95,13 +89,11 @@
             background-color: var(--panel-bg);
             flex-shrink: 0;
         }
-
         .conversation-list-panel .header {
             padding: 16px;
             border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
         }
-
         .conversation-list-panel .search-bar {
             width: 100%;
             padding: 10px 15px;
@@ -110,8 +102,6 @@
             font-size: 14px;
             box-sizing: border-box;
         }
-
-        /* CẬP NHẬT: Thêm style cho thanh Tabs mới */
         .conversation-tabs {
             display: flex;
             border-bottom: 1px solid var(--border-color);
@@ -133,26 +123,17 @@
             color: var(--accent-color);
             border-bottom-color: var(--accent-color);
         }
-
         .conversation-list-container {
             overflow-y: auto;
             flex-grow: 1;
         }
-
-        /* CẬP NHẬT: Style cho các Pane của Tab */
-        .tab-pane {
-            display: none;
-        }
-        .tab-pane.active {
-            display: block;
-        }
-
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
         .conversation-list {
             list-style: none;
             padding: 0;
             margin: 0;
         }
-
         .conversation-item {
             display: flex;
             padding: 12px 16px;
@@ -160,16 +141,11 @@
             border-bottom: 1px solid var(--border-color);
             transition: background-color 0.2s;
         }
-
-        .conversation-item:hover {
-            background-color: var(--hover-bg);
-        }
-
+        .conversation-item:hover { background-color: var(--hover-bg); }
         .conversation-item.active {
             background-color: #f1e9ff;
             border-right: 3px solid var(--accent-color);
         }
-
         .conversation-item .avatar {
             width: 48px;
             height: 48px;
@@ -183,24 +159,20 @@
             color: var(--text-secondary);
             flex-shrink: 0;
         }
-
         .conversation-item .avatar svg {
             width: 24px;
             height: 24px;
             color: var(--text-secondary);
         }
-
         .conversation-item .details {
             flex-grow: 1;
             overflow: hidden;
         }
-
         .conversation-item .name {
             font-weight: 600;
             color: var(--text-primary);
             margin: 0;
         }
-
         .conversation-item .last-message {
             font-size: 14px;
             color: var(--text-secondary);
@@ -209,8 +181,6 @@
             text-overflow: ellipsis;
             margin: 4px 0 0;
         }
-
-        /* --- Cột 2: Cửa sổ Chat --- */
         .chat-panel {
             flex-grow: 1;
             display: flex;
@@ -221,7 +191,6 @@
             background-size: 20px 20px;
             background-position: 0 0,10px 10px;
         }
-
         .chat-panel .header {
             padding: 16px 24px;
             border-bottom: 1px solid var(--border-color);
@@ -230,13 +199,11 @@
             align-items: center;
             gap: 12px;
         }
-
         .chat-panel .header .user-name {
             font-size: 18px;
             font-weight: 600;
             margin: 0;
         }
-
         .chat-panel .message-container {
             flex-grow: 1;
             padding: 24px;
@@ -245,13 +212,11 @@
             flex-direction: column;
             gap: 16px;
         }
-
         .message {
             display: flex;
             gap: 12px;
             max-width: 70%;
         }
-
         .message .avatar {
             width: 40px;
             height: 40px;
@@ -259,14 +224,12 @@
             background-color: #adb5bd;
             flex-shrink: 0;
         }
-
         .message .content {
             padding: 12px 16px;
             border-radius: 12px;
             font-size: 15px;
             line-height: 1.5;
         }
-
         .message.sent {
             align-self: flex-end;
             flex-direction: row-reverse;
@@ -276,16 +239,12 @@
             color: white;
             border-bottom-right-radius: 4px;
         }
-
-        .message.received {
-            align-self: flex-start;
-        }
+        .message.received { align-self: flex-start; }
         .message.received .content {
             background-color: var(--received-bg);
             color: var(--text-primary);
             border-bottom-left-radius: 4px;
         }
-
         .chat-panel .input-area {
             padding: 16px 24px;
             border-top: 1px solid var(--border-color);
@@ -293,7 +252,6 @@
             display: flex;
             gap: 16px;
         }
-
         .chat-panel .input-area .text-input {
             flex-grow: 1;
             padding: 12px 18px;
@@ -302,7 +260,6 @@
             font-size: 15px;
             outline: none;
         }
-
         .chat-panel .input-area .send-button {
             padding: 0 24px;
             border: none;
@@ -313,8 +270,6 @@
             font-weight: 600;
             cursor: pointer;
         }
-
-        /* --- Cột 3: Thông tin khách hàng --- */
         .info-panel {
             width: 350px;
             border-left: 1px solid var(--border-color);
@@ -323,7 +278,6 @@
             overflow-y: auto;
             flex-shrink: 0;
         }
-
         .info-panel .section-title {
             font-size: 16px;
             font-weight: 600;
@@ -333,7 +287,6 @@
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 8px;
         }
-
         .info-panel .info-item {
             display: flex;
             align-items: center;
@@ -346,16 +299,13 @@
             height: 18px;
             color: var(--text-secondary);
         }
-
         .order-history-list .order-item {
             padding: 12px;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             margin-bottom: 12px;
         }
-        .order-history-list .order-id {
-            font-weight: 600;
-        }
+        .order-history-list .order-id { font-weight: 600; }
         .order-history-list .order-details {
             font-size: 13px;
             color: var(--text-secondary);
@@ -401,7 +351,9 @@
                                     </div>
                                     <div class="details">
                                         <p class="name">{{ $conversation->user->name ?? 'Khách vãng lai' }}</p>
-                                        <p class="last-message">{{ $conversation->messages->last()->content ?? 'Chưa có tin nhắn' }}</p>
+                                        {{-- ✅ SỬA LỖI N+1: Sử dụng "latestMessage" thay vì "messages->last()" --}}
+                                        {{-- Lưu ý: Bạn cần định nghĩa quan hệ latestMessage trong Model ChatConversation --}}
+                                        <p class="last-message">{{ $conversation->latestMessage->content ?? 'Chưa có tin nhắn' }}</p>
                                     </div>
                                 </li>
                             @empty
@@ -419,7 +371,8 @@
                                     </div>
                                     <div class="details">
                                         <p class="name">{{ $conversation->subject ?? 'Trò chuyện nội bộ' }}</p>
-                                        <p class="last-message">{{ $conversation->messages->last()->content ?? 'Chưa có tin nhắn' }}</p>
+                                        {{-- ✅ SỬA LỖI N+1: Sử dụng "latestMessage" thay vì "messages->last()" --}}
+                                        <p class="last-message">{{ $conversation->latestMessage->content ?? 'Chưa có tin nhắn' }}</p>
                                     </div>
                                 </li>
                             @empty
@@ -448,7 +401,6 @@
             <aside class="info-panel" id="infoPanel">
                 <h3 class="section-title">Thông tin</h3>
                 <div class="info-list" id="customerInfoList">
-                    {{-- Thông tin khách hàng sẽ được tải động tại đây --}}
                     <p style="color: var(--text-secondary);">Chọn một cuộc hội thoại để xem thông tin chi tiết.</p>
                 </div>
 
