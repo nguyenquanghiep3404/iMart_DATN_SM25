@@ -224,11 +224,14 @@ Route::get('/payments', [PaymentController::class, 'index'])->name('payments.inf
 Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
 Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
 
-// Các tuyến đường chat của khách hàng
-Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-Route::post('/chat/register-guest', [ChatController::class, 'registerGuest'])->name('client.chat.registerGuest');
-Route::post('/chat/send-message', [ChatController::class, 'sendMessage'])->name('client.chat.sendMessage');
-Route::post('/chat/guest-login', [ChatController::class, 'guestLogin'])->name('client.chat.guestLogin');
+// --- Chat của khách hàng ---
+Route::prefix('chat')->name('client.chat.')->group(function () {
+    Route::get('/', [ChatController::class, 'index'])->name('index');
+    Route::post('/register-guest', [ChatController::class, 'registerGuest'])->name('registerGuest');
+    Route::post('/send-message', [ChatController::class, 'sendMessage'])->name('sendMessage');
+    Route::post('/guest-login', [ChatController::class, 'guestLogin'])->name('guestLogin');
+});
+
 
 // Routes cho Buy Now - phiên thanh toán riêng biệt
 Route::post('/buy-now/checkout', [PaymentController::class, 'buyNowCheckout'])->name('buy-now.checkout');
@@ -275,6 +278,7 @@ Route::prefix('admin')
     ->middleware(['auth', 'role:admin,content_manager', 'check.content.access'])
     ->middleware(['auth', 'verified'])
     ->group(function () {
+        
         // http://127.0.0.1:8000/admin/dashboard
         Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('dashboard')->middleware('can:access_admin_dashboard');
 
@@ -637,14 +641,13 @@ Route::prefix('admin')
         Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
 
 
-        // Các tuyến đường chat của quản trị viên (Yêu cầu xác thực và các vai trò/quyền phù hợp)
         Route::prefix('chat')->name('chat.')->group(function () {
             Route::get('/', [AdminChatController::class, 'index'])->name('dashboard');
-            Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
-            Route::post('/{conversation}/send-message', [AdminChatController::class, 'sendMessage'])->name('sendMessage');
-            Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
-            Route::post('/{conversation}/close', [AdminChatController::class, 'closeConversation'])->name('close');
             Route::post('/create-internal', [AdminChatController::class, 'createInternalChat'])->name('createInternal');
+            Route::post('/{conversation}/send-message', [AdminChatController::class, 'sendMessage'])->name('sendMessage');
+            Route::post('/{conversation}/close', [AdminChatController::class, 'close'])->name('close');
+            Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
+            Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
         });
 
         // Quản lý thu cũ và hàng mở hộp
@@ -746,6 +749,37 @@ Route::prefix('admin')
             Route::post('/{stockTransfer}/dispatch', [StockTransferController::class, 'processDispatch'])->name('dispatch.process');
         });
         Route::resource('stock-transfers', StockTransferController::class);
+        Route::get('/test-my-role', function () {
+    if (!Auth::check()) {
+        return 'Bạn chưa đăng nhập.';
+    }
+
+    $user = Auth::user();
+    
+    echo "<h2>Kiểm tra vai trò cho User ID: {$user->id} - {$user->name}</h2>";
+
+    // Kiểm tra trực tiếp
+    $hasRole = $user->hasAnyRole(['admin', 'super_admin']);
+    
+    echo 'Kết quả của `hasAnyRole([\'admin\', \'super_admin\'])`: ';
+    echo $hasRole ? '<b>TRUE (ĐÚNG)</b>' : '<b>FALSE (SAI)</b>';
+    
+    echo "<hr>";
+
+    // In ra tất cả các vai trò mà user này có
+    $roles = $user->roles;
+    if ($roles->isEmpty()) {
+        echo 'User này KHÔNG có vai trò nào được gán trong bảng `role_user`.';
+    } else {
+        echo '<h4>Các vai trò của user này:</h4>';
+        echo '<ul>';
+        foreach ($roles as $role) {
+            echo "<li>ID: {$role->id} - Tên: {$role->name}</li>";
+        }
+        echo '</ul>';
+    }
+});
+
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')

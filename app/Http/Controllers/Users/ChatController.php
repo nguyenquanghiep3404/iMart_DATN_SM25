@@ -49,7 +49,7 @@ class ChatController extends Controller
             'is_guest' => true,
             'status' => 'active',
         ]);
-
+        Auth::login($guestUser);
         // Tạo cuộc hội thoại ban đầu
         $conversation = ChatConversation::create([
             'type' => 'support',
@@ -78,7 +78,7 @@ class ChatController extends Controller
 
     /**
      * Gửi tin nhắn mới.
-     * *** ĐÃ CẬP NHẬT LOGIC BẢO MẬT ***
+     * *** ĐÃ CẬP NHẬT HOÀN CHỈNH LOGIC & BẢO MẬT ***
      */
     public function sendMessage(Request $request)
     {
@@ -91,52 +91,72 @@ class ChatController extends Controller
 
         $sender = null;
 
-        // --- Bắt đầu logic bảo mật đã được siết chặt ---
+        // --- Bắt đầu logic xác thực người gửi (Giữ nguyên vì đã tốt) ---
         if (Auth::check()) {
-            // Nếu đã đăng nhập, người gửi BẮT BUỘC phải là người dùng hiện tại.
             $user = Auth::user();
             if ((int) $request->sender_id !== $user->id) {
                 return response()->json(['message' => 'Sender ID mismatch.'], 403);
             }
             $sender = $user;
         } else {
-            // Nếu là khách, xác thực sender_id từ request với cookie.
             $guestUserIdFromCookie = $request->cookie('guest_user_id');
             if (! $guestUserIdFromCookie || (int) $request->sender_id !== (int) $guestUserIdFromCookie) {
                 return response()->json(['message' => 'Guest session mismatch or invalid sender.'], 403);
             }
-
             $sender = User::find($request->sender_id);
-            // Kiểm tra thêm để chắc chắn ID này là của một tài khoản khách hợp lệ
             if (! $sender || ! $sender->is_guest) {
                 return response()->json(['message' => 'Invalid guest user.'], 403);
             }
         }
-        // --- Kết thúc logic bảo mật ---
+        // --- Kết thúc logic xác thực người gửi ---
 
         // Từ đây, biến $sender đã được xác thực và đáng tin cậy.
 
         $conversation = null;
-        if (! $request->conversation_id) {
-            $conversation = ChatConversation::create([
-                'type' => 'support',
-                'user_id' => $sender->id,
-                'status' => 'open',
-                'last_message_at' => now(),
-            ]);
-            ChatParticipant::create([
-                'conversation_id' => $conversation->id,
-                'user_id' => $sender->id,
-            ]);
-            event(new NewConversationCreated($conversation));
-        } else {
-            $conversation = ChatConversation::find($request->conversation_id);
-            if (! $conversation) {
-                return response()->json(['message' => 'Conversation not found.'], 404);
-            }
-            $conversation->update(['last_message_at' => now()]);
-        }
 
+        // ✅ [SỬA LỖI] Logic xử lý cuộc hội thoại
+        if ($request->filled('conversation_id')) {
+            // Trường hợp gửi tin nhắn vào cuộc hội thoại đã có
+            $conversation = ChatConversation::find($request->conversation_id);
+
+            // 🛑 [BẢO MẬT] Kiểm tra xem người gửi có quyền trong cuộc hội thoại này không
+            $isParticipant = ChatParticipant::where('conversation_id', $conversation->id)
+                                            ->where('user_id', $sender->id)
+                                            ->exists();
+
+            if (!$isParticipant) {
+                return response()->json(['message' => 'You are not authorized to access this conversation.'], 403);
+            }
+
+            $conversation->update(['last_message_at' => now()]);
+
+        } else {
+            // ✅ [SỬA LỖI RACE CONDITION] Trường hợp tin nhắn đầu tiên, tìm hoặc tạo mới.
+            $conversation = ChatConversation::firstOrCreate(
+                [
+                    // Điều kiện để xác định cuộc hội thoại là duy nhất
+                    'user_id' => $sender->id,
+                    'status' => 'open',
+                    'type' => 'support',
+                ],
+                [
+                    // Dữ liệu sẽ được thêm vào nếu tạo mới
+                    'last_message_at' => now(),
+                ]
+            );
+
+            // Nếu cuộc hội thoại vừa được tạo (wasRecentlyCreated)
+            if ($conversation->wasRecentlyCreated) {
+                ChatParticipant::create([
+                    'conversation_id' => $conversation->id,
+                    'user_id' => $sender->id,
+                ]);
+                // Thông báo cho admin/support có cuộc hội thoại mới
+                event(new NewConversationCreated($conversation));
+            }
+        }
+        
+        // Tạo tin nhắn
         $message = ChatMessage::create([
             'conversation_id' => $conversation->id,
             'sender_id' => $sender->id,
@@ -144,10 +164,18 @@ class ChatController extends Controller
             'type' => $request->type ?? 'text',
         ]);
 
-        // Phát sóng tin nhắn mới
+        // Nạp thông tin người gửi để hiển thị ở client mà không cần truy vấn lại
+        $message->load('sender');
+
+        // Phát sóng tin nhắn mới đến các client khác trong kênh
         broadcast(new NewMessageSent($message, $conversation))->toOthers();
 
-        return response()->json(['message' => 'Message sent!', 'data' => ['conversation_id' => $conversation->id]]);
+        return response()->json([
+            'message' => 'Message sent successfully!',
+            'data' => [
+                'message' => $message, // Trả về cả dữ liệu tin nhắn vừa tạo
+            ]
+        ]);
     }
 
     /**
