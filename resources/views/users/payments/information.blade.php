@@ -1314,7 +1314,8 @@
                     //     width: width,
                     //     height: height
                     // });
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute(
+                        'content');
                     if (!csrfToken) {
                         console.error(' CSRF token not found');
                         return {
@@ -1534,7 +1535,8 @@
                                     const height = baseHeight || 10;
 
                                     const ghnResult = await fetchGhnFee(provinceText,
-                                        districtText, wardText, weight, length, width, height);
+                                        districtText, wardText, weight, length, width,
+                                        height);
 
                                     if (ghnResult.success) {
                                         // GHN được hỗ trợ - hiển thị phí
@@ -1939,7 +1941,7 @@
                         orderData.phone = document.getElementById('phone_number')?.value
                             .trim(); // Cho tương thích PaymentController
                         orderData.email = document.getElementById('email')?.value.trim();
-                        
+
                         // Gửi cả _id VÀ _code cho backend validation
                         orderData.province_id = document.getElementById('province_id')?.value;
                         orderData.district_id = document.getElementById('district_id')?.value;
@@ -1947,7 +1949,7 @@
                         orderData.province_code = document.getElementById('province_id')?.value;
                         orderData.district_code = document.getElementById('district_id')?.value;
                         orderData.ward_code = document.getElementById('ward_id')?.value;
-                        
+
                         orderData.address_line1 = document.getElementById('address_line1')?.value.trim();
                         orderData.address = document.getElementById('address_line1')?.value
                             .trim(); // Cho tương thích PaymentController
@@ -2407,7 +2409,7 @@
             // Function để hide cả frontend và backend validation errors
             function hideAllErrorsForField(fieldId) {
                 hideError(fieldId);
-                
+
                 // Cũng hide error cho các field khác có thể liên quan
                 if (fieldId === 'province_id') {
                     hideError('district_id');
