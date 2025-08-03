@@ -297,7 +297,7 @@ class PaymentController extends Controller
                     'reply_markup' => json_encode([
                         'inline_keyboard' => [
                             [
-                                ['text' => '✅ Xác nhận đã thanh toán', 'url' => $confirmationUrl]
+                                ['text' => 'Xác nhận đã thanh toán', 'url' => $confirmationUrl]
                             ]
                         ]
                     ])
@@ -1911,7 +1911,6 @@ class PaymentController extends Controller
         if (!$variant->manage_stock) {
             return;
         }
-
         // Lấy tồn kho hàng mới
         $newInventory = $variant->inventories()
             ->where('inventory_type', 'new')
