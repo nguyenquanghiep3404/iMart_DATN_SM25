@@ -1432,10 +1432,8 @@
         if (order.coupon_usages && order.coupon_usages.length > 0) {
             const couponUsage = order.coupon_usages[0]; // Lấy mã giảm giá đầu tiên
             const coupon = couponUsage.coupon;
-            
             if (coupon) {
                 document.getElementById('modal-coupon-code').textContent = coupon.code;
-                
                 // Hiển thị thông tin giảm giá
                 let discountText = '';
                 if (coupon.type === 'percentage') {
@@ -1444,7 +1442,6 @@
                     discountText = `-${formatCurrency(coupon.value)}`;
                 }
                 document.getElementById('modal-coupon-discount').textContent = discountText;
-                
                 couponInfo.classList.remove('hidden');
             } else {
                 couponInfo.classList.add('hidden');
