@@ -24,6 +24,9 @@ class CartController extends Controller
 {
     public function index()
     {
+        if (session()->has('buy_now_session') && session()->has('applied_coupon')) {
+            session()->forget('applied_coupon');
+        }
         $user = auth()->user();
         $hasItems = false;
         if ($user) {
