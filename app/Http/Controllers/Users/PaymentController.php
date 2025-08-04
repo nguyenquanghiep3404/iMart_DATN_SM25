@@ -402,6 +402,7 @@ class PaymentController extends Controller
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
+                'store_location_id' => $customerInfo['store_location_id'] ?? null,
             ]);
 
             // Tạo order items
