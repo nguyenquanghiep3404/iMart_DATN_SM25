@@ -17,7 +17,7 @@
 
                 {{-- Hình ảnh --}}
                 <a class="flex-shrink-0" href="{{ $productSlug !== '#' ? route('users.products.show', ['slug' => $productSlug]) : '#' }}">
-                    <img src="{{ $item->image }}" width="80" alt="{{ $productName }}">
+                    <img src="{{ $item->image ?? asset('images/placeholder.jpg') }}" width="80" alt="{{ $productName }}">
                 </a>
 
                 {{-- Nội dung bên phải --}}

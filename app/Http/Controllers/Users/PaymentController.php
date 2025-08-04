@@ -1419,14 +1419,14 @@ class PaymentController extends Controller
         $variant = null;
         // Tìm variant dựa vào variant_key hoặc lấy variant đầu tiên
         if ($request->variant_key) {
-            $variant = ProductVariant::where('product_id', $product->id)->get()
+            $variant = ProductVariant::with('product.coverImage', 'attributeValues', 'primaryImage')->where('product_id', $product->id)->get()
                 ->first(function ($variant) use ($request) {
                     $attributes = $variant->attributeValues->pluck('value')->toArray();
                     return implode('_', $attributes) === $request->variant_key;
                 });
         }
         if (!$variant) {
-            $variant = ProductVariant::where('product_id', $product->id)->first();
+            $variant = ProductVariant::with('product.coverImage', 'primaryImage')->where('product_id', $product->id)->first();
         }
         if (!$variant) {
             return response()->json([
@@ -1455,7 +1455,7 @@ class PaymentController extends Controller
             'name' => $product->name,
             'price' => $finalPrice,
             'quantity' => $request->quantity,
-            'image' => $variant->image_url,
+            'image' => ($variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg'))),
             'created_at' => now()->timestamp
         ]);
         return response()->json([
@@ -1753,7 +1753,7 @@ class PaymentController extends Controller
             return ['items' => collect(), 'subtotal' => 0, 'discount' => 0, 'total' => 0];
         }
         $product = Product::findOrFail($buyNowSession['product_id']);
-        $variant = ProductVariant::findOrFail($buyNowSession['variant_id']);
+        $variant = ProductVariant::with('product.coverImage', 'primaryImage')->findOrFail($buyNowSession['variant_id']);
         $items = collect([
             (object) [
                 'id' => $variant->id,
@@ -1764,6 +1764,9 @@ class PaymentController extends Controller
                 'quantity' => $buyNowSession['quantity'],
                 'stock_quantity' => $this->getSellableStock($variant),
                 'points_to_earn' => $variant->points_awarded_on_purchase ?? 0, // Để tương thích với getCartData()
+                'image' => $buyNowSession['image'] ?? ($variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg'))),
+                'name' => $variant->name ?? $variant->product->name,
+                'slug' => $variant->product->slug ?? '',
             ]
         ]);
         $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
