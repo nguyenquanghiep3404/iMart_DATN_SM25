@@ -200,4 +200,57 @@
         background-color: #fef2f2;
         /* red-50 */
     }
+
+    #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.3);
+        /* giảm mờ nền */
+        z-index: 9999;
+
+        /* căn giữa loader theo cả chiều ngang và dọc */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loader {
+        /* dùng flex theo chiều cột, căn giữa nội dung */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .loader img {
+        width: 100px;
+        height: auto;
+        animation: bounce 1s infinite;
+        display: block;
+        /* tránh khoảng trống dưới ảnh */
+        margin: 0;
+    }
+
+    .loader p {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 10px;
+        line-height: 1.2;
+    }
+
+    @keyframes bounce {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
 </style>
