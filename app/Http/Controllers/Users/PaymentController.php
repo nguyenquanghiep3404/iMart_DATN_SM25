@@ -2139,11 +2139,11 @@ class PaymentController extends Controller
             // ]);
             return response()->json(['success' => false, 'message' => 'Địa điểm này không được hỗ trợ giao hàng nhanh', 'fee' => null]);
         } catch (\Exception $e) {
-            \Log::error('GHN API Error: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            // \Log::error('GHN API Error: ' . $e->getMessage(), [
+            //     'file' => $e->getFile(),
+            //     'line' => $e->getLine(),
+            //     'trace' => $e->getTraceAsString()
+            // ]);
             return response()->json(['success' => false, 'message' => 'Lỗi server: ' . $e->getMessage(), 'fee' => null]);
         }
     }
@@ -2152,19 +2152,27 @@ class PaymentController extends Controller
     {
         $provinceCode = $request->input('province_code');
         $districtCode = $request->input('district_code');
-
+        $productVariantIds = $request->input('product_variant_ids', []);
         $query = StoreLocation::with(['province', 'district', 'ward'])
             ->where('is_active', true)
             ->where('type', 'store');
-
+        // Lọc theo tỉnh/huyện nếu có
         if ($provinceCode) {
             $query->where('province_code', $provinceCode);
         }
         if ($districtCode) {
             $query->where('district_code', $districtCode);
         }
-        $storeLocations = $query->get()->map(function ($location) {
-            return [
+        // Nếu có danh sách sản phẩm, chỉ lấy cửa hàng có sản phẩm trong kho
+        if (!empty($productVariantIds)) {
+            $query->whereHas('productInventories', function ($inventoryQuery) use ($productVariantIds) {
+                $inventoryQuery->whereIn('product_variant_id', $productVariantIds)
+                    ->where('inventory_type', 'new')
+                    ->where('quantity', '>', 0);
+            });
+        }
+        $storeLocations = $query->get()->map(function ($location) use ($productVariantIds) {
+            $storeData = [
                 'id' => $location->id,
                 'name' => $location->name,
                 'address' => $location->address,
@@ -2174,6 +2182,24 @@ class PaymentController extends Controller
                 'district_name' => $location->district ? $location->district->name_with_type : '',
                 'ward_name' => $location->ward ? $location->ward->name_with_type : '',
             ];
+            // Nếu có danh sách sản phẩm, thêm thông tin tồn kho
+            if (!empty($productVariantIds)) {
+                $inventoryInfo = $location->productInventories()
+                    ->whereIn('product_variant_id', $productVariantIds)
+                    ->where('inventory_type', 'new')
+                    ->where('quantity', '>', 0)
+                    ->get()
+                    ->map(function ($inventory) {
+                        return [
+                            'product_variant_id' => $inventory->product_variant_id,
+                            'quantity' => $inventory->quantity,
+                            'product_name' => $inventory->productVariant->product->name ?? 'N/A'
+                        ];
+                    });
+                $storeData['available_products'] = $inventoryInfo;
+                $storeData['total_available_items'] = $inventoryInfo->sum('quantity');
+            }
+            return $storeData;
         });
         return response()->json([
             'success' => true,
