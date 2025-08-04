@@ -20,6 +20,7 @@ use App\Models\LoyaltyPointLog;
 use App\Models\ProductInventory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 
 use Illuminate\Support\Facades\Auth;
@@ -431,6 +432,7 @@ class PaymentController extends Controller
                         'quantity' => $item->quantity,
                         'price' => $item->price,
                         'total_price' => $item->price * $item->quantity,
+                        'image_url' => $cartable && $cartable->primaryImage && file_exists(storage_path('app/public/' . $cartable->primaryImage->path)) ? Storage::url($cartable->primaryImage->path) : ($cartable && $cartable->product && $cartable->product->coverImage && file_exists(storage_path('app/public/' . $cartable->product->coverImage->path)) ? Storage::url($cartable->product->coverImage->path) : asset('images/placeholder.jpg')),
                     ]);
                     $this->decrementInventoryStock($cartable, $item->quantity);
                 } else {
@@ -1173,7 +1175,7 @@ class PaymentController extends Controller
         // 1. Lấy danh sách sản phẩm 
         if ($user && $user->cart) {
             $items = $user->cart->items()
-                ->with('cartable.product', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
+                ->with('cartable.product.coverImage', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
                 ->get()
                 ->filter(fn($item) => $item->cartable && $item->cartable->product)
                 ->map(function ($item) {
@@ -1194,7 +1196,7 @@ class PaymentController extends Controller
                 $cartableId = $data['cartable_id'] ?? $data['variant_id'] ?? null;
                 if (!$cartableId) return null;
 
-                $cartable = ProductVariant::with('product', 'attributeValues.attribute', 'primaryImage')->find($cartableId);
+                $cartable = ProductVariant::with('product.coverImage', 'attributeValues.attribute', 'primaryImage')->find($cartableId);
                 if (!$cartable || !$cartable->product) return null;
 
                 return (object) [
@@ -1561,6 +1563,7 @@ class PaymentController extends Controller
                     'quantity' => $item->quantity,
                     'price' => $item->price,
                     'total_price' => $item->price * $item->quantity,
+                    'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
                 // Gửi thông báo Telegram

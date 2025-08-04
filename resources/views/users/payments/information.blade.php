@@ -846,7 +846,7 @@
                         quantity: {{ $item->quantity }},
                         price: {{ $item->price }},
                         originalPrice: {{ $item->price }},
-                        image: '{{ $item->productVariant->image_url ?? asset('assets/users/img/no-image.png') }}'
+                        image: '{{ $item->productVariant && $item->productVariant->primaryImage && file_exists(storage_path('app/public/' . $item->productVariant->primaryImage->path)) ? Storage::url($item->productVariant->primaryImage->path) : ($item->productVariant && $item->productVariant->product && $item->productVariant->product->coverImage && file_exists(storage_path('app/public/' . $item->productVariant->product->coverImage->path)) ? Storage::url($item->productVariant->product->coverImage->path) : asset('images/placeholder.jpg')) }}',
                         // name: {!! json_encode($item->productVariant->product->name) !!},
                         // variant: {!! json_encode($item->productVariant->attributeValues->pluck('value')->implode(', ')) !!},
                         // quantity: {{ $item->quantity }},

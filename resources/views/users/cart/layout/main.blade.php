@@ -65,7 +65,7 @@
                                 <tr data-item-id="{{ $item->id }}" data-stock="{{ $item->stock_quantity }}">
                                     <td class="py-3 ps-0">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ asset($item->image ?: 'path/to/default.jpg') }}" alt="Ảnh sản phẩm"
+                                            <img src="{{ $item->image }}" alt="Ảnh sản phẩm"
                                                 width="90" height="90">
 
                                             <div class="w-100 min-w-0 ps-2 ps-xl-3">
