@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Order;
+use App\Models\StoreLocation;
+use App\Models\ProvinceOld;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -13,20 +15,52 @@ use Illuminate\Validation\Rules;
 class ShipperManagementController extends Controller
 {
     /**
-     * Hiển thị trang danh sách nhân viên giao hàng.
+     * Hiển thị trang danh sách kho trang index.
      */
     public function index(Request $request)
     {
+        $perPage = $request->get('per_page', 10);
+        // Lấy danh sách kho (warehouse) với thông tin tỉnh/thành và số lượng shipper
+        $warehouses = StoreLocation::with(['province', 'district'])
+            ->where('type', 'warehouse')
+            ->where('is_active', true)
+            ->withCount(['shippers as shipper_count' => function ($query) {
+                $shipperRole = Role::where('name', 'shipper')->first();
+                if ($shipperRole) {
+                    $query->whereHas('roles', function ($q) use ($shipperRole) {
+                        $q->where('role_id', $shipperRole->id);
+                    });
+                }
+            }])
+            ->orderBy('name')
+            ->paginate($perPage);
+        // Lấy danh sách tỉnh/thành để filter
+        $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
+        return view('admin.shippers.index', compact('warehouses', 'provinces'));
+    }
+    /**
+     * Hiển thị danh sách shipper của một kho cụ thể.
+     */
+    public function showWarehouse(int $warehouseId, Request $request)
+    {
+        $warehouse = StoreLocation::with(['province', 'district'])
+            ->where('type', 'warehouse')
+            ->findOrFail($warehouseId);
+
         $shipperRole = Role::where('name', 'shipper')->firstOrFail();
 
         $query = User::whereHas('roles', fn($q) => $q->where('role_id', $shipperRole->id))
-                            ->withCount([
-                                'shipperOrders as assigned_orders_count', // Đếm tổng số đơn được gán
-                                'shipperOrders as delivered_orders_count' => function ($q) {
-                                    $q->where('status', 'delivered'); // Chỉ đếm các đơn có trạng thái 'delivered'
-                                }
-                            ]);
-        // ... logic filter của bạn đã đúng, giữ nguyên ...
+            ->whereHas('warehouseAssignments', function ($q) use ($warehouseId) {
+                $q->where('store_location_id', $warehouseId);
+            })
+            ->withCount([
+                'shipperOrders as assigned_orders_count', // Đếm tổng số đơn được gán
+                'shipperOrders as delivered_orders_count' => function ($q) {
+                    $q->where('status', 'delivered'); // Chỉ đếm các đơn có trạng thái 'delivered'
+                }
+            ]);
+
+        // Logic filter
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(fn($q) => $q->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
@@ -37,8 +71,13 @@ class ShipperManagementController extends Controller
 
         $shippers = $query->latest()->paginate(10);
 
-        // SỬA LẠI LOGIC TÍNH TOÁN STATS
-        $allShippersQuery = User::whereHas('roles', function ($q) use ($shipperRole) { $q->where('role_id', $shipperRole->id); });
+        // Tính toán stats cho kho này
+        $allShippersQuery = User::whereHas('roles', function ($q) use ($shipperRole) {
+            $q->where('role_id', $shipperRole->id);
+        })->whereHas('warehouseAssignments', function ($q) use ($warehouseId) {
+            $q->where('store_location_id', $warehouseId);
+        });
+
         $allShipperIds = (clone $allShippersQuery)->pluck('id');
 
         $stats = [
@@ -49,7 +88,7 @@ class ShipperManagementController extends Controller
             'delivered' => Order::whereIn('shipped_by', $allShipperIds)->where('status', 'delivered')->count(),
         ];
 
-        return view('admin.shippers.index', compact('shippers', 'stats'));
+        return view('admin.shippers.warehouse', compact('warehouse', 'shippers', 'stats'));
     }
 
     /**
@@ -153,9 +192,9 @@ class ShipperManagementController extends Controller
         $shipperRole = Role::where('name', 'shipper')->firstOrFail();
 
         $trashedShippers = User::onlyTrashed()
-                               ->whereHas('roles', fn($q) => $q->where('role_id', $shipperRole->id))
-                               ->orderBy('deleted_at', 'desc')
-                               ->paginate(10);
+            ->whereHas('roles', fn($q) => $q->where('role_id', $shipperRole->id))
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(10);
 
         return view('admin.users.trash', compact('trashedShippers'));
     }
@@ -184,5 +223,4 @@ class ShipperManagementController extends Controller
 
         return redirect()->route('admin.users.trash')->with('success', "Đã xóa vĩnh viễn nhân viên '{$shipper->name}'.");
     }
-
 }

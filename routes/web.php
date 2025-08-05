@@ -328,6 +328,7 @@ Route::prefix('admin')
             Route::get('/trash', [ShipperManagementController::class, 'trash'])->name('trash');
             Route::patch('/{shipper}/restore', [ShipperManagementController::class, 'restore'])->name('restore');
             Route::delete('/{shipper}/force-delete', [ShipperManagementController::class, 'forceDelete'])->name('force-delete');
+            Route::get('/warehouse/{warehouse}', [ShipperManagementController::class, 'showWarehouse'])->name('warehouse.show');
         });
         Route::resource('shippers', ShipperManagementController::class);
 
