@@ -1,11 +1,3 @@
-{{--
-    Tệp header này đã được hợp nhất.
-    Nó bao gồm các chức năng từ header cũ của bạn (menu di động, tìm kiếm, hiệu ứng cuộn)
-    và đã được tích hợp thêm hệ thống thông báo từ header mới.
-    JavaScript cũng đã được kết hợp để xử lý tất cả các tương tác,
-    bao gồm cả việc chuyển đổi giữa menu chính và chế độ xem thông báo trong dropdown của người dùng.
---}}
-
 <style>
     /* --- CSS cho hiệu ứng chuyển động --- */
     #mobile-menu {
@@ -140,149 +132,159 @@
                         </svg>
                     </a>
 
-                    <!-- User Menu Container -->
                     <div class="relative">
                         <button id="user-menu-trigger"
                             class="relative w-10 h-10 rounded-full flex items-center justify-center text-gray-300 hover:bg-white/10 transition-colors overflow-hidden">
 
-                            @guest
-                            {{-- Icon user mặc định cho khách chưa đăng nhập --}}
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor" stroke-width="2">
-                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                                <circle cx="12" cy="7" r="4" />
-                            </svg>
-                            @else
-                            {{-- Hiển thị chấm đỏ nếu có thông báo chưa đọc --}}
-                            @if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
-                            <span id="avatar-ping"
-                                class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10 animate-ping"></span>
-                            <span id="avatar-dot"
-                                class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10"></span>
-                            @endif
+                            {{-- ✅ BẮT ĐẦU SỬA ĐỔI LOGIC --}}
+                            @auth
+                                {{-- Nếu là khách (có session tạm) thì hiển thị icon mặc định --}}
+                                @if (Auth::user()->is_guest)
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor" stroke-width="2">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                {{-- Nếu là người dùng thật thì hiển thị avatar --}}
+                                @else
+                                    @if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
+                                    <span id="avatar-ping"
+                                        class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10 animate-ping"></span>
+                                    <span id="avatar-dot"
+                                        class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10"></span>
+                                    @endif
 
-                            {{-- Avatar người dùng hoặc chữ cái đầu --}}
-                            @if (Auth::user()->avatar_url)
-                            <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
-                                class="w-full h-full object-cover rounded-full">
+                                    @if (Auth::user()->avatar_url)
+                                    <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
+                                        class="w-full h-full object-cover rounded-full">
+                                    @else
+                                    <span class="text-sm font-semibold text-white uppercase">
+                                        {{ strtoupper(Auth::user()->name[0]) }}
+                                    </span>
+                                    @endif
+                                @endif
                             @else
-                            <span class="text-sm font-semibold text-white uppercase">
-                                {{ strtoupper(Auth::user()->name[0]) }}
-                            </span>
-                            @endif
-                            @endguest
+                                {{-- Nếu chưa đăng nhập, hiển thị icon mặc định --}}
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                            @endauth
+                            {{-- ✅ KẾT THÚC SỬA ĐỔI LOGIC --}}
                         </button>
-                        <!-- Dropdown Container -->
+                        
                         <div id="user-dropdown-menu"
                             class="absolute top-full right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-20 overflow-hidden">
 
-                            <!-- Main Menu View -->
                             <div id="main-menu-view">
-                                @guest
-                                <div class="py-2">
-                                    <a href="{{ route('login') }}"
-                                        class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3">
-                                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
-                                            <polyline points="10 17 15 12 10 7"></polyline>
-                                            <line x1="15" y1="12" x2="3" y2="12"></line>
-                                        </svg>
-                                        <span>Đăng nhập</span>
-                                    </a>
-                                    <a href="{{ route('register') }}"
-                                        class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                            stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3">
-                                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="9" cy="7" r="4"></circle>
-                                            <line x1="19" x2="19" y1="8" y2="14">
-                                            </line>
-                                            <line x1="22" x2="16" y1="11" y2="11">
-                                            </line>
-                                        </svg>
-                                        <span>Đăng ký</span>
-                                    </a>
-                                </div>
+                                {{-- ✅ BẮT ĐẦU SỬA ĐỔI LOGIC --}}
+                                {{-- Nếu là khách vãng lai (chưa đăng nhập) HOẶC là khách có session tạm, thì hiển thị menu Đăng nhập/Đăng ký --}}
+                                @if (Auth::guest() || (Auth::check() && Auth::user()->is_guest))
+                                    <div class="py-2">
+                                        <a href="{{ route('logout.guest') }}"
+                                            class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3">
+                                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                                                <polyline points="10 17 15 12 10 7"></polyline>
+                                                <line x1="15" y1="12" x2="3" y2="12"></line>
+                                            </svg>
+                                            <span>Đăng nhập</span>
+                                        </a>
+                                        <a href="{{ route('register') }}"
+                                            class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3">
+                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="9" cy="7" r="4"></circle>
+                                                <line x1="19" x2="19" y1="8" y2="14">
+                                                </line>
+                                                <line x1="22" x2="16" y1="11" y2="11">
+                                                </line>
+                                            </svg>
+                                            <span>Đăng ký</span>
+                                        </a>
+                                    </div>
+                                {{-- Ngược lại (là người dùng thật đã đăng nhập), hiển thị menu người dùng --}}
                                 @else
-                                @php $user = Auth::user(); @endphp
-                                <div class="px-4 py-3 border-b border-gray-700">
-                                    <p class="text-sm text-white font-semibold" role="none">
-                                        {{ $user->name }}
-                                    </p>
-                                    <p class="text-xs text-gray-400 truncate" role="none">{{ $user->email }}
-                                    </p>
-                                </div>
-                                <div class="py-2">
-                                    {{-- Nút chuyển đến tab thông báo --}}
-                                    <a href="#" id="notification-trigger"
-                                        class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors relative">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                                        </svg>
-                                        <span>Thông báo</span>
-                                        {{-- Giả sử bạn truyền biến $unreadNotificationsCount từ controller --}}
-                                        @if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
-                                        <span
-                                            class="ml-auto text-xs bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">{{ $unreadNotificationsCount }}</span>
-                                        @endif
-                                    </a>
+                                    @php $user = Auth::user(); @endphp
+                                    <div class="px-4 py-3 border-b border-gray-700">
+                                        <p class="text-sm text-white font-semibold" role="none">
+                                            {{ $user->name }}
+                                        </p>
+                                        <p class="text-xs text-gray-400 truncate" role="none">{{ $user->email }}
+                                        </p>
+                                    </div>
+                                    <div class="py-2">
+                                        {{-- Nút chuyển đến tab thông báo --}}
+                                        <a href="#" id="notification-trigger"
+                                            class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors relative">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                                            </svg>
+                                            <span>Thông báo</span>
+                                            @if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
+                                            <span
+                                                class="ml-auto text-xs bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">{{ $unreadNotificationsCount }}</span>
+                                            @endif
+                                        </a>
 
-                                    {{-- Tài khoản --}}
-                                    <a href="{{ route('profile.edit') }}"
-                                        class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                            class="w-5 h-5 mr-3">
-                                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="12" cy="7" r="4"></circle>
-                                        </svg>
-                                        <span>Tài khoản của tôi</span>
-                                    </a>
-
-                                    {{-- Trang quản trị --}}
-                                    @if ($user->roles->contains('id', 1) || $user->roles->contains('id', 4) || $user->roles->contains('id', 5))
-                                    <a href="{{ route('admin.dashboard') }}"
-                                        class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                            class="w-5 h-5 mr-3">
-                                            <rect width="18" height="18" x="3" y="3" rx="2" />
-                                            <path d="M7 12h10M7 7h2M7 17h5" />
-                                        </svg>
-                                        <span>Trang Quản Trị</span>
-                                    </a>
-                                    @endif
-
-                                    <div class="border-t border-gray-700 my-2"></div>
-
-                                    {{-- Logout --}}
-                                    <form action="{{ route('logout') }}" method="POST" class="w-full">
-                                        @csrf
-                                        <button type="submit"
-                                            class="w-full flex items-center px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors">
+                                        {{-- Tài khoản --}}
+                                        <a href="{{ route('profile.edit') }}"
+                                            class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                                 class="w-5 h-5 mr-3">
-                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                                                <polyline points="16 17 21 12 16 7"></polyline>
-                                                <line x1="21" y1="12" x2="9" y2="12">
-                                                </line>
+                                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="12" cy="7" r="4"></circle>
                                             </svg>
-                                            <span>Đăng xuất</span>
-                                        </button>
-                                    </form>
-                                </div>
-                                @endauth
-                            </div>
+                                            <span>Tài khoản của tôi</span>
+                                        </a>
 
+                                        {{-- Trang quản trị --}}
+                                        @if ($user->roles->contains('id', 1) || $user->roles->contains('id', 4) || $user->roles->contains('id', 5))
+                                        <a href="{{ route('admin.dashboard') }}"
+                                            class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                class="w-5 h-5 mr-3">
+                                                <rect width="18" height="18" x="3" y="3" rx="2" />
+                                                <path d="M7 12h10M7 7h2M7 17h5" />
+                                            </svg>
+                                            <span>Trang Quản Trị</span>
+                                        </a>
+                                        @endif
+
+                                        <div class="border-t border-gray-700 my-2"></div>
+
+                                        {{-- Logout --}}
+                                        <form action="{{ route('logout') }}" method="POST" class="w-full">
+                                            @csrf
+                                            <button type="submit"
+                                                class="w-full flex items-center px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                    class="w-5 h-5 mr-3">
+                                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                                    <line x1="21" y1="12" x2="9" y2="12">
+                                                    </line>
+                                                </svg>
+                                                <span>Đăng xuất</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
+                                {{-- ✅ KẾT THÚC SỬA ĐỔI LOGIC --}}
+                            </div>
                             <!-- Notification Detail View (initially hidden) -->
                             <div id="notification-detail-view" class="hidden">
                                 <div class="p-3 border-b border-gray-700">

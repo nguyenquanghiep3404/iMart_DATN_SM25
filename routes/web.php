@@ -64,8 +64,9 @@ use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\PackingStationController;
 use App\Http\Controllers\Admin\StockTransferController;
 use Telegram\Bot\Laravel\Facades\Telegram;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
-
+Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -240,6 +241,7 @@ Route::prefix('chat')->name('client.chat.')->group(function () {
     Route::post('/register-guest', [ChatController::class, 'registerGuest'])->name('registerGuest');
     Route::post('/send-message', [ChatController::class, 'sendMessage'])->name('sendMessage');
     Route::post('/guest-login', [ChatController::class, 'guestLogin'])->name('guestLogin');
+    Route::post('/get-history', [ChatController::class, 'getHistory'])->name('getHistory');
 });
 
 
@@ -658,6 +660,7 @@ Route::prefix('admin')
             Route::post('/{conversation}/close', [AdminChatController::class, 'close'])->name('close');
             Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
             Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
+           
         });
 
         // Quản lý thu cũ và hàng mở hộp

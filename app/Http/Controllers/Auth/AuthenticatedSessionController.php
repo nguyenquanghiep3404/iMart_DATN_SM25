@@ -335,5 +335,15 @@ class AuthenticatedSessionController extends Controller
             ], 422); // 422 Unprocessable Entity
         }
     }
+public function logoutGuest(Request $request)
+{
+    Auth::guard('web')->logout();
+
+    $request->session()->invalidate();
+
+    $request->session()->regenerateToken();
+
+    return redirect('/login'); // Hoặc redirect()->route('login')
+}
 
 }
