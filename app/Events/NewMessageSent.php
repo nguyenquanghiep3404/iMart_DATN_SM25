@@ -7,12 +7,13 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel; // Quan trọng: Đảm bảo sử dụng PrivateChannel
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\ChatMessage;
 use App\Models\ChatConversation;
 
-class NewMessageSent implements ShouldBroadcast
+class NewMessageSent implements ShouldBroadcastNow 
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
