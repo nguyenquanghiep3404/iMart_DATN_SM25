@@ -8,7 +8,8 @@
             <!-- Header -->
             <header class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900">Dashboard Tồn kho</h1>
-                <p class="text-gray-600 mt-1">Tổng quan tình hình tồn kho toàn hệ thống - Cập nhật lúc 08:04, 05/08/2025</p>
+                <p class="text-gray-600 mt-1">Tổng quan tình hình tồn kho toàn hệ thống - Cập nhật lúc
+                    {{ now()->format('H:i, d/m/Y') }}</p>
             </header>
 
             <!-- KPI Cards Grid -->
@@ -17,7 +18,8 @@
                 <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-start justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500">Tổng giá trị tồn kho</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">125.8 tỷ ₫</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ number_format($totalValue / 1e9, 1, ',', '.') }}
+                            tỷ ₫</p>
                         <p class="text-xs text-green-600 mt-2 flex items-center">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20"
                                 fill="currentColor">
@@ -41,7 +43,7 @@
                 <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-start justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500">Tổng số SKU</p>
-                        <p class="text-3xl font-bold text-gray-900 mt-2">1,250</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-2">{{ number_format($totalSku) }}</p>
                         <p class="text-xs text-gray-500 mt-2">+25 SKU mới trong tháng</p>
                     </div>
                     <div class="bg-green-100 text-green-600 p-3 rounded-lg">
@@ -57,7 +59,7 @@
                 <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-start justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500">SKU dưới ngưỡng</p>
-                        <p class="text-3xl font-bold text-yellow-600 mt-2">78</p>
+                        <p class="text-3xl font-bold text-yellow-600 mt-2">{{ $lowStockCount }}</p>
                         <p class="text-xs text-gray-500 mt-2">Cần tạo đơn nhập hàng</p>
                     </div>
                     <div class="bg-yellow-100 text-yellow-600 p-3 rounded-lg">
@@ -73,7 +75,7 @@
                 <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 flex items-start justify-between">
                     <div>
                         <p class="text-sm font-medium text-gray-500">SKU sắp hết hạn</p>
-                        <p class="text-3xl font-bold text-red-600 mt-2">15</p>
+                        <p class="text-3xl font-bold text-red-600 mt-2">{{ $expiringSkuCount ?? 0 }}</p>
                         <p class="text-xs text-gray-500 mt-2">Trong vòng 30 ngày tới</p>
                     </div>
                     <div class="bg-red-100 text-red-600 p-3 rounded-lg">
@@ -121,24 +123,24 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-medium text-gray-900">PCK-00125</td>
-                                    <td class="px-4 py-3">Kho Tổng HN</td>
-                                    <td class="px-4 py-3">CH Đà Nẵng</td>
-                                    <td class="px-4 py-3">04/08/2025</td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-medium text-gray-900">PCK-00124</td>
-                                    <td class="px-4 py-3">Kho Tổng TPHCM</td>
-                                    <td class="px-4 py-3">CH Cần Thơ</td>
-                                    <td class="px-4 py-3">03/08/2025</td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-medium text-gray-900">PCK-00122</td>
-                                    <td class="px-4 py-3">CH Ba Đình</td>
-                                    <td class="px-4 py-3">CH Cầu Giấy</td>
-                                    <td class="px-4 py-3">01/08/2025</td>
-                                </tr>
+                                @forelse($pendingTransfers as $transfer)
+                                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                        <td class="px-4 py-3 font-medium text-gray-900">{{ $transfer->transfer_code }}</td>
+                                        <td class="px-4 py-3">
+                                            {{ $transfer->from_location_name ?? 'Chưa xác định' }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{ $transfer->to_location_name ?? 'Chưa xác định' }}
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            {{ \Carbon\Carbon::parse($transfer->created_at)->format('d/m/Y') }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-3 text-center text-gray-400">Không có phiếu chuyển
+                                            kho chờ xử lý</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -158,18 +160,21 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-medium text-gray-900">PKK-HN-0825</td>
-                                    <td class="px-4 py-3">Kho Tổng HN</td>
-                                    <td class="px-4 py-3">05/08/2025</td>
-                                    <td class="px-4 py-3">Nguyễn Văn A</td>
-                                </tr>
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-medium text-gray-900">PKK-DN-0825</td>
-                                    <td class="px-4 py-3">CH Đà Nẵng</td>
-                                    <td class="px-4 py-3">02/08/2025</td>
-                                    <td class="px-4 py-3">Trần Thị B</td>
-                                </tr>
+                                @forelse ($ongoingStocktakes as $stocktake)
+                                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                        <td class="px-4 py-3 font-medium text-gray-900">{{ $stocktake->stocktake_code }}
+                                        </td>
+                                        <td class="px-4 py-3">{{ $stocktake->store_name ?? 'Chưa xác định' }}</td>
+                                        <td class="px-4 py-3">
+                                            {{ \Carbon\Carbon::parse($stocktake->created_at)->format('d/m/Y') }}</td>
+                                        <td class="px-4 py-3">{{ $stocktake->user_name ?? 'Chưa có' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-3 text-center text-gray-400">Không có phiên kiểm
+                                            kho đang diễn ra</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
@@ -177,103 +182,5 @@
             </div>
 
         </div>
-
-        <script>
-            // Wait for the DOM to be fully loaded
-            document.addEventListener('DOMContentLoaded', () => {
-
-                // --- Chart 1: Tỷ trọng giá trị kho (Donut Chart) ---
-                const inventoryValueCtx = document.getElementById('inventoryValueChart').getContext('2d');
-                new Chart(inventoryValueCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Kho Tổng HN', 'Kho Tổng TPHCM', 'CH Đà Nẵng', 'Các CH khác'],
-                        datasets: [{
-                            label: 'Giá trị tồn kho',
-                            data: [50.3, 45.2, 15.8, 14.5], // Dữ liệu giả (tỷ đồng)
-                            backgroundColor: [
-                                'rgba(79, 70, 229, 0.8)', // Indigo
-                                'rgba(22, 163, 74, 0.8)', // Green
-                                'rgba(202, 138, 4, 0.8)', // Yellow
-                                'rgba(107, 114, 128, 0.8)' // Gray
-                            ],
-                            borderColor: '#ffffff', // Match the card background
-                            borderWidth: 4,
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: {
-                                    color: '#4b5563', // Text color for legend
-                                    font: {
-                                        family: "'Inter', sans-serif"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
-
-                // --- Chart 2: Top sản phẩm tồn kho (Horizontal Bar Chart) ---
-                const topProductsCtx = document.getElementById('topProductsChart').getContext('2d');
-                new Chart(topProductsCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: [
-                            'iPhone 15 Pro Max',
-                            'Macbook Pro 16" M3',
-                            'Samsung Galaxy S25',
-                            'Apple Watch Ultra 3',
-                            'Sony WH-1000XM6'
-                        ],
-                        datasets: [{
-                            label: 'Giá trị (tỷ ₫)',
-                            data: [12.5, 9.8, 7.2, 5.4, 4.1], // Dữ liệu giả
-                            backgroundColor: 'rgba(79, 70, 229, 0.6)',
-                            borderColor: 'rgba(79, 70, 229, 1)',
-                            borderWidth: 1,
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y', // This makes the bar chart horizontal
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                beginAtZero: true,
-                                grid: {
-                                    color: 'rgba(0, 0, 0, 0.05)'
-                                },
-                                ticks: {
-                                    color: '#4b5563'
-                                }
-                            },
-                            y: {
-                                grid: {
-                                    display: false
-                                },
-                                ticks: {
-                                    color: '#4b5563'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false // Hide legend for a cleaner look
-                            }
-                        }
-                    }
-                });
-            });
-        </script>
-
-    </body>
-
-    </html>
-@endsection
+        @include('admin.dashboard.layouts.script')
+    @endsection

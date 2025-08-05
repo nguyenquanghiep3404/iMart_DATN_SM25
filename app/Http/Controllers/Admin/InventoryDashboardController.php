@@ -53,19 +53,30 @@ class InventoryDashboardController extends Controller
             ->get();
 
         // Danh sách phiếu chuyển kho chờ xử lý
-        $pendingTransfers = DB::table('stock_transfers')
-            ->where('status', 'pending')
-            ->orderByDesc('created_at')
+        $pendingTransfers = DB::table('stock_transfers as st')
+            ->leftJoin('store_locations as from_loc', 'st.from_location_id', '=', 'from_loc.id')
+            ->leftJoin('store_locations as to_loc', 'st.to_location_id', '=', 'to_loc.id')
+            ->where('st.status', 'pending')
+            ->orderByDesc('st.created_at')
             ->limit(5)
+            ->select(
+                'st.transfer_code',
+                'st.created_at',
+                DB::raw('COALESCE(from_loc.name, "Chưa xác định") as from_location_name'),
+                DB::raw('COALESCE(to_loc.name, "Chưa xác định") as to_location_name')
+            )
             ->get();
 
         // Danh sách phiên kiểm kho đang diễn ra
-        $ongoingStocktakes = DB::table('stocktakes')
-            ->where('status', 'in_progress')
-            ->orderByDesc('created_at')
+        $ongoingStocktakes = DB::table('stocktakes as s')
+            ->leftJoin('store_locations as sl', 's.store_location_id', '=', 'sl.id')
+            ->leftJoin('users as u', 's.started_by', '=', 'u.id')
+            ->where('s.status', 'in_progress')
+            ->select('s.id', 's.stocktake_code', 's.created_at', 'sl.name as store_name', 'u.name as user_name')
+            ->orderByDesc('s.created_at')
             ->limit(5)
             ->get();
-
+     
         return view('admin.dashboard.inventory', compact(
             'totalValue', 'totalSku', 'lowStockCount',
             'valueByStore', 'topProducts',
