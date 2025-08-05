@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Điều chỉnh Tồn kho Thủ công</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto">
+        <!-- Header -->
+        <header class="mb-6 text-center">
+            <h1 class="text-3xl font-bold text-gray-900">Điều chỉnh Tồn kho Thủ công</h1>
+            <p class="text-gray-600 mt-1">Tạo bút toán tăng/giảm tồn kho cho các trường hợp đặc biệt.</p>
+        </header>
+
+        <!-- Adjustment Form -->
+        <div class="bg-white p-6 sm:p-8 rounded-xl shadow-md border border-gray-200">
+            <form action="#" method="POST" class="space-y-6">
+                <!-- Location -->
+                <div>
+                    <label for="location" class="block text-sm font-medium text-gray-700">
+                        Địa điểm <span class="text-red-500">*</span>
+                    </label>
+                    <select id="location" name="location" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option>Chọn địa điểm...</option>
+                        <option>Kho Tổng HN</option>
+                        <option>Kho Tổng TPHCM</option>
+                        <option>CH Ba Đình</option>
+                        <option>CH Đà Nẵng</option>
+                    </select>
+                </div>
+
+                <!-- Product -->
+                <div>
+                    <label for="product" class="block text-sm font-medium text-gray-700">
+                        Sản phẩm (SKU/Tên) <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" id="product" name="product" placeholder="Tìm kiếm sản phẩm..." class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+
+                <!-- Quantity Change -->
+                <div>
+                    <label for="quantity-change" class="block text-sm font-medium text-gray-700">
+                        Số lượng thay đổi <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" id="quantity-change" name="quantity-change" placeholder="VD: -1 hoặc +5" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    <p class="mt-2 text-xs text-gray-500">Nhập số âm (ví dụ: -1) để giảm tồn kho, số dương (ví dụ: 5) để tăng tồn kho.</p>
+                </div>
+
+                <!-- Reason -->
+                <div>
+                    <label for="reason" class="block text-sm font-medium text-gray-700">
+                        Lý do <span class="text-red-500">*</span>
+                    </label>
+                    <select id="reason" name="reason" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option>Chọn lý do điều chỉnh...</option>
+                        <option value="damaged">Hàng hỏng</option>
+                        <option value="lost">Thất lạc</option>
+                        <option value="found">Tìm thấy hàng thất lạc</option>
+                        <option value="other">Khác (ghi rõ trong ghi chú)</option>
+                    </select>
+                </div>
+
+                <!-- Notes -->
+                <div>
+                    <label for="notes" class="block text-sm font-medium text-gray-700">
+                        Ghi chú chi tiết
+                    </label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Mô tả chi tiết về lý do điều chỉnh..." class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+                </div>
+
+                <!-- Action Button -->
+                <div class="pt-4 border-t border-gray-200">
+                    <button type="submit" class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Xác nhận Điều chỉnh
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>
