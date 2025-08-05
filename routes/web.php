@@ -488,6 +488,7 @@ Route::prefix('admin')
                 Route::post('/schedule/assign-shift', [SalesStaffManagement::class, 'assignShift'])->name('schedule.assign-shift');
                 // API ca làm việc
                 Route::get('/work-shifts', [SalesStaffManagement::class, 'getWorkShifts'])->name('work-shifts.list');
+                Route::get('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'getWorkShift'])->name('work-shifts.show');
                 Route::post('/work-shifts', [SalesStaffManagement::class, 'addWorkShift'])->name('work-shifts.store');
                 Route::put('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'updateWorkShift'])->name('work-shifts.update');
                 Route::delete('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'deleteWorkShift'])->name('work-shifts.destroy');
