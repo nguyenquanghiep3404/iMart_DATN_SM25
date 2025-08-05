@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
+use Telegram\Bot\Laravel\Facades\Telegram;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\LocationController;
@@ -16,56 +17,58 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Users\BlogController;
 use App\Http\Controllers\Users\CartController;
+use App\Http\Controllers\Users\ChatController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\GuestReviewController;
+use App\Http\Controllers\OrderRefundController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\SerialLookupController;
 use App\Http\Controllers\Users\CarOffController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Users\TradeInPublicController;
 use App\Http\Controllers\Users\CommentController;
 use App\Http\Controllers\Users\PaymentController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\HomepageController;
+use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Shipper\ShipperController;
 use App\Http\Controllers\Users\AddressesController;
 use App\Http\Controllers\Users\UserOrderController;
+use App\Http\Controllers\Admin\SalesStaffManagement;
 use App\Http\Controllers\Admin\TradeInItemController;
 use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\PostCategoryController;
 use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\Users\LoyaltyPointController;
 use App\Http\Controllers\Admin\AbandonedCartController;
 use App\Http\Controllers\Admin\BundleProductController;
+use App\Http\Controllers\Admin\CustomerGroupController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\SpecificationController;
+use App\Http\Controllers\Admin\StockTransferController;
+use App\Http\Controllers\Admin\StoreLocationController;
+use App\Http\Controllers\Users\TradeInPublicController;
 use App\Http\Controllers\Admin\DashboardAdminController;
+use App\Http\Controllers\Admin\PackingStationController;
+use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
-use App\Http\Controllers\Users\ChatController;
-use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
-use App\Http\Controllers\Admin\StoreLocationController;
-use App\Http\Controllers\Users\LoyaltyPointController;
-use App\Http\Controllers\OrderRefundController;
-use App\Http\Controllers\Admin\RegisterController;
-use App\Http\Controllers\Admin\PurchaseOrderController;
-use App\Http\Controllers\Admin\SalesStaffManagement;
-
-use App\Http\Controllers\Admin\CustomerGroupController;
-use App\Http\Controllers\Admin\MarketingCampaignController;
-use App\Http\Controllers\Admin\PackingStationController;
-use App\Http\Controllers\Admin\StockTransferController;
-use Telegram\Bot\Laravel\Facades\Telegram;
 use App\Http\Controllers\Admin\InventoryDashboardController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
+
+Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
 
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
@@ -156,6 +159,8 @@ Route::prefix('blog')->group(function () {
     Route::get('/', [BlogController::class, 'home'])->name('users.blogs.home');
     Route::get('/tat-ca', [BlogController::class, 'index'])->name('users.blogs.index');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('users.blogs.show');
+    Route::post('/{id}/tang-luot-xem', [BlogController::class, 'increaseViews'])
+        ->name('users.blogs.increaseViews');
 });
 // Trang About và Help , terms
 Route::get('/about', [HomeController::class, 'about'])->name('users.about');
@@ -240,6 +245,7 @@ Route::prefix('chat')->name('client.chat.')->group(function () {
     Route::post('/register-guest', [ChatController::class, 'registerGuest'])->name('registerGuest');
     Route::post('/send-message', [ChatController::class, 'sendMessage'])->name('sendMessage');
     Route::post('/guest-login', [ChatController::class, 'guestLogin'])->name('guestLogin');
+    Route::post('/get-history', [ChatController::class, 'getHistory'])->name('getHistory');
 });
 
 
@@ -288,7 +294,7 @@ Route::prefix('admin')
     ->middleware(['auth', 'role:admin,content_manager', 'check.content.access'])
     ->middleware(['auth', 'verified'])
     ->group(function () {
-        
+
         // http://127.0.0.1:8000/admin/dashboard
         Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('dashboard')->middleware('can:access_admin_dashboard');
 
@@ -620,6 +626,9 @@ Route::prefix('admin')
         Route::patch('bundle-products/restore-bulk', [BundleProductController::class, 'restoreBulk'])->name('bundle-products.restore.bulk');
         Route::delete('bundle-products/force-delete-bulk', [BundleProductController::class, 'forceDeleteBulk'])->name('bundle-products.forceDelete.bulk');
 
+        // Routes cho tra cứu số serial
+        Route::get('/serials/lookup', [SerialLookupController::class, 'showForm'])->name('serial.lookup.form');
+        Route::post('/serials/lookup', [SerialLookupController::class, 'lookup'])->name('serial.lookup');
 
         // Gói sản phẩm
         Route::get('bundle-products', [BundleProductController::class, 'index'])->name('bundle-products.index');
@@ -660,6 +669,7 @@ Route::prefix('admin')
             Route::post('/{conversation}/close', [AdminChatController::class, 'close'])->name('close');
             Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
             Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
+           
         });
 
         // Quản lý thu cũ và hàng mở hộp
@@ -762,36 +772,35 @@ Route::prefix('admin')
         });
         Route::resource('stock-transfers', StockTransferController::class);
         Route::get('/test-my-role', function () {
-    if (!Auth::check()) {
-        return 'Bạn chưa đăng nhập.';
-    }
+            if (!Auth::check()) {
+                return 'Bạn chưa đăng nhập.';
+            }
 
-    $user = Auth::user();
-    
-    echo "<h2>Kiểm tra vai trò cho User ID: {$user->id} - {$user->name}</h2>";
+            $user = Auth::user();
 
-    // Kiểm tra trực tiếp
-    $hasRole = $user->hasAnyRole(['admin', 'super_admin']);
-    
-    echo 'Kết quả của `hasAnyRole([\'admin\', \'super_admin\'])`: ';
-    echo $hasRole ? '<b>TRUE (ĐÚNG)</b>' : '<b>FALSE (SAI)</b>';
-    
-    echo "<hr>";
+            echo "<h2>Kiểm tra vai trò cho User ID: {$user->id} - {$user->name}</h2>";
 
-    // In ra tất cả các vai trò mà user này có
-    $roles = $user->roles;
-    if ($roles->isEmpty()) {
-        echo 'User này KHÔNG có vai trò nào được gán trong bảng `role_user`.';
-    } else {
-        echo '<h4>Các vai trò của user này:</h4>';
-        echo '<ul>';
-        foreach ($roles as $role) {
-            echo "<li>ID: {$role->id} - Tên: {$role->name}</li>";
-        }
-        echo '</ul>';
-    }
-});
+            // Kiểm tra trực tiếp
+            $hasRole = $user->hasAnyRole(['admin', 'super_admin']);
 
+            echo 'Kết quả của `hasAnyRole([\'admin\', \'super_admin\'])`: ';
+            echo $hasRole ? '<b>TRUE (ĐÚNG)</b>' : '<b>FALSE (SAI)</b>';
+
+            echo "<hr>";
+
+            // In ra tất cả các vai trò mà user này có
+            $roles = $user->roles;
+            if ($roles->isEmpty()) {
+                echo 'User này KHÔNG có vai trò nào được gán trong bảng `role_user`.';
+            } else {
+                echo '<h4>Các vai trò của user này:</h4>';
+                echo '<ul>';
+                foreach ($roles as $role) {
+                    echo "<li>ID: {$role->id} - Tên: {$role->name}</li>";
+                }
+                echo '</ul>';
+            }
+        });
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')

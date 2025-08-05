@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use App\Models\StockTransferItemSerial;
 
 class StockTransferController extends Controller
 {
@@ -284,6 +285,7 @@ class StockTransferController extends Controller
      */
     public function processDispatch(Request $request, StockTransfer $stockTransfer)
     {
+        // Giữ nguyên phần validation ban đầu
         $validated = $request->validate([
             'scanned_serials' => 'required|array',
             'scanned_serials.*' => 'present|array',
@@ -296,47 +298,70 @@ class StockTransferController extends Controller
             }
 
             $fromLocationId = $stockTransfer->from_location_id;
-
+            
+            // Lặp qua từng dòng sản phẩm trong phiếu chuyển có serial được quét
             foreach ($validated['scanned_serials'] as $stItemId => $serials) {
                 $stItem = StockTransferItem::findOrFail($stItemId);
                 $productVariantId = $stItem->product_variant_id;
                 $quantity = $stItem->quantity;
 
                 if (count($serials) !== $quantity) {
-                    throw new \Exception("Số lượng serial cho SKU {$stItem->productVariant->sku} không khớp.");
+                    throw new \Exception("Số lượng serial cho SKU {$stItem->productVariant->sku} không khớp với số lượng trên phiếu.");
                 }
 
-                $updatedCount = InventorySerial::where('product_variant_id', $productVariantId)
+                // 1. Lấy thông tin đầy đủ của các serial đã quét để lấy ID
+                $inventorySerials = InventorySerial::where('product_variant_id', $productVariantId)
                     ->where('store_location_id', $fromLocationId)
                     ->where('status', 'available')
                     ->whereIn('serial_number', $serials)
-                    ->update(['status' => 'transferred']);
+                    ->get();
 
-                if ($updatedCount !== $quantity) {
+                // 2. Kiểm tra xem tất cả serial đã quét có hợp lệ không
+                if ($inventorySerials->count() !== $quantity) {
                     throw new \Exception("Một vài serial cho SKU {$stItem->productVariant->sku} không hợp lệ hoặc không có sẵn tại kho gửi.");
                 }
 
+                // 3. Chuẩn bị dữ liệu để insert hàng loạt vào bảng `stock_transfer_item_serials`
+                $serialsToInsert = $inventorySerials->map(function ($serial) use ($stItemId) {
+                    return [
+                        'stock_transfer_item_id' => $stItemId,
+                        'inventory_serial_id'  => $serial->id,
+                        // 'status' sẽ tự động được set là 'in_transit' do đã có default trong DB
+                        'created_at'           => now(),
+                        'updated_at'           => now(),
+                    ];
+                })->all();
+
+                // 4. Insert hàng loạt để tăng hiệu suất (thay vì tạo từng cái trong vòng lặp)
+                StockTransferItemSerial::insert($serialsToInsert);
+                
+                // 5. Cập nhật trạng thái của các serial trong bảng gốc `inventory_serials`
+                // Lấy ra các ID đã được xác thực
+                $validSerialIds = $inventorySerials->pluck('id');
+                InventorySerial::whereIn('id', $validSerialIds)->update(['status' => 'transferred']);
+                
+
+                // Các phần xử lý tồn kho chung và ghi log vẫn giữ nguyên
                 $inventory = ProductInventory::where('product_variant_id', $productVariantId)
                     ->where('store_location_id', $fromLocationId)
                     ->where('inventory_type', 'new')->firstOrFail();
                 
                 $inventory->decrement('quantity', $quantity);
 
-                // Create inventory movement record for dispatch
                 InventoryMovement::create([
                     'product_variant_id' => $productVariantId,
                     'store_location_id' => $fromLocationId,
-                    'inventory_type' => 'new', // <-- FIX: Added missing field
+                    'inventory_type' => 'new',
                     'quantity_change' => -$quantity,
                     'quantity_after_change' => $inventory->quantity,
-                    'reason' => 'Chuyển kho đi',
+                    'reason' => 'Xuất kho chuyển đi',
                     'reference_type' => StockTransfer::class,
                     'reference_id' => $stockTransfer->id,
                     'user_id' => auth()->id(),
                 ]);
             }
 
-            // Update stock transfer status
+            // Cập nhật trạng thái phiếu chuyển kho
             $stockTransfer->status = 'shipped';
             $stockTransfer->shipped_at = now();
             $stockTransfer->save();
@@ -351,4 +376,5 @@ class StockTransferController extends Controller
             return response()->json(['success' => false, 'message' => 'Đã xảy ra lỗi: ' . $e->getMessage()], 500);
         }
     }
+
 }
