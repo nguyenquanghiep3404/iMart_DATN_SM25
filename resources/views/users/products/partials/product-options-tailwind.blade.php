@@ -1,17 +1,16 @@
 <div class="product-info flex flex-col">
     @php
-        $productName = $product->name; // Ví dụ: "iPhone 16"
-        $dungLuong = $initialVariantAttributes['Dung lượng lưu trữ'] ?? '';
-        $mauSac = $initialVariantAttributes['Màu sắc'] ?? '';
-    @endphp
+    $productName = $product->name;
+    $variantSuffix = collect($initialVariantAttributes)->implode(' ');
+@endphp
     <!-- CDN Toastr -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     @include('users.cart.layout.partials.css')
     <h1 id="product-title" class="text-2xl md:text-3xl font-bold text-gray-900">
-        {{ $productName }} {{ $dungLuong }} {{ $mauSac }}
-    </h1>
+    {{ $productName }} {{ $variantSuffix }}
+</h1>
     <div class="flex items-center flex-wrap gap-4 mt-2">
         <span
             class="inline-flex items-center bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full w-fit">
