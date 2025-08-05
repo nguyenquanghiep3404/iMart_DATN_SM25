@@ -217,10 +217,10 @@
             <div class="mt-6">{{ $shippers->appends(request()->query())->links() }}</div>
         </div>
         <!-- Modal Xác nhận Xóa -->
-        <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center">
+            <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
-                    <div class="flex items-center">
+                    <div class="flex items-center justify-center">
                         <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
                             <i class="fas fa-exclamation-triangle text-red-600"></i>
                         </div>
@@ -231,7 +231,6 @@
                             <p class="text-sm text-gray-500">
                                 Bạn có chắc chắn muốn xóa nhân viên <span id="shipperName"
                                     class="font-semibold text-gray-900"></span> không?
-                                Hành động này sẽ chuyển nhân viên vào thùng rác và có thể khôi phục sau.
                             </p>
                         </div>
                         <div class="flex justify-end space-x-3 mt-4">
