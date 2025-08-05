@@ -122,13 +122,30 @@ class CartController extends Controller
 
         // Lấy thông tin giảm giá (nếu có)
         $appliedCoupon = session('applied_coupon');
-        if ($appliedCoupon && $appliedCoupon['source_type'] === 'cart') {
-            $discount = $appliedCoupon['discount'] ?? 0;
-            $voucherCode = $appliedCoupon['code'] ?? null;
-        } else {
-            $discount = 0;
-            $voucherCode = null;
+        $discount = 0;
+        $voucherCode = null;
+
+        if ($appliedCoupon && ($appliedCoupon['source_type'] ?? null) === 'cart') {
+            // Kiểm tra coupon có còn hiệu lực không
+            $coupon = \App\Models\Coupon::where('code', $appliedCoupon['code'] ?? null)->first();
+
+            if (!$coupon || $coupon->end_date < now() || $coupon->status !== 'active') {
+                // Coupon hết hạn hoặc không hợp lệ
+                session()->forget('applied_coupon');
+            } else {
+                // Coupon hợp lệ
+                $discount = $appliedCoupon['discount'] ?? 0;
+                $voucherCode = $appliedCoupon['code'] ?? null;
+            }
         }
+        // $appliedCoupon = session('applied_coupon');
+        // if ($appliedCoupon && $appliedCoupon['source_type'] === 'cart') {
+        //     $discount = $appliedCoupon['discount'] ?? 0;
+        //     $voucherCode = $appliedCoupon['code'] ?? null;
+        // } else {
+        //     $discount = 0;
+        //     $voucherCode = null;
+        // }
 
 
         $total = max(0, $subtotal - $discount);

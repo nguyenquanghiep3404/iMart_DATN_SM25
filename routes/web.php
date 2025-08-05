@@ -64,7 +64,7 @@ use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\PackingStationController;
 use App\Http\Controllers\Admin\StockTransferController;
 use Telegram\Bot\Laravel\Facades\Telegram;
-
+use App\Http\Controllers\Admin\InventoryDashboardController;
 
 
 // router khôi phục giỏ hàng
@@ -522,7 +522,9 @@ Route::prefix('admin')
         Route::put('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'update'])->name('marketing_campaigns.update');
         Route::post('/marketing_campaigns/{id}/send', [MarketingCampaignController::class, 'send'])->name('marketing_campaigns.send');
 
-
+        // quản lý tồn kho
+        Route::get('/dashboard/inventory', [InventoryDashboardController::class, 'index'])
+            ->name('dashboard.inventory');
 
         // Banner routes
 
