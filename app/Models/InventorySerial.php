@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 
 class InventorySerial extends Model
@@ -53,5 +55,24 @@ class InventorySerial extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(StoreLocation::class, 'store_location_id');
+    }
+
+    /**
+     * Lấy tất cả các mục chuyển kho liên quan đến serial này.
+     */
+    public function stockTransferItemSerials(): HasMany
+    {
+        return $this->hasMany(StockTransferItemSerial::class, 'inventory_serial_id');
+    }
+
+    /**
+     * Lấy mục đơn hàng liên quan đến serial này.
+     */
+   /**
+     * Lấy mục đơn hàng liên quan đến serial này.
+     */
+    public function orderItemSerial(): HasOne
+    {
+        return $this->hasOne(OrderItemSerial::class, 'serial_number', 'serial_number');
     }
 }
