@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết Sản phẩm - Tồn kho</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Styling for active and inactive tabs */
+        .tab-btn.active {
+            border-color: #4f46e5; /* indigo-600 */
+            color: #4f46e5;
+            background-color: #eef2ff; /* indigo-50 */
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center space-x-4">
+                    <img class="h-16 w-16 rounded-lg object-cover" src="https://placehold.co/100x100/e2e8f0/475569?text=IP15PM" alt="iPhone 15 Pro Max">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                             <h1 class="text-2xl lg:text-3xl font-bold text-gray-900">iPhone 15 Pro Max 256GB</h1>
+                             <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Đang bán</span>
+                        </div>
+                        <p class="text-gray-500 text-sm mt-1">SKU: APL-IP15PM-256 | Danh mục: Điện thoại</p>
+                    </div>
+                </div>
+                <div class="mt-4 md:mt-0 flex space-x-2">
+                    <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg shadow-sm hover:bg-gray-50 transition-colors duration-300">Xem trên web</button>
+                    <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 transition-colors duration-300">Chỉnh sửa</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button class="tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-tab="tab-location">Tồn kho theo Địa điểm</button>
+                <button class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="tab-lot">Tồn kho theo Lô/Batch</button>
+                <button class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="tab-serial">Tồn kho theo Serial/IMEI</button>
+                <button class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="tab-history">Lịch sử</button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <!-- Tab 1: Inventory by Location -->
+            <div id="tab-location" class="tab-content active">
+                <div class="p-4 sm:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800">Tồn kho theo Địa điểm</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
+                            <tr>
+                                <th class="px-6 py-3">Địa điểm</th>
+                                <th class="px-6 py-3 text-center">Tồn vật lý</th>
+                                <th class="px-6 py-3 text-center">Tạm giữ</th>
+                                <th class="px-6 py-3 text-center font-bold text-indigo-600">Tồn khả dụng (ATS)</th>
+                                <th class="px-6 py-3 text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-700">
+                            <tr class="border-t">
+                                <td class="px-6 py-4 font-semibold">Kho Tổng HN</td>
+                                <td class="px-6 py-4 text-center">50</td>
+                                <td class="px-6 py-4 text-center">5</td>
+                                <td class="px-6 py-4 text-center font-bold text-lg text-indigo-600">45</td>
+                                <td class="px-6 py-4 text-center space-x-2">
+                                    <a href="#" class="font-medium text-indigo-600 hover:text-indigo-900">Chuyển kho</a>
+                                    <a href="#" class="font-medium text-yellow-600 hover:text-yellow-900">Điều chỉnh</a>
+                                </td>
+                            </tr>
+                            <tr class="border-t">
+                                <td class="px-6 py-4 font-semibold">Kho Tổng TPHCM</td>
+                                <td class="px-6 py-4 text-center">100</td>
+                                <td class="px-6 py-4 text-center">12</td>
+                                <td class="px-6 py-4 text-center font-bold text-lg text-indigo-600">88</td>
+                                <td class="px-6 py-4 text-center space-x-2">
+                                    <a href="#" class="font-medium text-indigo-600 hover:text-indigo-900">Chuyển kho</a>
+                                    <a href="#" class="font-medium text-yellow-600 hover:text-yellow-900">Điều chỉnh</a>
+                                </td>
+                            </tr>
+                            <tr class="border-t">
+                                <td class="px-6 py-4 font-semibold">CH Ba Đình</td>
+                                <td class="px-6 py-4 text-center">10</td>
+                                <td class="px-6 py-4 text-center">1</td>
+                                <td class="px-6 py-4 text-center font-bold text-lg text-indigo-600">9</td>
+                                <td class="px-6 py-4 text-center space-x-2">
+                                    <a href="#" class="font-medium text-indigo-600 hover:text-indigo-900">Chuyển kho</a>
+                                    <a href="#" class="font-medium text-yellow-600 hover:text-yellow-900">Điều chỉnh</a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 2: Inventory by Lot/Batch -->
+            <div id="tab-lot" class="tab-content">
+                 <div class="p-4 sm:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800">Tồn kho theo Lô/Batch</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
+                             <tr>
+                                <th class="px-6 py-3">Mã lô</th>
+                                <th class="px-6 py-3">Địa điểm</th>
+                                <th class="px-6 py-3 text-center">Số lượng tồn</th>
+                                <th class="px-6 py-3 text-right">Giá vốn</th>
+                                <th class="px-6 py-3">Ngày hết hạn</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-700">
+                            <tr class="border-t">
+                                <td class="px-6 py-4 font-semibold">LOHH-20250801-01</td>
+                                <td class="px-6 py-4">Kho Tổng HN</td>
+                                <td class="px-6 py-4 text-center">60</td>
+                                <td class="px-6 py-4 text-right">25,000,000 ₫</td>
+                                <td class="px-6 py-4">N/A</td>
+                            </tr>
+                            <tr class="border-t">
+                                <td class="px-6 py-4 font-semibold">LOHH-20250715-05</td>
+                                <td class="px-6 py-4">Kho Tổng TPHCM</td>
+                                <td class="px-6 py-4 text-center">100</td>
+                                <td class="px-6 py-4 text-right">24,950,000 ₫</td>
+                                <td class="px-6 py-4">N/A</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 3: Inventory by Serial/IMEI -->
+            <div id="tab-serial" class="tab-content">
+                <div class="p-4 sm:p-6">
+                    <h3 class="text-lg font-semibold text-gray-800">Tồn kho theo Serial/IMEI</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
+                            <tr>
+                                <th class="px-6 py-3">Serial/IMEI</th>
+                                <th class="px-6 py-3">Địa điểm</th>
+                                <th class="px-6 py-3">Trạng thái</th>
+                                <th class="px-6 py-3">Mã lô</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-700">
+                             <tr class="border-t">
+                                <td class="px-6 py-4 font-mono">SN1234567890A</td>
+                                <td class="px-6 py-4">Kho Tổng HN</td>
+                                <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Có sẵn</span></td>
+                                <td class="px-6 py-4">LOHH-20250801-01</td>
+                            </tr>
+                            <tr class="border-t">
+                                <td class="px-6 py-4 font-mono">SN1234567890B</td>
+                                <td class="px-6 py-4">Kho Tổng HN</td>
+                                <td class="px-6 py-4"><span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Có sẵn</span></td>
+                                <td class="px-6 py-4">LOHH-20250801-01</td>
+                            </tr>
+                             <tr class="border-t">
+                                <td class="px-6 py-4 font-mono">SN9876543210Z</td>
+                                <td class="px-6 py-4">CH Ba Đình</td>
+                                <td class="px-6 py-4"><span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Đã bán</span></td>
+                                <td class="px-6 py-4">LOHH-20250715-05</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab 4: History -->
+            <div id="tab-history" class="tab-content">
+                <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-800">Lịch sử</h3>
+                    <p class="text-gray-600 mt-2">Toàn bộ lịch sử thay đổi tồn kho của sản phẩm này sẽ được hiển thị ở đây. Giao diện này sẽ tương tự như trang "Sổ cái Kho" nhưng đã được lọc sẵn cho sản phẩm "iPhone 15 Pro Max".</p>
+                    <a href="#" class="mt-4 inline-block font-semibold text-indigo-600 hover:text-indigo-800">Xem Sổ cái Kho chi tiết cho sản phẩm này &rarr;</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active classes from all tabs and contents
+                    tabs.forEach(item => item.classList.remove('active', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    // Add active classes to the clicked tab and corresponding content
+                    tab.classList.add('active');
+                    const targetContent = document.getElementById(tab.dataset.tab);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+                    
+                    // Re-add default styles to inactive tabs
+                    tabs.forEach(item => {
+                        if (!item.classList.contains('active')) {
+                            item.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
