@@ -229,4 +229,50 @@ class ChatController extends Controller
 
         return response()->json(['message' => 'Invalid credentials.'], 401);
     }
+    public function getHistory(Request $request)
+{
+    $userId = null;
+    $user = Auth::user(); // Luôn ưu tiên người dùng đã đăng nhập qua session
+
+    // TRƯỜNG HỢP 1: Người dùng đã đăng nhập thực sự (không phải khách)
+    if ($user && !$user->is_guest) {
+        $userId = $user->id;
+    } 
+    // TRƯỜNG HỢP 2: Là khách vãng lai
+    else {
+        // Xác thực user_id gửi lên phải là của một tài khoản khách
+        $request->validate([
+            'user_id' => 'required|integer|exists:users,id,is_guest,1',
+        ]);
+        $guestId = $request->input('user_id');
+
+        // Để bảo mật, kiểm tra lại cookie khớp với user_id
+        if ($guestId != $request->cookie('guest_user_id')) {
+            return response()->json(['conversation' => null]);
+        }
+        $userId = $guestId;
+    }
+
+    if (!$userId) {
+        return response()->json(['conversation' => null]);
+    }
+
+    // Tìm cuộc hội thoại đang mở gần nhất của user (dùng chung cho cả 2 trường hợp)
+    $conversation = ChatConversation::where('user_id', $userId)
+        ->where('status', 'open')
+        ->orderBy('last_message_at', 'desc')
+        ->with('messages') // Tải sẵn các tin nhắn
+        ->first();
+
+    // Chỉ thực hiện đăng nhập tạm thời nếu người dùng là khách
+    if ($conversation && (!$user || $user->is_guest)) {
+        Auth::loginUsingId($userId);
+    }
+
+    return response()->json([
+        'conversation' => $conversation
+    ]);
+}
+
+
 }
