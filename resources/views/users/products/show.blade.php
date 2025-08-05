@@ -155,7 +155,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Compare Modal -->
     <div id="compare-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
@@ -780,6 +780,7 @@
                 });
             }
 
+
             function renderSuggestedProducts(products) {
                 suggestedProductsContainer.innerHTML = '';
                 const compareList = getCompareList(); // Lấy danh sách đã thêm vào so sánh
@@ -831,9 +832,9 @@
                     <p class="font-bold text-lg text-red-600">
             ${formatPrice(displayPrice)}
             ${hasSale ? `
-                                                                <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
-                                                                <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
-                                                            ` : ''}
+                                                                    <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
+                                                                    <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
+                                                                ` : ''}
         </p>
         <p class="font-semibold text-gray-800 mt-1">
             ${productName}${variantName ? ` - ${variantName}` : ''}
@@ -1452,12 +1453,12 @@
                 }
                 const titleEl = document.getElementById('product-title');
                 if (titleEl && currentSelections) {
-    const selectedValues = Object.values(currentSelections)
-        .filter(val => val) // loại bỏ undefined/null
-        .join(' ');
-    titleEl.textContent = `${@json($product->name)} ${selectedValues}`;
-    console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent);
-}
+                    const selectedValues = Object.values(currentSelections)
+                        .filter(val => val) // loại bỏ undefined/null
+                        .join(' ');
+                    titleEl.textContent = `${@json($product->name)} ${selectedValues}`;
+                    console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent);
+                }
 
                 window.updateGalleryFromSelection(key);
                 updateSpecifications(key);

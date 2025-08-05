@@ -58,14 +58,15 @@ use App\Http\Controllers\Admin\StoreLocationController;
 use App\Http\Controllers\Users\TradeInPublicController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\PackingStationController;
-
 use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\InventoryDashboardController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+
 
 Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
 
@@ -527,7 +528,9 @@ Route::prefix('admin')
         Route::put('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'update'])->name('marketing_campaigns.update');
         Route::post('/marketing_campaigns/{id}/send', [MarketingCampaignController::class, 'send'])->name('marketing_campaigns.send');
 
-
+        // quản lý tồn kho
+        Route::get('/dashboard/inventory', [InventoryDashboardController::class, 'index'])
+            ->name('dashboard.inventory');
 
         // Banner routes
 

@@ -1,190 +1,5 @@
 @extends('users.layouts.app')
-
-@push('styles')
-    <style>
-        /* Custom styles */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f9fafb;
-            /* Light gray background */
-        }
-
-        .gallery-top .swiper-slide {
-            height: 700px;
-            /* Chiều cao cố định của khung */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f8f8;
-            /* màu nền dễ nhìn nếu ảnh không lấp đầy */
-            overflow: hidden;
-        }
-
-        .gallery-top .swiper-slide img {
-            max-height: 100%;
-            max-width: 100%;
-            object-fit: contain;
-            /* <-- giữ nguyên tỉ lệ, không cắt */
-            width: auto;
-            height: auto;
-            border-radius: 8px;
-        }
-
-
-        .carousel::-webkit-scrollbar {
-            display: none;
-        }
-
-        .carousel {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        .accordion-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
-        }
-
-        .accordion-icon {
-            transition: transform 0.3s ease;
-        }
-
-        .tab-button {
-            border-bottom: 2px solid transparent;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .tab-active {
-            border-color: #3b82f6;
-            /* blue-500 */
-            color: #2563eb;
-            /* blue-600 */
-            background-color: #eff6ff;
-            /* blue-50 */
-        }
-
-        .description-content.collapsed {
-            max-height: 300px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .description-content.collapsed::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 100px;
-            background: linear-gradient(to top, white, rgba(255, 255, 255, 0));
-        }
-
-        #favorite-btn.favorited {
-            color: #ef4444;
-            /* red-500 */
-        }
-
-        #sticky-bar {
-            transition: transform 0.3s ease-in-out;
-        }
-
-        #lightbox-main-image {
-            transition: transform 0.3s ease;
-            cursor: zoom-in;
-        }
-
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        .gallery-top {
-            border-radius: 0.5rem;
-            border: 1px solid #e5e7eb;
-        }
-
-        .gallery-thumbs {
-            padding-top: 0.5rem;
-        }
-
-        .gallery-thumbs .swiper-slide {
-            width: 20%;
-            height: auto;
-            opacity: 0.6;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
-            border: 2px solid transparent;
-            border-radius: 0.375rem;
-        }
-
-        .gallery-thumbs .swiper-slide:hover {
-            opacity: 1;
-        }
-
-        .gallery-thumbs .swiper-slide-thumb-active {
-            opacity: 1;
-            border-color: #3b82f6;
-        }
-
-        .gallery-thumbs .swiper-slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            aspect-ratio: 1 / 1;
-            border-radius: 0.25rem;
-        }
-
-        .thumb-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 0.5rem;
-            border-radius: 9999px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            z-index: 10;
-            transition: opacity 0.2s;
-        }
-
-        .thumb-nav-btn:hover {
-            background-color: white;
-        }
-
-        .thumb-nav-btn.swiper-button-disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        .thumb-prev-btn {
-            left: -12px;
-        }
-
-        .thumb-next-btn {
-            right: -12px;
-        }
-
-        #main-gallery-prev-btn.swiper-button-disabled,
-        #main-gallery-next-btn.swiper-button-disabled {
-            opacity: 0.2;
-            cursor: not-allowed;
-        }
-    </style>
-@endpush
+@include('users.trade_in.css')
 @section('content')
     <div class="container mx-auto p-4 md:p-8">
         <!-- Main Product Section -->
@@ -440,24 +255,46 @@
                         </div>
                     </div>
 
-                    <div id="main-cta-buttons" class="mt-auto pt-6 flex flex-col sm:flex-row gap-3">
-                        <button
-                            class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors"><svg
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" class="w-6 h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
-                            </svg>THÊM VÀO GIỎ HÀNG</button>
-                        <button
-                            class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">MUA
-                            NGAY</button>
+                    {{--  --}}
+                    <div class="mt-6">
+                        <h4 class="font-medium text-gray-800 mb-2">Số lượng</h4>
+                        <div
+                            class="flex flex-wrap flex-sm-nowrap flex-md-wrap flex-lg-nowrap gap-3 gap-lg-2 gap-xl-3 mb-4">
+                            <div class="count-input flex-shrink-0 order-sm-1">
+                                <button type="button" class="btn btn-icon btn-lg" data-decrement
+                                    aria-label="Giảm số lượng">
+                                    <i class="ci-minus"></i>
+                                </button>
+                                <input type="number" class="form-control form-control-lg" name="quantity"
+                                    id="quantity_input" value="1" min="1" max="1000">
+                                <button type="button" class="btn btn-icon btn-lg" data-increment
+                                    aria-label="Tăng số lượng">
+                                    <i class="ci-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="main-cta-buttons" class="mt-auto pt-6 flex flex-col sm:flex-row gap-3">
+                            <button id="add-to-cart-btn" data-variant-id="{{ $tradeInItem->productVariant->id }}"
+                                data-quantity="1"
+                                class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
+                                </svg>
+                                THÊM VÀO GIỎ HÀNG
+                            </button>
+                            <button type="button" id="buy-now-btn"
+                                class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+                                MUA NGAY
+                            </button>
+                        </div>
+                        {{--  --}}
+                        <div class="text-sm text-gray-500 mt-4 text-center sm:text-left"><span class="font-semibold">Giao
+                                hàng dự kiến:</span> Thứ Ba, 30/07 - Thứ Tư, 31/07.</div>
                     </div>
-                    <div class="text-sm text-gray-500 mt-4 text-center sm:text-left"><span class="font-semibold">Giao
-                            hàng dự kiến:</span> Thứ Ba, 30/07 - Thứ Tư, 31/07.</div>
                 </div>
-            </div>
         </main>
-
         <div class="mt-10 md:mt-12 space-y-10 md:space-y-12">
             <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
                 <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Mua Kèm Deal Sốc</h2>
@@ -588,82 +425,9 @@
                 </div>
             </section>
 
-            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
-                <div class="flex justify-between items-center mb-4 flex-wrap gap-y-4">
-                    <h2 class="text-2xl font-bold text-gray-900">Bình luận</h2>
-                </div>
-                <div class="border-t border-gray-200 pt-6">
-                    <div class="flex justify-between items-center mb-4 flex-wrap gap-y-4">
-                        <h3 class="text-lg font-bold text-gray-800">1,258 Bình luận</h3>
-                    </div>
-                    <div id="review-list">
-                        <!-- Reviews will be rendered here by JS -->
-                    </div>
-                    <nav id="review-pagination" class="flex items-center justify-center mt-6"></nav>
-                </div>
-            </section>
-
-            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Hỏi & Đáp với Trợ lý AI</h2>
-                <div class="mb-6">
-                    <textarea id="qna-textarea" placeholder="Nhập câu hỏi của bạn về iPhone 15 Pro Max..."
-                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                        rows="3"></textarea>
-                    <button id="ask-ai-btn"
-                        class="mt-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd"
-                                d="M10 3a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 3zM10 15a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 15zM4.134 5.866a.75.75 0 011.06 0l1.061 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zm9.193 9.193a.75.75 0 011.06 0l1.06 1.06a.75.75 0 11-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM15 10a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0115 10zM10 4a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 4zM5.866 14.134a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 01-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zm9.193-9.193a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zM10 16a6 6 0 100-12 6 6 0 000 12z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        ✨ Hỏi AI ngay
-                    </button>
-                </div>
-                <div id="ai-answer-container" class="hidden mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <!-- AI Answer will be injected here -->
-                </div>
-                <h3 class="text-lg font-bold text-gray-800 mb-4 border-t pt-6">Hoặc xem các câu hỏi thường gặp</h3>
-                <div id="qna-list" class="space-y-4">
-                    <!-- Q&A items will be dynamically inserted here -->
-                </div>
-                <nav id="qna-pagination" class="flex items-center justify-center mt-6"></nav>
-            </section>
-
-            <section>
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Sản phẩm tương tự</h2>
-                <div class="carousel flex gap-4 overflow-x-auto pb-4">
-                    <div
-                        class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform">
-                        <img src="https://placehold.co/200x200/e0e0e0/333?text=iPhone+15+Plus"
-                            class="w-full h-40 object-cover">
-                        <div class="p-3">
-                            <h4 class="font-semibold text-sm text-gray-800 truncate">iPhone 15 Plus 128GB</h4>
-                            <p class="font-bold text-red-600 mt-1">24.990.000₫</p>
-                            <div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.8 ★</div>
-                        </div>
-                    </div>
-                    <div
-                        class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform">
-                        <img src="https://placehold.co/200x200/e0e0e0/333?text=Galaxy+S24+Ultra"
-                            class="w-full h-40 object-cover">
-                        <div class="p-3">
-                            <h4 class="font-semibold text-sm text-gray-800 truncate">Samsung Galaxy S24 Ultra</h4>
-                            <p class="font-bold text-red-600 mt-1">28.490.000₫</p>
-                            <div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.9 ★</div>
-                        </div>
-                    </div>
-                    <div
-                        class="product-card flex-shrink-0 w-52 bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform">
-                        <img src="https://placehold.co/200x200/e0e0e0/333?text=iPhone+15+Pro"
-                            class="w-full h-40 object-cover">
-                        <div class="p-3">
-                            <h4 class="font-semibold text-sm text-gray-800 truncate">iPhone 15 Pro 128GB</h4>
-                            <p class="font-bold text-red-600 mt-1">27.990.000₫</p>
-                            <div class="flex items-center gap-1 text-xs text-yellow-500 mt-1">4.9 ★</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            @include('users.trade_in.comment')
+            @include('users.trade_in.QandA_withAI')
+            @include('users.trade_in.Products_similar')
         </div>
     </div>
 
@@ -760,55 +524,8 @@
         </div>
     </div>
 
-    <div id="sticky-bar"
-        class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-5xl bg-white/80 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-2xl transform translate-y-full transition-transform duration-300 z-40">
-        <div class="flex items-center justify-between gap-4 w-full">
-            <div class="flex items-center gap-4 overflow-hidden">
-                <img src="{{ $tradeInItem->productVariant->primaryImage?->url ?? asset('assets/admin/img/placeholder-image.png') }}"
-                    alt="{{ $tradeInItem->productVariant->product->name ?? 'Sản phẩm' }}"
-                    class="w-12 h-12 rounded-lg object-cover flex-shrink-0">
-                <div class="hidden sm:block">
-                    <p class="font-semibold text-sm text-gray-900 truncate">
-                        {{ $tradeInItem->productVariant->product->name ?? 'Không rõ tên' }}
-                        ({{ $tradeInItem->type === 'used' ? 'Cũ' : 'New 99%' }})
-                    </p>
-                    <p id="sticky-bar-variant-info" class="text-xs text-gray-600">
-                        @foreach ($tradeInItem->productVariant->attributeValues as $attributeValue)
-                            {{ $attributeValue->value }}{{ $loop->last ? '' : ', ' }}
-                        @endforeach
-                        @if ($tradeInItem->productVariant->attributeValues->isEmpty())
-                            Không có thông tin phân loại
-                        @endif
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                <div class="hidden lg:block text-right">
-                    <p class="font-bold text-red-600 text-lg">
-                        {{ number_format($tradeInItem->selling_price) }}₫
-                    </p>
-                    @if ($tradeInItem->productVariant->price)
-                        <p class="text-xs text-gray-500 line-through">
-                            {{ number_format($tradeInItem->productVariant->price) }}₫
-                        </p>
-                    @endif
-                </div>
-                <button
-                    class="hidden sm:flex items-center justify-center p-3 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                        stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215">
-                        </path>
-                    </svg>
-                </button>
-                <button
-                    class="w-full sm:w-auto px-4 sm:px-6 py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base">
-                    Mua Ngay
-                </button>
-            </div>
-        </div>
-    </div>
+    @include('users.trade_in.sticky-bar')
+    @include('users.trade_in.script')
 @endsection
 
 @push('scripts')
