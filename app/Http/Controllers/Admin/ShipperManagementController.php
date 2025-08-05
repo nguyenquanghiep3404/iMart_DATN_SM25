@@ -96,7 +96,34 @@ class ShipperManagementController extends Controller
      */
     public function create()
     {
-        return view('admin.shippers.create');
+        $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
+        
+        // Nếu có warehouse_id từ URL, chỉ hiển thị kho đó và tỉnh tương ứng
+        if (request()->has('warehouse_id')) {
+            $selectedWarehouse = StoreLocation::where('type', 'warehouse')
+                ->where('is_active', true)
+                ->where('id', request('warehouse_id'))
+                ->with(['province'])
+                ->first();
+            
+            if ($selectedWarehouse) {
+                $warehouses = collect([$selectedWarehouse]);
+                $selectedProvince = $selectedWarehouse->province;
+            } else {
+                $warehouses = collect();
+                $selectedProvince = null;
+            }
+        } else {
+            // Nếu không có warehouse_id, hiển thị tất cả kho
+            $warehouses = StoreLocation::where('type', 'warehouse')
+                ->where('is_active', true)
+                ->with(['province'])
+                ->orderBy('name')
+                ->get();
+            $selectedProvince = null;
+        }
+        
+        return view('admin.shippers.create', compact('provinces', 'warehouses', 'selectedProvince'));
     }
 
     /**
@@ -110,6 +137,25 @@ class ShipperManagementController extends Controller
             'phone_number' => ['required', 'string', 'max:15', 'unique:users,phone_number'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'status' => ['required', 'in:active,inactive,banned'],
+            'province_code' => ['required', 'exists:provinces_old,code'],
+            'warehouse_id' => ['required', 'exists:store_locations,id'],
+        ], [
+            'name.required' => 'Vui lòng nhập tên nhân viên.',
+            'name.string' => 'Tên nhân viên phải là chuỗi ký tự.',
+            'name.max' => 'Tên nhân viên không được vượt quá 255 ký tự.',
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.unique' => 'Email này đã được sử dụng.',
+            'phone_number.required' => 'Vui lòng nhập số điện thoại.',
+            'phone_number.unique' => 'Số điện thoại này đã được sử dụng.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+            'province_code.required' => 'Vui lòng chọn tỉnh/thành phố.',
+            'province_code.exists' => 'Tỉnh/thành phố không tồn tại.',
+            'warehouse_id.required' => 'Vui lòng chọn kho làm việc.',
+            'warehouse_id.exists' => 'Kho làm việc không tồn tại.',
         ]);
 
         $user = User::create([
@@ -125,6 +171,17 @@ class ShipperManagementController extends Controller
             $user->roles()->attach($shipperRole);
         }
 
+        // Gán shipper vào kho
+        if ($request->warehouse_id) {
+            $user->warehouseAssignments()->attach($request->warehouse_id);
+        }
+
+        // Kiểm tra nếu có warehouse_id trong request, quay lại trang warehouse detail
+        if ($request->has('warehouse_id')) {
+            $warehouse = StoreLocation::find($request->warehouse_id);
+            return redirect()->route('admin.shippers.warehouse.show', $warehouse)->with('success', 'Thêm nhân viên giao hàng thành công.');
+        }
+
         return redirect()->route('admin.shippers.index')->with('success', 'Thêm nhân viên giao hàng thành công.');
     }
 
@@ -136,7 +193,30 @@ class ShipperManagementController extends Controller
         if (!$shipper->hasRole('shipper')) {
             abort(404);
         }
-        return view('admin.shippers.edit', compact('shipper'));
+        
+        $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
+        
+        // Lấy kho hiện tại của shipper
+        $currentWarehouse = $shipper->warehouseAssignments()->first();
+        
+        if ($currentWarehouse) {
+            // Chỉ hiển thị các kho cùng tỉnh với kho hiện tại
+            $warehouses = StoreLocation::where('type', 'warehouse')
+                ->where('is_active', true)
+                ->where('province_code', $currentWarehouse->province_code)
+                ->with(['province'])
+                ->orderBy('name')
+                ->get();
+        } else {
+            // Nếu shipper chưa có kho, hiển thị tất cả kho
+            $warehouses = StoreLocation::where('type', 'warehouse')
+                ->where('is_active', true)
+                ->with(['province'])
+                ->orderBy('name')
+                ->get();
+        }
+        
+        return view('admin.shippers.edit', compact('shipper', 'provinces', 'warehouses', 'currentWarehouse'));
     }
 
     /**
@@ -152,6 +232,24 @@ class ShipperManagementController extends Controller
             'phone_number' => ['required', 'string', 'max:15', 'unique:users,phone_number,' . $shipper->id],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'status' => ['required', 'in:active,inactive,banned'],
+            'province_code' => ['required', 'exists:provinces_old,code'],
+            'warehouse_id' => ['required', 'exists:store_locations,id'],
+        ], [
+            'name.required' => 'Vui lòng nhập tên nhân viên.',
+            'name.string' => 'Tên nhân viên phải là chuỗi ký tự.',
+            'name.max' => 'Tên nhân viên không được vượt quá 255 ký tự.',
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.unique' => 'Email này đã được sử dụng.',
+            'phone_number.required' => 'Vui lòng nhập số điện thoại.',
+            'phone_number.unique' => 'Số điện thoại này đã được sử dụng.',
+            'password.confirmed' => 'Xác nhận mật khẩu không khớp.',
+            'status.required' => 'Vui lòng chọn trạng thái.',
+            'status.in' => 'Trạng thái không hợp lệ.',
+            'province_code.required' => 'Vui lòng chọn tỉnh/thành phố.',
+            'province_code.exists' => 'Tỉnh/thành phố không tồn tại.',
+            'warehouse_id.required' => 'Vui lòng chọn kho làm việc.',
+            'warehouse_id.exists' => 'Kho làm việc không tồn tại.',
         ]);
 
         $shipper->update([
@@ -166,21 +264,44 @@ class ShipperManagementController extends Controller
             $shipper->save();
         }
 
+        // Cập nhật gán kho cho shipper
+        if ($request->warehouse_id) {
+            // Xóa tất cả gán kho cũ
+            $shipper->warehouseAssignments()->detach();
+            // Gán kho mới
+            $shipper->warehouseAssignments()->attach($request->warehouse_id);
+        }
+
+        // Kiểm tra nếu có warehouse_id trong request, quay lại trang warehouse detail
+        if ($request->has('warehouse_id')) {
+            $warehouse = StoreLocation::find($request->warehouse_id);
+            return redirect()->route('admin.shippers.warehouse.show', $warehouse)->with('success', 'Cập nhật thông tin thành công.');
+        }
+
         return redirect()->route('admin.shippers.index')->with('success', 'Cập nhật thông tin thành công.');
     }
 
     /**
      * Chuyển một shipper vào thùng rác (Xóa mềm).
      */
-    public function destroy(User $shipper)
+    public function destroy(User $shipper, Request $request)
     {
         if (!$shipper->hasRole('shipper')) {
             abort(404);
         }
+        
+        // Lưu warehouse_id trước khi xóa
+        $warehouseId = $request->input('warehouse_id');
+        
         $shipper->delete(); // Lệnh này sẽ tự động thực hiện xóa mềm
 
+        // Kiểm tra nếu có warehouse_id trong request, quay lại trang warehouse detail
+        if ($warehouseId) {
+            $warehouse = StoreLocation::find($warehouseId);
+            return redirect()->route('admin.shippers.warehouse.show', $warehouse)->with('success', 'Đã chuyển nhân viên vào thùng rác.');
+        }
+
         // Chuyển hướng về lại trang danh sách với thông báo thành công
-        // Nếu bạn muốn chuyển thẳng đến trang thùng rác, hãy đổi 'admin.shippers.index' thành 'admin.shippers.trash'
         return redirect()->route('admin.shippers.index')->with('success', 'Đã chuyển nhân viên vào thùng rác.');
     }
 
@@ -196,7 +317,7 @@ class ShipperManagementController extends Controller
             ->orderBy('deleted_at', 'desc')
             ->paginate(10);
 
-        return view('admin.users.trash', compact('trashedShippers'));
+        return view('admin.shippers.trash', compact('trashedShippers'));
     }
 
     /**
@@ -206,7 +327,7 @@ class ShipperManagementController extends Controller
     {
         $shipper = User::onlyTrashed()->findOrFail($id);
         $shipper->restore();
-        return redirect()->route('admin.users.trash')->with('success', "Đã khôi phục nhân viên '{$shipper->name}' thành công!");
+        return redirect()->route('admin.shippers.trash')->with('success', "Đã khôi phục nhân viên '{$shipper->name}' thành công!");
     }
 
     /**
@@ -221,6 +342,22 @@ class ShipperManagementController extends Controller
         // Có thể thêm logic xóa avatar hoặc các dữ liệu liên quan khác ở đây
         $shipper->forceDelete();
 
-        return redirect()->route('admin.users.trash')->with('success', "Đã xóa vĩnh viễn nhân viên '{$shipper->name}'.");
+        return redirect()->route('admin.shippers.trash')->with('success', "Đã xóa vĩnh viễn nhân viên '{$shipper->name}'.");
     }
+
+    /**
+     * API: Lấy danh sách warehouses cho dropdown
+     */
+    public function getWarehouses()
+    {
+        $warehouses = StoreLocation::where('type', 'warehouse')
+            ->where('is_active', true)
+            ->with(['province'])
+            ->select('id', 'name', 'province_code')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($warehouses);
+    }
+
 }

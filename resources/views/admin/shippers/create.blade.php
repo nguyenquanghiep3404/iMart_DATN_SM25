@@ -22,6 +22,9 @@
     <div class="bg-white p-8 rounded-xl shadow-sm">
         <form action="{{ route('admin.shippers.store') }}" method="POST">
             @csrf
+            @if(request()->has('warehouse_id'))
+                <input type="hidden" name="warehouse_id" value="{{ request('warehouse_id') }}">
+            @endif
             <div class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -30,7 +33,7 @@
                     </div>
                      <div>
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span class="text-red-500">*</span></label>
-                        <input type="tel" name="phone_number" id="phone_number" value="{{ old('phone') }}"  class="w-full py-2 px-3 border border-gray-300 rounded-lg">
+                        <input type="tel" name="phone_number" id="phone_number" value="{{ old('phone_number') }}"  class="w-full py-2 px-3 border border-gray-300 rounded-lg">
                     </div>
                 </div>
                  <div>
@@ -47,6 +50,38 @@
                         <input type="password" name="password_confirmation" id="password_confirmation"  class="w-full py-2 px-3 border border-gray-300 rounded-lg">
                     </div>
                  </div>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="province" class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành phố <span class="text-red-500">*</span></label>
+                        <select name="province_code" id="province"  class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg" @if(isset($selectedProvince)) disabled @endif>
+                            <option value="">Chọn Tỉnh/Thành phố</option>
+                            @foreach($provinces ?? [] as $province)
+                                <option value="{{ $province->code }}" 
+                                    @selected(old('province_code', $selectedProvince->code ?? '') == $province->code)>
+                                    {{ $province->name_with_type }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @if(isset($selectedProvince))
+                            <input type="hidden" name="province_code" value="{{ $selectedProvince->code }}">
+                        @endif
+                    </div>
+                    <div>
+                        <label for="warehouse" class="block text-sm font-medium text-gray-700 mb-1">Kho làm việc <span class="text-red-500">*</span></label>
+                        <select name="warehouse_id" id="warehouse"  class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg" @if(count($warehouses) == 1) disabled @endif>
+                            <option value="">Chọn Kho làm việc</option>
+                            @foreach($warehouses ?? [] as $warehouse)
+                                <option value="{{ $warehouse->id }}" 
+                                    @selected(old('warehouse_id', $warehouse->id) == $warehouse->id)>
+                                    {{ $warehouse->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @if(count($warehouses) == 1)
+                            <input type="hidden" name="warehouse_id" value="{{ $warehouses->first()->id }}">
+                        @endif
+                    </div>
+                </div>
                  <div>
                     <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                     <select name="status" id="status" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg">
@@ -57,10 +92,70 @@
                 </div>
             </div>
             <div class="pt-8 flex justify-end space-x-3">
-                <a href="{{ route('admin.shippers.index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold">Hủy</a>
+                @if(request()->has('warehouse_id'))
+                    <a href="{{ route('admin.shippers.warehouse.show', request('warehouse_id')) }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold">Hủy</a>
+                @else
+                    <a href="{{ route('admin.shippers.index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold">Hủy</a>
+                @endif
                 <button type="submit" class="px-5 py-2 bg-indigo-600 text-white rounded-lg font-semibold">Tạo nhân viên</button>
             </div>
         </form>
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const provinceSelect = document.getElementById('province');
+    const warehouseSelect = document.getElementById('warehouse');
+    
+    // Chỉ chạy JavaScript nếu không có warehouse_id từ URL (tức là không bị disabled)
+    if (!provinceSelect.disabled) {
+        // Lưu trữ tất cả warehouses
+        let allWarehouses = [];
+        
+        // Fetch warehouses khi trang load
+        fetchWarehouses();
+        
+        // Khi chọn tỉnh/thành, filter warehouses
+        provinceSelect.addEventListener('change', function() {
+            const selectedProvince = this.value;
+            filterWarehouses(selectedProvince);
+        });
+        
+        function fetchWarehouses() {
+            fetch('{{ route("admin.shippers.warehouses") }}')
+                .then(response => response.json())
+                .then(data => {
+                    allWarehouses = data;
+                    filterWarehouses(provinceSelect.value);
+                })
+                .catch(error => {
+                    console.error('Error fetching warehouses:', error);
+                });
+        }
+        
+        function filterWarehouses(provinceCode) {
+            // Clear current options
+            warehouseSelect.innerHTML = '<option value="">Chọn Kho làm việc</option>';
+            
+            if (!provinceCode) return;
+            
+            // Filter warehouses by province
+            const filteredWarehouses = allWarehouses.filter(warehouse => 
+                warehouse.province_code === provinceCode
+            );
+            
+            // Add filtered options
+            filteredWarehouses.forEach(warehouse => {
+                const option = document.createElement('option');
+                option.value = warehouse.id;
+                option.textContent = warehouse.name;
+                warehouseSelect.appendChild(option);
+            });
+        }
+    }
+});
+</script>
+@endpush

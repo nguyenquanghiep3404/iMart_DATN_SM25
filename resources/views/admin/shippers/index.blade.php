@@ -52,7 +52,7 @@
                 </thead>
                 <tbody>
                     @forelse($warehouses as $warehouse)
-                    <tr class="bg-white border-b last:border-b-0 hover:bg-gray-50">
+                    <tr class="bg-white border-b last:border-b-0 hover:bg-gray-50" data-province-code="{{ $warehouse->province->code ?? '' }}">
                         <td class="p-6">
                             <div class="flex items-center">
                                 <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
@@ -102,35 +102,52 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const warehouseSearchInput = document.getElementById('warehouse-search-input');
+    const provinceFilter = document.getElementById('province-filter');
+    
+    // Lưu trữ tất cả warehouses để filter
+    const allWarehouses = [];
+    document.querySelectorAll('tbody tr').forEach(row => {
+        const warehouseName = row.querySelector('td:first-child .font-semibold').textContent;
+        const provinceName = row.querySelector('td:nth-child(2) .font-medium').textContent;
+        const provinceCode = row.getAttribute('data-province-code');
+        
+        allWarehouses.push({
+            row: row,
+            name: warehouseName,
+            province: provinceName,
+            provinceCode: provinceCode
+        });
+    });
+    
+    // Filter theo tên kho
     if (warehouseSearchInput) {
         warehouseSearchInput.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
-            const tableRows = document.querySelectorAll('tbody tr');
-            
-            tableRows.forEach(row => {
-                const warehouseName = row.querySelector('td:first-child .font-semibold').textContent.toLowerCase();
-                if (warehouseName.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+            filterWarehouses();
         });
     }
-    const provinceFilter = document.getElementById('province-filter');
+    
+    // Filter theo tỉnh/thành
     if (provinceFilter) {
         provinceFilter.addEventListener('change', function() {
-            const selectedProvince = this.value.toLowerCase();
-            const tableRows = document.querySelectorAll('tbody tr');
+            filterWarehouses();
+        });
+    }
+    
+    // Hàm filter tổng hợp
+    function filterWarehouses() {
+        const searchTerm = warehouseSearchInput ? warehouseSearchInput.value.toLowerCase() : '';
+        const selectedProvinceCode = provinceFilter ? provinceFilter.value : '';
+        
+        allWarehouses.forEach(warehouse => {
+            const nameMatch = !searchTerm || warehouse.name.toLowerCase().includes(searchTerm);
+            const provinceMatch = !selectedProvinceCode || warehouse.provinceCode === selectedProvinceCode;
             
-            tableRows.forEach(row => {
-                const provinceName = row.querySelector('td:nth-child(2) .font-medium').textContent.toLowerCase();
-                if (!selectedProvince || provinceName.includes(selectedProvince)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+            if (nameMatch && provinceMatch) {
+                warehouse.row.style.display = '';
+            } else {
+                warehouse.row.style.display = 'none';
+            }
         });
     }
 });
