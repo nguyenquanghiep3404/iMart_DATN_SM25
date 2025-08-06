@@ -37,6 +37,8 @@ class DatabaseSeeder extends Seeder
             OldAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ CŨ
             CustomerGroupSeeder::class,
             MarketingCampaignSeeder::class,
+            ProvincesOldRegionSeeder::class, // Seed dữ liệu cho vùng miền cũ
+            ShippingTransitTimesSeeder::class, // Seed dữ liệu thời gian vận chuyển
         ]);
         $this->command->info('All seeders ran successfully!');
     }

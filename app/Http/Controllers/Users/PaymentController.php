@@ -55,6 +55,9 @@ class PaymentController extends Controller
         $totalHeight = $items->sum(function ($item) {
             return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
         });
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+        $user = auth()->user();
+
         $availableCoupons = Coupon::where('status', 'active')
             ->where(function ($query) {
                 $query->whereNull('start_date')
@@ -70,8 +73,27 @@ class PaymentController extends Controller
                         (SELECT COUNT(*) FROM coupon_usages WHERE coupon_usages.coupon_id = coupons.id) < coupons.max_uses
                     ');
             })
-            ->get();
-        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+            ->where(function ($query) use ($subtotal) {
+                $query->whereNull('min_order_amount')
+                    ->orWhere('min_order_amount', '<=', $subtotal);
+            })
+            ->get()
+            ->filter(function ($coupon) use ($user) {
+                if (!$user) {
+                    return true;
+                }
+                if ($coupon->max_uses_per_user !== null) {
+                    $usedByUser = DB::table('coupon_usages')
+                        ->where('coupon_id', $coupon->id)
+                        ->where('user_id', $user->id)
+                        ->count();
+                    if ($usedByUser >= $coupon->max_uses_per_user) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+
         $appliedCoupon = session('applied_coupon');
         $discount = $appliedCoupon['discount'] ?? 0;
         $voucherCode = $appliedCoupon['code'] ?? null;
@@ -1476,9 +1498,51 @@ class PaymentController extends Controller
         }
         // Lấy dữ liệu từ session Buy Now
         $buyNowData = $this->getBuyNowData();
+        $items = $buyNowData['items'];
         if (!$buyNowData['items'] || $buyNowData['items']->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Không tìm thấy sản phẩm.');
         }
+        // 3. Tính subtotal
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+
+        // 4. Lọc coupon hợp lệ
+        $user = auth()->user();
+
+        $availableCoupons = Coupon::where('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('max_uses')
+                    ->orWhereRaw('
+                        (SELECT COUNT(*) FROM coupon_usages WHERE coupon_usages.coupon_id = coupons.id) < coupons.max_uses
+                    ');
+            })
+            ->where(function ($query) use ($subtotal) {
+                $query->whereNull('min_order_amount')
+                    ->orWhere('min_order_amount', '<=', $subtotal);
+            })
+            ->get()
+            ->filter(function ($coupon) use ($user) {
+                if (!$user) return true;
+
+                if ($coupon->max_uses_per_user !== null) {
+                    $usedByUser = DB::table('coupon_usages')
+                        ->where('coupon_id', $coupon->id)
+                        ->where('user_id', $user->id)
+                        ->count();
+                    return $usedByUser < $coupon->max_uses_per_user;
+                }
+                return true;
+            });
+            $buyNowData['is_buy_now'] = true;
+        $buyNowData['availableCoupons'] = $availableCoupons;
+        $buyNowData['subtotal'] = $subtotal;
         // Thêm flag để template biết đây là Buy Now
         $buyNowData['is_buy_now'] = true;
         return view('users.payments.information', $buyNowData);

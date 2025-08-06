@@ -1,17 +1,16 @@
 <div class="product-info flex flex-col">
     @php
-        $productName = $product->name; // Ví dụ: "iPhone 16"
-        $dungLuong = $initialVariantAttributes['Dung lượng lưu trữ'] ?? '';
-        $mauSac = $initialVariantAttributes['Màu sắc'] ?? '';
-    @endphp
+    $productName = $product->name;
+    $variantSuffix = collect($initialVariantAttributes)->implode(' ');
+@endphp
     <!-- CDN Toastr -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     @include('users.cart.layout.partials.css')
     <h1 id="product-title" class="text-2xl md:text-3xl font-bold text-gray-900">
-        {{ $productName }} {{ $dungLuong }} {{ $mauSac }}
-    </h1>
+    {{ $productName }} {{ $variantSuffix }}
+</h1>
     <div class="flex items-center flex-wrap gap-4 mt-2">
         <span
             class="inline-flex items-center bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full w-fit">
@@ -362,7 +361,8 @@
                                         class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
                                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
                                             viewBox="0 0 24 24">
-                                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38
+                                            <path
+                                                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38
                                                     0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" />
                                         </svg>
                                         <span>Bản đồ</span>

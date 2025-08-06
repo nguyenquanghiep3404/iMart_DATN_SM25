@@ -1,7 +1,13 @@
 @extends('users.layouts.app')
 @section('content')
-    @include('users.messenger')
+    <div id="loading-overlay">
+        <div class="loader">
+            <img src="https://media.tenor.com/On7kvXhzml4AAAAj/loading-gif.gif" alt="Loading..." />
+            <p>Vui lòng chờ một chút…</p>
+        </div>
+    </div>
     @include('users.cart.layout.partials.css')
+    @include('users.messenger')
     <!-- Breadcrumb -->
     <nav class="container pt-3 my-3 my-md-4" aria-label="breadcrumb">
         <ol class="breadcrumb">
