@@ -24,7 +24,6 @@ use App\Http\Controllers\GuestReviewController;
 use App\Http\Controllers\OrderRefundController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
-use App\Http\Controllers\Admin\SerialLookupController;
 use App\Http\Controllers\Users\CarOffController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
@@ -45,6 +44,7 @@ use App\Http\Controllers\Admin\SalesStaffManagement;
 use App\Http\Controllers\Admin\TradeInItemController;
 use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\PostCategoryController;
+use App\Http\Controllers\Admin\SerialLookupController;
 use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Users\CartRecoveryController;
 use App\Http\Controllers\Users\LoyaltyPointController;
@@ -58,14 +58,14 @@ use App\Http\Controllers\Admin\StoreLocationController;
 use App\Http\Controllers\Users\TradeInPublicController;
 use App\Http\Controllers\Admin\DashboardAdminController;
 use App\Http\Controllers\Admin\PackingStationController;
-
+use App\Http\Controllers\Admin\InventoryLedgerController;
 use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
 
 Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
 
@@ -627,6 +627,14 @@ Route::prefix('admin')
         Route::get('/serials/lookup', [SerialLookupController::class, 'showForm'])->name('serial.lookup.form');
         Route::post('/serials/lookup', [SerialLookupController::class, 'lookup'])->name('serial.lookup');
 
+        // Routes cho báo cáo tồn kho
+        Route::get('/reports/inventory-ledger', [InventoryLedgerController::class, 'index'])->name('inventory-ledger.index');
+        // Route xuất file Excel
+        Route::get('reports/inventory-ledger/export', [InventoryLedgerController::class, 'export'])->name('inventory-ledger.export');
+        // Route API lấy danh sách quận/huyện dựa trên mã tỉnh
+        Route::get('/api/districts/{province_code}', [InventoryLedgerController::class, 'getDistricts'])
+            ->name('districts.get');
+
         // Gói sản phẩm
         Route::get('bundle-products', [BundleProductController::class, 'index'])->name('bundle-products.index');
         Route::get('bundle-products/create', [BundleProductController::class, 'create'])->name('bundle-products.create');
@@ -666,7 +674,6 @@ Route::prefix('admin')
             Route::post('/{conversation}/close', [AdminChatController::class, 'close'])->name('close');
             Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
             Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
-           
         });
 
         // Quản lý thu cũ và hàng mở hộp
