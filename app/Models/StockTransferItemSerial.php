@@ -12,6 +12,16 @@ class StockTransferItemSerial extends Model
     protected $fillable = [
         'stock_transfer_item_id',
         'inventory_serial_id',
-        'status', // Mặc dù có giá trị default, thêm vào đây để có thể ghi đè nếu cần
+        'status',
     ];
+
+    /**
+     * Get the main inventory serial record.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function inventorySerial()
+    {
+        return $this->belongsTo(InventorySerial::class, 'inventory_serial_id');
+    }
 }

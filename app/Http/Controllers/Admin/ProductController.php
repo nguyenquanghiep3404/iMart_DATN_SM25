@@ -162,23 +162,11 @@ class ProductController extends Controller
             // Dữ liệu cho bảng 'products'
             $productData = $request->except([
                 '_token',
-                'cover_image_id',
-                'gallery_images',
-                'variants',
-                'specifications',
-                'simple_sku',
-                'simple_price',
-                'simple_sale_price',
-                'simple_cost_price',
-                'simple_points_awarded_on_purchase',
-                'simple_inventories', // Đã xóa khỏi logic
-                'store_location_id',  // Đã xóa khỏi logic
-                'simple_sale_price_starts_at',
-                'simple_sale_price_ends_at',
-                'simple_weight',
-                'simple_dimensions_length',
-                'simple_dimensions_width',
-                'simple_dimensions_height',
+                'cover_image_id', 'gallery_images', 'variants', 'specifications',
+                'simple_sku', 'simple_price', 'simple_sale_price', 'simple_cost_price',
+                'simple_points_awarded_on_purchase', 'simple_has_serial_tracking', 
+                'simple_sale_price_starts_at', 'simple_sale_price_ends_at',
+                'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height',
             ]);
             $productData['slug'] = $request->input('slug') ? Str::slug($request->input('slug')) : Str::slug($request->input('name'));
             $productData['is_featured'] = $request->boolean('is_featured');
@@ -222,10 +210,8 @@ class ProductController extends Controller
                     'dimensions_height' => $request->input('simple_dimensions_height'),
                     'is_default' => true,
                     'status' => 'active',
+                    'has_serial_tracking' => $request->has('simple_has_serial_tracking'),
                 ]);
-
-                // **ĐÃ VÔ HIỆU HÓA LOGIC KHO**
-                // $this->syncVariantInventory($variant, $request->input('simple_inventories', []));
                 
                 $saveSpecifications($variant, $request->input('specifications', []));
             }
@@ -330,9 +316,7 @@ class ProductController extends Controller
                 '_token', '_method',
                 'cover_image_id', 'gallery_images', 'variants', 'specifications',
                 'simple_sku', 'simple_price', 'simple_sale_price', 'simple_cost_price',
-                'simple_points_awarded_on_purchase',
-                'simple_inventories', // Đã xóa khỏi logic
-                'store_location_id',  // Đã xóa khỏi logic
+                'simple_points_awarded_on_purchase', 'simple_has_serial_tracking', 
                 'simple_sale_price_starts_at', 'simple_sale_price_ends_at',
                 'simple_weight', 'simple_dimensions_length', 'simple_dimensions_width', 'simple_dimensions_height',
             ]);
@@ -380,6 +364,7 @@ class ProductController extends Controller
                     'dimensions_height' => $request->input('simple_dimensions_height'),
                     'is_default' => true,
                     'status' => 'active',
+                    'has_serial_tracking' => $request->has('simple_has_serial_tracking'),
                 ];
                 $variant = $product->variants()->updateOrCreate(['product_id' => $product->id], $variantData);
 
@@ -458,6 +443,7 @@ class ProductController extends Controller
                 'dimensions_height'         => $variantData['dimensions_height'] ?? null,
                 'primary_image_id'          => $variantData['primary_image_id'] ?? null,
                 'status'                    => 'active',
+                'has_serial_tracking'       => isset($variantData['has_serial_tracking']),
             ];
 
             $variant = $product->variants()->updateOrCreate(
