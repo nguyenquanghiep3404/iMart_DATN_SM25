@@ -9,11 +9,18 @@
 @section('content')
 <div class="px-4 sm:px-6 md:px-8 py-8" x-data="storeLocationManager()" x-init="init()">
     <div class="container mx-auto max-w-7xl">
-        <header class="mb-8 flex items-center justify-between">
-            <h1 class="text-3xl font-bold text-gray-800">Quản lý Địa điểm Cửa hàng</h1>
-            <button @click="openModal()" type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                <i class="fas fa-plus mr-2"></i>Thêm địa điểm mới
-            </button>
+        <header class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-3xl font-bold text-gray-800">Quản lý Địa điểm Cửa Hàng</h1>
+                <div class="flex items-center space-x-3">
+                    <button @click="openModal()" type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        <i class="fas fa-plus mr-2"></i>Thêm địa điểm mới
+                    </button>
+                    <a href="{{ route('admin.store-locations.trashed') }}" class="inline-flex items-center px-4 py-2 border border-gray-500 shadow-sm text-sm font-medium rounded-lg text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200">
+                        <i class="fas fa-trash mr-2"></i>Thùng rác
+                    </a>
+                </div>
+            </div>
         </header>
 
         <div x-show="message" x-cloak
@@ -312,7 +319,7 @@
                 filterStatus: '',
 
                 currentPage: 1,
-                itemsPerPage: 5,
+                itemsPerPage: 10,
 
                 allLocations: @json($storeLocations),
                 provinces: @json($provinces),
@@ -445,20 +452,28 @@
                             type: fullLocation.type,
                             is_active: fullLocation.is_active,
                             province_code: fullLocation.province_code || '',
-                            district_code: fullLocation.district_code || '',
-                            ward_code: fullLocation.ward_code || '',
+                            district_code: String(fullLocation.district_code || ''),
+                            ward_code: String(fullLocation.ward_code || ''),
                             address: fullLocation.address || '',
                         };
 
-                        // Tải lại các dropdown địa chỉ
+                        // Tải lại các dropdown địa chỉ theo thứ tự
                         if (this.formData.province_code) {
                             await this.updateDistricts(true); // true để giữ lại district_code
-                        }
-                        if (this.formData.district_code) {
-                            await this.updateWards(true); // true để giữ lại ward_code
+                            // Đợi districts load xong rồi mới load wards
+                            if (this.formData.district_code) {
+                                // Thêm delay nhỏ để đảm bảo districts đã load xong
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                                await this.updateWards(true); // true để giữ lại ward_code
+                            }
                         }
 
                         this.isModalOpen = true;
+                        // Force update UI sau khi mở modal
+                        this.$nextTick(() => {
+                            // Force update form data để đảm bảo UI được cập nhật
+                            this.formData = { ...this.formData };
+                        });
                     } catch (error) {
                         console.error('Lỗi khi lấy địa điểm để chỉnh sửa:', error);
                         this.showMessage(error.message || 'Lỗi khi tải thông tin cửa hàng để sửa.', 'error');
@@ -487,7 +502,7 @@
 
                         // Nếu là tải ban đầu và district_code không hợp lệ, đặt lại
                         if (isInitialLoad && this.formData.district_code) {
-                            if (!this.districts.some(d => d.code === this.formData.district_code)) {
+                            if (!this.districts.some(d => d.code == this.formData.district_code)) {
                                 this.formData.district_code = '';
                                 this.formData.ward_code = ''; // Đặt lại ward nếu district không hợp lệ
                             }
@@ -518,7 +533,7 @@
 
                         // Nếu là tải ban đầu và ward_code không hợp lệ, đặt lại
                         if (isInitialLoad && this.formData.ward_code) {
-                            if (!this.wards.some(w => w.code === this.formData.ward_code)) {
+                            if (!this.wards.some(w => w.code == this.formData.ward_code)) {
                                 this.formData.ward_code = '';
                             }
                         }

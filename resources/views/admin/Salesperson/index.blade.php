@@ -57,7 +57,7 @@
     <div class="w-full">
         <div class="flex items-center justify-between flex-wrap gap-4 mb-6">
             <div>
-                <h1 class="text-3xl font-bold text-gray-800">Quản Lý Nhân Viên Bán Hàng - POS</h1>
+                <h1 class="text-3xl font-bold text-gray-800">Quản Lý Nhân Viên Bán Hàng Kiểm Tra Hàng - POS</h1>
                 <p class="text-gray-500">Quản lý nhân viên và lịch làm việc tại các cửa hàng</p>
             </div>
             <div class="flex items-center gap-3">

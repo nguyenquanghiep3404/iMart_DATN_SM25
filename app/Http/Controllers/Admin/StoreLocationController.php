@@ -154,7 +154,9 @@ class StoreLocationController extends Controller
      */
     public function apiIndex()
     {
-        $storeLocations = StoreLocation::with(['province', 'district', 'ward'])->get();
+        $storeLocations = StoreLocation::with(['province', 'district', 'ward'])
+                                       ->orderBy('id', 'desc')
+                                       ->get();
         return response()->json($storeLocations);
     }
 

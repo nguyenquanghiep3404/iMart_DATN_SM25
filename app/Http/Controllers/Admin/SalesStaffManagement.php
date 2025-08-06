@@ -29,6 +29,7 @@ class SalesStaffManagement extends Controller
     {
         $perPage = $request->get('per_page', 10);
         $stores = StoreLocation::with(['assignedUsers', 'province', 'district'])
+            ->where('type', 'store')
             ->where('is_active', true)
             ->orderBy('name')
             ->paginate($perPage);
@@ -113,6 +114,7 @@ class SalesStaffManagement extends Controller
     {
         $perPage = $request->get('per_page', 10);
         $query = StoreLocation::with(['assignedUsers', 'province', 'district'])
+            ->where('type', 'store')
             ->where('is_active', true);
         // Filter theo tỉnh/thành
         if ($request->filled('province')) {
