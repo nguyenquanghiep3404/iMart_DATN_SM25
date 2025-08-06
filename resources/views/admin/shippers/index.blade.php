@@ -145,14 +145,12 @@
             document.addEventListener('DOMContentLoaded', function() {
                 const warehouseSearchInput = document.getElementById('warehouse-search-input');
                 const provinceFilter = document.getElementById('province-filter');
-
                 // Lưu trữ tất cả warehouses để filter
                 const allWarehouses = [];
                 document.querySelectorAll('tbody tr').forEach(row => {
                     const warehouseName = row.querySelector('td:first-child .font-semibold').textContent;
                     const provinceName = row.querySelector('td:nth-child(2) .font-medium').textContent;
                     const provinceCode = row.getAttribute('data-province-code');
-
                     allWarehouses.push({
                         row: row,
                         name: warehouseName,
@@ -160,7 +158,6 @@
                         provinceCode: provinceCode
                     });
                 });
-
                 // Filter theo tên kho
                 if (warehouseSearchInput) {
                     warehouseSearchInput.addEventListener('input', function() {
@@ -168,19 +165,16 @@
                         filterWarehouses();
                     });
                 }
-
                 // Filter theo tỉnh/thành
                 if (provinceFilter) {
                     provinceFilter.addEventListener('change', function() {
                         filterWarehouses();
                     });
                 }
-
                 // Hàm filter tổng hợp
                 function filterWarehouses() {
                     const searchTerm = warehouseSearchInput ? warehouseSearchInput.value.toLowerCase() : '';
                     const selectedProvinceCode = provinceFilter ? provinceFilter.value : '';
-
                     allWarehouses.forEach(warehouse => {
                         const nameMatch = !searchTerm || warehouse.name.toLowerCase().includes(searchTerm);
                         const provinceMatch = !selectedProvinceCode || warehouse.provinceCode ===

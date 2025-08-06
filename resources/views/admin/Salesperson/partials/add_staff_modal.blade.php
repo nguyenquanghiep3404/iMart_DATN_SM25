@@ -6,6 +6,7 @@
         <form id="add-staff-form">
             <div id="staff-form-errors" class="mb-2"></div>
             <input type="hidden" id="editing-staff-id">
+            <input type="hidden" id="modal-store-id" name="store_location_id" value="">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-name">Họ và Tên <span class="text-danger">*</span></label>
@@ -31,7 +32,8 @@
                     <input id="new-staff-phone" name="phone" type="tel" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="09xxxxxxxx">
                     <div id="error-phone" class="text-red-500 text-xs mt-1"></div>
                 </div>
-                @if(!$store)
+            </div>
+            <div id="address-fields" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 <div>
                     <label class="block text-gray-700 text-sm font-semibold mb-2" for="modal-province-select">Tỉnh/Thành phố <span class="text-danger">*</span></label>
                     <select id="modal-province-select" name="province" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -51,28 +53,11 @@
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-gray-700 text-sm font-semibold mb-2" for="modal-store-select">Cửa Hàng <span class="text-danger">*</span></label>
-                    <select id="modal-store-select" name="store_location_id" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" disabled>
+                    <select id="modal-store-select" name="store_location_id_select" class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" disabled>
                         <option value="">-- Chọn cửa hàng --</option>
                     </select>
                     <div id="error-store_location_id" class="text-red-500 text-xs mt-1"></div>
                 </div>
-                @else
-                {{-- <div>
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Tỉnh/Thành phố</label>
-                    <input type="text" class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700" value="{{ $store->province->name_with_type ?? '' }}" disabled>
-                    <input type="hidden" name="province" value="{{ $store->province_code }}">
-                </div>
-                <div>
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Quận/Huyện</label>
-                    <input type="text" class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700" value="{{ $store->district->name_with_type ?? '' }}" disabled>
-                    <input type="hidden" name="district" value="{{ $store->district_code }}">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-gray-700 text-sm font-semibold mb-2">Cửa Hàng</label>
-                    <input type="text" class="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700" value="{{ $store->name }}" disabled>
-                    <input type="hidden" name="store_location_id" value="{{ $store->id }}"> --}}
-                </div>
-                @endif
             </div>
             <div class="flex justify-end gap-4 mt-8">
                 <button type="button" id="cancel-modal-btn" class="px-6 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 font-semibold">Hủy</button>
@@ -160,6 +145,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const staffId = document.getElementById('editing-staff-id').value;
         const url = staffId ? `/admin/sales-staff/api/employees/${staffId}` : '{{ route('admin.sales-staff.api.employees.store') }}';
         const method = staffId ? 'PUT' : 'POST';
+        
+        // Bổ sung: nếu không có store_id (ở trang index), lấy giá trị từ dropdown và gán vào hidden
+        const storeIdInput = document.getElementById('modal-store-id');
+        const storeSelect = document.getElementById('modal-store-select');
+        if (!storeIdInput.value && storeSelect) {
+            storeIdInput.value = storeSelect.value;
+        }
+
         fetch(url, {
             method: method,
             body: formData,
@@ -210,10 +203,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Xử lý mở modal cho cả hai trang
-    function openAddStaffModal() {
+    function openAddStaffModal(storeId = null) {
         const form = document.getElementById('add-staff-form');
         const modal = document.getElementById('add-staff-modal');
         const modalContent = document.getElementById('modal-content');
+        const addressFields = document.getElementById('address-fields');
+        const storeIdInput = document.getElementById('modal-store-id');
         
         if (!form || !modal || !modalContent) {
             return;
@@ -234,6 +229,14 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             modalContent.classList.remove('scale-95', 'opacity-0');
         }, 10);
+
+        if (storeId) {
+            storeIdInput.value = storeId;
+            addressFields.style.display = 'none';
+        } else {
+            storeIdInput.value = '';
+            addressFields.style.display = '';
+        }
     }
     function closeModal() {
         document.getElementById('modal-content').classList.add('scale-95', 'opacity-0');
@@ -252,7 +255,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnInView = document.getElementById('add-staff-btn-in-view');
     if (btnInView) {
         btnInView.addEventListener('click', function() {
-            openAddStaffModal();
+            const storeId = this.getAttribute('data-store-id');
+            openAddStaffModal(storeId);
         });
 
     }

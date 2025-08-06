@@ -105,7 +105,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const provinceSelect = document.getElementById('province');
     const warehouseSelect = document.getElementById('warehouse');
-    
     // Trong form edit, province luôn bị disabled nên không cần JavaScript
     // Chỉ cần đảm bảo warehouse dropdown hiển thị đúng kho hiện tại
     if (warehouseSelect) {

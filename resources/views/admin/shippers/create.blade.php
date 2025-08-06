@@ -127,21 +127,17 @@
         document.addEventListener('DOMContentLoaded', function() {
             const provinceSelect = document.getElementById('province');
             const warehouseSelect = document.getElementById('warehouse');
-
             // Chỉ chạy JavaScript nếu không có warehouse_id từ URL (tức là không bị disabled)
             if (!provinceSelect.disabled) {
                 // Lưu trữ tất cả warehouses
                 let allWarehouses = [];
-
                 // Fetch warehouses khi trang load
                 fetchWarehouses();
-
                 // Khi chọn tỉnh/thành, filter warehouses
                 provinceSelect.addEventListener('change', function() {
                     const selectedProvince = this.value;
                     filterWarehouses(selectedProvince);
                 });
-
                 function fetchWarehouses() {
                     fetch('{{ route('admin.shippers.warehouses') }}')
                         .then(response => response.json())
@@ -150,22 +146,18 @@
                             filterWarehouses(provinceSelect.value);
                         })
                         .catch(error => {
-                            console.error('Error fetching warehouses:', error);
+                            console.error('Lỗi khi tìm kho:', error);
                         });
                 }
-
                 function filterWarehouses(provinceCode) {
-                    // Clear current options
+                    // Thêm tùy chọn mặc định
                     warehouseSelect.innerHTML = '<option value="">Chọn Kho làm việc</option>';
-
                     if (!provinceCode) return;
-
-                    // Filter warehouses by province
+                    // Lọc warehouses theo province_code
                     const filteredWarehouses = allWarehouses.filter(warehouse =>
                         warehouse.province_code === provinceCode
                     );
-
-                    // Add filtered options
+                    // Thêm các tùy chọn kho vào select
                     filteredWarehouses.forEach(warehouse => {
                         const option = document.createElement('option');
                         option.value = warehouse.id;
