@@ -481,6 +481,12 @@ Route::prefix('admin')
             Route::get('/stores/{storeId}/schedule', [SalesStaffManagement::class, 'showSchedule'])->name('stores.schedule');
             // Quản lý ca làm việc
             Route::get('/work-shifts', [SalesStaffManagement::class, 'showWorkShifts'])->name('work-shifts.index');
+            
+            // Routes cho thùng rác (trash)
+            Route::get('/trash', [SalesStaffManagement::class, 'trash'])->name('trash');
+            Route::patch('/restore/{id}', [SalesStaffManagement::class, 'restore'])->name('restore');
+            Route::delete('/force-delete/{id}', [SalesStaffManagement::class, 'forceDelete'])->name('force-delete');
+            
             // API Routes
             Route::prefix('api')->name('api.')->group(function () {
                 // API cửa hàng

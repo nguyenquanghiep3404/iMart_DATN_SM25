@@ -50,6 +50,10 @@
             background-color: white;
             border-color: #d1d5db;
         }
+
+        .modal-open {
+            overflow: hidden;
+        }
     </style>
 @endpush
 @section('content')
@@ -103,6 +107,16 @@
                     </svg>
                     Thêm Nhân Viên
                 </button>
+                <a href="{{ route('admin.sales-staff.trash') }}"
+                    class="flex items-center gap-2 bg-gray-500 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                        </path>
+                    </svg>
+                    Thùng Rác
+                </a>
             </div>
         </div>
         <!-- Bộ lọc và bảng nhân viên kết hợp -->
@@ -355,6 +369,44 @@
         </div>
     </div>
 @endsection
+<div id="deleteEmployeeModal" class="fixed inset-0 z-50 overflow-y-auto hidden" aria-labelledby="delete-modal-title"
+    role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="closeDeleteModal()"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        <div
+            class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div
+                        class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="delete-modal-title">
+                            Xóa nhân viên
+                        </h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">
+                                Bạn có chắc chắn muốn xóa nhân viên này không? Hành động này không thể được hoàn tác.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" id="confirmDeleteBtn"
+                    class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                    Xác nhận Xóa
+                </button>
+                <button type="button" onclick="closeDeleteModal()"
+                    class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm">
+                    Hủy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 @push('scripts')
     <script>
         // Cấu hình toastr
@@ -484,36 +536,7 @@
                 const deleteBtn = e.target.closest('.delete-btn');
                 if (deleteBtn) {
                     const employeeId = deleteBtn.dataset.id;
-                    if (confirm('Bạn có chắc muốn xóa nhân viên này?')) {
-                        fetch(`/admin/sales-staff/api/stores/{{ $store->id }}/employees/${employeeId}`, {
-                                method: 'DELETE',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                        .getAttribute('content'),
-                                    'Accept': 'application/json',
-                                    'Content-Type': 'application/json'
-                                }
-                            })
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error(`HTTP error! status: ${response.status}`);
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                if (data.message) {
-                                    // Lưu thông báo vào session storage để hiển thị sau khi reload
-                                    sessionStorage.setItem('employee_delete_success_message', data
-                                        .message);
-                                    // Reload ngay lập tức
-                                    location.reload();
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error deleting employee:', error);
-                                toastr.error('Có lỗi xảy ra khi xóa nhân viên. Vui lòng thử lại.');
-                            });
-                    }
+                    openDeleteModal(employeeId);
                 }
                 // Sửa nhân viên
                 const editBtn = e.target.closest('.edit-btn');
@@ -930,6 +953,65 @@
                     modal.classList.add('hidden');
                 }, 200);
             }
+            // Modal xác nhận xóa nhân viên
+            const deleteEmployeeModal = document.getElementById('deleteEmployeeModal');
+            if (deleteEmployeeModal) {
+                deleteEmployeeModal.addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        closeDeleteModal();
+                    }
+                });
+            }
+
+            function openDeleteModal(employeeId) {
+                const deleteModal = document.getElementById('deleteEmployeeModal');
+                if (deleteModal) {
+                    deleteModal.classList.remove('hidden');
+                    deleteModal.style.display = 'block';
+                    document.getElementById('confirmDeleteBtn').dataset.id = employeeId;
+                }
+            }
+            window.closeDeleteModal = function() {
+                const deleteModal = document.getElementById('deleteEmployeeModal');
+                if (deleteModal) {
+                    deleteModal.classList.add('hidden');
+                    deleteModal.style.display = 'none';
+                }
+            }
+            document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+                const employeeId = this.dataset.id;
+                const url = `/admin/sales-staff/api/stores/{{ $store->id }}/employees/${employeeId}`;
+                const method = 'DELETE';
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                fetch(url, {
+                        method: method,
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.message) {
+                            // Lưu thông báo vào session storage để hiển thị sau khi reload
+                            sessionStorage.setItem('employee_delete_success_message', data
+                                .message);
+                            // Reload ngay lập tức
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting employee:', error);
+                        toastr.error('Có lỗi xảy ra khi xóa nhân viên. Vui lòng thử lại.');
+                    });
+                closeDeleteModal();
+            });
         });
     </script>
 @endpush

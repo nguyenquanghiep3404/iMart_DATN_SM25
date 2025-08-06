@@ -287,16 +287,63 @@ class SalesStaffManagement extends Controller
             if (!$assignmentExists) {
                 return response()->json(['message' => 'Nhân viên không thuộc cửa hàng này'], 404);
             }
+            // Lấy user để xóa mềm
+            $user = User::find($userId);
+            if (!$user) {
+                return response()->json(['message' => 'Không tìm thấy nhân viên'], 404);
+            }
+
+            // Xóa mềm user (chuyển vào thùng rác)
+            $user->delete();
+
             // Xóa lịch làm việc của nhân viên tại cửa hàng này
             EmployeeSchedule::where('user_id', $userId)
                 ->where('store_location_id', $storeId)
                 ->delete();
-            // Xóa liên kết nhân viên với cửa hàng
-            UserStoreLocation::xoaNhanVienKhoiCuaHang($userId, $storeId);
-            return response()->json(['message' => 'Xóa nhân viên khỏi cửa hàng thành công']);
+            return response()->json(['message' => 'Đã chuyển nhân viên vào thùng rác thành công']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Có lỗi xảy ra khi xóa nhân viên: ' . $e->getMessage()], 500);
         }
+    }
+    /**
+     * Hiển thị trang thùng rác - danh sách nhân viên đã xóa mềm
+     */
+    public function trash(): View
+    {
+        $trashedUsers = User::onlyTrashed()
+            ->whereHas('assignedStoreLocations') // Chỉ lấy những user đã từng được gán vào cửa hàng
+            ->with(['assignedStoreLocations.province'])
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(10);
+
+        return view('admin.Salesperson.trash', compact('trashedUsers'));
+    }
+    /**
+     * Khôi phục nhân viên đã xóa mềm
+     */
+    public function restore($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+        $user->restore();
+
+        return redirect()->route('admin.sales-staff.trash')
+            ->with('success', "Đã khôi phục nhân viên '{$user->name}' thành công!");
+    }
+    /**
+     * Xóa vĩnh viễn nhân viên khỏi database
+     */
+    public function forceDelete($id)
+    {
+        $user = User::onlyTrashed()->findOrFail($id);
+        $userName = $user->name;
+        // Xóa các liên kết với cửa hàng trước khi xóa vĩnh viễn
+        UserStoreLocation::where('user_id', $id)->delete();
+        // Xóa lịch làm việc
+        EmployeeSchedule::where('user_id', $id)->delete();
+        // Xóa vĩnh viễn user
+        $user->forceDelete();
+        return redirect()->route('admin.sales-staff.trash')
+            ->with('success', "Đã xóa vĩnh viễn nhân viên '{$userName}'.");
     }
     /**
      * API: Lấy lịch làm việc theo tuần
