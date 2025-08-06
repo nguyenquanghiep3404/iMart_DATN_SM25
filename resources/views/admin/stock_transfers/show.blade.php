@@ -82,11 +82,11 @@
                 @endif
                 
                 @if($stockTransfer->status == 'shipped')
-                     <a href="{{-- {{ route('admin.stock-transfers.receive.index', $stockTransfer->id) }} --}}" class="flex items-center bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">
-                        <i class="fas fa-dolly-flatbed mr-2"></i>
-                        Nhận Kho
-                    </a>
-                @endif
+    <a href="{{ route('admin.stock-transfers.receive.show', $stockTransfer->id) }}" class="flex items-center bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors">
+        <i class="fas fa-dolly-flatbed mr-2"></i>
+        Nhận Kho
+    </a>
+@endif
             </div>
         </div>
     </header>

@@ -76,6 +76,7 @@
             border: 1px solid #cbd5e1 !important;
             border-top: 0 !important;
         }
+
         .ck.ck-toolbar {
             border-radius: 0.625rem 0.625rem 0 0 !important;
             border: 1px solid #cbd5e1 !important;
@@ -836,8 +837,13 @@
                                 <div class="input-group">
                                     <label for="simple_points_awarded_on_purchase">Điểm thưởng khi mua</label>
                                     <div class="input-with-icon">
-                                        <svg class="svg-icon icon-prefix" viewBox="0 0 24 24"><path d="M12 2L9.1 8.3L2 9.3L7.5 14.3L6.2 21.5L12 18.1L17.8 21.5L16.5 14.3L22 9.3L14.9 8.3L12 2Z"></path></svg>
-                                        <input type="number" id="simple_points_awarded_on_purchase" name="simple_points_awarded_on_purchase"
+                                        <svg class="svg-icon icon-prefix" viewBox="0 0 24 24">
+                                            <path
+                                                d="M12 2L9.1 8.3L2 9.3L7.5 14.3L6.2 21.5L12 18.1L17.8 21.5L16.5 14.3L22 9.3L14.9 8.3L12 2Z">
+                                            </path>
+                                        </svg>
+                                        <input type="number" id="simple_points_awarded_on_purchase"
+                                            name="simple_points_awarded_on_purchase"
                                             class="input-field @error('simple_points_awarded_on_purchase') border-red-500 @enderror"
                                             min="0" value="{{ old('simple_points_awarded_on_purchase', 0) }}">
                                     </div>
@@ -895,7 +901,14 @@
                                     </div>
                                 </div>
                             </div>
-
+                            <div class="input-group pt-4 mt-4 border-t border-gray-200">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" id="simple_has_serial_tracking"
+                                        name="simple_has_serial_tracking" value="1" class="form-check-input mr-2"
+                                        {{ old('simple_has_serial_tracking', true) ? 'checked' : '' }}>
+                                    <span class="text-gray-700 font-medium">Quản lý tồn kho theo IMEI/Serial</span>
+                                </label>
+                            </div>
                             <div class="input-group md:col-span-2 pt-4 mt-4 border-t border-gray-200">
                                 <label>Ảnh Sản Phẩm <span class="required-star">*</span></label>
                                 <div class="flex space-x-2 mb-3">
@@ -1232,7 +1245,7 @@
 
 @push('scripts')
     {{-- THÊM SCRIPT CỦA CKEDITOR 5 TỪ CDN --}}
-     <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
 
     {{-- THÊM SCRIPT CỦA TAGIFY TỪ CDN --}}
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
@@ -1837,7 +1850,8 @@
 
             // --- Khôi phục sản phẩm có biến thể ---
             const productTypeRadio = document.querySelector('input[name="type"]:checked');
-            if (productTypeRadio && productTypeRadio.value === 'variable' && Array.isArray(oldVariantsData) && oldVariantsData.length > 0) {
+            if (productTypeRadio && productTypeRadio.value === 'variable' && Array.isArray(oldVariantsData) &&
+                oldVariantsData.length > 0) {
                 if (variantsContainer) variantsContainer.innerHTML = '';
                 variantIndexGlobal = 0;
 
@@ -1845,7 +1859,8 @@
                 let usedAttributeIdsInOld = new Set();
                 oldVariantsData.forEach(oldVar => {
                     if (oldVar.attributes && typeof oldVar.attributes === 'object') {
-                        Object.keys(oldVar.attributes).forEach(attrId => usedAttributeIdsInOld.add(parseInt(attrId)));
+                        Object.keys(oldVar.attributes).forEach(attrId => usedAttributeIdsInOld.add(parseInt(
+                            attrId)));
                     }
                 });
                 document.querySelectorAll('.product-attribute-checkbox').forEach(cb => {
@@ -1860,7 +1875,7 @@
                 // BƯỚC 3: Tái tạo trực tiếp các card biến thể từ dữ liệu old()
                 oldVariantsData.forEach(oldVariantData => {
                     // Hàm `addVariantCard` mới sẽ tạo và điền dữ liệu luôn
-                    addVariantCard(oldVariantData); 
+                    addVariantCard(oldVariantData);
                 });
 
                 updateDefaultVariantRadioAndHiddenFields();
@@ -1882,7 +1897,7 @@
             const variantCard = document.createElement('div');
             variantCard.className = 'variant-card';
             variantCard.dataset.variantIndex = currentVariantIndex;
-            
+
             // -- Xây dựng HTML cho các lựa chọn thuộc tính --
             let attributesHTML = '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-4">';
             selectedProductAttributes.forEach(attr => {
@@ -1903,6 +1918,8 @@
 
             // -- Xây dựng HTML cho toàn bộ card --
             // Đã loại bỏ hoàn toàn các trường và logic liên quan đến tồn kho
+            const isCheckedByDefault = initialData ? (initialData.has_serial_tracking ?? true) : document.getElementById(
+                'master_serial_tracking')?.checked;
             const cardHTML = `
                 <div class="variant-header">
                     <h4 class="variant-title">Biến Thể #${currentVariantIndex + 1}</h4>
@@ -1956,17 +1973,21 @@
                     </div>
                 </div>
                 
-                <div class="mt-4">
+                <div class="mt-4 pt-4 border-t flex justify-between items-center">
                     <label class="flex items-center text-sm cursor-pointer">
                         <input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio" ${initialData?.is_default ? 'checked' : ''}>
                         <input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="${initialData?.is_default ? 'true' : 'false'}" class="is-default-hidden-input"> Đặt làm biến thể mặc định
+                    </label>
+                    <label class="flex items-center text-sm cursor-pointer">
+                        <input type="checkbox" name="variants[${currentVariantIndex}][has_serial_tracking]" value="1" class="form-check-input mr-2 variant-serial-checkbox" ${isCheckedByDefault ? 'checked' : ''} onchange="updateMasterCheckboxState()">
+                        <span>Quản lý theo Serial</span>
                     </label>
                 </div>
             `;
 
             variantCard.innerHTML = cardHTML;
             if (variantsContainer) variantsContainer.appendChild(variantCard);
-            
+
             // Tự động render thông số kỹ thuật cho card mới
             const newSpecContainer = document.getElementById(`variant_${currentVariantIndex}_specifications_container`);
             const oldSpecData = initialData?.specifications || {};
@@ -1986,10 +2007,12 @@
                 });
 
                 if (imagesForThisVariant.length > 0) {
-                    const previewContainer = document.getElementById(`variant_${currentVariantIndex}_image_preview_container`);
+                    const previewContainer = document.getElementById(
+                        `variant_${currentVariantIndex}_image_preview_container`);
                     const idsContainer = document.getElementById(`variant_${currentVariantIndex}_image_ids_container`);
                     if (previewContainer && idsContainer) {
-                        addImagesToProductForm(imagesForThisVariant, previewContainer, idsContainer, 'variant', currentVariantIndex);
+                        addImagesToProductForm(imagesForThisVariant, previewContainer, idsContainer, 'variant',
+                            currentVariantIndex);
                         if (variantPrimaryId) {
                             setVariantPrimaryImage(currentVariantIndex, parseInt(variantPrimaryId));
                         }
@@ -1998,6 +2021,7 @@
             }
 
             variantIndexGlobal++;
+            updateMasterCheckboxState();
         }
 
 
@@ -2017,39 +2041,42 @@
             }
 
             CKEDITOR.ClassicEditor.create(document.querySelector('#description'), {
-                removePlugins: [
-                    'CKBox', 'CKFinder', 'EasyImage', 'RealTimeCollaborativeComments', 'RealTimeCollaborativeTrackChanges',
-                    'RealTimeCollaborativeRevisionHistory', 'PresenceList', 'Comments', 'TrackChanges', 'TrackChangesData',
-                    'RevisionHistory', 'Pagination', 'WProofreader', 'MathType', 'SlashCommand', 'Template',
-                    'DocumentOutline', 'FormatPainter', 'TableOfContents', 'PasteFromOfficeEnhanced',
-                    'AIAssistant', 'MultiLevelList', 'CaseChange'
-                ],
-                language: 'vi',
-                toolbar: {
-                    items: [
-                        'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'underline', '|', 
-                        'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', '|',
-                        'bulletedList', 'numberedList', 'alignment', '|',
-                        'link', 'uploadImage', 'insertTable', 'mediaEmbed', '|',
-                        'blockQuote', 'codeBlock', 'sourceEditing', 'removeFormat'
-                    ]
-                },
-                simpleUpload: {
-                    uploadUrl: '{{ route('admin.media.ckeditor_upload') }}',
-                    withCredentials: true,
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    removePlugins: [
+                        'CKBox', 'CKFinder', 'EasyImage', 'RealTimeCollaborativeComments',
+                        'RealTimeCollaborativeTrackChanges',
+                        'RealTimeCollaborativeRevisionHistory', 'PresenceList', 'Comments', 'TrackChanges',
+                        'TrackChangesData',
+                        'RevisionHistory', 'Pagination', 'WProofreader', 'MathType', 'SlashCommand',
+                        'Template',
+                        'DocumentOutline', 'FormatPainter', 'TableOfContents', 'PasteFromOfficeEnhanced',
+                        'AIAssistant', 'MultiLevelList', 'CaseChange'
+                    ],
+                    language: 'vi',
+                    toolbar: {
+                        items: [
+                            'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'underline', '|',
+                            'fontFamily', 'fontSize', 'fontColor', 'fontBackgroundColor', '|',
+                            'bulletedList', 'numberedList', 'alignment', '|',
+                            'link', 'uploadImage', 'insertTable', 'mediaEmbed', '|',
+                            'blockQuote', 'codeBlock', 'sourceEditing', 'removeFormat'
+                        ]
+                    },
+                    simpleUpload: {
+                        uploadUrl: '{{ route('admin.media.ckeditor_upload') }}',
+                        withCredentials: true,
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
                     }
-                }
-            })
-            .then(editor => {
-                console.log('CKEditor đã khởi tạo thành công!', editor);
-                // SỬA LỖI: Sửa lại tên biến bị sai (longDescription-DescriptionEditor -> longDescriptionEditor)
-                window.longDescriptionEditor = editor;
-            })
-            .catch(error => {
-                console.error('Đã có lỗi xảy ra khi khởi tạo CKEditor:', error);
-            });
+                })
+                .then(editor => {
+                    console.log('CKEditor đã khởi tạo thành công!', editor);
+                    // SỬA LỖI: Sửa lại tên biến bị sai (longDescription-DescriptionEditor -> longDescriptionEditor)
+                    window.longDescriptionEditor = editor;
+                })
+                .catch(error => {
+                    console.error('Đã có lỗi xảy ra khi khởi tạo CKEditor:', error);
+                });
 
             const tagsInput = document.getElementById('tags');
             if (tagsInput) {
@@ -2069,94 +2096,95 @@
                         const result = await callGeminiAPI(prompt);
                         if (result) {
                             shortDescriptionTextarea.value = result.replace(/[\*#`]/g, '').trim();
-                        }
-                    } catch (error) {
-                        showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`,
-                            'error');
-                    } finally {
-                        toggleButtonLoading(generateShortDescBtn, false);
                     }
-                });
-            }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo mô tả ngắn: ${error.message}`,
+                        'error');
+                } finally {
+                    toggleButtonLoading(generateShortDescBtn, false);
+                }
+            });
+        }
 
-            const generateLongDescBtn = document.getElementById('generateLongDescAI');
-            if (generateLongDescBtn) {
-                generateLongDescBtn.addEventListener('click', async () => {
-                    const context = getProductContext();
-                    if (!context) return;
-                    toggleButtonLoading(generateLongDescBtn, true);
-                    try {
-                        const prompt =
-                            `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm. Yêu cầu: - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng. - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp). - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo. - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
-                        const result = await callGeminiAPI(prompt);
-                        if (result && window.longDescriptionEditor) { // Sửa ở đây, dùng window.longDescriptionEditor
-                            window.longDescriptionEditor.setData(result);
-                        }
-                    } catch (error) {
-                        showMessageModal('Lỗi AI', `Không thể tạo mô tả chi tiết: ${error.message}`,
-                            'error');
-                    } finally {
-                        toggleButtonLoading(generateLongDescBtn, false);
+        const generateLongDescBtn = document.getElementById('generateLongDescAI');
+        if (generateLongDescBtn) {
+            generateLongDescBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+                toggleButtonLoading(generateLongDescBtn, true);
+                try {
+                    const prompt =
+                        `Dựa vào thông tin sau: "${context}", hãy viết một bài mô tả chi tiết, hấp dẫn, chuẩn SEO cho sản phẩm. Yêu cầu: - Sử dụng các thẻ HTML để định dạng bài viết một cách chuyên nghiệp. Ví dụ: <h3> cho tiêu đề các phần, <ul> và <li> cho danh sách liệt kê, <strong> để nhấn mạnh các tính năng quan trọng. - Chia bài viết thành các đoạn logic, có tiêu đề rõ ràng (ví dụ: Thiết kế sang trọng, Màn hình Super Retina XDR, Hiệu năng vượt trội với chip A17 Pro, Hệ thống Camera chuyên nghiệp). - KHÔNG bao gồm các thẻ <html>, <body>, <head>. Chỉ trả về phần nội dung HTML cho phần thân bài viết để chèn vào trình soạn thảo. - Giọng văn phải chuyên nghiệp, thuyết phục, hướng tới người mua hàng.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result && window
+                        .longDescriptionEditor) { // Sửa ở đây, dùng window.longDescriptionEditor
+                        window.longDescriptionEditor.setData(result);
                     }
-                });
-            }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo mô tả chi tiết: ${error.message}`,
+                        'error');
+                } finally {
+                    toggleButtonLoading(generateLongDescBtn, false);
+                }
+            });
+        }
 
-            const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
-            if (generateAllSeoBtn) {
-                generateAllSeoBtn.addEventListener('click', async () => {
-                    const context = getProductContext();
-                    if (!context) return;
-                    toggleButtonLoading(generateAllSeoBtn, true);
-                    try {
-                        const schema = {
-                            type: "OBJECT",
-                            properties: {
-                                meta_title: {
-                                    type: "STRING",
-                                    description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính."
-                                },
-                                meta_description: {
-                                    type: "STRING",
-                                    description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động."
-                                },
-                                meta_keywords: {
-                                    type: "STRING",
-                                    description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy."
-                                }
+        const generateAllSeoBtn = document.getElementById('generateAllSeoAI');
+        if (generateAllSeoBtn) {
+            generateAllSeoBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+                toggleButtonLoading(generateAllSeoBtn, true);
+                try {
+                    const schema = {
+                        type: "OBJECT",
+                        properties: {
+                            meta_title: {
+                                type: "STRING",
+                                description: "Tiêu đề SEO, khoảng 50-60 ký tự, chứa từ khóa chính."
                             },
-                            required: ["meta_title", "meta_description", "meta_keywords"]
-                        };
-                        const prompt =
-                            `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO. Yêu cầu: - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu. - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay"). - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan. - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
+                            meta_description: {
+                                type: "STRING",
+                                description: "Mô tả SEO, khoảng 150-160 ký tự, hấp dẫn và kêu gọi hành động."
+                            },
+                            meta_keywords: {
+                                type: "STRING",
+                                description: "Chuỗi các từ khóa liên quan, cách nhau bởi dấu phẩy."
+                            }
+                        },
+                        required: ["meta_title", "meta_description", "meta_keywords"]
+                    };
+                    const prompt =
+                        `Dựa vào thông tin sản phẩm sau: "${context}", hãy tạo nội dung tối ưu hóa SEO. Yêu cầu: - Meta Title: Ngắn gọn, súc tích, chứa từ khóa chính và tên thương hiệu. - Meta Description: Viết một đoạn mô tả hấp dẫn, tóm tắt điểm nổi bật của sản phẩm và có lời kêu gọi hành động (ví dụ: "Mua ngay", "Khám phá ngay"). - Meta Keywords: Liệt kê các từ khóa chính, từ khóa phụ, từ khóa liên quan. - Trả về kết quả dưới dạng một đối tượng JSON hợp lệ theo schema đã cung cấp. KHÔNG trả về bất cứ thứ gì khác ngoài JSON.`;
 
-                        const result = await callGeminiAPI(prompt, true, schema);
-                        if (result) {
-                            document.getElementById('meta_title').value = result.meta_title || '';
-                            document.getElementById('meta_description').value = result
-                                .meta_description || '';
-                            document.getElementById('meta_keywords').value = result.meta_keywords || '';
-                        }
-                    } catch (error) {
-                        showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`,
-                            'error');
-                    } finally {
-                        toggleButtonLoading(generateAllSeoBtn, false);
+                    const result = await callGeminiAPI(prompt, true, schema);
+                    if (result) {
+                        document.getElementById('meta_title').value = result.meta_title || '';
+                        document.getElementById('meta_description').value = result
+                            .meta_description || '';
+                        document.getElementById('meta_keywords').value = result.meta_keywords || '';
                     }
-                });
-            }
+                } catch (error) {
+                    showMessageModal('Lỗi AI', `Không thể tạo dữ liệu SEO: ${error.message}`,
+                        'error');
+                } finally {
+                    toggleButtonLoading(generateAllSeoBtn, false);
+                }
+            });
+        }
 
-            const generateTagsBtn = document.getElementById('generateTagsAI');
-            if (generateTagsBtn) {
-                generateTagsBtn.addEventListener('click', async () => {
-                    const context = getProductContext();
-                    if (!context) return;
-                    toggleButtonLoading(generateTagsBtn, true);
-                    try {
-                        const prompt =
-                            `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm. Yêu cầu: - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật. - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy. - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
-                        const result = await callGeminiAPI(prompt);
-                        if (result && tagify) {
-                            const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g,
+        const generateTagsBtn = document.getElementById('generateTagsAI');
+        if (generateTagsBtn) {
+            generateTagsBtn.addEventListener('click', async () => {
+                const context = getProductContext();
+                if (!context) return;
+                toggleButtonLoading(generateTagsBtn, true);
+                try {
+                    const prompt =
+                        `Dựa vào thông tin sản phẩm sau: "${context}", hãy gợi ý 5 đến 7 từ khóa (tags) phù hợp nhất để phân loại sản phẩm. Yêu cầu: - Các từ khóa phải ngắn gọn, liên quan trực tiếp đến sản phẩm hoặc tính năng nổi bật. - Trả về dưới dạng một chuỗi duy nhất, các từ khóa cách nhau bởi dấu phẩy. - Ví dụ: iPhone 15 Pro, Titan, USB-C, A17 Pro - KHÔNG dùng Markdown, KHÔNG dùng đánh số, và KHÔNG có lời dẫn. Chỉ trả về chuỗi các thẻ.`;
+                    const result = await callGeminiAPI(prompt);
+                    if (result && tagify) {
+                        const cleanedResult = result.replace(/[\*#`]/g, '').replace(/(\d+\.\s*)/g,
                                     '')
                                 .trim();
                             tagify.loadOriginalValues(cleanedResult);
@@ -2175,7 +2203,8 @@
                 allAttributesFromPHP.forEach(attr => {
                     if (!attr || typeof attr.id === 'undefined' || typeof attr.name === 'undefined') return;
                     const labelEl = document.createElement('label');
-                    labelEl.className = 'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
+                    labelEl.className =
+                        'flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100 transition-colors';
                     const checkbox = document.createElement('input');
                     checkbox.type = 'checkbox';
                     checkbox.id = `attr_${attr.id}`;
@@ -2203,6 +2232,7 @@
                             cardToRemove.remove();
                             updateDefaultVariantRadioAndHiddenFields();
                             updateAllCopySpecButtons();
+                            updateMasterCheckboxState();
                         }
                     }
                     if (e.target && e.target.matches('.open-library-btn-variant')) {
@@ -2210,8 +2240,10 @@
                         window.mediaLibraryTarget = {
                             type: 'variant',
                             variantIndex: variantIndex,
-                            previewContainer: document.getElementById(`variant_${variantIndex}_image_preview_container`),
-                            idsContainer: document.getElementById(`variant_${variantIndex}_image_ids_container`)
+                            previewContainer: document.getElementById(
+                                `variant_${variantIndex}_image_preview_container`),
+                            idsContainer: document.getElementById(
+                                `variant_${variantIndex}_image_ids_container`)
                         };
                         if (window.openMediaLibrary) {
                             window.openMediaLibrary();
@@ -2232,7 +2264,8 @@
                 openLibraryBtnSimple.addEventListener('click', () => {
                     window.mediaLibraryTarget = {
                         type: 'simple',
-                        previewContainer: document.getElementById('simple_product_image_preview_container'),
+                        previewContainer: document.getElementById(
+                            'simple_product_image_preview_container'),
                         idsContainer: document.getElementById('image_ids_container')
                     };
                     if (window.openMediaLibrary) {
@@ -2255,7 +2288,7 @@
                     slugInput.dataset.auto = slugInput.value.trim() === "" ? "true" : "false";
                 });
             }
-            
+
             repopulateFormFromOldData();
 
             if (categorySelectElement) {

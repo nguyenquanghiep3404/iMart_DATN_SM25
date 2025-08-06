@@ -14,190 +14,315 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Remove default arrow from select and add a custom one */
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gray-100 p-4 sm:p-6 lg:p-8">
 
-    <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <main class="max-w-screen-2xl mx-auto">
         <!-- Header -->
-        <header class="mb-6">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Báo cáo Tồn kho Chi tiết</h1>
-                    <p class="text-gray-600 mt-1">Xem và lọc dữ liệu tồn kho trên toàn hệ thống.</p>
-                </div>
-                <div class="mt-4 sm:mt-0">
-                    <button class="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 transition-colors duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                        </svg>
-                        Xuất file Excel
-                    </button>
-                </div>
+        <header class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Báo cáo Tồn kho Chi tiết</h1>
+                <p class="text-gray-600 mt-1">Xem và lọc dữ liệu tồn kho trên toàn hệ thống.</p>
             </div>
+            <button id="export-btn" class="flex-shrink-0 flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg shadow-sm hover:bg-green-700 transition-colors duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Xuất file Excel</span>
+            </button>
         </header>
 
-        <!-- Filter Section -->
-        <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 mb-6">
-            <div class="flex items-center justify-between cursor-pointer" id="filter-toggle">
-                 <h3 class="text-lg font-semibold text-gray-800">Bộ lọc</h3>
-                 <svg id="filter-arrow" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 transition-transform duration-300 transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-            </div>
-           
-            <div id="filter-content" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Search Input -->
-                <div>
-                    <label for="search" class="block text-sm font-medium text-gray-700">Tìm kiếm SKU / Tên</label>
-                    <input type="text" id="search" placeholder="VD: iPhone 15 Pro Max" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
-                <!-- Location Filter -->
-                <div>
-                    <label for="location" class="block text-sm font-medium text-gray-700">Địa điểm</label>
-                    <select id="location" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option>Tất cả địa điểm</option>
-                        <option>Kho Tổng HN</option>
-                        <option>Kho Tổng TPHCM</option>
-                        <option>CH Ba Đình</option>
-                        <option>CH Đà Nẵng</option>
-                    </select>
-                </div>
-                <!-- Inventory Type Filter -->
-                <div>
-                    <label for="inventory-type" class="block text-sm font-medium text-gray-700">Loại tồn kho</label>
-                    <select id="inventory-type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
-                        <option>Tất cả các loại</option>
-                        <option>Hàng mới (new)</option>
-                        <option>Hàng lỗi (defective)</option>
-                        <option>Hàng trả chờ kiểm định</option>
-                    </select>
-                </div>
-                <!-- Filter Buttons -->
-                <div class="flex items-end space-x-2">
-                    <button class="w-full flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-300">Áp dụng</button>
-                    <button class="w-full flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors duration-300">Xóa lọc</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Inventory Table -->
+        <!-- Main Content Block -->
         <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <!-- Filter Bar -->
+            <div class="p-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center gap-3 flex-wrap flex-grow">
+                    <!-- Province Filter -->
+                    <select id="province-filter" class="w-full sm:w-48 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <!-- Options rendered by JS -->
+                    </select>
+                    <!-- District Filter -->
+                    <select id="district-filter" class="w-full sm:w-48 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" disabled>
+                        <!-- Options rendered by JS -->
+                    </select>
+                     <!-- Location Type Filter -->
+                    <select id="location-type-filter" class="w-full sm:w-48 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      <option value="all">Tất cả loại địa điểm</option>
+                      <option value="warehouse">Kho tổng</option>
+                      <option value="store">Cửa hàng</option>
+                    </select>
+                    <!-- Search Input -->
+                    <div class="relative flex-grow min-w-[200px]">
+                        <input id="search-input" type="text" placeholder="Tìm SKU / Tên sản phẩm..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Table -->
             <div class="overflow-x-auto">
                 <table class="w-full text-sm text-left">
                     <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
                         <tr>
                             <th class="px-6 py-3">Sản phẩm</th>
                             <th class="px-6 py-3">Địa điểm</th>
-                            <th class="px-6 py-3 text-center">Loại</th>
-                            <th class="px-6 py-3 text-center">Tồn vật lý</th>
-                            <th class="px-6 py-3 text-center">Tạm giữ</th>
-                            <th class="px-6 py-3 text-center font-bold text-indigo-600">Tồn khả dụng (ATS)</th>
-                            <th class="px-6 py-3 text-right">Giá vốn</th>
-                            <th class="px-6 py-3 text-right">Giá trị tồn</th>
+                            <th class="px-6 py-3 text-center">Loại Tồn</th>
+                            <th class="px-6 py-3 text-center">Tồn Vật Lý</th>
+                            <th class="px-6 py-3 text-center">Tạm Giữ</th>
+                            <th class="px-6 py-3 text-center font-bold text-indigo-600">Tồn Khả Dụng</th>
+                            <th class="px-6 py-3 text-right">Giá Vốn</th>
+                            <th class="px-6 py-3 text-right">Giá Trị Tồn</th>
                         </tr>
                     </thead>
-                    <tbody class="text-gray-700">
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center">
-                                    <img class="h-10 w-10 rounded-md object-cover mr-3" src="https://placehold.co/100x100/e2e8f0/475569?text=IP15PM" alt="iPhone 15 Pro Max">
-                                    <div>
-                                        <div class="font-semibold text-gray-900">iPhone 15 Pro Max 256GB</div>
-                                        <div class="text-xs text-gray-500">SKU: APL-IP15PM-256</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">Kho Tổng HN</td>
-                            <td class="px-6 py-4 text-center"><span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Mới</span></td>
-                            <td class="px-6 py-4 text-center">50</td>
-                            <td class="px-6 py-4 text-center">5</td>
-                            <td class="px-6 py-4 text-center font-bold text-lg text-indigo-600">45</td>
-                            <td class="px-6 py-4 text-right">25,000,000 ₫</td>
-                            <td class="px-6 py-4 text-right font-semibold">1,250,000,000 ₫</td>
-                        </tr>
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center">
-                                    <img class="h-10 w-10 rounded-md object-cover mr-3" src="https://placehold.co/100x100/e2e8f0/475569?text=IP15PM" alt="iPhone 15 Pro Max">
-                                    <div>
-                                        <div class="font-semibold text-gray-900">iPhone 15 Pro Max 256GB</div>
-                                        <div class="text-xs text-gray-500">SKU: APL-IP15PM-256</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">CH Ba Đình</td>
-                            <td class="px-6 py-4 text-center"><span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Mới</span></td>
-                            <td class="px-6 py-4 text-center">10</td>
-                            <td class="px-6 py-4 text-center">1</td>
-                            <td class="px-6 py-4 text-center font-bold text-lg text-indigo-600">9</td>
-                            <td class="px-6 py-4 text-right">25,000,000 ₫</td>
-                            <td class="px-6 py-4 text-right font-semibold">250,000,000 ₫</td>
-                        </tr>
-                         <tr class="border-b hover:bg-gray-50">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center">
-                                    <img class="h-10 w-10 rounded-md object-cover mr-3" src="https://placehold.co/100x100/e2e8f0/475569?text=SS25U" alt="Samsung Galaxy S25 Ultra">
-                                    <div>
-                                        <div class="font-semibold text-gray-900">Samsung Galaxy S25 Ultra</div>
-                                        <div class="text-xs text-gray-500">SKU: SS-S25U-512</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">Kho Tổng TPHCM</td>
-                            <td class="px-6 py-4 text-center"><span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Mới</span></td>
-                            <td class="px-6 py-4 text-center">80</td>
-                            <td class="px-6 py-4 text-center">12</td>
-                            <td class="px-6 py-4 text-center font-bold text-lg text-indigo-600">68</td>
-                            <td class="px-6 py-4 text-right">23,500,000 ₫</td>
-                            <td class="px-6 py-4 text-right font-semibold">1,880,000,000 ₫</td>
-                        </tr>
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center">
-                                    <img class="h-10 w-10 rounded-md object-cover mr-3" src="https://placehold.co/100x100/e2e8f0/475569?text=SS25U" alt="Samsung Galaxy S25 Ultra">
-                                    <div>
-                                        <div class="font-semibold text-gray-900">Samsung Galaxy S25 Ultra</div>
-                                        <div class="text-xs text-gray-500">SKU: SS-S25U-512</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4">CH Đà Nẵng</td>
-                            <td class="px-6 py-4 text-center"><span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Hàng trả</span></td>
-                            <td class="px-6 py-4 text-center">1</td>
-                            <td class="px-6 py-4 text-center">0</td>
-                            <td class="px-6 py-4 text-center font-bold text-lg text-indigo-600">1</td>
-                            <td class="px-6 py-4 text-right">23,500,000 ₫</td>
-                            <td class="px-6 py-4 text-right font-semibold">23,500,000 ₫</td>
-                        </tr>
+                    <tbody id="inventory-table-body" class="text-gray-700">
+                        <!-- Inventory data will be inserted here by JS -->
                     </tbody>
                 </table>
+                <div id="no-results" class="text-center py-16 text-gray-500 hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Không tìm thấy kết quả</h3>
+                    <p class="mt-1 text-sm text-gray-500">Vui lòng thử lại với bộ lọc khác.</p>
+                </div>
             </div>
+
             <!-- Pagination -->
-            <div class="p-4 flex items-center justify-between">
-                <span class="text-sm text-gray-600">Hiển thị 1-10 của 1250 kết quả</span>
+            <div id="pagination-controls" class="p-4 flex items-center justify-between border-t border-gray-200">
+                <span id="pagination-summary" class="text-sm text-gray-600"></span>
                 <div class="flex items-center space-x-2">
-                    <button class="px-3 py-1 border rounded-md hover:bg-gray-100 disabled:opacity-50" disabled>Trước</button>
-                    <button class="px-3 py-1 border rounded-md hover:bg-gray-100">Sau</button>
+                    <button id="prev-page-btn" class="px-3 py-1 border rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">Trước</button>
+                    <button id="next-page-btn" class="px-3 py-1 border rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">Sau</button>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const filterToggle = document.getElementById('filter-toggle');
-            const filterContent = document.getElementById('filter-content');
-            const filterArrow = document.getElementById('filter-arrow');
+            // --- DATA ---
+            const locationsData = {
+                "Hà Nội": {
+                    "Hoàn Kiếm": [{ name: "CH Tràng Tiền", type: "store" }],
+                    "Cầu Giấy": [{ name: "CH Duy Tân", type: "store" }, { name: "CH Trung Hoà", type: "store" }],
+                    "Thanh Xuân": [{ name: "Kho tổng Hà Nội", type: "warehouse" }]
+                },
+                "TP. Hồ Chí Minh": {
+                    "Quận 1": [{ name: "CH Đồng Khởi", type: "store" }],
+                    "Quận 3": [{ name: "CH Võ Văn Tần", type: "store" }],
+                    "Quận 7": [{ name: "Kho tổng TPHCM", type: "warehouse" }]
+                },
+                "Đà Nẵng": {
+                    "Hải Châu": [{ name: "CH Bạch Đằng", type: "store" }, { name: "Kho tổng Đà Nẵng", type: "warehouse" }],
+                    "Thanh Khê": [{ name: "CH Điện Biên Phủ", type: "store" }]
+                }
+            };
 
-            // Initially hide the filter content
-            filterContent.classList.add('hidden');
-            filterArrow.classList.remove('transform');
+            const inventoryData = [
+                { id: 1, name: 'iPhone 15 Pro Max 256GB', sku: 'APL-IP15PM-256', province: 'Hà Nội', district: 'Thanh Xuân', locationName: 'Kho tổng Hà Nội', locationType: 'warehouse', inventoryType: 'new', physical: 50, held: 5, cost: 25000000 },
+                { id: 2, name: 'iPhone 15 Pro Max 256GB', sku: 'APL-IP15PM-256', province: 'Hà Nội', district: 'Cầu Giấy', locationName: 'CH Duy Tân', locationType: 'store', inventoryType: 'new', physical: 10, held: 1, cost: 25000000 },
+                { id: 3, name: 'Samsung Galaxy S25 Ultra', sku: 'SS-S25U-512', province: 'TP. Hồ Chí Minh', district: 'Quận 7', locationName: 'Kho tổng TPHCM', locationType: 'warehouse', inventoryType: 'new', physical: 80, held: 12, cost: 23500000 },
+                { id: 4, name: 'Samsung Galaxy S25 Ultra', sku: 'SS-S25U-512', province: 'Đà Nẵng', district: 'Hải Châu', locationName: 'CH Bạch Đằng', locationType: 'store', inventoryType: 'returned', physical: 1, held: 0, cost: 23500000 },
+                { id: 5, name: 'Laptop Dell XPS 15', sku: 'DELL-XPS15-1TB', province: 'Hà Nội', district: 'Thanh Xuân', locationName: 'Kho tổng Hà Nội', locationType: 'warehouse', inventoryType: 'new', physical: 30, held: 2, cost: 45000000 },
+                { id: 6, name: 'Laptop Dell XPS 15', sku: 'DELL-XPS15-1TB', province: 'TP. Hồ Chí Minh', district: 'Quận 1', locationName: 'CH Đồng Khởi', locationType: 'store', inventoryType: 'defective', physical: 2, held: 0, cost: 45000000 },
+                { id: 7, name: 'Tai nghe Sony WH-1000XM5', sku: 'SONY-XM5-BLK', province: 'Đà Nẵng', district: 'Hải Châu', locationName: 'Kho tổng Đà Nẵng', locationType: 'warehouse', inventoryType: 'new', physical: 100, held: 15, cost: 7500000 },
+                { id: 8, name: 'iPhone 15 Pro Max 256GB', sku: 'APL-IP15PM-256', province: 'TP. Hồ Chí Minh', district: 'Quận 1', locationName: 'CH Đồng Khởi', locationType: 'store', inventoryType: 'new', physical: 8, held: 3, cost: 25000000 },
+                 { id: 9, name: 'Chuột Logitech MX Master 3S', sku: 'LOGI-MX3S', province: 'Hà Nội', district: 'Thanh Xuân', locationName: 'Kho tổng Hà Nội', locationType: 'warehouse', inventoryType: 'new', physical: 150, held: 20, cost: 2100000 },
+                { id: 10, name: 'Bàn phím cơ Filco Majestouch', sku: 'FILCO-MJ-BN', province: 'TP. Hồ Chí Minh', district: 'Quận 7', locationName: 'Kho tổng TPHCM', locationType: 'warehouse', inventoryType: 'new', physical: 40, held: 8, cost: 3200000 },
+                { id: 11, name: 'Màn hình Dell UltraSharp U2723QE', sku: 'DELL-U2723QE', province: 'Đà Nẵng', district: 'Hải Châu', locationName: 'Kho tổng Đà Nẵng', locationType: 'warehouse', inventoryType: 'new', physical: 25, held: 3, cost: 15000000 },
+                { id: 12, name: 'Chuột Logitech MX Master 3S', sku: 'LOGI-MX3S', province: 'Hà Nội', district: 'Cầu Giấy', locationName: 'CH Trung Hoà', locationType: 'store', inventoryType: 'new', physical: 15, held: 5, cost: 2100000 },
+            ];
 
-            filterToggle.addEventListener('click', () => {
-                filterContent.classList.toggle('hidden');
-                filterArrow.classList.toggle('rotate-180');
+            // --- STATE ---
+            let appState = {
+                filters: {
+                    province: 'all',
+                    district: 'all',
+                    locationType: 'all',
+                    search: ''
+                },
+                pagination: {
+                    currentPage: 1,
+                    itemsPerPage: 10,
+                    totalItems: 0
+                }
+            };
+            
+            // --- DOM ELEMENTS ---
+            const provinceFilterEl = document.getElementById('province-filter');
+            const districtFilterEl = document.getElementById('district-filter');
+            const locationTypeFilterEl = document.getElementById('location-type-filter');
+            const searchInputEl = document.getElementById('search-input');
+            const tableBodyEl = document.getElementById('inventory-table-body');
+            const noResultsEl = document.getElementById('no-results');
+            const paginationSummaryEl = document.getElementById('pagination-summary');
+            const prevPageBtn = document.getElementById('prev-page-btn');
+            const nextPageBtn = document.getElementById('next-page-btn');
+            const paginationControlsEl = document.getElementById('pagination-controls');
+
+            // --- RENDER FUNCTIONS ---
+
+            const formatCurrency = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+
+            const getInventoryTypeBadge = (type) => {
+                switch (type) {
+                    case 'new': return `<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Mới</span>`;
+                    case 'defective': return `<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Lỗi</span>`;
+                    case 'returned': return `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Hàng trả</span>`;
+                    default: return '';
+                }
+            };
+
+            const renderTable = () => {
+                // 1. Filter data
+                const filteredData = inventoryData.filter(item => {
+                    const provinceMatch = appState.filters.province === 'all' || item.province === appState.filters.province;
+                    const districtMatch = appState.filters.district === 'all' || item.district === appState.filters.district;
+                    const locationTypeMatch = appState.filters.locationType === 'all' || item.locationType === appState.filters.locationType;
+                    const searchMatch = item.name.toLowerCase().includes(appState.filters.search.toLowerCase()) || item.sku.toLowerCase().includes(appState.filters.search.toLowerCase());
+                    return provinceMatch && districtMatch && locationTypeMatch && searchMatch;
+                });
+
+                appState.pagination.totalItems = filteredData.length;
+                appState.pagination.currentPage = 1; // Reset to first page on filter change
+
+                // 2. Paginate data
+                const paginatedData = paginate(filteredData, appState.pagination.currentPage, appState.pagination.itemsPerPage);
+
+                // 3. Render
+                tableBodyEl.innerHTML = '';
+                if (paginatedData.length === 0) {
+                    noResultsEl.classList.remove('hidden');
+                    paginationControlsEl.classList.add('hidden');
+                    return;
+                }
+
+                noResultsEl.classList.add('hidden');
+                paginationControlsEl.classList.remove('hidden');
+
+                paginatedData.forEach(item => {
+                    const available = item.physical - item.held;
+                    const totalValue = available * item.cost;
+                    const row = `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center">
+                                    <img class="h-10 w-10 rounded-md object-cover mr-3 flex-shrink-0" src="https://placehold.co/100x100/e2e8f0/475569?text=${item.sku.substring(0,6)}" alt="${item.name}" onerror="this.onerror=null;this.src='https://placehold.co/100x100/e2e8f0/475569?text=Error';">
+                                    <div>
+                                        <div class="font-semibold text-gray-900">${item.name}</div>
+                                        <div class="text-xs text-gray-500">SKU: ${item.sku}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">${item.locationName}</td>
+                            <td class="px-6 py-4 text-center">${getInventoryTypeBadge(item.inventoryType)}</td>
+                            <td class="px-6 py-4 text-center">${item.physical}</td>
+                            <td class="px-6 py-4 text-center">${item.held}</td>
+                            <td class="px-6 py-4 text-center font-bold text-lg text-indigo-600">${available}</td>
+                            <td class="px-6 py-4 text-right">${formatCurrency(item.cost)}</td>
+                            <td class="px-6 py-4 text-right font-semibold">${formatCurrency(totalValue)}</td>
+                        </tr>
+                    `;
+                    tableBodyEl.innerHTML += row;
+                });
+                
+                renderPagination();
+            };
+            
+            const paginate = (array, page_number, page_size) => {
+                return array.slice((page_number - 1) * page_size, page_number * page_size);
+            };
+
+            const renderPagination = () => {
+                const { currentPage, itemsPerPage, totalItems } = appState.pagination;
+                const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+                const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+                const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+                paginationSummaryEl.textContent = `Hiển thị ${startItem}-${endItem} của ${totalItems} kết quả`;
+
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages || totalPages === 0;
+            };
+
+            // --- FILTER POPULATION ---
+            const populateProvinces = () => {
+                provinceFilterEl.innerHTML = `<option value="all">Tất cả Tỉnh/Thành</option>`;
+                Object.keys(locationsData).forEach(province => {
+                    provinceFilterEl.innerHTML += `<option value="${province}">${province}</option>`;
+                });
+            };
+
+            const populateDistricts = (province) => {
+                if (province && province !== 'all') {
+                    districtFilterEl.innerHTML = `<option value="all">Tất cả Quận/Huyện</option>`;
+                    Object.keys(locationsData[province]).forEach(district => {
+                        districtFilterEl.innerHTML += `<option value="${district}">${district}</option>`;
+                    });
+                    districtFilterEl.disabled = false;
+                } else {
+                    districtFilterEl.innerHTML = `<option value="all">Tất cả Quận/Huyện</option>`;
+                    districtFilterEl.disabled = true;
+                }
+            };
+            
+            // --- EVENT LISTENERS ---
+            provinceFilterEl.addEventListener('change', (e) => {
+                appState.filters.province = e.target.value;
+                appState.filters.district = 'all'; // Reset district on province change
+                populateDistricts(appState.filters.province);
+                districtFilterEl.value = 'all';
+                renderTable();
             });
+
+            districtFilterEl.addEventListener('change', (e) => {
+                appState.filters.district = e.target.value;
+                renderTable();
+            });
+
+            locationTypeFilterEl.addEventListener('change', (e) => {
+                appState.filters.locationType = e.target.value;
+                renderTable();
+            });
+
+            searchInputEl.addEventListener('input', (e) => {
+                appState.filters.search = e.target.value;
+                renderTable();
+            });
+            
+            prevPageBtn.addEventListener('click', () => {
+                if (appState.pagination.currentPage > 1) {
+                    appState.pagination.currentPage--;
+                    renderTable(); // Re-render with the new page
+                }
+            });
+
+            nextPageBtn.addEventListener('click', () => {
+                const totalPages = Math.ceil(appState.pagination.totalItems / appState.pagination.itemsPerPage);
+                if (appState.pagination.currentPage < totalPages) {
+                    appState.pagination.currentPage++;
+                    renderTable(); // Re-render with the new page
+                }
+            });
+
+            // --- INITIALIZATION ---
+            populateProvinces();
+            populateDistricts(null);
+            renderTable();
         });
     </script>
 </body>
