@@ -58,15 +58,15 @@
                     </a>
                 </div>
                 <div class="flex items-center space-x-3">
-                    <a href="{{ route('admin.shippers.trash') }}"
-                        class="px-4 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold flex items-center justify-center space-x-2">
-                        <i class="fas fa-trash"></i>
-                        <span>Thùng rác</span>
-                    </a>
                     <a href="{{ route('admin.shippers.create', ['warehouse_id' => $warehouse->id]) }}"
                         class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center justify-center space-x-2">
                         <i class="fas fa-plus"></i>
                         <span>Thêm nhân viên mới</span>
+                    </a>
+                    <a href="{{ route('admin.shippers.trash') }}"
+                        class="px-4 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold flex items-center justify-center space-x-2">
+                        <i class="fas fa-trash"></i>
+                        <span>Thùng rác</span>
                     </a>
                 </div>
             </div>
@@ -217,7 +217,8 @@
             <div class="mt-6">{{ $shippers->appends(request()->query())->links() }}</div>
         </div>
         <!-- Modal Xác nhận Xóa -->
-        <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center">
+        <div id="deleteModal"
+            class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center">
             <div class="relative mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
                 <div class="mt-3">
                     <div class="flex items-center justify-center">
