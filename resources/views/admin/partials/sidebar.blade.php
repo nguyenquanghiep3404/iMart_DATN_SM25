@@ -186,7 +186,7 @@ foreach ($navigation as $navItem) {
 @endphp
 
 <aside id="adminSidebar"
-    class="w-[300px] border-r border-slate-200 overflow-y-auto sidebar-scrollbar fixed left-0 top-0 h-full bg-white z-40 transition-transform duration-300 print:hidden flex flex-col"
+    class="w-[280px] border-r border-slate-200 overflow-y-auto sidebar-scrollbar fixed left-0 top-0 h-full bg-white z-40 transition-transform duration-300 print:hidden flex flex-col"
     x-show="(window.innerWidth >= 1024) ? true : sideMenu"
     :class="(window.innerWidth >= 1024 && !sideMenu) ? '-translate-x-full' : ((sideMenu || window.innerWidth >= 1024) ? 'translate-x-0' : '-translate-x-full')"
     x-transition:enter="transition ease-out duration-300" x-transition:enter-start="-translate-x-full"
@@ -195,21 +195,16 @@ foreach ($navigation as $navItem) {
 
     <div class="flex flex-col h-full" x-data="{ openNav: '{{ $activeParentNav }}' }">
         {{-- SIDEBAR HEADER --}}
-        <div class="flex h-[65px] items-center justify-center border-b border-slate-200 px-3 lg:px-6 py-4">
+        <div class="flex h-16 items-center justify-center border-b border-slate-200 px-4">
             <a href="{{ route('admin.dashboard') }}">
-                {{-- Full Logo --}}
-                <img class="hidden lg:block" src="{{ asset('assets/users/logo/logo-full.svg') }}" alt="Full Logo"
-                     style="width: 150px;">
-                {{-- Icon Logo --}}
-                <img class="block lg:hidden" src="{{ asset('assets/users/logo/logo-icon.svg') }}" alt="Icon Logo"
-                     style="width: 40px;">
+                <img class="h-10 w-auto" src="{{ asset('assets/users/logo/logo-full.svg') }}" alt="iMart Logo">
             </a>
         </div>
         {{-- END HEADER --}}
 
         {{-- NAVIGATION --}}
         <div class="flex-1 overflow-y-auto">
-            <nav class="px-3 py-5">
+            <nav class="px-3 py-4">
                 <ul class="space-y-1">
                     @foreach ($navigation as $navItem)
                         {{-- RENDER A SINGLE LINK --}}
@@ -225,9 +220,13 @@ foreach ($navigation as $navItem) {
                             @endphp
                             <li>
                                 <a href="{{ route($navItem['route']) }}"
-                                   class="group flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out
-                                        {{ $isLinkActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
-                                    <span class="mr-3 text-lg {{ $isLinkActive ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-500' }}">
+                                   class="group relative flex items-center px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out
+                                          {{ $isLinkActive ? 'text-indigo-600 font-semibold' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium' }}">
+                                    {{-- THAY ĐỔI: Thêm chỉ báo active --}}
+                                    @if($isLinkActive)
+                                    <span class="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-indigo-600 rounded-r-full"></span>
+                                    @endif
+                                    <span class="mr-3 text-lg {{ $isLinkActive ? 'text-indigo-600' : 'text-slate-500 group-hover:text-slate-600' }}">
                                         {!! $navItem['icon'] !!}
                                     </span>
                                     {{ $navItem['label'] }}
@@ -238,13 +237,15 @@ foreach ($navigation as $navItem) {
                             @php
                                 $isDropdownActive = is_active_section($navItem['children'], $currentRouteName);
                             @endphp
-                            <li>
+                            <li class="relative">
                                 <button @click="openNav = (openNav === '{{ $navItem['id'] }}' ? null : '{{ $navItem['id'] }}')"
-                                        class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out font-medium
-                                            {{ $isDropdownActive ? 'text-indigo-600' : 'text-slate-700' }} hover:text-indigo-600 hover:bg-indigo-50/50"
-                                        :class="{ 'bg-indigo-50 text-indigo-600': openNav === '{{ $navItem['id'] }}' }">
-                                    <span class="mr-3 text-lg {{ $isDropdownActive ? 'text-indigo-600' : 'text-slate-500' }} group-hover:text-indigo-500"
-                                          :class="{ 'text-indigo-600': openNav === '{{ $navItem['id'] }}' }">
+                                        class="group w-full flex items-center px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out font-medium
+                                               {{ $isDropdownActive ? 'text-slate-900' : 'text-slate-700' }} hover:text-slate-900 hover:bg-slate-100">
+                                    {{-- THAY ĐỔI: Thêm chỉ báo active --}}
+                                    @if($isDropdownActive)
+                                    <span class="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-indigo-600 rounded-r-full"></span>
+                                    @endif
+                                    <span class="mr-3 text-lg {{ $isDropdownActive ? 'text-indigo-600' : 'text-slate-500' }} group-hover:text-slate-600">
                                         {!! $navItem['icon'] !!}
                                     </span>
                                     {{ $navItem['label'] }}
@@ -252,7 +253,7 @@ foreach ($navigation as $navItem) {
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.4,9.88,10.81,5.29a1,1,0,0,0-1.41,0,1,1,0,0,0,0,1.42L14,11.29a1,1,0,0,1,0,1.42L9.4,17.29a1,1,0,0,0,1.41,1.42l4.59-4.59A3,3,0,0,0,15.4,9.88Z" /></svg>
                                     </span>
                                 </button>
-                                <ul x-show="openNav === '{{ $navItem['id'] }}'" class="pl-8 pr-2 py-1 space-y-1 mt-1" style="display: none;">
+                                <ul x-show="openNav === '{{ $navItem['id'] }}'" x-transition class="pl-7 pr-2 py-1 space-y-1 mt-1" style="display: none;">
                                     @foreach ($navItem['children'] as $child)
                                         @php
                                             $isChildActive = false;
@@ -264,10 +265,12 @@ foreach ($navigation as $navItem) {
                                             }
                                         @endphp
                                         <li>
+                                            {{-- THAY ĐỔI: Giao diện active cho menu con --}}
                                             <a href="{{ route($child['route']) }}"
-                                               class="block w-full py-1.5 px-3 text-sm rounded-md transition-colors duration-150
-                                                    {{ $isChildActive ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                                {{ $child['label'] }}
+                                               class="relative flex items-center w-full py-1.5 px-3 text-sm rounded-md transition-colors duration-150
+                                                      {{ $isChildActive ? 'text-indigo-600 font-semibold' : 'text-slate-600 hover:text-slate-900' }}">
+                                                <span class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full {{ $isChildActive ? 'bg-indigo-600' : 'bg-slate-400' }}"></span>
+                                                <span class="ml-4">{{ $child['label'] }}</span>
                                             </a>
                                         </li>
                                     @endforeach
@@ -285,7 +288,7 @@ foreach ($navigation as $navItem) {
                 @csrf
                 <a href="{{ route('logout') }}"
                    onclick="event.preventDefault(); this.closest('form').submit();"
-                   class="group flex items-center px-4 py-2.5 text-base rounded-md font-medium text-slate-700 hover:text-red-600 hover:bg-red-50/50 transition-all duration-200 ease-in-out">
+                   class="group flex items-center px-3 py-2 text-sm rounded-md font-medium text-slate-700 hover:text-red-600 hover:bg-red-50 transition-all duration-200 ease-in-out">
                     <span class="mr-3 text-lg text-slate-500 group-hover:text-red-500">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16,13H15V11h1a1,1,0,0,0,0-2H15V7h1a1,1,0,0,0,0-2H15V4a1,1,0,0,0-1-1H4A1,1,0,0,0,3,4V20a1,1,0,0,0,1,1h9a1,1,0,0,0,1-1V19h1a1,1,0,0,0,0-2H15V15h1a1,1,0,0,0,0-2ZM13,19H5V5h8V19Z" /><path d="M21,12l-4-4v3H11v2h6v3Z" /></svg>
                     </span>

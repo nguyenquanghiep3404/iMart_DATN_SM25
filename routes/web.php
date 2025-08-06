@@ -66,6 +66,8 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
+use App\Http\Controllers\Admin\InventoryDashboardController;
+
 
 Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
 
@@ -383,18 +385,18 @@ Route::prefix('admin')
         // Route::middleware('can:manage-content')->group(function () {
         // Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
         //     ->name('products.gallery.delete');
-
+    
         // Category routes
         // Route::resource('categories', CategoryController::class);
-
+    
 
         // Route::middleware('can:manage-content')->group(function () {
         // Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
         //     ->name('products.gallery.delete');
-
+    
         // Category routes
         // Route::resource('categories', CategoryController::class);
-
+    
 
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::get('/categories/trash', [CategoryController::class, 'trash'])->name('categories.trash');
@@ -420,7 +422,8 @@ Route::prefix('admin')
         // --- Specification Groups ---
         Route::get('specification-groups/trashed', [SpecificationGroupController::class, 'trashed'])->name('specification-groups.trashed');
         Route::post('specification-groups/{id}/restore', [SpecificationGroupController::class, 'restore'])->name('specification-groups.restore');
-        Route::delete('specification-groups/{id}/force-delete', [SpecificationGroupController::class, 'forceDelete'])->name('specification-groups.forceDelete');;
+        Route::delete('specification-groups/{id}/force-delete', [SpecificationGroupController::class, 'forceDelete'])->name('specification-groups.forceDelete');
+        ;
         Route::resource('specification-groups', SpecificationGroupController::class);
 
         // --- Specifications ---
@@ -527,10 +530,12 @@ Route::prefix('admin')
         Route::put('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'update'])->name('marketing_campaigns.update');
         Route::post('/marketing_campaigns/{id}/send', [MarketingCampaignController::class, 'send'])->name('marketing_campaigns.send');
 
-
+        // quản lý tồn kho
+        Route::get('/dashboard/inventory', [InventoryDashboardController::class, 'index'])
+            ->name('dashboard.inventory');
 
         // Banner routes
-
+    
         Route::get('/banners/trash', [BannerController::class, 'trash'])->name('banners.trash');
         Route::post('/banners/{banner}/restore', [BannerController::class, 'restore'])->name('banners.restore');
         Route::delete('/banners/{banner}/force-delete', [BannerController::class, 'forceDelete'])->name('banners.forceDelete');
@@ -646,7 +651,7 @@ Route::prefix('admin')
         Route::patch('bundle-products/{bundle}/toggle-status', [BundleProductController::class, 'toggleStatus'])->name('bundle-products.toggle-status');
 
         // Xóa mềm gói sản phẩm
-
+    
         // Post routes
         Route::get('posts/trashed', [PostController::class, 'trashed'])->name('posts.trashed'); // Danh sách bài đã xóa
         Route::get('posts/preview/{id}', [PostController::class, 'preview'])->name('posts.preview');
@@ -766,45 +771,34 @@ Route::prefix('admin')
             // Route để xác nhận hoàn tất đóng gói
             Route::post('/orders/{orderId}/confirm-packing', [PackingStationController::class, 'confirmPacking'])->name('confirm-packing');
         });
-        // QUẢN LÝ CHUYỂN KHO (STOCK TRANSFERS)
         Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
-            Route::get('/search-products', [StockTransferController::class, 'searchProducts'])->name('search-products');
-            Route::get('/dispatch', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.index');
-            Route::get('/{stockTransfer}/dispatch', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.show');
+
+            // === CÁC ROUTE CHÍNH (Từ Route::resource) ===
+            Route::get('/', [StockTransferController::class, 'index'])->name('index');
+            Route::get('/create', [StockTransferController::class, 'create'])->name('create');
+            Route::post('/', [StockTransferController::class, 'store'])->name('store');
+            Route::get('/{stockTransfer}', [StockTransferController::class, 'show'])->name('show');
+            Route::get('/{stockTransfer}/edit', [StockTransferController::class, 'edit'])->name('edit');
+            Route::put('/{stockTransfer}', [StockTransferController::class, 'update'])->name('update');
+            // Giả sử sẽ có chức năng xóa
+            // Route::delete('/{stockTransfer}', [StockTransferController::class, 'destroy'])->name('destroy');
+    
+            // API Routes (đặt gần nhau cho dễ quản lý)
             Route::get('/api/pending', [StockTransferController::class, 'getPendingTransfers'])->name('api.pending');
+            Route::get('/api/search-products', [StockTransferController::class, 'searchProducts'])->name('search-products');
+
+            // Dispatch (Xuất Kho) Routes
+            Route::get('/dispatch/select', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.index'); // Trang chọn phiếu
+            Route::get('/{stockTransfer}/dispatch', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.show'); // Trang xuất kho cho phiếu cụ thể
             Route::post('/{stockTransfer}/dispatch', [StockTransferController::class, 'processDispatch'])->name('dispatch.process');
+
+            // Receive (Nhận Kho) Routes
+            Route::get('/{stockTransfer}/receive', [StockTransferController::class, 'showReceivePage'])->name('receive.show');
+            Route::post('/{stockTransfer}/receive', [StockTransferController::class, 'processReceive'])->name('receive.process');
+
         });
         Route::resource('stock-transfers', StockTransferController::class);
-        Route::get('/test-my-role', function () {
-            if (!Auth::check()) {
-                return 'Bạn chưa đăng nhập.';
-            }
 
-            $user = Auth::user();
-
-            echo "<h2>Kiểm tra vai trò cho User ID: {$user->id} - {$user->name}</h2>";
-
-            // Kiểm tra trực tiếp
-            $hasRole = $user->hasAnyRole(['admin', 'super_admin']);
-
-            echo 'Kết quả của `hasAnyRole([\'admin\', \'super_admin\'])`: ';
-            echo $hasRole ? '<b>TRUE (ĐÚNG)</b>' : '<b>FALSE (SAI)</b>';
-
-            echo "<hr>";
-
-            // In ra tất cả các vai trò mà user này có
-            $roles = $user->roles;
-            if ($roles->isEmpty()) {
-                echo 'User này KHÔNG có vai trò nào được gán trong bảng `role_user`.';
-            } else {
-                echo '<h4>Các vai trò của user này:</h4>';
-                echo '<ul>';
-                foreach ($roles as $role) {
-                    echo "<li>ID: {$role->id} - Tên: {$role->name}</li>";
-                }
-                echo '</ul>';
-            }
-        });
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')

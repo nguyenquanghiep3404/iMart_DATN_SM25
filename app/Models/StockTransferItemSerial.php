@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class StockTransferItemSerial extends Model
 {
@@ -13,22 +12,21 @@ class StockTransferItemSerial extends Model
     protected $fillable = [
         'stock_transfer_item_id',
         'inventory_serial_id',
-        'status', // Mặc dù có giá trị default, thêm vào đây để có thể ghi đè nếu cần
+        'status',
     ];
 
     /**
-     * Lấy mục chuyển kho mà serial này thuộc về.
+     * Get the main inventory serial record.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function stockTransferItem(): BelongsTo
-    {
-        return $this->belongsTo(StockTransferItem::class, 'stock_transfer_item_id');
-    }
-
-    /**
-     * Lấy serial hàng tồn kho liên quan.
-     */
-    public function inventorySerial(): BelongsTo
+    public function inventorySerial()
     {
         return $this->belongsTo(InventorySerial::class, 'inventory_serial_id');
     }
+
+    public function stockTransferItem()
+{
+    return $this->belongsTo(StockTransferItem::class, 'stock_transfer_item_id');
+}
 }

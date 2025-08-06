@@ -16,15 +16,8 @@
     .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 6px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
-    @keyframes flash-border {
-        0%, 100% { border-color: #10b981; }
-        50% { border-color: #34d399; box-shadow: 0 0 10px #34d399; }
-    }
-    .flash-success { animation: flash-border 0.7s ease-in-out; }
-
-    /* Status Badge Styles */
     .status-badge { font-size: 0.75rem; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 9999px; }
-    .status-pending { background-color: #FEF9C3; color: #713F12; } /* Yellow for Pending */
+    .status-pending { background-color: #FEF9C3; color: #713F12; }
 </style>
 @endpush
 
@@ -64,7 +57,7 @@
     <!-- Main Card Content -->
     <div class="card p-6 min-h-[400px] flex items-center justify-center">
         <!-- Loading State -->
-        <div x-show="isLoading && stockTransfers.length === 0" class="text-center">
+        <div x-show="isLoading && !preselectedTransfer" class="text-center">
             <i class="fas fa-spinner fa-spin text-4xl text-gray-400"></i>
             <p class="mt-3 text-gray-600">Đang tải danh sách phiếu chuyển kho...</p>
         </div>
@@ -110,32 +103,66 @@
                        <i class="fas fa-arrow-left mr-1"></i> Quay lại chọn phiếu
                     </button>
                 </div>
-                <div class="space-y-6">
+                <div class="space-y-4">
                     <template x-for="item in selectedTransfer.items" :key="item.id">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center p-3 rounded-md hover:bg-gray-50">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center p-3 rounded-md hover:bg-gray-50 border-t">
+                            
+                            <!-- Cột 1: Tên sản phẩm -->
                             <div class="md:col-span-1">
                                 <p class="font-semibold text-gray-900" x-text="item.name"></p>
                                 <p class="text-xs text-gray-500" x-text="'SKU: ' + item.sku"></p>
                             </div>
-                            <div class="md:col-span-1">
-                                 <div class="flex justify-between items-center mb-1">
-                                     <p class="text-sm font-medium text-gray-700">Tiến độ quét</p>
-                                     <p class="text-sm font-bold" :class="scannedData[item.id].length === item.quantity ? 'text-green-600' : 'text-gray-800'">
-                                         <span x-text="scannedData[item.id].length"></span> / <span x-text="item.quantity"></span>
-                                     </p>
-                                 </div>
-                                <div class="w-full progress-bar-bg rounded-full h-2.5">
-                                    <div class="progress-bar-fill h-2.5 rounded-full" :style="`width: ${(scannedData[item.id].length / item.quantity) * 100}%`"></div>
+                    
+                            <!-- Container cho 2 cột còn lại (dùng nested grid) -->
+                            <template x-if="item.has_serial_tracking">
+                                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                                    <!-- Cột Tiến độ quét -->
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <p class="text-sm font-medium text-gray-700">Tiến độ quét</p>
+                                            <p class="text-sm font-bold" :class="scannedData[item.id].length === item.quantity ? 'text-green-600' : 'text-gray-800'">
+                                                <span x-text="scannedData[item.id].length"></span> / <span x-text="item.quantity"></span>
+                                            </p>
+                                        </div>
+                                        <div class="w-full progress-bar-bg rounded-full h-2.5">
+                                            <div class="progress-bar-fill h-2.5 rounded-full" :style="`width: ${(scannedData[item.id].length / item.quantity) * 100}%`"></div>
+                                        </div>
+                                    </div>
+                                    <!-- Cột Nút bấm -->
+                                    <div class="text-right">
+                                        <button @click="openScanningModal(item)"
+                                                class="w-full sm:w-auto px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors"
+                                                :class="scannedData[item.id].length === item.quantity ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'">
+                                            <i class="fas" :class="scannedData[item.id].length === item.quantity ? 'fa-check-circle' : 'fa-barcode'"></i>
+                                            <span x-text="scannedData[item.id].length === item.quantity ? 'Xem lại' : 'Bắt đầu quét'"></span>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="md:col-span-1 text-right">
-                                 <button @click="openScanningModal(item)"
-                                         class="w-full md:w-auto px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors"
-                                         :class="scannedData[item.id].length === item.quantity ? 'bg-green-100 text-green-700' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'">
-                                    <i class="fas" :class="scannedData[item.id].length === item.quantity ? 'fa-check-circle' : 'fa-barcode'"></i>
-                                    <span x-text="scannedData[item.id].length === item.quantity ? 'Xem lại' : 'Bắt đầu quét'"></span>
-                                </button>
-                            </div>
+                            </template>
+                    
+                            <template x-if="!item.has_serial_tracking">
+                                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                                    <!-- Cột Trạng thái (cho sản phẩm không serial) -->
+                                    <div>
+                                         <div class="flex justify-between items-center mb-1">
+                                            <p class="text-sm font-medium text-gray-700">Trạng thái</p>
+                                            <p class="text-sm font-bold text-green-600">
+                                               <span x-text="item.quantity"></span> / <span x-text="item.quantity"></span>
+                                            </p>
+                                        </div>
+                                        <div class="w-full progress-bar-bg rounded-full h-2.5">
+                                            <div class="bg-green-500 h-2.5 rounded-full" style="width: 100%"></div>
+                                        </div>
+                                    </div>
+                                    <!-- Cột Text (cho sản phẩm không serial) -->
+                                    <div class="text-right">
+                                        <div class="inline-flex items-center justify-center w-full sm:w-auto px-5 py-2.5 text-sm font-semibold rounded-lg bg-gray-100 text-gray-500">
+                                             <i class="fas fa-check-circle mr-2 text-gray-400"></i>
+                                             <span>Tự động xác nhận</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </template>
                 </div>
@@ -143,15 +170,12 @@
         </template>
     </div>
 
-    <!-- Modals -->
     @include('admin.stock_transfers.partials._dispatch_modals')
 </div>
 @endsection
 
 @push('scripts')
-{{-- Thư viện quét mã vạch --}}
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-{{-- Thư viện âm thanh Howler.js --}}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
 <script>
 function dispatchPageData(preselectedTransfer = null) {
@@ -194,7 +218,6 @@ function dispatchPageData(preselectedTransfer = null) {
             });
         },
 
-        // --- SOUND METHODS ---
         initializeSound() {
             if (this.soundInitialized || typeof Howl === 'undefined') return;
             this.beepSound = new Howl({
@@ -204,11 +227,13 @@ function dispatchPageData(preselectedTransfer = null) {
                 onloaderror: (id, err) => { console.error('Sound load error:', err); }
             });
         },
+
         playBeep() {
-            if (this.soundInitialized && this.beepSound) this.beepSound.play();
+            if (this.soundInitialized && this.beepSound) {
+                this.beepSound.play();
+            }
         },
 
-        // --- DATA FETCHING ---
         fetchPendingTransfers() {
             this.isLoading = true;
             fetch('{{ route('admin.stock-transfers.api.pending') }}')
@@ -220,22 +245,29 @@ function dispatchPageData(preselectedTransfer = null) {
                 .finally(() => this.isLoading = false);
         },
 
-        // --- SELECTION LOGIC ---
         selectTransfer(transfer) {
             this.selectedTransfer = transfer;
             this.scannedData = {};
             this.selectedTransfer.items.forEach(item => {
-                this.scannedData[item.id] = [];
+                if (!item.has_serial_tracking) {
+                    this.scannedData[item.id] = [];
+                    for (let i = 0; i < item.quantity; i++) {
+                        this.scannedData[item.id].push('AUTO_CONFIRMED');
+                    }
+                } else {
+                    this.scannedData[item.id] = [];
+                }
             });
         },
+
         resetSelection() {
             this.selectedTransfer = null;
             this.scannedData = {};
-            // If the page was loaded for a specific transfer, redirect to the general dispatch page
             if (preselectedTransfer) {
                 window.location.href = '{{ route('admin.stock-transfers.dispatch.index') }}';
             }
         },
+
         get isFullyScanned() {
             if (!this.selectedTransfer) return false;
             return this.selectedTransfer.items.every(item =>
@@ -243,18 +275,19 @@ function dispatchPageData(preselectedTransfer = null) {
             );
         },
 
-        // --- SCANNING MODAL LOGIC ---
         openScanningModal(item) {
             this.currentItemForScanning = item;
             this.isScanningModalOpen = true;
             this.$nextTick(() => document.getElementById('serial-input').focus());
         },
+
         closeScanningModal() {
             this.isScanningModalOpen = false;
             this.currentItemForScanning = null;
             this.currentSerialInput = '';
             this.scanError = '';
         },
+
         addSerial() {
             const trimmedSerial = this.currentSerialInput.trim();
             if (!trimmedSerial) {
@@ -278,21 +311,23 @@ function dispatchPageData(preselectedTransfer = null) {
             this.playBeep();
             this.$nextTick(() => document.getElementById('serial-input').focus());
         },
+
         removeSerial(itemId, serialToRemove) {
             const list = this.scannedData[itemId];
             const index = list.indexOf(serialToRemove);
             if (index > -1) list.splice(index, 1);
         },
         
-        // --- BARCODE CAMERA MODAL LOGIC ---
         openBarcodeScanner() {
             this.isScannerOpen = true;
             this.$nextTick(() => { this.startScanning(); });
         },
+
         closeBarcodeScanner() {
             this.stopScanning();
             this.isScannerOpen = false;
         },
+
         startScanning() {
             const readerElement = document.getElementById('reader');
             const loadingMessage = document.getElementById('loading-message');
@@ -321,18 +356,26 @@ function dispatchPageData(preselectedTransfer = null) {
                 errorMessage.classList.remove('hidden');
             });
         },
+
         stopScanning() {
             if (this.html5QrCode && this.html5QrCode.isScanning) {
                 this.html5QrCode.stop().catch(err => console.error("Error stopping camera:", err));
             }
         },
 
-        // --- FORM SUBMISSION ---
         confirmDispatch() {
             if(!this.isFullyScanned || this.isLoading) return;
             this.isLoading = true;
             const url = `{{ url('admin/stock-transfers') }}/${this.selectedTransfer.id}/dispatch`;
             
+            let finalScannedData = {};
+            for (const itemId in this.scannedData) {
+                const item = this.selectedTransfer.items.find(i => i.id == itemId);
+                if (item && item.has_serial_tracking) {
+                    finalScannedData[itemId] = this.scannedData[itemId];
+                }
+            }
+
             fetch(url, {
                 method: 'POST',
                 headers: {
@@ -340,7 +383,7 @@ function dispatchPageData(preselectedTransfer = null) {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({ scanned_serials: this.scannedData })
+                body: JSON.stringify({ scanned_serials: finalScannedData })
             })
             .then(response => {
                 if (!response.ok) return response.json().then(err => { throw err; });
@@ -360,9 +403,9 @@ function dispatchPageData(preselectedTransfer = null) {
             })
             .finally(() => this.isLoading = false);
         },
+
         closeSuccessModal() {
             this.isSuccessModalOpen = false;
-            // Redirect to the index page after success
             window.location.href = '{{ route('admin.stock-transfers.index') }}';
         }
     }
