@@ -278,7 +278,8 @@
                 tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center">Đang tải...</td></tr>';
                 // Lọc dữ liệu
                 fetch(
-                        `{{ route('admin.sales-staff.api.stores') }}?province=${province}&district=${district}&search=${search}&per_page=${perPage}`)
+                        `{{ route('admin.sales-staff.api.stores') }}?province=${province}&district=${district}&search=${search}&per_page=${perPage}`
+                        )
                     .then(response => response.json())
                     .then(data => {
                         if (data.stores.length === 0) {
@@ -320,6 +321,7 @@
                         }
                     });
             }
+
             function updatePaginationInfo(pagination) {
                 // This function can be used to update pagination display if needed
                 console.log('Pagination info:', pagination);
