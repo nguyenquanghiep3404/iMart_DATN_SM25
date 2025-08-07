@@ -85,11 +85,13 @@
                                 class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg"
                                 @if (count($warehouses) == 1) disabled @endif>
                                 <option value="">Chọn Kho làm việc</option>
-                                @foreach ($warehouses ?? [] as $warehouse)
-                                    <option value="{{ $warehouse->id }}" @selected(old('warehouse_id', $warehouse->id) == $warehouse->id)>
-                                        {{ $warehouse->name }}
-                                    </option>
-                                @endforeach
+                                @if (count($warehouses) == 1)
+                                    @foreach ($warehouses ?? [] as $warehouse)
+                                        <option value="{{ $warehouse->id }}" @selected(old('warehouse_id', $warehouse->id) == $warehouse->id)>
+                                            {{ $warehouse->name }}
+                                        </option>
+                                    @endforeach
+                                @endif
                             </select>
                             @if (count($warehouses) == 1)
                                 <input type="hidden" name="warehouse_id" value="{{ $warehouses->first()->id }}">
@@ -127,36 +129,52 @@
         document.addEventListener('DOMContentLoaded', function() {
             const provinceSelect = document.getElementById('province');
             const warehouseSelect = document.getElementById('warehouse');
+            
             // Chỉ chạy JavaScript nếu không có warehouse_id từ URL (tức là không bị disabled)
             if (!provinceSelect.disabled) {
                 // Lưu trữ tất cả warehouses
                 let allWarehouses = [];
+                let isInitialized = false;
+                
                 // Fetch warehouses khi trang load
                 fetchWarehouses();
+                
                 // Khi chọn tỉnh/thành, filter warehouses
                 provinceSelect.addEventListener('change', function() {
                     const selectedProvince = this.value;
                     filterWarehouses(selectedProvince);
                 });
+                
                 function fetchWarehouses() {
                     fetch('{{ route('admin.shippers.warehouses') }}')
                         .then(response => response.json())
                         .then(data => {
                             allWarehouses = data;
-                            filterWarehouses(provinceSelect.value);
+                            isInitialized = true;
+                            // Chỉ filter nếu đã có province được chọn
+                            if (provinceSelect.value) {
+                                filterWarehouses(provinceSelect.value);
+                            }
                         })
                         .catch(error => {
                             console.error('Lỗi khi tìm kho:', error);
                         });
                 }
+                
                 function filterWarehouses(provinceCode) {
-                    // Thêm tùy chọn mặc định
+                    // Chỉ filter khi đã khởi tạo xong
+                    if (!isInitialized) return;
+                    
+                    // Clear dropdown kho
                     warehouseSelect.innerHTML = '<option value="">Chọn Kho làm việc</option>';
+                    
                     if (!provinceCode) return;
+                    
                     // Lọc warehouses theo province_code
                     const filteredWarehouses = allWarehouses.filter(warehouse =>
                         warehouse.province_code === provinceCode
                     );
+                    
                     // Thêm các tùy chọn kho vào select
                     filteredWarehouses.forEach(warehouse => {
                         const option = document.createElement('option');

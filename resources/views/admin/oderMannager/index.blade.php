@@ -4,7 +4,7 @@
     <div class="max-w-screen-2xl mx-auto space-y-6">
         {{-- Header --}}
         <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">Quản Lý Nhân viên Đơn hàng</h1>
+            <h1 class="text-3xl font-bold text-gray-800">Quản Lý Nhân viên Đơn hàng - Đóng Gói</h1>
             <p class="text-gray-500 mt-1">Tổng quan, tìm kiếm kho và quản lý các nhân viên xử lý đơn hàng.</p>
         </div>
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">

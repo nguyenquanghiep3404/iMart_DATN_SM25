@@ -53,8 +53,10 @@
                     <h1 class="text-3xl font-bold text-gray-800">Quản lý Nhân viên Giao hàng</h1>
                     <p class="text-gray-500 mt-1">Kho: {{ $warehouse->name }} -
                         {{ $warehouse->province->name_with_type ?? '' }}</p>
-                    <a href="{{ route('admin.shippers.index') }}">
-                        <p class="text-indigo-600"><i class="fas fa-arrow-left"> Quay lại </i></p>
+                    <a href="{{ route('admin.shippers.index') }}" 
+                        class="inline-flex items-center mt-2 px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Quay lại
                     </a>
                 </div>
                 <div class="flex items-center space-x-3">

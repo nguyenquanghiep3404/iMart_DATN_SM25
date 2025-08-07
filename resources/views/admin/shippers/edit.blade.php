@@ -30,16 +30,16 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Họ và Tên <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" id="name" value="{{ old('name', $shipper->name) }}" required class="w-full py-2 px-3 border border-gray-300 rounded-lg">
+                        <input type="text" name="name" id="name" value="{{ old('name', $shipper->name) }}"  class="w-full py-2 px-3 border border-gray-300 rounded-lg">
                     </div>
                      <div>
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span class="text-red-500">*</span></label>
-                        <input type="tel" name="phone_number" id="phone_number" value="{{ old('phone_number', $shipper->phone_number) }}" required class="w-full py-2 px-3 border border-gray-300 rounded-lg">
+                        <input type="tel" name="phone_number" id="phone_number" value="{{ old('phone_number', $shipper->phone_number) }}"  class="w-full py-2 px-3 border border-gray-300 rounded-lg">
                     </div>
                 </div>
                  <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
-                    <input type="email" name="email" id="email" value="{{ old('email', $shipper->email) }}" required class="w-full py-2 px-3 border border-gray-300 rounded-lg">
+                    <input type="email" name="email" id="email" value="{{ old('email', $shipper->email) }}"  class="w-full py-2 px-3 border border-gray-300 rounded-lg">
                  </div>
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -54,7 +54,7 @@
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="province" class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành phố <span class="text-red-500">*</span></label>
-                        <select name="province_code" id="province" required class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg">
+                        <select name="province_code" id="province"  class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg">
                             <option value="">Chọn Tỉnh/Thành phố</option>
                             @foreach($provinces ?? [] as $province)
                                 <option value="{{ $province->code }}" 
@@ -66,7 +66,7 @@
                     </div>
                     <div>
                         <label for="warehouse" class="block text-sm font-medium text-gray-700 mb-1">Kho làm việc <span class="text-red-500">*</span></label>
-                        <select name="warehouse_id" id="warehouse" required class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg">
+                        <select name="warehouse_id" id="warehouse"  class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg">
                             <option value="">Chọn Kho làm việc</option>
                             @foreach($warehouses ?? [] as $warehouse)
                                 <option value="{{ $warehouse->id }}" 
@@ -104,6 +104,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const provinceSelect = document.getElementById('province');
     const warehouseSelect = document.getElementById('warehouse');
+    
     if (provinceSelect && warehouseSelect) {
         // Lấy tất cả warehouses từ server
         let allWarehouses = [];
@@ -114,14 +115,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 province_code: '{{ $warehouse->province_code }}'
             });
         @endforeach
+        
         // Filter warehouses khi province thay đổi
         provinceSelect.addEventListener('change', function() {
             filterWarehouses(this.value);
         });
+
         // Nếu đã có province_code thì filter luôn khi load trang
         if (provinceSelect.value) {
             filterWarehouses(provinceSelect.value);
         }
+
         function filterWarehouses(provinceCode) {
             warehouseSelect.innerHTML = '<option value="">Chọn Kho làm việc</option>';
             if (!provinceCode) return;
@@ -129,12 +133,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const filteredWarehouses = allWarehouses.filter(warehouse =>
                 warehouse.province_code === provinceCode
             );
+            
             filteredWarehouses.forEach(warehouse => {
                 const option = document.createElement('option');
                 option.value = warehouse.id;
                 option.textContent = warehouse.name;
                 warehouseSelect.appendChild(option);
             });
+
+            // Set lại giá trị đã chọn nếu có
+            const currentWarehouseId = '{{ old('warehouse_id', $currentWarehouse?->id) }}';
+            if (currentWarehouseId) {
+                warehouseSelect.value = currentWarehouseId;
+            }
         }
     }
 });

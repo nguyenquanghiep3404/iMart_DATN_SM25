@@ -25,7 +25,7 @@
                                 </li>
                             </ol>
                         </nav>
-                        <h1 class="text-3xl font-bold text-gray-800">Quản lý Nhân viên Đơn hàng</h1>
+                        <h1 class="text-3xl font-bold text-gray-800">Quản lý Nhân viên Đơn hàng - Đóng Gói</h1>
                         <p class="text-gray-500 mt-1">Kho: {{ $warehouse->name }} - {{ $warehouse->province->name_with_type ?? '' }}</p>
                         <a href="{{ route('admin.order-manager.index') }}" 
                            class="inline-flex items-center mt-2 px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">

@@ -209,12 +209,19 @@
                 const filteredWarehouses = allWarehouses.filter(warehouse =>
                     warehouse.province_code === provinceCode
                 );
+                
                 filteredWarehouses.forEach(warehouse => {
                     const option = document.createElement('option');
                     option.value = warehouse.id;
                     option.textContent = warehouse.name + ' - ' + warehouse.province_name;
                     warehouseSelect.appendChild(option);
                 });
+
+                // Set lại giá trị đã chọn nếu có
+                const currentWarehouseId = '{{ old('warehouse_id', $user->assignedStoreLocations->first()?->id ?? '') }}';
+                if (currentWarehouseId) {
+                    warehouseSelect.value = currentWarehouseId;
+                }
             }
         }
     });
