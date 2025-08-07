@@ -11,16 +11,21 @@
 @section('title', 'Quản lý Cửa hàng')
 
 @section('content')
-    <div class="px-4 sm:px-6 md:px-8 py-8" x-data="storeLocationManager()" x-init="init()">
-        <div class="container mx-auto max-w-7xl">
-            <header class="mb-8 flex items-center justify-between">
-                <h1 class="text-3xl font-bold text-gray-800">Quản lý Địa điểm Cửa hàng</h1>
-                <button @click="openModal()" type="button"
-                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <i class="fas fa-plus mr-2"></i>Thêm địa điểm mới
-                </button>
-            </header>
-
+<div class="px-4 sm:px-6 md:px-8 py-8" x-data="storeLocationManager()" x-init="init()">
+    <div class="container mx-auto max-w-7xl">
+        <header class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-3xl font-bold text-gray-800">Quản lý Địa điểm Cửa Hàng</h1>
+                <div class="flex items-center space-x-3">
+                    <button @click="openModal()" type="button" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
+                        <i class="fas fa-plus mr-2"></i>Thêm địa điểm mới
+                    </button>
+                    <a href="{{ route('admin.store-locations.trashed') }}" class="inline-flex items-center px-4 py-2 border border-gray-500 shadow-sm text-sm font-medium rounded-lg text-white bg-gray-500 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200">
+                        <i class="fas fa-trash mr-2"></i>Thùng rác
+                    </a>
+                </div>
+            </div>
+        </header>
             <div x-show="message" x-cloak
                 :class="{ 'bg-green-100 border-green-400 text-green-700': messageType === 'success', 'bg-red-100 border-red-400 text-red-700': messageType === 'error' }"
                 class="border px-4 py-3 rounded relative mb-4" role="alert">
@@ -399,13 +404,13 @@
                     filterStatus: '',
 
                     currentPage: 1,
-                    itemsPerPage: 5,
+                    itemsPerPage: 10,
 
                     allLocations: @json($storeLocations),
                     provinces: @json($provinces),
 
                     districts: [],
-                    wards: [], // Sửa lỗi chính tả từ 'words' thành 'wards'
+                    wards: [],
 
                     formData: {
                         id: null,
@@ -426,32 +431,34 @@
                                 const fullAddress = this.getFullAddress(location).toLowerCase();
                                 const name = location.name.toLowerCase();
                                 const phone = location.phone ? location.phone.toLowerCase() : '';
-                                return name.includes(searchTerm) || fullAddress.includes(
-                                    searchTerm) || phone.includes(searchTerm);
+                                return name.includes(searchTerm) || fullAddress.includes(searchTerm) || phone.includes(searchTerm);
                             })
-                            .filter(location => this.filterType === '' || location.type === this
-                                .filterType)
-                            .filter(location => this.filterStatus === '' || String(location
-                                .is_active) === this.filterStatus);
+                            .filter(location => this.filterType === '' || location.type === this.filterType)
+                            .filter(location => this.filterStatus === '' || String(location.is_active) === this.filterStatus);
                     },
 
                     get totalItems() {
                         return this.filteredLocations.length;
                     },
+
                     get totalPages() {
                         return Math.ceil(this.totalItems / this.itemsPerPage);
                     },
+
                     get paginatedLocations() {
                         const start = (this.currentPage - 1) * this.itemsPerPage;
                         const end = start + this.itemsPerPage;
                         return this.filteredLocations.slice(start, end);
                     },
+
                     get startItem() {
                         return this.totalItems > 0 ? (this.currentPage - 1) * this.itemsPerPage + 1 : 0;
                     },
+
                     get endItem() {
                         return Math.min(this.currentPage * this.itemsPerPage, this.totalItems);
                     },
+
                     get pages() {
                         const pagesArray = [];
                         for (let i = 1; i <= this.totalPages; i++) {
@@ -500,9 +507,11 @@
                         if (page < 1 || page > this.totalPages) return;
                         this.currentPage = page;
                     },
+
                     prevPage() {
                         if (this.currentPage > 1) this.currentPage--;
                     },
+
                     nextPage() {
                         if (this.currentPage < this.totalPages) this.currentPage++;
                     },
@@ -511,7 +520,11 @@
                         this.isEditMode = false;
                         this.resetForm();
                         this.isModalOpen = true;
+                        this.$nextTick(() => {
+                            this.formData = { ...this.formData };
+                        });
                     },
+
                     closeModal() {
                         this.isModalOpen = false;
                         this.resetForm();
@@ -519,14 +532,12 @@
 
                     async editLocation(location) {
                         this.isEditMode = true;
-                        this.resetForm(); // Reset form trước để tránh lỗi hiển thị tạm thời
+                        this.resetForm();
                         try {
                             const response = await fetch(`/admin/store-locations/${location.id}/edit`);
                             if (!response.ok) {
                                 const errorText = await response.text();
-                                throw new Error(
-                                    `Không thể lấy dữ liệu địa điểm. Trạng thái: ${response.status}. Phản hồi: ${errorText}`
-                                );
+                                throw new Error(`Không thể lấy dữ liệu địa điểm. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
                             }
                             const fullLocation = await response.json();
 
@@ -542,26 +553,26 @@
                                 address: fullLocation.address || '',
                             };
 
-                            // Tải lại các dropdown địa chỉ
+                            // Tải lại các dropdown địa chỉ theo thứ tự
                             if (this.formData.province_code) {
-                                await this.updateDistricts(true); // true để giữ lại district_code
-                            }
-                            if (this.formData.district_code) {
-                                await this.updateWards(true); // true để giữ lại ward_code
+                                await this.updateDistricts(true);
+                                if (this.formData.district_code) {
+                                    await new Promise(resolve => setTimeout(resolve, 100));
+                                    await this.updateWards(true);
+                                }
                             }
 
                             this.isModalOpen = true;
                         } catch (error) {
                             console.error('Lỗi khi lấy địa điểm để chỉnh sửa:', error);
-                            this.showMessage(error.message || 'Lỗi khi tải thông tin cửa hàng để sửa.',
-                                'error');
+                            this.showMessage(error.message || 'Lỗi khi tải thông tin cửa hàng để sửa.', 'error');
                         }
                     },
 
                     async updateDistricts(isInitialLoad = false) {
                         const provinceCode = this.formData.province_code;
                         this.districts = [];
-                        this.wards = []; // Đặt lại wards khi tỉnh thay đổi
+                        this.wards = [];
 
                         if (!isInitialLoad) {
                             this.formData.district_code = '';
@@ -571,28 +582,22 @@
                         if (!provinceCode) return;
 
                         try {
-                            const response = await fetch(
-                                `/admin/api/districts?province_code=${provinceCode}`);
+                            const response = await fetch(`/admin/api/districts?province_code=${provinceCode}`);
                             if (!response.ok) {
                                 const errorText = await response.text();
-                                throw new Error(
-                                    `Không thể lấy danh sách quận/huyện. Trạng thái: ${response.status}. Phản hồi: ${errorText}`
-                                );
+                                throw new Error(`Không thể lấy danh sách quận/huyện. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
                             }
                             this.districts = await response.json();
 
-                            // Nếu là tải ban đầu và district_code không hợp lệ, đặt lại
                             if (isInitialLoad && this.formData.district_code) {
-                                if (!this.districts.some(d => d.code === this.formData.district_code)) {
+                                if (!this.districts.some(d => d.code == this.formData.district_code)) {
                                     this.formData.district_code = '';
-                                    this.formData.ward_code =
-                                        ''; // Đặt lại ward nếu district không hợp lệ
+                                    this.formData.ward_code = '';
                                 }
                             }
                         } catch (error) {
                             console.error('Lỗi khi lấy danh sách quận/huyện:', error);
-                            this.showMessage(error.message || 'Lỗi khi tải danh sách quận/huyện.',
-                                'error');
+                            this.showMessage(error.message || 'Lỗi khi tải danh sách quận/huyện.', 'error');
                         }
                     },
 
@@ -607,26 +612,21 @@
                         if (!districtCode) return;
 
                         try {
-                            const response = await fetch(
-                                `/admin/api/wards?district_code=${districtCode}`);
+                            const response = await fetch(`/admin/api/wards?district_code=${districtCode}`);
                             if (!response.ok) {
                                 const errorText = await response.text();
-                                throw new Error(
-                                    `Không thể lấy danh sách phường/xã. Trạng thái: ${response.status}. Phản hồi: ${errorText}`
-                                );
+                                throw new Error(`Không thể lấy danh sách phường/xã. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
                             }
                             this.wards = await response.json();
 
-                            // Nếu là tải ban đầu và ward_code không hợp lệ, đặt lại
                             if (isInitialLoad && this.formData.ward_code) {
-                                if (!this.wards.some(w => w.code === this.formData.ward_code)) {
+                                if (!this.wards.some(w => w.code == this.formData.ward_code)) {
                                     this.formData.ward_code = '';
                                 }
                             }
                         } catch (error) {
                             console.error('Lỗi khi lấy danh sách phường/xã:', error);
-                            this.showMessage(error.message || 'Lỗi khi tải danh sách phường/xã.',
-                                'error');
+                            this.showMessage(error.message || 'Lỗi khi tải danh sách phường/xã.', 'error');
                         }
                     },
 
@@ -647,24 +647,19 @@
                         const provinceName = location.province ? location.province.name : '';
                         const districtName = location.district ? location.district.name : '';
                         const wardName = location.ward ? location.ward.name : '';
-                        return [location.address, wardName, districtName, provinceName].filter(Boolean)
-                            .join(', ');
+                        return [location.address, wardName, districtName, provinceName].filter(Boolean).join(', ');
                     },
 
                     async saveLocation() {
                         if (!this.formData.name || !this.formData.address || !this.formData.phone ||
-                            !this.formData.province_code || !this.formData.district_code || !this
-                            .formData.ward_code) {
-                            this.showMessage('Vui lòng điền đầy đủ các trường bắt buộc có dấu *',
-                                'error');
+                            !this.formData.province_code || !this.formData.district_code || !this.formData.ward_code) {
+                            this.showMessage('Vui lòng điền đầy đủ các trường bắt buộc có dấu *', 'error');
                             return;
                         }
 
-                        const csrfToken = document.querySelector('meta[name="csrf-token"]')
-                            .getAttribute('content');
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                         const method = this.isEditMode ? 'PUT' : 'POST';
-                        const url = this.isEditMode ? `/admin/store-locations/${this.formData.id}` :
-                            '/admin/store-locations';
+                        const url = this.isEditMode ? `/admin/store-locations/${this.formData.id}` : '/admin/store-locations';
 
                         try {
                             const response = await fetch(url, {
@@ -672,7 +667,7 @@
                                 headers: {
                                     'Content-Type': 'application/json',
                                     'X-CSRF-TOKEN': csrfToken,
-                                    'Accept': 'application/json' // Yêu cầu phản hồi JSON
+                                    'Accept': 'application/json'
                                 },
                                 body: JSON.stringify(this.formData)
                             });
@@ -680,25 +675,21 @@
                             const data = await response.json();
 
                             if (!response.ok) {
-                                // Xử lý lỗi validation từ Laravel nếu có
                                 if (response.status === 422 && data.errors) {
-                                    let errorMessages = Object.values(data.errors).map(e => e.join(
-                                        '<br>')).join('<br>');
+                                    let errorMessages = Object.values(data.errors).map(e => e.join('<br>')).join('<br>');
                                     this.showMessage(`Lỗi nhập liệu:<br>${errorMessages}`, 'error');
                                 } else {
                                     throw new Error(data.message || `Lỗi server: ${response.status}`);
                                 }
-                                return; // Dừng lại nếu có lỗi
+                                return;
                             }
 
-                            this.showMessage(data.message || (this.isEditMode ? 'Cập nhật thành công!' :
-                                'Thêm mới thành công!'), 'success');
+                            this.showMessage(data.message || (this.isEditMode ? 'Cập nhật thành công!' : 'Thêm mới thành công!'), 'success');
                             this.closeModal();
-                            await this.fetchLocations(); // Fetch lại danh sách để cập nhật bảng
+                            await this.fetchLocations();
                         } catch (error) {
                             console.error('Lỗi khi lưu địa điểm:', error);
-                            this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server.',
-                                'error');
+                            this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server.', 'error');
                         }
                     },
 
@@ -706,87 +697,74 @@
                         this.locationToDeleteId = id;
                         this.isDeleteModalOpen = true;
                     },
+
                     closeDeleteModal() {
                         this.isDeleteModalOpen = false;
                         this.locationToDeleteId = null;
                     },
 
                     async confirmDelete() {
-                        const csrfToken = document.querySelector('meta[name="csrf-token"]')
-                            .getAttribute('content');
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                         try {
-                            const response = await fetch(
-                                `/admin/store-locations/${this.locationToDeleteId}`, {
-                                    method: 'DELETE',
-                                    headers: {
-                                        'X-CSRF-TOKEN': csrfToken,
-                                        'Accept': 'application/json'
-                                    }
-                                });
+                            const response = await fetch(`/admin/store-locations/${this.locationToDeleteId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Accept': 'application/json'
+                                }
+                            });
                             if (!response.ok) {
                                 const errorData = await response.json().catch(() => ({}));
-                                throw new Error(errorData.message ||
-                                    `Không thể xóa địa điểm. Trạng thái: ${response.status}`);
+                                throw new Error(errorData.message || `Không thể xóa địa điểm. Trạng thái: ${response.status}`);
                             }
                             const data = await response.json();
 
                             this.showMessage(data.message || 'Xóa địa điểm thành công!', 'success');
                             this.closeDeleteModal();
-                            await this
-                                .fetchLocations(); // Fetch lại danh sách để cập nhật bảng sau khi xóa
+                            await this.fetchLocations();
 
                             if (this.paginatedLocations.length === 0 && this.currentPage > 1) {
                                 this.currentPage--;
                             }
                         } catch (error) {
                             console.error('Lỗi khi xóa địa điểm:', error);
-                            this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server khi xóa.',
-                                'error');
+                            this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server khi xóa.', 'error');
                         }
                     },
 
                     async toggleActive(locationId, currentStatus) {
-                        const csrfToken = document.querySelector('meta[name="csrf-token"]')
-                            .getAttribute('content');
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                         try {
-                            const response = await fetch(
-                                `/admin/store-locations/${locationId}/toggle-active`, {
-                                    method: 'PATCH',
-                                    headers: {
-                                        'X-CSRF-TOKEN': csrfToken,
-                                        'Content-Type': 'application/json',
-                                        'Accept': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        is_active: !currentStatus
-                                    })
-                                });
+                            const response = await fetch(`/admin/store-locations/${locationId}/toggle-active`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    is_active: !currentStatus
+                                })
+                            });
                             if (!response.ok) {
                                 const errorData = await response.json().catch(() => ({}));
-                                throw new Error(errorData.message ||
-                                    `Không thể thay đổi trạng thái. Trạng thái: ${response.status}`);
+                                throw new Error(errorData.message || `Không thể thay đổi trạng thái. Trạng thái: ${response.status}`);
                             }
                             const data = await response.json();
                             this.showMessage(data.message, 'success');
-                            await this
-                                .fetchLocations(); // Fetch lại danh sách để cập nhật bảng sau khi thay đổi trạng thái
+                            await this.fetchLocations();
                         } catch (error) {
                             console.error('Lỗi khi thay đổi trạng thái hoạt động:', error);
-                            this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server.',
-                                'error');
+                            this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server.', 'error');
                         }
                     },
 
-                    // Phương thức mới để lấy lại tất cả dữ liệu từ server
                     async fetchLocations() {
                         try {
-                            const response = await fetch(
-                                '/admin/api/store-locations'); // Sử dụng route API mới
+                            const response = await fetch('/admin/api/store-locations');
                             if (!response.ok) {
                                 const errorText = await response.text();
-                                throw new Error(
-                                    `Không thể tải danh sách cửa hàng. Trạng thái: ${response.status}. Phản hồi: ${errorText}`
-                                );
+                                throw new Error(`Không thể tải danh sách cửa hàng. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
                             }
                             this.allLocations = await response.json();
                         } catch (error) {

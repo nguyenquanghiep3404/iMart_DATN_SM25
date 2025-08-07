@@ -344,6 +344,8 @@ Route::prefix('admin')
             Route::get('/trash', [ShipperManagementController::class, 'trash'])->name('trash');
             Route::patch('/{shipper}/restore', [ShipperManagementController::class, 'restore'])->name('restore');
             Route::delete('/{shipper}/force-delete', [ShipperManagementController::class, 'forceDelete'])->name('force-delete');
+            Route::get('/warehouse/{warehouse}', [ShipperManagementController::class, 'showWarehouse'])->name('warehouse.show');
+            Route::get('/warehouses', [ShipperManagementController::class, 'getWarehouses'])->name('warehouses');
         });
         Route::resource('shippers', ShipperManagementController::class);
 
@@ -489,6 +491,12 @@ Route::prefix('admin')
             Route::get('/stores/{storeId}/schedule', [SalesStaffManagement::class, 'showSchedule'])->name('stores.schedule');
             // Quản lý ca làm việc
             Route::get('/work-shifts', [SalesStaffManagement::class, 'showWorkShifts'])->name('work-shifts.index');
+            
+            // Routes cho thùng rác (trash)
+            Route::get('/trash', [SalesStaffManagement::class, 'trash'])->name('trash');
+            Route::patch('/restore/{id}', [SalesStaffManagement::class, 'restore'])->name('restore');
+            Route::delete('/force-delete/{id}', [SalesStaffManagement::class, 'forceDelete'])->name('force-delete');
+            
             // API Routes
             Route::prefix('api')->name('api.')->group(function () {
                 // API cửa hàng
@@ -504,6 +512,7 @@ Route::prefix('admin')
                 Route::post('/schedule/assign-shift', [SalesStaffManagement::class, 'assignShift'])->name('schedule.assign-shift');
                 // API ca làm việc
                 Route::get('/work-shifts', [SalesStaffManagement::class, 'getWorkShifts'])->name('work-shifts.list');
+                Route::get('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'getWorkShift'])->name('work-shifts.show');
                 Route::post('/work-shifts', [SalesStaffManagement::class, 'addWorkShift'])->name('work-shifts.store');
                 Route::put('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'updateWorkShift'])->name('work-shifts.update');
                 Route::delete('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'deleteWorkShift'])->name('work-shifts.destroy');
@@ -562,7 +571,8 @@ Route::prefix('admin')
         Route::put('/order-manager/{user}', [OrderManagerController::class, 'update'])->name('order-manager.update');
         Route::post('/order-manager/store', [OrderManagerController::class, 'store'])->name('order-manager.store');
         Route::delete('/order-manager/{user}', [OrderManagerController::class, 'destroy'])->name('order-manager.destroy');
-
+        Route::get('/order-manager/warehouses', [OrderManagerController::class, 'getWarehouses'])->name('order-manager.warehouses');
+        Route::get('/order-manager/warehouse/{warehouse}', [OrderManagerController::class, 'showWarehouse'])->name('order-manager.warehouse.show');
 
         // Route khác nếu cần
         Route::get('/staff', [OrderManagerController::class, 'staffIndex'])->name('staff.index');

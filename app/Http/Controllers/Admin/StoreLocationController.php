@@ -25,6 +25,10 @@ class StoreLocationController extends Controller
 
         $provinces = ProvinceOld::all();
 
+        // Debug: Log số lượng dữ liệu
+        \Log::info('StoreLocationController::index - Found ' . $storeLocations->count() . ' locations');
+        \Log::info('StoreLocationController::index - Found ' . $provinces->count() . ' provinces');
+
         return view('admin.store_locations.index', compact('storeLocations', 'provinces'));
     }
 
@@ -154,7 +158,9 @@ class StoreLocationController extends Controller
      */
     public function apiIndex()
     {
-        $storeLocations = StoreLocation::with(['province', 'district', 'ward'])->get();
+        $storeLocations = StoreLocation::with(['province', 'district', 'ward'])
+                                       ->orderBy('id', 'desc')
+                                       ->get();
         return response()->json($storeLocations);
     }
 

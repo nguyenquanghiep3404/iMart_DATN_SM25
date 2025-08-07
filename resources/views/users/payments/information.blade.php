@@ -891,7 +891,7 @@
                         quantity: {{ $item->quantity }},
                         price: {{ $item->price }},
                         originalPrice: {{ $item->price }},
-                        image: '{{ $item->productVariant->image_url ?? asset('assets/users/img/no-image.png') }}'
+                        image: '{{ $item->productVariant && $item->productVariant->primaryImage && file_exists(storage_path('app/public/' . $item->productVariant->primaryImage->path)) ? Storage::url($item->productVariant->primaryImage->path) : ($item->productVariant && $item->productVariant->product && $item->productVariant->product->coverImage && file_exists(storage_path('app/public/' . $item->productVariant->product->coverImage->path)) ? Storage::url($item->productVariant->product->coverImage->path) : asset('images/placeholder.jpg')) }}',
                         // name: {!! json_encode($item->productVariant->product->name) !!},
                         // variant: {!! json_encode($item->productVariant->attributeValues->pluck('value')->implode(', ')) !!},
                         // quantity: {{ $item->quantity }},
@@ -2241,6 +2241,31 @@
                 return new Intl.NumberFormat('vi-VN').format(number);
             }
 
+            // Hàm lấy danh sách ID sản phẩm từ giỏ hàng hoặc buy now session
+            function getProductVariantIds() {
+                const productVariantIds = [];
+                // Kiểm tra xem có phải là buy now session không
+                const isBuyNow = {{ isset($is_buy_now) && $is_buy_now ? 'true' : 'false' }};
+                if (isBuyNow) {
+                    // Lấy từ buy now session
+                    const buyNowSession = @json(session('buy_now_session', null));
+                    if (buyNowSession && buyNowSession.variant_id) {
+                        productVariantIds.push(buyNowSession.variant_id);
+                    }
+                } else {
+                    // Lấy từ giỏ hàng
+                    const cartItems = @json($items ?? []);
+                    cartItems.forEach(item => {
+                        if (item.productVariant && item.productVariant.id) {
+                            productVariantIds.push(item.productVariant.id);
+                        } else if (item.id) {
+                            productVariantIds.push(item.id);
+                        }
+                    });
+                }
+                return productVariantIds;
+            }
+
             // Hàm mở modal chọn cửa hàng
             function openStoreSelectionModal() {
                 loadModalStoreProvinces();
@@ -2314,7 +2339,13 @@
                     const params = new URLSearchParams();
                     if (provinceCode) params.append('province_code', provinceCode);
                     if (districtCode) params.append('district_code', districtCode);
-
+                    // Lấy danh sách sản phẩm từ giỏ hàng hoặc buy now session
+                    const productVariantIds = getProductVariantIds();
+                    if (productVariantIds.length > 0) {
+                        productVariantIds.forEach(id => {
+                            params.append('product_variant_ids[]', id);
+                        });
+                    }
                     const response = await fetch(`/api/store-locations/stores?${params.toString()}`);
                     const data = await response.json();
 
@@ -2334,11 +2365,6 @@
                                                 <span class="d-block small text-muted">${store.full_address}</span>
                                             </label>
                                         </div>
-                                        {{-- <div class="mt-2">
-                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="viewDirections('${store.full_address}')">
-                                                <i class="fas fa-map-marker-alt me-1"></i>Xem chỉ đường
-                                            </button>
-                                        </div> --}}
                                     </div>
                                 `;
                         });

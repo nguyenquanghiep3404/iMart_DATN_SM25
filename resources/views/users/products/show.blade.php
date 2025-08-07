@@ -113,7 +113,7 @@
         $isSale = !$isFlashSale && $salePrice && $salePrice < $originalPrice;
         $priceToDisplay = $isSale || $isFlashSale ? $salePrice : $originalPrice;
 
-        $imageUrl = $variant->primaryImage ? Storage::url($variant->primaryImage->path) : asset('placeholder.png');
+        $imageUrl = $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : asset('images/placeholder.jpg');
     @endphp
 
     <!-- Sticky Add to Cart Bar -->

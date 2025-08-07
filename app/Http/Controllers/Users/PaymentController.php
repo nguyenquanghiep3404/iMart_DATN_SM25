@@ -20,6 +20,7 @@ use App\Models\LoyaltyPointLog;
 use App\Models\ProductInventory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\Controller;
 
 use Illuminate\Support\Facades\Auth;
@@ -432,6 +433,7 @@ class PaymentController extends Controller
                 'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
+                'store_location_id' => $customerInfo['store_location_id'] ?? null,
             ]);
 
             // Tạo order items
@@ -462,6 +464,7 @@ class PaymentController extends Controller
                         'quantity' => $item->quantity,
                         'price' => $item->price,
                         'total_price' => $item->price * $item->quantity,
+                        'image_url' => $cartable && $cartable->primaryImage && file_exists(storage_path('app/public/' . $cartable->primaryImage->path)) ? Storage::url($cartable->primaryImage->path) : ($cartable && $cartable->product && $cartable->product->coverImage && file_exists(storage_path('app/public/' . $cartable->product->coverImage->path)) ? Storage::url($cartable->product->coverImage->path) : asset('images/placeholder.jpg')),
                     ]);
                     $this->decrementInventoryStock($cartable, $item->quantity);
                 } else {
@@ -1204,7 +1207,7 @@ class PaymentController extends Controller
         // 1. Lấy danh sách sản phẩm 
         if ($user && $user->cart) {
             $items = $user->cart->items()
-                ->with('cartable.product', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
+                ->with('cartable.product.coverImage', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
                 ->get()
                 ->filter(fn($item) => $item->cartable && $item->cartable->product)
                 ->map(function ($item) {
@@ -1225,7 +1228,7 @@ class PaymentController extends Controller
                 $cartableId = $data['cartable_id'] ?? $data['variant_id'] ?? null;
                 if (!$cartableId) return null;
 
-                $cartable = ProductVariant::with('product', 'attributeValues.attribute', 'primaryImage')->find($cartableId);
+                $cartable = ProductVariant::with('product.coverImage', 'attributeValues.attribute', 'primaryImage')->find($cartableId);
                 if (!$cartable || !$cartable->product) return null;
 
                 return (object) [
@@ -1448,14 +1451,14 @@ class PaymentController extends Controller
         $variant = null;
         // Tìm variant dựa vào variant_key hoặc lấy variant đầu tiên
         if ($request->variant_key) {
-            $variant = ProductVariant::where('product_id', $product->id)->get()
+            $variant = ProductVariant::with('product.coverImage', 'attributeValues', 'primaryImage')->where('product_id', $product->id)->get()
                 ->first(function ($variant) use ($request) {
                     $attributes = $variant->attributeValues->pluck('value')->toArray();
                     return implode('_', $attributes) === $request->variant_key;
                 });
         }
         if (!$variant) {
-            $variant = ProductVariant::where('product_id', $product->id)->first();
+            $variant = ProductVariant::with('product.coverImage', 'primaryImage')->where('product_id', $product->id)->first();
         }
         if (!$variant) {
             return response()->json([
@@ -1484,7 +1487,7 @@ class PaymentController extends Controller
             'name' => $product->name,
             'price' => $finalPrice,
             'quantity' => $request->quantity,
-            'image' => $variant->image_url,
+            'image' => ($variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg'))),
             'created_at' => now()->timestamp
         ]);
         return response()->json([
@@ -1634,6 +1637,7 @@ class PaymentController extends Controller
                     'quantity' => $item->quantity,
                     'price' => $item->price,
                     'total_price' => $item->price * $item->quantity,
+                    'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
                 // Gửi thông báo Telegram
@@ -1823,7 +1827,7 @@ class PaymentController extends Controller
             return ['items' => collect(), 'subtotal' => 0, 'discount' => 0, 'total' => 0];
         }
         $product = Product::findOrFail($buyNowSession['product_id']);
-        $variant = ProductVariant::findOrFail($buyNowSession['variant_id']);
+        $variant = ProductVariant::with('product.coverImage', 'primaryImage')->findOrFail($buyNowSession['variant_id']);
         $items = collect([
             (object) [
                 'id' => $variant->id,
@@ -1834,6 +1838,9 @@ class PaymentController extends Controller
                 'quantity' => $buyNowSession['quantity'],
                 'stock_quantity' => $this->getSellableStock($variant),
                 'points_to_earn' => $variant->points_awarded_on_purchase ?? 0, // Để tương thích với getCartData()
+                'image' => $buyNowSession['image'] ?? ($variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg'))),
+                'name' => $variant->name ?? $variant->product->name,
+                'slug' => $variant->product->slug ?? '',
             ]
         ]);
         $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
@@ -2205,11 +2212,11 @@ class PaymentController extends Controller
             // ]);
             return response()->json(['success' => false, 'message' => 'Địa điểm này không được hỗ trợ giao hàng nhanh', 'fee' => null]);
         } catch (\Exception $e) {
-            \Log::error('GHN API Error: ' . $e->getMessage(), [
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            // \Log::error('GHN API Error: ' . $e->getMessage(), [
+            //     'file' => $e->getFile(),
+            //     'line' => $e->getLine(),
+            //     'trace' => $e->getTraceAsString()
+            // ]);
             return response()->json(['success' => false, 'message' => 'Lỗi server: ' . $e->getMessage(), 'fee' => null]);
         }
     }
@@ -2218,19 +2225,27 @@ class PaymentController extends Controller
     {
         $provinceCode = $request->input('province_code');
         $districtCode = $request->input('district_code');
-
+        $productVariantIds = $request->input('product_variant_ids', []);
         $query = StoreLocation::with(['province', 'district', 'ward'])
             ->where('is_active', true)
             ->where('type', 'store');
-
+        // Lọc theo tỉnh/huyện nếu có
         if ($provinceCode) {
             $query->where('province_code', $provinceCode);
         }
         if ($districtCode) {
             $query->where('district_code', $districtCode);
         }
-        $storeLocations = $query->get()->map(function ($location) {
-            return [
+        // Nếu có danh sách sản phẩm, chỉ lấy cửa hàng có sản phẩm trong kho
+        if (!empty($productVariantIds)) {
+            $query->whereHas('productInventories', function ($inventoryQuery) use ($productVariantIds) {
+                $inventoryQuery->whereIn('product_variant_id', $productVariantIds)
+                    ->where('inventory_type', 'new')
+                    ->where('quantity', '>', 0);
+            });
+        }
+        $storeLocations = $query->get()->map(function ($location) use ($productVariantIds) {
+            $storeData = [
                 'id' => $location->id,
                 'name' => $location->name,
                 'address' => $location->address,
@@ -2240,6 +2255,24 @@ class PaymentController extends Controller
                 'district_name' => $location->district ? $location->district->name_with_type : '',
                 'ward_name' => $location->ward ? $location->ward->name_with_type : '',
             ];
+            // Nếu có danh sách sản phẩm, thêm thông tin tồn kho
+            if (!empty($productVariantIds)) {
+                $inventoryInfo = $location->productInventories()
+                    ->whereIn('product_variant_id', $productVariantIds)
+                    ->where('inventory_type', 'new')
+                    ->where('quantity', '>', 0)
+                    ->get()
+                    ->map(function ($inventory) {
+                        return [
+                            'product_variant_id' => $inventory->product_variant_id,
+                            'quantity' => $inventory->quantity,
+                            'product_name' => $inventory->productVariant->product->name ?? 'N/A'
+                        ];
+                    });
+                $storeData['available_products'] = $inventoryInfo;
+                $storeData['total_available_items'] = $inventoryInfo->sum('quantity');
+            }
+            return $storeData;
         });
         return response()->json([
             'success' => true,
