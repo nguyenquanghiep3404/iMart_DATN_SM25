@@ -182,12 +182,15 @@ class PurchaseOrderController extends Controller
     public function edit(PurchaseOrder $purchaseOrder)
     {
         $purchaseOrder->load([
-            'supplier',
+            // Sửa đổi ở đây để lấy đúng thông tin supplier và location cho AlpineJS
+            'supplier', 
             'storeLocation',
             'items.productVariant' => function ($query) {
                 $query->with(['product', 'primaryImage', 'attributeValues.attribute', 'inventories']);
             }
         ]);
+        
+        // Đoạn này để chuẩn bị dữ liệu cho modal chọn lựa, giữ nguyên
         $provinces = ProvinceOld::orderBy('name')->get();
         $districts = DistrictOld::orderBy('name')->get();
         $locations = StoreLocation::with(['province', 'district', 'ward'])
@@ -202,13 +205,15 @@ class PurchaseOrderController extends Controller
                     'district_id' => $location->district_code,
                 ];
             });
+
         $suppliers = Supplier::with(['province', 'district', 'ward'])->get()->map(function ($supplier) {
             return [
                 'id' => $supplier->id,
                 'name' => $supplier->name,
+                // Giả sử mỗi supplier chỉ có 1 địa chỉ chính trong bảng suppliers
                 'addresses' => [
                     [
-                        'id' => $supplier->id,
+                        'id' => $supplier->id, // Dùng ID của supplier làm ID địa chỉ cho đơn giản
                         'fullAddress' => $supplier->full_address,
                         'province_id' => $supplier->province_code,
                         'district_id' => $supplier->district_code,
@@ -217,28 +222,69 @@ class PurchaseOrderController extends Controller
                 ]
             ];
         });
-        return view('admin.purchase_orders.edit', compact('purchaseOrder', 'provinces', 'districts', 'locations', 'suppliers'));
-    }
 
+        // Thay đổi ở đây: Truyền purchaseOrder đã được chuẩn hóa cho JS
+        $purchaseOrderData = [
+            'id' => $purchaseOrder->id,
+            'po_code' => $purchaseOrder->po_code,
+            'order_date' => Carbon::parse($purchaseOrder->order_date)->format('Y-m-d'),
+            'notes' => $purchaseOrder->notes,
+            'status' => $purchaseOrder->status,
+            'supplier' => $purchaseOrder->supplier ? [ // Dữ liệu nhà cung cấp để JS populate
+                'name' => $purchaseOrder->supplier->name,
+                'address' => $purchaseOrder->supplier->full_address,
+                'addressId' => $purchaseOrder->supplier_id,
+            ] : null,
+            'store_location' => $purchaseOrder->storeLocation ? [ // Dữ liệu kho để JS populate
+                'name' => $purchaseOrder->storeLocation->name,
+                'address' => $purchaseOrder->storeLocation->full_address,
+                'id' => $purchaseOrder->store_location_id,
+            ] : null,
+            'items' => $purchaseOrder->items->map(function ($item) { // Dữ liệu sản phẩm
+                $variant = $item->productVariant;
+                if (!$variant) return null;
+
+                $variantName = $variant->attributeValues->pluck('value')->implode(' - ');
+                return [
+                    'id' => $item->id,
+                    'quantity' => $item->quantity,
+                    'cost_price' => $item->cost_price,
+                    'product_variant' => [
+                        'id' => $variant->id,
+                        'product' => ['name' => $variant->product->name],
+                        'attribute_values' => $variant->attributeValues,
+                        'sku' => $variant->sku,
+                        'primary_image' => $variant->primaryImage,
+                        'inventories' => $variant->inventories,
+                        'cost_price' => $variant->cost_price,
+                        'full_name' => $variant->product->name . ($variantName ? " ({$variantName})" : ''),
+                        'image_url' => optional($variant->primaryImage)->path ? Storage::url($variant->primaryImage->path) : asset('assets/admin/img/placeholder-image.png'),
+                        'stock' => $variant->inventories->sum('quantity'),
+                    ]
+                ];
+            })->filter(),
+        ];
+        
+        return view('admin.purchase_orders.edit', compact('purchaseOrder', 'provinces', 'districts', 'locations', 'suppliers', 'purchaseOrderData'));
+    }
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, PurchaseOrder $purchaseOrder)
     {
-        // === CHANGE HERE: Prevent editing if the PO is waiting for scan, completed, or cancelled ===
-        if (in_array($purchaseOrder->status, ['waiting_for_scan', 'completed', 'cancelled'])) {
+        // Chỉ cho phép sửa khi trạng thái là 'pending' hoặc 'cancelled'
+        if (in_array($purchaseOrder->status, ['waiting_for_scan', 'completed'])) {
             return redirect()->route('admin.purchase-orders.show', $purchaseOrder->id)
                 ->with('error', 'Không thể cập nhật phiếu nhập ở trạng thái này.');
         }
 
-        // === CHANGE HERE: Update validation to include the new statuses ===
         $validator = Validator::make($request->all(), [
             'supplier_id' => 'required|exists:suppliers,id',
             'store_location_id' => 'required|exists:store_locations,id',
             'order_date' => 'required|date',
             'notes' => 'nullable|string|max:2000',
-            'status' => 'required|in:pending,waiting_for_scan,cancelled', // Admin can manually set to waiting or cancel
+            'status' => 'required|in:pending,waiting_for_scan,cancelled', // Admin có thể set các trạng thái này
             'items' => 'required|array|min:1',
             'items.*.product_variant_id' => 'required|exists:product_variants,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -251,7 +297,10 @@ class PurchaseOrderController extends Controller
 
         try {
             DB::beginTransaction();
+
             $purchaseOrder->update($request->only(['supplier_id', 'store_location_id', 'order_date', 'notes', 'status']));
+
+            // Xóa item cũ và tạo lại item mới (Delete and Insert pattern)
             $purchaseOrder->items()->delete();
             foreach ($request->input('items') as $itemData) {
                 $purchaseOrder->items()->create([
@@ -260,6 +309,7 @@ class PurchaseOrderController extends Controller
                     'cost_price' => $itemData['cost_price'],
                 ]);
             }
+
             DB::commit();
             return redirect()->route('admin.purchase-orders.show', $purchaseOrder->id)
                 ->with('success', "Phiếu nhập kho {$purchaseOrder->po_code} đã được cập nhật thành công.");
