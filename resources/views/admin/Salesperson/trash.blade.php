@@ -154,9 +154,9 @@
                         </ol>
                     </nav>
                 </div>
-                <a href="{{ route('admin.sales-staff.index') }}"
+                <a href="{{ route('admin.sales-staff.stores.employees', session('last_store_id')) }}"
                     class="btn btn-secondary inline-flex items-center mt-4 sm:mt-0">
-                    <i class="fas fa-arrow-left mr-2"></i> Quay lại Danh sách
+                    <i class="fas fa-arrow-left mr-2"></i> Quay lại Danh sách Nhân viên
                 </a>
             </div>
             <div class="admin-main-card">

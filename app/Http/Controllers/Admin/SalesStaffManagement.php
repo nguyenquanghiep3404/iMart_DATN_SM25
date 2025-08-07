@@ -18,8 +18,7 @@ use App\Http\Requests\SalesStaffRequest;
 use App\Http\Requests\WorkShiftRequest;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Pagination\LengthAwarePaginator;
-
-
+use Illuminate\Support\Facades\Validator;
 class SalesStaffManagement extends Controller
 {
     /**
@@ -43,6 +42,7 @@ class SalesStaffManagement extends Controller
     public function showEmployees(int $storeId, Request $request): View
     {
         $store = StoreLocation::with(['province', 'district'])->findOrFail($storeId);
+        session(['last_store_id' => $storeId]);
         $perPage = $request->get('per_page', 10);
         // Lấy danh sách nhân viên với phân trang
         $employeeAssignments = UserStoreLocation::with(['user'])

@@ -135,7 +135,12 @@
                 </div>
             </a>
         </div>
+        </div>
+        @if($users->hasPages())
+            <div class="bg-white px-4 py-3 border-t border-gray-200">
+                {!! $users->links() !!}
+            </div>
+        @endif
     </div>
-    {{ $users->links() }}
     @include('admin.oderMannager.layouts.script')
 @endsection

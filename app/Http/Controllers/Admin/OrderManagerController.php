@@ -23,7 +23,7 @@ class OrderManagerController extends Controller
                 });
             }])
             ->orderByDesc('id')
-            ->get();
+            ->paginate(10);
         return view('admin.oderMannager.index', compact('warehouses', 'provinces'));
     }
     public function edit(User $user)
