@@ -648,7 +648,55 @@
                                     <span class="fw-medium text-danger">Chọn hoặc nhập ưu đãi</span>
                                     <i class="ci-chevron-right text-muted"></i>
                                 </button>
+                                <div class="bg-body-tertiary rounded-5 p-4 mb-3">
+                                    @guest
+                                        {{-- TRƯỜNG HỢP 1: KHÁCH VÃNG LAI (CHƯA ĐĂNG NHẬP) --}}
+                                        <a href="{{ route('login') }}" class="d-flex align-items-center text-decoration-none">
+                                            <div class="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle flex-shrink-0"
+                                                style="width: 40px; height: 40px;">
+                                                <i class="ci-gift fs-xl text-warning"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <div class="fw-medium text-dark">Đăng nhập để dùng điểm</div>
+                                                <p class="fs-xs text-muted mb-0">Tích lũy và sử dụng điểm cho mọi đơn hàng.</p>
+                                            </div>
+                                        </a>
+                                    @endguest
 
+                                    @auth
+                                        {{-- TRƯỜNG HỢP 2 & 3: NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP --}}
+                                        <div class="d-flex align-items-center">
+                                            <div class="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle flex-shrink-0"
+                                                style="width: 40px; height: 40px;">
+                                                <i class="ci-gift fs-xl text-primary"></i>
+                                            </div>
+                                            <div class="ps-3">
+                                                <div class="fw-medium text-dark">Điểm thưởng của bạn</div>
+                                                <p class="fs-sm text-primary fw-semibold mb-0">
+                                                    {{ number_format(Auth::user()->loyalty_points_balance) }} điểm</p>
+                                            </div>
+                                        </div>
+
+                                        @if (Auth::user()->loyalty_points_balance > 0)
+                                            {{-- CÓ ĐIỂM: HIỂN THỊ FORM SỬ DỤNG --}}
+                                            <div id="points-form" class="mt-3">
+                                                <div class="d-flex gap-2">
+                                                    <input type="number" id="points-to-use" class="form-control"
+                                                        placeholder="Nhập số điểm">
+                                                    <button type="button" id="apply-points-btn"
+                                                        class="btn btn-dark flex-shrink-0">Áp
+                                                        dụng</button>
+                                                </div>
+                                                <div id="points-message" class="mt-2 small"></div>
+                                            </div>
+                                        @else
+                                            {{-- KHÔNG CÓ ĐIỂM: HIỂN THỊ THÔNG BÁO --}}
+                                            <p class="fs-xs text-muted mb-0 mt-2">
+                                                Bạn chưa có điểm thưởng. Hãy mua sắm để tích lũy ngay!
+                                            </p>
+                                        @endif
+                                    @endauth
+                                </div>
 
                             </div>
 
@@ -668,15 +716,12 @@
                                     </span>
                                 </div>
 
-                                {{-- <<< THAY ĐỔI 1: HIỂN THỊ GIẢM GIÁ TỪ ĐIỂM >>> --}}
-                                @if (isset($pointsDiscount) && $pointsDiscount > 0)
-                                    <div class="d-flex justify-content-between mb-2" id="points-discount-row">
-                                        <span class="text-muted small">Giảm từ điểm:</span>
-                                        <span id="points-discount-amount" class="text-danger fw-medium">
-                                            -{{ number_format($pointsDiscount, 0, ',', '.') }}₫
-                                        </span>
-                                    </div>
-                                @endif
+                                <li class="d-flex justify-content-between mb-2" id="points-discount-row">
+                                    <span class="text-muted small">Giảm từ điểm:</span>
+                                    <span id="points-discount-amount" class="text-danger fw-medium">
+                                        -{{ number_format($pointsDiscount, 0, ',', '.') }}₫
+                                    </span>
+                                </li>
                             </div>
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="text-muted small">Phí vận chuyển:</span>
@@ -1676,7 +1721,9 @@
                 });
             }
 
-            function updateOrderInformation({ shippingFee }) {
+            function updateOrderInformation({
+                shippingFee
+            }) {
                 const deliveryMethod = document.querySelector('input[name="delivery_method"]:checked')?.value;
                 if (deliveryMethod === 'pickup') {
                     shippingFee = 0;
@@ -1688,10 +1735,11 @@
                     shippingFeeSummary.textContent = 'Chưa xác định';
                     finalTotal = baseSubtotal - baseDiscount - basePointsDiscount;
                 } else {
-                    shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND'
-                    }).format(shippingFee);
+                    shippingFeeSummary.textContent = shippingFee === 0 ? 'Miễn phí' : new Intl.NumberFormat(
+                        'vi-VN', {
+                            style: 'currency',
+                            currency: 'VND'
+                        }).format(shippingFee);
                     // Công thức tính tổng đúng bao gồm cả giảm giá từ điểm
                     finalTotal = baseSubtotal - baseDiscount - basePointsDiscount + shippingFee;
                 }
@@ -2566,7 +2614,7 @@
                 });
             }
 
-            document.getElementById('delivery-method-delivery').classList.add('selected');         
+            document.getElementById('delivery-method-delivery').classList.add('selected');
             renderMainProductList();
             updateOrderInformation({
                 shippingFee: null

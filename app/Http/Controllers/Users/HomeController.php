@@ -995,7 +995,7 @@ class HomeController extends Controller
         $categories = Category::all();
         $parentCategories = $categories->whereNull('parent_id');
 
-        if ($request->ajax()) {
+        if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'sidebar' => view('users.partials.category_product.product_sidebar', compact('categories', 'parentCategories', 'currentCategory'))->render(),
                 'products' => view('users.partials.category_product.shop_products', compact('products'))->render(),

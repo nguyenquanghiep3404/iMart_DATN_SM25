@@ -15,4 +15,13 @@ class ProductInventory extends Model
         'quantity',
         'store_location_id',
     ];
+    public function productVariant()
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function storeLocation()
+    {
+        return $this->belongsTo(StoreLocation::class, 'store_location_id');
+    }
 }

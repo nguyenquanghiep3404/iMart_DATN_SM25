@@ -25,6 +25,10 @@ class StoreLocationController extends Controller
 
         $provinces = ProvinceOld::all();
 
+        // Debug: Log số lượng dữ liệu
+        \Log::info('StoreLocationController::index - Found ' . $storeLocations->count() . ' locations');
+        \Log::info('StoreLocationController::index - Found ' . $provinces->count() . ' provinces');
+
         return view('admin.store_locations.index', compact('storeLocations', 'provinces'));
     }
 
