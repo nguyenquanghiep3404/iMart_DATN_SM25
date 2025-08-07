@@ -122,12 +122,9 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             humanChatBody.scrollTop = humanChatBody.scrollHeight;
         } else if (currentSenderId) {
-            // Có ID người dùng (đã đăng nhập hoặc guest cũ), nhưng không có cuộc hội thoại nào từ server
-            showMainChat();
-            displayMessage(humanChatBody, `Xin chào! Tôi có thể giúp gì cho bạn?`, 'received');
-            // Logic để tạo conversation mới hoặc fetch conversation nếu cần thiết
-            // Hiện tại, tin nhắn đầu tiên gửi sẽ tạo conversation
-        } else {
+    // Có ID của khách cũ, gọi lên server để lấy lại lịch sử chat
+    fetchAndDisplayHistory(currentSenderId);
+} else {
             // Không có ID nào, hiển thị màn hình chào mừng
             welcomeScreen.style.display = 'flex';
             mainChatInterface.style.display = 'none';
@@ -277,6 +274,50 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.key === 'Enter') aiSendButton.click();
         });
     }
+    async function fetchAndDisplayHistory(userId) {
+    try {
+        const response = await fetch('/chat/get-history', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            },
+            body: JSON.stringify({ user_id: userId })
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to fetch history');
+        }
+
+        const data = await response.json();
+        const conversation = data.conversation;
+
+        showMainChat(); // Hiển thị giao diện chat
+
+        if (conversation && conversation.messages.length > 0) {
+            currentConversationId = conversation.id;
+            
+            // Hiển thị các tin nhắn cũ
+            conversation.messages.forEach(msg => {
+                const messageType = (msg.sender_id == userId) ? 'sent' : 'received';
+                displayMessage(humanChatBody, msg.content, messageType, msg.created_at);
+            });
+            humanChatBody.scrollTop = humanChatBody.scrollHeight;
+
+            // Đăng ký kênh real-time để nhận tin nhắn mới
+            subscribeToConversation(currentConversationId, userId);
+        } else {
+            // Nếu không có lịch sử, hiển thị lời chào
+            displayMessage(humanChatBody, `Xin chào! Tôi có thể giúp gì cho bạn?`, 'received');
+        }
+
+    } catch (error) {
+        console.error("Error fetching chat history:", error);
+        // Nếu lỗi, vẫn hiển thị khung chat với lời chào
+        showMainChat();
+        displayMessage(humanChatBody, `Xin chào! Tôi có thể giúp gì cho bạn?`, 'received');
+    }
+}
 
     function simulateAiResponse(container, userMessage) {
         setTimeout(() => {

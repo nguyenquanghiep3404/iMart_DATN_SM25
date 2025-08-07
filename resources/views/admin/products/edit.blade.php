@@ -375,6 +375,38 @@
                 </ul>
             </div>
         @endif
+        
+        @if (session('success'))
+            <div class="bg-green-50 border-l-4 border-green-400 text-green-700 p-4 mb-6 rounded-md shadow-md" role="alert">
+                <div class="flex items-center">
+                    <svg class="svg-icon text-green-500 mr-2" viewBox="0 0 24 24">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                    <div>
+                        <p class="font-bold">Thành công!</p>
+                        <p>{{ session('success') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="bg-red-50 border-l-4 border-red-400 text-red-700 p-4 mb-6 rounded-md shadow-md" role="alert">
+                <div class="flex items-center">
+                    <svg class="svg-icon text-red-500 mr-2" viewBox="0 0 24 24">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <div>
+                        <p class="font-bold">Lỗi!</p>
+                        <p>{{ session('error') }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         @if ($hasBeenSold)
             <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-4 mb-6 rounded-md shadow-md"
                 role="alert">
@@ -394,6 +426,7 @@
                 </p>
             </div>
         @endif
+        
         <form id="editProductForm" action="{{ route('admin.products.update', $product->id) }}" method="POST">
             @csrf
             @method('PUT')
@@ -562,6 +595,14 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="input-group pt-4 mt-4 border-t border-gray-200">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" id="simple_has_serial_tracking" name="simple_has_serial_tracking" value="1" 
+                                           class="form-check-input mr-2"
+                                           {{ old('simple_has_serial_tracking', $simpleVariant?->has_serial_tracking ?? true) ? 'checked' : '' }}>
+                                    <span class="text-gray-700 font-medium">Quản lý tồn kho theo IMEI/Serial</span>
+                                </label>
+                            </div>
                             <div class="input-group md:col-span-2 pt-4 mt-4 border-t">
                                 <label>Ảnh Sản Phẩm <span class="required-star">*</span></label>
                                 <div class="flex space-x-2 mb-3">
@@ -577,7 +618,6 @@
                                 <div id="simple_product_image_preview_container" class="image-preview-container mt-2">
                                 </div>
                             </div>
-                            {{-- Specifications container for simple product --}}
                             <div class="pt-4 mt-4 border-t border-gray-200">
                                 <h4 class="text-md font-semibold text-gray-700 mb-2">Thông số kỹ thuật</h4>
                                 <div id="simpleSpecificationsContainer" class="space-y-4">
@@ -590,6 +630,12 @@
                         <div id="variableProductFields" class="space-y-4 mt-6 pt-4 border-t border-gray-200"
                             style="{{ old('type', $product->type) === 'variable' ? '' : 'display:none;' }}">
                             <h3 class="text-lg font-semibold text-gray-700 mb-1">Quản lý biến thể</h3>
+                            <div class="input-group bg-gray-50 p-3 rounded-md">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="checkbox" id="master_serial_tracking" class="form-check-input mr-2" onchange="toggleAllSerialCheckboxes(this)" checked>
+                                    <span class="text-gray-700 font-medium">Quản lý tất cả biến thể theo IMEI/Serial</span>
+                                </label>
+                            </div>
                             <div class="input-group">
                                 <label for="sku_prefix">Tiền tố SKU (cho biến thể)</label>
                                 <input type="text" id="sku_prefix" name="sku_prefix" class="input-field"
@@ -734,7 +780,6 @@
                                 value="{{ old('meta_keywords', $product->meta_keywords) }}">
                         </div>
                     </div>
-                    {{-- Card Thông Tin Bổ Sung --}}
                     <div class="card">
                         <div class="card-header">
                             <svg class="svg-icon" viewBox="0 0 24 24">
@@ -838,7 +883,7 @@
 @endsection
 
 @push('scripts')
-    {{-- **ĐÃ THAY THẾ TINYMCE BẰNG CKEDITOR** --}}
+    {{-- Scripts --}}
     <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/super-build/ckeditor.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
     <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.polyfills.min.js"></script>
@@ -849,7 +894,7 @@
         // =================================================================
         let variantIndexGlobal = 0;
         let tagify;
-        let longDescriptionEditor; // **BIẾN MỚI CHO CKEDITOR**
+        let longDescriptionEditor;
         window.mediaLibraryTarget = null;
         let selectedProductAttributes = [];
         let fetchedSpecifications = [];
@@ -1022,9 +1067,9 @@
         function mapSpecsToObject(specsArray) {
             if (!Array.isArray(specsArray)) return {};
             return specsArray.reduce((acc, item) => {
-                if (item && item.id && item.pivot) { // Adjusted for direct variant.specifications
+                if (item && item.id && item.pivot) { 
                     acc[item.id] = item.pivot.value;
-                } else if (item && item.specification && item.specification.id && item.pivot) { // For old structure if needed
+                } else if (item && item.specification && item.specification.id && item.pivot) { 
                      acc[item.specification.id] = item.pivot.value;
                 }
                 return acc;
@@ -1217,7 +1262,7 @@
                 <img src="${image.url}" alt="${image.alt_text || 'Ảnh sản phẩm'}">
                 <span class="remove-img-btn" onclick="${removeFunc}">×</span>
                 <button type="button" class="set-primary-btn" title="Đặt làm ảnh chính" onclick="${setPrimaryFunc}"><i class="fas fa-star" style="color: white; pointer-events: none;"></i> Đặt chính</button>
-            `;
+                `;
                 previewContainer.appendChild(previewDiv);
             });
 
@@ -1286,6 +1331,29 @@
             );
         }
 
+        // =================================================================
+        // LOGIC IMEI/SERIAL
+        // =================================================================
+        function toggleAllSerialCheckboxes(masterCheckbox) {
+            const isChecked = masterCheckbox.checked;
+            document.querySelectorAll('.variant-serial-checkbox').forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+        }
+
+        function updateMasterCheckboxState() {
+            const allCheckboxes = document.querySelectorAll('.variant-serial-checkbox');
+            const masterCheckbox = document.getElementById('master_serial_tracking');
+            if (!masterCheckbox) return;
+
+            if (allCheckboxes.length === 0) {
+                masterCheckbox.checked = true; // Mặc định là true nếu chưa có biến thể nào
+                return;
+            };
+
+            const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+            masterCheckbox.checked = allChecked;
+        }
 
         // =================================================================
         // LOGIC FORM VÀ BIẾN THỂ
@@ -1327,13 +1395,10 @@
             });
         }
 
-        // =================================================================
-        // HÀM TẠO MỚI MỘT CARD BIẾN THỂ (ĐÃ BỎ TỒN KHO)
-        // =================================================================
         function addVariantCard(variantData = {}) {
             const currentVariantIndex = variantIndexGlobal;
             if (selectedProductAttributes.length === 0 && !Object.keys(variantData).length && document.getElementById('variableProductFields').style.display !== 'none') {
-                showMessageModal('Thông báo', 'Vui lòng chọn ít nhất một thuộc tính cho sản phẩm trước khi thêm biến thể.', 'info');
+                showMessageModal('Thông báo', 'Vui lòng chọn ít nhất một thuộc tính để tạo biến thể.', 'info');
                 return;
             }
             const variantCard = document.createElement('div');
@@ -1349,6 +1414,8 @@
 
             const startsAtValue = variantData.sale_price_starts_at ? new Date(variantData.sale_price_starts_at).toISOString().slice(0, 16) : '';
             const endsAtValue = variantData.sale_price_ends_at ? new Date(variantData.sale_price_ends_at).toISOString().slice(0, 16) : '';
+            
+            const isCheckedByDefault = 'has_serial_tracking' in variantData ? variantData.has_serial_tracking : (document.getElementById('master_serial_tracking')?.checked ?? true);
 
             variantCard.innerHTML = `
                 <div class="variant-header">
@@ -1400,7 +1467,13 @@
                         <p class="text-gray-500 text-sm">Vui lòng chọn danh mục để tải thông số.</p>
                     </div>
                 </div>
-                <div class="mt-4"><label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio" ${variantData.is_default ? 'checked' : ''}><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="${variantData.is_default ? 'true' : 'false'}" class="is-default-hidden-input"> Đặt làm mặc định</label></div>
+                <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                    <label class="flex items-center text-sm cursor-pointer"><input type="radio" name="variant_is_default_radio_group" value="${currentVariantIndex}" class="form-check-input mr-2 variant-default-radio" ${variantData.is_default ? 'checked' : ''}><input type="hidden" name="variants[${currentVariantIndex}][is_default]" value="${variantData.is_default ? 'true' : 'false'}" class="is-default-hidden-input"> Đặt làm mặc định</label>
+                    <label class="flex items-center text-sm cursor-pointer">
+                        <input type="checkbox" name="variants[${currentVariantIndex}][has_serial_tracking]" value="1" class="form-check-input mr-2 variant-serial-checkbox" ${isCheckedByDefault ? 'checked' : ''} onchange="updateMasterCheckboxState()">
+                        <span>Quản lý theo Serial</span>
+                    </label>
+                </div>
             `;
 
             document.getElementById('variantsContainer').appendChild(variantCard);
@@ -1413,15 +1486,17 @@
                 this.closest('.variant-card').remove();
                 updateDefaultVariantRadioAndHiddenFields();
                 updateAllCopySpecButtons();
+                updateMasterCheckboxState(); 
             });
             variantCard.querySelector('.variant-default-radio').addEventListener('change', handleDefaultVariantChange);
             variantIndexGlobal++;
             updateDefaultVariantRadioAndHiddenFields();
             updateAllCopySpecButtons();
+            updateMasterCheckboxState(); 
         }
 
         // =================================================================
-        // LOGIC CHUYỂN ĐỔI LOẠI SẢN PHẨM (ĐÃ BỎ TỒN KHO)
+        // LOGIC CHUYỂN ĐỔI LOẠI SẢN PHẨM
         // =================================================================
         function performTypeSwitch(newType) {
             const simpleFieldsDiv = document.getElementById('simpleProductFields');
@@ -1439,7 +1514,6 @@
                 if (sourceVariantCard) {
                     const sourceIndex = sourceVariantCard.dataset.variantIndex;
                     
-                    // Sao chép dữ liệu
                     document.getElementById('simple_sku').value = sourceVariantCard.querySelector(`input[name="variants[${sourceIndex}][sku]"]`)?.value || '';
                     document.getElementById('simple_price').value = sourceVariantCard.querySelector(`input[name="variants[${sourceIndex}][price]"]`)?.value || '';
                     document.querySelector('input[name="simple_sale_price"]').value = sourceVariantCard.querySelector(`input[name="variants[${sourceIndex}][sale_price]"]`)?.value || '';
@@ -1449,6 +1523,12 @@
                     document.querySelector('input[name="simple_dimensions_length"]').value = sourceVariantCard.querySelector(`input[name="variants[${sourceIndex}][dimensions_length]"]`)?.value || '';
                     document.querySelector('input[name="simple_dimensions_width"]').value = sourceVariantCard.querySelector(`input[name="variants[${sourceIndex}][dimensions_width]"]`)?.value || '';
                     document.querySelector('input[name="simple_dimensions_height"]').value = sourceVariantCard.querySelector(`input[name="variants[${sourceIndex}][dimensions_height]"]`)?.value || '';
+                    
+                    const simpleSerialCheckbox = document.getElementById('simple_has_serial_tracking');
+                    const sourceSerialCheckbox = sourceVariantCard.querySelector(`input[name="variants[${sourceIndex}][has_serial_tracking]"]`);
+                    if(simpleSerialCheckbox && sourceSerialCheckbox) {
+                        simpleSerialCheckbox.checked = sourceSerialCheckbox.checked;
+                    }
 
                     const simplePreviewContainer = document.getElementById('simple_product_image_preview_container');
                     const simpleIdsContainer = document.getElementById('image_ids_container');
@@ -1487,7 +1567,8 @@
                     dimensions_length: document.querySelector('input[name="simple_dimensions_length"]').value,
                     dimensions_width: document.querySelector('input[name="simple_dimensions_width"]').value,
                     dimensions_height: document.querySelector('input[name="simple_dimensions_height"]').value,
-                    is_default: true
+                    is_default: true,
+                    has_serial_tracking: document.getElementById('simple_has_serial_tracking')?.checked ?? true
                 };
                 addVariantCard(firstVariantData);
 
@@ -1510,7 +1591,7 @@
                 }
             }
             currentProductType = newType;
-            handleCategoryChange(); // Refresh specs for the new view
+            handleCategoryChange(); 
         }
 
         // =================================================================
@@ -1607,6 +1688,8 @@
                 document.getElementById('category_id').value = categoryId;
                 handleCategoryChange();
             }
+
+            updateMasterCheckboxState(); // Cập nhật trạng thái master checkbox khi tải trang
         }
 
 

@@ -426,5 +426,8 @@
                 recalculateCartSummary();
             }
         });
+        setTimeout(() => {
+            document.getElementById("loading-overlay").style.display = "none";
+        }, 1000);
     </script>
 @endpush

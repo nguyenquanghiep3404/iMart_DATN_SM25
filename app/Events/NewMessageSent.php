@@ -7,12 +7,13 @@ use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
 use Illuminate\Broadcasting\PrivateChannel; // Quan trọng: Đảm bảo sử dụng PrivateChannel
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\ChatMessage;
 use App\Models\ChatConversation;
 
-class NewMessageSent implements ShouldBroadcast
+class NewMessageSent implements ShouldBroadcastNow 
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -26,13 +27,30 @@ class NewMessageSent implements ShouldBroadcast
     }
 
     public function broadcastOn(): array
-    {
-        // Kênh riêng tư cho cuộc hội thoại này.
-        // Tên kênh phải khớp với tên lắng nghe của Echo.
-        return [
-            new PrivateChannel('chat.conversation.' . $this->conversation->id),
-        ];
+{
+    $channels = [];
+
+    // 1. Kênh chung cho cuộc hội thoại (để tất cả mọi người trong đó thấy tin nhắn)
+    $channels[] = new PrivateChannel('chat.conversation.' . $this->conversation->id);
+
+    // 2. Gửi đến kênh riêng của từng admin để cập nhật UI danh sách hội thoại
+    //    ngay cả khi họ không mở cuộc hội thoại đó.
+    $adminParticipants = $this->conversation->participants()
+        ->whereHas('user.roles', function ($query) {
+            $query->whereIn('name', ['admin', 'super_admin']);
+        })
+        ->get();
+
+    foreach ($adminParticipants as $participant) {
+        // Không cần gửi thông báo riêng cho chính người vừa gửi tin nhắn
+        if ($this->message->sender_id !== $participant->user_id) {
+            $channels[] = new PrivateChannel('users.' . $participant->user_id);
+        }
     }
+
+    return $channels;
+}
+
 
     public function broadcastAs(): string
     {

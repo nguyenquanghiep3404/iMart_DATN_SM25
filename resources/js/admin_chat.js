@@ -411,7 +411,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     showToastNotification(`Bạn được mời vào chat nội bộ: ${e.conversation.subject || ''}`, 'info');
                     createConversationElement(e.conversation);
                 }
-            });
+            })
+            .listen('.message.sent', (e) => {
+        // Bỏ qua nếu tin nhắn là của chính mình
+        if (e.message.sender_id == AUTH_ID) {
+            return;
+        }
+
+        // Tìm item hội thoại trong danh sách
+        const conversationElement = document.querySelector(`.conversation-item[data-conversation-id="${e.conversation.id}"]`);
+
+        if (conversationElement) {
+            // Cập nhật tin nhắn cuối cùng
+            const lastMessageP = conversationElement.querySelector('.last-message');
+            if (lastMessageP) {
+                lastMessageP.textContent = e.message.content;
+            }
+
+            // Di chuyển item hội thoại lên đầu danh sách
+            const list = conversationElement.parentElement;
+            list.prepend(conversationElement);
+            
+            // Tùy chọn: Hiển thị thông báo toast
+            const conversationName = conversationElement.querySelector('.name').textContent;
+            showToastNotification(`Tin nhắn mới từ "${conversationName}"`, 'info');
+        }
+    });
     }
 
     // Tự động tải cuộc hội thoại đầu tiên nếu có
