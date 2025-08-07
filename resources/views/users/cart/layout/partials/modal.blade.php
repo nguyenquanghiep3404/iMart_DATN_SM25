@@ -247,4 +247,84 @@
             modal.style.display = 'none'; // In a real app, you would manage this with state
         });
     });
+    // xử lý điểm thưởng
+    $(document).ready(function() {
+        $('#apply-points-btn').on('click', function() {
+            const $btn = $(this);
+            const points = $('#points-to-use').val();
+            const $messageDiv = $('#points-message');
+
+            if (!points || parseInt(points) <= 0) {
+                $messageDiv.html('<span class="text-danger">Vui lòng nhập số điểm hợp lệ.</span>');
+                return;
+            }
+
+            $btn.prop('disabled', true).html('Đang xử lý...');
+            $messageDiv.html('');
+
+            $.ajax({
+                url: "{{ route('cart.applyPoints') }}",
+                method: 'POST',
+                type: 'buy-now',
+                data: {
+                    points: points,
+                    _token: '{{ csrf_token() }}'
+                },
+                success: function(res) {
+                    if (res.success) {
+                        toastr.success(res.message);
+                        $messageDiv.html(
+                            `<span class="text-success">${res.message}</span>`);
+
+                        // Cập nhật giao diện tổng tiền
+                        $('#points-discount-row').show();
+                        $('#points-discount-amount').text(
+                            `- ${res.discount_amount.toLocaleString('vi-VN')}₫`);
+                        $('#cart-total').text(
+                            `${res.new_grand_total.toLocaleString('vi-VN')}₫`);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        toastr.error(res.message);
+                        $messageDiv.html(`<span class="text-danger">${res.message}</span>`);
+                    }
+                },
+                error: function() {
+                    toastr.error('Có lỗi xảy ra, vui lòng thử lại.');
+                    $messageDiv.html(
+                        '<span class="text-danger">Có lỗi xảy ra, vui lòng thử lại.</span>'
+                    );
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html('Áp dụng');
+                }
+            });
+        });
+
+
+        // Cấu hình toastr
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toast-top-right",
+            timeOut: "3000",
+            showDuration: "300",
+            hideDuration: "1000",
+            showMethod: "slideDown",
+            hideMethod: "slideUp"
+        };
+
+        // Setup CSRF
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            }
+        });
+
+        function formatPrice(num) {
+            if (typeof num !== 'number') return '0₫';
+            return num.toLocaleString('vi-VN') + '₫';
+        }
+    });
 </script>

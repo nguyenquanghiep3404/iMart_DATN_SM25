@@ -24,4 +24,9 @@ class StockTransferItemSerial extends Model
     {
         return $this->belongsTo(InventorySerial::class, 'inventory_serial_id');
     }
+
+    public function stockTransferItem()
+{
+    return $this->belongsTo(StockTransferItem::class, 'stock_transfer_item_id');
+}
 }

@@ -66,4 +66,15 @@ class StockTransfer extends Model
     {
         return $this->hasMany(StockTransferItem::class);
     }
+
+
+
+    /**
+     * Accessor để lấy mã chuyển kho.
+     * Cách dùng trong view: $stockTransfer->getCode()
+     */
+    public function getCode()
+    {
+        return $this->transfer_code;
+    }
 }
