@@ -48,91 +48,93 @@
         <!-- Main Content Block -->
         <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <!-- Filter Bar -->
-           <form method="GET" action="{{ route('admin.inventory-ledger.index') }}">
-    @csrf
-    <div class="p-4 border-b border-gray-200">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-12 gap-4">
-            <!-- Province Filter -->
-            <select id="province-filter" name="province_code"
-                class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Tất cả Tỉnh/Thành</option>
-                @foreach ($provinces as $province)
-                    <option value="{{ $province->code }}"
-                        {{ old('province_code', request('province_code')) == $province->code ? 'selected' : '' }}>
-                        {{ $province->name }}
-                    </option>
-                @endforeach
-            </select>
+            <form method="GET" action="{{ route('admin.inventory-ledger.index') }}">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-12 gap-4">
+                        <!-- Province Filter -->
+                        <select id="province-filter" name="province_code"
+                            class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Tất cả Tỉnh/Thành</option>
+                            @foreach ($provinces as $province)
+                                <option value="{{ $province->code }}"
+                                    {{ old('province_code', request('province_code')) == $province->code ? 'selected' : '' }}>
+                                    {{ $province->name }}
+                                </option>
+                            @endforeach
+                        </select>
 
-            <!-- District Filter -->
-            <select id="district-filter" name="district_code"
-                class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                {{ request('province_code') ? '' : 'disabled' }}>
-                <option value="">Tất cả Quận/Huyện</option>
-            </select>
+                        <!-- District Filter -->
+                        <select id="district-filter" name="district_code"
+                            class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            {{ request('province_code') ? '' : 'disabled' }}>
+                            <option value="">Tất cả Quận/Huyện</option>
+                        </select>
 
-            <!-- Transaction Type -->
-            <select id="transaction-type-filter" name="transaction_type"
-                class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <option value="">Tất cả giao dịch</option>
-                <option value="sale"
-                    {{ old('transaction_type', request('transaction_type')) == 'sale' ? 'selected' : '' }}>
-                    Bán hàng
-                </option>
-                <option value="Nhập hàng từ NCC"
-                    {{ old('transaction_type', request('transaction_type')) == 'Nhập hàng từ NCC' ? 'selected' : '' }}>
-                    Nhập hàng
-                </option>
-                <option value="Xuất kho chuyển đi"
-                    {{ old('transaction_type', request('transaction_type')) == 'Xuất kho chuyển đi' ? 'selected' : '' }}>
-                    Chuyển kho
-                </option>
-                <option value="adjustment"
-                    {{ old('transaction_type', request('transaction_type')) == 'adjustment' ? 'selected' : '' }}>
-                    Điều chỉnh
-                </option>
-            </select>
+                        <!-- Transaction Type -->
+                        <select id="transaction-type-filter" name="transaction_type"
+                            class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Tất cả giao dịch</option>
+                            <option value="sale"
+                                {{ old('transaction_type', request('transaction_type')) == 'sale' ? 'selected' : '' }}>
+                                Bán hàng
+                            </option>
+                            <option value="Nhập hàng từ NCC"
+                                {{ old('transaction_type', request('transaction_type')) == 'Nhập hàng từ NCC' ? 'selected' : '' }}>
+                                Nhập hàng
+                            </option>
+                            <option value="Xuất kho chuyển đi"
+                                {{ old('transaction_type', request('transaction_type')) == 'Xuất kho chuyển đi' ? 'selected' : '' }}>
+                                Chuyển kho
+                            </option>
+                            <option value="Nhận kho chuyển đến"
+                                {{ old('transaction_type', request('transaction_type')) == 'Nhận kho chuyển đến' ? 'selected' : '' }}>
+                                Nhận kho
+                            <option value="adjustment"
+                                {{ old('transaction_type', request('transaction_type')) == 'adjustment' ? 'selected' : '' }}>
+                                Điều chỉnh
+                            </option>
+                        </select>
 
-            <!-- Date Start -->
-            <input id="date-start-filter" type="date" name="date_start"
-                value="{{ old('date_start', request('date_start')) }}"
-                class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <!-- Date Start -->
+                        <input id="date-start-filter" type="date" name="date_start"
+                            value="{{ old('date_start', request('date_start')) }}"
+                            class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
 
-            <!-- Date End -->
-            <input id="date-end-filter" type="date" name="date_end"
-                value="{{ old('date_end', request('date_end')) }}"
-                class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <!-- Date End -->
+                        <input id="date-end-filter" type="date" name="date_end"
+                            value="{{ old('date_end', request('date_end')) }}"
+                            class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
 
-            <!-- Search Input -->
-            <div class="relative xl:col-span-2">
-                <input id="search-input" type="text" name="search"
-                    value="{{ old('search', request('search')) }}"
-                    placeholder="Tìm SKU / Tên sản phẩm / Tham chiếu..."
-                    class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                </span>
-            </div>
-        </div>
-        <!-- Action Buttons -->
-        <div class="flex items-center justify-start gap-2 mt-4">
-            <button type="submit"
-                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center gap-2">
-                Tìm kiếm
-            </button>
+                        <!-- Search Input -->
+                        <div class="relative xl:col-span-2">
+                            <input id="search-input" type="text" name="search"
+                                value="{{ old('search', request('search')) }}"
+                                placeholder="Tìm SKU / Tên sản phẩm / Tham chiếu..."
+                                class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Action Buttons -->
+                    <div class="flex items-center justify-start gap-2 mt-4">
+                        <button type="submit"
+                            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center gap-2">
+                            Tìm kiếm
+                        </button>
 
-            <a href="{{ route('admin.inventory-ledger.index') }}"
-                class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 flex items-center gap-2">
-                Xóa lọc
-            </a>
-        </div>
-    </div>
-</form>
+                        <a href="{{ route('admin.inventory-ledger.index') }}"
+                            class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300 flex items-center gap-2">
+                            Xóa lọc
+                        </a>
+                    </div>
+                </div>
+            </form>
 
             <!-- Ledger Table -->
             <div class="overflow-x-auto">
@@ -196,6 +198,13 @@
 
                                         @case('Xuất kho chuyển đi')
                                             <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                                {{ $movement->reason_label }}
+                                            </span>
+                                        @break
+
+                                        @case('Nhận kho chuyển đến')
+                                            <span
+                                                class="bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                                                 {{ $movement->reason_label }}
                                             </span>
                                         @break

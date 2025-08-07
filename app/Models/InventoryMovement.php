@@ -44,6 +44,7 @@ class InventoryMovement extends Model
             'sale' => 'Bán hàng',
             'Nhập hàng từ NCC' => 'Nhập hàng',
             'Xuất kho chuyển đi' => 'Chuyển kho',
+            'Nhận kho chuyển đến' => 'Nhận kho',
             'adjustment' => 'Điều chỉnh',
             default => 'Không xác định',
         };
