@@ -55,7 +55,17 @@
             <div class="p-4 flex items-center space-x-4">
                 <img src="{{ $image }}" alt="Product Image" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
                 <div class="flex-1">
-                    <p class="font-semibold text-gray-800">{{ $product->name ?? '---' }}</p>
+                    @php
+                    $items = $refund->returnItems ?? collect();
+                    $firstItem = $items->first();
+                    $firstProduct = optional($firstItem?->orderItem?->variant?->product);
+                    $otherCount = $items->count() - 1;
+                    @endphp
+
+                    <p class="font-semibold text-gray-800">
+                        {{ $firstProduct->name ?? '---' }}{{ $otherCount > 0 ? " và $otherCount sản phẩm khác" : '' }}
+                    </p>
+
                     <p class="text-sm text-gray-500">
                         Số tiền hoàn lại:
                         <span class="font-medium text-green-600">

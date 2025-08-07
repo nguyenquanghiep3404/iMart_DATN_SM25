@@ -66,6 +66,10 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
+use App\Http\Controllers\GuestOrderController;
+use App\Http\Controllers\ReorderController;
+use App\Http\Controllers\Admin\InventoryDashboardController;
+use App\Http\Controllers\Admin\InventoryAdjustmentController;
 
 Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
 
@@ -171,6 +175,13 @@ Route::post('/notifications/mark-as-read', function () {
     auth()->user()->unreadNotifications->markAsRead();
     return response()->json(['status' => 'success']);
 })->name('notifications.markAsRead')->middleware('auth');
+
+// Routes cho trang tra cứu đơn hàng của khách vãng lai
+Route::get('/tra-cuu-don-hang', [GuestOrderController::class, 'index'])->name('guest.orders.form');
+Route::post('/tra-cuu-don-hang/ajax', [GuestOrderController::class, 'lookupAjax'])->name('guest.orders.ajax');
+// routes/web.php
+Route::post('/orders/reorder/{order:order_code}', [ReorderController::class, 'reorder'])->name('orders.reorder');
+
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -385,18 +396,18 @@ Route::prefix('admin')
         // Route::middleware('can:manage-content')->group(function () {
         // Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
         //     ->name('products.gallery.delete');
-    
+
         // Category routes
         // Route::resource('categories', CategoryController::class);
-    
+
 
         // Route::middleware('can:manage-content')->group(function () {
         // Route::delete('products/gallery-images/{uploadedFile}', [ProductController::class, 'deleteGalleryImage'])
         //     ->name('products.gallery.delete');
-    
+
         // Category routes
         // Route::resource('categories', CategoryController::class);
-    
+
 
         Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
         Route::get('/categories/trash', [CategoryController::class, 'trash'])->name('categories.trash');
@@ -422,8 +433,7 @@ Route::prefix('admin')
         // --- Specification Groups ---
         Route::get('specification-groups/trashed', [SpecificationGroupController::class, 'trashed'])->name('specification-groups.trashed');
         Route::post('specification-groups/{id}/restore', [SpecificationGroupController::class, 'restore'])->name('specification-groups.restore');
-        Route::delete('specification-groups/{id}/force-delete', [SpecificationGroupController::class, 'forceDelete'])->name('specification-groups.forceDelete');
-        ;
+        Route::delete('specification-groups/{id}/force-delete', [SpecificationGroupController::class, 'forceDelete'])->name('specification-groups.forceDelete');;
         Route::resource('specification-groups', SpecificationGroupController::class);
 
         // --- Specifications ---
@@ -540,7 +550,7 @@ Route::prefix('admin')
 
 
         // Banner routes
-    
+
         Route::get('/banners/trash', [BannerController::class, 'trash'])->name('banners.trash');
         Route::post('/banners/{banner}/restore', [BannerController::class, 'restore'])->name('banners.restore');
         Route::delete('/banners/{banner}/force-delete', [BannerController::class, 'forceDelete'])->name('banners.forceDelete');
@@ -657,7 +667,7 @@ Route::prefix('admin')
         Route::patch('bundle-products/{bundle}/toggle-status', [BundleProductController::class, 'toggleStatus'])->name('bundle-products.toggle-status');
 
         // Xóa mềm gói sản phẩm
-    
+
         // Post routes
         Route::get('posts/trashed', [PostController::class, 'trashed'])->name('posts.trashed'); // Danh sách bài đã xóa
         Route::get('posts/preview/{id}', [PostController::class, 'preview'])->name('posts.preview');
@@ -685,7 +695,7 @@ Route::prefix('admin')
             Route::post('/{conversation}/close', [AdminChatController::class, 'close'])->name('close');
             Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
             Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
-           
+
         });
 
         // Quản lý thu cũ và hàng mở hộp
@@ -789,7 +799,7 @@ Route::prefix('admin')
             Route::put('/{stockTransfer}', [StockTransferController::class, 'update'])->name('update');
             // Giả sử sẽ có chức năng xóa
             // Route::delete('/{stockTransfer}', [StockTransferController::class, 'destroy'])->name('destroy');
-    
+
             // API Routes (đặt gần nhau cho dễ quản lý)
             Route::get('/api/pending', [StockTransferController::class, 'getPendingTransfers'])->name('api.pending');
             Route::get('/api/search-products', [StockTransferController::class, 'searchProducts'])->name('search-products');
@@ -802,10 +812,11 @@ Route::prefix('admin')
             // Receive (Nhận Kho) Routes
             Route::get('/{stockTransfer}/receive', [StockTransferController::class, 'showReceivePage'])->name('receive.show');
             Route::post('/{stockTransfer}/receive', [StockTransferController::class, 'processReceive'])->name('receive.process');
-
         });
         Route::resource('stock-transfers', StockTransferController::class);
-
+        
+        Route::get('/product-variants/{id}/adjust-form', [InventoryAdjustmentController::class, 'showAdjustForm'])->name('product-variants.adjust-form');
+        Route::post('/product-variants/{id}/adjust-stock', [InventoryAdjustmentController::class, 'adjustStock'])->name('product-variants.adjust-stock')->middleware('auth');
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')
