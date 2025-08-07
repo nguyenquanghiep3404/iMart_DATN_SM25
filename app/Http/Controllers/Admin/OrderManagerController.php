@@ -7,20 +7,34 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Models\StoreLocation;
+use App\Models\ProvinceOld;
+
 class OrderManagerController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::whereIn('id', function ($query) {
-            $query->select('user_id')
-                  ->from('role_user')
-                  ->where('role_id', 5);
-        })->paginate(10);
-        return view('admin.oderMannager.index', compact('users'));
+        $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
+        $warehouses = StoreLocation::with(['province', 'district'])
+            ->where('type', 'warehouse')
+            ->withCount(['assignedUsers as orderManagers_count' => function ($q) {
+                $q->whereHas('roles', function ($qr) {
+                    $qr->where('id', 5);
+                });
+            }])
+            ->orderByDesc('id')
+            ->get();
+        return view('admin.oderMannager.index', compact('warehouses', 'provinces'));
     }
     public function edit(User $user)
     {
-        return view('admin.oderMannager.layouts.edit', compact('user'));
+        $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
+        $warehouses = StoreLocation::with('province')->where('type', 'warehouse')->orderBy('name')->get();
+        
+        // Lấy warehouse hiện tại của user
+        $currentWarehouse = $user->assignedStoreLocations()->first();
+
+        return view('admin.oderMannager.layouts.edit', compact('user', 'provinces', 'warehouses', 'currentWarehouse'));
     }
     public function update(Request $request, User $user)
     {
@@ -35,21 +49,27 @@ class OrderManagerController extends Controller
                 'nullable',
                 'regex:/^(0|\+84)[0-9]{9}$/',
             ],
+            'province_code' => 'required|exists:provinces_old,code',
+            'warehouse_id' => 'required|exists:store_locations,id',
             'status' => 'required|in:active,inactive',
             'password' => 'nullable|string|min:6|confirmed',
+            'password_confirmation' => 'nullable|same:password',
         ], [
             'name.required' => 'Vui lòng nhập họ và tên.',
             'email.required' => 'Vui lòng nhập địa chỉ email.',
             'email.email' => 'Địa chỉ email không hợp lệ.',
             'email.unique' => 'Email đã tồn tại trong hệ thống.',
             'phone_number.regex' => 'Số điện thoại không hợp lệ. Định dạng đúng: 0xxxxxxxxx hoặc +84xxxxxxxx.',
+            'province_code.required' => 'Vui lòng chọn tỉnh/thành phố.',
+            'province_code.exists' => 'Tỉnh/thành phố không hợp lệ.',
+            'warehouse_id.required' => 'Vui lòng chọn kho làm việc.',
+            'warehouse_id.exists' => 'Kho làm việc không hợp lệ.',
             'status.required' => 'Vui lòng chọn trạng thái.',
             'status.in' => 'Trạng thái không hợp lệ.',
             'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
             'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
+            'password_confirmation.same' => 'Mật khẩu xác nhận không khớp.',
         ]);
-        
-    
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         $user->phone_number = $validated['phone_number'] ?? null;
@@ -57,14 +77,34 @@ class OrderManagerController extends Controller
         if (!empty($validated['password'])) {
             $user->password = \Hash::make($validated['password']);
         }
-    
+
         $user->save();
-    
-        return redirect()->route('admin.order-manager.index')->with('success', 'Cập nhật thành công!');
+
+        // Cập nhật warehouse assignment
+        $user->assignedStoreLocations()->sync([$validated['warehouse_id']]);
+
+        // Redirect về warehouse detail nếu user thuộc warehouse
+        $currentWarehouse = $user->assignedStoreLocations()->first();
+        $redirectRoute = $currentWarehouse 
+            ? route('admin.order-manager.warehouse.show', $currentWarehouse->id)
+            : route('admin.order-manager.index');
+            
+        return redirect($redirectRoute)->with('success', 'Cập nhật thành công!');
     }
-    public function create()
+    public function create(Request $request)
     {
-        return view('admin.oderMannager.layouts.create'); 
+        $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
+        $warehouses = StoreLocation::with('province')->where('type', 'warehouse')->orderBy('name')->get();
+        // Nếu có warehouse_id trong request, lọc warehouses và set selected province
+        $selectedProvince = null;
+        if ($request->has('warehouse_id')) {
+            $warehouse = $warehouses->find($request->warehouse_id);
+            if ($warehouse) {
+                $selectedProvince = $warehouse->province_code;
+                $warehouses = $warehouses->where('id', $request->warehouse_id);
+            }
+        }
+        return view('admin.oderMannager.layouts.create', compact('provinces', 'warehouses', 'selectedProvince'));
     }
     public function store(Request $request)
     {
@@ -74,8 +114,11 @@ class OrderManagerController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone_number' => ['required', 'regex:/^(0|\+84)[0-9]{9}$/', 'unique:users,phone_number'],
+            'province_code' => 'required|exists:provinces_old,code',
+            'warehouse_id' => 'required|exists:store_locations,id',
             'status' => 'required|in:active,inactive',
             'password' => 'required|string|min:6|confirmed',
+            'password_confirmation' => 'required|same:password',
         ], [
             'name.required' => 'Vui lòng nhập họ và tên.',
             'email.required' => 'Vui lòng nhập email.',
@@ -84,13 +127,18 @@ class OrderManagerController extends Controller
             'phone_number.required' => 'Vui lòng nhập số điện thoại.',
             'phone_number.regex' => 'Số điện thoại không đúng định dạng.',
             'phone_number.unique' => 'Số điện thoại đã tồn tại.',
+            'province_code.required' => 'Vui lòng chọn tỉnh/thành phố.',
+            'province_code.exists' => 'Tỉnh/thành phố không hợp lệ.',
+            'warehouse_id.required' => 'Vui lòng chọn kho làm việc.',
+            'warehouse_id.exists' => 'Kho làm việc không hợp lệ.',
             'status.required' => 'Vui lòng chọn trạng thái.',
             'status.in' => 'Trạng thái không hợp lệ.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
             'password.min' => 'Mật khẩu phải có ít nhất :min ký tự.',
             'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
+            'password_confirmation.required' => 'Vui lòng xác nhận mật khẩu.',
+            'password_confirmation.same' => 'Mật khẩu xác nhận không khớp.',
         ]);
-        
         // Tạo user mới
         $user = new User();
         $user->name = $validated['name'];
@@ -102,25 +150,54 @@ class OrderManagerController extends Controller
 
         // Gán role nhân viên quản lý đơn hàng (ví dụ role_id = 5)
         $user->roles()->attach(5);
+        // Gán warehouse cho user
+        $user->assignedStoreLocations()->attach($validated['warehouse_id']);
         // Redirect về trang danh sách với thông báo
-        return redirect()->route('admin.order-manager.index')->with('success', 'Thêm nhân viên quản lý đơn hàng thành công!');
+        $redirectRoute = $request->has('warehouse_id')
+            ? route('admin.order-manager.warehouse.show', $validated['warehouse_id'])
+            : route('admin.order-manager.index');
+        return redirect($redirectRoute)->with('success', 'Thêm nhân viên quản lý đơn hàng thành công!');
     }
     public function show(User $user)
     {
-        return view('admin.oderMannager.layouts.show', compact('user'));
-    } 
-   public function staffIndex(Request $request)
+        // Lấy warehouse hiện tại của user
+        $currentWarehouse = $user->assignedStoreLocations()->first();
+        
+        return view('admin.oderMannager.layouts.show', compact('user', 'currentWarehouse'));
+    }
+    public function showWarehouse($warehouseId, Request $request)
+    {
+        $warehouse = StoreLocation::with(['province', 'district'])->findOrFail($warehouseId);
+        $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
+        $query = $warehouse->assignedUsers()->whereHas('roles', function ($q) {
+            $q->where('id', 5);
+        });
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%$search%")
+                    ->orWhere('email', 'like', "%$search%")
+                    ->orWhere('phone_number', 'like', "%$search%");
+            });
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        $users = $query->latest()->paginate(10);
+        return view('admin.oderMannager.warehouse', compact('warehouse', 'users', 'provinces'));
+    }
+    public function staffIndex(Request $request)
     {
         $query = User::whereHas('roles', function ($q) {
-            $q->where('id', 5); 
+            $q->where('id', 5);
         });
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%$search%")
-                ->orWhere('email', 'like', "%$search%")
-                ->orWhere('phone_number', 'like', "%$search%");
+                    ->orWhere('email', 'like', "%$search%")
+                    ->orWhere('phone_number', 'like', "%$search%");
             });
         }
 
@@ -135,9 +212,19 @@ class OrderManagerController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
-        $user->roles()->detach(); 
+        $user->roles()->detach();
         $user->delete();
         return redirect()->route('admin.order-manager.index')->with('success', 'Đã xoá nhân viên thành công!');
     }
+    // API: Lấy danh sách warehouses cho dropdown 
+    public function getWarehouses()
+    {
+        $warehouses = StoreLocation::where('type', 'warehouse')
+            ->where('is_active', true)
+            ->with(['province'])
+            ->select('id', 'name', 'province_code')
+            ->orderBy('name')
+            ->get();
+        return response()->json($warehouses);
+    }
 }
-

@@ -563,7 +563,8 @@ Route::prefix('admin')
         Route::put('/order-manager/{user}', [OrderManagerController::class, 'update'])->name('order-manager.update');
         Route::post('/order-manager/store', [OrderManagerController::class, 'store'])->name('order-manager.store');
         Route::delete('/order-manager/{user}', [OrderManagerController::class, 'destroy'])->name('order-manager.destroy');
-
+        Route::get('/order-manager/warehouses', [OrderManagerController::class, 'getWarehouses'])->name('order-manager.warehouses');
+        Route::get('/order-manager/warehouse/{warehouse}', [OrderManagerController::class, 'showWarehouse'])->name('order-manager.warehouse.show');
 
         // Route khác nếu cần
         Route::get('/staff', [OrderManagerController::class, 'staffIndex'])->name('staff.index');

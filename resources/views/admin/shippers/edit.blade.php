@@ -54,7 +54,7 @@
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="province" class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành phố <span class="text-red-500">*</span></label>
-                        <select name="province_code" id="province" required class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg" disabled>
+                        <select name="province_code" id="province" required class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg">
                             <option value="">Chọn Tỉnh/Thành phố</option>
                             @foreach($provinces ?? [] as $province)
                                 <option value="{{ $province->code }}" 
@@ -63,7 +63,6 @@
                                 </option>
                             @endforeach
                         </select>
-                        <input type="hidden" name="province_code" value="{{ $currentWarehouse?->province_code }}">
                     </div>
                     <div>
                         <label for="warehouse" class="block text-sm font-medium text-gray-700 mb-1">Kho làm việc <span class="text-red-500">*</span></label>
@@ -105,13 +104,37 @@
 document.addEventListener('DOMContentLoaded', function() {
     const provinceSelect = document.getElementById('province');
     const warehouseSelect = document.getElementById('warehouse');
-    // Trong form edit, province luôn bị disabled nên không cần JavaScript
-    // Chỉ cần đảm bảo warehouse dropdown hiển thị đúng kho hiện tại
-    if (warehouseSelect) {
-        // Tự động chọn kho hiện tại nếu có
-        const currentWarehouseId = '{{ $currentWarehouse?->id }}';
-        if (currentWarehouseId) {
-            warehouseSelect.value = currentWarehouseId;
+    if (provinceSelect && warehouseSelect) {
+        // Lấy tất cả warehouses từ server
+        let allWarehouses = [];
+        @foreach($warehouses ?? [] as $warehouse)
+            allWarehouses.push({
+                id: {{ $warehouse->id }},
+                name: '{{ $warehouse->name }}',
+                province_code: '{{ $warehouse->province_code }}'
+            });
+        @endforeach
+        // Filter warehouses khi province thay đổi
+        provinceSelect.addEventListener('change', function() {
+            filterWarehouses(this.value);
+        });
+        // Nếu đã có province_code thì filter luôn khi load trang
+        if (provinceSelect.value) {
+            filterWarehouses(provinceSelect.value);
+        }
+        function filterWarehouses(provinceCode) {
+            warehouseSelect.innerHTML = '<option value="">Chọn Kho làm việc</option>';
+            if (!provinceCode) return;
+            
+            const filteredWarehouses = allWarehouses.filter(warehouse =>
+                warehouse.province_code === provinceCode
+            );
+            filteredWarehouses.forEach(warehouse => {
+                const option = document.createElement('option');
+                option.value = warehouse.id;
+                option.textContent = warehouse.name;
+                warehouseSelect.appendChild(option);
+            });
         }
     }
 });

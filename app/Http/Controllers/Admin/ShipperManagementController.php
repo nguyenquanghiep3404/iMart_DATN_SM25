@@ -32,7 +32,7 @@ class ShipperManagementController extends Controller
                     });
                 }
             }])
-            ->orderBy('name')
+            ->orderByDesc('id')
             ->paginate($perPage);
         // Lấy danh sách tỉnh/thành để filter
         $provinces = ProvinceOld::select('code', 'name', 'name_with_type')->orderBy('name')->get();
@@ -198,24 +198,12 @@ class ShipperManagementController extends Controller
         
         // Lấy kho hiện tại của shipper
         $currentWarehouse = $shipper->warehouseAssignments()->first();
-        
-        if ($currentWarehouse) {
-            // Chỉ hiển thị các kho cùng tỉnh với kho hiện tại
-            $warehouses = StoreLocation::where('type', 'warehouse')
-                ->where('is_active', true)
-                ->where('province_code', $currentWarehouse->province_code)
-                ->with(['province'])
-                ->orderBy('name')
-                ->get();
-        } else {
-            // Nếu shipper chưa có kho, hiển thị tất cả kho
-            $warehouses = StoreLocation::where('type', 'warehouse')
-                ->where('is_active', true)
-                ->with(['province'])
-                ->orderBy('name')
-                ->get();
-        }
-        
+        // Luôn hiển thị tất cả kho để có thể chuyển sang kho khác
+        $warehouses = StoreLocation::where('type', 'warehouse')
+            ->where('is_active', true)
+            ->with(['province'])
+            ->orderBy('name')
+            ->get();
         return view('admin.shippers.edit', compact('shipper', 'provinces', 'warehouses', 'currentWarehouse'));
     }
 
