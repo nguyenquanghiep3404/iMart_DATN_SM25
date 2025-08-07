@@ -66,7 +66,6 @@ $navigation = [
             ['label' => 'Nhập kho (PO)', 'route' => 'admin.purchase-orders.index', 'active_check' => ['admin.purchase-orders.']],
             ['label' => 'Chuyển kho', 'route' => 'admin.stock-transfers.index', 'active_check' => ['admin.stock-transfers.']],
             ['label' => 'Trạm đóng gói', 'route' => 'admin.packing-station.index', 'active_check' => ['admin.packing-station.']],
-            ['label' => 'Báo cáo tồn kho', 'route' => 'admin.inventory-ledger.index', 'active_check' => ['admin.inventory-ledger.index']],
         ]
     ],
     
@@ -83,8 +82,6 @@ $navigation = [
             ['label' => 'Danh mục', 'route' => 'admin.categories.index', 'active_check' => ['admin.categories.']],
             ['label' => 'Thuộc tính', 'route' => 'admin.attributes.index', 'active_check' => ['admin.attributes.']],
             ['label' => 'Thông số', 'route' => 'admin.specifications.index', 'active_check' => ['admin.specifications.', 'admin.specification-groups.']],
-            ['label' => 'Quét IMEI sản phẩm', 'route' => 'admin.serial.lookup.form', 'active_check' => ['admin.specifications.', 'admin.serial.lookup.form']],
-            
         ]
     ],
 

@@ -66,8 +66,6 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
-use App\Http\Controllers\Admin\InventoryDashboardController;
-
 
 Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
 
@@ -530,9 +528,7 @@ Route::prefix('admin')
         Route::put('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'update'])->name('marketing_campaigns.update');
         Route::post('/marketing_campaigns/{id}/send', [MarketingCampaignController::class, 'send'])->name('marketing_campaigns.send');
 
-        // quản lý tồn kho
-        Route::get('/dashboard/inventory', [InventoryDashboardController::class, 'index'])
-            ->name('dashboard.inventory');
+
 
         // Banner routes
     
@@ -679,6 +675,7 @@ Route::prefix('admin')
             Route::post('/{conversation}/close', [AdminChatController::class, 'close'])->name('close');
             Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
             Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
+           
         });
 
         // Quản lý thu cũ và hàng mở hộp
