@@ -28,7 +28,8 @@ class ProductVariant extends Model
         'is_default',
         'status',
         'cost_price',
-        'points_awarded_on_purchase'
+        'points_awarded_on_purchase',
+        'has_serial_tracking',
     ];
 
     protected $casts = [
@@ -42,6 +43,7 @@ class ProductVariant extends Model
         'dimensions_width' => 'decimal:2',
         'dimensions_height' => 'decimal:2',
         'is_default' => 'boolean',
+        'has_serial_tracking' => 'boolean',
     ];
 
     public function product()

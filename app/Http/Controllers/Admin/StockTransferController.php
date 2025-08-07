@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use App\Models\StockTransferItemSerial;
+use Illuminate\Validation\ValidationException;
 
 class StockTransferController extends Controller
 {
@@ -88,6 +89,32 @@ class StockTransferController extends Controller
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
+        
+        // **BẮT ĐẦU: KIỂM TRA TỒN KHO TRƯỚC KHI TẠO**
+        $fromLocationId = $request->input('from_location_id');
+        $items = $request->input('items');
+        
+        // Lấy tất cả các ID biến thể để truy vấn một lần, tăng hiệu suất
+        $variantIds = array_column($items, 'product_variant_id');
+        $productVariants = ProductVariant::with('product')->findMany($variantIds);
+        $inventories = ProductInventory::where('store_location_id', $fromLocationId)
+                                       ->whereIn('product_variant_id', $variantIds)
+                                       ->where('inventory_type', 'new')
+                                       ->get()
+                                       ->keyBy('product_variant_id');
+        
+        foreach ($items as $itemData) {
+            $inventory = $inventories->get($itemData['product_variant_id']);
+            $productVariant = $productVariants->find($itemData['product_variant_id']);
+            $productFullName = $productVariant->product->name . ' (' . $productVariant->sku . ')';
+
+            if (!$inventory || $inventory->quantity < $itemData['quantity']) {
+                $availableStock = $inventory->quantity ?? 0;
+                $errorMessage = "Không đủ tồn kho cho sản phẩm '{$productFullName}'. Tồn kho hiện tại: {$availableStock}, Yêu cầu chuyển: {$itemData['quantity']}.";
+                return redirect()->back()->with('error', $errorMessage)->withInput();
+            }
+        }
+        // **KẾT THÚC: KIỂM TRA TỒN KHO**
 
         DB::beginTransaction();
         try {
@@ -95,15 +122,14 @@ class StockTransferController extends Controller
 
             $stockTransfer = StockTransfer::create([
                 'transfer_code' => $transferCode,
-                'from_location_id' => $request->input('from_location_id'),
+                'from_location_id' => $fromLocationId,
                 'to_location_id' => $request->input('to_location_id'),
                 'notes' => $request->input('notes'),
                 'status' => 'pending',
                 'created_by' => Auth::id(),
             ]);
 
-            foreach ($request->input('items') as $itemData) {
-                // TODO: Validate stock availability before creating
+            foreach ($items as $itemData) {
                 $stockTransfer->items()->create([
                     'product_variant_id' => $itemData['product_variant_id'],
                     'quantity' => $itemData['quantity'],
@@ -112,14 +138,14 @@ class StockTransferController extends Controller
 
             DB::commit();
             return redirect()->route('admin.stock-transfers.show', $stockTransfer->id)
-                         ->with('success', "Phiếu chuyển kho {$stockTransfer->transfer_code} đã được tạo thành công.");
+                             ->with('success', "Phiếu chuyển kho {$stockTransfer->transfer_code} đã được tạo thành công.");
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Failed to create stock transfer: ' . $e->getMessage());
             return redirect()->back()
-                         ->with('error', 'Đã xảy ra lỗi. Không thể tạo phiếu chuyển kho.')
-                         ->withInput();
+                             ->with('error', 'Đã xảy ra lỗi. Không thể tạo phiếu chuyển kho.')
+                             ->withInput();
         }
     }
     
@@ -136,8 +162,15 @@ class StockTransferController extends Controller
             'items.productVariant.primaryImage', 
             'items.productVariant.attributeValues.attribute'
         ]);
+
+        $statuses = [
+            'pending' => 'Chờ chuyển',
+            'shipped' => 'Đang chuyển',
+            'received' => 'Đã nhận',
+            'cancelled' => 'Đã hủy',
+        ];
         
-        return view('admin.stock_transfers.show', compact('stockTransfer'));
+        return view('admin.stock_transfers.show', compact('stockTransfer', 'statuses'));
     }
     
     /**
@@ -145,7 +178,6 @@ class StockTransferController extends Controller
      */
     public function searchProducts(Request $request)
     {
-        // This function remains the same
         $searchTerm = $request->input('search', '');
         $locationId = $request->input('location_id');
 
@@ -201,13 +233,11 @@ class StockTransferController extends Controller
 
     /**
      * Show the dispatch page for scanning items.
-     * Can optionally receive a pre-selected transfer.
      */
     public function showDispatchPage(StockTransfer $stockTransfer = null)
     {
         $preselectedTransferData = null;
         if ($stockTransfer) {
-            // Ensure the transfer is in a dispatchable state
             if ($stockTransfer->status !== 'pending') {
                 return redirect()->route('admin.stock-transfers.show', $stockTransfer->id)
                                  ->with('error', 'Phiếu này không ở trạng thái chờ chuyển.');
@@ -216,30 +246,12 @@ class StockTransferController extends Controller
             $stockTransfer->load([
                 'fromLocation', 
                 'toLocation', 
-                'items.productVariant.product', 
-                'items.productVariant.attributeValues.attribute'
+                'items.productVariant' => function ($query) {
+                    $query->with(['product', 'attributeValues.attribute']);
+                }
             ]);
             
-            // Format it to match the API response structure for consistency on the frontend
-            $preselectedTransferData = [
-                'id' => $stockTransfer->id,
-                'transfer_code' => $stockTransfer->transfer_code,
-                'from_location_name' => $stockTransfer->fromLocation->name,
-                'to_location_name' => $stockTransfer->toLocation->name,
-                'created_at' => $stockTransfer->created_at,
-                'items' => $stockTransfer->items->map(function ($item) {
-                    $variant = $item->productVariant;
-                    $productName = $variant->product->name ?? 'N/A';
-                    $variantName = $variant->attributeValues->pluck('value')->implode(' - ');
-                    return [
-                        'id' => $item->id,
-                        'product_variant_id' => $item->product_variant_id,
-                        'name' => $productName . ($variantName ? " ({$variantName})" : ''),
-                        'sku' => $variant->sku,
-                        'quantity' => $item->quantity,
-                    ];
-                }),
-            ];
+            $preselectedTransferData = $this->formatTransferDataForFrontend($stockTransfer);
         }
         
         return view('admin.stock_transfers.dispatch', ['preselectedTransfer' => $preselectedTransferData]);
@@ -255,27 +267,7 @@ class StockTransferController extends Controller
             ->latest()
             ->get();
 
-        $formattedData = $transfers->map(function ($st) {
-            return [
-                'id' => $st->id,
-                'transfer_code' => $st->transfer_code,
-                'from_location_name' => $st->fromLocation->name,
-                'to_location_name' => $st->toLocation->name,
-                'created_at' => $st->created_at,
-                'items' => $st->items->map(function ($item) {
-                    $variant = $item->productVariant;
-                    $productName = $variant->product->name ?? 'N/A';
-                    $variantName = $variant->attributeValues->pluck('value')->implode(' - ');
-                    return [
-                        'id' => $item->id,
-                        'product_variant_id' => $item->product_variant_id,
-                        'name' => $productName . ($variantName ? " ({$variantName})" : ''),
-                        'sku' => $variant->sku,
-                        'quantity' => $item->quantity,
-                    ];
-                }),
-            ];
-        });
+        $formattedData = $transfers->map(fn($st) => $this->formatTransferDataForFrontend($st));
 
         return response()->json($formattedData);
     }
@@ -285,9 +277,8 @@ class StockTransferController extends Controller
      */
     public function processDispatch(Request $request, StockTransfer $stockTransfer)
     {
-        // Giữ nguyên phần validation ban đầu
         $validated = $request->validate([
-            'scanned_serials' => 'required|array',
+            'scanned_serials' => 'present|array',
             'scanned_serials.*' => 'present|array',
         ]);
 
@@ -299,77 +290,45 @@ class StockTransferController extends Controller
 
             $fromLocationId = $stockTransfer->from_location_id;
             
-            // Lặp qua từng dòng sản phẩm trong phiếu chuyển có serial được quét
-            foreach ($validated['scanned_serials'] as $stItemId => $serials) {
-                $stItem = StockTransferItem::findOrFail($stItemId);
-                $productVariantId = $stItem->product_variant_id;
+            foreach ($stockTransfer->items as $stItem) {
+                $productVariant = $stItem->productVariant;
                 $quantity = $stItem->quantity;
 
-                if (count($serials) !== $quantity) {
-                    throw new \Exception("Số lượng serial cho SKU {$stItem->productVariant->sku} không khớp với số lượng trên phiếu.");
+                if ($productVariant->has_serial_tracking) {
+                    $serials = $validated['scanned_serials'][$stItem->id] ?? [];
+                    if (count($serials) !== $quantity) throw new \Exception("Số lượng serial cho SKU {$productVariant->sku} không khớp.");
+
+                    $inventorySerials = InventorySerial::where('product_variant_id', $productVariant->id)
+                        ->where('store_location_id', $fromLocationId)
+                        ->where('status', 'available')
+                        ->whereIn('serial_number', $serials)->get();
+
+                    if ($inventorySerials->count() !== $quantity) throw new \Exception("Một vài serial cho SKU {$productVariant->sku} không hợp lệ.");
+
+                    $serialsToInsert = $inventorySerials->map(fn($s) => [
+                        'stock_transfer_item_id' => $stItem->id, 'inventory_serial_id' => $s->id, 'created_at' => now(), 'updated_at' => now()
+                    ])->all();
+
+                    StockTransferItemSerial::insert($serialsToInsert);
+                    InventorySerial::whereIn('id', $inventorySerials->pluck('id'))->update(['status' => 'transferred']);
                 }
 
-                // 1. Lấy thông tin đầy đủ của các serial đã quét để lấy ID
-                $inventorySerials = InventorySerial::where('product_variant_id', $productVariantId)
-                    ->where('store_location_id', $fromLocationId)
-                    ->where('status', 'available')
-                    ->whereIn('serial_number', $serials)
-                    ->get();
-
-                // 2. Kiểm tra xem tất cả serial đã quét có hợp lệ không
-                if ($inventorySerials->count() !== $quantity) {
-                    throw new \Exception("Một vài serial cho SKU {$stItem->productVariant->sku} không hợp lệ hoặc không có sẵn tại kho gửi.");
-                }
-
-                // 3. Chuẩn bị dữ liệu để insert hàng loạt vào bảng `stock_transfer_item_serials`
-                $serialsToInsert = $inventorySerials->map(function ($serial) use ($stItemId) {
-                    return [
-                        'stock_transfer_item_id' => $stItemId,
-                        'inventory_serial_id'  => $serial->id,
-                        // 'status' sẽ tự động được set là 'in_transit' do đã có default trong DB
-                        'created_at'           => now(),
-                        'updated_at'           => now(),
-                    ];
-                })->all();
-
-                // 4. Insert hàng loạt để tăng hiệu suất (thay vì tạo từng cái trong vòng lặp)
-                StockTransferItemSerial::insert($serialsToInsert);
-                
-                // 5. Cập nhật trạng thái của các serial trong bảng gốc `inventory_serials`
-                // Lấy ra các ID đã được xác thực
-                $validSerialIds = $inventorySerials->pluck('id');
-                InventorySerial::whereIn('id', $validSerialIds)->update(['status' => 'transferred']);
-                
-
-                // Các phần xử lý tồn kho chung và ghi log vẫn giữ nguyên
-                $inventory = ProductInventory::where('product_variant_id', $productVariantId)
+                $inventory = ProductInventory::where('product_variant_id', $productVariant->id)
                     ->where('store_location_id', $fromLocationId)
                     ->where('inventory_type', 'new')->firstOrFail();
                 
                 $inventory->decrement('quantity', $quantity);
 
                 InventoryMovement::create([
-                    'product_variant_id' => $productVariantId,
-                    'store_location_id' => $fromLocationId,
-                    'inventory_type' => 'new',
-                    'quantity_change' => -$quantity,
-                    'quantity_after_change' => $inventory->quantity,
-                    'reason' => 'Xuất kho chuyển đi',
-                    'reference_type' => StockTransfer::class,
-                    'reference_id' => $stockTransfer->id,
-                    'user_id' => auth()->id(),
+                    'product_variant_id' => $productVariant->id, 'store_location_id' => $fromLocationId, 'inventory_type' => 'new',
+                    'quantity_change' => -$quantity, 'quantity_after_change' => $inventory->quantity, 'reason' => 'Xuất kho chuyển đi',
+                    'reference_type' => StockTransfer::class, 'reference_id' => $stockTransfer->id, 'user_id' => auth()->id(),
                 ]);
             }
 
-            // Cập nhật trạng thái phiếu chuyển kho
-            $stockTransfer->status = 'shipped';
-            $stockTransfer->shipped_at = now();
-            $stockTransfer->save();
-
+            $stockTransfer->update(['status' => 'shipped', 'shipped_at' => now()]);
             DB::commit();
-
             return response()->json(['success' => true, 'message' => 'Xuất kho thành công!']);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("Lỗi khi xuất kho cho ST #{$stockTransfer->id}: " . $e->getMessage());
@@ -377,4 +336,145 @@ class StockTransferController extends Controller
         }
     }
 
+    // =================================================================
+    // **CÁC HÀM MỚI CHO CHỨC NĂNG NHẬN KHO**
+    // =================================================================
+
+    /**
+     * Show the receive page for a specific stock transfer.
+     */
+    public function showReceivePage(StockTransfer $stockTransfer)
+    {
+        if ($stockTransfer->status !== 'shipped') {
+            return redirect()->route('admin.stock-transfers.show', $stockTransfer->id)
+                             ->with('error', 'Phiếu này không ở trạng thái "Đang chuyển".');
+        }
+
+        $stockTransfer->load([
+            'fromLocation', 
+            'toLocation', 
+            'items.productVariant' => fn($q) => $q->with(['product', 'attributeValues.attribute'])
+        ]);
+
+        $transferData = $this->formatTransferDataForFrontend($stockTransfer);
+
+        return view('admin.stock_transfers.receive', ['transfer' => $transferData]);
+    }
+
+    /**
+     * Process the reception of items and scanned serials.
+     */
+    public function processReceive(Request $request, StockTransfer $stockTransfer)
+    {
+        $validated = $request->validate([
+            'scanned_serials' => 'present|array',
+            'scanned_serials.*' => 'present|array',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            if ($stockTransfer->status !== 'shipped') {
+                throw new \Exception("Phiếu chuyển kho không ở trạng thái đang vận chuyển.");
+            }
+
+            $toLocationId = $stockTransfer->to_location_id;
+
+            foreach ($stockTransfer->items as $stItem) {
+                $productVariant = $stItem->productVariant;
+                $quantity = $stItem->quantity;
+
+                if ($productVariant->has_serial_tracking) {
+                    $receivedSerials = $validated['scanned_serials'][$stItem->id] ?? [];
+                    if (count($receivedSerials) !== $quantity) {
+                        throw new \Exception("Số lượng serial nhận được cho SKU {$productVariant->sku} không khớp.");
+                    }
+                    
+                    // Lấy ra các serial đã được gửi đi cho item này
+                    $shippedSerials = $stItem->serials()->with('inventorySerial')->get();
+
+                    // Kiểm tra xem các serial nhận được có khớp với serial đã gửi không
+                    $shippedSerialNumbers = $shippedSerials->pluck('inventorySerial.serial_number')->all();
+                    $diff = array_diff($receivedSerials, $shippedSerialNumbers);
+                    if (!empty($diff)) {
+                        throw new \Exception("Serial '" . reset($diff) . "' không thuộc phiếu chuyển này.");
+                    }
+                    
+                    // Cập nhật trạng thái và vị trí mới cho serial
+                    $shippedSerialIds = $shippedSerials->pluck('inventory_serial_id');
+                    InventorySerial::whereIn('id', $shippedSerialIds)
+                                    ->update([
+                                        'status' => 'available',
+                                        'store_location_id' => $toLocationId
+                                    ]);
+                    
+                    // Cập nhật trạng thái trong bảng trung gian
+                    $stItem->serials()->update(['status' => 'received']);
+                }
+
+                // Tăng tồn kho tại kho nhận cho TẤT CẢ sản phẩm
+                $inventory = ProductInventory::firstOrCreate(
+                    [
+                        'product_variant_id' => $productVariant->id,
+                        'store_location_id' => $toLocationId,
+                        'inventory_type' => 'new',
+                    ],
+                    ['quantity' => 0]
+                );
+                $inventory->increment('quantity', $quantity);
+
+                // Ghi lại lịch sử nhập kho
+                InventoryMovement::create([
+                    'product_variant_id' => $productVariant->id,
+                    'store_location_id' => $toLocationId,
+                    'inventory_type' => 'new',
+                    'quantity_change' => +$quantity,
+                    'quantity_after_change' => $inventory->quantity,
+                    'reason' => 'Nhận kho chuyển đến',
+                    'reference_type' => StockTransfer::class,
+                    'reference_id' => $stockTransfer->id,
+                    'user_id' => auth()->id(),
+                ]);
+            }
+
+            $stockTransfer->update([
+                'status' => 'received',
+                'received_at' => now()
+            ]);
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Nhận hàng và nhập kho thành công!']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Lỗi khi nhận kho cho ST #{$stockTransfer->id}: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Đã xảy ra lỗi: ' . $e->getMessage()], 500);
+        }
+    }
+
+
+    /**
+     * Helper function to format transfer data for frontend consistency.
+     */
+    private function formatTransferDataForFrontend(StockTransfer $stockTransfer)
+    {
+        return [
+            'id' => $stockTransfer->id,
+            'transfer_code' => $stockTransfer->transfer_code,
+            'from_location_name' => $stockTransfer->fromLocation->name,
+            'to_location_name' => $stockTransfer->toLocation->name,
+            'created_at' => $stockTransfer->created_at,
+            'items' => $stockTransfer->items->map(function ($item) {
+                $variant = $item->productVariant;
+                $productName = $variant->product->name ?? 'N/A';
+                $variantName = $variant->attributeValues->pluck('value')->implode(' - ');
+                return [
+                    'id' => $item->id,
+                    'product_variant_id' => $item->product_variant_id,
+                    'name' => $productName . ($variantName ? " ({$variantName})" : ''),
+                    'sku' => $variant->sku,
+                    'quantity' => $item->quantity,
+                    'has_serial_tracking' => $variant->has_serial_tracking,
+                ];
+            }),
+        ];
+    }
 }

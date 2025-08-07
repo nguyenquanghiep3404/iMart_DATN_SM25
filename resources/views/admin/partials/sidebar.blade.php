@@ -95,16 +95,6 @@
                     'route' => 'admin.packing-station.index',
                     'active_check' => ['admin.packing-station.'],
                 ],
-                [
-                    'label' => 'Báo cáo tồn kho chi tiết',
-                    'route' => 'admin.reports.inventory.index',
-                    'active_check' => ['admin.reports.inventory.'],
-                ],
-                [
-                    'label' => 'Dashboard Tồn kho',
-                    'route' => 'admin.dashboard.inventory',
-                    'active_check' => ['admin.dashboard.inventory.'],
-                ],
             ],
         ],
 
@@ -277,7 +267,7 @@
 @endphp
 
 <aside id="adminSidebar"
-    class="w-[300px] border-r border-slate-200 overflow-y-auto sidebar-scrollbar fixed left-0 top-0 h-full bg-white z-40 transition-transform duration-300 print:hidden flex flex-col"
+    class="w-[280px] border-r border-slate-200 overflow-y-auto sidebar-scrollbar fixed left-0 top-0 h-full bg-white z-40 transition-transform duration-300 print:hidden flex flex-col"
     x-show="(window.innerWidth >= 1024) ? true : sideMenu"
     :class="(window.innerWidth >= 1024 && !sideMenu) ? '-translate-x-full' : ((sideMenu || window.innerWidth >= 1024) ?
         'translate-x-0' : '-translate-x-full')"
@@ -287,21 +277,16 @@
 
     <div class="flex flex-col h-full" x-data="{ openNav: '{{ $activeParentNav }}' }">
         {{-- SIDEBAR HEADER --}}
-        <div class="flex h-[65px] items-center justify-center border-b border-slate-200 px-3 lg:px-6 py-4">
+        <div class="flex h-16 items-center justify-center border-b border-slate-200 px-4">
             <a href="{{ route('admin.dashboard') }}">
-                {{-- Full Logo --}}
-                <img class="hidden lg:block" src="{{ asset('assets/users/logo/logo-full.svg') }}" alt="Full Logo"
-                    style="width: 150px;">
-                {{-- Icon Logo --}}
-                <img class="block lg:hidden" src="{{ asset('assets/users/logo/logo-icon.svg') }}" alt="Icon Logo"
-                    style="width: 40px;">
+                <img class="h-10 w-auto" src="{{ asset('assets/users/logo/logo-full.svg') }}" alt="iMart Logo">
             </a>
         </div>
         {{-- END HEADER --}}
 
         {{-- NAVIGATION --}}
         <div class="flex-1 overflow-y-auto">
-            <nav class="px-3 py-5">
+            <nav class="px-3 py-4">
                 <ul class="space-y-1">
                     @foreach ($navigation as $navItem)
                         {{-- RENDER A SINGLE LINK --}}
@@ -317,10 +302,15 @@
                             @endphp
                             <li>
                                 <a href="{{ route($navItem['route']) }}"
-                                    class="group flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out
-                                        {{ $isLinkActive ? 'bg-indigo-50 text-indigo-600 font-semibold' : 'text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/50 font-medium' }}">
+                                    class="group relative flex items-center px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out
+                                          {{ $isLinkActive ? 'text-indigo-600 font-semibold' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium' }}">
+                                    {{-- THAY ĐỔI: Thêm chỉ báo active --}}
+                                    @if ($isLinkActive)
+                                        <span
+                                            class="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-indigo-600 rounded-r-full"></span>
+                                    @endif
                                     <span
-                                        class="mr-3 text-lg {{ $isLinkActive ? 'text-indigo-600' : 'text-slate-500 group-hover:text-indigo-500' }}">
+                                        class="mr-3 text-lg {{ $isLinkActive ? 'text-indigo-600' : 'text-slate-500 group-hover:text-slate-600' }}">
                                         {!! $navItem['icon'] !!}
                                     </span>
                                     {{ $navItem['label'] }}
@@ -331,15 +321,18 @@
                             @php
                                 $isDropdownActive = is_active_section($navItem['children'], $currentRouteName);
                             @endphp
-                            <li>
+                            <li class="relative">
                                 <button
                                     @click="openNav = (openNav === '{{ $navItem['id'] }}' ? null : '{{ $navItem['id'] }}')"
-                                    class="group w-full flex items-center px-4 py-2.5 text-base rounded-md transition-all duration-200 ease-in-out font-medium
-                                            {{ $isDropdownActive ? 'text-indigo-600' : 'text-slate-700' }} hover:text-indigo-600 hover:bg-indigo-50/50"
-                                    :class="{ 'bg-indigo-50 text-indigo-600': openNav === '{{ $navItem['id'] }}' }">
+                                    class="group w-full flex items-center px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out font-medium
+                                               {{ $isDropdownActive ? 'text-slate-900' : 'text-slate-700' }} hover:text-slate-900 hover:bg-slate-100">
+                                    {{-- THAY ĐỔI: Thêm chỉ báo active --}}
+                                    @if ($isDropdownActive)
+                                        <span
+                                            class="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-indigo-600 rounded-r-full"></span>
+                                    @endif
                                     <span
-                                        class="mr-3 text-lg {{ $isDropdownActive ? 'text-indigo-600' : 'text-slate-500' }} group-hover:text-indigo-500"
-                                        :class="{ 'text-indigo-600': openNav === '{{ $navItem['id'] }}' }">
+                                        class="mr-3 text-lg {{ $isDropdownActive ? 'text-indigo-600' : 'text-slate-500' }} group-hover:text-slate-600">
                                         {!! $navItem['icon'] !!}
                                     </span>
                                     {{ $navItem['label'] }}
@@ -352,8 +345,8 @@
                                         </svg>
                                     </span>
                                 </button>
-                                <ul x-show="openNav === '{{ $navItem['id'] }}'" class="pl-8 pr-2 py-1 space-y-1 mt-1"
-                                    style="display: none;">
+                                <ul x-show="openNav === '{{ $navItem['id'] }}'" x-transition
+                                    class="pl-7 pr-2 py-1 space-y-1 mt-1" style="display: none;">
                                     @foreach ($navItem['children'] as $child)
                                         @php
                                             $isChildActive = false;
@@ -365,10 +358,13 @@
                                             }
                                         @endphp
                                         <li>
+                                            {{-- THAY ĐỔI: Giao diện active cho menu con --}}
                                             <a href="{{ route($child['route']) }}"
-                                                class="block w-full py-1.5 px-3 text-sm rounded-md transition-colors duration-150
-                                                    {{ $isChildActive ? 'bg-indigo-100 text-indigo-700 font-medium' : 'text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/50' }}">
-                                                {{ $child['label'] }}
+                                                class="relative flex items-center w-full py-1.5 px-3 text-sm rounded-md transition-colors duration-150
+                                                      {{ $isChildActive ? 'text-indigo-600 font-semibold' : 'text-slate-600 hover:text-slate-900' }}">
+                                                <span
+                                                    class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full {{ $isChildActive ? 'bg-indigo-600' : 'bg-slate-400' }}"></span>
+                                                <span class="ml-4">{{ $child['label'] }}</span>
                                             </a>
                                         </li>
                                     @endforeach
@@ -385,7 +381,7 @@
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <a href="{{ route('logout') }}" onclick="event.preventDefault(); this.closest('form').submit();"
-                    class="group flex items-center px-4 py-2.5 text-base rounded-md font-medium text-slate-700 hover:text-red-600 hover:bg-red-50/50 transition-all duration-200 ease-in-out">
+                    class="group flex items-center px-3 py-2 text-sm rounded-md font-medium text-slate-700 hover:text-red-600 hover:bg-red-50 transition-all duration-200 ease-in-out">
                     <span class="mr-3 text-lg text-slate-500 group-hover:text-red-500">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18"
                             fill="currentColor">

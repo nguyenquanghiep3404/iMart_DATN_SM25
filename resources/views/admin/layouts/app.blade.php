@@ -37,7 +37,7 @@
         localStorage.setItem('sideMenu', this.sideMenu); // Save state to localStorage
     }
 }">
-    <div class="tp-main-wrapper bg-slate-100 min-h-screen flex">
+    <div class="tp-main-wrapper bg-slate-100 min-h-screen relative">
         @include('admin.partials.sidebar')
 
         <!-- Overlay for mobile -->
@@ -47,7 +47,7 @@
 
         <div class="tp-main-content flex-1 transition-all duration-300 min-h-screen"
             :class="sideMenu && window.innerWidth < 1024 ? 'overflow-hidden' : ''"
-            :style="window.innerWidth >= 1024 ? (sideMenu ? 'margin-left: 300px;' : 'margin-left: 0;') : ''">
+            :style="window.innerWidth >= 1024 ? (sideMenu ? 'margin-left: 280px;' : 'margin-left: 0;') : ''">
             @include('admin.partials.header')
             <main class="p-4 sm:p-6 lg:p-8"> {{-- Added padding for main content --}}
                 @yield('content')
