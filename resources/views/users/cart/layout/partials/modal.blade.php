@@ -265,6 +265,7 @@
             $.ajax({
                 url: "{{ route('cart.applyPoints') }}",
                 method: 'POST',
+                type: 'buy-now',
                 data: {
                     points: points,
                     _token: '{{ csrf_token() }}'
@@ -281,6 +282,9 @@
                             `- ${res.discount_amount.toLocaleString('vi-VN')}₫`);
                         $('#cart-total').text(
                             `${res.new_grand_total.toLocaleString('vi-VN')}₫`);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
                     } else {
                         toastr.error(res.message);
                         $messageDiv.html(`<span class="text-danger">${res.message}</span>`);

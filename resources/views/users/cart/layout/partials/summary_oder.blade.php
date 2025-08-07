@@ -65,7 +65,7 @@
             <!-- Scrollable order information -->
             <div class="border-top pt-4">
                 <h4 class="h6 mb-3">Thông tin đơn hàng</h4>
-
+                {{-- @dd(session()->all()); --}}
                 <div class="d-flex justify-content-between mb-2">
                     <span class="text-muted small">Tổng (<span id="total-quantity">{{ $items->sum('quantity') }}</span>
                         sản phẩm):</span>
@@ -77,7 +77,7 @@
                 <li class="d-flex justify-content-between mb-2">
                     Giảm giá:
                     <span id="cart-discount" class="text-danger fw-medium">
-                        {{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
+                        -{{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
                     </span>
                 </li>
 
@@ -239,6 +239,7 @@
                 method: 'POST',
                 data: {
                     points: points,
+                    type: 'cart',
                     _token: '{{ csrf_token() }}'
                 },
                 success: function(res) {
