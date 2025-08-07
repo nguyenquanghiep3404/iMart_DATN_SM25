@@ -4,54 +4,59 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Broadcasting\PrivateChannel;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\ChatConversation;
-use Illuminate\Broadcasting\PrivateChannel;
-use App\Models\User;
 
-class NewConversationCreated implements ShouldBroadcast
+class NewConversationCreated implements ShouldBroadcastNow 
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $conversation;
-    public $recipientUser; // Tùy chọn: cho các thông báo nhắm mục tiêu
+    public ChatConversation $conversation;
 
     /**
      * Create a new event instance.
-     *
-     * @return void
      */
-    public function __construct(ChatConversation $conversation, User $recipientUser = null)
+    public function __construct(ChatConversation $conversation)
     {
-        $this->conversation = $conversation->load(['user', 'assignedTo', 'participants.user']);
-        $this->recipientUser = $recipientUser;
+        // Tải trước các dữ liệu cần thiết để gửi đi trong payload
+        $this->conversation = $conversation->load(['user', 'latestMessage', 'participants.user']);
     }
 
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * @return array<int, \Illuminate\Broadcasting\Channel>
      */
-    public function broadcastOn()
+    public function broadcastOn(): array
     {
+        $channels = [];
+
+        // 1. Nếu là chat HỖ TRỢ, gửi đến kênh PUBLIC cho tất cả admin
         if ($this->conversation->type === 'support') {
-            // Broadcast tới tất cả các quản trị viên (giả sử có kênh 'admins' cho các thông báo chung)
-            return new Channel('admin.notifications');
-        } elseif ($this->conversation->type === 'internal' && $this->recipientUser) {
-            // Đối với các cuộc trò chuyện nội bộ, broadcast tới kênh riêng tư của một quản trị viên cụ thể
-            return new PrivateChannel('users.' . $this->recipientUser->id);
+            $channels[] = new Channel('admin.notifications');
         }
-        return []; // Không nên xảy ra
+
+        // 2. Nếu là chat NỘI BỘ, gửi đến kênh PRIVATE của từng người tham gia
+        if ($this->conversation->type === 'internal') {
+            // Tải lại quan hệ participants nếu chưa có
+            $this->conversation->loadMissing('participants'); 
+            
+            foreach ($this->conversation->participants as $participant) {
+                $channels[] = new PrivateChannel('users.' . $participant->user_id);
+            }
+        }
+
+        return $channels;
     }
 
     /**
-     * Tên broadcast của event.
-     *
-     * @return string
+     * The event's broadcast name.
      */
-    public function broadcastAs()
+    public function broadcastAs(): string
     {
         return 'conversation.created';
     }

@@ -15,6 +15,27 @@
             font-family: 'Be Vietnam Pro', sans-serif;
             background-color: #f8f9fa;
         }
+        /* View Switching */
+        .view {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .view.active {
+            display: block;
+            opacity: 1;
+        }
+        /* Custom Select Arrow */
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-position: right 0.7rem center;
+            background-repeat: no-repeat;
+            background-size: 1.25em 1.25em;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        }
+        /* Status Badges */
         .status-badge {
             padding: 4px 12px;
             border-radius: 9999px;
@@ -43,244 +64,479 @@
         .modal:not(.hidden) .modal-content {
             transform: scale(1);
         }
+        /* Schedule Grid */
+        .schedule-grid {
+            grid-template-columns: 150px repeat(7, minmax(0, 1fr));
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div class="max-w-screen-2xl mx-auto">
-        <!-- Header -->
-        <header class="mb-8 flex flex-col md:flex-row justify-between md:items-center">
-            <div>
-                 <h1 class="text-3xl font-bold text-gray-800">Quản lý Nhân viên Giao hàng</h1>
-                 <p class="text-gray-500 mt-1">Thêm mới, tìm kiếm và quản lý thông tin các tài xế.</p>
-            </div>
-            <button onclick="openModal()" class="mt-4 md:mt-0 px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center justify-center space-x-2">
-                <i class="fas fa-plus"></i>
-                <span>Thêm nhân viên mới</span>
-            </button>
-        </header>
+        <!-- Main Warehouse View -->
+        <div id="warehouses-view" class="view active">
+            <!-- Header -->
+            <header class="mb-8 flex flex-col md:flex-row justify-between md:items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Quản lý Nhân viên Giao hàng</h1>
+                    <p class="text-gray-500 mt-1">Tổng quan, tìm kiếm kho và quản lý các tài xế.</p>
+                </div>
+            </header>
 
-        <!-- Stats Section -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <!-- Stat Card 1: Total Shippers -->
-            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
-                <div class="bg-blue-100 text-blue-600 p-4 rounded-full">
-                    <i class="fas fa-users fa-xl"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Tổng tài xế</p>
-                    <p id="stat-total" class="text-2xl font-bold text-gray-800">0</p>
-                </div>
-            </div>
-            <!-- Stat Card 2: Active Shippers -->
-            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
-                <div class="bg-green-100 text-green-600 p-4 rounded-full">
-                    <i class="fas fa-user-check fa-xl"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Đang hoạt động</p>
-                    <p id="stat-active" class="text-2xl font-bold text-gray-800">0</p>
-                </div>
-            </div>
-            <!-- Stat Card 3: Inactive Shippers -->
-            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
-                <div class="bg-gray-100 text-gray-600 p-4 rounded-full">
-                    <i class="fas fa-user-clock fa-xl"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Tạm nghỉ</p>
-                    <p id="stat-inactive" class="text-2xl font-bold text-gray-800">0</p>
-                </div>
-            </div>
-            <!-- Stat Card 4: Assigned Orders -->
-            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
-                <div class="bg-yellow-100 text-yellow-600 p-4 rounded-full">
-                    <i class="fas fa-box fa-xl"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Tổng đơn đã nhận</p>
-                    <p id="stat-assigned" class="text-2xl font-bold text-gray-800">0</p>
-                </div>
-            </div>
-            <!-- Stat Card 5: Delivered Orders -->
-            <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
-                <div class="bg-indigo-100 text-indigo-600 p-4 rounded-full">
-                    <i class="fas fa-truck-ramp-box fa-xl"></i>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-500">Tổng đơn đã giao</p>
-                    <p id="stat-delivered" class="text-2xl font-bold text-gray-800">0</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Filter Section -->
-        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                    <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                            <i class="fas fa-search text-gray-400"></i>
-                        </span>
-                        <input type="text" id="search-input" placeholder="Tên, Email, SĐT..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+            <!-- Warehouse Table -->
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                <!-- Filter Bar -->
+                <div class="p-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-center gap-4 flex-wrap">
+                        <select id="warehouse-province-filter" class="w-full sm:w-56 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                           {/* Options will be rendered by JS */}
+                        </select>
+                        <div class="relative flex-grow">
+                            <input id="warehouse-search-input" type="text" placeholder="Tìm theo tên kho..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                         <button id="add-staff-global-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            <span>Thêm nhân viên</span>
+                        </button>
                     </div>
                 </div>
-                <div>
-                    <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái tài khoản</label>
-                    <select id="status-filter" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Tất cả</option>
-                        <option value="active">Đang hoạt động</option>
-                        <option value="inactive">Không hoạt động</option>
-                        <option value="banned">Đã khóa</option>
-                    </select>
-                </div>
-                 <div class="flex items-end space-x-3">
-                    <button id="apply-filters-btn" class="w-full px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center justify-center space-x-2">
-                        <i class="fas fa-filter"></i>
-                        <span>Áp dụng</span>
-                    </button>
-                    <button id="clear-filters-btn" class="w-full px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Xóa lọc</button>
+
+                 <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" class="p-6">Tên Kho</th>
+                                <th scope="col" class="p-6">Tỉnh/Thành Phố</th>
+                                <th scope="col" class="p-6">Số lượng nhân viên</th>
+                                <th scope="col" class="p-6 text-center">Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="warehouse-tbody"></tbody>
+                    </table>
+                     <div id="no-warehouses-found" class="hidden text-center p-12 text-gray-500">
+                        <i class="fas fa-warehouse fa-3x text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-700">Không tìm thấy kho</h3>
+                        <p class="text-gray-500">Vui lòng thử lại với bộ lọc khác.</p>
+                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Shippers Table -->
-        <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
-             <table class="w-full text-sm text-left text-gray-600">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                        <th scope="col" class="p-6">STT</th>
-                        <th scope="col" class="p-6">Nhân viên</th>
-                        <th scope="col" class="p-6">Số điện thoại</th>
-                        <th scope="col" class="p-6">Thống kê</th>
-                        <th scope="col" class="p-6">Ngày tham gia</th>
-                        <th scope="col" class="p-6">Trạng thái</th>
-                        <th scope="col" class="p-6 text-center">Hành động</th>
-                    </tr>
-                </thead>
-                <tbody id="shippers-tbody">
-                    <!-- Shipper rows will be inserted here by JavaScript -->
-                </tbody>
-            </table>
-             <div id="no-results" class="hidden text-center p-12 text-gray-500">
-                 <i class="fas fa-user-slash fa-3x text-gray-400 mb-4"></i>
-                 <h3 class="text-lg font-semibold text-gray-700">Không tìm thấy nhân viên</h3>
-                 <p class="text-gray-500">Vui lòng thử lại với bộ lọc khác.</p>
-             </div>
+        <!-- Employee List View -->
+        <div id="employees-view" class="view">
+            <header class="mb-8 flex flex-col md:flex-row justify-between md:items-center">
+                <div class="flex items-center space-x-4">
+                    <button id="back-to-warehouses-btn" class="p-2 rounded-md hover:bg-gray-200 transition-colors">
+                         <i class="fas fa-arrow-left text-gray-700 fa-lg"></i>
+                    </button>
+                    <div>
+                        <h1 id="employee-view-title" class="text-3xl font-bold text-gray-800"></h1>
+                        <p id="employee-view-subtitle" class="text-gray-500 mt-1"></p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3 mt-4 md:mt-0">
+                    <button id="go-to-schedule-btn" class="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-semibold flex items-center justify-center space-x-2">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Lịch làm việc</span>
+                    </button>
+                    <button id="add-staff-in-view-btn" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center justify-center space-x-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Thêm nhân viên</span>
+                    </button>
+                    <button id="go-to-trash-btn" class="px-5 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold flex items-center justify-center space-x-2">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Thùng rác</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Stats Section (Scoped to Warehouse) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                    <div class="bg-blue-100 text-blue-600 p-4 rounded-full"><i class="fas fa-users fa-xl"></i></div>
+                    <div><p class="text-sm text-gray-500">Tổng tài xế</p><p id="stat-total" class="text-2xl font-bold text-gray-800">0</p></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                    <div class="bg-green-100 text-green-600 p-4 rounded-full"><i class="fas fa-user-check fa-xl"></i></div>
+                    <div><p class="text-sm text-gray-500">Đang hoạt động</p><p id="stat-active" class="text-2xl font-bold text-gray-800">0</p></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                    <div class="bg-gray-100 text-gray-600 p-4 rounded-full"><i class="fas fa-user-clock fa-xl"></i></div>
+                    <div><p class="text-sm text-gray-500">Tạm nghỉ</p><p id="stat-inactive" class="text-2xl font-bold text-gray-800">0</p></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                    <div class="bg-yellow-100 text-yellow-600 p-4 rounded-full"><i class="fas fa-box fa-xl"></i></div>
+                    <div><p class="text-sm text-gray-500">Tổng đơn đã nhận</p><p id="stat-assigned" class="text-2xl font-bold text-gray-800">0</p></div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
+                    <div class="bg-indigo-100 text-indigo-600 p-4 rounded-full"><i class="fas fa-truck-ramp-box fa-xl"></i></div>
+                    <div><p class="text-sm text-gray-500">Tổng đơn đã giao</p><p id="stat-delivered" class="text-2xl font-bold text-gray-800">0</p></div>
+                </div>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                        <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm nhân viên</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3"><i class="fas fa-search text-gray-400"></i></span>
+                            <input type="text" id="search-input" placeholder="Tên, Email, SĐT..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                        <select id="status-filter" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Tất cả</option>
+                            <option value="active">Đang hoạt động</option>
+                            <option value="inactive">Tạm nghỉ</option>
+                            <option value="banned">Đã khóa</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shippers Table -->
+            <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+                 <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="p-6">STT</th>
+                            <th scope="col" class="p-6">Nhân viên</th>
+                            <th scope="col" class="p-6">Số điện thoại</th>
+                            <th scope="col" class="p-6">Thống kê</th>
+                            <th scope="col" class="p-6">Ngày tham gia</th>
+                            <th scope="col" class="p-6">Trạng thái</th>
+                            <th scope="col" class="p-6 text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shippers-tbody"></tbody>
+                </table>
+                 <div id="no-results" class="hidden text-center p-12 text-gray-500">
+                    <i class="fas fa-user-slash fa-3x text-gray-400 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-gray-700">Không tìm thấy nhân viên</h3>
+                    <p class="text-gray-500">Chưa có nhân viên nào trong kho này hoặc không khớp với bộ lọc.</p>
+                 </div>
+            </div>
+        </div>
+        
+        <!-- Schedule View -->
+        <div id="schedule-view" class="view">
+             <header class="mb-8 flex flex-col md:flex-row justify-between md:items-center">
+                <div class="flex items-center space-x-4">
+                    <button id="back-to-employees-btn" class="p-2 rounded-md hover:bg-gray-200 transition-colors">
+                         <i class="fas fa-arrow-left text-gray-700 fa-lg"></i>
+                    </button>
+                    <div>
+                        <h1 id="schedule-view-title" class="text-3xl font-bold text-gray-800">Lịch Làm Việc</h1>
+                        <p id="schedule-view-subtitle" class="text-gray-500 mt-1"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 mt-4 md:mt-0">
+                     <button id="prev-week-btn" class="p-3 rounded-lg hover:bg-gray-200"><i class="fas fa-chevron-left"></i></button>
+                     <span id="current-week-display" class="font-semibold text-gray-700 text-lg"></span>
+                     <button id="next-week-btn" class="p-3 rounded-lg hover:bg-gray-200"><i class="fas fa-chevron-right"></i></button>
+                 </div>
+            </header>
+            <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+                <div id="schedule-grid-container" class="min-w-[1000px]"></div>
+            </div>
+        </div>
+
+        <!-- Trash View -->
+        <div id="trash-view" class="view">
+            <header class="mb-8 flex flex-col md:flex-row justify-between md:items-center">
+                <div class="flex items-center space-x-4">
+                    <button id="back-to-employees-from-trash-btn" class="p-2 rounded-md hover:bg-gray-200 transition-colors">
+                         <i class="fas fa-arrow-left text-gray-700 fa-lg"></i>
+                    </button>
+                    <div>
+                        <h1 id="trash-view-title" class="text-3xl font-bold text-gray-800">Thùng rác</h1>
+                        <p id="trash-view-subtitle" class="text-gray-500 mt-1"></p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Deleted Shippers Table -->
+            <div class="bg-white rounded-xl shadow-sm overflow-x-auto">
+                 <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="p-6">STT</th>
+                            <th scope="col" class="p-6">Nhân viên</th>
+                            <th scope="col" class="p-6">Số điện thoại</th>
+                            <th scope="col" class="p-6">Ngày tham gia</th>
+                            <th scope="col" class="p-6 text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trash-tbody"></tbody>
+                </table>
+                 <div id="no-trash-results" class="hidden text-center p-12 text-gray-500">
+                    <i class="fas fa-trash-alt fa-3x text-gray-400 mb-4"></i>
+                    <h3 class="text-lg font-semibold text-gray-700">Thùng rác trống</h3>
+                    <p class="text-gray-500">Không có nhân viên nào đã bị xóa trong kho này.</p>
+                 </div>
+            </div>
         </div>
     </div>
     
-    <!-- Add/Edit Shipper Modal -->
-    <div id="shipper-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <form id="shipper-form" class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-2xl">
+    <!-- Add/Edit Staff Modal -->
+    <div id="staff-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
+        <form id="staff-form" class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-2xl">
             <div class="p-6 border-b border-gray-200 flex justify-between items-center">
                 <h2 id="modal-title" class="text-xl font-bold text-gray-800">Thêm nhân viên mới</h2>
-                <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times fa-lg"></i>
-                </button>
+                <button type="button" class="close-modal-btn text-gray-400 hover:text-gray-600"><i class="fas fa-times fa-lg"></i></button>
             </div>
             <div class="p-8 space-y-6">
-                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="hidden" id="editing-staff-id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Họ và Tên <span class="text-red-500">*</span></label>
                         <input type="text" id="name" required class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Nguyễn Văn A">
                     </div>
-                     <div>
+                    <div>
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại <span class="text-red-500">*</span></label>
                         <input type="tel" id="phone" required class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="09xxxxxxxx">
                     </div>
-                 </div>
-                 <div>
+                </div>
+                <div>
                     <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
                     <input type="email" id="email" required class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="example@email.com">
-                 </div>
-                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
+                        <label for="modal-province-select" class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành phố <span class="text-red-500">*</span></label>
+                        <select id="modal-province-select" required class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></select>
+                    </div>
+                    <div>
+                        <label for="modal-warehouse-select" class="block text-sm font-medium text-gray-700 mb-1">Kho làm việc <span class="text-red-500">*</span></label>
+                        <select id="modal-warehouse-select" required class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500" disabled></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
                         <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
                         <input type="password" id="password" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Để trống nếu không đổi">
                     </div>
-                     <div>
+                    <div>
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                         <select id="status" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
                             <option value="active">Đang hoạt động</option>
-                            <option value="inactive">Không hoạt động</option>
+                            <option value="inactive">Tạm nghỉ</option>
                             <option value="banned">Đã khóa</option>
                         </select>
                     </div>
-                 </div>
+                </div>
             </div>
             <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3 rounded-b-2xl">
-                <button type="button" onclick="closeModal()" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Hủy</button>
+                <button type="button" class="close-modal-btn px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Hủy</button>
                 <button type="submit" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">Lưu thông tin</button>
             </div>
         </form>
     </div>
 
+    <!-- Schedule Shift Modal -->
+    <div id="schedule-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-60 z-50 flex justify-center items-center p-4">
+        <div class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <form id="schedule-form">
+                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h2 class="text-xl font-bold text-gray-800">Sắp xếp ca làm việc</h2>
+                    <button type="button" class="close-schedule-modal-btn text-gray-400 hover:text-gray-600"><i class="fas fa-times fa-lg"></i></button>
+                </div>
+                <div class="p-8 space-y-6">
+                    <input type="hidden" id="scheduling-staff-id">
+                    <input type="hidden" id="scheduling-date">
+                    <div id="schedule-modal-info" class="text-center"></div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-semibold mb-2 text-center">Chọn ca làm việc</label>
+                        <div class="grid grid-cols-2 gap-3 mt-4">
+                            <div>
+                                <input type="radio" id="shift-morning" name="work-shift" value="Ca Sáng" class="hidden peer">
+                                <label for="shift-morning" class="w-full text-center block px-4 py-3 rounded-lg border-2 border-gray-300 cursor-pointer peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600 font-semibold">Ca Sáng</label>
+                            </div>
+                            <div>
+                                <input type="radio" id="shift-afternoon" name="work-shift" value="Ca Chiều" class="hidden peer">
+                                <label for="shift-afternoon" class="w-full text-center block px-4 py-3 rounded-lg border-2 border-gray-300 cursor-pointer peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 font-semibold">Ca Chiều</label>
+                            </div>
+                            <div>
+                                <input type="radio" id="shift-evening" name="work-shift" value="Ca Tối" class="hidden peer">
+                                <label for="shift-evening" class="w-full text-center block px-4 py-3 rounded-lg border-2 border-gray-300 cursor-pointer peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600 font-semibold">Ca Tối</label>
+                            </div>
+                            <div>
+                                <input type="radio" id="shift-off" name="work-shift" value="Nghỉ" class="hidden peer">
+                                <label for="shift-off" class="w-full text-center block px-4 py-3 rounded-lg border-2 border-gray-300 cursor-pointer peer-checked:bg-gray-600 peer-checked:text-white peer-checked:border-gray-600 font-semibold">Nghỉ</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3 rounded-b-2xl">
+                    <button type="button" class="close-schedule-modal-btn px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Hủy</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold">Lưu Ca</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- MOCK DATA ---
-            let mockShippers = [
-                { id: 1, name: 'Nguyễn Tuấn Dũng', email: 'dung.nt@shipper.com', phone: '0987654321', avatar: 'https://placehold.co/40x40/3B82F6/FFFFFF?text=D', status: 'active', createdAt: '2024-05-20T10:00:00Z', stats: { assigned: 12, delivered: 10 } },
-                { id: 2, name: 'Trần Văn Mạnh', email: 'manh.tv@shipper.com', phone: '0912345678', avatar: 'https://placehold.co/40x40/10B981/FFFFFF?text=M', status: 'active', createdAt: '2024-04-15T11:00:00Z', stats: { assigned: 25, delivered: 24 } },
-                { id: 3, name: 'Lê Thị Hoa', email: 'hoa.lt@shipper.com', phone: '0905112233', avatar: 'https://placehold.co/40x40/F59E0B/FFFFFF?text=H', status: 'inactive', createdAt: '2024-03-10T09:00:00Z', stats: { assigned: 5, delivered: 5 } },
-                { id: 4, name: 'Phạm Minh Hiếu', email: 'hieu.pm@shipper.com', phone: '0934555666', avatar: 'https://placehold.co/40x40/EF4444/FFFFFF?text=H', status: 'banned', createdAt: '2024-02-01T14:00:00Z', stats: { assigned: 30, delivered: 20 } },
-                { id: 5, name: 'Vũ Đức Thắng', email: 'thang.vd@shipper.com', phone: '0978999888', avatar: 'https://placehold.co/40x40/6366F1/FFFFFF?text=T', status: 'active', createdAt: '2024-06-01T08:00:00Z', stats: { assigned: 8, delivered: 8 } },
-            ];
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- MOCK DATA & STATE ---
+        let locations = {
+            "Hà Nội": ["Kho tổng Long Biên", "Kho tổng Gia Lâm"],
+            "TP. Hồ Chí Minh": ["Kho tổng Thủ Đức", "Kho tổng Tân Bình"],
+            "Đà Nẵng": ["Kho tổng Liên Chiểu"]
+        };
 
-            // --- STATE ---
-            let currentEditingId = null;
+        // --- UTILITY & HELPER FUNCTIONS ---
+        function getStartOfWeek(date = new Date()) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            d.setHours(0, 0, 0, 0);
+            return new Date(d.setDate(diff));
+        }
 
-            // --- DOM ELEMENTS ---
-            const tbody = document.getElementById('shippers-tbody');
-            const noResultsDiv = document.getElementById('no-results');
-            const searchInput = document.getElementById('search-input');
-            const statusFilter = document.getElementById('status-filter');
-            
-            // Modal elements
-            const shipperModal = document.getElementById('shipper-modal');
-            const shipperForm = document.getElementById('shipper-form');
-            const modalTitle = document.getElementById('modal-title');
+        const formatDate = (dateString) => {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        };
+        
+        const formatDateForInput = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        const today = getStartOfWeek();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
 
-            // Stats elements
-            const statTotal = document.getElementById('stat-total');
-            const statActive = document.getElementById('stat-active');
-            const statInactive = document.getElementById('stat-inactive');
-            const statAssigned = document.getElementById('stat-assigned');
-            const statDelivered = document.getElementById('stat-delivered');
+        let staffList = [
+            { id: 'NV001', name: 'Nguyễn Tuấn Dũng', email: 'dung.nt@shipper.com', phone: '0987654321', avatar: 'https://placehold.co/40x40/3B82F6/FFFFFF?text=D', status: 'active', createdAt: '2024-05-20T10:00:00Z', stats: { assigned: 12, delivered: 10 }, province: 'Hà Nội', warehouse: 'Kho tổng Long Biên', schedule: [{ date: formatDateForInput(today), shift: 'Ca Sáng' }] },
+            { id: 'NV002', name: 'Trần Văn Mạnh', email: 'manh.tv@shipper.com', phone: '0912345678', avatar: 'https://placehold.co/40x40/10B981/FFFFFF?text=M', status: 'active', createdAt: '2024-04-15T11:00:00Z', stats: { assigned: 25, delivered: 24 }, province: 'TP. Hồ Chí Minh', warehouse: 'Kho tổng Thủ Đức', schedule: [{ date: formatDateForInput(tomorrow), shift: 'Ca Chiều' }] },
+            { id: 'NV003', name: 'Lê Thị Hoa', email: 'hoa.lt@shipper.com', phone: '0905112233', avatar: 'https://placehold.co/40x40/F59E0B/FFFFFF?text=H', status: 'inactive', createdAt: '2024-03-10T09:00:00Z', stats: { assigned: 5, delivered: 5 }, province: 'Đà Nẵng', warehouse: 'Kho tổng Liên Chiểu', schedule: [] },
+            { id: 'NV004', name: 'Phạm Minh Hiếu', email: 'hieu.pm@shipper.com', phone: '0934555666', avatar: 'https://placehold.co/40x40/EF4444/FFFFFF?text=H', status: 'banned', createdAt: '2024-02-01T14:00:00Z', stats: { assigned: 30, delivered: 20 }, province: 'Hà Nội', warehouse: 'Kho tổng Long Biên', schedule: [] },
+            { id: 'NV005', name: 'Vũ Đức Thắng', email: 'thang.vd@shipper.com', phone: '0978999888', avatar: 'https://placehold.co/40x40/6366F1/FFFFFF?text=T', status: 'active', createdAt: '2024-06-01T08:00:00Z', stats: { assigned: 8, delivered: 8 }, province: 'TP. Hồ Chí Minh', warehouse: 'Kho tổng Tân Bình', schedule: [] },
+        ];
 
-            // --- UTILITY FUNCTIONS ---
-            const formatDate = (dateString) => {
-                if (!dateString) return '';
-                const date = new Date(dateString);
-                return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            };
+        let appState = {
+            currentView: 'warehouses', // warehouses, employees, schedule, trash
+            selectedWarehouse: null,
+            warehouseFilter: { province: 'Tất cả', search: '' },
+            staffFilter: { search: '', status: '' },
+            currentWeekStartDate: getStartOfWeek(),
+            currentEditingId: null,
+        };
+        
+        const statusMap = {
+            active: { text: 'Hoạt động', class: 'status-active' },
+            inactive: { text: 'Tạm nghỉ', class: 'status-inactive' },
+            banned: { text: 'Đã khóa', class: 'status-banned' }
+        };
 
-            const statusMap = {
-                active: { text: 'Hoạt động', class: 'status-active' },
-                inactive: { text: 'Tạm nghỉ', class: 'status-inactive' },
-                banned: { text: 'Đã khóa', class: 'status-banned' }
-            };
+        // --- DOM ELEMENTS ---
+        const views = document.querySelectorAll('.view');
+        const warehouseTbody = document.getElementById('warehouse-tbody');
+        const shippersTbody = document.getElementById('shippers-tbody');
+        const trashTbody = document.getElementById('trash-tbody');
+        const noResultsDiv = document.getElementById('no-results');
+        const noWarehousesDiv = document.getElementById('no-warehouses-found');
+        const noTrashResultsDiv = document.getElementById('no-trash-results');
+        
+        // Modals
+        const staffModal = document.getElementById('staff-modal');
+        const staffForm = document.getElementById('staff-form');
+        const scheduleModal = document.getElementById('schedule-modal');
+        const scheduleForm = document.getElementById('schedule-form');
+        
+        // Filters
+        const warehouseProvinceFilter = document.getElementById('warehouse-province-filter');
+        const warehouseSearchInput = document.getElementById('warehouse-search-input');
+        const staffSearchInput = document.getElementById('search-input');
+        const staffStatusFilter = document.getElementById('status-filter');
 
-            // --- RENDER FUNCTIONS ---
-            function renderStats() {
-                const totalShippers = mockShippers.length;
-                const activeShippers = mockShippers.filter(s => s.status === 'active').length;
-                const inactiveShippers = mockShippers.filter(s => s.status === 'inactive').length;
-                const totalAssigned = mockShippers.reduce((sum, s) => sum + s.stats.assigned, 0);
-                const totalDelivered = mockShippers.reduce((sum, s) => sum + s.stats.delivered, 0);
 
-                statTotal.textContent = totalShippers;
-                statActive.textContent = activeShippers;
-                statInactive.textContent = inactiveShippers;
-                statAssigned.textContent = totalAssigned;
-                statDelivered.textContent = totalDelivered;
+        // --- VIEW MANAGEMENT ---
+        const switchView = (viewId, data = null) => {
+            appState.currentView = viewId;
+            if (viewId === 'employees' || viewId === 'schedule' || viewId === 'trash') {
+                appState.selectedWarehouse = data;
             }
+            
+            views.forEach(view => view.classList.toggle('active', view.id === `${viewId}-view`));
+            
+            switch(viewId) {
+                case 'warehouses': renderWarehouseView(); break;
+                case 'employees': renderEmployeeView(); break;
+                case 'schedule': renderScheduleView(); break;
+                case 'trash': renderTrashView(); break;
+            }
+        };
 
-            function renderShipperRow(shipper, index) {
-                const shipperStatus = statusMap[shipper.status] || { text: 'N/A', class: '' };
-                
+        // --- RENDER FUNCTIONS ---
+        function renderWarehouseView() {
+            populateWarehouseProvinceFilter();
+            
+            const { province, search } = appState.warehouseFilter;
+            const allWarehouses = [];
+            Object.keys(locations).forEach(p => {
+                locations[p].forEach(warehouse => {
+                    allWarehouses.push({ name: warehouse, province: p });
+                });
+            });
+
+            const filteredWarehouses = allWarehouses.filter(wh => {
+                const provinceMatch = province === 'Tất cả' || wh.province === province;
+                const searchMatch = wh.name.toLowerCase().includes(search.toLowerCase());
+                return provinceMatch && searchMatch;
+            });
+
+            noWarehousesDiv.classList.toggle('hidden', filteredWarehouses.length > 0);
+            warehouseTbody.innerHTML = filteredWarehouses.map(wh => {
+                const employeeCount = staffList.filter(s => s.warehouse === wh.name && s.status !== 'deleted').length;
+                return `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="p-6 font-semibold text-gray-800">${wh.name}</td>
+                        <td class="p-6">${wh.province}</td>
+                        <td class="p-6">${employeeCount}</td>
+                        <td class="p-6 text-center">
+                            <button class="view-employees-btn bg-indigo-100 text-indigo-700 px-4 py-2 rounded-lg hover:bg-indigo-200 font-semibold" data-warehouse-name="${wh.name}" data-province-name="${wh.province}">
+                                Xem chi tiết
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderEmployeeView() {
+            const { name, province } = appState.selectedWarehouse;
+            document.getElementById('employee-view-title').textContent = `Kho: ${name}`;
+            document.getElementById('employee-view-subtitle').textContent = province;
+
+            let staffOfWarehouse = staffList.filter(staff => staff.warehouse === name && staff.status !== 'deleted');
+            renderScopedStats(staffOfWarehouse);
+
+            const { search, status } = appState.staffFilter;
+            const filteredEmployees = staffOfWarehouse.filter(shipper => {
+                const searchTerm = search.toLowerCase();
+                const matchesSearch = searchTerm === '' ||
+                    shipper.name.toLowerCase().includes(searchTerm) ||
+                    shipper.email.toLowerCase().includes(searchTerm) ||
+                    shipper.phone.includes(searchTerm);
+                const matchesStatus = status === '' || shipper.status === status;
+                return matchesSearch && matchesStatus;
+            });
+
+            noResultsDiv.classList.toggle('hidden', filteredEmployees.length > 0);
+            shippersTbody.innerHTML = filteredEmployees.map((shipper, index) => {
+                const shipperStatus = statusMap[shipper.status];
                 return `
                     <tr class="bg-white border-b hover:bg-gray-50">
                         <td class="p-6 font-medium text-gray-700">${index + 1}</td>
@@ -300,117 +556,315 @@
                         </td>
                         <td class="p-6">${formatDate(shipper.createdAt)}</td>
                         <td class="p-6"><span class="status-badge ${shipperStatus.class}">${shipperStatus.text}</span></td>
-                        <td class="p-6 text-center">
-                            <button onclick='openModal(${shipper.id})' class="text-indigo-600 hover:text-indigo-900 text-lg" title="Chỉnh sửa"><i class="fas fa-edit"></i></button>
-                            <button class="text-red-600 hover:text-red-900 text-lg ml-4" title="Xóa"><i class="fas fa-trash"></i></button>
+                        <td class="p-6 text-center space-x-4">
+                            <button class="edit-staff-btn text-indigo-600 hover:text-indigo-900 text-lg" title="Chỉnh sửa" data-id="${shipper.id}"><i class="fas fa-edit"></i></button>
+                            <button class="delete-staff-btn text-red-600 hover:text-red-900 text-lg" title="Xóa" data-id="${shipper.id}"><i class="fas fa-trash"></i></button>
                         </td>
-                    </tr>
-                `;
-            }
+                    </tr>`;
+            }).join('');
+        }
+        
+        function renderScheduleView() {
+            const { name } = appState.selectedWarehouse;
+            document.getElementById('schedule-view-subtitle').textContent = `Kho: ${name}`;
             
-            function renderTable(shippersToRender) {
-                if (!shippersToRender || shippersToRender.length === 0) {
-                    tbody.innerHTML = '';
-                    noResultsDiv.classList.remove('hidden');
-                    return;
-                }
-                noResultsDiv.classList.add('hidden');
-                tbody.innerHTML = shippersToRender.map((shipper, index) => renderShipperRow(shipper, index)).join('');
-            }
-            
-             // --- MODAL LOGIC ---
-            window.openModal = (shipperId = null) => {
-                shipperForm.reset();
-                currentEditingId = shipperId;
+            const startDate = appState.currentWeekStartDate;
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            document.getElementById('current-week-display').textContent = `${formatDate(startDate)} - ${formatDate(endDate)}`;
 
-                if (shipperId !== null) {
-                    modalTitle.textContent = "Chỉnh sửa thông tin nhân viên";
-                    const shipper = mockShippers.find(s => s.id === shipperId);
-                    if (shipper) {
-                        document.getElementById('name').value = shipper.name;
-                        document.getElementById('phone').value = shipper.phone;
-                        document.getElementById('email').value = shipper.email;
-                        document.getElementById('status').value = shipper.status;
-                        document.getElementById('password').required = false;
-                    }
-                } else {
-                    modalTitle.textContent = "Thêm nhân viên mới";
-                    document.getElementById('password').required = true;
-                }
-                
-                shipperModal.classList.remove('hidden');
-            };
-
-            window.closeModal = () => {
-                shipperModal.classList.add('hidden');
-                currentEditingId = null;
-                document.getElementById('password').required = false; // reset requirement
-            }
-            
-            shipperForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const name = document.getElementById('name').value;
-                const phone = document.getElementById('phone').value;
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                const status = document.getElementById('status').value;
-
-                if (currentEditingId !== null) {
-                    // Editing existing shipper
-                    const index = mockShippers.findIndex(s => s.id === currentEditingId);
-                    if (index !== -1) {
-                        mockShippers[index] = { ...mockShippers[index], name, phone, email, status };
-                        // Note: In a real app, you'd handle password update logic separately
-                    }
-                } else {
-                    // Adding new shipper
-                    const newId = mockShippers.length > 0 ? Math.max(...mockShippers.map(s => s.id)) + 1 : 1;
-                    mockShippers.unshift({
-                        id: newId,
-                        name, phone, email, status,
-                        avatar: `https://placehold.co/40x40/8B5CF6/FFFFFF?text=${name.charAt(0)}`,
-                        createdAt: new Date().toISOString(),
-                        stats: { assigned: 0, delivered: 0 }
-                    });
-                }
-                
-                renderStats(); // Update stats after add/edit
-                applyFilters();
-                closeModal();
+            const weekDates = Array.from({length: 7}).map((_, i) => {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                return date;
             });
 
-            // --- FILTERING LOGIC ---
-            function applyFilters() {
-                const searchTerm = searchInput.value.toLowerCase();
-                const status = statusFilter.value;
+            const employeesOfStore = staffList.filter(staff => staff.warehouse === name && staff.status !== 'deleted');
+            const dayHeaders = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+            
+            let gridHTML = `<div class="grid schedule-grid text-sm">`;
+            gridHTML += `<div class="font-semibold p-2 border-b border-r bg-gray-50 text-gray-600 sticky left-0 z-10">Nhân viên</div>`;
+            weekDates.forEach((date, index) => {
+                gridHTML += `<div class="font-semibold p-2 border-b text-center bg-gray-50 text-gray-600">
+                    <div>${dayHeaders[index]}</div>
+                    <div class="text-xs font-normal">${date.getDate()}/${date.getMonth()+1}</div>
+                </div>`;
+            });
 
-                let filteredShippers = mockShippers.filter(shipper => {
-                    const matchesSearch = searchTerm === '' ||
-                        shipper.name.toLowerCase().includes(searchTerm) ||
-                        shipper.email.toLowerCase().includes(searchTerm) ||
-                        shipper.phone.includes(searchTerm);
-                    
-                    const matchesStatus = status === '' || shipper.status === status;
-
-                    return matchesSearch && matchesStatus;
+            if (employeesOfStore.length === 0) {
+                gridHTML += `<div class="col-span-8 text-center p-8 text-gray-500">Kho này chưa có nhân viên.</div>`;
+            } else {
+                 employeesOfStore.forEach(staff => {
+                    gridHTML += `<div class="font-semibold p-3 border-b border-r text-gray-800 bg-gray-50 flex items-center sticky left-0 z-10">${staff.name}</div>`;
+                    weekDates.forEach(date => {
+                        const dateString = formatDateForInput(date);
+                        const shift = staff.schedule.find(s => s.date === dateString);
+                        let shiftTag = '';
+                        if(shift) {
+                            const shiftColors = { "Ca Sáng": "bg-blue-100 text-blue-800", "Ca Chiều": "bg-amber-100 text-amber-800", "Ca Tối": "bg-indigo-100 text-indigo-800" };
+                            shiftTag = `<div class="font-semibold rounded-md p-2 text-xs ${shiftColors[shift.shift] || ''}">${shift.shift}</div>`;
+                        }
+                        gridHTML += `<div class="schedule-cell border-b p-2 cursor-pointer hover:bg-indigo-50 min-h-[60px]" data-staff-id="${staff.id}" data-date="${dateString}">${shiftTag}</div>`;
+                    });
                 });
-                
-                renderTable(filteredShippers);
             }
+            gridHTML += `</div>`;
+            document.getElementById('schedule-grid-container').innerHTML = gridHTML;
+        }
 
-            function clearFilters() {
-                searchInput.value = '';
-                statusFilter.value = '';
-                renderTable(mockShippers);
+        function renderTrashView() {
+            const { name, province } = appState.selectedWarehouse;
+            document.getElementById('trash-view-title').textContent = `Thùng rác: ${name}`;
+            document.getElementById('trash-view-subtitle').textContent = province;
+
+            const deletedStaff = staffList.filter(staff => staff.warehouse === name && staff.status === 'deleted');
+
+            noTrashResultsDiv.classList.toggle('hidden', deletedStaff.length > 0);
+            trashTbody.innerHTML = deletedStaff.map((shipper, index) => {
+                return `
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <td class="p-6 font-medium text-gray-700">${index + 1}</td>
+                        <td class="p-6">
+                            <div class="flex items-center">
+                                <img src="${shipper.avatar}" class="w-10 h-10 rounded-full mr-4 object-cover" onerror="this.onerror=null;this.src='https://placehold.co/40x40/cccccc/ffffff?text=?';">
+                                <div>
+                                    <div class="font-semibold text-gray-800">${shipper.name}</div>
+                                    <div class="text-gray-500">${shipper.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-6">${shipper.phone}</td>
+                        <td class="p-6">${formatDate(shipper.createdAt)}</td>
+                        <td class="p-6 text-center space-x-4">
+                            <button class="restore-staff-btn text-green-600 hover:text-green-900 text-lg" title="Khôi phục" data-id="${shipper.id}"><i class="fas fa-undo"></i></button>
+                            <button class="perm-delete-staff-btn text-red-600 hover:text-red-900 text-lg" title="Xóa vĩnh viễn" data-id="${shipper.id}"><i class="fas fa-times-circle"></i></button>
+                        </td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function renderScopedStats(staffInWarehouse) {
+            const totalShippers = staffInWarehouse.length;
+            const activeShippers = staffInWarehouse.filter(s => s.status === 'active').length;
+            const inactiveShippers = staffInWarehouse.filter(s => s.status === 'inactive').length;
+            const totalAssigned = staffInWarehouse.reduce((sum, s) => sum + s.stats.assigned, 0);
+            const totalDelivered = staffInWarehouse.reduce((sum, s) => sum + s.stats.delivered, 0);
+
+            document.getElementById('stat-total').textContent = totalShippers;
+            document.getElementById('stat-active').textContent = activeShippers;
+            document.getElementById('stat-inactive').textContent = inactiveShippers;
+            document.getElementById('stat-assigned').textContent = totalAssigned;
+            document.getElementById('stat-delivered').textContent = totalDelivered;
+        }
+
+        function populateWarehouseProvinceFilter() {
+            warehouseProvinceFilter.innerHTML = `<option value="Tất cả">Tất cả Tỉnh/Thành</option>` + Object.keys(locations).map(p => `<option value="${p}">${p}</option>`).join('');
+        }
+
+        // --- MODAL LOGIC ---
+        function openStaffModal(staffId = null) {
+            staffForm.reset();
+            appState.currentEditingId = staffId;
+            const modalTitle = document.getElementById('modal-title');
+            
+            populateModalProvinces();
+            document.getElementById('modal-warehouse-select').disabled = true;
+            document.getElementById('modal-warehouse-select').innerHTML = '<option value="">-- Chọn kho --</option>';
+
+            if (staffId !== null) {
+                modalTitle.textContent = "Chỉnh sửa thông tin nhân viên";
+                const staff = staffList.find(s => s.id === staffId);
+                if (staff) {
+                    document.getElementById('name').value = staff.name;
+                    document.getElementById('phone').value = staff.phone;
+                    document.getElementById('email').value = staff.email;
+                    document.getElementById('status').value = staff.status;
+                    document.getElementById('modal-province-select').value = staff.province;
+                    populateModalWarehouses(staff.province, staff.warehouse);
+                    document.getElementById('password').required = false;
+                }
+            } else {
+                modalTitle.textContent = "Thêm nhân viên mới";
+                document.getElementById('password').required = true;
+                if(appState.currentView === 'employees' && appState.selectedWarehouse) {
+                    document.getElementById('modal-province-select').value = appState.selectedWarehouse.province;
+                    populateModalWarehouses(appState.selectedWarehouse.province, appState.selectedWarehouse.name);
+                }
+            }
+            staffModal.classList.remove('hidden');
+        }
+
+        function closeStaffModal() {
+            staffModal.classList.add('hidden');
+            appState.currentEditingId = null;
+        }
+        
+        function openScheduleModal(staffId, dateString) {
+            scheduleForm.reset();
+            const staff = staffList.find(s => s.id === staffId);
+            if (!staff) return;
+
+            document.getElementById('scheduling-staff-id').value = staffId;
+            document.getElementById('scheduling-date').value = dateString;
+            
+            const dateObj = new Date(dateString);
+            const adjustedDate = new Date(dateObj.getTime() + dateObj.getTimezoneOffset() * 60000);
+
+            document.getElementById('schedule-modal-info').innerHTML = `<p class="font-semibold text-gray-800 text-lg">${staff.name}</p><p class="text-sm text-gray-500">${adjustedDate.toLocaleDateString('vi-VN')}</p>`;
+
+            const existingShift = staff.schedule.find(s => s.date === dateString);
+            const shiftRadio = existingShift ? document.querySelector(`input[name="work-shift"][value="${existingShift.shift}"]`) : document.getElementById('shift-off');
+            if(shiftRadio) shiftRadio.checked = true;
+
+            scheduleModal.classList.remove('hidden');
+        }
+
+        function closeScheduleModal() {
+            scheduleModal.classList.add('hidden');
+        }
+
+        function populateModalProvinces(selected = null) {
+            const select = document.getElementById('modal-province-select');
+            select.innerHTML = `<option value="">-- Chọn tỉnh/thành --</option>` + Object.keys(locations).map(p => `<option value="${p}" ${p === selected ? 'selected' : ''}>${p}</option>`).join('');
+        }
+
+        function populateModalWarehouses(province, selected = null) {
+            const select = document.getElementById('modal-warehouse-select');
+            if (!province || !locations[province]) {
+                select.innerHTML = '<option value="">-- Chọn kho --</option>';
+                select.disabled = true;
+            } else {
+                select.innerHTML = '<option value="">-- Chọn kho --</option>' + locations[province].map(s => `<option value="${s}" ${s === selected ? 'selected' : ''}>${s}</option>`).join('');
+                select.disabled = false;
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        document.body.addEventListener('click', (e) => {
+            const viewBtn = e.target.closest('.view-employees-btn');
+            if (viewBtn) {
+                e.preventDefault();
+                switchView('employees', { name: viewBtn.dataset.warehouseName, province: viewBtn.dataset.provinceName });
+            }
+            const editBtn = e.target.closest('.edit-staff-btn');
+            if (editBtn) openStaffModal(editBtn.dataset.id);
+            
+            const deleteStaffBtn = e.target.closest('.delete-staff-btn');
+            if (deleteStaffBtn) {
+                if (confirm('Bạn có chắc muốn chuyển nhân viên này vào thùng rác?')) {
+                    const staff = staffList.find(s => s.id === deleteStaffBtn.dataset.id);
+                    if (staff) {
+                        staff.status = 'deleted';
+                    }
+                    renderEmployeeView();
+                }
             }
             
-            document.getElementById('apply-filters-btn').addEventListener('click', applyFilters);
-            document.getElementById('clear-filters-btn').addEventListener('click', clearFilters);
+            const goToTrashBtn = e.target.closest('#go-to-trash-btn');
+            if(goToTrashBtn) {
+                switchView('trash', appState.selectedWarehouse);
+            }
 
-            // --- INITIAL RENDER ---
-            renderStats();
-            renderTable(mockShippers);
+            const restoreBtn = e.target.closest('.restore-staff-btn');
+            if (restoreBtn) {
+                const staff = staffList.find(s => s.id === restoreBtn.dataset.id);
+                if (staff) {
+                    staff.status = 'inactive'; // Restore to inactive status
+                }
+                renderTrashView();
+            }
+
+            const permDeleteBtn = e.target.closest('.perm-delete-staff-btn');
+            if (permDeleteBtn) {
+                if (confirm('Bạn có chắc muốn XÓA VĨNH VIỄN nhân viên này? Hành động này không thể hoàn tác.')) {
+                    staffList = staffList.filter(s => s.id !== permDeleteBtn.dataset.id);
+                    renderTrashView();
+                }
+            }
+
+            const scheduleCell = e.target.closest('.schedule-cell');
+            if(scheduleCell) openScheduleModal(scheduleCell.dataset.staffId, scheduleCell.dataset.date);
         });
+
+        // Navigation
+        document.getElementById('back-to-warehouses-btn').addEventListener('click', () => switchView('warehouses'));
+        document.getElementById('back-to-employees-btn').addEventListener('click', () => switchView('employees', appState.selectedWarehouse));
+        document.getElementById('back-to-employees-from-trash-btn').addEventListener('click', () => switchView('employees', appState.selectedWarehouse));
+        document.getElementById('go-to-schedule-btn').addEventListener('click', () => switchView('schedule', appState.selectedWarehouse));
+
+        // Filtering
+        warehouseProvinceFilter.addEventListener('change', (e) => { appState.warehouseFilter.province = e.target.value; renderWarehouseView(); });
+        warehouseSearchInput.addEventListener('input', (e) => { appState.warehouseFilter.search = e.target.value; renderWarehouseView(); });
+        staffSearchInput.addEventListener('input', (e) => { appState.staffFilter.search = e.target.value; renderEmployeeView(); });
+        staffStatusFilter.addEventListener('change', (e) => { appState.staffFilter.status = e.target.value; renderEmployeeView(); });
+        
+        // Modals
+        document.getElementById('add-staff-global-btn').addEventListener('click', () => openStaffModal());
+        document.getElementById('add-staff-in-view-btn').addEventListener('click', () => openStaffModal());
+        document.querySelectorAll('.close-modal-btn').forEach(btn => btn.addEventListener('click', closeStaffModal));
+        document.querySelectorAll('.close-schedule-modal-btn').forEach(btn => btn.addEventListener('click', closeScheduleModal));
+        document.getElementById('modal-province-select').addEventListener('change', (e) => populateModalWarehouses(e.target.value));
+
+        staffForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const staffData = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                status: document.getElementById('status').value,
+                province: document.getElementById('modal-province-select').value,
+                warehouse: document.getElementById('modal-warehouse-select').value,
+            };
+
+            if (appState.currentEditingId) {
+                const index = staffList.findIndex(s => s.id === appState.currentEditingId);
+                if (index !== -1) staffList[index] = { ...staffList[index], ...staffData };
+            } else {
+                const newId = `NV${String(Date.now()).slice(-5)}`;
+                staffList.unshift({
+                    id: newId, ...staffData,
+                    avatar: `https://placehold.co/40x40/8B5CF6/FFFFFF?text=${staffData.name.charAt(0)}`,
+                    createdAt: new Date().toISOString(),
+                    stats: { assigned: 0, delivered: 0 },
+                    schedule: []
+                });
+            }
+            if(appState.currentView === 'employees') {
+                renderEmployeeView();
+            } else {
+                switchView('employees', {name: staffData.warehouse, province: staffData.province});
+            }
+            closeStaffModal();
+        });
+
+        scheduleForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const staffId = document.getElementById('scheduling-staff-id').value;
+            const date = document.getElementById('scheduling-date').value;
+            const shift = document.querySelector('input[name="work-shift"]:checked').value;
+            const staff = staffList.find(s => s.id === staffId);
+            
+            if (staff) {
+                staff.schedule = staff.schedule.filter(s => s.date !== date);
+                if (shift !== 'Nghỉ') staff.schedule.push({ date, shift });
+            }
+            renderScheduleView();
+            closeScheduleModal();
+        });
+        
+        // Schedule Week Navigation
+        document.getElementById('prev-week-btn').addEventListener('click', () => {
+            appState.currentWeekStartDate.setDate(appState.currentWeekStartDate.getDate() - 7);
+            renderScheduleView();
+        });
+        document.getElementById('next-week-btn').addEventListener('click', () => {
+            appState.currentWeekStartDate.setDate(appState.currentWeekStartDate.getDate() + 7);
+            renderScheduleView();
+        });
+
+        // --- INITIALIZATION ---
+        switchView('warehouses');
+    });
     </script>
 </body>
 </html>
