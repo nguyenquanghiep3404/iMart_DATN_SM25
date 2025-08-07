@@ -149,6 +149,11 @@ class CartController extends Controller
 
 
         $total = max(0, $subtotal - $discount);
+        // thêm ngày 7/8
+        $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
+        $pointsDiscount = $pointsApplied['discount'] ?? 0;
+        $total = max(0, $total - $pointsDiscount);
+        // thêm ngày 7/8
         // Lấy coupon còn hiệu lực (ví dụ đơn giản)
         $availableCoupons = Coupon::where('status', 'active')
         ->where('is_public', 1)
@@ -186,7 +191,7 @@ class CartController extends Controller
         // Lấy số dư điểm hiện tại của người dùng
         $pointsBalance = $user ? $user->loyalty_points_balance : 0;
         // dd($items->pluck('image'));
-        return view('users.cart.layout.main', compact('items', 'subtotal', 'discount', 'total', 'voucherCode','availableCoupons', 'totalPointsToEarn', 'pointsBalance'));
+        return view('users.cart.layout.main', compact('items', 'subtotal', 'discount', 'total', 'voucherCode','availableCoupons', 'totalPointsToEarn', 'pointsBalance','pointsApplied'));
     }
 
     // thêm sản phẩm vào giỏ
@@ -461,6 +466,7 @@ class CartController extends Controller
                         $voucherRemoved = true;
                         $discount = 0;
                     }
+                    session()->forget('points_applied');
                     $subtotal = 0;
                     $totalQuantity = 0;
                 } else {
@@ -563,8 +569,11 @@ class CartController extends Controller
                     }
                 }
             }
+            $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
+            $pointsDiscount = $pointsApplied['discount'] ?? 0;
 
-            $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
+            $totalAfterDiscount = max($totalBeforeDiscount - $discount - $pointsDiscount, 0);
+            // $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
 
             $item->quantity = $quantity;
             $item->price = $newPrice;
@@ -613,8 +622,12 @@ class CartController extends Controller
                     }
                 }
             }
+            $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
+            $pointsDiscount = $pointsApplied['discount'] ?? 0;
 
-            $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
+            $totalAfterDiscount = max($totalBeforeDiscount - $discount - $pointsDiscount, 0);
+
+            // $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
             session()->put('cart', $cart);
         }
 
@@ -622,6 +635,7 @@ class CartController extends Controller
             'success' => true,
             'subtotal_before_dc' => number_format($totalBeforeDiscount, 0, ',', '.') . '₫',
             'discount' => $discount > 0 && !$voucherRemoved ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫',
+            'points_discount' => $pointsDiscount > 0 ? '-' . number_format($pointsDiscount, 0, ',', '.') . '₫' : '0₫',
             'total_after_dc' => number_format($totalAfterDiscount, 0, ',', '.') . '₫',
             'voucher_removed' => $voucherRemoved,
         ]);
@@ -729,7 +743,12 @@ class CartController extends Controller
             // ====== Tính giảm giá ======
             $discount = round($coupon->calculateDiscount($subtotal));
             $totalAfterDiscount = max($subtotal - $discount, 0);
+            $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
+            $pointsDiscount = $pointsApplied['discount'] ?? 0;
 
+            // Tính tổng giảm giá (voucher + điểm)
+            $totalDiscount = $discount + $pointsDiscount;
+            $totalAfterDiscount = max($subtotal - $totalDiscount, 0);
             // Lưu thông tin mã đã áp dụng vào session
             session()->put('applied_coupon', [
                 'id'          => $coupon->id,
@@ -741,6 +760,7 @@ class CartController extends Controller
             return response()->json([
                 'success'              => true,
                 'discount'             => $discount,
+                'points_discount'      => $pointsDiscount, // trả về điểm giảm cho frontend
                 'total_after_discount' => $totalAfterDiscount,
                 'message'              => 'Mã giảm giá đã được áp dụng.',
                 'source_type'          => $sourceType,

@@ -92,11 +92,19 @@ class PaymentController extends Controller
                 }
                 return true;
             });
+        // Ví dụ nếu có trong $cartData
+        $pointsDiscount = $cartData['discount_from_points'] ?? 0;
+
+        // Hoặc lấy trực tiếp từ session nếu chưa có trong $cartData
+        if (!isset($pointsDiscount)) {
+            $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
+            $pointsDiscount = $pointsApplied['discount'] ?? 0;
+        }
 
         $appliedCoupon = session('applied_coupon');
         $discount = $appliedCoupon['discount'] ?? 0;
         $voucherCode = $appliedCoupon['code'] ?? null;
-        $total = max(0, $subtotal - $discount);
+        $total = max(0, $subtotal - $discount - $pointsDiscount);
         return view('users.payments.information', array_merge($cartData, [
             'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
             'baseLength' => $maxLength > 0 ? $maxLength : 20,
@@ -104,7 +112,8 @@ class PaymentController extends Controller
             'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
             'availableCoupons' => $availableCoupons,
             'total' => $total,
-            'discount' => $discount
+            'discount' => $discount,
+            'pointsDiscount' => $pointsDiscount,
         ]));
         if ($cartData['items']->isEmpty()) {
             return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
@@ -1422,7 +1431,7 @@ class PaymentController extends Controller
             session()->forget('cart');
         }
         // Xóa voucher đã áp dụng
-        session()->forget(['applied_voucher', 'applied_coupon', 'discount']);
+        session()->forget(['applied_voucher', 'applied_coupon', 'discount','points_applied']);
     }
     /**
      * Tạo phiên Buy Now và chuyển đến trang thanh toán
@@ -1434,7 +1443,7 @@ class PaymentController extends Controller
             'variant_key' => 'nullable|string',
             'quantity' => 'required|integer|min:1|max:5',
         ]);
-        session()->forget('applied_coupon');
+        session()->forget(['applied_coupon', 'points_applied']);
         $product = Product::findOrFail($request->product_id);
         $variant = null;
         // Tìm variant dựa vào variant_key hoặc lấy variant đầu tiên

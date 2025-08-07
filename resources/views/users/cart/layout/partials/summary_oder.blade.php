@@ -81,10 +81,18 @@
                     </span>
                 </li>
 
-                <li class="d-flex justify-content-between mb-2" id="points-discount-row" style="display: none;">
+                @php
+                    $pointDiscount = session('points_applied.discount', 0);
+                @endphp
+
+                <li class="d-flex justify-content-between mb-2" id="points-discount-row"
+                    style="{{ $pointDiscount > 0 ? '' : 'display: none;' }}">
                     <span class="text-muted small">Giảm từ điểm:</span>
-                    <span id="points-discount-amount" class="text-danger fw-medium"></span>
+                    <span id="points-discount-amount" class="text-danger fw-medium">
+                        -{{ number_format($pointDiscount, 0, ',', '.') }}₫
+                    </span>
                 </li>
+
 
                 <div class="d-flex justify-content-between mb-3">
                     <span class="text-muted small">Phí vận chuyển:</span>
