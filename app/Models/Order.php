@@ -402,4 +402,10 @@ class Order extends Model
     {
         return $this->hasMany(\App\Models\ReturnRequest::class);
     }
+
+    // Phương thức để lấy mã đơn hàng
+    public function getCode()
+    {
+        return $this->order_code;
+    }
 }
