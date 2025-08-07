@@ -470,10 +470,6 @@
                     init() {
                         this.resetForm();
                         this.currentPage = 1;
-                        console.log('Initialized with locations:', this.allLocations.length);
-                        console.log('Sample location:', this.allLocations[0]);
-                        console.log('Filtered locations:', this.filteredLocations.length);
-                        console.log('Paginated locations:', this.paginatedLocations.length);
                     },
 
                     showMessage(msg, type = 'success') {
