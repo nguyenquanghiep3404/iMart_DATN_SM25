@@ -66,7 +66,7 @@ use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\InventoryDashboardController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
-
+use App\Http\Controllers\Admin\InventoryReportController;
 
 Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
 
@@ -532,6 +532,15 @@ Route::prefix('admin')
         // quản lý tồn kho
         Route::get('/dashboard/inventory', [InventoryDashboardController::class, 'index'])
             ->name('dashboard.inventory');
+        
+        // báo cáo tồn kho chi tiết
+        Route::get('/reports/inventory', [InventoryReportController::class, 'index'])->name('reports.inventory.index');; // giao diện
+        Route::get('/reports/inventory/data', [InventoryReportController::class, 'generate']); // API dữ liệu
+        Route::get('/reports/inventory/provinces', [InventoryReportController::class, 'getAvailableProvinces']);
+        Route::get('/reports/inventory/districts', [InventoryReportController::class, 'getAvailableDistricts']);
+        Route::get('reports/inventory/export', [InventoryReportController::class, 'export'])->name('admin.reports.inventory.export');
+
+
 
         // Banner routes
     
