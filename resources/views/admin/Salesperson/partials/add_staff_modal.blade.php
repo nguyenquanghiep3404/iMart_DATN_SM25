@@ -189,7 +189,7 @@
                 if (el) el.innerHTML = '';
             });
             document.getElementById('staff-form-errors').innerHTML = '';
-            // Quick password validation
+            // Validate mật khẩu
             const password = document.getElementById('new-staff-password').value;
             const passwordConfirmation = document.getElementById('new-staff-password-confirmation').value;
             
