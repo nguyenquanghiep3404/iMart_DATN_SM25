@@ -183,6 +183,25 @@
         const addStaffForm = document.getElementById('add-staff-form');
         addStaffForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            const errorFields = ['name', 'email', 'phone', 'status', 'store_location_id', 'province', 'district', 'password', 'password_confirmation'];
+            errorFields.forEach(field => {
+                const el = document.getElementById('error-' + field);
+                if (el) el.innerHTML = '';
+            });
+            document.getElementById('staff-form-errors').innerHTML = '';
+            // Quick password validation
+            const password = document.getElementById('new-staff-password').value;
+            const passwordConfirmation = document.getElementById('new-staff-password-confirmation').value;
+            
+            if (password && password.length < 8) {
+                document.getElementById('error-password').innerHTML = '<div class="text-red-500 text-xs">Mật khẩu phải có ít nhất 8 ký tự</div>';
+                return;
+            }
+            
+            if (password && passwordConfirmation && password !== passwordConfirmation) {
+                document.getElementById('error-password_confirmation').innerHTML = '<div class="text-red-500 text-xs">Mật khẩu xác nhận không khớp</div>';
+                return;
+            }
             const formData = new FormData(this);
             const staffId = document.getElementById('editing-staff-id').value;
             const url = staffId ? `/admin/sales-staff/api/employees/${staffId}` :
@@ -222,7 +241,7 @@
                     if (!response.ok && data && data.errors) {
                         Object.entries(data.errors).forEach(([field, arr]) => {
                             const el = document.getElementById('error-' + field);
-                            if (el) el.innerHTML = `<div>${arr[0]}</div>`;
+                            if (el) el.innerHTML = `<div class="text-red-500 text-xs">${arr[0]}</div>`;
                         });
                         return; // Giữ nguyên popup, không đóng
                     } else if (!response.ok && data && data.message) {
