@@ -246,7 +246,7 @@ class SalesStaffManagement extends Controller
                 'email' => $data['email'],
                 'phone_number' => $data['phone'],
                 'status' => $data['status'] ?? 'active',
-                'password' => bcrypt('password123'),
+                'password' => bcrypt($data['password']),
             ]);
             UserStoreLocation::ganNhanVienVaoCuaHang($user->id, $data['store_location_id']);
             DB::commit();
@@ -269,12 +269,17 @@ class SalesStaffManagement extends Controller
         try {
             DB::transaction(function () use ($userId, $data) {
                 $user = User::findOrFail($userId);
-                $user->update([
+                $updateData = [
                     'name' => $data['name'],
                     'email' => $data['email'],
                     'phone_number' => $data['phone'],
                     'status' => $data['status'] ?? 'active',
-                ]);
+                ];
+                // Cập nhật password nếu có
+                if (isset($data['password']) && !empty($data['password'])) {
+                    $updateData['password'] = bcrypt($data['password']);
+                }
+                $user->update($updateData);
                 // Cập nhật store_location nếu có thay đổi
                 if (isset($data['store_location_id']) && $data['store_location_id']) {
                     UserStoreLocation::where('user_id', $userId)->delete();

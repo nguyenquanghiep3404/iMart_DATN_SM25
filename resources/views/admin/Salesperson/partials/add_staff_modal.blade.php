@@ -27,6 +27,14 @@
                     <div id="error-email" class="text-red-500 text-xs mt-1"></div>
                 </div>
                 <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-phone">Số Điện Thoại
+                        <span class="text-danger">*</span></label>
+                    <input id="new-staff-phone" name="phone" type="tel"
+                        class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="09xxxxxxxx">
+                    <div id="error-phone" class="text-red-500 text-xs mt-1"></div>
+                </div>
+                <div>
                     <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-status">Trạng
                         thái</label>
                     <select id="new-staff-status" name="status"
@@ -37,13 +45,24 @@
                     </select>
                     <div id="error-status" class="text-red-500 text-xs mt-1"></div>
                 </div>
+            </div>
+            <!-- Phần mật khẩu -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 <div>
-                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-phone">Số Điện Thoại
-                        <span class="text-danger">*</span></label>
-                    <input id="new-staff-phone" name="phone" type="tel"
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-password">Mật Khẩu <span
+                            class="text-danger">*</span></label>
+                    <input id="new-staff-password" name="password" type="password"
                         class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="09xxxxxxxx">
-                    <div id="error-phone" class="text-red-500 text-xs mt-1"></div>
+                        placeholder="Nhập mật khẩu">
+                    <div id="error-password" class="text-red-500 text-xs mt-1"></div>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-password-confirmation">Xác Nhận Mật Khẩu <span
+                            class="text-danger">*</span></label>
+                    <input id="new-staff-password-confirmation" name="password_confirmation" type="password"
+                        class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Nhập lại mật khẩu">
+                    <div id="error-password_confirmation" class="text-red-500 text-xs mt-1"></div>
                 </div>
             </div>
             <div id="address-fields" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -192,7 +211,7 @@
                         data = {};
                     }
                     const errorFields = ['name', 'email', 'phone', 'status',
-                        'store_location_id', 'province', 'district'
+                        'store_location_id', 'province', 'district', 'password', 'password_confirmation'
                     ];
                     errorFields.forEach(field => {
                         const el = document.getElementById('error-' + field);
@@ -239,7 +258,7 @@
                 return;
             }
             form.reset();
-            ['name', 'email', 'phone', 'status', 'store_location_id', 'province', 'district'].forEach(field => {
+            ['name', 'email', 'phone', 'status', 'store_location_id', 'province', 'district', 'password', 'password_confirmation'].forEach(field => {
                 const el = document.getElementById('error-' + field);
                 if (el) el.innerHTML = '';
             });

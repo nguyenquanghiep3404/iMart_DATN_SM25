@@ -36,6 +36,15 @@ class SalesStaffRequest extends FormRequest
             'status' => 'nullable|in:active,inactive,banned',
         ];
         
+        // Thêm validation cho password
+        if (!$isUpdate) {
+            // Khi thêm mới - bắt buộc
+            $rules['password'] = 'required|string|min:8|confirmed';
+        } else {
+            // Khi edit - tùy chọn, nhưng nếu có thì phải đúng format
+            $rules['password'] = 'nullable|string|min:8|confirmed';
+        }
+        
         // Thêm unique validation chỉ khi cần thiết
         if ($userId) {
             // Khi update, kiểm tra unique trừ user hiện tại
@@ -80,6 +89,9 @@ class SalesStaffRequest extends FormRequest
             'district.required' => 'Vui lòng chọn quận/huyện.',
             'store_location_id.required' => 'Vui lòng chọn cửa hàng.',
             'store_location_id.exists' => 'Cửa hàng không hợp lệ.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
+            'password.confirmed' => 'Mật khẩu xác nhận không khớp.',
         ];
     }
 }

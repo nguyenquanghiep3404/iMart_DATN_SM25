@@ -274,6 +274,39 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <div id="error-email" class="text-red-600 text-sm mt-1"></div>
                         </div>
+                        <div>
+                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Số Điện Thoại <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" id="phone" name="phone" placeholder="09xxxxxxxx"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <div id="error-phone" class="text-red-600 text-sm mt-1"></div>
+                        </div>
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                            <select id="status" name="status"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="active">Đang hoạt động</option>
+                                <option value="inactive">Không hoạt động</option>
+                                <option value="banned">Đã khóa</option>
+                            </select>
+                            <div id="error-status" class="text-red-600 text-sm mt-1"></div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mật Khẩu <span
+                                    class="text-danger">*</span></label>
+                            <input type="password" id="password" name="password" placeholder="Nhập mật khẩu"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <div id="error-password" class="text-red-600 text-sm mt-1"></div>
+                        </div>
+                        <div>
+                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Xác Nhận Mật Khẩu <span
+                                    class="text-danger">*</span></label>
+                            <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Nhập lại mật khẩu"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <div id="error-password_confirmation" class="text-red-600 text-sm mt-1"></div>
+                        </div>
                         @if (!$store)
                             <div>
                                 <label for="modal-province-select"
@@ -287,34 +320,6 @@
                                 </select>
                                 <div id="error-province" class="text-red-600 text-sm mt-1"></div>
                             </div>
-                        @else
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành Phố</label>
-                                <input type="text" value="{{ $store->province->name_with_type ?? '' }}" disabled
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
-                                <input type="hidden" name="province" value="{{ $store->province->code ?? '' }}">
-                            </div>
-                        @endif
-                    </div>
-                    <div class="space-y-4">
-                        <div>
-                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                            <select id="status" name="status"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="active">Đang hoạt động</option>
-                                <option value="inactive">Không hoạt động</option>
-                                <option value="banned">Đã khóa</option>
-                            </select>
-                            <div id="error-status" class="text-red-600 text-sm mt-1"></div>
-                        </div>
-                        <div>
-                            <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Số Điện Thoại <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" id="phone" name="phone" placeholder="09xxxxxxxx"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <div id="error-phone" class="text-red-600 text-sm mt-1"></div>
-                        </div>
-                        @if (!$store)
                             <div>
                                 <label for="modal-district-select"
                                     class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện</label>
@@ -326,6 +331,12 @@
                             </div>
                         @else
                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành Phố</label>
+                                <input type="text" value="{{ $store->province->name_with_type ?? '' }}" disabled
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
+                                <input type="hidden" name="province" value="{{ $store->province->code ?? '' }}">
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện</label>
                                 <input type="text" value="{{ $store->district->name_with_type ?? '' }}" disabled
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100">
@@ -334,11 +345,12 @@
                         @endif
                     </div>
                 </div>
-                <div class="mt-6">
+                <!-- Phần chọn cửa hàng -->
+                <div class="mt-6 border-t pt-6">
                     @if (!$store)
                         <div>
-                            <label for="modal-store-select" class="block text-sm font-medium text-gray-700 mb-1">Cửa Hàng
-                                *</label>
+                            <label for="modal-store-select" class="block text-sm font-medium text-gray-700 mb-1">Cửa Hàng <span
+                                    class="text-danger">*</span></label>
                             <select id="modal-store-select" name="store_location_id" disabled
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="">-- Chọn Cửa Hàng --</option>
@@ -384,6 +396,7 @@
                 <input type="hidden" id="edit-staff-id" name="edit_staff_id" value="">
                 <div id="edit-staff-form-errors" class="mb-2"></div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Cột trái -->
                     <div class="space-y-4">
                         <div>
                             <label for="edit-name" class="block text-sm font-medium text-gray-700 mb-1">Họ và Tên <span class="text-danger">*</span></label>
@@ -398,18 +411,11 @@
                             <div id="error-edit-email" class="text-red-600 text-sm mt-1"></div>
                         </div>
                         <div>
-                            <label for="edit-province-select" class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành Phố  <span class="text-danger">*</span></label>
-                            <select id="edit-province-select" name="province"
+                            <label for="edit-phone" class="block text-sm font-medium text-gray-700 mb-1">Số Điện Thoại <span class="text-danger">*</span></label>
+                            <input type="text" id="edit-phone" name="phone" placeholder="09xxxxxxxx"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="">-- Chọn Tỉnh/Thành Phố --</option>
-                                @foreach ($provinces ?? [] as $province)
-                                    <option value="{{ $province->code }}">{{ $province->name_with_type }}</option>
-                                @endforeach
-                            </select>
-                            <div id="error-edit-province" class="text-red-600 text-sm mt-1"></div>
+                            <div id="error-edit-phone" class="text-red-600 text-sm mt-1"></div>
                         </div>
-                    </div>
-                    <div class="space-y-4">
                         <div>
                             <label for="edit-status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
                             <select id="edit-status" name="status"
@@ -420,14 +426,34 @@
                             </select>
                             <div id="error-edit-status" class="text-red-600 text-sm mt-1"></div>
                         </div>
+                    </div>
+                    <!-- Cột phải -->
+                    <div class="space-y-4">
                         <div>
-                            <label for="edit-phone" class="block text-sm font-medium text-gray-700 mb-1">Số Điện Thoại <span class="text-danger">*</span></label>
-                            <input type="text" id="edit-phone" name="phone" placeholder="09xxxxxxxx"
+                            <label for="edit-password" class="block text-sm font-medium text-gray-700 mb-1">Mật Khẩu Mới</label>
+                            <input type="password" id="edit-password" name="password" placeholder="Để trống nếu không đổi"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <div id="error-edit-phone" class="text-red-600 text-sm mt-1"></div>
+                            <div id="error-edit-password" class="text-red-600 text-sm mt-1"></div>
                         </div>
                         <div>
-                            <label for="edit-district-select" class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện  <span class="text-danger">*</span></label>
+                            <label for="edit-password-confirmation" class="block text-sm font-medium text-gray-700 mb-1">Xác Nhận Mật Khẩu Mới</label>
+                            <input type="password" id="edit-password-confirmation" name="password_confirmation" placeholder="Nhập lại mật khẩu mới"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <div id="error-edit-password-confirmation" class="text-red-600 text-sm mt-1"></div>
+                        </div>
+                        <div>
+                            <label for="edit-province-select" class="block text-sm font-medium text-gray-700 mb-1">Tỉnh/Thành Phố <span class="text-danger">*</span></label>
+                            <select id="edit-province-select" name="province"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- Chọn Tỉnh/Thành Phố --</option>
+                                @foreach ($provinces ?? [] as $province)
+                                    <option value="{{ $province->code }}">{{ $province->name_with_type }}</option>
+                                @endforeach
+                            </select>
+                            <div id="error-edit-province" class="text-red-600 text-sm mt-1"></div>
+                        </div>
+                        <div>
+                            <label for="edit-district-select" class="block text-sm font-medium text-gray-700 mb-1">Quận/Huyện <span class="text-danger">*</span></label>
                             <select id="edit-district-select" name="district" disabled
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
                                 <option value="">-- Chọn Quận/Huyện --</option>
@@ -566,50 +592,50 @@
                         if (data.employees.length === 0) {
                             staffTableBody.innerHTML = `
                                 <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                    <div class="flex flex-col items-center py-8">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><path d="M20 8v6"></path><path d="M23 11h-6"></path></svg>
-                                        <h3 class="mt-2 text-sm font-medium text-gray-900">Không tìm thấy nhân viên</h3>
-                                        <p class="mt-1 text-sm text-gray-500">Vui lòng thay đổi từ khóa tìm kiếm.</p>
-                                    </div>
+                                <div class="flex flex-col items-center py-8">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><path d="M20 8v6"></path><path d="M23 11h-6"></path></svg>
+                                    <h3 class="mt-2 text-sm font-medium text-gray-900">Không tìm thấy nhân viên</h3>
+                                    <p class="mt-1 text-sm text-gray-500">Vui lòng thay đổi từ khóa tìm kiếm.</p>
+                                </div>
                                 </td></tr>`;
                         } else {
                             staffTableBody.innerHTML = data.employees.map((employee, index) => `
-                                <tr class="bg-white border-b hover:bg-gray-50">
-                                    <td class="px-6 py-4 font-medium text-gray-900 text-center">${data.pagination ? data.pagination.from + index : index + 1}</td>
-                                    <td class="px-6 py-4 font-medium text-gray-900">${employee.name}</td>
-                                    <td class="px-6 py-4">${employee.email}</td>
-                                    <td class="px-6 py-4">${employee.phone}</td>
-                                    <td class="px-6 py-4">
-                                        ${employee.status === 'active' ? 
-                                            '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Đang hoạt động</span>' :
-                                            employee.status === 'inactive' ?
-                                            '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Không hoạt động</span>' :
-                                            '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Đã khóa</span>'
-                                        }
-                                    </td>
-                                    <td class="px-6 py-4 text-center">
-                                        <div class="flex justify-center items-center gap-2">
-                                            <button class="edit-btn bg-gray-200 text-gray-800 p-2 rounded-lg hover:bg-gray-300 transition-colors" title="Chỉnh sửa" data-id="${employee.id}">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                            </button>
-                                            <button class="delete-btn bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition-colors" title="Xóa" data-id="${employee.id}">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            `).join('');
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <td class="px-6 py-4 font-medium text-gray-900 text-center">${data.pagination ? data.pagination.from + index : index + 1}</td>
+                            <td class="px-6 py-4 font-medium text-gray-900">${employee.name}</td>
+                            <td class="px-6 py-4">${employee.email}</td>
+                            <td class="px-6 py-4">${employee.phone}</td>
+                            <td class="px-6 py-4">
+                                ${employee.status === 'active' ? 
+                                    '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Đang hoạt động</span>' :
+                                    employee.status === 'inactive' ?
+                                    '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Không hoạt động</span>' :
+                                    '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Đã khóa</span>'
+                                }
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex justify-center items-center gap-2">
+                                    <button class="edit-btn bg-gray-200 text-gray-800 p-2 rounded-lg hover:bg-gray-300 transition-colors" title="Chỉnh sửa" data-id="${employee.id}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                    </button>
+                                    <button class="delete-btn bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition-colors" title="Xóa" data-id="${employee.id}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
                         }
                     })
                     .catch(error => {
                         console.error('Error searching employees:', error);
                         staffTableBody.innerHTML = `
                             <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                <div class="flex flex-col items-center py-8">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><path d="M20 8v6"></path><path d="M23 11h-6"></path></svg>
-                                    <h3 class="mt-2 text-sm font-medium text-gray-900">Lỗi tìm kiếm</h3>
-                                    <p class="mt-1 text-sm text-gray-500">Vui lòng thử lại sau.</p>
-                                </div>
+                            <div class="flex flex-col items-center py-8">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><path d="M20 8v6"></path><path d="M23 11h-6"></path></svg>
+                                <h3 class="mt-2 text-sm font-medium text-gray-900">Lỗi tìm kiếm</h3>
+                                <p class="mt-1 text-sm text-gray-500">Vui lòng thử lại sau.</p>
+                            </div>
                             </td></tr>`;
                     });
             }
@@ -627,8 +653,8 @@
                             e.stopPropagation();
                             const employeeId = e.target.closest('.delete-btn').dataset.id;
                             if (employeeId && employeeId !== '') {
-                                openDeleteModal(employeeId);
-                            }
+                    openDeleteModal(employeeId);
+                }
                         }
                         
                         // Edit button
@@ -637,10 +663,10 @@
                             e.stopPropagation();
                             const employeeId = e.target.closest('.edit-btn').dataset.id;
                             if (employeeId && employeeId !== '') {
-                                openEditStaffModal(employeeId);
+                    openEditStaffModal(employeeId);
                             }
-                        }
-                    });
+                }
+            });
                 }, 100);
             }
             // Nút mở modal
@@ -684,7 +710,7 @@
             const modalProvinceSelect = document.getElementById('modal-province-select');
             const modalDistrictSelect = document.getElementById('modal-district-select');
             const modalStoreSelect = document.getElementById('modal-store-select');
-            
+
             // Edit modal selects
             const editProvinceSelect = document.getElementById('edit-province-select');
             const editDistrictSelect = document.getElementById('edit-district-select');
@@ -710,7 +736,7 @@
                             });
                     } else {
                         modalDistrictSelect.disabled = true;
-                        modalStoreSelect.disabled = true;
+                    modalStoreSelect.disabled = true;
                     }
                 });
             }
@@ -735,7 +761,7 @@
                         modalStoreSelect.disabled = true;
                     }
                 });
-            } 
+            }
             // Chỉnh sửa địa chỉ trong Edit modal
             if (editProvinceSelect) {
                 editProvinceSelect.addEventListener('change', function() {
@@ -786,7 +812,7 @@
             if (addStaffForm) {
                 addStaffForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    ['name', 'email', 'phone', 'store_location_id', 'province', 'district'].forEach(field => {
+                    ['name', 'email', 'phone', 'password', 'password_confirmation', 'store_location_id', 'province', 'district'].forEach(field => {
                         const el = document.getElementById('error-' + field);
                         if (el) el.innerHTML = '';
                     });
@@ -795,11 +821,19 @@
                     const name = document.getElementById('name').value.trim();
                     const email = document.getElementById('email').value.trim();
                     const phone = document.getElementById('phone').value.trim();
+                    const password = document.getElementById('password').value;
+                    const passwordConfirmation = document.getElementById('password_confirmation').value;
                     
                     let hasError = false;
                     if (!name) { document.getElementById('error-name').innerHTML = '<div class="text-red-600 text-sm">Vui lòng nhập họ và tên</div>'; hasError = true; }
                     if (!email) { document.getElementById('error-email').innerHTML = '<div class="text-red-600 text-sm">Vui lòng nhập email</div>'; hasError = true; }
                     if (!phone) { document.getElementById('error-phone').innerHTML = '<div class="text-red-600 text-sm">Vui lòng nhập số điện thoại</div>'; hasError = true; }
+                    if (!password) { document.getElementById('error-password').innerHTML = '<div class="text-red-600 text-sm">Vui lòng nhập mật khẩu</div>'; hasError = true; }
+                    if (!passwordConfirmation) { document.getElementById('error-password_confirmation').innerHTML = '<div class="text-red-600 text-sm">Vui lòng xác nhận mật khẩu</div>'; hasError = true; }
+                    if (password && passwordConfirmation && password !== passwordConfirmation) { 
+                        document.getElementById('error-password_confirmation').innerHTML = '<div class="text-red-600 text-sm">Mật khẩu xác nhận không khớp</div>'; 
+                        hasError = true; 
+                    }
                     
                     if (hasError) return;
                     // Submit
@@ -817,7 +851,7 @@
                             sessionStorage.setItem('staff_success_message', data.message);
                             closeModal();
                             location.reload();
-                        } else {
+                    } else {
                             if (data.errors) {
                                 Object.entries(data.errors).forEach(([field, arr]) => {
                                     const el = document.getElementById('error-' + field);
@@ -837,7 +871,7 @@
             if (editStaffForm) {
                 editStaffForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    ['edit-name', 'edit-email', 'edit-phone', 'edit-store_location_id', 'edit-province', 'edit-district'].forEach(field => {
+                    ['edit-name', 'edit-email', 'edit-phone', 'edit-password', 'edit-password-confirmation', 'edit-store_location_id', 'edit-province', 'edit-district'].forEach(field => {
                         const el = document.getElementById('error-' + field);
                         if (el) el.innerHTML = '';
                     });
@@ -846,6 +880,8 @@
                     const name = document.getElementById('edit-name').value.trim();
                     const email = document.getElementById('edit-email').value.trim();
                     const phone = document.getElementById('edit-phone').value.trim();
+                    const password = document.getElementById('edit-password').value;
+                    const passwordConfirmation = document.getElementById('edit-password-confirmation').value;
                     const province = document.getElementById('edit-province-select').value;
                     const district = document.getElementById('edit-district-select').value;
                     const storeLocationId = document.getElementById('edit-store-select').value;
@@ -858,20 +894,34 @@
                     if (!district) { document.getElementById('error-edit-district').innerHTML = '<div class="text-red-600 text-sm">Vui lòng chọn quận/huyện</div>'; hasError = true; }
                     if (!storeLocationId) { document.getElementById('error-edit-store_location_id').innerHTML = '<div class="text-red-600 text-sm">Vui lòng chọn cửa hàng</div>'; hasError = true; }
                     
+                    // Validate password nếu có nhập
+                    if (password && !passwordConfirmation) {
+                        document.getElementById('error-edit-password-confirmation').innerHTML = '<div class="text-red-600 text-sm">Vui lòng xác nhận mật khẩu mới</div>';
+                        hasError = true;
+                    }
+                    if (passwordConfirmation && !password) {
+                        document.getElementById('error-edit-password').innerHTML = '<div class="text-red-600 text-sm">Vui lòng nhập mật khẩu mới</div>';
+                        hasError = true;
+                    }
+                    if (password && passwordConfirmation && password !== passwordConfirmation) {
+                        document.getElementById('error-edit-password-confirmation').innerHTML = '<div class="text-red-600 text-sm">Mật khẩu xác nhận không khớp</div>';
+                        hasError = true;
+                    }
+                    
                     if (hasError) return;
                     
                     const formData = new FormData(this);
                     const staffId = document.getElementById('edit-staff-id').value;
                     
-                    formData.append('_method', 'PUT');
+                        formData.append('_method', 'PUT');
                     fetch(`/admin/sales-staff/api/employees/${staffId}`, {
                         method: 'POST',
-                        body: formData,
-                        headers: {
+                            body: formData,
+                            headers: {
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            'Accept': 'application/json'
-                        }
-                    })
+                                'Accept': 'application/json'
+                            }
+                        })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
@@ -880,20 +930,20 @@
                             location.reload();
                         } else {
                             if (data.errors) {
-                                Object.entries(data.errors).forEach(([field, arr]) => {
+                                    Object.entries(data.errors).forEach(([field, arr]) => {
                                     const el = document.getElementById('error-edit-' + field);
                                     if (el) el.innerHTML = `<div class="text-red-600 text-sm">${arr[0]}</div>`;
                                 });
-                            } else {
+                                } else {
                                 document.getElementById('edit-staff-form-errors').innerHTML = `<div class="text-red-600 text-sm mb-1">${data.message || 'Có lỗi xảy ra'}</div>`;
                             }
                         }
                     })
                     .catch(error => {
                         document.getElementById('edit-staff-form-errors').innerHTML = '<div class="text-red-600 text-sm mb-1">Lỗi kết nối server</div>';
-                    });
+                        });
                 });
-            }        
+            }
             // Functions
             function openAddStaffModal() {
                 const form = document.getElementById('add-staff-form');
@@ -905,7 +955,7 @@
                 // Reset form
                 form.reset();
                 // Clear errors
-                ['name', 'email', 'phone', 'store_location_id', 'province', 'district'].forEach(field => {
+                ['name', 'email', 'phone', 'password', 'password_confirmation', 'store_location_id', 'province', 'district'].forEach(field => {
                     const el = document.getElementById('error-' + field);
                     if (el) el.innerHTML = '';
                 });
@@ -920,7 +970,7 @@
 
             function openEditStaffModal(employeeId) {
                 // Clear errors
-                ['edit-name', 'edit-email', 'edit-phone', 'edit-store_location_id', 'edit-province', 'edit-district'].forEach(field => {
+                ['edit-name', 'edit-email', 'edit-phone', 'edit-password', 'edit-password-confirmation', 'edit-store_location_id', 'edit-province', 'edit-district'].forEach(field => {
                     const el = document.getElementById('error-' + field);
                     if (el) el.innerHTML = '';
                 });
@@ -1039,21 +1089,21 @@
                 
                 fetch(`/admin/sales-staff/api/stores/{{ $store->id }}/employees/${employeeId}`, {
                     method: 'DELETE',
-                    headers: {
+                        headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         'Accept': 'application/json'
                     }
                 })
                 .then(response => response.json())
-                .then(data => {
-                    if (data.message) {
+                    .then(data => {
+                        if (data.message) {
                         sessionStorage.setItem('employee_delete_success_message', data.message);
-                        location.reload();
-                    }
-                })
-                .catch(error => {
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
                     toastr.error('Có lỗi xảy ra khi xóa nhân viên');
-                });
+                    });
                 
                 closeDeleteModal();
             });
