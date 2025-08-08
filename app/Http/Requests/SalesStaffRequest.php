@@ -46,12 +46,17 @@ class SalesStaffRequest extends FormRequest
             $rules['email'] .= '|unique:users,email';
             $rules['phone'][] = 'unique:users,phone_number';
         }
-        
-        // Chỉ thêm validation cho location fields khi thêm mới
+        // Validate cho địa chỉ thêm mới
         if (!$isUpdate) {
+            // Khi thêm mới - bắt buộc
             $rules['province'] = 'required';
             $rules['district'] = 'required';
             $rules['store_location_id'] = 'required|exists:store_locations,id';
+        } else {
+            // Khi update - tùy chọn
+            $rules['province'] = 'nullable';
+            $rules['district'] = 'nullable';
+            $rules['store_location_id'] = 'nullable|exists:store_locations,id';
         }
         
         return $rules;

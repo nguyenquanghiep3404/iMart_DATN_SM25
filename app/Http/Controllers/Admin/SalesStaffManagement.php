@@ -197,7 +197,7 @@ class SalesStaffManagement extends Controller
      */
     public function getEmployee(int $storeId, int $employeeId): JsonResponse
     {
-        $employee = UserStoreLocation::with(['user'])
+        $employee = UserStoreLocation::with(['user', 'storeLocation.province', 'storeLocation.district'])
             ->where('store_location_id', $storeId)
             ->where('user_id', $employeeId)
             ->whereHas('user') // Chỉ lấy các record có user tồn tại
@@ -217,6 +217,19 @@ class SalesStaffManagement extends Controller
                 'email' => $user->email,
                 'phone' => $user->phone_number,
                 'status' => $user->status,
+                'store_location_id' => $employee->store_location_id,
+                'store_location' => [
+                    'id' => $employee->storeLocation->id,
+                    'name' => $employee->storeLocation->name,
+                    'province' => [
+                        'code' => $employee->storeLocation->province->code ?? null,
+                        'name' => $employee->storeLocation->province->name_with_type ?? null,
+                    ],
+                    'district' => [
+                        'code' => $employee->storeLocation->district->code ?? null,
+                        'name' => $employee->storeLocation->district->name_with_type ?? null,
+                    ],
+                ]
             ]
         ]);
     }
@@ -253,17 +266,31 @@ class SalesStaffManagement extends Controller
     {
         $data = $request->validated();
 
-        $user = User::findOrFail($userId);
-        $user->update([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone_number' => $data['phone'],
-            'status' => $data['status'] ?? 'active',
-        ]);
-        return response()->json([
-            'message' => 'Cập nhật nhân viên thành công',
-            'user' => $user
-        ]);
+        try {
+            DB::transaction(function () use ($userId, $data) {
+                $user = User::findOrFail($userId);
+                $user->update([
+                    'name' => $data['name'],
+                    'email' => $data['email'],
+                    'phone_number' => $data['phone'],
+                    'status' => $data['status'] ?? 'active',
+                ]);
+                // Cập nhật store_location nếu có thay đổi
+                if (isset($data['store_location_id']) && $data['store_location_id']) {
+                    UserStoreLocation::where('user_id', $userId)->delete();
+                    UserStoreLocation::ganNhanVienVaoCuaHang($userId, $data['store_location_id']);
+                }
+            });
+            return response()->json([
+                'success' => true,
+                'message' => 'Cập nhật nhân viên thành công'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+            ], 500);
+        }
     }
     /**
      * API: Xóa nhân viên khỏi cửa hàng
