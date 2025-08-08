@@ -1791,7 +1791,16 @@ class PaymentController extends Controller
                     'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
                 ]);
             }
-
+            // --- Xử lý lượt dùng mã giảm giá ---
+            $appliedCoupon = session('applied_coupon');
+            if ($appliedCoupon && isset($appliedCoupon['id'])) {
+                CouponUsage::create([
+                    'coupon_id' => $appliedCoupon['id'],
+                    'user_id' => Auth::id(),
+                    'order_id' => $order->id,
+                    'usage_date' => now(),
+                ]);
+            }
             // Lưu địa chỉ mới vào sổ địa chỉ nếu người dùng chọn
             if (Auth::check() && $request->save_address && !$request->address_id) {
                 $this->saveNewAddress($request);

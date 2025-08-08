@@ -27,6 +27,14 @@
                     <div id="error-email" class="text-red-500 text-xs mt-1"></div>
                 </div>
                 <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-phone">Số Điện Thoại
+                        <span class="text-danger">*</span></label>
+                    <input id="new-staff-phone" name="phone" type="tel"
+                        class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="09xxxxxxxx">
+                    <div id="error-phone" class="text-red-500 text-xs mt-1"></div>
+                </div>
+                <div>
                     <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-status">Trạng
                         thái</label>
                     <select id="new-staff-status" name="status"
@@ -37,13 +45,24 @@
                     </select>
                     <div id="error-status" class="text-red-500 text-xs mt-1"></div>
                 </div>
+            </div>
+            <!-- Phần mật khẩu -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                 <div>
-                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-phone">Số Điện Thoại
-                        <span class="text-danger">*</span></label>
-                    <input id="new-staff-phone" name="phone" type="tel"
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-password">Mật Khẩu <span
+                            class="text-danger">*</span></label>
+                    <input id="new-staff-password" name="password" type="password"
                         class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        placeholder="09xxxxxxxx">
-                    <div id="error-phone" class="text-red-500 text-xs mt-1"></div>
+                        placeholder="Nhập mật khẩu">
+                    <div id="error-password" class="text-red-500 text-xs mt-1"></div>
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-semibold mb-2" for="new-staff-password-confirmation">Xác Nhận Mật Khẩu <span
+                            class="text-danger">*</span></label>
+                    <input id="new-staff-password-confirmation" name="password_confirmation" type="password"
+                        class="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        placeholder="Nhập lại mật khẩu">
+                    <div id="error-password_confirmation" class="text-red-500 text-xs mt-1"></div>
                 </div>
             </div>
             <div id="address-fields" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -164,6 +183,25 @@
         const addStaffForm = document.getElementById('add-staff-form');
         addStaffForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            const errorFields = ['name', 'email', 'phone', 'status', 'store_location_id', 'province', 'district', 'password', 'password_confirmation'];
+            errorFields.forEach(field => {
+                const el = document.getElementById('error-' + field);
+                if (el) el.innerHTML = '';
+            });
+            document.getElementById('staff-form-errors').innerHTML = '';
+            // Validate mật khẩu
+            const password = document.getElementById('new-staff-password').value;
+            const passwordConfirmation = document.getElementById('new-staff-password-confirmation').value;
+            
+            if (password && password.length < 8) {
+                document.getElementById('error-password').innerHTML = '<div class="text-red-500 text-xs">Mật khẩu phải có ít nhất 8 ký tự</div>';
+                return;
+            }
+            
+            if (password && passwordConfirmation && password !== passwordConfirmation) {
+                document.getElementById('error-password_confirmation').innerHTML = '<div class="text-red-500 text-xs">Mật khẩu xác nhận không khớp</div>';
+                return;
+            }
             const formData = new FormData(this);
             const staffId = document.getElementById('editing-staff-id').value;
             const url = staffId ? `/admin/sales-staff/api/employees/${staffId}` :
@@ -192,7 +230,7 @@
                         data = {};
                     }
                     const errorFields = ['name', 'email', 'phone', 'status',
-                        'store_location_id', 'province', 'district'
+                        'store_location_id', 'province', 'district', 'password', 'password_confirmation'
                     ];
                     errorFields.forEach(field => {
                         const el = document.getElementById('error-' + field);
@@ -203,7 +241,7 @@
                     if (!response.ok && data && data.errors) {
                         Object.entries(data.errors).forEach(([field, arr]) => {
                             const el = document.getElementById('error-' + field);
-                            if (el) el.innerHTML = `<div>${arr[0]}</div>`;
+                            if (el) el.innerHTML = `<div class="text-red-500 text-xs">${arr[0]}</div>`;
                         });
                         return; // Giữ nguyên popup, không đóng
                     } else if (!response.ok && data && data.message) {
@@ -239,7 +277,7 @@
                 return;
             }
             form.reset();
-            ['name', 'email', 'phone', 'status', 'store_location_id', 'province', 'district'].forEach(field => {
+            ['name', 'email', 'phone', 'status', 'store_location_id', 'province', 'district', 'password', 'password_confirmation'].forEach(field => {
                 const el = document.getElementById('error-' + field);
                 if (el) el.innerHTML = '';
             });
