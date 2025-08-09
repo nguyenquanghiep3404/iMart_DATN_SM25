@@ -33,6 +33,185 @@
                 }
 
 
+                // function updateQuantity(newQuantity, oldQuantity) {
+                //     if (isUpdating) return;
+                //     isUpdating = true;
+
+                //     fetch('{{ route('cart.updateQuantity') }}', {
+                //             method: 'POST',
+                //             headers: {
+                //                 'Content-Type': 'application/json',
+                //                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                //                     .content
+                //             },
+                //             body: JSON.stringify({
+                //                 item_id: itemId,
+                //                 quantity: newQuantity
+                //             })
+                //         })
+                //         .then(async res => {
+                //             if (!res.ok) {
+                //                 const err = await res.json();
+                //                 toastr.error(err.message || 'Lỗi máy chủ.');
+                //                 updateUI(oldQuantity);
+                //                 return null;
+                //             }
+                //             return res.json();
+                //         })
+                //         .then(data => {
+                //             if (!data) return;
+
+                //             if (data.success) {
+                //                 document.getElementById('cart-subtotal').textContent = data
+                //                     .subtotal_before_dc;
+                //                 document.getElementById('cart-discount').textContent = data.discount;
+                //                 document.getElementById('cart-total').textContent = data.total_after_dc;
+                //             } else if (data.need_confirm_points_removal) {
+                //                 Swal.fire({
+                //                     title: 'Điểm thưởng không đủ điều kiện',
+                //                     text: data.message +
+                //                         '\nBạn có muốn huỷ điểm thưởng để tiếp tục không?',
+                //                     icon: 'warning',
+                //                     showCancelButton: true,
+                //                     confirmButtonText: 'Huỷ điểm thưởng',
+                //                     cancelButtonText: 'Giữ điểm thưởng'
+                //                 }).then(result => {
+                //                     if (result.isConfirmed) {
+                //                         fetch('{{ route('cart.updateQuantity') }}', {
+                //                                 method: 'POST',
+                //                                 headers: {
+                //                                     'Content-Type': 'application/json',
+                //                                     'X-CSRF-TOKEN': document.querySelector(
+                //                                             'meta[name="csrf-token"]')
+                //                                         .content
+                //                                 },
+                //                                 body: JSON.stringify({
+                //                                     item_id: itemId,
+                //                                     quantity: newQuantity,
+                //                                     force_points_removal: true
+                //                                 })
+                //                             })
+                //                             .then(res => res.json())
+                //                             .then(data => {
+                //                                 if (data.success) {
+                //                                     // Cập nhật UI
+                //                                     document.getElementById('cart-subtotal')
+                //                                         .textContent = data
+                //                                         .subtotal_before_dc;
+                //                                     document.getElementById('cart-discount')
+                //                                         .textContent = data.discount;
+                //                                     document.getElementById('cart-total')
+                //                                         .textContent = data.total_after_dc;
+                //                                     const pointsDiscountRow = document
+                //                                         .getElementById(
+                //                                             'points-discount-row');
+                //                                     const pointsDiscountAmount = document
+                //                                         .getElementById(
+                //                                             'points-discount-amount');
+                //                                     if (pointsDiscountAmount) {
+                //                                         pointsDiscountAmount.textContent =
+                //                                             '-0₫';
+                //                                     }
+                //                                     if (pointsDiscountRow) {
+                //                                         pointsDiscountRow.style.display =
+                //                                             'none';
+                //                                     }
+                //                                     // Thông báo điểm thưởng đã bị huỷ
+                //                                     Swal.fire({
+                //                                         icon: 'info',
+                //                                         title: 'Điểm thưởng đã bị huỷ',
+                //                                         text: 'Đơn hàng không còn đủ điều kiện áp dụng điểm thưởng.',
+                //                                         timer: 2000,
+                //                                         showConfirmButton: false
+                //                                     });
+                //                                 } else {
+                //                                     showSlideAlert('error', data.message ||
+                //                                         'Cập nhật thất bại.');
+                //                                     updateUI(oldQuantity);
+                //                                 }
+                //                             });
+                //                     } else {
+                //                         updateUI(oldQuantity);
+                //                     }
+                //                 });
+                //             } else if (data.need_rollback_quantity) {
+                //                 Swal.fire({
+                //                     title: 'Không đủ điều kiện sử dụng mã giảm giá',
+                //                     text: data.message +
+                //                         '\nBạn có muốn tiếp tục và huỷ mã giảm giá không?',
+                //                     icon: 'warning',
+                //                     showCancelButton: true,
+                //                     confirmButtonText: 'Tiếp tục & Huỷ mã',
+                //                     cancelButtonText: 'Giữ nguyên số lượng cũ'
+                //                 }).then(result => {
+                //                     if (result.isConfirmed) {
+                //                         fetch('{{ route('cart.updateQuantity') }}', {
+                //                                 method: 'POST',
+                //                                 headers: {
+                //                                     'Content-Type': 'application/json',
+                //                                     'X-CSRF-TOKEN': document.querySelector(
+                //                                             'meta[name="csrf-token"]')
+                //                                         .content
+                //                                 },
+                //                                 body: JSON.stringify({
+                //                                     item_id: itemId,
+                //                                     quantity: newQuantity,
+                //                                     force_update: true
+                //                                 })
+                //                             })
+                //                             .then(res => res.json())
+                //                             .then(data => {
+                //                                 if (data.success) {
+                //                                     document.getElementById('cart-subtotal')
+                //                                         .textContent = data
+                //                                         .subtotal_before_dc;
+                //                                     document.getElementById('cart-discount')
+                //                                         .textContent = data.discount;
+                //                                     document.getElementById('cart-total')
+                //                                         .textContent = data.total_after_dc;
+
+                //                                     if (data.voucher_removed) {
+                //                                         Swal.fire({
+                //                                             icon: 'info',
+                //                                             title: 'Mã giảm giá đã bị huỷ',
+                //                                             text: 'Đơn hàng không còn đủ điều kiện áp dụng mã.'
+                //                                         });
+
+                //                                         const voucherSection = document
+                //                                             .getElementById(
+                //                                                 'voucher-section');
+                //                                         if (voucherSection) voucherSection
+                //                                             .style.display = 'none';
+                //                                     }
+                //                                 } else {
+                //                                     showSlideAlert('error', data.message ||
+                //                                         'Cập nhật thất bại.');
+                //                                     updateUI(oldQuantity);
+                //                                 }
+                //                             })
+                //                             .catch(err => {
+                //                                 console.error(err);
+                //                                 showSlideAlert('error', 'Lỗi máy chủ.');
+                //                                 updateUI(oldQuantity);
+                //                             });
+                //                     } else {
+                //                         updateUI(oldQuantity);
+                //                     }
+                //                 });
+                //             } else {
+                //                 showSlideAlert('error', data.message || 'Cập nhật thất bại.');
+                //                 updateUI(oldQuantity);
+                //             }
+                //         })
+                //         .catch(err => {
+                //             console.error(err);
+                //             showSlideAlert('error', 'Lỗi máy chủ.');
+                //             updateUI(oldQuantity);
+                //         })
+                //         .finally(() => {
+                //             isUpdating = false;
+                //         });
+                // }
                 function updateQuantity(newQuantity, oldQuantity) {
                     if (isUpdating) return;
                     isUpdating = true;
@@ -62,18 +241,33 @@
                             if (!data) return;
 
                             if (data.success) {
+                                // Cập nhật UI nếu thành công
                                 document.getElementById('cart-subtotal').textContent = data
                                     .subtotal_before_dc;
                                 document.getElementById('cart-discount').textContent = data.discount;
                                 document.getElementById('cart-total').textContent = data.total_after_dc;
-                            } else if (data.need_rollback_quantity) {
+                                return;
+                            }
+
+                            // ===== Trường hợp mới: Voucher & Points cùng lúc fail =====
+                            if (data.voucher_failed || data.points_failed) {
+                                let msgParts = [];
+                                if (data.voucher_failed) {
+                                    msgParts.push(
+                                        `- Mã giảm giá không đủ điều kiện (tối thiểu ${data.voucher_min_amount || '...'}).`
+                                    );
+                                }
+                                if (data.points_failed) {
+                                    msgParts.push(`- Điểm thưởng không đủ điều kiện.`);
+                                }
+
                                 Swal.fire({
-                                    title: 'Không đủ điều kiện sử dụng mã giảm giá',
-                                    text: data.message +
-                                        '\nBạn có muốn tiếp tục và huỷ mã giảm giá không?',
+                                    title: 'Ưu đãi không đủ điều kiện',
+                                    html: msgParts.join('<br>') +
+                                        '<br>Bạn có muốn gỡ các ưu đãi này để tiếp tục không?',
                                     icon: 'warning',
                                     showCancelButton: true,
-                                    confirmButtonText: 'Tiếp tục & Huỷ mã',
+                                    confirmButtonText: 'Gỡ & Tiếp tục',
                                     cancelButtonText: 'Giữ nguyên số lượng cũ'
                                 }).then(result => {
                                     if (result.isConfirmed) {
@@ -88,12 +282,14 @@
                                                 body: JSON.stringify({
                                                     item_id: itemId,
                                                     quantity: newQuantity,
-                                                    force_update: true
+                                                    force_update: true, // Gỡ cả voucher và điểm
+                                                    force_points_removal: true
                                                 })
                                             })
                                             .then(res => res.json())
                                             .then(data => {
                                                 if (data.success) {
+                                                    // Cập nhật UI
                                                     document.getElementById('cart-subtotal')
                                                         .textContent = data
                                                         .subtotal_before_dc;
@@ -103,17 +299,37 @@
                                                         .textContent = data.total_after_dc;
 
                                                     if (data.voucher_removed) {
-                                                        Swal.fire({
-                                                            icon: 'info',
-                                                            title: 'Mã giảm giá đã bị huỷ',
-                                                            text: 'Đơn hàng không còn đủ điều kiện áp dụng mã.'
-                                                        });
-
                                                         const voucherSection = document
                                                             .getElementById(
                                                                 'voucher-section');
                                                         if (voucherSection) voucherSection
                                                             .style.display = 'none';
+                                                        Swal.fire({
+                                                            icon: 'info',
+                                                            title: 'Đã bị huỷ',
+                                                            timer: 1000,
+                                                            showConfirmButton: false
+                                                        });
+                                                    }
+                                                    if (data.points_removed) {
+                                                        const pointsDiscountRow = document
+                                                            .getElementById(
+                                                                'points-discount-row');
+                                                        const pointsDiscountAmount =
+                                                            document.getElementById(
+                                                                'points-discount-amount');
+                                                        if (pointsDiscountAmount)
+                                                            pointsDiscountAmount
+                                                            .textContent = '-0₫';
+                                                        if (pointsDiscountRow)
+                                                            pointsDiscountRow.style
+                                                            .display = 'none';
+                                                        Swal.fire({
+                                                            icon: 'info',
+                                                            title: 'Đã bị huỷ',
+                                                            timer: 1000,
+                                                            showConfirmButton: false
+                                                        });
                                                     }
                                                 } else {
                                                     showSlideAlert('error', data.message ||
@@ -130,10 +346,12 @@
                                         updateUI(oldQuantity);
                                     }
                                 });
-                            } else {
-                                showSlideAlert('error', data.message || 'Cập nhật thất bại.');
-                                updateUI(oldQuantity);
+                                return;
                             }
+
+                            // ===== Trường hợp khác (fallback) =====
+                            showSlideAlert('error', data.message || 'Cập nhật thất bại.');
+                            updateUI(oldQuantity);
                         })
                         .catch(err => {
                             console.error(err);
