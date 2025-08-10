@@ -77,7 +77,7 @@
                 <li class="d-flex justify-content-between mb-2">
                     Giảm giá:
                     <span id="cart-discount" class="text-danger fw-medium">
-                        -{{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
+                        {{ $discount > 0 ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫' }}
                     </span>
                 </li>
 
