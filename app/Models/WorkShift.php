@@ -17,8 +17,8 @@ class WorkShift extends Model
     ];
 
     protected $casts = [
-        'start_time' => 'datetime:H:i',
-        'end_time' => 'datetime:H:i',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime',
     ];
 
     /**
@@ -104,7 +104,7 @@ class WorkShift extends Model
         $start = \Carbon\Carbon::parse($this->start_time);
         $end = \Carbon\Carbon::parse($this->end_time);
         
-        // Xử lý ca làm việc qua đêm
+        // Xử lý ca làm việc qua đêm (end < start)
         if ($end->lt($start)) {
             $end->addDay();
         }

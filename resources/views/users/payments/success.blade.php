@@ -56,7 +56,7 @@
                 <h3 class="h6 mb-2">Phương thức vận chuyển</h3>
                 <p class="fs-sm mb-1">
                   @if(str_contains(strtolower($order->shipping_method), 'giao hàng nhanh'))
-                    <span class="fw-medium">🚀 Giao hàng nhanh</span>
+                    <span class="fw-medium">Giao hàng nhanh</span>
                     <span class="text-body-secondary">
                       @if($order->shipping_fee > 0)
                          {{ number_format($order->shipping_fee, 0, ',', '.') }} VNĐ
@@ -65,7 +65,7 @@
                       @endif
                     </span>
                   @elseif(str_contains(strtolower($order->shipping_method), 'giao hàng của cửa hàng'))
-                    <span class="fw-medium">🏪 Giao hàng của cửa hàng</span>
+                    <span class="fw-medium">Giao hàng của cửa hàng</span>
                     <span class="text-body-secondary">
                       @if($order->shipping_fee > 0)
                          {{ number_format($order->shipping_fee, 0, ',', '.') }} VNĐ
@@ -145,7 +145,7 @@
                 <!-- Thông báo cho "Nhận tại cửa hàng" -->
                 <div class="bg-info rounded px-4 py-4" style="--cz-bg-opacity: .2">
                   <div class="py-3">
-                    <h2 class="h5 text-center pb-2 mb-1">🏪 Thông báo nhận hàng</h2>
+                    <h2 class="h5 text-center pb-2 mb-1">Thông báo nhận hàng</h2>
                     <p class="fs-sm text-center mb-2">Bạn đã chọn nhận hàng tại cửa hàng</p>
                     @if($order->payment_method === 'cod')
                       <p class="fs-sm text-center mb-0">Vui lòng chuẩn bị đủ tiền mặt <strong>{{ number_format($order->grand_total, 0, ',', '.') }} VNĐ</strong> khi đến nhận hàng.</p>
@@ -158,7 +158,7 @@
                 <!-- Thông báo cho "Giao hàng tận nơi + COD" -->
                 <div class="bg-warning rounded px-4 py-4" style="--cz-bg-opacity: .2">
                   <div class="py-3">
-                    <h2 class="h5 text-center pb-2 mb-1">📦 Lưu ý quan trọng</h2>
+                    <h2 class="h5 text-center pb-2 mb-1">Lưu ý quan trọng</h2>
                     <p class="fs-sm text-center mb-2">Bạn đã chọn thanh toán khi nhận hàng (COD)</p>
                     <p class="fs-sm text-center mb-0">Vui lòng chuẩn bị đủ tiền mặt <strong>{{ number_format($order->grand_total, 0, ',', '.') }} VNĐ</strong> khi nhận hàng.</p>
                   </div>
@@ -167,7 +167,7 @@
                 <!-- Thông báo cho "Giao hàng tận nơi + Thanh toán online" -->
                 <div class="bg-success rounded px-4 py-4" style="--cz-bg-opacity: .2">
                   <div class="py-3">
-                    <h2 class="h5 text-center pb-2 mb-1">🎉 Cảm ơn bạn đã tin tưởng iMart!</h2>
+                    <h2 class="h5 text-center pb-2 mb-1">Cảm ơn bạn đã tin tưởng iMart!</h2>
                     <p class="fs-sm text-center mb-0">Đơn hàng của bạn đang được xử lý và sẽ sớm được giao đến tận nơi.</p>
                   </div>
                 </div>

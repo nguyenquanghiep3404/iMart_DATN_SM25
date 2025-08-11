@@ -39,9 +39,6 @@ class Order extends Model
         'shipping_address_line2',
         'shipping_zip_code',
         'shipping_country',
-        'shipping_address_system',
-        'shipping_new_province_code',
-        'shipping_new_ward_code',
         'shipping_old_province_code',
         'shipping_old_district_code',
         'shipping_old_ward_code',
@@ -49,9 +46,6 @@ class Order extends Model
         'billing_address_line2',
         'billing_zip_code',
         'billing_country',
-        'billing_address_system',
-        'billing_new_province_code',
-        'billing_new_ward_code',
         'billing_old_province_code',
         'billing_old_district_code',
         'billing_old_ward_code',
@@ -168,11 +162,6 @@ class Order extends Model
         return $this->belongsTo(Province::class, 'shipping_new_province_code', 'code');
     }
 
-    public function shippingNewWard()
-    {
-        return $this->belongsTo(Ward::class, 'shipping_new_ward_code', 'code');
-    }
-
     // Hệ thống CŨ - Shipping
     public function shippingOldProvince()
     {
@@ -189,18 +178,7 @@ class Order extends Model
         return $this->belongsTo(WardOld::class, 'shipping_old_ward_code', 'code');
     }
 
-    // Hệ thống MỚI - Billing
-    public function billingNewProvince()
-    {
-        return $this->belongsTo(Province::class, 'billing_new_province_code', 'code');
-    }
-
-    public function billingNewWard()
-    {
-        return $this->belongsTo(Ward::class, 'billing_new_ward_code', 'code');
-    }
-
-    // Địa chỉ cũ - Billing
+    // Hệ thống CŨ - Billing
     public function billingOldProvince()
     {
         return $this->belongsTo(ProvinceOld::class, 'billing_old_province_code', 'code');
@@ -350,29 +328,12 @@ class Order extends Model
 
     public function scopeByProvince($query, $provinceCode)
     {
-        return $query->where(function ($q) use ($provinceCode) {
-            $q->where('shipping_new_province_code', $provinceCode)
-                ->orWhere('shipping_old_province_code', $provinceCode);
-        });
+        return $query->where('shipping_old_province_code', $provinceCode);
     }
 
     public function scopeByWard($query, $wardCode)
     {
-        return $query->where(function ($q) use ($wardCode) {
-            $q->where('shipping_new_ward_code', $wardCode)
-                ->orWhere('shipping_old_ward_code', $wardCode);
-        });
-    }
-
-    // Scope để lọc theo hệ thống
-    public function scopeNewSystem($query)
-    {
-        return $query->where('shipping_address_system', 'new');
-    }
-
-    public function scopeOldSystem($query)
-    {
-        return $query->where('shipping_address_system', 'old');
+        return $query->where('shipping_old_ward_code', $wardCode);
     }
     public function orderItems()
     {
@@ -402,4 +363,15 @@ class Order extends Model
     {
         return $this->hasMany(\App\Models\ReturnRequest::class);
     }
+
+    // Phương thức để lấy mã đơn hàng
+    public function getCode()
+    {
+        return $this->order_code;
+    }
+    public function fulfillments()
+{
+    return $this->hasMany(OrderFulfillment::class);
+}
+
 }

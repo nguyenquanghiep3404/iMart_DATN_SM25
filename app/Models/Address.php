@@ -63,6 +63,22 @@ class Address extends Model
         return $this->belongsTo(WardOld::class, 'old_ward_code', 'code');
     }
 
+    // Alias cho tương thích với code hiện tại
+    public function provinceOld()
+    {
+        return $this->oldProvince();
+    }
+
+    public function districtOld()
+    {
+        return $this->oldDistrict();
+    }
+
+    public function wardOld()
+    {
+        return $this->oldWard();
+    }
+
     // Quan hệ động dựa trên hệ thống
     public function province()
     {

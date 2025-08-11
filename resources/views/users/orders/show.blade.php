@@ -3,49 +3,200 @@
 @section('styles')
 <style>
     /* CSS đầy đủ để tạo giao diện như mẫu */
-    body { background-color: #f9fafb; }
-    .main-content { max-width: 1200px; margin: auto; }
-    .details-card { background-color: #fff; border-radius: 0.75rem; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); overflow: hidden; }
-    .details-header { padding: 1.5rem; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;}
-    .details-main { padding: 1.5rem; }
-    .details-footer { padding: 1rem; border-top: 1px solid #e5e7eb; background-color: #f9fafb; text-align: right; }
+    body {
+        background-color: #f9fafb;
+    }
 
-    .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; white-space: nowrap;}
-    .status-completed { background-color: #d1fae5; color: #065f46; }
-    .status-processing { background-color: #feefc7; color: #92400e; }
-    .status-shipping { background-color: #dbeafe; color: #1e40af; }
-    .status-cancelled { background-color: #fee2e2; color: #991b1b; }
-    .status-awaiting-pickup { background-color: #e5e0ff; color: #5b21b6; }
-    .status-returned { background-color: #e5e7eb; color: #4b5563; }
+    .main-content {
+        max-width: 1200px;
+        margin: auto;
+    }
+
+    .details-card {
+        background-color: #fff;
+        border-radius: 0.75rem;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+
+    .details-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        background-color: #f9fafb;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .details-main {
+        padding: 1.5rem;
+    }
+
+    .details-footer {
+        padding: 1rem;
+        border-top: 1px solid #e5e7eb;
+        background-color: #f9fafb;
+        text-align: right;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .status-completed {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+
+    .status-processing {
+        background-color: #feefc7;
+        color: #92400e;
+    }
+
+    .status-shipping {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-cancelled {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-awaiting-pickup {
+        background-color: #e5e0ff;
+        color: #5b21b6;
+    }
+
+    .status-returned {
+        background-color: #e5e7eb;
+        color: #4b5563;
+    }
 
     /* Status Tracker Styles */
-    .tracker-container { display: flex; align-items: flex-start; }
-    .tracker-item { text-align: center; flex: 1; }
-    .tracker-line-container { flex-grow: 1; padding: 0 0.5rem; margin-top: 0.6rem; }
-    .tracker-line { height: 2px; background-color: #e5e7eb; }
-    .tracker-line-filled { background-color: #10b981; }
-    .tracker-dot { width: 1.5rem; height: 1.5rem; border-radius: 9999px; background-color: #e5e7eb; display: flex; align-items: center; justify-content: center; color: white; transition: background-color 0.3s; font-size: 0.75rem; font-weight: bold; margin: auto; }
-    .tracker-dot.active { background-color: #10b981; }
-    .tracker-label { font-size: 0.75rem; margin-top: 0.5rem; color: #6b7280;}
-    .tracker-label.active { color: #dc2626; font-weight: bold; }
-    .status-dot-cancelled { background-color: #dc2626 !important; }
+    .tracker-container {
+        display: flex;
+        align-items: flex-start;
+    }
 
-    .info-box { background-color: #f9fafb; padding: 1rem; border-radius: 0.5rem; border: 1px solid #e5e7eb; }
+    .tracker-item {
+        text-align: center;
+        flex: 1;
+    }
 
-    .product-list-item { display: flex; align-items: flex-start; gap: 1rem; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #f3f4f6;}
-    .product-list-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0;}
-    .product-image { width: 60px; height: 60px; border-radius: 0.375rem; object-fit: cover; flex-shrink: 0; }
+    .tracker-line-container {
+        flex-grow: 1;
+        padding: 0 0.5rem;
+        margin-top: 0.6rem;
+    }
+
+    .tracker-line {
+        height: 2px;
+        background-color: #e5e7eb;
+    }
+
+    .tracker-line-filled {
+        background-color: #10b981;
+    }
+
+    .tracker-dot {
+        width: 1.5rem;
+        height: 1.5rem;
+        border-radius: 9999px;
+        background-color: #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: background-color 0.3s;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin: auto;
+    }
+
+    .tracker-dot.active {
+        background-color: #10b981;
+    }
+
+    .tracker-label {
+        font-size: 0.75rem;
+        margin-top: 0.5rem;
+        color: #6b7280;
+    }
+
+    .tracker-label.active {
+        color: #dc2626;
+        font-weight: bold;
+    }
+
+    .status-dot-cancelled {
+        background-color: #dc2626 !important;
+    }
+
+    .info-box {
+        background-color: #f9fafb;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e5e7eb;
+    }
+
+    .product-list-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .product-list-item:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+
+    .product-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 0.375rem;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
 
     .btn-action {
-        background-color: #dc2626; color: #fff; font-weight: 600; padding: 0.5rem 1rem;
-        border-radius: 0.5rem; text-decoration: none; transition: background-color 0.2s;
-        display: inline-block; border: none;
+        background-color: #dc2626;
+        color: #fff;
+        font-weight: 600;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: background-color 0.2s;
+        display: inline-block;
+        border: none;
     }
-    .btn-action:hover { background-color: #b91c1c; color: #fff; }
+
+    .btn-action:hover {
+        background-color: #b91c1c;
+        color: #fff;
+    }
+
     .btn-action-secondary {
-        background-color: #fff; color: #374151; border: 1px solid #d1d5db;
+        background-color: #fff;
+        color: #374151;
+        border: 1px solid #d1d5db;
     }
-    .btn-action-secondary:hover { background-color: #f3f4f6; }
+
+    .btn-action-secondary:hover {
+        background-color: #f3f4f6;
+    }
 </style>
 @endsection
 
@@ -59,46 +210,46 @@
     </div>
 
     @php
-        //============= LOGIC TRUNG TÂM =============//
-        $statusSteps = [
-            'pending_confirmation' => 1, 'processing' => 2,
-            'awaiting_shipment' => 2, 'shipped' => 3, 'out_for_delivery' => 3,
-            'delivered' => 4, 'cancelled' => -1, 'failed_delivery' => -1,
-            'returned' => -1
-        ];
-        $currentStep = $statusSteps[$order->status] ?? 0;
-        $statusInfo = match ($order->status) {
-            'delivered' => ['text' => 'Hoàn tất', 'class' => 'status-completed'],
-            'processing' => ['text' => 'Đang xử lý', 'class' => 'status-processing'],
-            'shipped', 'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
-            'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
-            'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-pending_confirmation'],
-            'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],
-            default => ['text' => ucfirst($order->status), 'class' => 'status-returned'],
-        };
-        $isPickupOrder = !empty($order->store_location_id);
+    //============= LOGIC TRUNG TÂM =============//
+    $statusSteps = [
+    'pending_confirmation' => 1, 'processing' => 2,
+    'awaiting_shipment' => 2, 'shipped' => 3, 'out_for_delivery' => 3,
+    'delivered' => 4, 'cancelled' => -1, 'failed_delivery' => -1,
+    'returned' => -1
+    ];
+    $currentStep = $statusSteps[$order->status] ?? 0;
+    $statusInfo = match ($order->status) {
+    'delivered' => ['text' => 'Hoàn tất', 'class' => 'status-completed'],
+    'processing' => ['text' => 'Đang xử lý', 'class' => 'status-processing'],
+    'shipped', 'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
+    'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
+    'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-pending_confirmation'],
+    'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],
+    default => ['text' => ucfirst($order->status), 'class' => 'status-returned'],
+    };
+    $isPickupOrder = !empty($order->store_location_id);
 
     // LOGIC MỚI: KIỂM TRA ĐƠN HÀNG CÓ BỊ QUÁ HẠN KHÔNG
     $isOverdue = false;
     if ($isPickupOrder && $order->status === 'awaiting_shipment' && !empty($order->desired_delivery_date)) {
-        try {
-            // Lấy ngày hẹn nhận hàng từ database
-            $pickupDate = \Carbon\Carbon::parse($order->desired_delivery_date)->startOfDay();
-            $today = \Carbon\Carbon::now()->startOfDay();
+    try {
+    // Lấy ngày hẹn nhận hàng từ database
+    $pickupDate = \Carbon\Carbon::parse($order->desired_delivery_date)->startOfDay();
+    $today = \Carbon\Carbon::now()->startOfDay();
 
-            // So sánh ngày hôm nay với ngày hẹn
-            if ($today->gt($pickupDate)) {
-                $isOverdue = true;
-            }
-        } catch (\Exception $e) {
-            // Nếu `desired_delivery_date` không phải ngày tháng hợp lệ, bỏ qua
-            $isOverdue = false;
-        }
+    // So sánh ngày hôm nay với ngày hẹn
+    if ($today->gt($pickupDate)) {
+    $isOverdue = true;
+    }
+    } catch (\Exception $e) {
+    // Nếu `desired_delivery_date` không phải ngày tháng hợp lệ, bỏ qua
+    $isOverdue = false;
+    }
     }
 
     function renderDeliveryDate($dateString) {
-        if (empty($dateString)) return 'Chưa xác định';
-        try { return \Carbon\Carbon::parse($dateString)->format('d/m/Y'); } catch (\Exception $e) { return e($dateString); }
+    if (empty($dateString)) return 'Chưa xác định';
+    try { return \Carbon\Carbon::parse($dateString)->format('d/m/Y'); } catch (\Exception $e) { return e($dateString); }
     }
     @endphp
 
@@ -120,41 +271,74 @@
             <div class="mb-5">
                 <h5 class="fw-bold mb-4">Trạng thái đơn hàng</h5>
                 @if($order->status == 'cancelled')
-                    {{-- Giao diện đặc biệt cho đơn hàng BỊ HỦY --}}
-                    <div class="tracker-container">
-                        <div class="tracker-item">
-                            <div class="tracker-dot active status-dot-cancelled">
-                                <i class="fas fa-times"></i>
-                            </div>
-                            <p class="tracker-label active">Đã hủy</p>
+                {{-- Giao diện đặc biệt cho đơn hàng BỊ HỦY --}}
+                <div class="tracker-container">
+                    <div class="tracker-item">
+                        <div class="tracker-dot active status-dot-cancelled">
+                            <i class="fas fa-times"></i>
                         </div>
-                        <div class="tracker-line-container"><div class="tracker-line"></div></div>
-                        <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang xử lý</p></div>
-                        <div class="tracker-line-container"><div class="tracker-line"></div></div>
-                        <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang giao</p></div>
-                        <div class="tracker-line-container"><div class="tracker-line"></div></div>
-                        <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Hoàn tất</p></div>
+                        <p class="tracker-label active">Đã hủy</p>
                     </div>
+                    <div class="tracker-line-container">
+                        <div class="tracker-line"></div>
+                    </div>
+                    <div class="tracker-item">
+                        <div class="tracker-dot"></div>
+                        <p class="tracker-label text-muted">Đang xử lý</p>
+                    </div>
+                    <div class="tracker-line-container">
+                        <div class="tracker-line"></div>
+                    </div>
+                    <div class="tracker-item">
+                        <div class="tracker-dot"></div>
+                        <p class="tracker-label text-muted">Đang giao</p>
+                    </div>
+                    <div class="tracker-line-container">
+                        <div class="tracker-line"></div>
+                    </div>
+                    <div class="tracker-item">
+                        <div class="tracker-dot"></div>
+                        <p class="tracker-label text-muted">Hoàn tất</p>
+                    </div>
+                </div>
                 @elseif($currentStep > 0)
-                    {{-- Giao diện cho các trạng thái khác --}}
-                    <div class="tracker-container">
-                        <div class="tracker-item"><div class="tracker-dot {{ $currentStep >= 1 ? 'active' : '' }}">✓</div><p class="tracker-label {{ $currentStep == 1 ? 'active' : '' }}">Chờ xác nhận</p></div>
-                        <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 2 ? 'tracker-line-filled' : '' }}"></div></div>
-                        <div class="tracker-item"><div class="tracker-dot {{ $currentStep >= 2 ? 'active' : '' }}">@if($currentStep >= 2) ✓ @else 2 @endif</div><p class="tracker-label {{ $currentStep == 2 ? 'active' : '' }}">Đang xử lý</p></div>
-                        <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 3 ? 'tracker-line-filled' : '' }}"></div></div>
-                        <div class="tracker-item"><div class="tracker-dot {{ $currentStep >= 3 ? 'active' : '' }}">@if($currentStep >= 3) ✓ @else 3 @endif</div><p class="tracker-label {{ $currentStep == 3 ? 'active' : '' }}">Đang giao</p></div>
-                        <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 4 ? 'tracker-line-filled' : '' }}"></div></div>
-                        <div class="tracker-item"><div class="tracker-dot {{ $currentStep >= 4 ? 'active' : '' }}">@if($currentStep >= 4) ✓ @else 4 @endif</div><p class="tracker-label {{ $currentStep == 4 ? 'active' : '' }}">Hoàn tất</p></div>
+                {{-- Giao diện cho các trạng thái khác --}}
+                <div class="tracker-container">
+                    <div class="tracker-item">
+                        <div class="tracker-dot {{ $currentStep >= 1 ? 'active' : '' }}">✓</div>
+                        <p class="tracker-label {{ $currentStep == 1 ? 'active' : '' }}">Chờ xác nhận</p>
                     </div>
+                    <div class="tracker-line-container">
+                        <div class="tracker-line {{ $currentStep >= 2 ? 'tracker-line-filled' : '' }}"></div>
+                    </div>
+                    <div class="tracker-item">
+                        <div class="tracker-dot {{ $currentStep >= 2 ? 'active' : '' }}">@if($currentStep >= 2) ✓ @else 2 @endif</div>
+                        <p class="tracker-label {{ $currentStep == 2 ? 'active' : '' }}">Đang xử lý</p>
+                    </div>
+                    <div class="tracker-line-container">
+                        <div class="tracker-line {{ $currentStep >= 3 ? 'tracker-line-filled' : '' }}"></div>
+                    </div>
+                    <div class="tracker-item">
+                        <div class="tracker-dot {{ $currentStep >= 3 ? 'active' : '' }}">@if($currentStep >= 3) ✓ @else 3 @endif</div>
+                        <p class="tracker-label {{ $currentStep == 3 ? 'active' : '' }}">Đang giao</p>
+                    </div>
+                    <div class="tracker-line-container">
+                        <div class="tracker-line {{ $currentStep >= 4 ? 'tracker-line-filled' : '' }}"></div>
+                    </div>
+                    <div class="tracker-item">
+                        <div class="tracker-dot {{ $currentStep >= 4 ? 'active' : '' }}">@if($currentStep >= 4) ✓ @else 4 @endif</div>
+                        <p class="tracker-label {{ $currentStep == 4 ? 'active' : '' }}">Hoàn tất</p>
+                    </div>
+                </div>
                 @endif
             </div>
             @if($isOverdue)
-                <div class="alert alert-danger d-flex align-items-start mb-4" role="alert">
-                    <i class="fas fa-exclamation-circle me-3 mt-1 fs-5"></i>
-                    <div>
-                        Đã quá ngày hẹn nhận hàng. Đơn hàng của quý khách sẽ được giữ tại cửa hàng thêm <strong>3 ngày</strong> trước khi tự động hủy.
-                    </div>
+            <div class="alert alert-danger d-flex align-items-start mb-4" role="alert">
+                <i class="fas fa-exclamation-circle me-3 mt-1 fs-5"></i>
+                <div>
+                    Đã quá ngày hẹn nhận hàng. Đơn hàng của quý khách sẽ được giữ tại cửa hàng thêm <strong>3 ngày</strong> trước khi tự động hủy.
                 </div>
+            </div>
             @endif
 
             <div class="row g-4">
@@ -167,9 +351,9 @@
                             <div class="flex-grow-1">
                                 <p class="fw-bold text-dark mb-1">{{ $item->product_name }}</p>
                                 @if(!empty($item->variant_attributes) && is_iterable($item->variant_attributes))
-                                    @foreach($item->variant_attributes as $key => $value)
-                                        <p class="text-muted small mb-0">{{ $key }}: {{ $value }}</p>
-                                    @endforeach
+                                @foreach($item->variant_attributes as $key => $value)
+                                <p class="text-muted small mb-0">{{ $key }}: {{ $value }}</p>
+                                @endforeach
                                 @endif
                                 <p class="text-muted small mt-1 mb-1">SL: {{ $item->quantity }}</p>
                             </div>
@@ -185,18 +369,18 @@
                     <div class="d-flex flex-column" style="gap: 1rem;">
                         {{-- Box 1: Thời gian nhận hàng / Thông tin vận chuyển --}}
                         @if($isPickupOrder)
-                            <div class="info-box">
-                                <h6 class="fw-bold mb-3">Thời gian nhận hàng</h6>
-                                <p class="small mb-1"><strong>Ngày nhận:</strong> {{ renderDeliveryDate($order->desired_delivery_date) }}</p>
-                                @if($order->desired_delivery_time_slot)<p class="small mb-0"><strong>Khung giờ:</strong> {{ $order->desired_delivery_time_slot }}</p>@endif
-                            </div>
+                        <div class="info-box">
+                            <h6 class="fw-bold mb-3">Thời gian nhận hàng</h6>
+                            <p class="small mb-1"><strong>Ngày nhận:</strong> {{ renderDeliveryDate($order->desired_delivery_date) }}</p>
+                            @if($order->desired_delivery_time_slot)<p class="small mb-0"><strong>Khung giờ:</strong> {{ $order->desired_delivery_time_slot }}</p>@endif
+                        </div>
                         @else
-                            <div class="info-box">
-                                <h6 class="fw-bold mb-3">Thông tin vận chuyển</h6>
-                                @if($order->shipping_method)<p class="small mb-1"><strong>Đơn vị:</strong> {{ $order->shipping_method }}</p>@endif
-                                <p class="small mb-1"><strong>Ngày giao dự kiến:</strong> {{ renderDeliveryDate($order->desired_delivery_date) }}</p>
-                                @if($order->desired_delivery_time_slot)<p class="small mb-0"><strong>Khung giờ giao:</strong> {{ $order->desired_delivery_time_slot }}</p>@endif
-                            </div>
+                        <div class="info-box">
+                            <h6 class="fw-bold mb-3">Thông tin vận chuyển</h6>
+                            @if($order->shipping_method)<p class="small mb-1"><strong>Đơn vị:</strong> {{ $order->shipping_method }}</p>@endif
+                            <p class="small mb-1"><strong>Ngày giao dự kiến:</strong> {{ renderDeliveryDate($order->desired_delivery_date) }}</p>
+                            @if($order->desired_delivery_time_slot)<p class="small mb-0"><strong>Khung giờ giao:</strong> {{ $order->desired_delivery_time_slot }}</p>@endif
+                        </div>
                         @endif
 
                         {{-- Box 2: Địa chỉ giao hàng --}}
@@ -250,23 +434,34 @@
 
         <footer class="details-footer">
             @if($order->status == 'delivered')
-                @php
-                    $firstItem = $order->items->first();
-                    $canReview = $firstItem && !$firstItem->has_reviewed && $firstItem->product_variant_id;
+
+            @php
+            $firstItem = $order->items->first();
+            $canReview = $firstItem && !$firstItem->has_reviewed && $firstItem->product_variant_id;
+
+            $deliveredAt = $order->desired_delivery_date ?? $order->updated_at;
+            $daysSinceDelivered = $deliveredAt ? \Carbon\Carbon::parse($deliveredAt)->diffInDays(now()) : null;
+            $canRefund = $daysSinceDelivered !== null && $daysSinceDelivered <= 15;
                 @endphp
-                <a href="{{ route('refunds.create', ['orderItem' => $firstItem->id]) }}" class="btn-action btn-action-secondary">Yêu cầu trả hàng</a>
-                @if($canReview)
-                    <button type="button" class="btn-action write-review-btn"
-                        data-order-item-id="{{ $firstItem->id }}"
-                        data-product-variant-id="{{ $firstItem->product_variant_id }}"
-                        data-product-name="{{ $firstItem->product_name }}">
-                        Viết đánh giá
-                    </button>
+
+
+                @if($order->status == 'delivered' && $canRefund)
+                <a href="{{ route('refunds.create', ['orderItem' => $firstItem->id]) }}" class="btn-action btn-action-secondary">
+                    Yêu cầu trả hàng
+                </a>
                 @endif
-            @endif
-            @if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
+                 @if($canReview)
+                <button type="button" class="btn-action write-review-btn"
+                    data-order-item-id="{{ $firstItem->id }}"
+                    data-product-variant-id="{{ $firstItem->product_variant_id }}"
+                    data-product-name="{{ $firstItem->product_name }}">
+                    Viết đánh giá
+                </button>
+                @endif
+                @endif
+                @if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
                 <button class="btn-action" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn hàng</button>
-            @endif
+                @endif
         </footer>
     </div>
 </div>

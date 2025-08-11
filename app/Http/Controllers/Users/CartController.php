@@ -18,6 +18,7 @@ use App\Models\ProductInventory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 
 class CartController extends Controller
@@ -26,6 +27,10 @@ class CartController extends Controller
     {
         if (session()->has('buy_now_session') && session()->has('applied_coupon')) {
             session()->forget('applied_coupon');
+        }
+        $pointsApplied = session('points_applied');
+        if (isset($pointsApplied['source_type']) && $pointsApplied['source_type'] === 'buy-now') {
+            session()->forget('points_applied');
         }
         $user = auth()->user();
         $hasItems = false;
@@ -48,7 +53,7 @@ class CartController extends Controller
         if ($user && $user->cart) {
             // Load cart items từ DB cho user đã đăng nhập
             $items = $user->cart->items()
-                ->with('cartable.product', 'cartable.attributeValues.attribute')
+                ->with('cartable.product.coverImage', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
                 ->get()
                 ->filter(fn($item) => $item->cartable && $item->cartable->product)
                 ->map(function ($item) {
@@ -69,7 +74,7 @@ class CartController extends Controller
                         'price' => $item->price,
                         'quantity' => $item->quantity,
                         'stock_quantity' => $stockQuantity,
-                        'image' => $variant->image_url ?? '',
+                        'image' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg')),
                         'variant_attributes' => $attributes,
                         'cartable_type' => $item->cartable_type,
                         'points_to_earn' => $item->points_to_earn,
@@ -86,7 +91,7 @@ class CartController extends Controller
                 $cartableId = $data['cartable_id'];
                 switch ($cartableType) {
                     case \App\Models\ProductVariant::class:
-                        $cartable = \App\Models\ProductVariant::with(['product', 'attributeValues.attribute'])
+                        $cartable = \App\Models\ProductVariant::with(['product.coverImage', 'attributeValues.attribute', 'primaryImage'])
                             ->find($cartableId);
                         break;
                     default:
@@ -110,7 +115,7 @@ class CartController extends Controller
                     'price' => (float)($data['price'] ?? 0),
                     'quantity' => (int)($data['quantity'] ?? 1),
                     'stock_quantity' => $stockQuantity,
-                    'image' => $data['image'] ?? $cartable->image_url ?? '',
+                    'image' => $data['image'] ?? ($cartable && $cartable->primaryImage && file_exists(storage_path('app/public/' . $cartable->primaryImage->path)) ? Storage::url($cartable->primaryImage->path) . '?v=' . time() : ($cartable && $cartable->product && $cartable->product->coverImage && file_exists(storage_path('app/public/' . $cartable->product->coverImage->path)) ? Storage::url($cartable->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg'))),
                     'variant_attributes' => $attributes,
                     'cartable_type' => $cartableType,
                 ];
@@ -149,6 +154,11 @@ class CartController extends Controller
 
 
         $total = max(0, $subtotal - $discount);
+        // thêm ngày 7/8
+        $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
+        $pointsDiscount = $pointsApplied['discount'] ?? 0;
+        $total = max(0, $total - $pointsDiscount);
+        // thêm ngày 7/8
         // Lấy coupon còn hiệu lực (ví dụ đơn giản)
         $availableCoupons = Coupon::where('status', 'active')
         ->where('is_public', 1)
@@ -186,7 +196,7 @@ class CartController extends Controller
         // Lấy số dư điểm hiện tại của người dùng
         $pointsBalance = $user ? $user->loyalty_points_balance : 0;
         // dd($items->pluck('image'));
-        return view('users.cart.layout.main', compact('items', 'subtotal', 'discount', 'total', 'voucherCode','availableCoupons', 'totalPointsToEarn', 'pointsBalance'));
+        return view('users.cart.layout.main', compact('items', 'subtotal', 'discount', 'total', 'voucherCode','availableCoupons', 'totalPointsToEarn', 'pointsBalance','pointsApplied'));
     }
 
     // thêm sản phẩm vào giỏ
@@ -202,7 +212,7 @@ class CartController extends Controller
 
         // Lấy biến thể sản phẩm
         if (!empty($validated['product_variant_id'])) {
-            $variant = ProductVariant::find($validated['product_variant_id']);
+            $variant = ProductVariant::with('product.coverImage', 'attributeValues', 'primaryImage')->find($validated['product_variant_id']);
             if (!$variant) {
                 return response()->json(['error' => 'Không tìm thấy biến thể sản phẩm.'], 404);
             }
@@ -284,7 +294,7 @@ class CartController extends Controller
                 'name'       => $variant->name ?? $variant->product->name,
                 'price'      => $finalPrice,
                 'quantity'   => $quantity,
-                'image'      => $variant->image_url,
+                'image'      => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg')),
             ];
         }
         session()->put('cart', $cart);
@@ -461,6 +471,7 @@ class CartController extends Controller
                         $voucherRemoved = true;
                         $discount = 0;
                     }
+                    session()->forget('points_applied');
                     $subtotal = 0;
                     $totalQuantity = 0;
                 } else {
@@ -563,8 +574,11 @@ class CartController extends Controller
                     }
                 }
             }
+            $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
+            $pointsDiscount = $pointsApplied['discount'] ?? 0;
 
-            $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
+            $totalAfterDiscount = max($totalBeforeDiscount - $discount - $pointsDiscount, 0);
+            // $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
 
             $item->quantity = $quantity;
             $item->price = $newPrice;
@@ -613,8 +627,12 @@ class CartController extends Controller
                     }
                 }
             }
+            $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
+            $pointsDiscount = $pointsApplied['discount'] ?? 0;
 
-            $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
+            $totalAfterDiscount = max($totalBeforeDiscount - $discount - $pointsDiscount, 0);
+
+            // $totalAfterDiscount = max($totalBeforeDiscount - $discount, 0);
             session()->put('cart', $cart);
         }
 
@@ -622,6 +640,7 @@ class CartController extends Controller
             'success' => true,
             'subtotal_before_dc' => number_format($totalBeforeDiscount, 0, ',', '.') . '₫',
             'discount' => $discount > 0 && !$voucherRemoved ? '-' . number_format($discount, 0, ',', '.') . '₫' : '0₫',
+            'points_discount' => $pointsDiscount > 0 ? '-' . number_format($pointsDiscount, 0, ',', '.') . '₫' : '0₫',
             'total_after_dc' => number_format($totalAfterDiscount, 0, ',', '.') . '₫',
             'voucher_removed' => $voucherRemoved,
         ]);
@@ -729,7 +748,12 @@ class CartController extends Controller
             // ====== Tính giảm giá ======
             $discount = round($coupon->calculateDiscount($subtotal));
             $totalAfterDiscount = max($subtotal - $discount, 0);
+            $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
+            $pointsDiscount = $pointsApplied['discount'] ?? 0;
 
+            // Tính tổng giảm giá (voucher + điểm)
+            $totalDiscount = $discount + $pointsDiscount;
+            $totalAfterDiscount = max($subtotal - $totalDiscount, 0);
             // Lưu thông tin mã đã áp dụng vào session
             session()->put('applied_coupon', [
                 'id'          => $coupon->id,
@@ -741,6 +765,7 @@ class CartController extends Controller
             return response()->json([
                 'success'              => true,
                 'discount'             => $discount,
+                'points_discount'      => $pointsDiscount, // trả về điểm giảm cho frontend
                 'total_after_discount' => $totalAfterDiscount,
                 'message'              => 'Mã giảm giá đã được áp dụng.',
                 'source_type'          => $sourceType,
@@ -788,7 +813,7 @@ class CartController extends Controller
         if (auth()->check()) {
             $cart = auth()->user()->cart;
             return $cart
-                ? $cart->items()->with('productVariant.product', 'productVariant.attributeValues.attribute')->get()
+                ? $cart->items()->with('productVariant.product.coverImage', 'productVariant.attributeValues.attribute', 'productVariant.primaryImage')->get()
                 : collect();
         }
 
@@ -832,7 +857,7 @@ class CartController extends Controller
         $oldCart = $cart; // Lưu giỏ hàng cũ
 
         foreach ($request->products as $item) {
-            $variant = ProductVariant::with('product', 'attributeValues')->find($item['product_variant_id']);
+            $variant = ProductVariant::with('product.coverImage', 'attributeValues', 'primaryImage')->find($item['product_variant_id']);
             if (!$variant) {
                 $results[] = [
                     'variant_id' => $item['product_variant_id'],
@@ -890,7 +915,7 @@ class CartController extends Controller
                     'name' => $variant->product->name,
                     'price' => $finalPrice,
                     'quantity' => $item['quantity'],
-                    'image' => $variant->image_url,
+                    'image' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg')),
                     'cartable_type' => \App\Models\ProductVariant::class,
                     'cartable_id' => $variant->id,
                 ];
@@ -974,7 +999,7 @@ class CartController extends Controller
             }
         }
 
-        session()->forget(['cart', 'applied_coupon', 'discount', 'applied_voucher']);
+        session()->forget(['cart', 'applied_coupon', 'discount', 'applied_voucher','points_applied']);
 
         // Dữ liệu phản hồi về tổng tiền và số lượng = 0
         return response()->json([
@@ -1102,7 +1127,7 @@ class CartController extends Controller
                         'name' => $variant->name ?? $variant->product->name,
                         'price' => $finalPrice,
                         'quantity' => $quantity,
-                        'image' => $variant->image_url,
+                        'image' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg')),
                     ];
                 }
 
@@ -1172,31 +1197,123 @@ class CartController extends Controller
    /**
      * Xử lý AJAX để áp dụng điểm thưởng vào giỏ hàng.
      */
+    // public function applyPoints(Request $request)
+    // {
+    //     // --- BƯỚC 1: KIỂM TRA ĐĂNG NHẬP VÀ VALIDATE DỮ LIỆU ---
+    //     if (!Auth::check()) {
+    //         return response()->json(['success' => false, 'message' => 'Vui lòng đăng nhập để sử dụng chức năng này.']);
+    //     }
+
+    //     $user = Auth::user();
+
+    //     // --- BƯỚC 2: TÍNH TOÁN TỔNG TIỀN GIỎ HÀNG (THEO LOGIC CỦA BẠN) ---
+    //     $subtotal = 0;
+    //     if ($user && $user->cart) {
+    //         // User đã đăng nhập, tính tổng từ database
+    //         $subtotal = $user->cart->items->sum(fn($item) => $item->price * $item->quantity);
+    //     } else {
+    //         // User là khách, tính tổng từ session
+    //         $sessionCart = session('cart', []);
+    //         $subtotal = collect($sessionCart)->sum(fn($item) => ($item['price'] ?? 0) * ($item['quantity'] ?? 0));
+    //     }
+
+    //     // Trừ đi giảm giá từ coupon đã áp dụng (nếu có)
+    //     $couponDiscount = session('applied_coupon.discount', 0);
+    //     $cartTotal = max(0, $subtotal - $couponDiscount);
+
+    //     // --- BƯỚC 3: VALIDATE ĐIỂM SỬ DỤNG ---
+    //     $validator = Validator::make($request->all(), [
+    //         'points' => 'required|integer|min:1',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json(['success' => false, 'message' => $validator->errors()->first()]);
+    //     }
+
+    //     $pointsToUse = (int) $request->input('points');
+
+    //     // --- BƯỚC 4: KIỂM TRA CÁC QUY TẮC NGHIỆP VỤ ---
+    //     if ($pointsToUse > $user->loyalty_points_balance) {
+    //         return response()->json(['success' => false, 'message' => 'Bạn không đủ điểm thưởng để sử dụng.']);
+    //     }
+
+    //     $rateValue = Cache::remember('points_to_currency_rate', 3600, function () {
+    //         return DB::table('system_settings')->where('key', 'points_to_currency_rate')->value('value');
+    //     });
+    //     $conversionRate = (float) ($rateValue ?? 1);
+    //     $discountAmount = $pointsToUse * $conversionRate;
+
+    //     if ($discountAmount > $cartTotal) {
+    //         return response()->json(['success' => false, 'message' => 'Số điểm áp dụng không được vượt quá tổng giá trị đơn hàng.']);
+    //     }
+
+    //     // --- BƯỚC 5: LƯU TẠM VÀO SESSION VÀ PHẢN HỒI ---
+    //     session()->put('points_applied', [
+    //         'points' => $pointsToUse,
+    //         'discount' => $discountAmount,
+    //     ]);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Áp dụng điểm thưởng thành công!',
+    //         'discount_amount' => $discountAmount,
+    //         'new_grand_total' => $cartTotal - $discountAmount,
+    //     ]);
+    // }
     public function applyPoints(Request $request)
     {
-        // --- BƯỚC 1: KIỂM TRA ĐĂNG NHẬP VÀ VALIDATE DỮ LIỆU ---
         if (!Auth::check()) {
             return response()->json(['success' => false, 'message' => 'Vui lòng đăng nhập để sử dụng chức năng này.']);
         }
 
         $user = Auth::user();
 
-        // --- BƯỚC 2: TÍNH TOÁN TỔNG TIỀN GIỎ HÀNG (THEO LOGIC CỦA BẠN) ---
-        $subtotal = 0;
-        if ($user && $user->cart) {
-            // User đã đăng nhập, tính tổng từ database
-            $subtotal = $user->cart->items->sum(fn($item) => $item->price * $item->quantity);
-        } else {
-            // User là khách, tính tổng từ session
-            $sessionCart = session('cart', []);
-            $subtotal = collect($sessionCart)->sum(fn($item) => ($item['price'] ?? 0) * ($item['quantity'] ?? 0));
+        // Xác định subtotal & nguồn dữ liệu ưu tiên buy-now, sau đó cart (đăng nhập hoặc session)
+        $subtotal = null;
+        $sourceType = null;
+
+        // Ưu tiên xử lý buy-now
+        if (session()->has('buy_now_session')) {
+            $buyNowData = session('buy_now_session');
+            if (isset($buyNowData['items']) && is_array($buyNowData['items'])) {
+                $subtotal = collect($buyNowData['items'])->sum(fn($item) =>
+                    (float)($item['price'] ?? 0) * (int)($item['quantity'] ?? 1)
+                );
+            } elseif (isset($buyNowData['price'], $buyNowData['quantity'])) {
+                $subtotal = (float)$buyNowData['price'] * (int)$buyNowData['quantity'];
+            }
+            $sourceType = 'buy-now';
         }
 
-        // Trừ đi giảm giá từ coupon đã áp dụng (nếu có)
+        // Nếu chưa có subtotal, kiểm tra giỏ hàng đăng nhập
+        if (is_null($subtotal)) {
+            $cart = $user->cart()->with('items')->first();
+            if ($cart && $cart->items->isNotEmpty()) {
+                $subtotal = $cart->items->sum(fn($item) => $item->price * $item->quantity);
+                $sourceType = 'cart';
+            }
+        }
+
+        // Nếu chưa có subtotal, kiểm tra giỏ hàng session (khách)
+        if (is_null($subtotal)) {
+            $sessionCart = session('cart', []);
+            if (is_array($sessionCart) && count($sessionCart) > 0) {
+                $subtotal = collect($sessionCart)->sum(fn($item) =>
+                    (float)($item['price'] ?? 0) * (int)($item['quantity'] ?? 0)
+                );
+                $sourceType = 'cart';
+            }
+        }
+
+        if (is_null($subtotal) || $subtotal <= 0) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy sản phẩm hợp lệ.']);
+        }
+
+        // Lấy giảm giá từ coupon đã áp dụng (nếu có)
         $couponDiscount = session('applied_coupon.discount', 0);
         $cartTotal = max(0, $subtotal - $couponDiscount);
 
-        // --- BƯỚC 3: VALIDATE ĐIỂM SỬ DỤNG ---
+        // Validate điểm sử dụng
         $validator = Validator::make($request->all(), [
             'points' => 'required|integer|min:1',
         ]);
@@ -1207,7 +1324,6 @@ class CartController extends Controller
 
         $pointsToUse = (int) $request->input('points');
 
-        // --- BƯỚC 4: KIỂM TRA CÁC QUY TẮC NGHIỆP VỤ ---
         if ($pointsToUse > $user->loyalty_points_balance) {
             return response()->json(['success' => false, 'message' => 'Bạn không đủ điểm thưởng để sử dụng.']);
         }
@@ -1222,10 +1338,11 @@ class CartController extends Controller
             return response()->json(['success' => false, 'message' => 'Số điểm áp dụng không được vượt quá tổng giá trị đơn hàng.']);
         }
 
-        // --- BƯỚC 5: LƯU TẠM VÀO SESSION VÀ PHẢN HỒI ---
+        // Lưu điểm áp dụng vào session, kèm theo nguồn (sourceType)
         session()->put('points_applied', [
             'points' => $pointsToUse,
             'discount' => $discountAmount,
+            'source_type' => $sourceType,
         ]);
 
         return response()->json([
@@ -1233,6 +1350,7 @@ class CartController extends Controller
             'message' => 'Áp dụng điểm thưởng thành công!',
             'discount_amount' => $discountAmount,
             'new_grand_total' => $cartTotal - $discountAmount,
+            'source_type' => $sourceType,
         ]);
     }
 }

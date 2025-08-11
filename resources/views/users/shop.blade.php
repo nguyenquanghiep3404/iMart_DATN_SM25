@@ -433,17 +433,6 @@
                 }
 
             });
-            // ✅ Xử lý khi người dùng bấm nút Back hoặc Forward
-            window.addEventListener('popstate', function(event) {
-                ajaxLoad(window.location.href);
-            });
-        });
-
-        // Reload lại nếu trình duyệt dùng bfcache (back/forward cache)
-        window.addEventListener('pageshow', function(event) {
-            if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
-                location.reload();
-            }
         });
     </script>
 @endpush
