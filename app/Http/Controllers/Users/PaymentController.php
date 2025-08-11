@@ -2315,8 +2315,13 @@ class PaymentController extends Controller
         }
     }
 
-    public function confirmPaymentByToken($token)
+    public function confirmPaymentByToken($token = null)
     {
+        // Kiểm tra token có tồn tại không
+        if (!$token || empty(trim($token))) {
+            return response('<h1>Link không hợp lệ!</h1><p>Token xác nhận không được cung cấp.</p>', 400);
+        }
+
         // Tìm đơn hàng với token hợp lệ và đang chờ xác nhận
         $order = Order::where('confirmation_token', $token)
             ->where('status', Order::STATUS_PENDING_CONFIRMATION) // Sử dụng hằng số nếu có

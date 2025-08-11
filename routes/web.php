@@ -879,4 +879,7 @@ require __DIR__ . '/auth.php';
 //     $response = Telegram::setWebhook(['url' => $url]);
 //     return 'Webhook setup: ' . $response->getDescription();
 // });
+// Route xử lý khi không có token
+Route::get('/payments/confirm', [PaymentController::class, 'confirmPaymentByToken'])->name('payments.confirm.no-token');
+// Route xử lý khi có token
 Route::get('/payments/confirm/{token}', [PaymentController::class, 'confirmPaymentByToken'])->name('payments.confirm');

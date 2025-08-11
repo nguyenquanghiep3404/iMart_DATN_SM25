@@ -1405,8 +1405,15 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    if (data.redirect_url) window.location.href = data.redirect_url;
-                    else window.location.href = `{{ route('payments.success') }}?order_id=${data.order.id}`;
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else if (data.payment_url) {
+                        window.location.href = data.payment_url;
+                    } else if (data.order && data.order.id) {
+                        window.location.href = `{{ route('payments.success') }}?order_id=${data.order.id}`;
+                    } else {
+                        window.location.href = `{{ route('payments.success') }}`;
+                    }
                 } else {
                     this.helpers.showAlert(data.message || 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.', 'danger');
                     if (data.errors) {
