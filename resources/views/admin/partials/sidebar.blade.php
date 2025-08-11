@@ -91,6 +91,11 @@
                     'active_check' => ['admin.stock-transfers.'],
                 ],
                 [
+                    'label' => 'Chuyển kho tự động',
+                    'route' => 'admin.auto-stock-transfers.manage',
+                    'active_check' => ['admin.auto-stock-transfers.'],
+                ],
+                [
                     'label' => 'Trạm đóng gói',
                     'route' => 'admin.packing-station.index',
                     'active_check' => ['admin.packing-station.'],

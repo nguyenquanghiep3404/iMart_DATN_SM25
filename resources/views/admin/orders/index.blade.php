@@ -2161,13 +2161,13 @@
                 refreshCurrentPage();
             } else {
                 if (response.status === 422) {
-                    showToast('Vui lòng chọn trạng thái hợp lệ', 'error');
+                    showToast(result.message || 'Dữ liệu không hợp lệ', 'error');
                 } else if (response.status === 403) {
                     showToast('Bạn không có quyền thực hiện hành động này.', 'error');
                 } else if (response.status === 404) {
                     showToast('Không tìm thấy đơn hàng hoặc shipper.', 'error');
                 } else {
-                    showToast('Vui lòng chọn trạng thái hợp lệ', 'error');
+                    showToast(result.message || 'Có lỗi xảy ra khi gán shipper', 'error');
                 }
             }
         } catch (error) {

@@ -183,5 +183,7 @@ const mediaLibraryModal = {
 };
 
 // Gắn sự kiện cho nút "Chọn ảnh" trong modal
-mediaLibraryModal.elements.selectBtn.addEventListener('click', () => mediaLibraryModal.handleConfirmSelection());
+if (mediaLibraryModal.elements.selectBtn) {
+    mediaLibraryModal.elements.selectBtn.addEventListener('click', () => mediaLibraryModal.handleConfirmSelection());
+}
 

@@ -257,4 +257,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(StoreLocation::class, 'user_store_location');
     }
 
+    /**
+     * Lấy tất cả kho (warehouse) mà shipper này được gán.
+     */
+    public function warehouseAssignments()
+    {
+        return $this->belongsToMany(StoreLocation::class, 'user_store_location', 'user_id', 'store_location_id')
+                    ->where('type', 'warehouse');
+    }
 }

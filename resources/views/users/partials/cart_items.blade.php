@@ -2,14 +2,13 @@
     <div id="cart-items-wrapper">
         @foreach ($items as $item)
             @php
-                // Khai báo các biến để truy cập dữ liệu lồng nhau một cách gọn gàng
-                // Giả định cấu trúc trả về từ controller là $item->productVariant->product
-                $product = $item->productVariant->product ?? null;
-                $variant = $item->productVariant ?? null;
-                $imageUrl = $variant->primaryImage->file_path ?? ($item->image ?? 'assets/users/img/shop/electronics/thumbs/08.png');
-                $productName = $product->name ?? ($item->name ?? 'Sản phẩm không xác định');
-                $productSlug = $product->slug ?? ($item->slug ?? '#');
-            @endphp
+                    // Khai báo các biến để truy cập dữ liệu lồng nhau một cách gọn gàng
+                    // Giả định cấu trúc trả về từ controller là $item->productVariant->product
+                    $product = $item->productVariant->product ?? null;
+                    $variant = $item->productVariant ?? null;
+                    $productName = $product->name ?? ($item->name ?? 'Sản phẩm không xác định');
+                    $productSlug = $product->slug ?? ($item->slug ?? '#');
+                @endphp
             
             <div class="d-flex align-items-center mb-3 border-bottom pb-2 cart-item" 
                  data-item-id="{{ $item->id }}"
@@ -18,7 +17,7 @@
 
                 {{-- Hình ảnh --}}
                 <a class="flex-shrink-0" href="{{ $productSlug !== '#' ? route('users.products.show', ['slug' => $productSlug]) : '#' }}">
-                    <img src="{{ asset($imageUrl) }}" width="80" alt="{{ $productName }}">
+                    <img src="{{ $item->image ?? asset('images/placeholder.jpg') }}" width="80" alt="{{ $productName }}">
                 </a>
 
                 {{-- Nội dung bên phải --}}

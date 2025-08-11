@@ -558,8 +558,8 @@ class HomeController extends Controller
 
 
                 // Lấy hình ảnh sản phẩm chính (ưu tiên primaryImage của variant, sau đó đến coverImage của product)
-                $mainImage = $mainVariant->primaryImage ? Storage::url($mainVariant->primaryImage->path)
-                    : ($mainProductData->coverImage ? Storage::url($mainProductData->coverImage->path)
+                $mainImage = $mainVariant && $mainVariant->primaryImage && file_exists(storage_path('app/public/' . $mainVariant->primaryImage->path)) ? Storage::url($mainVariant->primaryImage->path)
+                    : ($mainProductData && $mainProductData->coverImage && file_exists(storage_path('app/public/' . $mainProductData->coverImage->path)) ? Storage::url($mainProductData->coverImage->path)
                         : asset('images/placeholder.jpg'));
                 // Dữ liệu sản phẩm chính
                 $mainProductItem = [
@@ -601,8 +601,8 @@ class HomeController extends Controller
                         'product_id' => $product->id,
                         'name' => $product->name,
                         'slug' => $product->slug,
-                        'image' => $variant->primaryImage ? Storage::url($variant->primaryImage->path)
-                            : ($product->coverImage ? Storage::url($product->coverImage->path)
+                        'image' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path)
+                            : ($product && $product->coverImage && file_exists(storage_path('app/public/' . $product->coverImage->path)) ? Storage::url($product->coverImage->path)
                                 : asset('images/placeholder.jpg')),
                         'price' => $price,
                         'sale_price' => $salePrice,
@@ -995,7 +995,7 @@ class HomeController extends Controller
         $categories = Category::all();
         $parentCategories = $categories->whereNull('parent_id');
 
-        if ($request->ajax()) {
+        if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'sidebar' => view('users.partials.category_product.product_sidebar', compact('categories', 'parentCategories', 'currentCategory'))->render(),
                 'products' => view('users.partials.category_product.shop_products', compact('products'))->render(),

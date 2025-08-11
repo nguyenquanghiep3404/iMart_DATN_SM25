@@ -18,6 +18,7 @@ use App\Models\ProductInventory;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 
 class CartController extends Controller
@@ -52,7 +53,7 @@ class CartController extends Controller
         if ($user && $user->cart) {
             // Load cart items từ DB cho user đã đăng nhập
             $items = $user->cart->items()
-                ->with('cartable.product', 'cartable.attributeValues.attribute')
+                ->with('cartable.product.coverImage', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
                 ->get()
                 ->filter(fn($item) => $item->cartable && $item->cartable->product)
                 ->map(function ($item) {
@@ -73,7 +74,7 @@ class CartController extends Controller
                         'price' => $item->price,
                         'quantity' => $item->quantity,
                         'stock_quantity' => $stockQuantity,
-                        'image' => $variant->image_url ?? '',
+                        'image' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg')),
                         'variant_attributes' => $attributes,
                         'cartable_type' => $item->cartable_type,
                         'points_to_earn' => $item->points_to_earn,
@@ -90,7 +91,7 @@ class CartController extends Controller
                 $cartableId = $data['cartable_id'];
                 switch ($cartableType) {
                     case \App\Models\ProductVariant::class:
-                        $cartable = \App\Models\ProductVariant::with(['product', 'attributeValues.attribute'])
+                        $cartable = \App\Models\ProductVariant::with(['product.coverImage', 'attributeValues.attribute', 'primaryImage'])
                             ->find($cartableId);
                         break;
                     default:
@@ -114,7 +115,7 @@ class CartController extends Controller
                     'price' => (float)($data['price'] ?? 0),
                     'quantity' => (int)($data['quantity'] ?? 1),
                     'stock_quantity' => $stockQuantity,
-                    'image' => $data['image'] ?? $cartable->image_url ?? '',
+                    'image' => $data['image'] ?? ($cartable && $cartable->primaryImage && file_exists(storage_path('app/public/' . $cartable->primaryImage->path)) ? Storage::url($cartable->primaryImage->path) . '?v=' . time() : ($cartable && $cartable->product && $cartable->product->coverImage && file_exists(storage_path('app/public/' . $cartable->product->coverImage->path)) ? Storage::url($cartable->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg'))),
                     'variant_attributes' => $attributes,
                     'cartable_type' => $cartableType,
                 ];
@@ -211,7 +212,7 @@ class CartController extends Controller
 
         // Lấy biến thể sản phẩm
         if (!empty($validated['product_variant_id'])) {
-            $variant = ProductVariant::find($validated['product_variant_id']);
+            $variant = ProductVariant::with('product.coverImage', 'attributeValues', 'primaryImage')->find($validated['product_variant_id']);
             if (!$variant) {
                 return response()->json(['error' => 'Không tìm thấy biến thể sản phẩm.'], 404);
             }
@@ -293,7 +294,7 @@ class CartController extends Controller
                 'name'       => $variant->name ?? $variant->product->name,
                 'price'      => $finalPrice,
                 'quantity'   => $quantity,
-                'image'      => $variant->image_url,
+                'image'      => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg')),
             ];
         }
         session()->put('cart', $cart);
@@ -986,7 +987,7 @@ class CartController extends Controller
         if (auth()->check()) {
             $cart = auth()->user()->cart;
             return $cart
-                ? $cart->items()->with('productVariant.product', 'productVariant.attributeValues.attribute')->get()
+                ? $cart->items()->with('productVariant.product.coverImage', 'productVariant.attributeValues.attribute', 'productVariant.primaryImage')->get()
                 : collect();
         }
 
@@ -1030,7 +1031,7 @@ class CartController extends Controller
         $oldCart = $cart; // Lưu giỏ hàng cũ
 
         foreach ($request->products as $item) {
-            $variant = ProductVariant::with('product', 'attributeValues')->find($item['product_variant_id']);
+            $variant = ProductVariant::with('product.coverImage', 'attributeValues', 'primaryImage')->find($item['product_variant_id']);
             if (!$variant) {
                 $results[] = [
                     'variant_id' => $item['product_variant_id'],
@@ -1088,7 +1089,7 @@ class CartController extends Controller
                     'name' => $variant->product->name,
                     'price' => $finalPrice,
                     'quantity' => $item['quantity'],
-                    'image' => $variant->image_url,
+                    'image' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg')),
                     'cartable_type' => \App\Models\ProductVariant::class,
                     'cartable_id' => $variant->id,
                 ];
@@ -1300,7 +1301,7 @@ class CartController extends Controller
                         'name' => $variant->name ?? $variant->product->name,
                         'price' => $finalPrice,
                         'quantity' => $quantity,
-                        'image' => $variant->image_url,
+                        'image' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg')),
                     ];
                 }
 

@@ -205,6 +205,8 @@
                     </form>
                     {{-- ACTION BUTTONS --}}
                     <div class="flex items-center gap-2">
+                        <a href="{{ route('admin.users.trash') }}" class="px-4 py-2.5 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold flex items-center justify-center space-x-2">
+                            <i class="fas fa-trash"></i>Thùng rác</a>
                         <a href="{{ route('admin.users.index') }}" id="refresh-button" class="btn btn-secondary inline-flex items-center" title="Làm mới danh sách">
                             <i class="fas fa-sync-alt mr-0 sm:mr-2"></i> <span class="hidden sm:inline">Làm mới</span>
                         </a>
