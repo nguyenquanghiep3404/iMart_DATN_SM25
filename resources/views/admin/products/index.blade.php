@@ -99,7 +99,6 @@
                             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider min-w-[250px]">Tên sản phẩm</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Danh mục</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giá</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tồn kho</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Loại</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Trạng thái</th>
                             <th class="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider w-24">Thao tác</th>
@@ -132,7 +131,6 @@
                                     <span class="block text-xs text-slate-500 line-through">{{ number_format($variant->price, 0, ',', '.') }} ₫</span>
                                     @endif
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600 font-medium">{{ $product->variants->sum('stock') }}</td>
                             <td class="px-4 py-3 whitespace-nowrap text-sm">
                                 @if ($product->type == 'simple')
                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-sky-100 text-sky-700">Đơn giản</span>

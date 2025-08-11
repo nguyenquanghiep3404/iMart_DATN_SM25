@@ -70,9 +70,10 @@ use App\Http\Controllers\GuestOrderController;
 use App\Http\Controllers\ReorderController;
 use App\Http\Controllers\Admin\InventoryDashboardController;
 use App\Http\Controllers\Admin\InventoryAdjustmentController;
+use App\Http\Controllers\Admin\AutoStockTransferController;
 
 Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
-
+Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping-fee');
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
 Route::get('/cart/recover-result', function () {
@@ -96,7 +97,8 @@ Route::get('/cart/offcanvas', [CarOffController::class, 'index']);
 
 Route::prefix('payments')->name('payments.')->group(function () {
     Route::get('/', [PaymentController::class, 'index'])->name('index');
-    Route::post('/process', [PaymentController::class, 'processOrder'])->name('process');
+    Route::post('/process', [PaymentController::class, 'processOrder'])->middleware('auth')->name('process');
+    Route::post('/process-guest', [PaymentController::class, 'processOrder'])->name('process.guest');
     Route::get('/success', [PaymentController::class, 'success'])->name('success');
 
     // Routes cho VNPay - nguyenquanghiep3404
@@ -246,8 +248,6 @@ Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->n
 
 // Routes cho thanh toán ( Sang PaymentController )
 Route::get('/payments', [PaymentController::class, 'index'])->name('payments.information');
-Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
-Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
 
 // --- Chat của khách hàng ---
 Route::prefix('chat')->name('client.chat.')->group(function () {
@@ -280,10 +280,10 @@ Route::prefix('api/locations')->name('api.locations.')->group(function () {
 
 // STORE LOCATIONS API ROUTES
 //==========================================================================
-Route::prefix('api/store-locations')->name('api.store-locations.')->group(function () {
+Route::prefix('api/store-locations')->name('api.stores.')->group(function () {
     Route::get('/provinces', [PaymentController::class, 'getProvincesWithStores'])->name('provinces');
     Route::get('/districts', [PaymentController::class, 'getDistrictsWithStores'])->name('districts');
-    Route::get('/stores', [PaymentController::class, 'getStoreLocations'])->name('stores');
+    Route::get('/stores', [PaymentController::class, 'getStoreLocations'])->name('locations'); // Sửa tên này để tránh trùng lặp nếu có
 });
 
 // API lấy địa chỉ GHN ( Để lại nếu không cần bỏ được để xem xét)
@@ -815,8 +815,21 @@ Route::prefix('admin')
         });
         Route::resource('stock-transfers', StockTransferController::class);
         
+        // Routes cho Auto Stock Transfer
+        Route::prefix('auto-stock-transfers')->name('auto-stock-transfers.')->group(function () {
+            Route::get('/', [AutoStockTransferController::class, 'index'])->name('index');
+            Route::get('/manage', [AutoStockTransferController::class, 'manage'])->name('manage');
+            Route::get('/statistics', [AutoStockTransferController::class, 'statistics'])->name('statistics');
+            Route::get('/{id}', [AutoStockTransferController::class, 'show'])->name('show');
+            Route::post('/{id}/auto-process', [AutoStockTransferController::class, 'autoProcess'])->name('auto-process');
+            Route::post('/{id}/cancel', [AutoStockTransferController::class, 'cancel'])->name('cancel');
+            Route::post('/check-and-create', [AutoStockTransferController::class, 'checkAndCreateForOrder'])->name('check-and-create');
+        });
+        
         Route::get('/product-variants/{id}/adjust-form', [InventoryAdjustmentController::class, 'showAdjustForm'])->name('product-variants.adjust-form');
         Route::post('/product-variants/{id}/adjust-stock', [InventoryAdjustmentController::class, 'adjustStock'])->name('product-variants.adjust-stock')->middleware('auth');
+        Route::post('/ajax/calculate-shipping-options', [PaymentController::class, 'ajaxCalculateShippingOptions']);
+
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')
@@ -858,7 +871,6 @@ require __DIR__ . '/auth.php';
 //     ]);
 // });
 
-Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping_fee');
 // Route::get('api/old-provinces', [AddressesController::class, 'getOldProvinces']);
 // Route::get('api/old-districts/{province_code}', [AddressesController::class, 'getOldDistricts']);
 // Route::get('api/old-wards/{district_code}', [AddressesController::class, 'getOldWards']);

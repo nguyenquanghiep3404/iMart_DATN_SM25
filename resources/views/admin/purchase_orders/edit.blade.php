@@ -3,6 +3,7 @@
 @section('title', 'Cập nhật Phiếu Nhập Kho')
 
 @push('styles')
+    {{-- CSS Styles --}}
     <style>
         .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
         [x-cloak] { display: none !important; }
@@ -12,7 +13,7 @@
         input[type=number] { -moz-appearance: textfield; }
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         .status-badge { display: inline-flex; align-items: center; padding: 0.25em 0.6em; font-size: 0.875rem; font-weight: 600; line-height: 1; border-radius: 0.375rem; }
-        .status-pending { background-color: #FEF3C7; color: #92400E; }
+        .status-pending, .status-waiting_for_scan { background-color: #FEF3C7; color: #92400E; }
         .status-completed { background-color: #D1FAE5; color: #065F46; }
         .status-cancelled { background-color: #FEE2E2; color: #991B1B; }
         .disabled-ui { pointer-events: none; opacity: 0.6; background-color: #f9fafb; }
@@ -25,12 +26,13 @@
 @endpush
 
 @section('content')
+{{-- Dữ liệu được truyền từ controller đã được chuẩn hóa --}}
 <div class="body-content px-4 sm:px-6 md:px-8 py-8" x-data="pageData({
     suppliersData: {{ Js::from($suppliers) }},
     provincesData: {{ Js::from($provinces) }},
     districtsData: {{ Js::from($districts) }},
     locationsData: {{ Js::from($locations) }},
-    purchaseOrder: {{ Js::from($purchaseOrder) }}
+    purchaseOrderData: {{ Js::from($purchaseOrderData) }}
 })">
 
     <div class="container mx-auto max-w-full">
@@ -45,7 +47,7 @@
                 </div>
                 <div class="mt-4 sm:mt-0 flex space-x-2">
                     <a href="{{ route('admin.purchase-orders.index') }}" class="w-full sm:w-auto flex items-center justify-center bg-white text-gray-700 font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-100 border border-gray-300 transition-colors">
-                        Hủy Bỏ
+                        Quay Lại
                     </a>
                     <button type="submit" :disabled="isLocked"
                             class="w-full sm:w-auto flex items-center justify-center bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors"
@@ -56,8 +58,20 @@
                 </div>
             </header>
 
+            {{-- Hiển thị lỗi Validation --}}
+            @if ($errors->any())
+                <div class="card bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                    <strong class="font-bold">Có lỗi xảy ra!</strong>
+                    <ul class="mt-2 list-disc list-inside">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {{-- Cột trái --}}
+                {{-- Cột trái: Bị vô hiệu hóa nếu isLocked=true --}}
                 <div class="lg:col-span-2 space-y-8" :class="{ 'disabled-ui': isLocked }">
                     <div class="card">
                         <div class="p-6">
@@ -70,6 +84,7 @@
                             </div>
                         </div>
                     </div>
+                    {{-- File partial danh sách sản phẩm --}}
                     @include('admin.purchase_orders.partials._product_list')
                 </div>
 
@@ -90,14 +105,14 @@
                             </div>
                         </div>
                     </div>
-                    {{-- Khối thông tin chung và ghi chú được bao bọc bởi div để áp dụng disabled-ui --}}
-                    <div class="space-y-8" :class="{ 'disabled-ui': isLocked }">
-                        @include('admin.purchase_orders.partials._general_info')
-                    </div>
+                    
+                    {{-- File partial thông tin chung đã sửa --}}
+                    @include('admin.purchase_orders.partials._general_info', ['purchaseOrder' => $purchaseOrder])
                 </div>
             </div>
         </form>
 
+        {{-- Các modal giữ nguyên --}}
         @include('admin.purchase_orders.partials._modals')
         @include('admin.purchase_orders.partials._barcode_scanner_modal')
     </div>
@@ -105,39 +120,78 @@
 @endsection
 
 @push('scripts')
+{{-- Các script thư viện --}}
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
 
+{{-- Script AlpineJS hoàn chỉnh --}}
 <script>
     function pageData(initialData) {
         return {
             // State
             isModalOpen: false, modalType: '', modalTitle: '', modalSelectedProvince: '', modalSelectedDistrict: '', modalSearchTerm: '',
-            selectedSupplier: { name: null, address: null, addressId: null },
-            selectedLocation: { name: null, address: null, id: null },
+            selectedSupplier: initialData.purchaseOrderData.supplier || { name: null, address: null, addressId: null },
+            selectedLocation: initialData.purchaseOrderData.store_location || { name: null, address: null, id: null },
             isScannerOpen: false, html5QrCode: null,
             beepSound: null, soundInitialized: false,
 
             // Initial Data
-            provinces: initialData.provincesData, districts: initialData.districtsData, allSuppliers: initialData.suppliersData, allLocations: initialData.locationsData,
-            purchaseOrder: initialData.purchaseOrder,
-            isLocked: initialData.purchaseOrder.status !== 'pending',
+            provinces: initialData.provincesData,
+            districts: initialData.districtsData,
+            allSuppliers: initialData.suppliersData,
+            allLocations: initialData.locationsData,
+            purchaseOrder: initialData.purchaseOrderData,
+            isLocked: ['waiting_for_scan', 'completed'].includes(initialData.purchaseOrderData.status),
             statusInfo: {},
 
             init() {
                 this.$watch('modalSelectedProvince', () => { this.modalSelectedDistrict = ''; });
                 
                 window.addEventListener('barcode-scanned', (event) => {
+                    if (this.isLocked) return;
                     const scannedCode = event.detail.code;
                     document.getElementById('product-search').value = scannedCode;
                     document.getElementById('product-search').dispatchEvent(new Event('input'));
                 });
                 
-                this.initializeProductSearch();
                 this.populateInitialForm();
+                this.initializeProductSearch();
                 this.initializeSound();
             },
             
+            populateInitialForm() {
+                const statuses = {
+                    pending: { text: 'Chờ xử lý', class: 'status-pending' },
+                    waiting_for_scan: { text: 'Chờ nhận hàng', class: 'status-waiting_for_scan' },
+                    completed: { text: 'Hoàn thành', class: 'status-completed' },
+                    cancelled: { text: 'Đã hủy', class: 'status-cancelled' }
+                };
+                this.statusInfo = statuses[this.purchaseOrder.status] || { text: this.purchaseOrder.status, class: '' };
+
+                if (this.purchaseOrder.items && this.purchaseOrder.items.length > 0) {
+                    this.$nextTick(() => { // Đảm bảo DOM sẵn sàng
+                        this.purchaseOrder.items.forEach(item => {
+                            const variant = item.product_variant;
+                            if (!variant) return;
+                            
+                            const productForTable = {
+                                id: variant.id,
+                                name: variant.full_name,
+                                sku: variant.sku,
+                                image_url: variant.image_url,
+                                stock: variant.stock,
+                                cost_price: variant.cost_price
+                            };
+                            
+                            this.addProductToTable(productForTable, {
+                                quantity: item.quantity,
+                                cost_price: item.cost_price
+                            });
+                        });
+                    });
+                }
+            },
+
             initializeSound() {
                 if (this.soundInitialized || typeof Howl === 'undefined') return;
                 this.beepSound = new Howl({
@@ -150,56 +204,6 @@
 
             playBeep() {
                 if (this.soundInitialized && this.beepSound) this.beepSound.play();
-            },
-
-            populateInitialForm() {
-                const statuses = {
-                    pending: { text: 'Đang chờ', class: 'status-pending' },
-                    completed: { text: 'Hoàn thành', class: 'status-completed' },
-                    cancelled: { text: 'Đã hủy', class: 'status-cancelled' }
-                };
-                this.statusInfo = statuses[this.purchaseOrder.status] || { text: this.purchaseOrder.status, class: '' };
-
-                if (this.purchaseOrder.supplier) {
-                    this.selectedSupplier = {
-                        name: this.purchaseOrder.supplier.name,
-                        address: this.purchaseOrder.supplier.full_address,
-                        addressId: this.purchaseOrder.supplier.id,
-                    };
-                }
-                if (this.purchaseOrder.store_location) {
-                    this.selectedLocation = {
-                        name: this.purchaseOrder.store_location.name,
-                        address: this.purchaseOrder.store_location.full_address,
-                        id: this.purchaseOrder.store_location.id,
-                    };
-                }
-                
-                const orderDateEl = document.getElementById('order-date');
-                const notesEl = document.getElementById('notes');
-                if(orderDateEl) orderDateEl.value = this.purchaseOrder.order_date;
-                if(notesEl) notesEl.value = this.purchaseOrder.notes || ''; // SỬA LỖI: Xử lý giá trị null
-
-                if (this.purchaseOrder.items && this.purchaseOrder.items.length > 0) {
-                    this.purchaseOrder.items.forEach(item => {
-                        const variant = item.product_variant;
-                        if (!variant) return;
-
-                        const productForTable = {
-                            id: variant.id,
-                            name: `${variant.product.name} - ${variant.attribute_values.map(av => av.value).join(' - ')}`,
-                            sku: variant.sku,
-                            image_url: variant.primary_image ? `/storage/${variant.primary_image.path}` : '{{ asset('assets/admin/img/placeholder-image.png') }}',
-                            stock: variant.inventories ? variant.inventories.reduce((sum, inv) => sum + inv.quantity, 0) : 0,
-                            cost_price: variant.cost_price || 0
-                        };
-                        
-                        this.addProductToTable(productForTable, {
-                            quantity: item.quantity,
-                            cost_price: item.cost_price
-                        });
-                    });
-                }
             },
 
             get filteredDistricts() {
@@ -243,8 +247,14 @@
             },
 
             submitForm() {
-                if(this.isLocked) return alert('Phiếu nhập đã ở trạng thái không thể chỉnh sửa.');
-                if (!this.selectedSupplier.addressId || !this.selectedLocation.id) return alert('Vui lòng chọn đầy đủ Nhà cung cấp và Kho nhận hàng.');
+                if(this.isLocked) {
+                    alert('Phiếu nhập đã ở trạng thái không thể chỉnh sửa.');
+                    return;
+                }
+                if (!this.selectedSupplier.addressId || !this.selectedLocation.id) {
+                    alert('Vui lòng chọn đầy đủ Nhà cung cấp và Kho nhận hàng.');
+                    return;
+                }
                 document.getElementById('purchase-order-form').submit();
             },
             
@@ -262,54 +272,27 @@
                 const readerElement = document.getElementById('reader');
                 const loadingMessage = document.getElementById('loading-message');
                 const errorMessage = document.getElementById('scan-error-message');
-
-                if (typeof Html5Qrcode === "undefined") {
-                    errorMessage.textContent = "Lỗi: Thư viện quét mã vạch chưa được tải.";
-                    errorMessage.classList.remove('hidden');
-                    return;
-                }
-                if (!readerElement) return;
-
+                if (typeof Html5Qrcode === "undefined" || !readerElement) return;
+                
                 loadingMessage.classList.remove('hidden');
                 errorMessage.classList.add('hidden');
-                document.getElementById('scan-result-container').classList.add('hidden');
-
+                
                 this.html5QrCode = new Html5Qrcode("reader");
-                const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-
                 const onScanSuccess = (decodedText, decodedResult) => {
                     if (!this.isScannerOpen) return;
-                    
                     this.playBeep();
-                    readerElement.classList.add('flash-success');
-                    try { if (navigator.vibrate) navigator.vibrate(100); } catch (e) {}
-                    
                     window.dispatchEvent(new CustomEvent('barcode-scanned', { detail: { code: decodedText } }));
-                    
-                    this.stopScanning();
-                    setTimeout(() => { this.isScannerOpen = false; }, 300); 
+                    this.closeBarcodeScanner();
                 };
-
-                this.html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, (error) => {})
-                .then(() => {
+                this.html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, onScanSuccess, (error) => {})
+                .finally(() => {
                     loadingMessage.classList.add('hidden');
-                })
-                .catch(err => {
-                    loadingMessage.classList.add('hidden');
-                    let friendlyError = `Lỗi camera: ${err}.`;
-                    if (String(err).includes("Permission denied")) {
-                        friendlyError = "Bạn đã từ chối quyền truy cập camera. Vui lòng cấp quyền trong cài đặt trình duyệt.";
-                    } else if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                         friendlyError += " Việc truy cập camera yêu cầu kết nối an toàn (HTTPS).";
-                    }
-                    errorMessage.textContent = friendlyError;
-                    errorMessage.classList.remove('hidden');
                 });
             },
 
             stopScanning() {
                 if (this.html5QrCode && this.html5QrCode.isScanning) {
-                    this.html5QrCode.stop().catch(err => { console.error("Lỗi khi dừng camera:", err); });
+                    this.html5QrCode.stop().catch(err => console.error("Error stopping camera:", err));
                 }
             },
 
@@ -327,8 +310,6 @@
                         displaySuggestions(data.groupedProducts);
                     } catch (error) {
                         console.error("Error fetching products:", error);
-                        suggestionsContainer.innerHTML = `<div class="p-3 text-center text-red-500">Có lỗi xảy ra.</div>`;
-                        suggestionsContainer.classList.remove('hidden');
                     }
                 };
                 
@@ -342,7 +323,7 @@
                                 <div class="pl-2">
                                     ${p.variants.map(v => `
                                         <div class="flex items-center p-2 hover:bg-blue-50 cursor-pointer rounded-md suggestion-item" data-product-id="${v.id}">
-                                            <img src="${v.image_url}" alt="${v.variantName}" class="w-10 h-10 object-cover rounded-md mr-3">
+                                            <img src="${v.image_url}" class="w-10 h-10 object-cover rounded-md mr-3">
                                             <div>
                                                 <div class="font-semibold text-gray-800">${v.variantName}</div>
                                                 <div class="text-xs text-gray-500">SKU: ${v.sku} | Tồn kho: <span class="font-bold">${v.stock}</span></div>
@@ -355,8 +336,7 @@
                 };
                 
                 this.addProductToTable = (product, itemData = null) => {
-                    if (!product || !product.id) return;
-                    if (purchaseItemsTableBody.querySelector(`tr[data-variant-id="${product.id}"]`)) return;
+                    if (!product || !product.id || purchaseItemsTableBody.querySelector(`tr[data-variant-id="${product.id}"]`)) return;
 
                     document.getElementById('no-items-row').style.display = 'none';
                     const newRow = document.createElement('tr');
@@ -367,16 +347,7 @@
                     const costPrice = itemData ? itemData.cost_price : (product.cost_price || 0);
 
                     newRow.innerHTML = `
-                        <td class="px-4 py-3">
-                            <div class="flex items-center">
-                                <img src="${product.image_url}" alt="${product.name}" class="w-10 h-10 object-cover rounded-md mr-3">
-                                <div>
-                                    <div class="font-medium text-gray-800">${product.name}</div>
-                                    <div class="text-xs text-gray-500">SKU: ${product.sku}</div>
-                                    <input type="hidden" name="items[${product.id}][product_variant_id]" value="${product.id}">
-                                </div>
-                            </div>
-                        </td>
+                        <td class="px-4 py-3"><div class="flex items-center"><img src="${product.image_url}" class="w-10 h-10 object-cover rounded-md mr-3"><div><div class="font-medium text-gray-800">${product.name}</div><div class="text-xs text-gray-500">SKU: ${product.sku}</div><input type="hidden" name="items[${product.id}][product_variant_id]" value="${product.id}"></div></div></td>
                         <td class="px-4 py-3 text-center font-bold text-blue-600">${product.stock}</td>
                         <td class="px-4 py-3"><input type="number" name="items[${product.id}][quantity]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-center quantity-input" value="${quantity}" min="1"></td>
                         <td class="px-4 py-3"><input type="number" name="items[${product.id}][cost_price]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-right cost-price-input" value="${costPrice}" min="0"></td>
@@ -406,14 +377,7 @@
                     clearTimeout(debounceTimer);
                     debounceTimer = setTimeout(() => { fetchProducts(searchInput.value); }, 300);
                 });
-                searchInput.addEventListener('focus', () => { if(!searchInput.value) fetchProducts(''); });
-
-                document.addEventListener('click', (e) => {
-                    if (!suggestionsContainer.contains(e.target) && e.target !== searchInput) {
-                        suggestionsContainer.classList.add('hidden');
-                    }
-                });
-
+                
                 suggestionsContainer.addEventListener('click', (e) => {
                     const item = e.target.closest('.suggestion-item');
                     if (item) {
@@ -444,4 +408,4 @@
         }
     }
 </script>
-@endp
+@endpush

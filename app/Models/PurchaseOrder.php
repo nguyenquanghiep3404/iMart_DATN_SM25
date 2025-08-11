@@ -20,7 +20,9 @@ class PurchaseOrder extends Model
         'po_code',
         'status',
         'order_date',
-        'store_location_id',
+        'store_location_id', 
+        'notes',
+
     ];
 
     /**

@@ -32,6 +32,13 @@ class PaymentRequest extends FormRequest
             'shipping_method' => 'nullable|string',
             'shipping_fee' => 'nullable|integer|min:0',
             'shipping_time' => 'nullable|string',
+            
+            // Shipments
+            'shipments' => 'nullable|array',
+            'shipments.*.store_location_id' => 'required|integer',
+            'shipments.*.shipping_method' => 'required|string',
+            'shipments.*.shipping_fee' => 'required|integer|min:0',
+            'shipments.*.estimated_delivery_time' => 'nullable|string',
         ];
 
         // VALIDATION PHƯƠNG THỨC GIAO HÀNG
@@ -40,7 +47,6 @@ class PaymentRequest extends FormRequest
             if ($this->input('address_id')) {
                 // Sử dụng địa chỉ đã lưu - validation tối thiểu
                 $rules['address_id'] = 'required|integer|exists:addresses,id|address_ownership';
-                $rules['shipping_method'] = 'required|string';
 
                 // Validation khung giờ giao hàng cho giao hàng tại cửa hàng
                 $rules['delivery_date'] = 'nullable|string';
@@ -77,7 +83,6 @@ class PaymentRequest extends FormRequest
                     'address' => 'nullable|string|min:5|max:500', // Cũng chấp nhận 'address' để tương thích
                     'postcode' => 'nullable|string|max:10',
                     'save_address' => 'nullable|boolean',
-                    'shipping_method' => 'required|string',
 
                     // Validation khung giờ giao hàng cho giao hàng tại cửa hàng
                     'delivery_date' => 'nullable|string',
@@ -88,6 +93,9 @@ class PaymentRequest extends FormRequest
                 $rules['address_system'] = 'required|string|in:new,old';
                 
             }
+            
+            // Shipments required cho delivery
+            $rules['shipments'] = 'required|array|min:1';
         }
 
         // VALIDATION PHƯƠNG THỨC NHẬN HÀNG TẠI CỬA HÀNG
@@ -216,6 +224,17 @@ class PaymentRequest extends FormRequest
             'notes.max' => 'Ghi chú không được quá 1000 ký tự',
             'shipping_fee.integer' => 'Phí vận chuyển phải là số nguyên',
             'shipping_fee.min' => 'Phí vận chuyển không được âm',
+            
+            // Shipments
+            'shipments.required' => 'Vui lòng chọn phương thức vận chuyển cho tất cả gói hàng',
+            'shipments.array' => 'Dữ liệu gói hàng không hợp lệ',
+            'shipments.min' => 'Phải có ít nhất một gói hàng',
+            'shipments.*.store_location_id.required' => 'Thiếu thông tin cửa hàng',
+            'shipments.*.store_location_id.integer' => 'ID cửa hàng không hợp lệ',
+            'shipments.*.shipping_method.required' => 'Vui lòng chọn phương thức vận chuyển',
+            'shipments.*.shipping_fee.required' => 'Thiếu thông tin phí vận chuyển',
+            'shipments.*.shipping_fee.integer' => 'Phí vận chuyển phải là số nguyên',
+            'shipments.*.shipping_fee.min' => 'Phí vận chuyển không được âm',
         ];
     }
 
@@ -255,6 +274,12 @@ class PaymentRequest extends FormRequest
      */
     protected function failedValidation(Validator $validator)
     {
+        // Debug: Log validation errors
+        \Log::info('PaymentRequest Validation Failed:', [
+            'errors' => $validator->errors()->toArray(),
+            'input' => $this->all()
+        ]);
+        
         if ($this->expectsJson()) {
             $response = response()->json([
                 'success' => false,

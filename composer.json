@@ -9,7 +9,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "doctrine/dbal": "^4.3",
         "intervention/image": "^3.11",
         "irazasyed/telegram-bot-sdk": "^3.15",
