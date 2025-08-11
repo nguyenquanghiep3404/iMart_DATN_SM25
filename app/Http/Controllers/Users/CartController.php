@@ -861,7 +861,6 @@ class CartController extends Controller
             // ====== Tính subtotal & xác định nguồn dữ liệu ======
             $subtotal = null;
             $sourceType = null;
-
             if (session()->has('buy_now_session')) {
                 $buyNowData = session('buy_now_session');
                 if (isset($buyNowData['items']) && is_array($buyNowData['items'])) {
@@ -895,7 +894,12 @@ class CartController extends Controller
             if (is_null($subtotal) || $subtotal <= 0) {
                 return response()->json(['success' => false, 'message' => 'Không tìm thấy sản phẩm hợp lệ.']);
             }
-
+            if ($coupon->min_order_amount && $subtotal < $coupon->min_order_amount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Đơn hàng tối thiểu để áp dụng voucher này là ' . number_format($coupon->min_order_amount, 0, ',', '.') . '₫.',
+                ]);
+            }
             // Lấy thông tin điểm giảm (nếu có)
             $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
             $pointsDiscount = $pointsApplied['discount'] ?? 0;
@@ -908,10 +912,13 @@ class CartController extends Controller
                 ]);
             }
 
-            if ($coupon->min_order_amount && ($subtotal - $pointsDiscount) < $coupon->min_order_amount) {
+            $discount = round($coupon->calculateDiscount($subtotal));
+            $totalAfterPoints = $subtotal - $pointsDiscount;
+
+            if ($discount > $totalAfterPoints) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Đơn hàng phải tối thiểu ' . number_format($coupon->min_order_amount, 0, ',', '.') . '₫ sau khi trừ điểm để áp dụng mã giảm giá.',
+                    'message' => 'Mức giảm giá của voucher vượt quá giá trị đơn hàng còn lại sau khi trừ điểm.',
                 ]);
             }
 
