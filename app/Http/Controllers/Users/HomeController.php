@@ -512,7 +512,13 @@ class HomeController extends Controller
         $selectedVariant = $variantId && $product->variants->contains('id', $variantId)
             ? $product->variants->firstWhere('id', $variantId)
             : $defaultVariant;
-
+        $availableStock = 0;
+        if ($defaultVariant) {
+            $availableStock = $defaultVariant->inventories()
+                ->where('inventory_type', 'new')
+                ->selectRaw('COALESCE(SUM(quantity - quantity_committed), 0) as available_stock')
+                ->value('available_stock');
+        }
         $productBundles = ProductBundle::with([
             'mainProducts.productVariant.product.coverImage',
             'suggestedProducts.productVariant.product.coverImage'
@@ -837,7 +843,7 @@ class HomeController extends Controller
             'storeLocations',
             'provinces', // Thêm provinces để view có thể dùng
             'districts', // Districts sẽ được load động bằng JS
-
+            'availableStock',
             // Thêm biến mới
         ));
     }

@@ -1,16 +1,16 @@
 <div class="product-info flex flex-col">
     @php
-    $productName = $product->name;
-    $variantSuffix = collect($initialVariantAttributes)->implode(' ');
-@endphp
+        $productName = $product->name;
+        $variantSuffix = collect($initialVariantAttributes)->implode(' ');
+    @endphp
     <!-- CDN Toastr -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     @include('users.cart.layout.partials.css')
     <h1 id="product-title" class="text-2xl md:text-3xl font-bold text-gray-900">
-    {{ $productName }} {{ $variantSuffix }}
-</h1>
+        {{ $productName }} {{ $variantSuffix }}
+    </h1>
     <div class="flex items-center flex-wrap gap-4 mt-2">
         <span
             class="inline-flex items-center bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full w-fit">
@@ -419,19 +419,29 @@
                 </div>
             </div>
             <div id="main-cta-buttons" class="mt-auto pt-6 flex flex-col sm:flex-row gap-3">
-                <button type="submit"
-                    class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                        stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
-                    </svg>
-                    THÊM VÀO GIỎ HÀNG
-                </button>
-                <button type="button" id="buy-now-btn"
-                    class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
-                    MUA NGAY
-                </button>
+                @if ($availableStock > 0)
+                    <button type="submit"
+                        class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                            stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
+                        </svg>
+                        THÊM VÀO GIỎ HÀNG
+                    </button>
+
+                    <button type="button" id="buy-now-btn"
+                        class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+                        MUA NGAY
+                    </button>
+                @else
+                    <button type="button" disabled
+                        class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-gray-400 text-gray-400 font-bold rounded-lg cursor-not-allowed">
+                        HẾT HÀNG
+                    </button>
+                    {{-- Ẩn luôn nút MUA NGAY khi hết hàng --}}
+                @endif
+
             </div>
         </div>
     </form>

@@ -25,7 +25,9 @@ class CartController extends Controller
 {
     public function index()
     {
-        if (session()->has('buy_now_session') && session()->has('applied_coupon')) {
+        // dd(session()->all());
+        $appliedCoupon = session('applied_coupon');
+        if (isset($appliedCoupon['source_type']) && $appliedCoupon['source_type'] === 'buy-now') {
             session()->forget('applied_coupon');
         }
         $pointsApplied = session('points_applied');
@@ -143,22 +145,11 @@ class CartController extends Controller
                 $voucherCode = $appliedCoupon['code'] ?? null;
             }
         }
-        // $appliedCoupon = session('applied_coupon');
-        // if ($appliedCoupon && $appliedCoupon['source_type'] === 'cart') {
-        //     $discount = $appliedCoupon['discount'] ?? 0;
-        //     $voucherCode = $appliedCoupon['code'] ?? null;
-        // } else {
-        //     $discount = 0;
-        //     $voucherCode = null;
-        // }
-
 
         $total = max(0, $subtotal - $discount);
-        // thêm ngày 7/8
         $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
         $pointsDiscount = $pointsApplied['discount'] ?? 0;
         $total = max(0, $total - $pointsDiscount);
-        // thêm ngày 7/8
         // Lấy coupon còn hiệu lực (ví dụ đơn giản)
         $availableCoupons = Coupon::where('status', 'active')
         ->where('is_public', 1)
@@ -202,7 +193,7 @@ class CartController extends Controller
     // thêm sản phẩm vào giỏ
     public function add(Request $request)
     {
-        // Validate
+        // 1. Validate input
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1|max:10000',
             'product_variant_id' => 'required_without:product_id|integer|exists:product_variants,id',
@@ -210,19 +201,18 @@ class CartController extends Controller
             'variant_key' => 'nullable|string',
         ]);
 
-        // Lấy biến thể sản phẩm
+        // 2. Lấy biến thể sản phẩm
         if (!empty($validated['product_variant_id'])) {
-            $variant = ProductVariant::with('product.coverImage', 'attributeValues', 'primaryImage')->find($validated['product_variant_id']);
+            $variant = ProductVariant::with('product.coverImage', 'attributeValues', 'primaryImage')
+                ->find($validated['product_variant_id']);
             if (!$variant) {
                 return response()->json(['error' => 'Không tìm thấy biến thể sản phẩm.'], 404);
             }
             $product = $variant->product;
         } else {
-            // Tìm product
             $product = Product::findOrFail($validated['product_id']);
-
-            // Tìm biến thể theo variant_key nếu có
             $variant = null;
+
             if (!empty($validated['variant_key'])) {
                 $variant = ProductVariant::where('product_id', $product->id)->get()
                     ->first(function ($v) use ($validated) {
@@ -239,18 +229,26 @@ class CartController extends Controller
                 return response()->json(['error' => 'Sản phẩm chưa có biến thể, vui lòng liên hệ quản trị viên.'], 422);
             }
         }
-        $quantity = $validated['quantity'];
-        // Kiểm tra tồn kho
+
+        $quantity = (int) $validated['quantity'];
+
+        // 3. Xác định giá bán hiện tại
         $now = now();
         $isOnSale = $variant->sale_price &&
             (!$variant->sale_price_starts_at || $variant->sale_price_starts_at <= $now) &&
             (!$variant->sale_price_ends_at || $variant->sale_price_ends_at >= $now);
         $finalPrice = $isOnSale ? $variant->sale_price : $variant->price;
 
+        // 4. Lấy số lượng hiện có trong giỏ
+        $quantityInCart = 0;
         $cart = session()->get('cart', []);
         $itemKey = $variant->id;
-        $quantityInCart = isset($cart[$itemKey]) ? $cart[$itemKey]['quantity'] : 0;
 
+        if (isset($cart[$itemKey])) {
+            $quantityInCart = $cart[$itemKey]['quantity'];
+        }
+
+        $cartModel = null;
         if (auth()->check()) {
             $user = auth()->user();
             $cartModel = Cart::firstOrCreate(['user_id' => $user->id]);
@@ -258,49 +256,60 @@ class CartController extends Controller
                 ->where('cartable_id', $variant->id)
                 ->where('cartable_type', ProductVariant::class)
                 ->first();
-
-
             if ($dbItem) {
                 $quantityInCart = $dbItem->quantity;
             }
         }
 
+        // 5. Tính tổng số lượng mong muốn
         $totalRequested = $quantityInCart + $quantity;
+
+        // 6. Lấy tồn kho khả dụng
         $availableStock = $variant->inventories()
             ->where('inventory_type', 'new')
-            ->sum('quantity');
+            ->selectRaw('SUM(quantity - quantity_committed) as available_stock')
+            ->value('available_stock');
 
+        // 7. Kiểm tra tồn kho
         if ($variant->manage_stock && $availableStock !== null && $totalRequested > $availableStock) {
             $remaining = max(0, $availableStock - $quantityInCart);
-            return response()->json([
-                'error' => 'Số lượng vượt quá tồn kho. Hiện chỉ còn ' . $remaining . ' sản phẩm.'
-            ], 422);
+            $message = $quantityInCart > 0
+                ? "Bạn đã có {$quantityInCart} sản phẩm trong giỏ. Hệ thống chỉ còn {$remaining} sản phẩm nữa."
+                : "Số lượng vượt quá tồn kho. Hiện chỉ còn {$remaining} sản phẩm.";
+            return response()->json(['error' => $message], 422);
         }
 
-        // Nếu sản phẩm mới thì reset coupon
-        // if (!isset($cart[$itemKey])) {
+        // 8. Reset coupon nếu là sản phẩm mới thêm
         session()->forget(['applied_coupon', 'discount', 'applied_voucher']);
-        // }
 
-        // Cập nhật giỏ hàng session
+        // 9. Cập nhật giỏ hàng session
         if (isset($cart[$itemKey])) {
             $cart[$itemKey]['quantity'] += $quantity;
         } else {
+            $imagePath = null;
+            if ($variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path))) {
+                $imagePath = Storage::url($variant->primaryImage->path) . '?v=' . time();
+            } elseif ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path))) {
+                $imagePath = Storage::url($variant->product->coverImage->path) . '?v=' . time();
+            } else {
+                $imagePath = asset('images/placeholder.jpg');
+            }
+
             $cart[$itemKey] = [
                 'cartable_type' => ProductVariant::class,
                 'cartable_id'   => $variant->id,
-                'product_id' => $variant->product_id,
-                'variant_id' => $variant->id,
-                'name'       => $variant->name ?? $variant->product->name,
-                'price'      => $finalPrice,
-                'quantity'   => $quantity,
-                'image'      => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) . '?v=' . time() : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) . '?v=' . time() : asset('images/placeholder.jpg')),
+                'product_id'    => $variant->product_id,
+                'variant_id'    => $variant->id,
+                'name'          => $variant->name ?? $variant->product->name,
+                'price'         => $finalPrice,
+                'quantity'      => $quantity,
+                'image'         => $imagePath,
             ];
         }
         session()->put('cart', $cart);
 
-        // Cập nhật database nếu user đã đăng nhập
-        if (auth()->check()) {
+        // 10. Cập nhật giỏ hàng DB nếu user đăng nhập
+        if (auth()->check() && $cartModel) {
             $existingItem = CartItem::where('cart_id', $cartModel->id)
                 ->where('cartable_id', $variant->id)
                 ->where('cartable_type', ProductVariant::class)
@@ -320,6 +329,7 @@ class CartController extends Controller
             }
         }
 
+        // 11. Chuẩn bị phản hồi
         $successMsg = 'Đã thêm sản phẩm vào giỏ hàng!';
 
         if ($request->has('buy_now')) {
@@ -333,22 +343,16 @@ class CartController extends Controller
         }
 
         if ($request->expectsJson() || $request->ajax()) {
-            $totalQuantity = 0;
-
-            if (auth()->check()) {
-                $user = auth()->user();
-                $cartModel = Cart::firstOrCreate(['user_id' => $user->id]);
-                $totalQuantity = $cartModel->items()->sum('quantity');
-            } else {
-                $cart = session()->get('cart', []);
-                $totalQuantity = array_sum(array_column($cart, 'quantity'));
-            }
+            $totalQuantity = auth()->check()
+                ? $cartModel->items()->sum('quantity')
+                : array_sum(array_column(session()->get('cart', []), 'quantity'));
 
             return response()->json([
                 'success' => $successMsg,
                 'cartItemCount' => $totalQuantity,
             ]);
         }
+
         return back()->with('success', $successMsg);
     }
 
@@ -514,18 +518,16 @@ class CartController extends Controller
             ], 500);
         }
     }
-
+    
     public function updateQuantity(Request $request)
     {
-        $itemId = $request->input('item_id');
-        $quantity = $request->input('quantity');
+        $request->validate([
+            'item_id'  => 'required|integer',
+            'quantity' => 'required|integer|min:1',
+        ]);
 
-        if ($quantity < 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Số lượng không hợp lệ.'
-            ], 422);
-        }
+        $itemId   = $request->input('item_id');
+        $quantity = (int) $request->input('quantity');
 
         $newPrice = 0;
         $totalBeforeDiscount = 0;
@@ -546,36 +548,69 @@ class CartController extends Controller
 
         if (auth()->check()) {
             // --- Auth user ---
-            $item = CartItem::with('cartable')->findOrFail($itemId);
+            $item = CartItem::with('cartable', 'cart')->findOrFail($itemId);
             $variant = $item->cartable;
 
-            $now = now();
-            $isOnSale = $variant->sale_price &&
-                (!$variant->sale_price_starts_at || $variant->sale_price_starts_at <= $now) &&
-                (!$variant->sale_price_ends_at || $variant->sale_price_ends_at >= $now);
-            $newPrice = $isOnSale ? $variant->sale_price : $variant->price;
+            // nếu cartable không phải ProductVariant (ví dụ TradeInItem) thì bỏ qua check inventory
+            if ($variant instanceof \App\Models\ProductVariant) {
+                $now = now();
+                $isOnSale = $variant->sale_price &&
+                    (!$variant->sale_price_starts_at || $variant->sale_price_starts_at <= $now) &&
+                    (!$variant->sale_price_ends_at || $variant->sale_price_ends_at >= $now);
+                $newPrice = $isOnSale ? $variant->sale_price : $variant->price;
 
-            // Kiểm tra tồn kho
-            $availableStock = \App\Models\ProductInventory::where('product_variant_id', $variant->id)
-                ->where('inventory_type', 'new')
-                ->sum('quantity');
+                // Tính available_stock = SUM(quantity - quantity_committed)
+                $availableStock = \App\Models\ProductInventory::where('product_variant_id', $variant->id)
+                    ->where('inventory_type', 'new')
+                    ->selectRaw('COALESCE(SUM(quantity - quantity_committed),0) as available_stock')
+                    ->value('available_stock');
 
-            if ($quantity > $availableStock) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "Sản phẩm chỉ còn {$availableStock} sản phẩm trong kho.",
-                ], 422);
+                $availableStock = (int) ($availableStock ?? 0);
+
+                // Số lượng đã có trong giỏ của user cho variant này (trừ item đang cập nhật)
+                $currentCartQty = CartItem::where('cart_id', $item->cart_id)
+                    ->where('cartable_type', \App\Models\ProductVariant::class)
+                    ->where('cartable_id', $variant->id)
+                    ->where('id', '!=', $item->id)
+                    ->sum('quantity');
+
+                $currentCartQty = (int) $currentCartQty;
+
+                // Số lượng tối đa user có thể đặt thêm cho item này
+                $remainingStock = max(0, $availableStock - $currentCartQty);
+
+                if ($quantity > $remainingStock) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Sản phẩm chỉ còn {$remainingStock} sản phẩm trong kho.",
+                    ], 422);
+                }
+
+                // Tạo collection items (dùng để tính tổng trước khi áp voucher)
+                $cart = auth()->user()->cart()->with('items.cartable')->first();
+                $items = $cart->items->map(function ($i) use ($itemId, $quantity, $newPrice) {
+                    return (object)[
+                        'price' => ($i->id == $itemId) ? $newPrice : $i->price,
+                        'quantity' => ($i->id == $itemId) ? $quantity : $i->quantity,
+                    ];
+                });
+
+                $totalBeforeDiscount = $items->sum(fn($i) => $i->price * $i->quantity);
+            } else {
+                // nếu cartable không phải product variant, vẫn cập nhật giá/quantity nhưng bỏ qua check tồn kho
+                $now = now();
+                $newPrice = $variant->price ?? 0;
+
+                $cart = auth()->user()->cart()->with('items.cartable')->first();
+                $items = $cart->items->map(function ($i) use ($itemId, $quantity, $newPrice) {
+                    return (object)[
+                        'price' => ($i->id == $itemId) ? ($i->cartable->price ?? $newPrice) : $i->price,
+                        'quantity' => ($i->id == $itemId) ? $quantity : $i->quantity,
+                    ];
+                });
+
+                $totalBeforeDiscount = $items->sum(fn($i) => $i->price * $i->quantity);
             }
-
-            $cart = auth()->user()?->cart()->with('items')->first();
-            $items = $cart->items->map(function ($i) use ($itemId, $quantity, $newPrice) {
-                return (object)[
-                    'price' => ($i->id == $itemId) ? $newPrice : $i->price,
-                    'quantity' => ($i->id == $itemId) ? $quantity : $i->quantity,
-                ];
-            });
-
-            $totalBeforeDiscount = $items->sum(fn($i) => $i->price * $i->quantity);
 
         } else {
             // --- Guest user ---
@@ -584,7 +619,8 @@ class CartController extends Controller
                 return response()->json(['success' => false, 'message' => 'Sản phẩm không tồn tại.'], 404);
             }
 
-            $variant = \App\Models\ProductVariant::find($cart[$itemId]['variant_id']);
+            $variantId = $cart[$itemId]['variant_id'] ?? null;
+            $variant = $variantId ? \App\Models\ProductVariant::find($variantId) : null;
             if (!$variant) {
                 return response()->json(['success' => false, 'message' => 'Sản phẩm không hợp lệ.'], 404);
             }
@@ -595,8 +631,34 @@ class CartController extends Controller
                 (!$variant->sale_price_ends_at || $variant->sale_price_ends_at >= $now);
             $newPrice = $isOnSale ? $variant->sale_price : $variant->price;
 
+            // Tính available_stock = SUM(quantity - quantity_committed)
+            $availableStock = \App\Models\ProductInventory::where('product_variant_id', $variant->id)
+                ->where('inventory_type', 'new')
+                ->selectRaw('COALESCE(SUM(quantity - quantity_committed),0) as available_stock')
+                ->value('available_stock');
+
+            $availableStock = (int) ($availableStock ?? 0);
+
+            // Số lượng đã có trong session (trừ mục đang update) — phòng trường hợp có nhiều key cùng variant
+            $currentCartQty = 0;
+            foreach ($cart as $key => $entry) {
+                if (($entry['variant_id'] ?? null) == $variant->id && $key != $itemId) {
+                    $currentCartQty += (int) ($entry['quantity'] ?? 0);
+                }
+            }
+
+            $remainingStock = max(0, $availableStock - $currentCartQty);
+            if ($quantity > $remainingStock) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Sản phẩm chỉ còn {$remainingStock} sản phẩm trong kho.",
+                ], 422);
+            }
+
+            // Cập nhật session cart (chưa persist DB)
             $cart[$itemId]['quantity'] = $quantity;
             $cart[$itemId]['price'] = $newPrice;
+            session()->put('cart', $cart);
 
             $totalBeforeDiscount = collect($cart)->sum(fn($i) => $i['price'] * $i['quantity']);
         }
@@ -628,7 +690,7 @@ class CartController extends Controller
                 'success' => false,
                 'voucher_failed' => $voucherFailed,
                 'points_failed' => $pointsFailed,
-                'voucher_min_amount' => $voucherMinAmount > 0 
+                'voucher_min_amount' => $voucherMinAmount > 0
                     ? number_format($voucherMinAmount, 0, ',', '.') . '₫'
                     : null,
                 'message' => 'Một hoặc nhiều ưu đãi không đủ điều kiện sử dụng.',
@@ -647,13 +709,14 @@ class CartController extends Controller
             $pointsDiscount = 0;
         }
 
-        // ===== Cập nhật giỏ hàng =====
+        // ===== Cập nhật giỏ hàng (persist vào DB nếu auth) =====
         if (auth()->check()) {
+            // $item đã lấy ở trên
             $item->quantity = $quantity;
             $item->price = $newPrice;
             $item->save();
         } else {
-            session()->put('cart', $cart);
+            // session đã cập nhật phía trên
         }
 
         // ===== Tính tổng mới =====
@@ -670,145 +733,7 @@ class CartController extends Controller
         ]);
     }
 
-    // public function applyVoucherAjax(Request $request)
-    // {
-    //     try {
-    //         $request->validate([
-    //             'voucher_code' => 'required|string',
-    //         ]);
 
-    //         $voucherCode = $request->input('voucher_code');
-    //         $appliedCode = session('applied_coupon.code');
-
-    //         // Nếu đã áp dụng mã này rồi
-    //         if ($appliedCode === $voucherCode) {
-    //             return response()->json([
-    //                 'success'  => true,
-    //                 'message'  => 'Mã giảm giá này đã được áp dụng thành công rồi.',
-    //                 'discount' => session('applied_coupon.discount', 0),
-    //                 'total_after_discount' => null,
-    //                 'source_type' => session('applied_coupon.source_type', 'cart'),
-    //             ]);
-    //         }
-
-    //         $isLoggedIn = auth()->check();
-    //         \Log::info("Người dùng " . ($isLoggedIn ? 'ID ' . auth()->id() : 'guest') . " áp dụng voucher: {$voucherCode}");
-
-    //         // Lấy mã giảm giá
-    //         $coupon = Coupon::where('code', $voucherCode)->first();
-    //         if (!$coupon || $coupon->status !== 'active') {
-    //             return response()->json(['success' => false, 'message' => 'Mã giảm giá không hợp lệ.']);
-    //         }
-
-    //         if ($coupon->start_date && $coupon->start_date->isFuture()) {
-    //             return response()->json(['success' => false, 'message' => 'Mã giảm giá chưa bắt đầu.']);
-    //         }
-
-    //         if ($coupon->end_date && $coupon->end_date->isPast()) {
-    //             return response()->json(['success' => false, 'message' => 'Mã giảm giá đã hết hạn.']);
-    //         }
-
-    //         // Kiểm tra giới hạn sử dụng
-    //         if ($coupon->max_uses && $coupon->usages()->count() >= $coupon->max_uses) {
-    //             return response()->json(['success' => false, 'message' => 'Mã giảm giá đã hết lượt sử dụng.']);
-    //         }
-
-    //         if ($isLoggedIn && $coupon->max_uses_per_user) {
-    //             $used = $coupon->usages()->where('user_id', auth()->id())->count();
-    //             if ($used >= $coupon->max_uses_per_user) {
-    //                 return response()->json(['success' => false, 'message' => 'Bạn đã sử dụng mã này tối đa số lần cho phép.']);
-    //             }
-    //         }
-
-    //         // ====== Tính subtotal & xác định loại nguồn ======
-    //         $subtotal = null;
-    //         $sourceType = null;
-
-    //         // Ưu tiên xử lý dữ liệu từ "buy now"
-    //         if (session()->has('buy_now_session')) {
-    //             $buyNowData = session('buy_now_session');
-    //             if (isset($buyNowData['items']) && is_array($buyNowData['items'])) {
-    //                 $subtotal = collect($buyNowData['items'])->sum(fn($item) =>
-    //                     (float)($item['price'] ?? 0) * (int)($item['quantity'] ?? 1)
-    //                 );
-    //             } elseif (isset($buyNowData['price'], $buyNowData['quantity'])) {
-    //                 $subtotal = (float)$buyNowData['price'] * (int)$buyNowData['quantity'];
-    //             }
-    //             $sourceType = 'buy-now';
-    //         }
-
-    //         // Nếu không phải buy now => kiểm tra cart (đăng nhập)
-    //         if (is_null($subtotal) && $isLoggedIn) {
-    //             $cart = auth()->user()?->cart()->with('items')->first();
-    //             if ($cart && $cart->items->isNotEmpty()) {
-    //                 $subtotal = $cart->items->sum(fn($i) => $i->price * $i->quantity);
-    //                 $sourceType = 'cart';
-    //             }
-    //         }
-
-    //         // Nếu không đăng nhập => kiểm tra session cart
-    //         if (is_null($subtotal) && !$isLoggedIn) {
-    //             $cartItems = session('cart', []);
-    //             if (is_array($cartItems) && count($cartItems) > 0) {
-    //                 $subtotal = collect($cartItems)->sum(fn($i) =>
-    //                     (float)($i['price'] ?? 0) * (int)($i['quantity'] ?? 1)
-    //                 );
-    //                 $sourceType = 'cart';
-    //             }
-    //         }
-
-    //         if (is_null($subtotal) || $subtotal <= 0) {
-    //             return response()->json(['success' => false, 'message' => 'Không tìm thấy sản phẩm hợp lệ.']);
-    //         }
-
-    //         // Kiểm tra giá trị đơn hàng tối thiểu
-    //         if ($coupon->min_order_amount && $subtotal < $coupon->min_order_amount) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Đơn hàng phải tối thiểu ' . number_format($coupon->min_order_amount, 0, ',', '.') . '₫ để áp dụng.',
-    //             ]);
-    //         }
-
-    //         // ====== Tính giảm giá ======
-    //         $discount = round($coupon->calculateDiscount($subtotal));
-    //         $totalAfterDiscount = max($subtotal - $discount, 0);
-    //         $pointsApplied = session('points_applied', ['points' => 0, 'discount' => 0]);
-    //         $pointsDiscount = $pointsApplied['discount'] ?? 0;
-
-    //         // Tính tổng giảm giá (voucher + điểm)
-    //         $totalDiscount = $discount + $pointsDiscount;
-    //         $totalAfterDiscount = max($subtotal - $totalDiscount, 0);
-    //         // Lưu thông tin mã đã áp dụng vào session
-    //         session()->put('applied_coupon', [
-    //             'id'          => $coupon->id,
-    //             'code'        => $coupon->code,
-    //             'discount'    => $discount,
-    //             'source_type' => $sourceType,
-    //         ]);
-
-    //         return response()->json([
-    //             'success'              => true,
-    //             'discount'             => $discount,
-    //             'points_discount'      => $pointsDiscount, // trả về điểm giảm cho frontend
-    //             'total_after_discount' => $totalAfterDiscount,
-    //             'message'              => 'Mã giảm giá đã được áp dụng.',
-    //             'source_type'          => $sourceType,
-    //         ]);
-
-    //     } catch (\Illuminate\Validation\ValidationException $e) {
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Vui lòng nhập mã giảm giá.',
-    //             'errors'  => $e->errors()
-    //         ]);
-    //     } catch (\Throwable $e) {
-    //         \Log::error('Lỗi khi áp mã giảm giá: ' . $e->getMessage());
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Lỗi hệ thống khi áp mã.',
-    //         ], 500);
-    //     }
-    // }
     public function applyVoucherAjax(Request $request)
     {
         try {

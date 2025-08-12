@@ -787,7 +787,7 @@ class PaymentController extends Controller
                 session()->forget('cart');
             }
         }
-        session()->forget(['applied_voucher', 'applied_coupon', 'discount']);
+        session()->forget(['cart','applied_voucher', 'applied_coupon', 'discount','points_applied']);
     }
     public function showBankTransferQr(Order $order)
     {
@@ -1072,7 +1072,7 @@ class PaymentController extends Controller
             session()->forget('cart');
         }
         // Xóa voucher đã áp dụng
-        session()->forget(['applied_voucher', 'applied_coupon', 'discount', 'points_applied']);
+        session()->forget(['cart','applied_voucher', 'applied_coupon', 'discount', 'points_applied']);
     }
     /**
      * Tạo phiên Buy Now và chuyển đến trang thanh toán
