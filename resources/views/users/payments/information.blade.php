@@ -266,12 +266,12 @@
                                 </div>
                                 <hr class="my-4">
                                 <div id="pickup-store-selection">
-                                    <h3 class="h6 mb-3">Chọn cửa hàng để nhận hàng <span class="text-danger">*</span></h3>
+                                    <h3 class="h6 mb-3" style="color: black; font-weight: bold;">Chọn cửa hàng để nhận hàng <span class="text-danger">*</span></h3>
                                     <!-- Button chọn cửa hàng -->
                                     <div class="mb-3">
                                         <button type="button" id="select-store-btn"
                                             class="btn btn-outline-secondary w-100 text-start d-flex align-items-center justify-content-between">
-                                            <span id="store-selection-text">Chọn shop có hàng gần nhất</span>
+                                            <span id="store-selection-text">Chọn cửa hàng nhận hàng</span>
                                             <i class="fas fa-chevron-right text-muted"></i>
                                         </button>
                                     </div>
@@ -293,6 +293,8 @@
                                     </div>
                                     <div id="store_location_error" class="error-message"><i class="fas fa-exclamation-circle"></i><span>Vui lòng chọn cửa hàng</span></div>
                                 </div>
+                                
+                                <!-- Phần ngày nhận hàng đã được xóa -->
                             </div>
                         </div>
 
@@ -543,7 +545,7 @@
         <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="storeSelectionModalLabel">
+                    <h5 class="modal-title" id="storeSelectionModalLabel" style="color: white; font-weight: bold;">
                         <i class="fas fa-store me-2 text-danger"></i>Chọn cửa hàng nhận hàng
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -747,6 +749,7 @@
             this.elements.selectStoreBtn = document.getElementById('select-store-btn');
             this.elements.selectedStoreDisplay = document.getElementById('selected-store-display');
             this.elements.pickupProductList = document.getElementById('pickup-product-list');
+            this.elements.pickupProductCount = document.getElementById('pickup-product-count');
 
             // Order Summary and Payment
             this.elements.shippingFeeSummary = document.getElementById('shipping-fee-summary');
@@ -760,6 +763,7 @@
         },
 
         bindEvents() {
+            // Kiểm tra tất cả các phần tử trước khi thêm sự kiện
             if (this.elements.deliveryMethodCards) {
                 this.elements.deliveryMethodCards.forEach(card => {
                     if (card) {
@@ -768,38 +772,51 @@
                 });
             }
             
-            if (this.elements.useNewAddressBtn) this.elements.useNewAddressBtn.addEventListener('click', () => this.toggleAddressForm(true));
-            if (this.elements.backToAddressListBtn) this.elements.backToAddressListBtn.addEventListener('click', () => this.toggleAddressForm(false));
-            if (this.elements.openAddressModalBtn) this.elements.openAddressModalBtn.addEventListener('click', () => this.handleAddressModalOpen());
+            // Kiểm tra từng phần tử trước khi thêm sự kiện
+            if (this.elements.useNewAddressBtn) {
+                this.elements.useNewAddressBtn.addEventListener('click', () => this.toggleAddressForm(true));
+            }
+            
+            if (this.elements.backToAddressListBtn) {
+                this.elements.backToAddressListBtn.addEventListener('click', () => this.toggleAddressForm(false));
+            }
+            
+            if (this.elements.openAddressModalBtn) {
+                this.elements.openAddressModalBtn.addEventListener('click', () => this.handleAddressModalOpen());
+            }
             
             // Event listeners for dynamic address form
             document.addEventListener('change', (e) => {
-                if (e.target.id === 'province_id') {
+                if (e.target && e.target.id === 'province_id') {
                     this.handleLocationChange('province', e.target.value);
-                } else if (e.target.id === 'district_id') {
+                } else if (e.target && e.target.id === 'district_id') {
                     this.handleLocationChange('district', e.target.value);
-                } else if (e.target.id === 'ward_id') {
+                } else if (e.target && e.target.id === 'ward_id') {
                     this.handleLocationChange('ward', e.target.value);
                 }
             });
 
-            if (this.elements.selectStoreBtn) this.elements.selectStoreBtn.addEventListener('click', () => this.handleStoreModalOpen());
+            if (this.elements.selectStoreBtn) {
+                this.elements.selectStoreBtn.addEventListener('click', () => this.handleStoreModalOpen());
+            } else {
+                console.warn('Element selectStoreBtn not found');
+            }
             
             // Store modal event listeners
             document.addEventListener('change', (e) => {
-                if (e.target.id === 'modal-store-province-select') {
+                if (e.target && e.target.id === 'modal-store-province-select') {
                     this.loadModalStoreDistricts(e.target.value);
-                } else if (e.target.id === 'modal-store-district-select') {
+                } else if (e.target && e.target.id === 'modal-store-district-select') {
                     this.loadModalStoreLocations();
                 }
             });
             
             document.addEventListener('click', (e) => {
-                if (e.target.id === 'confirm-store-selection-btn') {
+                if (e.target && e.target.id === 'confirm-store-selection-btn') {
                     this.confirmStoreSelection();
-                } else if (e.target.id === 'change-store-btn') {
+                } else if (e.target && e.target.id === 'change-store-btn') {
                     this.handleStoreModalOpen();
-                } else if (e.target.classList.contains('store-item')) {
+                } else if (e.target && e.target.classList && e.target.classList.contains('store-item')) {
                     // Remove previous selection
                     document.querySelectorAll('.store-item').forEach(item => item.classList.remove('selected'));
                     // Add selection to clicked item
@@ -853,7 +870,23 @@
             this.elements.deliveryAddressSection.classList.toggle('d-none', !isDelivery);
             this.elements.shipmentListSection.classList.toggle('d-none', !isDelivery);
             this.elements.pickupLocationSection.classList.toggle('d-none', isDelivery);
-            this.elements.pickupSummarySection.classList.toggle('d-none', isDelivery);
+            
+            // Chỉ ẩn pickup-summary-section khi đang ở delivery mode
+            // Khi ở pickup mode, sẽ hiển thị ngay cả khi chưa chọn store (để hiển thị thông báo)
+            console.log('setupInitialUI - delivery method:', deliveryMethod, 'isDelivery:', isDelivery);
+            if (isDelivery) {
+                this.elements.pickupSummarySection.classList.add('d-none');
+                console.log('setupInitialUI - hiding pickup-summary-section (delivery mode)');
+            } else {
+                this.elements.pickupSummarySection.classList.remove('d-none');
+                     this.elements.pickupSummarySection.style.display = 'block';
+                     this.elements.pickupSummarySection.style.visibility = 'visible';
+                     this.elements.pickupSummarySection.style.opacity = '1';
+                     this.elements.pickupSummarySection.style.height = 'auto';
+                console.log('setupInitialUI - showing pickup-summary-section (pickup mode)');
+            }
+
+            // Đã xóa phần khởi tạo ngày nhận hàng
 
             if (isDelivery) {
                 this.renderMainProductList();
@@ -878,6 +911,8 @@
                 this.updateOrderInformation({ shippingFee: 0 });
             }
         },
+        
+        // Đã xóa hàm initializePickupDate
 
         handleDeliveryMethodChange(card) {
             const radio = card.querySelector('input[type="radio"]');
@@ -887,6 +922,24 @@
             document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
             card.classList.add('selected');
             this.setupInitialUI();
+            
+            // Nếu chuyển sang pickup method và đã chọn store, hiển thị thông tin cửa hàng và render pickup summary
+            if (radio.value === 'pickup') {
+                if (this.state.selectedStore && this.state.selectedStore.id) {
+                    // Hiển thị thông tin cửa hàng đã chọn
+                    const storeDisplay = document.getElementById('selected-store-display');
+                    if (storeDisplay) {
+                        storeDisplay.style.display = 'block';
+                        document.getElementById('selected-store-name').textContent = this.state.selectedStore.name;
+                        document.getElementById('selected-store-address').textContent = this.state.selectedStore.address;
+                        document.getElementById('selected-store-phone').textContent = this.state.selectedStore.phone || '';
+                    }
+                    // Cập nhật text của nút chọn cửa hàng
+                    document.getElementById('store-selection-text').textContent = 'Thay đổi cửa hàng';
+                    // Gọi lại API để lấy thông tin gói hàng
+                    this.renderPickupOrderSummary();
+                }
+            }
         },
 
         toggleAddressForm(showForm) {
@@ -1287,20 +1340,322 @@
             });
         },
 
-        renderPickupOrderSummary() {
-            const productContainer = this.elements.pickupProductList;
-            productContainer.innerHTML = '';
-            document.getElementById('pickup-product-count').textContent = this.state.cartItems.length;
+        async renderPickupOrderSummary() {
+            // Đảm bảo pickup-summary-section luôn hiển thị khi ở pickup mode
+            if (this.elements.pickupSummarySection) {
+                this.elements.pickupSummarySection.classList.remove('d-none');
+                this.elements.pickupSummarySection.style.display = 'block';
+            }
+            
+            // Kiểm tra xem đã chọn cửa hàng chưa
+            if (!this.state.selectedStore || !this.state.selectedStore.id) {
+                if (this.elements.pickupSummarySection) {
+                    this.elements.pickupSummarySection.innerHTML = '<p class="text-muted">Vui lòng chọn cửa hàng nhận hàng để xem thông tin sản phẩm.</p>';
+                }
+                return;
+            }
+            
+            // Kiểm tra xem thông tin cửa hàng đã hiển thị chưa
+            const storeDisplay = document.getElementById('selected-store-display');
+            if (storeDisplay && storeDisplay.style.display === 'none') {
+                storeDisplay.style.display = 'block';
+            }
+            
+            // Hiển thị thông báo đang tải
+            this.elements.pickupSummarySection.innerHTML = '<p class="text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải thông tin gói hàng...</p>';
 
-            this.state.cartItems.forEach(product => {
-                const productNode = this.elements.productItemTemplate.content.cloneNode(true);
-                productNode.querySelector('img').src = product.image;
-                productNode.querySelector('.product-name').textContent = product.name;
-                productNode.querySelector('.product-variant').textContent = product.variant;
-                productNode.querySelector('.product-price').textContent = this.helpers.formatCurrency(product.price);
-                productNode.querySelector('.product-quantity').textContent = `x${product.quantity}`;
-                productContainer.appendChild(productNode);
+            // Đảm bảo cartItems có định dạng đúng cho API
+            const formattedCartItems = this.state.cartItems.map(item => ({
+                product_variant_id: item.product_variant_id || item.productVariant?.id || item.id,
+                quantity: item.quantity,
+                name: item.name || item.productVariant?.product?.name || '',
+                image: item.image || item.productVariant?.product?.thumbnail || '',
+                price: item.price || item.productVariant?.price || 0,
+                variant: item.variant || ''
+            }));
+
+            try {
+                console.log('Sending request with data:', {
+                    cart_items: formattedCartItems,
+                    pickup_store_id: this.state.selectedStore.id
+                });
+                
+                // Tạo AbortController để có thể hủy request nếu cần
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 giây timeout
+                
+                // Gọi API để tính toán pickup shipments
+                const response = await fetch('/api/shipments/calculate-pickup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        cart_items: formattedCartItems,
+                        pickup_store_id: this.state.selectedStore.id
+                    }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('API Response:', result); // Debug log
+                
+                if (result.success && result.shipments && result.shipments.length > 0) {
+                    console.log('Rendering shipments:', result.shipments);
+                    this.renderPickupShipmentsFromAPI(result.shipments);
+                } else {
+                    console.error('API Error or no shipments:', result);
+                    let errorMessage = result.message || 'Có lỗi xảy ra khi tính toán gói hàng.';
+                    if (result.unavailable_items && result.unavailable_items.length > 0) {
+                        errorMessage += '<br><small>Một số sản phẩm không có đủ hàng tại cửa hàng được chọn.</small>';
+                    }
+                    this.elements.pickupSummarySection.innerHTML = `<p class="text-danger">${errorMessage}</p>`;
+                }
+            } catch (error) {
+                console.error('Error calculating pickup shipments:', error);
+                let errorMessage = 'Có lỗi xảy ra khi tính toán gói hàng';
+                
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Yêu cầu bị hủy do quá thời gian chờ. Vui lòng thử lại.';
+                } else if (error.message) {
+                    errorMessage += `: ${error.message}`;
+                }
+                
+                this.elements.pickupSummarySection.innerHTML = `<p class="text-danger">${errorMessage}</p>`;
+            }
+        },
+
+        renderPickupShipmentsFromAPI(shipments) {
+            console.log('Rendering pickup shipments:', shipments); // Debug log
+            console.log('pickupProductList element:', this.elements.pickupProductList);
+            console.log('pickupSummarySection element:', this.elements.pickupSummarySection);
+            
+            // Kiểm tra xem phần tử pickupProductList có tồn tại không
+            if (!this.elements.pickupProductList) {
+                console.error('Element pickupProductList not found');
+                // Thử tìm lại element
+                this.elements.pickupProductList = document.getElementById('pickup-product-list');
+                if (!this.elements.pickupProductList) {
+                    console.error('Still cannot find pickup-product-list element');
+                    return;
+                }
+            }
+            
+            // Kiểm tra xem shipments có dữ liệu không
+            if (!shipments || shipments.length === 0) {
+                console.log('No shipments data');
+                if (this.elements.pickupSummarySection) {
+                    this.elements.pickupSummarySection.innerHTML = '<p class="text-danger">Không có thông tin gói hàng.</p>';
+                }
+                return;
+            }
+            
+            let totalProducts = 0;
+            shipments.forEach(shipment => {
+                if (shipment.items && Array.isArray(shipment.items)) {
+                    totalProducts += shipment.items.length;
+                }                
             });
+            
+            // Đảm bảo phần tử pickup-product-count được cập nhật
+            // Re-find the element in case it was recreated
+            this.elements.pickupProductCount = document.getElementById('pickup-product-count');
+            if (this.elements.pickupProductCount) {
+                this.elements.pickupProductCount.textContent = totalProducts;
+                console.log('Updated pickup-product-count to:', totalProducts);
+            } else {
+                console.warn('Element with ID "pickup-product-count" not found');
+            }
+            
+            // Hiển thị phần pickup-summary-section
+            if (this.elements.pickupSummarySection) {
+                console.log('Showing pickup summary section');
+                this.elements.pickupSummarySection.classList.remove('d-none');
+                this.elements.pickupSummarySection.style.display = 'block'; // Đảm bảo hiển thị
+                this.elements.pickupSummarySection.style.visibility = 'visible'; // Đảm bảo visible
+                this.elements.pickupSummarySection.style.opacity = '1';
+                this.elements.pickupSummarySection.style.height = 'auto';
+            } else {
+                console.warn('Element pickupSummarySection not found');
+                // Thử tìm lại element
+                this.elements.pickupSummarySection = document.getElementById('pickup-summary-section');
+                if (!this.elements.pickupSummarySection) {
+                    console.error('Still cannot find pickup-summary-section element');
+                    return;
+                }
+                this.elements.pickupSummarySection.classList.remove('d-none');
+                this.elements.pickupSummarySection.style.display = 'block';
+                this.elements.pickupSummarySection.style.visibility = 'visible';
+            }
+            
+            // Clear loading message from pickup-summary-section and restore proper structure
+            if (this.elements.pickupSummarySection && this.elements.pickupSummarySection.innerHTML.includes('Đang tải')) {
+                console.log('Clearing loading message from pickup-summary-section and restoring structure');
+                this.elements.pickupSummarySection.innerHTML = `
+                    <h3 class="h6 mb-3">Sản phẩm sẽ nhận (<span id="pickup-product-count">0</span>)</h3>
+                    <div id="pickup-product-list" class="d-flex flex-column gap-3"></div>
+                `;
+                // Re-initialize the pickup product list element
+                this.elements.pickupProductList = document.getElementById('pickup-product-list');
+                this.elements.pickupProductCount = document.getElementById('pickup-product-count');
+            }
+            
+            // Xóa nội dung cũ của pickup-product-list
+            // Re-find the element in case it was recreated
+            this.elements.pickupProductList = document.getElementById('pickup-product-list');
+            if (this.elements.pickupProductList) {
+                this.elements.pickupProductList.innerHTML = '';
+                console.log('Cleared pickup-product-list content');
+            } else {
+                console.warn('pickup-product-list element not found after structure restore');
+            }
+            
+            console.log('pickup-summary-section final state:', {
+                element: this.elements.pickupSummarySection,
+                classList: this.elements.pickupSummarySection?.classList.toString(),
+                display: this.elements.pickupSummarySection?.style.display,
+                visibility: this.elements.pickupSummarySection?.style.visibility,
+                innerHTML: this.elements.pickupSummarySection?.innerHTML.substring(0, 100) + '...'
+            });
+
+            shipments.forEach((shipment, index) => {
+                const shipmentDiv = document.createElement('div');
+                shipmentDiv.className = 'border rounded p-3 mb-3';
+                
+                let statusText = '';
+                let statusClass = '';
+                if (shipment.requires_transfer) {
+                    statusText = `Sẽ chuyển từ ${shipment.source_name || 'kho hàng'} về ${shipment.pickup_store_name || 'cửa hàng đã chọn'}`;
+                    statusClass = 'text-warning';
+                } else {
+                    statusText = `Có sẵn tại ${shipment.pickup_store_name || 'cửa hàng đã chọn'}`;
+                    statusClass = 'text-success';
+                }
+
+                shipmentDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Gói hàng ${index + 1}</h6>
+                        <small class="${statusClass}">${statusText}</small>
+                    </div>
+                    ${shipment.requires_transfer ? `
+                        <div class="small text-muted mb-2">
+                            <i class="fas fa-clock me-1"></i>
+                            Dự kiến sẵn sàng: ${shipment.estimated_ready_date || 'đang cập nhật'}
+                            (${shipment.transit_days_min || '1'}-${shipment.transit_days_max || '3'} ngày)
+                        </div>
+                    ` : ''}
+                    <div class="product-list"></div>
+                `;
+
+                const productList = shipmentDiv.querySelector('.product-list');
+                
+                // Kiểm tra xem shipment có items không
+                if (!shipment.items || !Array.isArray(shipment.items) || shipment.items.length === 0) {
+                    const noItemsDiv = document.createElement('div');
+                    noItemsDiv.className = 'text-muted py-2';
+                    noItemsDiv.textContent = 'Không có thông tin sản phẩm';
+                    productList.appendChild(noItemsDiv);
+                } else {
+                    // Tìm thông tin sản phẩm từ cartItems nếu cần
+                    shipment.items.forEach(item => {
+                        // Tìm thông tin đầy đủ của sản phẩm từ cartItems nếu thiếu
+                        let productInfo = item;
+                        if (!item.name || !item.image || !item.price) {
+                            console.log('Tìm thông tin sản phẩm từ cartItems:', item.product_variant_id);
+                            if (this.state && this.state.cartItems && Array.isArray(this.state.cartItems)) {
+                                const cartItem = this.state.cartItems.find(cartItem => 
+                                    cartItem.product_variant_id == item.product_variant_id);
+                                if (cartItem) {
+                                    console.log('Đã tìm thấy thông tin sản phẩm:', cartItem);
+                                    productInfo = {
+                                        ...item,
+                                        name: item.name || cartItem.name || 'Sản phẩm không xác định',
+                                        image: item.image || cartItem.image || '/images/no-image.png',
+                                        price: item.price || cartItem.price || 0,
+                                        variant: item.variant || cartItem.variant || ''
+                                    };
+                                } else {
+                                    console.warn('Không tìm thấy thông tin sản phẩm trong cartItems');
+                                }
+                            } else {
+                                console.error('state.cartItems không tồn tại hoặc không phải là mảng');
+                            }
+                        }
+                        
+                        try {
+                            const productDiv = document.createElement('div');
+                            productDiv.className = 'd-flex align-items-center gap-3 py-2 border-bottom';
+                            
+                            // Đảm bảo các giá trị mặc định nếu không có thông tin
+                            const productName = productInfo.name || 'Sản phẩm không xác định';
+                            const productImage = productInfo.image || '/images/no-image.png';
+                            const productVariant = productInfo.variant || '';
+                            const productPrice = productInfo.price || 0;
+                            const productQuantity = productInfo.quantity || 1;
+                            
+                            console.log('Hiển thị sản phẩm:', {
+                                name: productName,
+                                image: productImage,
+                                variant: productVariant,
+                                price: productPrice,
+                                quantity: productQuantity
+                            });
+                            
+                            productDiv.innerHTML = `
+                                <img src="${productImage}" alt="${productName}" class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <div class="fw-medium">${productName}</div>
+                                    <div class="small text-muted">${productVariant}</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-medium">${this.helpers.formatCurrency(productPrice)}</div>
+                                    <div class="small text-muted">x${productQuantity}</div>
+                                </div>
+                            `;
+                            productList.appendChild(productDiv);
+                        } catch (error) {
+                            console.error('Lỗi khi tạo phần tử sản phẩm:', error);
+                        }
+                    });
+                }
+
+                this.elements.pickupProductList.appendChild(shipmentDiv);
+            });
+            
+            // Log trạng thái cuối cùng sau khi render xong
+            console.log('Render completed. Final pickup-summary-section state:', {
+                element: this.elements.pickupSummarySection,
+                classList: this.elements.pickupSummarySection?.classList.toString(),
+                display: this.elements.pickupSummarySection?.style.display,
+                visibility: this.elements.pickupSummarySection?.style.visibility,
+                offsetHeight: this.elements.pickupSummarySection?.offsetHeight,
+                offsetWidth: this.elements.pickupSummarySection?.offsetWidth
+            });
+            
+            // Force reflow để đảm bảo DOM được cập nhật
+            if (this.elements.pickupSummarySection) {
+                this.elements.pickupSummarySection.offsetHeight;
+            }
+            
+            // Đảm bảo hiển thị sau một khoảng thời gian ngắn để tránh bị CSS override
+            setTimeout(() => {
+                if (this.elements.pickupSummarySection) {
+                    this.elements.pickupSummarySection.classList.remove('d-none');
+                    this.elements.pickupSummarySection.style.display = 'block';
+                    this.elements.pickupSummarySection.style.visibility = 'visible';
+                    console.log('Force showing pickup-summary-section after timeout');
+                }
+            }, 100);
         },
 
         updateOrderInformation(options = {}) {
@@ -1393,7 +1748,7 @@
                 orderData.pickup_phone_number = this.elements.pickupPhoneNumber?.value.trim();
                 orderData.pickup_email = this.elements.pickupEmail?.value.trim();
                 orderData.store_location_id = this.state.selectedStore?.id;
-                orderData.pickup_date = document.getElementById('pickup-date')?.value;
+                // Đã xóa tham chiếu đến pickup_date
                 orderData.pickup_time_slot = document.getElementById('pickup-time-slot')?.value;
             }
 
@@ -1405,8 +1760,15 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    if (data.redirect_url) window.location.href = data.redirect_url;
-                    else window.location.href = `{{ route('payments.success') }}?order_id=${data.order.id}`;
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else if (data.payment_url) {
+                        window.location.href = data.payment_url;
+                    } else if (data.order && data.order.id) {
+                        window.location.href = `{{ route('payments.success') }}?order_id=${data.order.id}`;
+                    } else {
+                        window.location.href = `{{ route('payments.success') }}`;
+                    }
                 } else {
                     this.helpers.showAlert(data.message || 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.', 'danger');
                     if (data.errors) {
@@ -1472,6 +1834,7 @@
                 if (!this.elements.pickupPhoneNumber.value) { this.helpers.showError('pickup_phone_number', 'Vui lòng nhập số điện thoại'); isValid = false; }
                 if (!this.elements.pickupEmail.value) { this.helpers.showError('pickup_email', 'Vui lòng nhập email'); isValid = false; }
                 if (!this.state.selectedStore) { this.helpers.showError('store_location_error', 'Vui lòng chọn cửa hàng'); isValid = false; }
+                // Đã xóa phần kiểm tra pickup-date
             }
             return isValid;
         },
@@ -1743,10 +2106,16 @@
                 }
                 
                 const response = await fetch(`/api/store-locations/stores?${params.toString()}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data = await response.json();
+                console.log('Store locations response:', data);
 
                 if (data.success && data.data.length > 0) {
-                    storeCountText.textContent = `Có ${data.data.length} cửa hàng còn hàng`;
+                    storeCountText.textContent = `Có ${data.data.length} cửa hàng`;
 
                     let html = '';
                     data.data.forEach(store => {
@@ -1772,34 +2141,48 @@
                     
                     // Thêm event listeners cho radio buttons
                     if (modalStoreList) {
-                        modalStoreList.querySelectorAll('input[type="radio"]').forEach(radio => {
-                            if (radio) {
-                                radio.addEventListener('change', () => {
-                                    const confirmBtn = document.getElementById('confirm-store-selection-btn');
-                                    if (confirmBtn) {
-                                        confirmBtn.disabled = false;
-                                    }
-                            
-                                    // Cập nhật visual state cho các items
-                                    document.querySelectorAll('.store-item').forEach(item => {
-                                        item.classList.remove('border-danger', 'bg-light');
-                                    });
+                        const radioButtons = modalStoreList.querySelectorAll('input[type="radio"]');
+                        if (radioButtons && radioButtons.length > 0) {
+                            radioButtons.forEach(radio => {
+                                if (radio) {
+                                    radio.addEventListener('change', () => {
+                                        const confirmBtn = document.getElementById('confirm-store-selection-btn');
+                                        if (confirmBtn) {
+                                            confirmBtn.disabled = false;
+                                        }
+                                
+                                        // Cập nhật visual state cho các items
+                                        const storeItems = document.querySelectorAll('.store-item');
+                                        if (storeItems && storeItems.length > 0) {
+                                            storeItems.forEach(item => {
+                                                if (item) {
+                                                    item.classList.remove('border-danger', 'bg-light');
+                                                }
+                                            });
+                                        }
 
-                                    const selectedItem = radio.closest('.store-item');
-                                    if (selectedItem) {
-                                        selectedItem.classList.add('border-danger', 'bg-light');
-                                    }
-                                });
-                            }
-                        });
+                                        const selectedItem = radio.closest('.store-item');
+                                        if (selectedItem) {
+                                            selectedItem.classList.add('border-danger', 'bg-light');
+                                        }
+                                    });
+                                }
+                            });
+                        }
                     }
                 } else {
-                    storeCountText.textContent = 'Có 0 cửa hàng còn hàng';
-                    modalStoreList.innerHTML = '<p class="text-muted small text-center">Không có cửa hàng nào trong khu vực này.</p>';
+                    console.log('No stores found or API error:', data);
+                    if (storeCountText) {
+                        storeCountText.textContent = 'Có 0 cửa hàng';
+                    }
+                    modalStoreList.innerHTML = '<div class="text-center py-4"><div class="text-warning mb-2"><i class="fas fa-store-slash"></i></div><p class="text-muted small mb-2">Không có cửa hàng nào trong khu vực này</p><p class="text-muted small">Vui lòng thử chọn tỉnh/thành phố khác</p></div>';
                 }
             } catch (error) {
                 console.error('Error loading store locations:', error);
-                modalStoreList.innerHTML = '<p class="text-danger small text-center">Lỗi khi tải danh sách cửa hàng.</p>';
+                if (storeCountText) {
+                    storeCountText.textContent = 'Có 0 cửa hàng';
+                }
+                modalStoreList.innerHTML = '<div class="text-center py-4"><div class="text-danger mb-2"><i class="fas fa-exclamation-triangle"></i></div><p class="text-danger small mb-2">Không thể tải danh sách cửa hàng</p><p class="text-muted small">Vui lòng thử lại sau hoặc liên hệ hỗ trợ</p></div>';
             }
         },
 
@@ -1816,13 +2199,17 @@
             } else {
                 // Lấy từ giỏ hàng
                 const cartItems = @json($items ?? []);
-                cartItems.forEach(item => {
-                    if (item.productVariant && item.productVariant.id) {
-                        productVariantIds.push(item.productVariant.id);
-                    } else if (item.id) {
-                        productVariantIds.push(item.id);
-                    }
-                });
+                if (Array.isArray(cartItems)) {
+                    cartItems.forEach(item => {
+                        if (item.productVariant && item.productVariant.id) {
+                            productVariantIds.push(item.productVariant.id);
+                        } else if (item.id) {
+                            productVariantIds.push(item.id);
+                        }
+                    });
+                } else {
+                    console.warn('cartItems không phải là mảng:', cartItems);
+                }
             }
             return productVariantIds;
         },
@@ -1844,13 +2231,38 @@
                     phone: storePhone
                 };
 
+                // Tự động chuyển sang chế độ pickup khi chọn cửa hàng
+                const pickupRadio = document.getElementById('delivery_method_radio_pickup');
+                if (pickupRadio && !pickupRadio.checked) {
+                    pickupRadio.checked = true;
+                    // Cập nhật giao diện các option cards
+                    document.querySelectorAll('.option-card').forEach(card => card.classList.remove('selected'));
+                    const pickupCard = document.getElementById('delivery-method-pickup');
+                    if (pickupCard) {
+                        pickupCard.classList.add('selected');
+                    }
+                    // Cập nhật UI sections
+                    this.setupInitialUI();
+                }
+
                 // Hiển thị cửa hàng đã chọn
                 document.getElementById('selected-store-name').textContent = storeName;
                 document.getElementById('selected-store-address').textContent = storeAddress;
                 document.getElementById('selected-store-phone').textContent = storePhone;
 
                 // Ẩn button chọn và hiển thị thông tin cửa hàng
-                document.getElementById('selected-store-display').style.display = 'block';
+                const storeDisplay = document.getElementById('selected-store-display');
+                if (storeDisplay) {
+                    storeDisplay.style.display = 'block';
+                    // Cập nhật text của nút chọn cửa hàng
+                    document.getElementById('store-selection-text').textContent = 'Thay đổi cửa hàng';
+                }
+                
+                // Hiển thị phần pickup-summary-section
+                if (this.elements.pickupSummarySection) {
+                    this.elements.pickupSummarySection.classList.remove('d-none');
+                    this.elements.pickupSummarySection.style.display = 'block';
+                }
 
                 // Ẩn lỗi nếu có
                 const storeError = document.getElementById('store_location_error');
@@ -1861,12 +2273,20 @@
                 // Đóng modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('store-selection-modal'));
                 modal.hide();
+
+                // Cập nhật thông tin đơn hàng và render lại pickup summary
+                this.updateOrderInformation();
+                this.renderPickupOrderSummary();
             }
         }
     };
 
     document.addEventListener('DOMContentLoaded', () => {
-        CheckoutPage.init(window.checkoutConfig);
+        if (window.checkoutConfig) {
+            CheckoutPage.init(window.checkoutConfig);
+        } else {
+            console.error('Checkout configuration not found');
+        }
     });
 </script>
 @endpush
