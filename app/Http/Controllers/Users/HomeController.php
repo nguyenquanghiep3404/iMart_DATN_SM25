@@ -40,28 +40,27 @@ class HomeController extends Controller
             ->orderBy('order')
             ->get();
 
+        // Lấy danh sách các khối sản phẩm trên trang chủ
+        // ✅ Sử dụng mối quan hệ 'productVariants' thay vì 'products'
         $blocks = HomepageProductBlock::where('is_visible', true)
             ->orderBy('order')
-            ->with(['products' => function ($query) {
-                $query->where('products.status', 'published') // ✅ fix lỗi ambiguous
+            ->with(['productVariants' => function ($query) {
+                // Truy vấn đến sản phẩm thông qua biến thể
+                $query->whereHas('product', function ($q) {
+                    $q->where('status', 'published');
+                })
                     ->with([
-                        'category',
-                        'coverImage',
-                        'galleryImages',
-                        'variants.primaryImage',
-                        'variants.images',
-                        'reviews' => function ($query) {
-                            $query->where('reviews.status', 'approved'); // ✅ fix luôn
-                        },
-                    ])
-                    ->withCount([
-                        'reviews as approved_reviews_count' => function ($query) {
-                            $query->where('reviews.status', 'approved'); // ✅
-                        },
+                        'product.category',
+                        'product.coverImage',
+                        'product.galleryImages',
+                        // Đã bỏ mối quan hệ 'product.reviews'
+                        'primaryImage',
+                        'images',
+                        'attributeValues.attribute'
                     ]);
+                // Đã bỏ hoàn toàn withCount cho reviews
             }])
             ->get();
-
 
         // Hàm xử lý đánh giá và phần trăm giảm giá
         $calculateAverageRating = function ($products) {
@@ -678,7 +677,7 @@ class HomeController extends Controller
         }
 
         // Kêt thúc logic Store Locations
-       
+
         $initialVariantAttributes = [];
         if ($defaultVariant) {
             foreach ($defaultVariant->attributeValues as $attrValue) {
@@ -688,7 +687,7 @@ class HomeController extends Controller
         $attributesGrouped = collect($attributes)->map(fn($values) => $values->sortBy('value')->values());
 
         $variantCombinations = $availableCombinations;
-        
+
         // ✅ Lấy thông số kỹ thuật theo nhóm (chỉ lấy từ biến thể mặc định)
         $specGroupsData = [];
         if ($defaultVariant) {
@@ -843,6 +842,217 @@ class HomeController extends Controller
     }
 
 
+    // public function allProducts(Request $request, $id = null, $slug = null)
+    // {
+    //     $now = Carbon::now();
+    //     // Lấy danh mục hiện tại nếu có
+    //     $currentCategory = null;
+    //     if ($id) {
+    //         $currentCategory = Category::with('parent')->findOrFail($id);
+    //         if ($slug !== Str::slug($currentCategory->name)) {
+    //             return redirect()->route('products.byCategory', array_merge(
+    //                 ['id' => $currentCategory->id, 'slug' => Str::slug($currentCategory->name)],
+    //                 $request->query()
+    //             ));
+    //         }
+    //         // Lưu danh mục vào session
+    //         session(['current_category' => $currentCategory]);
+    //     } else {
+    //         // Nếu không có id (trang tất cả), xóa session danh mục
+    //         session()->forget('current_category');
+    //         if ($request->hasAny(['sort', 'min_price', 'max_price', 'storage']) && session('current_category')) {
+    //             // Nếu có tham số lọc/sắp xếp và không có id, khôi phục danh mục từ session
+    //             $currentCategory = session('current_category');
+    //             return redirect()->route('products.byCategory', array_merge(
+    //                 ['id' => $currentCategory->id, 'slug' => Str::slug($currentCategory->name)],
+    //                 $request->query()
+    //             ));
+    //         }
+    //     }
+
+    //     $query = Product::with([
+    //         'category',
+    //         'coverImage',
+    //         'variants' => function ($query) use ($now, $request) {
+    //             if ($request->sort === 'dang_giam_gia') {
+    //                 $query->where('sale_price', '>', 0)
+    //                     ->where('sale_price_starts_at', '<=', $now)
+    //                     ->where('sale_price_ends_at', '>=', $now)
+    //                     ->whereNull('deleted_at')
+    //                     ->orderBy('id');
+    //             } else {
+    //                 $query->where(function ($q) {
+    //                     $q->where('is_default', true)
+    //                         ->orWhereRaw('id = (
+    //                         select min(id) 
+    //                         from product_variants pv 
+    //                         where pv.product_id = product_variants.product_id 
+    //                         and pv.deleted_at is null
+    //                     )');
+    //                 })->whereNull('deleted_at');
+    //             }
+    //         },
+    //         'reviews' => fn($q) => $q->where('reviews.status', 'approved')
+    //     ])
+    //         ->withCount([
+    //             'reviews as approved_reviews_count' => fn($q) => $q->where('reviews.status', 'approved')
+    //         ])
+    //         ->where('status', 'published');
+
+    //     // 🔍 Tìm kiếm
+    //     if ($request->filled('search')) {
+    //         $query->where('name', 'like', '%' . $request->search . '%');
+    //     }
+
+    //     // 🗂 Lọc theo danh mục và con
+    //     if ($currentCategory) {
+    //         $categoryIds = Category::where('parent_id', $currentCategory->id)->pluck('id')->toArray();
+    //         $categoryIds[] = $currentCategory->id;
+    //         $query->whereIn('category_id', $categoryIds);
+    //     }
+
+    //     // 💰 Lọc giá
+    //     if ($request->filled('min_price') || $request->filled('max_price')) {
+    //         // Ưu tiên lọc theo thanh trượt (có min_price và max_price)
+    //         $query->whereHas('variants', function ($q) use ($request) {
+    //             $q->where(function ($q2) use ($request) {
+    //                 $min = (int) $request->min_price;
+    //                 $max = (int) $request->max_price;
+
+    //                 $q2->whereRaw("COALESCE(sale_price, price) >= ? AND COALESCE(sale_price, price) <= ?", [$min, $max]);
+    //             });
+    //         });
+    //     } elseif ($request->filled('muc-gia')) {
+    //         // Nếu không có thanh trượt, lọc theo các checkbox giá nhanh
+    //         $query->whereHas('variants', function ($q) use ($request) {
+    //             $q->where(function ($q2) use ($request) {
+    //                 // Thay đổi ở đây: Lấy tham số 'muc-gia'
+    //                 $priceRanges = is_array($request->input('muc-gia')) ? $request->input('muc-gia') : explode(',', $request->input('muc-gia'));
+    //                 $first = true;
+
+    //                 foreach ($priceRanges as $range) {
+    //                     if ($range === 'all') {
+    //                         // Nếu có "all", không cần thêm điều kiện lọc giá
+    //                         continue;
+    //                     }
+
+    //                     // Logic phân tích giá trị mới
+    //                     $minPrice = 0;
+    //                     $maxPrice = 0;
+
+    //                     if ($range === 'duoi-2-trieu') {
+    //                         $maxPrice = 2000000;
+    //                     } elseif ($range === 'tu-2-4-trieu') {
+    //                         $minPrice = 2000000;
+    //                         $maxPrice = 4000000;
+    //                     } elseif ($range === 'tu-4-7-trieu') {
+    //                         $minPrice = 4000000;
+    //                         $maxPrice = 7000000;
+    //                     } elseif ($range === 'tu-7-13-trieu') {
+    //                         $minPrice = 7000000;
+    //                         $maxPrice = 13000000;
+    //                     } elseif ($range === 'tu-13-20-trieu') {
+    //                         $minPrice = 13000000;
+    //                         $maxPrice = 20000000;
+    //                     } elseif ($range === 'tren-20-trieu') {
+    //                         $minPrice = 20000000;
+    //                         $maxPrice = 999999999;
+    //                     } else {
+    //                         continue;
+    //                     }
+
+    //                     if ($first) {
+    //                         $q2->whereRaw("COALESCE(sale_price, price) >= ? AND COALESCE(sale_price, price) <= ?", [$minPrice, $maxPrice]);
+    //                         $first = false;
+    //                     } else {
+    //                         $q2->orWhereRaw("COALESCE(sale_price, price) >= ? AND COALESCE(sale_price, price) <= ?", [$minPrice, $maxPrice]);
+    //                     }
+    //                 }
+    //             });
+    //         });
+    //     }
+
+    //     // 🔃 Sắp xếp
+    //     $currentSort = $request->input('sort', 'moi_nhat'); // Mặc định moi_nhat
+    //     switch ($currentSort) {
+    //         case 'moi_nhat':
+    //             $query->where('created_at', '>=', $now->copy()->subWeek())->orderByDesc('created_at');
+    //             break;
+    //         case 'gia_thap_den_cao':
+    //             $query->whereHas('variants', fn($q) => $q->whereNull('deleted_at'))
+    //                 ->orderByRaw('(
+    //                 SELECT COALESCE(MIN(sale_price), MIN(price))
+    //                 FROM product_variants pv
+    //                 WHERE pv.product_id = products.id
+    //                 AND pv.deleted_at IS NULL
+    //                 AND (pv.is_default = true OR pv.id = (
+    //                     SELECT MIN(id)
+    //                     FROM product_variants pv2
+    //                     WHERE pv2.product_id = pv.product_id
+    //                     AND pv2.deleted_at IS NULL
+    //                 ))
+    //             ) ASC');
+    //             break;
+    //         case 'gia_cao_den_thap':
+    //             $query->whereHas('variants', fn($q) => $q->whereNull('deleted_at'))
+    //                 ->orderByRaw('(
+    //                 SELECT COALESCE(MIN(sale_price), MIN(price))
+    //                 FROM product_variants pv
+    //                 WHERE pv.product_id = products.id
+    //                 AND pv.deleted_at IS NULL
+    //                 AND (pv.is_default = true OR pv.id = (
+    //                     SELECT MIN(id)
+    //                     FROM product_variants pv2
+    //                     WHERE pv2.product_id = pv.product_id
+    //                     AND pv2.deleted_at IS NULL
+    //                 ))
+    //             ) DESC');
+    //             break;
+    //         case 'noi_bat':
+    //             $query->where('is_featured', 1)->orderByDesc('created_at');
+    //             break;
+    //         default:
+    //             if (!$id) {
+    //                 // Mặc định cho trang tất cả sản phẩm: moi_nhat
+    //                 $query->where('created_at', '>=', $now->copy()->subWeek())->orderByDesc('created_at');
+    //             } else {
+    //                 // Mặc định cho danh mục: tat_ca
+    //                 $query->orderByDesc('created_at');
+    //             }
+    //             break;
+    //     }
+
+    //     $products = $query->paginate(12);
+
+    //     // 🎯 Tính rating + giảm giá
+    //     foreach ($products as $product) {
+    //         $product->average_rating = round($product->reviews->avg('rating') ?? 0, 1);
+    //         $variant = $product->variants->first();
+    //         if ($variant && $variant->sale_price && $variant->sale_price_starts_at && $variant->sale_price_ends_at) {
+    //             $onSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+    //             $variant->discount_percent = $onSale
+    //                 ? round(100 - ($variant->sale_price / $variant->price) * 100)
+    //                 : 0;
+    //         }
+    //     }
+
+    //     $categories = Category::all();
+    //     $parentCategories = $categories->whereNull('parent_id');
+
+    //     if ($request->ajax()) {
+    //         return response()->json([
+    //             'sidebar' => view('users.partials.category_product.product_sidebar', compact('categories', 'parentCategories', 'currentCategory'))->render(),
+    //             'products' => view('users.partials.category_product.shop_products', compact('products'))->render(),
+    //             'title' => $currentCategory ? $currentCategory->name : 'Tất cả sản phẩm',
+    //             'breadcrumb_html' => view('users.partials.category_product.breadcrumb', compact('categories', 'currentCategory'))->render(),
+    //             'currentSort' => $currentSort, // Pass currentSort to AJAX response
+    //         ]);
+    //     }
+
+    //     return view('users.shop', compact('products', 'categories', 'parentCategories', 'currentCategory', 'currentSort'));
+    // }
+
+
     public function allProducts(Request $request, $id = null, $slug = null)
     {
         $now = Carbon::now();
@@ -852,37 +1062,109 @@ class HomeController extends Controller
         if ($id) {
             $currentCategory = Category::with('parent')->findOrFail($id);
             if ($slug !== Str::slug($currentCategory->name)) {
-                return redirect()->route('products.byCategory', [
-                    'id' => $currentCategory->id,
-                    'slug' => Str::slug($currentCategory->name),
-                ]);
+                $query = $request->query();
+                // Xóa tham số 'sort' để mặc định quay về 'moi_nhat'
+                unset($query['sort']);
+                return redirect()->route('products.byCategory', array_merge(
+                    ['id' => $currentCategory->id, 'slug' => Str::slug($currentCategory->name)],
+                    $query
+                ));
             }
+            session(['current_category' => $currentCategory]);
         } else {
-            // Reset $currentCategory nếu không có $id
-            // Session::forget('current_category'); // Bỏ nếu không dùng session
+            session()->forget('current_category');
+            if ($request->hasAny(['sort', 'min_price', 'max_price', 'storage']) && session('current_category')) {
+                $currentCategory = session('current_category');
+                return redirect()->route('products.byCategory', array_merge(
+                    ['id' => $currentCategory->id, 'slug' => Str::slug($currentCategory->name)],
+                    $request->query()
+                ));
+            }
         }
 
+        // Nếu không có sort và không có $id, redirect với ?sort=moi_nhat
+        if (!$request->filled('sort') && !$id && !$request->ajax()) {
+            return redirect()->route('users.products.all', array_merge(
+                $request->query(),
+                ['sort' => 'moi_nhat']
+            ));
+        }
+
+        // Lấy tham số bộ lọc dung lượng
+        $storages = $request->input('storage') ? array_map('trim', explode(',', $request->input('storage'))) : [];
+
+        // Lấy tham số bộ lọc giá
+        $priceRangesSelected = [];
+        if ($request->filled('min_price') && $request->filled('max_price')) {
+            $priceRangesSelected[] = [
+                'min' => (int) $request->min_price,
+                'max' => (int) $request->max_price
+            ];
+        } elseif ($request->filled('muc-gia')) {
+            $priceRanges = is_array($request->input('muc-gia')) ? $request->input('muc-gia') : explode(',', $request->input('muc-gia'));
+            foreach ($priceRanges as $range) {
+                $minPrice = 0;
+                $maxPrice = 0;
+                if ($range === 'duoi-2-trieu') {
+                    $maxPrice = 2000000;
+                } elseif ($range === 'tu-2-4-trieu') {
+                    $minPrice = 2000000;
+                    $maxPrice = 4000000;
+                } elseif ($range === 'tu-4-7-trieu') {
+                    $minPrice = 4000000;
+                    $maxPrice = 7000000;
+                } elseif ($range === 'tu-7-13-trieu') {
+                    $minPrice = 7000000;
+                    $maxPrice = 13000000;
+                } elseif ($range === 'tu-13-20-trieu') {
+                    $minPrice = 13000000;
+                    $maxPrice = 20000000;
+                } elseif ($range === 'tren-20-trieu') {
+                    $minPrice = 20000000;
+                    $maxPrice = 999999999;
+                } else {
+                    continue;
+                }
+                $priceRangesSelected[] = ['min' => $minPrice, 'max' => $maxPrice];
+            }
+        }
+
+        // Lưu trạng thái bộ lọc ban đầu
+        $filterType = $request->input('filter_type', null);
+        if ($request->filled('sort') && in_array($request->sort, ['moi_nhat', 'noi_bat'])) {
+            $filterType = $request->sort;
+            $request->session()->put('filter_type', $filterType);
+        } elseif ($request->session()->has('filter_type')) {
+            $filterType = $request->session()->get('filter_type');
+        } else {
+            $filterType = 'moi_nhat'; // Mặc định là moi_nhat
+        }
+
+        // Xây dựng truy vấn sản phẩm
         $query = Product::with([
             'category',
             'coverImage',
-            'variants' => function ($query) use ($now, $request) {
+            'variants' => function ($query) use ($now, $request, $storages, $priceRangesSelected) {
+                $query->with(['attributeValues', 'primaryImage']);
                 if ($request->sort === 'dang_giam_gia') {
                     $query->where('sale_price', '>', 0)
                         ->where('sale_price_starts_at', '<=', $now)
                         ->where('sale_price_ends_at', '>=', $now)
-                        ->whereNull('deleted_at')
-                        ->orderBy('id');
-                } else {
-                    $query->where(function ($q) {
-                        $q->where('is_default', true)
-                            ->orWhereRaw('id = (
-                            select min(id) 
-                            from product_variants pv 
-                            where pv.product_id = product_variants.product_id 
-                            and pv.deleted_at is null
-                        )');
-                    })->whereNull('deleted_at');
+                        ->whereNull('deleted_at');
                 }
+                if (!empty($storages)) {
+                    $query->whereHas('attributeValues', function ($q) use ($storages) {
+                        $q->whereIn('value', $storages);
+                    });
+                }
+                if (!empty($priceRangesSelected)) {
+                    $query->where(function ($q) use ($priceRangesSelected) {
+                        foreach ($priceRangesSelected as $range) {
+                            $q->orWhereRaw('COALESCE(sale_price, price) BETWEEN ? AND ?', [$range['min'], $range['max']]);
+                        }
+                    });
+                }
+                $query->whereNull('deleted_at');
             },
             'reviews' => fn($q) => $q->where('reviews.status', 'approved')
         ])
@@ -904,108 +1186,165 @@ class HomeController extends Controller
         }
 
         // 💰 Lọc giá
-        if ($request->filled('min_price') || $request->filled('max_price')) {
-            $query->whereHas('variants', function ($q) use ($request) {
-                $q->where(function ($q2) use ($request) {
-                    // Kiểm tra nếu có sale_price
-                    $q2->where(function ($q3) use ($request) {
-                        $q3->where('sale_price', '>', 0);
-                        if ($request->filled('min_price')) {
-                            $q3->where('sale_price', '>=', $request->min_price);
-                        }
-                        if ($request->filled('max_price')) {
-                            $q3->where('sale_price', '<=', $request->max_price);
-                        }
-                    })
-                        // Nếu không có sale_price, dùng giá gốc
-                        ->orWhere(function ($q3) use ($request) {
-                            $q3->where('sale_price', 0)->orWhereNull('sale_price');
-                            if ($request->filled('min_price')) {
-                                $q3->where('price', '>=', $request->min_price);
-                            }
-                            if ($request->filled('max_price')) {
-                                $q3->where('price', '<=', $request->max_price);
-                            }
+        if (!empty($priceRangesSelected)) {
+            $query->where(function ($q) use ($priceRangesSelected) {
+                $first = true;
+                foreach ($priceRangesSelected as $range) {
+                    $closure = function ($subQuery) use ($range) {
+                        $subQuery->whereHas('variants', function ($variantQuery) use ($range) {
+                            $variantQuery->whereRaw('COALESCE(sale_price, price) BETWEEN ? AND ?', [$range['min'], $range['max']]);
                         });
-                });
+                    };
+                    if ($first) {
+                        $q->where($closure);
+                        $first = false;
+                    } else {
+                        $q->orWhere($closure);
+                    }
+                }
             });
         }
 
+        // 🗃 Lọc dung lượng
+        if (!empty($storages)) {
+            $query->whereHas('variants.attributeValues', function ($q) use ($storages) {
+                $q->whereIn('value', $storages);
+            });
+        }
+
+        // 🔃 Áp dụng bộ lọc ban đầu (moi_nhat hoặc noi_bat)
+        if ($filterType === 'moi_nhat') {
+            $query->where('created_at', '>=', $now->copy()->subWeek());
+        } elseif ($filterType === 'noi_bat') {
+            $query->where('is_featured', 1);
+        }
+
         // 🔃 Sắp xếp
-        switch ($request->sort) {
+        $currentSort = $request->input('sort', 'moi_nhat');
+        switch ($currentSort) {
             case 'moi_nhat':
-                $query->where('created_at', '>=', $now->copy()->subWeek())->orderByDesc('created_at');
+                $query->orderByDesc('created_at');
                 break;
-
-            case 'gia_thap_den_cao':
-                $query->whereHas('variants', fn($q) => $q->whereNull('deleted_at'))
-                    ->orderByRaw('(
-                    SELECT COALESCE(MIN(sale_price), MIN(price))
-                    FROM product_variants pv
-                    WHERE pv.product_id = products.id
-                    AND pv.deleted_at IS NULL
-                    AND (pv.is_default = true OR pv.id = (
-                        SELECT MIN(id)
-                        FROM product_variants pv2
-                        WHERE pv2.product_id = pv.product_id
-                        AND pv2.deleted_at IS NULL
-                    ))
-                ) ASC');
-                break;
-
-            case 'gia_cao_den_thap':
-                $query->whereHas('variants', fn($q) => $q->whereNull('deleted_at'))
-                    ->orderByRaw('(
-                    SELECT COALESCE(MIN(sale_price), MIN(price))
-                    FROM product_variants pv
-                    WHERE pv.product_id = products.id
-                    AND pv.deleted_at IS NULL
-                    AND (pv.is_default = true OR pv.id = (
-                        SELECT MIN(id)
-                        FROM product_variants pv2
-                        WHERE pv2.product_id = pv.product_id
-                        AND pv2.deleted_at IS NULL
-                    ))
-                ) DESC');
-                break;
-
             case 'noi_bat':
-                $query->where('is_featured', 1)->orderByDesc('created_at');
+                $query->orderByDesc('created_at');
                 break;
-
+            case 'gia_thap_den_cao':
+            case 'gia_cao_den_thap':
+                // Không áp dụng sắp xếp trong truy vấn, sẽ xử lý trong $productsData
+                break;
             default:
                 $query->orderByDesc('created_at');
                 break;
         }
 
+        // Phân trang
         $products = $query->paginate(12);
 
-        // 🎯 Tính rating + giảm giá
-        foreach ($products as $product) {
+        // 🎯 Tính rating và giảm giá, chuẩn bị dữ liệu biến thể
+        $productsData = $products->getCollection()->flatMap(function ($product) use ($storages, $now, $priceRangesSelected) {
+            // Tính rating trung bình
             $product->average_rating = round($product->reviews->avg('rating') ?? 0, 1);
-            $variant = $product->variants->first();
-            if ($variant && $variant->sale_price && $variant->sale_price_starts_at && $variant->sale_price_ends_at) {
-                $onSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
-                $variant->discount_percent = $onSale
-                    ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                    : 0;
+
+            // Lấy tất cả các biến thể
+            $variants = !empty($storages)
+                ? $product->variants->filter(function ($variant) use ($storages) {
+                    return $variant->attributeValues->pluck('value')->intersect($storages)->isNotEmpty();
+                })
+                : $product->variants;
+
+            // Lọc biến thể theo giá nếu có bộ lọc giá
+            if (!empty($priceRangesSelected)) {
+                $variants = $variants->filter(function ($variant) use ($priceRangesSelected, $now) {
+                    $price = $variant->sale_price !== null && $variant->sale_price_starts_at && $variant->sale_price_ends_at && $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at)
+                        ? $variant->sale_price
+                        : $variant->price;
+                    foreach ($priceRangesSelected as $range) {
+                        if ($price >= $range['min'] && $price <= $range['max']) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
             }
+
+            // Nhóm các biến thể theo dung lượng
+            $groupedVariants = $variants->groupBy(function ($variant) {
+                return $variant->attributeValues->where('attribute.name', 'Dung lượng')->pluck('value')->first();
+            });
+
+            // Tạo bản ghi cho mỗi dung lượng
+            return $groupedVariants->map(function ($variants, $storage) use ($product, $now) {
+                // Chọn biến thể đại diện (mặc định hoặc đầu tiên)
+                $variant = $variants->where('is_default', true)->first() ?? $variants->first();
+
+                // Logic xác định onSale và tính phần trăm giảm giá
+                $onSale = ($variant->sale_price !== null && $variant->sale_price < $variant->price)
+                    && $variant->sale_price_starts_at && $variant->sale_price_ends_at
+                    && $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+
+                $discountPercent = 0;
+                if ($onSale && $variant->price > 0) {
+                    $discountPercent = round(100 * (1 - ($variant->sale_price / $variant->price)));
+                }
+
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                    'average_rating' => $product->average_rating,
+                    'approved_reviews_count' => $product->approved_reviews_count,
+                    'cover_image' => $product->coverImage ? '/storage/' . ltrim($product->coverImage->path, '/') : '/images/no-image.png',
+                    'variant' => [
+                        'id' => $variant->id,
+                        'sku' => $variant->sku,
+                        'storage' => $storage,
+                        'price' => $onSale ? $variant->sale_price : $variant->price,
+                        'original_price' => $variant->price,
+                        'discount_percent' => $discountPercent,
+                        'image_url' => $variant->image_url,
+                        'stock' => $variant->sellable_stock,
+                    ],
+                ];
+            })->values();
+        })->filter()->values();
+
+        // Sắp xếp theo giá nếu cần
+        if ($currentSort === 'gia_thap_den_cao') {
+            $productsData = $productsData->sortBy(function ($product) {
+                return $product['variant']['price'];
+            })->values();
+        } elseif ($currentSort === 'gia_cao_den_thap') {
+            $productsData = $productsData->sortByDesc(function ($product) {
+                return $product['variant']['price'];
+            })->values();
         }
+
+        // Sắp xếp theo dung lượng nếu có
+        if (!empty($storages)) {
+            $storageOrder = array_flip($storages);
+            $productsData = $productsData->sortBy(function ($product) use ($storageOrder) {
+                $storage = $product['variant']['storage'];
+                return isset($storageOrder[$storage]) ? $storageOrder[$storage] : PHP_INT_MAX;
+            })->values();
+        }
+
+        // Cập nhật collection của $products
+        $products->setCollection(collect($productsData));
 
         $categories = Category::all();
         $parentCategories = $categories->whereNull('parent_id');
 
-        if ($request->ajax() || $request->wantsJson()) {
+        if ($request->ajax()) {
             return response()->json([
                 'sidebar' => view('users.partials.category_product.product_sidebar', compact('categories', 'parentCategories', 'currentCategory'))->render(),
                 'products' => view('users.partials.category_product.shop_products', compact('products'))->render(),
                 'title' => $currentCategory ? $currentCategory->name : 'Tất cả sản phẩm',
                 'breadcrumb_html' => view('users.partials.category_product.breadcrumb', compact('categories', 'currentCategory'))->render(),
+                'currentSort' => $currentSort,
             ]);
         }
 
-
-        return view('users.shop', compact('products', 'categories', 'parentCategories', 'currentCategory'));
+        return view('users.shop', compact('products', 'categories', 'parentCategories', 'currentCategory', 'currentSort'));
     }
 
     /**

@@ -7,6 +7,7 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider/dist/nouislider.min.css">
     @include('users.partials.head')
 </head>
 
@@ -21,7 +22,7 @@
     @include('users.partials.header')
 
     <!-- Page content -->
-    <main class="content-wrapper bg-body">
+    <main class="content-wrapper bg-body bg-body-tertiary">
         @yield('content')
     </main>
 
@@ -34,6 +35,8 @@
     <!-- Vendor scripts -->
     <!-- Vendor scripts -->
     <script src="{{ asset('assets/users/vendor/swiper/swiper-bundle.min.js') }}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/nouislider/dist/nouislider.min.js"></script>
 
     <!-- Bootstrap + Theme scripts -->
     <script src="{{ asset('assets/users/js/theme.min.js') }}"></script>
