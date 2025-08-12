@@ -1,4 +1,4 @@
-<form method="GET" action="{{ route('admin.staff.index') }}" class="p-6 border-b border-gray-200">
+<form method="GET" action="{{ route('admin.order-manager.warehouse.show', $warehouse->id) }}" class="p-6 border-b border-gray-200">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <!-- Ô tìm kiếm -->
         <div>
@@ -32,7 +32,7 @@
                 <i class="fas fa-filter"></i>
                 <span>Áp dụng</span>
             </button>
-            <a href="{{ route('admin.order-manager.index') }}"
+            <a href="{{ route('admin.order-manager.warehouse.show', $warehouse->id) }}"
                 class="w-full px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold text-center">
                 Xóa lọc
             </a>

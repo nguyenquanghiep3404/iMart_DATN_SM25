@@ -32,7 +32,6 @@
     <div class="container mx-auto max-w-full">
         <form id="purchase-order-form" @submit.prevent="submitForm" method="POST" action="{{ route('admin.purchase-orders.store') }}">
             @csrf
-            <!-- Header -->
             <header class="mb-8 flex flex-col sm:flex-row items-center justify-between">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-800">Tạo Phiếu Nhập Kho</h1>
@@ -48,10 +47,17 @@
                     </button>
                 </div>
             </header>
-
-            <!-- Main Grid Layout -->
+            @if ($errors->any())
+                <div class="card bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                    <strong class="font-bold">Có lỗi xảy ra!</strong>
+                    <ul class="mt-2 list-disc list-inside">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Left Column: Product Details -->
                 <div class="lg:col-span-2 space-y-8">
                     <div class="card">
                         <div class="p-6">
@@ -69,8 +75,7 @@
                         
                                 <div id="search-suggestions"
                                      class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-2 shadow-lg max-h-80 overflow-y-auto hidden custom-scrollbar">
-                                    <!-- Search results will be displayed here by JS -->
-                                </div>
+                                    </div>
                             </div>
                         </div>
                     </div>
@@ -78,14 +83,12 @@
                     @include('admin.purchase_orders.partials._product_list')
                 </div>
 
-                <!-- Right Column: General Info -->
                 <div class="lg:col-span-1 space-y-8">
                     @include('admin.purchase_orders.partials._general_info')
                 </div>
             </div>
         </form>
 
-        <!-- Modals -->
         @include('admin.purchase_orders.partials._modals')
         @include('admin.purchase_orders.partials._barcode_scanner_modal')
     </div>
@@ -125,7 +128,7 @@
                 });
 
                 this.initializeProductSearch();
-                this.initializeSound(); // Tải âm thanh sẵn sàng
+                this.initializeSound();
             },
             
             // --- SOUND METHODS ---
@@ -136,7 +139,6 @@
                     volume: 0.8,
                     onload: () => { 
                         this.soundInitialized = true; 
-                        console.log('Sound loaded successfully.');
                     },
                     onloaderror: (id, err) => { 
                         console.error('Failed to load beep sound:', err); 
@@ -147,8 +149,6 @@
             playBeep() {
                 if (this.soundInitialized && this.beepSound) {
                     this.beepSound.play();
-                } else {
-                    console.warn('Sound not ready or failed to load.');
                 }
             },
 
@@ -209,6 +209,10 @@
             submitForm() {
                 if (!this.selectedSupplier.addressId || !this.selectedLocation.id) {
                     alert('Vui lòng chọn đầy đủ Nhà cung cấp và Kho nhận hàng.');
+                    return;
+                }
+                if (document.querySelectorAll('.purchase-item-row').length === 0) {
+                    alert('Vui lòng thêm ít nhất một sản phẩm vào phiếu nhập.');
                     return;
                 }
                 document.getElementById('purchase-order-form').submit();
@@ -285,6 +289,7 @@
                 const noItemsRow = document.getElementById('no-items-row');
                 const grandTotalEl = document.getElementById('grand-total');
                 let allProductVariants = [];
+                let itemIndex = 0;
 
                 const fetchProducts = async (term) => {
                     try {
@@ -338,6 +343,7 @@
                     const newRow = document.createElement('tr');
                     newRow.className = 'bg-white border-b purchase-item-row transition-colors';
                     newRow.dataset.variantId = product.id;
+                    
                     newRow.innerHTML = `
                         <td class="px-4 py-3">
                             <div class="flex items-center">
@@ -345,16 +351,16 @@
                                 <div>
                                     <div class="font-medium text-gray-800">${product.name}</div>
                                     <div class="text-xs text-gray-500">SKU: ${product.sku}</div>
-                                    <input type="hidden" name="items[${product.id}][product_variant_id]" value="${product.id}">
+                                    <input type="hidden" name="items[${itemIndex}][product_variant_id]" value="${product.id}">
                                 </div>
                             </div>
                         </td>
                         <td class="px-4 py-3 text-center font-bold text-blue-600">${product.stock}</td>
                         <td class="px-4 py-3">
-                            <input type="number" name="items[${product.id}][quantity]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-center quantity-input" value="1" min="1">
+                            <input type="number" name="items[${itemIndex}][quantity]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-center quantity-input" value="1" min="1">
                         </td>
                         <td class="px-4 py-3">
-                            <input type="number" name="items[${product.id}][cost_price]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-right cost-price-input" value="${product.cost_price}" min="0">
+                            <input type="number" name="items[${itemIndex}][cost_price]" class="w-full p-2 border border-gray-300 rounded-md text-sm text-right cost-price-input" value="${product.cost_price}" min="0">
                         </td>
                         <td class="px-4 py-3 text-right font-medium text-gray-900 subtotal">${formatCurrency(product.cost_price)}</td>
                         <td class="px-4 py-3 text-center">
@@ -362,6 +368,7 @@
                         </td>
                     `;
                     purchaseItemsTableBody.appendChild(newRow);
+                    itemIndex++;
                     updateGrandTotal();
                 };
 

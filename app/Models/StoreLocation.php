@@ -200,4 +200,15 @@ class StoreLocation extends Model
     {
         return $this->assignedUsers()->where('status', 'active')->get();
     }
+
+    /**
+     * Lấy tất cả shipper được gán vào kho này.
+     */
+    public function shippers()
+    {
+        return $this->belongsToMany(User::class, 'user_store_location', 'store_location_id', 'user_id')
+                    ->whereHas('roles', function($query) {
+                        $query->where('name', 'shipper');
+                    });
+    }
 }
