@@ -10,7 +10,20 @@
                     <span class="fw-medium text-danger">Chọn hoặc nhập ưu đãi</span>
                     <i class="ci-chevron-right text-muted"></i>
                 </button>
-
+                <div id="appliedCouponBox" class="mb-4">
+                    @if (session()->has('applied_coupon'))
+                        <div
+                            class="flex items-center justify-between bg-gray-100 border border-gray-300 rounded-lg px-4 py-2">
+                            <span class="text-sm text-gray-700">
+                                Bạn đang áp dụng mã:
+                                <strong class="text-red-500">{{ session('applied_coupon.code') }}</strong>
+                            </span>
+                            <button id="removeCouponBtn" class="text-xs text-red-500 hover:underline font-semibold">
+                                Gỡ bỏ
+                            </button>
+                        </div>
+                    @endif
+                </div>
 
                 <div class="bg-body-tertiary rounded-5 p-4 mb-3">
                     @guest
@@ -352,6 +365,18 @@
                         toastr.success(response.message);
                         $('#cart-discount').text('-' + formatMoney(response.discount));
                         $('#cart-total').text(formatMoney(response.total_after_discount));
+                        // ✅ Cập nhật nội dung hiển thị mã đã áp dụng
+                        $('#appliedCouponBox').html(`
+                            <div class="flex items-center justify-between bg-gray-100 border border-gray-300 rounded-lg px-4 py-2">
+                                <span class="text-sm text-gray-700">
+                                    Bạn đang áp dụng mã:
+                                    <strong class="text-red-500">${voucherCode}</strong>
+                                </span>
+                                <button id="removeCouponBtn" class="text-xs text-red-500 hover:underline font-semibold">
+                                    Gỡ bỏ
+                                </button>
+                            </div>
+                        `);
                     } else {
                         toastr.error(response.message);
                     }
@@ -474,6 +499,35 @@
         const modal = document.querySelector('.fixed.inset-0');
         document.getElementById('closeModalBtn').addEventListener('click', () => {
             modal.style.display = 'none'; // In a real app, you would manage this with state
+        });
+    });
+    $(document).ready(function() {
+        $(document).on('click', '#removeCouponBtn', function() {
+            Swal.fire({
+                title: 'Bạn có chắc muốn gỡ mã giảm giá?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Có, gỡ mã!',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('{{ route('cart.removeCoupon') }}', function(res) {
+                        if (res.success) {
+                            toastr.info(res.message);
+                            $('#appliedCouponBox').empty();
+                            $('#cart-discount').text('0₫');
+                            $('#cart-total').text(formatPrice(res.new_total));
+                        } else {
+                            toastr.error(res.message ||
+                                'Xảy ra lỗi khi gỡ mã giảm giá.');
+                        }
+                    }).fail(function() {
+                        toastr.error('Không thể kết nối đến server.');
+                    });
+                }
+            });
         });
     });
 </script>

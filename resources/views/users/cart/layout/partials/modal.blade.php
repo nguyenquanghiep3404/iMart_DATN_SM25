@@ -105,14 +105,13 @@
             }
         });
 
-        // Hàm xử lý gọi ajax dùng chung
         function applyVoucher(voucherCode) {
             $.ajax({
                 url: '{{ route('cart.applyVoucherAjax') }}',
                 method: 'POST',
                 data: {
                     voucher_code: voucherCode,
-                    type: 'buy-now'
+                    type: 'cart'
                 },
                 success: function(response) {
                     const formatMoney = (amount) => amount.toLocaleString('vi-VN') + '₫';
@@ -121,12 +120,24 @@
                         toastr.success(response.message);
                         $('#cart-discount').text('-' + formatMoney(response.discount));
                         $('#cart-total').text(formatMoney(response.total_after_discount));
-                        setTimeout(() => {
-                            location.reload();
-                        }, 1000);
+                        // ✅ Cập nhật nội dung hiển thị mã đã áp dụng
+                        $('#appliedCouponBox').html(`
+                            <div class="flex items-center justify-between bg-gray-100 border border-gray-300 rounded-lg px-4 py-2">
+                                <span class="text-sm text-gray-700">
+                                    Bạn đang áp dụng mã:
+                                    <strong class="text-red-500">${voucherCode}</strong>
+                                </span>
+                                <button id="removeCouponBtn" class="text-xs text-red-500 hover:underline font-semibold">
+                                    Gỡ bỏ
+                                </button>
+                            </div>
+                        `);
                     } else {
                         toastr.error(response.message);
                     }
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
                 },
                 error: function(xhr, status, error) {
                     console.error('Lỗi AJAX:', error);
@@ -134,7 +145,6 @@
                 }
             });
         }
-
         // Gửi từ form nhập mã voucher
         $('#voucher-form').on('submit', function(e) {
             e.preventDefault();
@@ -326,5 +336,37 @@
             if (typeof num !== 'number') return '0₫';
             return num.toLocaleString('vi-VN') + '₫';
         }
+    });
+    $(document).ready(function() {
+        $(document).on('click', '#removeCouponBtn', function() {
+            Swal.fire({
+                title: 'Bạn có chắc muốn gỡ mã giảm giá?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Có, gỡ mã!',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('{{ route('cart.removeCoupon') }}', function(res) {
+                        if (res.success) {
+                            toastr.info(res.message);
+                            $('#appliedCouponBox').empty();
+                            $('#cart-discount').text('0₫');
+                            $('#cart-total').text(formatPrice(res.new_total));
+                        } else {
+                            toastr.error(res.message ||
+                                'Xảy ra lỗi khi gỡ mã giảm giá.');
+                        }
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    }).fail(function() {
+                        toastr.error('Không thể kết nối đến server.');
+                    });
+                }
+            });
+        });
     });
 </script>

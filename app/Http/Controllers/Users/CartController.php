@@ -1389,4 +1389,30 @@ class CartController extends Controller
             'source_type' => $sourceType,
         ]);
     }
+
+    // gỡ mã giảm giá
+    public function removeCoupon(Request $request)
+    {
+        // Gỡ mã khuyến mãi khỏi session
+        session()->forget('applied_coupon');
+
+        // Tính toán lại giỏ hàng nếu cần
+        $cart = session('cart', []);
+
+        // Tính subtotal (tổng giá trước giảm)
+        $subtotal = collect($cart)->sum(function ($item) {
+            return $item['price'] * $item['quantity'];
+        });
+
+        // Trừ tiếp giảm giá từ điểm thưởng nếu có
+        $pointsDiscount = session('points_applied.discount', 0);
+        $totalAfterRemove = $subtotal - $pointsDiscount;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Mã khuyến mãi đã được gỡ bỏ.',
+            'new_total' => $totalAfterRemove,
+        ]);
+    }
+
 }
