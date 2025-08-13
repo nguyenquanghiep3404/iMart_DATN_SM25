@@ -40,6 +40,18 @@ class ReturnRequest extends Model
             default => 'Không xác định',
         };
     }
+    public function getReasonTextAttribute()
+    {
+        return match ($this->reason) {
+            'defective' => 'Sản phẩm bị lỗi do nhà sản xuất',
+            'wrong_item' => 'Giao sai sản phẩm',
+            'not_as_described' => 'Không đúng như mô tả',
+            'changed_mind' => 'Thay đổi ý định (có thể áp dụng phí)',
+            'other' => 'Lý do khác',
+            default => 'Không xác định',
+        };
+    }
+
     public function getRefundMethodTextAttribute()
     {
         return match ($this->refund_method) {
@@ -78,5 +90,25 @@ class ReturnRequest extends Model
     public function coupon()
     {
         return $this->belongsTo(Coupon::class);
+    }
+    public function orderItem()
+    {
+        return $this->hasOne(ReturnItem::class, 'return_request_id')->with('orderItem.variant.product.coverImage');
+    }
+
+    public function logs()
+    {
+        return $this->morphMany(ActivityLog::class, 'subject')->latest();
+    }
+    public function variant()
+    {
+        return $this->hasOneThrough(
+            ProductVariant::class,
+            OrderItem::class,
+            'id',            // foreign key on OrderItem
+            'id',            // foreign key on ProductVariant
+            'order_item_id', // local key on ReturnItem
+            'variant_id'     // local key on OrderItem
+        );
     }
 }

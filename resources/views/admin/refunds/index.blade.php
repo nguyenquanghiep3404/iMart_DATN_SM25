@@ -173,7 +173,7 @@
                             <a href="{{ route('admin.orders.show', $request->order_id) }}">{{ $request->order->order_code ?? 'N/A' }}</a>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">{{ $request->order->user->name ?? 'Ẩn danh' }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $request->reason }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $request->reason_text}}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                             <span class="badge status-{{ $request->status }}">
                                 <span class="badge-dot"></span>{{ $request->status_text }}

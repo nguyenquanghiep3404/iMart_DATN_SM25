@@ -395,12 +395,43 @@ class PurchaseOrderController extends Controller
     /**
      * Process item reception and serial scanning.
      */
-    public function receiveItems(Request $request, PurchaseOrder $purchaseOrder)
+   public function receiveItems(Request $request, PurchaseOrder $purchaseOrder)
     {
         $validated = $request->validate([
             'scanned_serials' => 'required|array',
             'scanned_serials.*' => 'present|array',
+            'scanned_serials.*.*' => 'required|string|distinct', // Added validation for each serial
         ]);
+
+        // === START: ADDED VALIDATION LOGIC ===
+
+        // 1. Flatten all incoming serial numbers into a single array
+        $allIncomingSerials = [];
+        foreach ($validated['scanned_serials'] as $serials) {
+            $allIncomingSerials = array_merge($allIncomingSerials, $serials);
+        }
+
+        // 2. Check for duplicates within the request itself (e.g., same serial for different products)
+        if (count($allIncomingSerials) !== count(array_unique($allIncomingSerials))) {
+            $duplicates = array_diff_key($allIncomingSerials, array_unique($allIncomingSerials));
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi: Tồn tại IMEI/Serial trùng lặp trong cùng một phiếu nhập: ' . implode(', ', array_unique($duplicates))
+            ], 422);
+        }
+
+        // 3. Check if any of the incoming serial numbers already exist in the database
+        $existingSerials = InventorySerial::whereIn('serial_number', $allIncomingSerials)->pluck('serial_number')->toArray();
+
+        if (!empty($existingSerials)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi: Các IMEI/Serial sau đã tồn tại trong hệ thống: ' . implode(', ', $existingSerials)
+            ], 422); // 422: Unprocessable Entity is a good choice for validation errors
+        }
+
+        // === END: ADDED VALIDATION LOGIC ===
+
 
         DB::beginTransaction();
         try {
@@ -415,7 +446,7 @@ class PurchaseOrderController extends Controller
                 $quantity = $poItem->quantity;
 
                 if (count($serials) !== $quantity) {
-                    throw new \Exception("Số lượng serial cho sản phẩm SKU {$poItem->productVariant->sku} không khớp.");
+                    throw new \Exception("Số lượng serial đã quét cho sản phẩm SKU {$poItem->productVariant->sku} không khớp với số lượng trong phiếu nhập.");
                 }
 
                 $lot = InventoryLot::create([
@@ -458,7 +489,6 @@ class PurchaseOrderController extends Controller
                 ]);
             }
 
-            // === CHANGE HERE: Set final status to 'completed' ===
             $purchaseOrder->status = 'completed';
             $purchaseOrder->save();
 
@@ -467,8 +497,9 @@ class PurchaseOrderController extends Controller
             return response()->json(['success' => true, 'message' => 'Nhập kho thành công!']);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Lỗi khi nhập kho cho PO #{$purchaseOrder->id}: " . $e->getMessage());
+            Log::error("Lỗi khi nhập kho cho PO #{$purchaseOrder->id}: " . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine());
             return response()->json(['success' => false, 'message' => 'Đã xảy ra lỗi: ' . $e->getMessage()], 500);
         }
     }
+
 }

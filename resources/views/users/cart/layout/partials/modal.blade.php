@@ -111,7 +111,8 @@
                 url: '{{ route('cart.applyVoucherAjax') }}',
                 method: 'POST',
                 data: {
-                    voucher_code: voucherCode
+                    voucher_code: voucherCode,
+                    type: 'buy-now'
                 },
                 success: function(response) {
                     const formatMoney = (amount) => amount.toLocaleString('vi-VN') + '₫';
@@ -120,6 +121,9 @@
                         toastr.success(response.message);
                         $('#cart-discount').text('-' + formatMoney(response.discount));
                         $('#cart-total').text(formatMoney(response.total_after_discount));
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
                     } else {
                         toastr.error(response.message);
                     }

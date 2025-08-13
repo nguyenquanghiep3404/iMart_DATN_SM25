@@ -78,6 +78,7 @@ class OrderController extends Controller
             'storeLocation.province:code,name,name_with_type',
             'storeLocation.district:code,name,name_with_type',
             'storeLocation.ward:code,name,name_with_type',
+            'couponUsages.coupon:id,code,type,value,description',
         ]);
 
         return response()->json([
@@ -93,7 +94,8 @@ class OrderController extends Controller
             'items.productVariant.product.coverImage',
             'items.productVariant.primaryImage',
             'processor:id,name',
-            'shipper:id,name'
+            'shipper:id,name',
+            'couponUsages.coupon:id,code,type,value,description'
         ]);
 
         return view('admin.orders.show', compact('order'));

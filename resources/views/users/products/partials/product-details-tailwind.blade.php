@@ -739,7 +739,7 @@
                     const verifiedProductsSection = document.getElementById('verifiedProductsSection');
                     const productList = document.getElementById('productList');
                     productList.innerHTML = ''; // Clear trước
-
+                    
                     // Render từng item
                     data.items.forEach(item => {
                         const productHTML = `

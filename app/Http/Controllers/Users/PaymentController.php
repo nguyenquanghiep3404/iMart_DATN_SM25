@@ -32,149 +32,7 @@ use Telegram\Bot\Laravel\Facades\Telegram;
 
 class PaymentController extends Controller
 {
-    /**
-     * Áp dụng điểm cho luồng từ giỏ hàng
-     */
-    public function applyPointsCart(Request $request)
-    {
-        if (!Auth::check()) {
-            return response()->json(['success' => false, 'message' => 'Bạn cần đăng nhập.'], 401);
-        }
 
-        $request->validate(['points' => 'required|integer|min:1']);
-        $user = Auth::user();
-        $pointsToUse = $request->input('points');
-
-        if ($user->loyalty_points_balance < $pointsToUse) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Số dư điểm không đủ.'
-            ]);
-        }
-
-        // Lấy dữ liệu giỏ hàng
-        $cartData = $this->getCartData();
-        $subtotalAfterCoupon = $cartData['subtotal'] - $cartData['discount_from_coupon'];
-
-        // Tính giảm giá từ điểm
-        $pointConversionRate = 1;
-        $discountAmount = $pointsToUse * $pointConversionRate;
-
-        if ($discountAmount > $subtotalAfterCoupon) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Số điểm áp dụng vượt quá giá trị đơn hàng.'
-            ]);
-        }
-
-        // Lưu vào session với key riêng cho giỏ hàng
-        session(['cart_points_applied' => [
-            'points' => $pointsToUse,
-            'discount' => $discountAmount
-        ]]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Áp dụng điểm thành công!',
-            'discount_amount' => $discountAmount,
-            'new_grand_total' => $subtotalAfterCoupon - $discountAmount
-        ]);
-    }
-
-    /**
-     * Áp dụng điểm cho luồng mua ngay
-     */
-    public function applyPointsBuyNow(Request $request)
-    {
-        if (!Auth::check()) {
-            return response()->json(['success' => false, 'message' => 'Bạn cần đăng nhập.'], 401);
-        }
-
-        $request->validate(['points' => 'required|integer|min:1']);
-        $user = Auth::user();
-        $pointsToUse = $request->input('points');
-
-        if ($user->loyalty_points_balance < $pointsToUse) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Số dư điểm không đủ.'
-            ]);
-        }
-
-        // Lấy dữ liệu mua ngay
-        $buyNowData = $this->getBuyNowData();
-        if (!$buyNowData['items'] || $buyNowData['items']->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy thông tin mua ngay.'
-            ]);
-        }
-
-        $subtotalAfterCoupon = $buyNowData['subtotal'] - $buyNowData['discount_from_coupon'];
-
-        // Tính giảm giá từ điểm
-        $pointConversionRate = 1;
-        $discountAmount = $pointsToUse * $pointConversionRate;
-
-        if ($discountAmount > $subtotalAfterCoupon) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Số điểm áp dụng vượt quá giá trị đơn hàng.'
-            ]);
-        }
-
-        // Lưu vào session với key riêng cho mua ngay
-        session(['buynow_points_applied' => [
-            'points' => $pointsToUse,
-            'discount' => $discountAmount
-        ]]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Áp dụng điểm thành công!',
-            'discount_amount' => $discountAmount,
-            'new_grand_total' => $subtotalAfterCoupon - $discountAmount
-        ]);
-    }
-    public function index()
-{
-    // 1. Lấy toàn bộ dữ liệu giỏ hàng đã được tính toán chính xác
-    $cartData = $this->getCartData();
-
-    if ($cartData['items']->isEmpty()) {
-        return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
-    }
-
-    // 2. Lấy các giá trị đã được tính toán đúng từ $cartData
-    $items              = $cartData['items'];
-    $subtotal           = $cartData['subtotal'];
-    $couponDiscount     = $cartData['discount_from_coupon'];
-    $pointsDiscount     = $cartData['discount_from_points']; // <-- Lấy giá trị đúng
-    $total              = $cartData['total'];                // <-- Lấy giá trị đúng
-    $totalPointsToEarn  = $cartData['totalPointsToEarn'];
-
-    // 3. Tính toán các thông số vận chuyển (giữ nguyên logic cũ của bạn)
-    $totalWeight = $items->sum(fn($item) => ($item->productVariant->weight ?? 0) * $item->quantity);
-    $maxLength   = $items->max(fn($item) => $item->productVariant->dimensions_length ?? 0);
-    $maxWidth    = $items->max(fn($item) => $item->productVariant->dimensions_width ?? 0);
-    $totalHeight = $items->sum(fn($item) => ($item->productVariant->dimensions_height ?? 0) * $item->quantity);
-
-    // 4. Trả về view với toàn bộ dữ liệu chính xác
-    return view('users.payments.information', [
-        'items'             => $items,
-        'subtotal'          => $subtotal,
-        'discount'          => $couponDiscount, // Giảm giá từ coupon
-        'pointsDiscount'    => $pointsDiscount, // <<< Truyền biến này cho view
-        'total'             => $total,
-        'is_buy_now'        => false,
-        'totalPointsToEarn' => $totalPointsToEarn,
-        'availableCoupons'  => Coupon::where('status', 'active')->get(),
-        'baseWeight'        => $totalWeight > 0 ? $totalWeight : 1000,
-        'baseLength'        => $maxLength > 0 ? $maxLength : 20,
-        'baseWidth'         => $maxWidth > 0 ? $maxWidth : 10,
-        'baseHeight'        => $totalHeight > 0 ? $totalHeight : 10,
-    ]);
-}
     // public function index()
     // {
     //     // 1. Lấy toàn bộ dữ liệu giỏ hàng đã được tính toán chính xác từ hàm getCartData()
@@ -197,7 +55,22 @@ class PaymentController extends Controller
     //     $totalHeight = $items->sum(function ($item) {
     //         return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
     //     });
-    //     $availableCoupons = Coupon::where('status', 'active')->get();
+    //     $availableCoupons = Coupon::where('status', 'active')
+    //         ->where(function ($query) {
+    //             $query->whereNull('start_date')
+    //                 ->orWhere('start_date', '<=', now());
+    //         })
+    //         ->where(function ($query) {
+    //             $query->whereNull('end_date')
+    //                 ->orWhere('end_date', '>=', now());
+    //         })
+    //         ->where(function ($query) {
+    //             $query->whereNull('max_uses')
+    //                 ->orWhereRaw('
+    //                     (SELECT COUNT(*) FROM coupon_usages WHERE coupon_usages.coupon_id = coupons.id) < coupons.max_uses
+    //                 ');
+    //         })
+    //         ->get();
     //     $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
     //     $appliedCoupon = session('applied_coupon');
     //     $discount = $appliedCoupon['discount'] ?? 0;
@@ -237,7 +110,6 @@ class PaymentController extends Controller
     //     $totalHeight = $items->sum(function ($item) {
     //         return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
     //     });
-
     //     $availableCoupons = Coupon::where('status', 'active')->get();
 
     //     // 4. Trả về view với toàn bộ dữ liệu chính xác
@@ -255,6 +127,74 @@ class PaymentController extends Controller
     //         'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
     //     ]);
     // }
+    public function index()
+    {
+        // 1. Lấy toàn bộ dữ liệu giỏ hàng đã được tính toán chính xác từ hàm getCartData()
+        $cartData = $this->getCartData();
+
+        if ($cartData['items']->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
+        }
+
+        // Tính tổng khối lượng và kích thước
+        $items = $cartData['items'];
+        $totalWeight = $items->sum(function ($item) {
+            return ($item->productVariant->weight ?? 0) * $item->quantity;
+        });
+        $maxLength = $items->max(function ($item) {
+            return $item->productVariant->dimensions_length ?? 0;
+        });
+        $maxWidth = $items->max(function ($item) {
+            return $item->productVariant->dimensions_width ?? 0;
+        });
+        $totalHeight = $items->sum(function ($item) {
+            return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
+        });
+
+        // Lấy coupon active
+        $availableCoupons = Coupon::where('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('start_date')
+                    ->orWhere('start_date', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhere('end_date', '>=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('max_uses')
+                    ->orWhereRaw('
+                        (SELECT COUNT(*) FROM coupon_usages WHERE coupon_usages.coupon_id = coupons.id) < coupons.max_uses
+                    ');
+            })
+            ->get();
+
+        $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
+
+        // Lấy giảm giá coupon từ session
+        $appliedCoupon = session('applied_coupon', []);
+        $couponDiscount = isset($appliedCoupon['discount']) ? (float)$appliedCoupon['discount'] : 0;
+
+        // Lấy giảm giá điểm từ session (giả sử cấu trúc ['points' => ..., 'discount' => ...])
+        $pointsApplied = session('points_applied', []);
+        $pointsDiscount = isset($pointsApplied['discount']) ? (float)$pointsApplied['discount'] : 0;
+
+        // Tính tổng cuối cùng
+        $total = max(0, $subtotal - $couponDiscount - $pointsDiscount);
+
+        // Trả về view với toàn bộ dữ liệu
+        return view('users.payments.information', array_merge($cartData, [
+            'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
+            'baseLength' => $maxLength > 0 ? $maxLength : 20,
+            'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
+            'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
+            'availableCoupons' => $availableCoupons,
+            'total' => $total,
+            'discount' => $couponDiscount,
+            'pointsDiscount' => $pointsDiscount,
+            'pointsApplied' => $pointsApplied,
+            ]));
+    }
     /**
      * Xử lý đặt hàng COD
      */
@@ -409,7 +349,7 @@ class PaymentController extends Controller
                     'reply_markup' => json_encode([
                         'inline_keyboard' => [
                             [
-                                ['text' => '✅ Xác nhận đã thanh toán', 'url' => $confirmationUrl]
+                                ['text' => 'Xác nhận đã thanh toán', 'url' => $confirmationUrl]
                             ]
                         ]
                     ])
@@ -1298,8 +1238,7 @@ class PaymentController extends Controller
     {
         $user = auth()->user();
         $items = collect();
-
-        // 1. Lấy danh sách sản phẩm (logic này của bạn đã đúng)
+        // 1. Lấy danh sách sản phẩm
         if ($user && $user->cart) {
             $items = $user->cart->items()
                 ->with('cartable.product', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
@@ -1337,19 +1276,15 @@ class PaymentController extends Controller
                 ];
             })->filter();
         }
-
         // 2. Tính toán các giá trị tài chính MỘT LẦN DUY NHẤT
         $subtotal = $items->sum(fn($item) => $item->price * $item->quantity);
-
         // Lấy giảm giá từ coupon
         $couponDiscount = session('applied_coupon.discount', 0);
-
         // Lấy giảm giá từ điểm thưởng
         $pointsDiscount = 0;
         if (Auth::check()) {
             $pointsDiscount = session('points_applied.discount', 0);
         }
-
         // Tính tổng giảm giá và tổng tiền cuối cùng
         $totalDiscount = $couponDiscount + $pointsDiscount;
         $total = max(0, $subtotal - $totalDiscount);
@@ -1358,7 +1293,6 @@ class PaymentController extends Controller
         $totalPointsToEarn = $items->sum(function ($item) {
             return ($item->points_to_earn ?? 0) * $item->quantity;
         });
-
         // 3. Trả về kết quả cuối cùng
         return [
             'items' => $items,
@@ -1546,6 +1480,7 @@ class PaymentController extends Controller
             'variant_key' => 'nullable|string',
             'quantity' => 'required|integer|min:1|max:5',
         ]);
+        session()->forget('applied_coupon');
         $product = Product::findOrFail($request->product_id);
         $variant = null;
         // Tìm variant dựa vào variant_key hoặc lấy variant đầu tiên
@@ -2065,7 +2000,6 @@ class PaymentController extends Controller
         if (!$variant->manage_stock) {
             return;
         }
-
         // Lấy tồn kho hàng mới
         $newInventory = $variant->inventories()
             ->where('inventory_type', 'new')
@@ -2153,145 +2087,162 @@ class PaymentController extends Controller
      */
     public function ajaxGhnShippingFee(Request $request)
     {
-        $request->validate([
-            'province_name' => 'required|string',
-            'district_name' => 'required|string',
-            'ward_name' => 'required|string',
-            'weight' => 'required|integer|min:10',
-            'length' => 'nullable|integer|min:1',
-            'width' => 'nullable|integer|min:1',
-            'height' => 'nullable|integer|min:1',
-        ]);
-        $token = config('services.ghn.token');
-        // \Log::info('GHN API - Địa chỉ nhận vào', [
-        //     'province_name' => $request->province_name,
-        //     'district_name' => $request->district_name,
-        //     'ward_name' => $request->ward_name,
-        //     'weight' => $request->weight
-        // ]);
-        // // Log lại config GHN thực tế trước khi gọi API
-        // \Log::info('GHN config', [
-        //     'api_url' => config('services.ghn.api_url'),
-        //     'token' => config('services.ghn.token'),
-        //     'shop_id' => config('services.ghn.shop_id'),
-        // ]);
-        $ghnProvinces = Http::withHeaders(['Token' => $token])
-            ->get(config('services.ghn.api_url') . '/shiip/public-api/master-data/province');
-        // \Log::info('GHN API - Response province', ['status' => $ghnProvinces->status(), 'body' => $ghnProvinces->body()]);
-        $ghnProvinces = $ghnProvinces->json('data');
-        if (!is_array($ghnProvinces)) {
-            // \Log::error('GHN API - Danh sách tỉnh GHN trả về null hoặc không phải mảng', ['response' => $ghnProvinces]);
-            return response()->json(['success' => false, 'message' => 'Không lấy được danh sách tỉnh từ GHN. Vui lòng kiểm tra cấu hình token/shop_id/API_URL.']);
-        }
-        // \Log::info('GHN API - Danh sách tỉnh GHN', ['provinces' => $ghnProvinces]);
-        $provinceId = null;
-        $inputNorm = $this->normalize($request->province_name);
-        $matchedProvinces = [];
-        foreach ($ghnProvinces as $province) {
-            if ($this->normalize($province['ProvinceName']) === $inputNorm) {
-                $matchedProvinces[] = $province;
+        try {
+            $request->validate([
+                'province_name' => 'required|string',
+                'district_name' => 'required|string',
+                'ward_name' => 'required|string',
+                'weight' => 'required|integer|min:10',
+                'length' => 'nullable|integer|min:1',
+                'width' => 'nullable|integer|min:1',
+                'height' => 'nullable|integer|min:1',
+            ]);
+
+            // Set default values if not provided
+            $length = $request->input('length', 20);
+            $width = $request->input('width', 10);
+            $height = $request->input('height', 10);
+            $token = config('services.ghn.token');
+
+            // Debug: Log request data (đã comment)
+            // \Log::info('GHN API - Request data', [
+            //     'province_name' => $request->province_name,
+            //     'district_name' => $request->district_name,
+            //     'ward_name' => $request->ward_name,
+            //     'weight' => $request->weight,
+            //     'length' => $length,
+            //     'width' => $width,
+            //     'height' => $height
+            // ]);
+
+            // // Log lại config GHN thực tế trước khi gọi API
+            // \Log::info('GHN config', [
+            //     'api_url' => config('services.ghn.api_url'),
+            //     'token' => config('services.ghn.token'),
+            //     'shop_id' => config('services.ghn.shop_id'),
+            // ]);
+            $ghnProvinces = Http::withHeaders(['Token' => $token])
+                ->get(config('services.ghn.api_url') . '/shiip/public-api/master-data/province');
+            // \Log::info('GHN API - Response province', ['status' => $ghnProvinces->status(), 'body' => $ghnProvinces->body()]);
+            $ghnProvinces = $ghnProvinces->json('data');
+            if (!is_array($ghnProvinces)) {
+                // \Log::error('GHN API - Danh sách tỉnh GHN trả về null hoặc không phải mảng', ['response' => $ghnProvinces]);
+                return response()->json(['success' => false, 'message' => 'Không lấy được danh sách tỉnh từ GHN. Vui lòng kiểm tra cấu hình token/shop_id/API_URL.']);
             }
-            if (!empty($province['NameExtension']) && is_array($province['NameExtension'])) {
-                foreach ($province['NameExtension'] as $ext) {
-                    if ($this->normalize($ext) === $inputNorm) {
-                        $matchedProvinces[] = $province;
-                        break;
+            // \Log::info('GHN API - Danh sách tỉnh GHN', ['provinces' => $ghnProvinces]);
+            $provinceId = null;
+            $inputNorm = $this->normalize($request->province_name);
+            $matchedProvinces = [];
+            foreach ($ghnProvinces as $province) {
+                if ($this->normalize($province['ProvinceName']) === $inputNorm) {
+                    $matchedProvinces[] = $province;
+                }
+                if (!empty($province['NameExtension']) && is_array($province['NameExtension'])) {
+                    foreach ($province['NameExtension'] as $ext) {
+                        if ($this->normalize($ext) === $inputNorm) {
+                            $matchedProvinces[] = $province;
+                            break;
+                        }
                     }
                 }
             }
-        }
-        // Ưu tiên bản ghi có ProvinceName = 'Hà Nội'
-        foreach ($matchedProvinces as $province) {
-            if ($this->normalize($province['ProvinceName']) === 'ha noi') {
-                $provinceId = $province['ProvinceID'];
-                break;
-            }
-        }
-        // Nếu không có thì lấy bản đầu tiên khớp
-        if (!$provinceId && count($matchedProvinces) > 0) {
-            $provinceId = $matchedProvinces[0]['ProvinceID'];
-        }
-        if (!$provinceId) {
-            return response()->json(['success' => false, 'message' => 'Không tìm thấy tỉnh GHN phù hợp']);
-        }
-        // 2. Lấy danh sách quận/huyện GHN
-        $ghnDistricts = Http::withHeaders(['Token' => $token])
-            ->post(config('services.ghn.api_url') . '/shiip/public-api/master-data/district', [
-                'province_id' => $provinceId
-            ]);
-        // \Log::info('GHN API - Response district', ['status' => $ghnDistricts->status(), 'body' => $ghnDistricts->body()]);
-        $ghnDistricts = $ghnDistricts->json('data');
-        // \Log::info('GHN API - Danh sách quận/huyện GHN', ['districts' => $ghnDistricts, 'province_id' => $provinceId]);
-        $districtId = null;
-        if (is_array($ghnDistricts)) {
-            foreach ($ghnDistricts as $district) {
-                // \Log::info('So khớp huyện', [
-                //     'input' => $this->normalize($request->district_name),
-                //     'ghn' => $this->normalize($district['DistrictName']),
-                //     'raw_ghn' => $district['DistrictName']
-                // ]);
-                if ($this->normalize($district['DistrictName']) === $this->normalize($request->district_name)) {
-                    $districtId = $district['DistrictID'];
+            // Ưu tiên bản ghi có ProvinceName = 'Hà Nội'
+            foreach ($matchedProvinces as $province) {
+                if ($this->normalize($province['ProvinceName']) === 'ha noi') {
+                    $provinceId = $province['ProvinceID'];
                     break;
                 }
             }
-        } else {
-            // \Log::error('GHN API - Danh sách quận/huyện GHN trả về null hoặc không phải mảng', ['province_id' => $provinceId, 'response' => $ghnDistricts]);
-        }
-        // 3. Lấy danh sách phường/xã GHN
-        $ghnWards = Http::withHeaders(['Token' => $token])
-            ->post(config('services.ghn.api_url') . '/shiip/public-api/master-data/ward', [
-                'district_id' => $districtId
-            ]);
-        // \Log::info('GHN API - Response ward', ['status' => $ghnWards->status(), 'body' => $ghnWards->body()]);
-        $ghnWards = $ghnWards->json('data');
-        // \Log::info('GHN API - Danh sách phường/xã GHN', ['wards' => $ghnWards]);
-        $wardCode = null;
-        foreach ($ghnWards as $ward) {
-            // \Log::info('So khớp xã', [
-            //     'input' => $this->normalize($request->ward_name),
-            //     'ghn' => $this->normalize($ward['WardName']),
-            //     'raw_ghn' => $ward['WardName']
-            // ]);
-            if ($this->normalize($ward['WardName']) === $this->normalize($request->ward_name)) {
-                $wardCode = $ward['WardCode'];
-                break;
+            // Nếu không có thì lấy bản đầu tiên khớp
+            if (!$provinceId && count($matchedProvinces) > 0) {
+                $provinceId = $matchedProvinces[0]['ProvinceID'];
             }
-        }
-        if (!$wardCode) {
-            // \Log::error('GHN API - Không tìm thấy phường/xã GHN phù hợp', [
-            //     'input' => $request->ward_name,
-            //     'normalized_input' => $this->normalize($request->ward_name)
-            // ]);
-            return response()->json(['success' => false, 'message' => 'Không tìm thấy phường/xã GHN phù hợp']);
-        }
-        // 4. Gọi service GHN lấy phí ship
-        $ghn = new \App\Services\GhnService();
-        $length = $request->input('length', 20);
-        $width = $request->input('width', 10);
-        $height = $request->input('height', 10);
-        $fee = $ghn->calculateShippingFee((int) $districtId, (string) $wardCode, (int) $request->weight, (int) $length, (int) $width, (int) $height);
-        // Nếu $fee là instance của JsonResponse thì lấy giá trị fee thực sự
-        if ($fee instanceof \Illuminate\Http\JsonResponse) {
-            // \Log::info('GHN API - Phí ship trả về (unwrap)', ['fee' => $data['fee']]);
-            $data = $fee->getData(true);
-            if (isset($data['fee']) && is_numeric($data['fee'])) {
-                // \Log::info('GHN API - Phí ship trả về (unwrap)', ['fee' => $data['fee']]);
-                return response()->json(['success' => true, 'fee' => $data['fee']]);
+            if (!$provinceId) {
+                return response()->json(['success' => false, 'message' => 'Không tìm thấy tỉnh GHN phù hợp']);
+            }
+            // 2. Lấy danh sách quận/huyện GHN
+            $ghnDistricts = Http::withHeaders(['Token' => $token])
+                ->post(config('services.ghn.api_url') . '/shiip/public-api/master-data/district', [
+                    'province_id' => $provinceId
+                ]);
+            // \Log::info('GHN API - Response district', ['status' => $ghnDistricts->status(), 'body' => $ghnDistricts->body()]);
+            $ghnDistricts = $ghnDistricts->json('data');
+            // \Log::info('GHN API - Danh sách quận/huyện GHN', ['districts' => $ghnDistricts, 'province_id' => $provinceId]);
+            $districtId = null;
+            if (is_array($ghnDistricts)) {
+                foreach ($ghnDistricts as $district) {
+                    // \Log::info('So khớp huyện', [
+                    //     'input' => $this->normalize($request->district_name),
+                    //     'ghn' => $this->normalize($district['DistrictName']),
+                    //     'raw_ghn' => $district['DistrictName']
+                    // ]);
+                    if ($this->normalize($district['DistrictName']) === $this->normalize($request->district_name)) {
+                        $districtId = $district['DistrictID'];
+                        break;
+                    }
+                }
             } else {
-                return response()->json(['success' => false, 'message' => $data['message'] ?? 'Không lấy được phí GHN', 'fee' => null]);
+                // \Log::error('GHN API - Danh sách quận/huyện GHN trả về null hoặc không phải mảng', ['province_id' => $provinceId, 'response' => $ghnDistricts]);
             }
+
+            if (!$districtId) {
+                // \Log::error('GHN API - Không tìm thấy quận/huyện GHN phù hợp', [
+                //     'input' => $request->district_name,
+                //     'normalized_input' => $this->normalize($request->district_name)
+                // ]);
+                return response()->json(['success' => false, 'message' => 'Không tìm thấy quận/huyện GHN phù hợp']);
+            }
+            // 3. Lấy danh sách phường/xã GHN
+            $ghnWards = Http::withHeaders(['Token' => $token])
+                ->post(config('services.ghn.api_url') . '/shiip/public-api/master-data/ward', [
+                    'district_id' => $districtId
+                ]);
+            // \Log::info('GHN API - Response ward', ['status' => $ghnWards->status(), 'body' => $ghnWards->body()]);
+            $ghnWards = $ghnWards->json('data');
+            // \Log::info('GHN API - Danh sách phường/xã GHN', ['wards' => $ghnWards]);
+            $wardCode = null;
+            foreach ($ghnWards as $ward) {
+                // \Log::info('So khớp xã', [
+                //     'input' => $this->normalize($request->ward_name),
+                //     'ghn' => $this->normalize($ward['WardName']),
+                //     'raw_ghn' => $ward['WardName']
+                // ]);
+                if ($this->normalize($ward['WardName']) === $this->normalize($request->ward_name)) {
+                    $wardCode = $ward['WardCode'];
+                    break;
+                }
+            }
+            if (!$wardCode) {
+                // \Log::error('GHN API - Không tìm thấy phường/xã GHN phù hợp', [
+                //     'input' => $request->ward_name,
+                //     'normalized_input' => $this->normalize($request->ward_name)
+                // ]);
+                return response()->json(['success' => false, 'message' => 'Không tìm thấy phường/xã GHN phù hợp']);
+            }
+            // 4. Gọi service GHN lấy phí ship
+            $ghn = new \App\Services\GhnService();
+
+            $fee = $ghn->calculateShippingFee((int) $districtId, (string) $wardCode, (int) $request->weight, (int) $length, (int) $width, (int) $height);
+
+            if ($fee !== false && is_numeric($fee)) {
+                // \Log::info('GHN API - Phí ship trả về', ['fee' => $fee, 'districtId' => $districtId, 'wardCode' => $wardCode]);
+                return response()->json(['success' => true, 'fee' => $fee]);
+            }
+
+            // \Log::error('GHN API - Không lấy được phí vận chuyển từ GHN', [
+            //     'districtId' => $districtId,
+            //     'wardCode' => $wardCode,
+            //     'weight' => $request->weight
+            // ]);
+            return response()->json(['success' => false, 'message' => 'Địa điểm này không được hỗ trợ giao hàng nhanh', 'fee' => null]);
+        } catch (\Exception $e) {
+            \Log::error('GHN API Error: ' . $e->getMessage(), [
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Lỗi server: ' . $e->getMessage(), 'fee' => null]);
         }
-        if ($fee !== false && is_numeric($fee)) {
-            // \Log::info('GHN API - Phí ship trả về (direct)', ['fee' => $fee]);
-            return response()->json(['success' => true, 'fee' => $fee]);
-        }
-        // \Log::error('GHN API - Không lấy được phí vận chuyển từ GHN', [
-        //     'districtId' => $districtId,
-        //     'wardCode' => $wardCode,
-        //     'weight' => $request->weight
-        // ]);
-        return response()->json(['success' => false, 'message' => 'Không lấy được phí vận chuyển từ GHN', 'fee' => null]);
     }
     // Lấy danh sách cửa hàng theo tỉnh/huyện
     public function getStoreLocations(Request $request)

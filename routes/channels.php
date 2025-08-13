@@ -7,48 +7,38 @@ use App\Models\ChatConversation;
 use App\Models\ChatParticipant;
 use Illuminate\Support\Facades\Log; // Thêm dòng này để sử dụng Log
 
+
 // Kênh riêng tư cho cuộc hội thoại chat
 Broadcast::channel('chat.conversation.{conversationId}', function ($user, $conversationId) {
-    // --- BẮT ĐẦU GỠ LỖI ---
-    // Ghi lại userId và conversationId để đảm bảo chúng chính xác
-    Log::info("Channel Auth: User ID - " . ($user ? $user->id : 'NULL') . ", Conv ID - " . $conversationId);
-
+    // Nếu không có user đăng nhập qua session, thử tìm user khách qua cookie
     if (!$user) {
-        Log::warning("Channel Auth: User not authenticated for conversation " . $conversationId);
-        return false; // Người dùng chưa xác thực
+        $guestUserId = request()->cookie('guest_user_id');
+        if ($guestUserId) {
+            // Tìm user trong DB, đảm bảo đó là tài khoản khách
+            $user = User::where('id', $guestUserId)->where('is_guest', true)->first();
+        }
     }
 
-    // Thử trả về true trực tiếp để xem lỗi JSON có còn không
-    // Nếu điều này hoạt động, vấn đề nằm trong logic ủy quyền chi tiết của bạn bên dưới.
-    // return true; // <-- BỎ GHI CHÚ DÒNG NÀY ĐỂ KIỂM TRA NHANH
+    // Nếu sau khi kiểm tra cả session và cookie mà vẫn không có user, từ chối quyền
+    if (!$user) {
+        return false;
+    }
 
-    // Nếu `return true;` ở trên KHÔNG khắc phục được lỗi JSON,
-    // vấn đề có thể nằm ngoài closure này, ví dụ: một lệnh `echo` ở nơi khác.
-
+    // Lấy thông tin cuộc hội thoại
     $conversation = ChatConversation::find($conversationId);
-
     if (!$conversation) {
-        Log::warning("Channel Auth: Conversation " . $conversationId . " not found.");
-        return false; // Không tìm thấy cuộc hội thoại
+        return false;
     }
 
-    $isAuthorized = false; // Mặc định là false
+    // Kiểm tra xem user có phải là người tham gia hợp lệ của cuộc hội thoại không
+    $isParticipant = $conversation->participants()->where('user_id', $user->id)->exists();
+    
+    // Đối với support chat, khách hàng (chủ của cuộc hội thoại) luôn có quyền
+    $isOwner = ($conversation->type === 'support' && $conversation->user_id === $user->id);
 
-    if ($conversation->type === 'support') {
-        $hasAdminRole = $user->hasAnyRole(['admin', 'support_staff']);
-        $isCustomer = ($conversation->user_id === (int)$user->id);
-        $isAuthorized = $hasAdminRole || $isCustomer;
-        Log::info("Channel Auth: Support chat. User is admin/support: " . var_export($hasAdminRole, true) . ", User is customer: " . var_export($isCustomer, true) . ". Authorized: " . var_export($isAuthorized, true));
-    } elseif ($conversation->type === 'internal') {
-        $isParticipant = $conversation->participants->contains('user_id', (int)$user->id);
-        $isAuthorized = $isParticipant;
-        Log::info("Channel Auth: Internal chat. User is participant: " . var_export($isParticipant, true) . ". Authorized: " . var_export($isAuthorized, true));
-    } else {
-        Log::info("Channel Auth: Unknown conversation type for " . $conversationId);
-    }
-
-    return $isAuthorized;
+    return $isParticipant || $isOwner;
 });
+
 
 // Kênh riêng tư cho từng người dùng
 Broadcast::channel('users.{userId}', function ($user, $userId) {

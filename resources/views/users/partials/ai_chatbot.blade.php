@@ -325,7 +325,7 @@
 
     {{-- Bao gồm các tài nguyên được Vite xử lý (CSS và JavaScript chính của bạn) --}}
     {{-- Đảm bảo bạn đã chạy "npm install" và "npm run dev" --}}
-    @vite(['resources/js/chat.js'])
+    @vite(['resources/js/bootstrap.js', 'resources/js/chat.js'])
 </head>
 <body>
 

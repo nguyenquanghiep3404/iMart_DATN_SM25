@@ -45,6 +45,14 @@ class DistrictOld extends Model
         return $this->hasMany(Order::class, 'billing_old_district_code', 'code');
     }
 
+    // App\Models\DistrictOld.php
+
+    public function storeLocations()
+    {
+        return $this->hasMany(StoreLocation::class, 'district_code', 'code');
+    }
+
+
     // Accessor để kiểm tra loại
     public function getIsCity()
     {

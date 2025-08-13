@@ -82,8 +82,10 @@ Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name(
 Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
 
 Route::post('/cart/apply-points', [CartController::class, 'applyPoints'])->name('cart.applyPoints')->middleware('auth');
-Route::post('/payments/apply-points-cart', [PaymentController::class, 'applyPointsCart'])->name('payments.applyPointsCart')->middleware('auth');
-Route::post('/payments/apply-points-buynow', [PaymentController::class, 'applyPointsBuyNow'])->name('payments.applyPointsBuyNow')->middleware('auth');
+// Route::post('/payments/apply-points-cart', [PaymentController::class, 'applyPointsCart'])->name('payments.applyPointsCart')->middleware('auth');
+// Route::post('/payments/remove-points-cart', [PaymentController::class, 'removePointsCart'])->name('payments.removePointsCart')->middleware('auth');
+// Route::post('/payments/apply-points-buynow', [PaymentController::class, 'applyPointsBuyNow'])->name('payments.applyPointsBuyNow')->middleware('auth');
+// Route::post('/payments/remove-points-buynow', [PaymentController::class, 'removePointsBuyNow'])->name('payments.removePointsBuyNow')->middleware('auth');
 // Route::match(['get', 'post'], '/buy-now/information', [App\Http\Controllers\Users\PaymentController::class, 'buyNowInformation'])->name('buy-now.information');
 
 
@@ -121,6 +123,16 @@ Route::get('/hang-doi-tra', [TradeInPublicController::class, 'index'])
     ->name('public.trade-in.index');
 Route::get('/hang-doi-tra/{category}/{product}/detail', [TradeInPublicController::class, 'detail'])
     ->name('public.trade-in.detail');
+// --- Routes API cho chức năng lọc ---
+// Route để lấy danh sách quận/huyện theo mã tỉnh
+Route::get('/api/districts-by-province', [HomeController::class, 'getDistrictsByProvince'])->name('api.districts.by.province');
+
+// Route để lọc danh sách cửa hàng dựa trên tỉnh và quận
+Route::get('/api/filter-stores', [HomeController::class, 'filterStoreLocations'])->name('api.stores.filter');
+
+// Route để lấy danh sách tỉnh/thành phố theo biến thể sản phẩm
+Route::get('/api/provinces-by-variant', [HomeController::class, 'getProvincesByVariant'])->name('api.provinces.by.variant');
+
 
 
 
@@ -176,17 +188,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('addresses/{address}/default', [AddressesController::class, 'setDefault'])->name('addresses.setDefault');
     //Routes đơn hàng của user
     Route::prefix('my-orders')->group(function () {
+        Route::get('returns', [OrderRefundController::class, 'indexuser'])->name('orders.returns'); // 👈 đưa lên trên
+
         Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
-        Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
         Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
         Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
+        Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
     });
+
 
     // Route lịch sử điểm thưởng
     Route::get('/my-points', [LoyaltyPointController::class, 'history'])->name('loyalty.history');
-// });
+    // });
 
     Route::get('/refunds/{code}', [OrderRefundController::class, 'showuser'])->name('refunds.show');
+    Route::post('/refunds', [OrderRefundController::class, 'store'])->name('refunds.store');
+    Route::get('/refunds/create/{orderItem}', [OrderRefundController::class, 'create'])->name('refunds.create');
 });
 // Tách riêng route hoàn tiền ra ngoài
 Route::post('/orders/refund-request', [OrderRefundController::class, 'store'])
@@ -221,11 +238,14 @@ Route::get('/payments', [PaymentController::class, 'index'])->name('payments.inf
 Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
 Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
 
-// Các tuyến đường chat của khách hàng
-Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
-Route::post('/chat/register-guest', [ChatController::class, 'registerGuest'])->name('client.chat.registerGuest');
-Route::post('/chat/send-message', [ChatController::class, 'sendMessage'])->name('client.chat.sendMessage');
-Route::post('/chat/guest-login', [ChatController::class, 'guestLogin'])->name('client.chat.guestLogin');
+// --- Chat của khách hàng ---
+Route::prefix('chat')->name('client.chat.')->group(function () {
+    Route::get('/', [ChatController::class, 'index'])->name('index');
+    Route::post('/register-guest', [ChatController::class, 'registerGuest'])->name('registerGuest');
+    Route::post('/send-message', [ChatController::class, 'sendMessage'])->name('sendMessage');
+    Route::post('/guest-login', [ChatController::class, 'guestLogin'])->name('guestLogin');
+});
+
 
 // Routes cho Buy Now - phiên thanh toán riêng biệt
 Route::post('/buy-now/checkout', [PaymentController::class, 'buyNowCheckout'])->name('buy-now.checkout');
@@ -272,6 +292,7 @@ Route::prefix('admin')
     ->middleware(['auth', 'role:admin,content_manager', 'check.content.access'])
     ->middleware(['auth', 'verified'])
     ->group(function () {
+
         // http://127.0.0.1:8000/admin/dashboard
         Route::get('/dashboard', [DashboardAdminController::class, 'index'])->name('dashboard')->middleware('can:access_admin_dashboard');
 
@@ -420,6 +441,7 @@ Route::prefix('admin')
         Route::get('/orders/shippers/list', [OrderController::class, 'getShippers'])->name('orders.shippers');
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
         Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
+        Route::post('/buy-now/clear-session', [PaymentController::class, 'handleClearBuyNowSession'])->name('buy_now.clear_session');
 
         // quản lý giỏ hàng lãng quên
         Route::get('/abandoned-carts', [AbandonedCartController::class, 'index'])->name('abandoned-carts.index');
@@ -428,7 +450,7 @@ Route::prefix('admin')
         Route::post('abandoned-carts/send-inapp/{cart}', [AbandonedCartController::class, 'sendInApp'])
             ->name('abandoned_carts.send_inapp');
         Route::post('/abandoned-carts/{id}/send-email', [AbandonedCartController::class, 'sendEmail'])
-        ->name('abandoned_carts.send_email');
+            ->name('abandoned_carts.send_email');
 
         Route::post('/abandoned-carts/bulk-send-email', [AbandonedCartController::class, 'bulkSendEmail'])
             ->name('abandoned_carts.bulk_send_email');
@@ -502,6 +524,8 @@ Route::prefix('admin')
         Route::get('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'show'])->name('marketing_campaigns.show');
         Route::get('/marketing_campaigns/{id}/edit', [MarketingCampaignController::class, 'edit'])->name('marketing_campaigns.edit');
         Route::put('/marketing_campaigns/{id}', [MarketingCampaignController::class, 'update'])->name('marketing_campaigns.update');
+        Route::post('/marketing_campaigns/{id}/send', [MarketingCampaignController::class, 'send'])->name('marketing_campaigns.send');
+
 
 
         // Banner routes
@@ -631,14 +655,13 @@ Route::prefix('admin')
         Route::delete('/coupons/force-delete/{id}', [CouponController::class, 'forceDelete'])->name('coupons.forceDelete');
 
 
-        // Các tuyến đường chat của quản trị viên (Yêu cầu xác thực và các vai trò/quyền phù hợp)
         Route::prefix('chat')->name('chat.')->group(function () {
             Route::get('/', [AdminChatController::class, 'index'])->name('dashboard');
-            Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
-            Route::post('/{conversation}/send-message', [AdminChatController::class, 'sendMessage'])->name('sendMessage');
-            Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
-            Route::post('/{conversation}/close', [AdminChatController::class, 'closeConversation'])->name('close');
             Route::post('/create-internal', [AdminChatController::class, 'createInternalChat'])->name('createInternal');
+            Route::post('/{conversation}/send-message', [AdminChatController::class, 'sendMessage'])->name('sendMessage');
+            Route::post('/{conversation}/close', [AdminChatController::class, 'close'])->name('close');
+            Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
+            Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
         });
 
         // Quản lý thu cũ và hàng mở hộp
@@ -664,7 +687,7 @@ Route::prefix('admin')
         Route::patch('store-locations/{storeLocation}/toggle-active', [StoreLocationController::class, 'toggleActive'])->name('store-locations.toggle-active');
 
         // Routes cho thùng rác (trashed items), khôi phục, và xóa vĩnh viễn
-       Route::resource('store-locations', StoreLocationController::class)->except(['create', 'show']);
+        Route::resource('store-locations', StoreLocationController::class)->except(['create', 'show']);
         // Các route AJAX riêng biệt vẫn giữ nguyên để tương tác động
         Route::get('store-locations/{storeLocation}/edit-data', [StoreLocationController::class, 'edit'])->name('store-locations.edit-data');
         Route::delete('store-locations/{storeLocation}/soft-delete', [StoreLocationController::class, 'destroy'])->name('store-locations.soft-delete');
@@ -695,7 +718,7 @@ Route::prefix('admin')
             Route::put('/{id}/status', [OrderRefundController::class, 'updateStatus'])->name('update_status');
         });
         // QUẢN LÝ NHẬP KHO (PURCHASE ORDERS)
-       Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
+        Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
             // Route để tìm kiếm sản phẩm (dùng cho AJAX khi thêm sản phẩm vào phiếu)
             Route::get('/search-products', [PurchaseOrderController::class, 'searchProducts'])->name('search-products');
 
@@ -703,9 +726,9 @@ Route::prefix('admin')
             Route::post('/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receiveItems'])->name('receive');
 
 
-        // --- ROUTES QUẢN LÝ ĐIỂM THƯỞNG ---
-        Route::get('/loyalty-points', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'index'])->name('loyalty.index');
-        Route::post('/loyalty-points/adjust', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'adjust'])->name('loyalty.adjust');
+            // --- ROUTES QUẢN LÝ ĐIỂM THƯỞNG ---
+            Route::get('/loyalty-points', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'index'])->name('loyalty.index');
+            Route::post('/loyalty-points/adjust', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'adjust'])->name('loyalty.adjust');
 
             // Route để hiển thị trang tiếp nhận hàng
             Route::get('/receiving', [PurchaseOrderController::class, 'showReceivingPage'])->name('receiving.index');
@@ -715,21 +738,21 @@ Route::prefix('admin')
         Route::resource('purchase-orders', PurchaseOrderController::class);
         // Route để hiển thị trang Trạm Đóng Gói
         Route::prefix('packing-station')->name('packing-station.')->group(function () {
-        // Route để hiển thị trang chính
-        Route::get('/', [PackingStationController::class, 'index'])->name('index');
+            // Route để hiển thị trang chính
+            Route::get('/', [PackingStationController::class, 'index'])->name('index');
 
-        // ==== API routes for the packing station interface ====
-        // Route để lấy danh sách đơn hàng chờ đóng gói
-        Route::get('/orders', [PackingStationController::class, 'getOrdersForPacking'])->name('get-orders');
+            // ==== API routes for the packing station interface ====
+            // Route để lấy danh sách đơn hàng chờ đóng gói
+            Route::get('/orders', [PackingStationController::class, 'getOrdersForPacking'])->name('get-orders');
 
-        // Route để lấy chi tiết một đơn hàng
-        Route::get('/orders/{id}', [PackingStationController::class, 'getOrderDetails'])->name('get-order-details');
+            // Route để lấy chi tiết một đơn hàng
+            Route::get('/orders/{id}', [PackingStationController::class, 'getOrderDetails'])->name('get-order-details');
 
-        // Route để xác thực IMEI/Serial
-        Route::post('/validate-imei', [PackingStationController::class, 'validateImei'])->name('validate-imei');
+            // Route để xác thực IMEI/Serial
+            Route::post('/validate-imei', [PackingStationController::class, 'validateImei'])->name('validate-imei');
 
-        // Route để xác nhận hoàn tất đóng gói
-        Route::post('/orders/{orderId}/confirm-packing', [PackingStationController::class, 'confirmPacking'])->name('confirm-packing');
+            // Route để xác nhận hoàn tất đóng gói
+            Route::post('/orders/{orderId}/confirm-packing', [PackingStationController::class, 'confirmPacking'])->name('confirm-packing');
         });
         // QUẢN LÝ CHUYỂN KHO (STOCK TRANSFERS)
         Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
@@ -740,6 +763,36 @@ Route::prefix('admin')
             Route::post('/{stockTransfer}/dispatch', [StockTransferController::class, 'processDispatch'])->name('dispatch.process');
         });
         Route::resource('stock-transfers', StockTransferController::class);
+        Route::get('/test-my-role', function () {
+    if (!Auth::check()) {
+        return 'Bạn chưa đăng nhập.';
+    }
+
+    $user = Auth::user();
+
+    echo "<h2>Kiểm tra vai trò cho User ID: {$user->id} - {$user->name}</h2>";
+
+    // Kiểm tra trực tiếp
+    $hasRole = $user->hasAnyRole(['admin', 'super_admin']);
+
+    echo 'Kết quả của `hasAnyRole([\'admin\', \'super_admin\'])`: ';
+    echo $hasRole ? '<b>TRUE (ĐÚNG)</b>' : '<b>FALSE (SAI)</b>';
+
+    echo "<hr>";
+
+    // In ra tất cả các vai trò mà user này có
+    $roles = $user->roles;
+    if ($roles->isEmpty()) {
+        echo 'User này KHÔNG có vai trò nào được gán trong bảng `role_user`.';
+    } else {
+        echo '<h4>Các vai trò của user này:</h4>';
+        echo '<ul>';
+        foreach ($roles as $role) {
+            echo "<li>ID: {$role->id} - Tên: {$role->name}</li>";
+        }
+        echo '</ul>';
+    }
+});
 
     });
 // Group các route dành cho shipper và bảo vệ chúng
@@ -764,6 +817,24 @@ Route::get('/test-403', function () {
 
 // Routes xác thực được định nghĩa trong auth.php (đăng nhập, đăng ký, quên mật khẩu, etc.)
 require __DIR__ . '/auth.php';
+
+// Test route để debug GHN API
+// Route::get('/test-ghn', function() {
+//     return response()->json([
+//         'success' => true,
+//         'message' => 'GHN route is working',
+//         'timestamp' => now()
+//     ]);
+// });
+// Route::post('/test-ghn-post', function() {
+//     return response()->json([
+//         'success' => true,
+//         'message' => 'GHN POST route is working',
+//         'data' => request()->all(),
+//         'timestamp' => now()
+//     ]);
+// });
+
 Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping_fee');
 // Route::get('api/old-provinces', [AddressesController::class, 'getOldProvinces']);
 // Route::get('api/old-districts/{province_code}', [AddressesController::class, 'getOldDistricts']);

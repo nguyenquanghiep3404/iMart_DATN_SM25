@@ -9,13 +9,17 @@ use App\Models\Review;
 use App\Models\Comment;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Province;
 use App\Models\FlashSale;
 use App\Models\OrderItem;
+use App\Models\DistrictOld;
+use App\Models\ProvinceOld;
 use Illuminate\Support\Str;
 use App\Models\PostCategory;
 use App\Models\WishlistItem;
 use Illuminate\Http\Request;
 use App\Models\ProductBundle;
+use App\Models\StoreLocation;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -454,11 +458,11 @@ class HomeController extends Controller
             }
             $variantKeyStr = implode('_', $variantKey);
 
-            $images = $variant->images->map(fn($image) => Storage::url($image->path))->toArray();
+            $images = $variant->images->map(fn($image) => $image->url)->toArray();
             if (empty($images)) {
                 $images = [asset('images/placeholder.jpg')];
             }
-            $mainImage = $variant->primaryImage ? Storage::url($variant->primaryImage->path) : ($images[0] ?? null);
+            $mainImage = $variant->primaryImage ? $variant->primaryImage->url : ($images[0] ?? null);
 
             $variantData[$variantKeyStr] = [
                 'price' => $originalPrice,
@@ -627,6 +631,50 @@ class HomeController extends Controller
             });
 
         // Kết thúc xử lý gói sản phẩm
+
+        // --- Bắt đầu logic để lấy Store Locations có sản phẩm ---
+        $productVariantId = $selectedVariant ? $selectedVariant->id : ($defaultVariant ? $defaultVariant->id : null);
+
+        if (!$productVariantId) {
+            $storeLocations = collect();
+            $provinces = collect();
+            $districts = collect();
+        } else {
+            $storeLocations = StoreLocation::with(['province', 'district', 'ward'])
+                ->where('is_active', 1)
+                ->whereNull('deleted_at')
+                ->where('type', 'store')
+                ->whereHas('productInventories', function ($query) use ($productVariantId) {
+                    $query->where('product_variant_id', $productVariantId)
+                        ->where('quantity', '>', 0)
+                        ->where('inventory_type', 'new');
+                })
+                ->orderBy('name')
+                ->get()
+                ->each(function ($location) use ($productVariantId) {
+                    $location->quantity = $location->productInventories()
+                        ->where('product_variant_id', $productVariantId)
+                        ->where('inventory_type', 'new')
+                        ->sum('quantity');
+                });
+
+
+            $provinces = ProvinceOld::whereHas('storeLocations', function ($query) use ($productVariantId) {
+                $query->where('is_active', 1)
+                    ->whereNull('deleted_at')
+                    ->where('type', 'store')
+                    ->whereHas('productInventories', function ($subQuery) use ($productVariantId) {
+                        $subQuery->where('product_variant_id', $productVariantId)
+                            ->where('quantity', '>', 0)
+                            ->where('inventory_type', 'new');
+                    });
+            })
+                ->orderBy('name')
+                ->get();
+
+            $districts = collect();
+        }
+        // --- Kết thúc logic kho ---
 
         // // $comments = $product->comments()
         // //     ->whereNull('parent_id')
@@ -803,7 +851,12 @@ class HomeController extends Controller
             'totalReviewsCount',
             'totalCommentsCount',
             'ratingFilter',
-            'productBundles' // Thêm biến mới
+            'productBundles',
+            'storeLocations',
+            'provinces', // Thêm provinces để view có thể dùng
+            'districts', // Districts sẽ được load động bằng JS
+
+            // Thêm biến mới
         ));
     }
 
@@ -866,14 +919,6 @@ class HomeController extends Controller
             $categoryIds = Category::where('parent_id', $currentCategory->id)->pluck('id')->toArray();
             $categoryIds[] = $currentCategory->id;
             $query->whereIn('category_id', $categoryIds);
-        }
-
-        // ⭐ Lọc đánh giá
-        if ($request->filled('rating')) {
-            $rating = (int) $request->rating;
-            $query->whereHas('reviews', fn($q) => $q->where('reviews.status', 'approved'))
-                ->withAvg(['reviews as approved_reviews_avg_rating' => fn($q) => $q->where('reviews.status', 'approved')], 'rating')
-                ->having('approved_reviews_avg_rating', '>=', $rating);
         }
 
         // 💰 Lọc giá
@@ -1221,5 +1266,133 @@ class HomeController extends Controller
             });
 
         return response()->json($products);
+    }
+
+    // API để lấy danh sách quận/huyện theo tỉnh
+    public function getDistrictsByProvince(Request $request)
+    {
+        // Lấy province_code và product_variant_id từ request
+        $provinceCode = $request->input('province_code');
+        $productVariantId = $request->input('product_variant_id');
+
+        // Debug: Ghi log province_code và product_variant_id
+        \Log::info('getDistrictsByProvince called with province_code: ' . $provinceCode . ', product_variant_id: ' . $productVariantId);
+
+        try {
+            // Thực hiện truy vấn
+            $districts = DistrictOld::where('parent_code', $provinceCode)
+                ->whereHas('storeLocations', function ($query) use ($productVariantId) {
+                    $query->where('is_active', 1)
+                        ->whereNull('deleted_at')
+                        ->where('type', 'store')
+                        ->whereHas('productInventories', function ($subQuery) use ($productVariantId) {
+                            $subQuery->where('product_variant_id', $productVariantId)
+                                ->where('quantity', '>', 0)
+                                ->where('inventory_type', 'new'); // Chỉ lấy tồn kho loại 'new'
+                        });
+                })
+                ->orderBy('name')
+                ->get(['code', 'name']);
+
+            // Debug: Ghi log kết quả truy vấn
+            \Log::info('Districts found: ' . json_encode($districts));
+
+            return response()->json($districts);
+        } catch (\Exception $e) {
+            // Debug: Ghi log nếu có lỗi
+            \Log::error('Error in getDistrictsByProvince: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
+    }
+
+    // API để lọc cửa hàng theo tỉnh/quận
+    public function filterStoreLocations(Request $request)
+    {
+        $provinceCode = $request->input('province_code');
+        $districtCode = $request->input('district_code');
+        $productVariantId = $request->input('product_variant_id');
+
+        // Debug: Ghi log các tham số
+        \Log::info('filterStoreLocations called with province_code: ' . $provinceCode . ', district_code: ' . $districtCode . ', product_variant_id: ' . $productVariantId);
+
+        try {
+            $query = StoreLocation::with(['province', 'district', 'ward'])
+                ->where('is_active', 1)
+                ->whereNull('deleted_at')
+                ->where('type', 'store') // Chỉ lấy loại cửa hàng
+                ->whereHas('productInventories', function ($query) use ($productVariantId) {
+                    $query->where('product_variant_id', $productVariantId)
+                        ->where('quantity', '>', 0)
+                        ->where('inventory_type', 'new'); // Chỉ lấy tồn kho loại 'new'
+                });
+
+            if ($provinceCode) {
+                $query->where('province_code', $provinceCode);
+            }
+
+            if ($districtCode) {
+                $query->where('district_code', $districtCode);
+            }
+
+            $filteredStores = $query->orderBy('name')->get()->map(function ($location) use ($productVariantId) {
+                return [
+                    'id' => $location->id,
+                    'name' => $location->name,
+                    'phone' => $location->phone,
+                    'full_address' => $location->full_address,
+                    'address' => $location->address, // thêm dòng này
+                    'province' => $location->province->name ?? 'N/A',
+                    'district' => $location->district->name ?? 'N/A',
+                    'ward' => $location->ward->name ?? 'N/A',
+                    'quantity' => $location->productInventories()
+                        ->where('product_variant_id', $productVariantId)
+                        ->where('inventory_type', 'new')
+                        ->sum('quantity'),
+                ];
+            });
+
+            return response()->json([
+                'stores' => $filteredStores,
+                'count' => $filteredStores->count()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in filterStoreLocations: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
+    }
+
+    // API để lấy danh sách tỉnh/thành phố theo biến thể sản phẩm
+    public function getProvincesByVariant(Request $request)
+    {
+        $productVariantId = $request->input('product_variant_id');
+
+        // Debug: Ghi log product_variant_id
+        \Log::info('getProvincesByVariant called with product_variant_id: ' . $productVariantId);
+
+        try {
+            // Lấy danh sách tỉnh có sản phẩm của biến thể này
+            // Sử dụng ProvinceOld vì StoreLocation liên kết với ProvinceOld
+            $provinces = ProvinceOld::whereHas('storeLocations', function ($query) use ($productVariantId) {
+                $query->where('is_active', 1)
+                    ->whereNull('deleted_at')
+                    ->where('type', 'store')
+                    ->whereHas('productInventories', function ($subQuery) use ($productVariantId) {
+                        $subQuery->where('product_variant_id', $productVariantId)
+                            ->where('quantity', '>', 0)
+                            ->where('inventory_type', 'new'); // Chỉ lấy tồn kho loại 'new'
+                    });
+            })
+            ->orderBy('name')
+            ->get(['code', 'name']);
+
+            // Debug: Ghi log kết quả truy vấn
+            \Log::info('Provinces found for variant ' . $productVariantId . ': ' . json_encode($provinces));
+
+            return response()->json($provinces);
+        } catch (\Exception $e) {
+            // Debug: Ghi log nếu có lỗi
+            \Log::error('Error in getProvincesByVariant: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
 }

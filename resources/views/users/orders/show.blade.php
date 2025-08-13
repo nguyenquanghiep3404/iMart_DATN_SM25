@@ -254,7 +254,7 @@
                     $firstItem = $order->items->first();
                     $canReview = $firstItem && !$firstItem->has_reviewed && $firstItem->product_variant_id;
                 @endphp
-                <a href="#" class="btn-action btn-action-secondary">Yêu cầu trả hàng</a>
+                <a href="{{ route('refunds.create', ['orderItem' => $firstItem->id]) }}" class="btn-action btn-action-secondary">Yêu cầu trả hàng</a>
                 @if($canReview)
                     <button type="button" class="btn-action write-review-btn"
                         data-order-item-id="{{ $firstItem->id }}"
