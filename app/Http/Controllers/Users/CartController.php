@@ -1415,4 +1415,35 @@ class CartController extends Controller
         ]);
     }
 
+
+    // gỡ điểm thưởng
+    public function removePoints(Request $request)
+    {
+        // Xóa điểm thưởng
+        session()->forget('points_applied');
+
+        // Lấy cart hiện tại
+        $cart = session('cart', []);
+
+        // Tính subtotal
+        $subtotal = collect($cart)->sum(function ($item) {
+            return $item['price'] * $item['quantity'];
+        });
+
+        // Lấy discount từ voucher nếu có
+        $voucherDiscount = 0;
+        if (session()->has('applied_coupon')) {
+            // Giả sử bạn lưu discount của voucher trong session
+            $voucherDiscount = session('applied_coupon.discount', 0);
+        }
+
+        // Tổng tiền mới = subtotal - voucher discount (vì điểm thưởng bị xóa)
+        $totalAfterRemove = max(0, $subtotal - $voucherDiscount);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Điểm thưởng đã được gỡ bỏ khỏi đơn hàng.',
+            'new_total' => $totalAfterRemove,
+        ]);
+    }
 }

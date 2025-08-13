@@ -90,7 +90,8 @@ Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.cle
 
 Route::post('/cart/apply-points', [CartController::class, 'applyPoints'])->name('cart.applyPoints')->middleware('auth');
 Route::post('/payments/apply-points', [PaymentController::class, 'applyPoints'])->name('payments.applyPoints')->middleware('auth');
-
+Route::post('/cart/remove-points', [CartController::class, 'removePoints'])
+    ->name('cart.removePoints');
 
 // cart_offcanvas
 Route::get('/cart/offcanvas', [CarOffController::class, 'index']);

@@ -121,6 +121,8 @@
                                                         .textContent = data.total_after_dc;
 
                                                     if (data.voucher_removed) {
+                                                        $('#appliedCouponBox').hide();
+                                                        $('#appliedPointsBox').hide();
                                                         const voucherSection = document
                                                             .getElementById(
                                                                 'voucher-section');
@@ -134,6 +136,8 @@
                                                         });
                                                     }
                                                     if (data.points_removed) {
+                                                        $('#appliedCouponBox').hide();
+                                                        $('#appliedPointsBox').hide();
                                                         const pointsDiscountRow = document
                                                             .getElementById(
                                                                 'points-discount-row');
@@ -276,6 +280,8 @@
                                         updateCartUI(data);
 
                                         if (data.voucher_removed) {
+                                            $('#appliedCouponBox').hide();
+                                            $('#appliedPointsBox').hide();
                                             Swal.fire({
                                                 icon: 'info',
                                                 title: 'Mã giảm giá đã bị huỷ',

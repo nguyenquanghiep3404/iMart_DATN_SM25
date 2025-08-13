@@ -478,13 +478,13 @@
                                         </div>
                                     @endif
                                 </div>
-                                <div class="bg-light rounded p-3">
+                                <div class="bg-body-tertiary rounded-5 p-4 mb-3">
                                     @guest
-                                        {{-- Guest View --}}
+                                        {{-- TRƯỜNG HỢP 1: KHÁCH VÃNG LAI (CHƯA ĐĂNG NHẬP) --}}
                                         <a href="{{ route('login') }}" class="d-flex align-items-center text-decoration-none">
                                             <div class="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle flex-shrink-0"
                                                 style="width: 40px; height: 40px;">
-                                                <i class="fas fa-star text-warning"></i>
+                                                <i class="ci-gift fs-xl text-warning"></i>
                                             </div>
                                             <div class="ps-3">
                                                 <div class="fw-medium text-dark">Đăng nhập để dùng điểm</div>
@@ -494,36 +494,57 @@
                                     @endguest
 
                                     @auth
-                                        {{-- Logged-in User View --}}
+                                        {{-- TRƯỜNG HỢP 2 & 3: NGƯỜI DÙNG ĐÃ ĐĂNG NHẬP --}}
                                         <div class="d-flex align-items-center">
                                             <div class="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 rounded-circle flex-shrink-0"
                                                 style="width: 40px; height: 40px;">
-                                                <i class="fas fa-star text-primary"></i>
+                                                <i class="ci-gift fs-xl text-primary"></i>
                                             </div>
                                             <div class="ps-3">
                                                 <div class="fw-medium text-dark">Điểm thưởng của bạn</div>
                                                 <p class="fs-sm text-primary fw-semibold mb-0">
-                                                    {{ number_format(Auth::user()->loyalty_points_balance) }} điểm
-                                                </p>
+                                                    {{ number_format(Auth::user()->loyalty_points_balance) }} điểm</p>
                                             </div>
                                         </div>
 
                                         @if (Auth::user()->loyalty_points_balance > 0)
+                                            {{-- CÓ ĐIỂM: HIỂN THỊ FORM SỬ DỤNG --}}
                                             <div id="points-form" class="mt-3">
                                                 <div class="d-flex gap-2">
-                                                    <input type="number" id="points-to-use"
-                                                        class="form-control form-control-sm" placeholder="Nhập số điểm">
+                                                    <input type="number" id="points-to-use" class="form-control"
+                                                        placeholder="Nhập số điểm">
                                                     <button type="button" id="apply-points-btn"
-                                                        class="btn btn-dark btn-sm flex-shrink-0">Áp dụng</button>
+                                                        class="btn btn-dark flex-shrink-0">Áp
+                                                        dụng</button>
                                                 </div>
                                                 <div id="points-message" class="mt-2 small"></div>
                                             </div>
                                         @else
+                                            {{-- KHÔNG CÓ ĐIỂM: HIỂN THỊ THÔNG BÁO --}}
                                             <p class="fs-xs text-muted mb-0 mt-2">
                                                 Bạn chưa có điểm thưởng. Hãy mua sắm để tích lũy ngay!
                                             </p>
                                         @endif
                                     @endauth
+                                    @php
+                                        $pointsApplied = session('points_applied.points', 0);
+                                    @endphp
+
+                                    @if ($pointsApplied > 0)
+                                        <div id="appliedPointsBox"
+                                            class="flex items-center justify-between bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 mt-3">
+                                            <span class="text-sm text-gray-700">
+                                                Bạn đã áp dụng <strong
+                                                    class="text-primary">{{ number_format($pointsApplied) }} điểm
+                                                    thưởng</strong>
+                                            </span>
+                                            <button id="removePointsBtn"
+                                                class="text-xs text-primary hover:underline font-semibold">
+                                                Gỡ bỏ
+                                            </button>
+                                        </div>
+                                    @endif
+
                                 </div>
                             </div>
 
@@ -888,7 +909,7 @@
                 if (this.elements.useNewAddressBtn) this.elements.useNewAddressBtn.addEventListener('click', () => this
                     .toggleAddressForm(true));
                 if (this.elements.backToAddressListBtn) this.elements.backToAddressListBtn.addEventListener('click',
-                () => this.toggleAddressForm(false));
+                    () => this.toggleAddressForm(false));
                 if (this.elements.openAddressModalBtn) this.elements.openAddressModalBtn.addEventListener('click', () =>
                     this.handleAddressModalOpen());
 
@@ -1581,7 +1602,8 @@
                     .then(data => {
                         if (data.success) {
                             if (data.redirect_url) window.location.href = data.redirect_url;
-                            else window.location.href = `{{ route('payments.success') }}?order_id=${data.order.id}`;
+                            else window.location.href =
+                            `{{ route('payments.success') }}?order_id=${data.order.id}`;
                         } else {
                             this.helpers.showAlert(data.message || 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.',
                                 'danger');
@@ -2087,7 +2109,7 @@
                     const storeName = storeItem.querySelector('strong').textContent;
                     const storeAddress = storeItem.querySelector('span').textContent;
                     const storePhone = storeItem.querySelector('.fa-phone')?.parentElement?.textContent.trim() ||
-                    '';
+                        '';
 
                     // Lưu thông tin cửa hàng đã chọn
                     this.state.selectedStore = {
