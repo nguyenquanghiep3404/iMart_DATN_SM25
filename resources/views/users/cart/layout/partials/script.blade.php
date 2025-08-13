@@ -398,6 +398,8 @@
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
+                                    $('#appliedCouponBox').hide();
+                                    $('#appliedPointsBox').hide();
                                     const pointsRow = document.getElementById(
                                         'points-discount-row');
                                     if (pointsRow) pointsRow.style.display = 'none';

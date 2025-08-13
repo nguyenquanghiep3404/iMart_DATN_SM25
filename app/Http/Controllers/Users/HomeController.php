@@ -519,6 +519,11 @@ class HomeController extends Controller
                 ->selectRaw('COALESCE(SUM(quantity - quantity_committed), 0) as available_stock')
                 ->value('available_stock');
         }
+        $alreadyInCart = 0;
+        // Ví dụ lấy từ session (thay bằng logic thực tế của bạn):
+        if (session()->has('cart')) {
+            $alreadyInCart = collect(session('cart'))->sum('quantity');
+        }
         $productBundles = ProductBundle::with([
             'mainProducts.productVariant.product.coverImage',
             'suggestedProducts.productVariant.product.coverImage'
@@ -844,6 +849,7 @@ class HomeController extends Controller
             'provinces', // Thêm provinces để view có thể dùng
             'districts', // Districts sẽ được load động bằng JS
             'availableStock',
+            'alreadyInCart'
             // Thêm biến mới
         ));
     }

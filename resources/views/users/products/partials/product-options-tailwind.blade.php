@@ -412,7 +412,7 @@
                         <i class="ci-minus"></i>
                     </button>
                     <input type="number" class="form-control form-control-lg" name="quantity" id="quantity_input"
-                        value="1" min="1" max="1000">
+                        value="1" min="1" max="{{ $availableStock }}">
                     <button type="button" class="btn btn-icon btn-lg" data-increment aria-label="Tăng số lượng">
                         <i class="ci-plus"></i>
                     </button>
@@ -1108,5 +1108,26 @@
             }
             createProvinceSelectListener();
         }, 200);
+    });
+</script>
+<script>
+    const availableStock = {{ $availableStock }};
+    const alreadyInCart = {{ $alreadyInCart }};
+
+    // Tính số lượng thực còn lại được phép mua
+    const realAvailableStock = Math.max(availableStock - alreadyInCart, 0);
+
+    const quantityInput = document.getElementById('quantity_input');
+    quantityInput.setAttribute('max', realAvailableStock);
+
+    quantityInput.addEventListener('input', function() {
+        const enteredQuantity = parseInt(this.value);
+
+        if (enteredQuantity > realAvailableStock) {
+            toastr.error(
+                `Bạn đã có ${alreadyInCart} sản phẩm trong giỏ. Hệ thống chỉ còn ${realAvailableStock} sản phẩm nữa.`
+            );
+            this.value = realAvailableStock;
+        }
     });
 </script>
