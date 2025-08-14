@@ -456,7 +456,19 @@ class CartController extends Controller
             // ==== Xóa sản phẩm ====
             if (auth()->check()) {
                 $item->delete();
-
+                $dbCartItems = auth()->user()->cart?->items()->with('cartable')->get();
+                $cartSession = [];
+                foreach ($dbCartItems as $dbItem) {
+                    $cartSession[$dbItem->id] = [
+                        'id'       => $dbItem->id,
+                        'price'    => $dbItem->price,
+                        'quantity' => $dbItem->quantity,
+                        'name'     => $dbItem->cartable?->name,
+                        'image'    => $dbItem->cartable?->image_url,
+                        'variant_id' => method_exists($dbItem->cartable, 'getKey') ? $dbItem->cartable->getKey() : null,
+                    ];
+                }
+                session()->put('cart', $cartSession);
                 // Xóa trong session cart nếu có
                 $cartSession = session()->get('cart', []);
                 if (isset($cartSession[$item->cartable_id])) {
@@ -715,6 +727,20 @@ class CartController extends Controller
             $item->quantity = $quantity;
             $item->price = $newPrice;
             $item->save();
+             // Đồng bộ lại session từ DB
+            $dbCartItems = auth()->user()->cart?->items()->with('cartable')->get();
+            $cartSession = [];
+            foreach ($dbCartItems as $dbItem) {
+                $cartSession[$dbItem->id] = [
+                    'id'       => $dbItem->id,
+                    'price'    => $dbItem->price,
+                    'quantity' => $dbItem->quantity,
+                    'name'     => $dbItem->cartable?->name,
+                    'image'    => $dbItem->cartable?->image_url,
+                    'variant_id' => method_exists($dbItem->cartable, 'getKey') ? $dbItem->cartable->getKey() : null,
+                ];
+            }
+            session()->put('cart', $cartSession);
         } else {
             // session đã cập nhật phía trên
         }
@@ -1396,13 +1422,21 @@ class CartController extends Controller
         // Gỡ mã khuyến mãi khỏi session
         session()->forget('applied_coupon');
 
-        // Tính toán lại giỏ hàng nếu cần
-        $cart = session('cart', []);
+        $subtotal = 0;
 
-        // Tính subtotal (tổng giá trước giảm)
-        $subtotal = collect($cart)->sum(function ($item) {
-            return $item['price'] * $item['quantity'];
-        });
+        if (Auth::check()) {
+            // Nếu user đã login thì dùng DB cart
+            $cart = Auth::user()->cart?->items ?? collect();
+            $subtotal = $cart->sum(function ($item) {
+                return $item->price * $item->quantity;
+            });
+        } else {
+            // Nếu guest thì vẫn dùng session cart
+            $cart = session('cart', []);
+            $subtotal = collect($cart)->sum(function ($item) {
+                return $item['price'] * $item['quantity'];
+            });
+        }
 
         // Trừ tiếp giảm giá từ điểm thưởng nếu có
         $pointsDiscount = session('points_applied.discount', 0);
@@ -1415,29 +1449,28 @@ class CartController extends Controller
         ]);
     }
 
-
     // gỡ điểm thưởng
     public function removePoints(Request $request)
     {
         // Xóa điểm thưởng
         session()->forget('points_applied');
 
-        // Lấy cart hiện tại
-        $cart = session('cart', []);
+        $subtotal = 0;
 
-        // Tính subtotal
-        $subtotal = collect($cart)->sum(function ($item) {
-            return $item['price'] * $item['quantity'];
-        });
-
-        // Lấy discount từ voucher nếu có
-        $voucherDiscount = 0;
-        if (session()->has('applied_coupon')) {
-            // Giả sử bạn lưu discount của voucher trong session
-            $voucherDiscount = session('applied_coupon.discount', 0);
+        if (Auth::check()) {
+            // Nếu user đã login thì dùng DB cart
+            $cartItems = Auth::user()->cart()->with('items')->first()?->items ?? collect();
+            $subtotal = $cartItems->sum(fn($item) => $item->price * $item->quantity);
+        } else {
+            // Nếu guest thì vẫn dùng session cart
+            $cart = session('cart', []);
+            $subtotal = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
         }
 
-        // Tổng tiền mới = subtotal - voucher discount (vì điểm thưởng bị xóa)
+        // Lấy discount từ voucher nếu có
+        $voucherDiscount = session('applied_coupon.discount', 0);
+
+        // Tổng tiền mới = subtotal - voucher discount
         $totalAfterRemove = max(0, $subtotal - $voucherDiscount);
 
         return response()->json([
@@ -1446,4 +1479,5 @@ class CartController extends Controller
             'new_total' => $totalAfterRemove,
         ]);
     }
+
 }
