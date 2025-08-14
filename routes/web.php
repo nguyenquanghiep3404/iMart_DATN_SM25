@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
+use Telegram\Bot\Laravel\Facades\Telegram;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\LocationController;
@@ -16,57 +17,63 @@ use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Users\BlogController;
 use App\Http\Controllers\Users\CartController;
+use App\Http\Controllers\Users\ChatController;
 use App\Http\Controllers\Users\HomeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\GuestReviewController;
+use App\Http\Controllers\OrderRefundController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Users\CarOffController;
 use App\Http\Controllers\Admin\PostTagController;
 use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Users\TradeInPublicController;
 use App\Http\Controllers\Users\CommentController;
 use App\Http\Controllers\Users\PaymentController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\HomepageController;
+use App\Http\Controllers\Admin\RegisterController;
 use App\Http\Controllers\Admin\SupplierController;
 use App\Http\Controllers\Users\WishlistController;
+use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\FlashSaleController;
 use App\Http\Controllers\Shipper\ShipperController;
 use App\Http\Controllers\Users\AddressesController;
 use App\Http\Controllers\Users\UserOrderController;
+use App\Http\Controllers\Admin\SalesStaffManagement;
 use App\Http\Controllers\Admin\TradeInItemController;
 use App\Http\Controllers\Admin\OrderManagerController;
 use App\Http\Controllers\Admin\PostCategoryController;
+use App\Http\Controllers\Admin\SerialLookupController;
 use App\Http\Controllers\Admin\UploadedFileController;
 use App\Http\Controllers\Users\CartRecoveryController;
+use App\Http\Controllers\Users\LoyaltyPointController;
 use App\Http\Controllers\Admin\AbandonedCartController;
 use App\Http\Controllers\Admin\BundleProductController;
+use App\Http\Controllers\Admin\CustomerGroupController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\SpecificationController;
+use App\Http\Controllers\Admin\StockTransferController;
+use App\Http\Controllers\Admin\StoreLocationController;
+use App\Http\Controllers\Users\TradeInPublicController;
 use App\Http\Controllers\Admin\DashboardAdminController;
+use App\Http\Controllers\Admin\PackingStationController;
+use App\Http\Controllers\Admin\InventoryLedgerController;
+use App\Http\Controllers\Admin\MarketingCampaignController;
 use App\Http\Controllers\Admin\ShipperManagementController;
 use App\Http\Controllers\Admin\SpecificationGroupController;
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\ContentStaffManagementController;
-use App\Http\Controllers\Users\ChatController;
-use App\Http\Controllers\Admin\AdminChatController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
-use App\Http\Controllers\Admin\StoreLocationController;
-use App\Http\Controllers\Users\LoyaltyPointController;
-use App\Http\Controllers\OrderRefundController;
-use App\Http\Controllers\Admin\RegisterController;
-use App\Http\Controllers\Admin\PurchaseOrderController;
-use App\Http\Controllers\Admin\SalesStaffManagement;
+use App\Http\Controllers\GuestOrderController;
+use App\Http\Controllers\ReorderController;
+use App\Http\Controllers\Admin\InventoryDashboardController;
+use App\Http\Controllers\Admin\InventoryAdjustmentController;
+use App\Http\Controllers\Admin\AutoStockTransferController;
 
-use App\Http\Controllers\Admin\CustomerGroupController;
-use App\Http\Controllers\Admin\MarketingCampaignController;
-use App\Http\Controllers\Admin\PackingStationController;
-use App\Http\Controllers\Admin\StockTransferController;
-use Telegram\Bot\Laravel\Facades\Telegram;
-
-
-
+Route::get('/logout-guest', [AuthenticatedSessionController::class, 'logoutGuest'])->name('logout.guest');
+Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping-fee');
 // router khôi phục giỏ hàng
 Route::get('/cart/recover', [CartRecoveryController::class, 'recover'])->name('cart.restore');
 Route::get('/cart/recover-result', function () {
@@ -82,11 +89,7 @@ Route::post('/cart/add-multiple', [CartController::class, 'addMultiple'])->name(
 Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.clear');
 
 Route::post('/cart/apply-points', [CartController::class, 'applyPoints'])->name('cart.applyPoints')->middleware('auth');
-// Route::post('/payments/apply-points-cart', [PaymentController::class, 'applyPointsCart'])->name('payments.applyPointsCart')->middleware('auth');
-// Route::post('/payments/remove-points-cart', [PaymentController::class, 'removePointsCart'])->name('payments.removePointsCart')->middleware('auth');
-// Route::post('/payments/apply-points-buynow', [PaymentController::class, 'applyPointsBuyNow'])->name('payments.applyPointsBuyNow')->middleware('auth');
-// Route::post('/payments/remove-points-buynow', [PaymentController::class, 'removePointsBuyNow'])->name('payments.removePointsBuyNow')->middleware('auth');
-// Route::match(['get', 'post'], '/buy-now/information', [App\Http\Controllers\Users\PaymentController::class, 'buyNowInformation'])->name('buy-now.information');
+Route::post('/payments/apply-points', [PaymentController::class, 'applyPoints'])->name('payments.applyPoints')->middleware('auth');
 
 
 // cart_offcanvas
@@ -94,7 +97,8 @@ Route::get('/cart/offcanvas', [CarOffController::class, 'index']);
 
 Route::prefix('payments')->name('payments.')->group(function () {
     Route::get('/', [PaymentController::class, 'index'])->name('index');
-    Route::post('/process', [PaymentController::class, 'processOrder'])->name('process');
+    Route::post('/process', [PaymentController::class, 'processOrder'])->middleware('auth')->name('process');
+    Route::post('/process-guest', [PaymentController::class, 'processOrder'])->name('process.guest');
     Route::get('/success', [PaymentController::class, 'success'])->name('success');
 
     // Routes cho VNPay - nguyenquanghiep3404
@@ -160,6 +164,8 @@ Route::prefix('blog')->group(function () {
     Route::get('/', [BlogController::class, 'home'])->name('users.blogs.home');
     Route::get('/tat-ca', [BlogController::class, 'index'])->name('users.blogs.index');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('users.blogs.show');
+    Route::post('/{id}/tang-luot-xem', [BlogController::class, 'increaseViews'])
+        ->name('users.blogs.increaseViews');
 });
 // Trang About và Help , terms
 Route::get('/about', [HomeController::class, 'about'])->name('users.about');
@@ -171,6 +177,13 @@ Route::post('/notifications/mark-as-read', function () {
     auth()->user()->unreadNotifications->markAsRead();
     return response()->json(['status' => 'success']);
 })->name('notifications.markAsRead')->middleware('auth');
+
+// Routes cho trang tra cứu đơn hàng của khách vãng lai
+Route::get('/tra-cuu-don-hang', [GuestOrderController::class, 'index'])->name('guest.orders.form');
+Route::post('/tra-cuu-don-hang/ajax', [GuestOrderController::class, 'lookupAjax'])->name('guest.orders.ajax');
+// routes/web.php
+Route::post('/orders/reorder/{order:order_code}', [ReorderController::class, 'reorder'])->name('orders.reorder');
+
 // Routes cho người dùng (các tính năng phải đăng nhập mới dùng được. ví dụ: quản lý tài khoản phía người dùng)
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -235,8 +248,6 @@ Route::post('/cart/remove-voucher', [CartController::class, 'removeVoucher'])->n
 
 // Routes cho thanh toán ( Sang PaymentController )
 Route::get('/payments', [PaymentController::class, 'index'])->name('payments.information');
-Route::post('/payments/process', [PaymentController::class, 'processOrder'])->name('payments.process');
-Route::get('/payments/success', [PaymentController::class, 'success'])->name('payments.success');
 
 // --- Chat của khách hàng ---
 Route::prefix('chat')->name('client.chat.')->group(function () {
@@ -244,6 +255,7 @@ Route::prefix('chat')->name('client.chat.')->group(function () {
     Route::post('/register-guest', [ChatController::class, 'registerGuest'])->name('registerGuest');
     Route::post('/send-message', [ChatController::class, 'sendMessage'])->name('sendMessage');
     Route::post('/guest-login', [ChatController::class, 'guestLogin'])->name('guestLogin');
+    Route::post('/get-history', [ChatController::class, 'getHistory'])->name('getHistory');
 });
 
 
@@ -268,10 +280,10 @@ Route::prefix('api/locations')->name('api.locations.')->group(function () {
 
 // STORE LOCATIONS API ROUTES
 //==========================================================================
-Route::prefix('api/store-locations')->name('api.store-locations.')->group(function () {
+Route::prefix('api/store-locations')->name('api.stores.')->group(function () {
     Route::get('/provinces', [PaymentController::class, 'getProvincesWithStores'])->name('provinces');
     Route::get('/districts', [PaymentController::class, 'getDistrictsWithStores'])->name('districts');
-    Route::get('/stores', [PaymentController::class, 'getStoreLocations'])->name('stores');
+    Route::get('/stores', [PaymentController::class, 'getStoreLocations'])->name('locations'); // Sửa tên này để tránh trùng lặp nếu có
 });
 
 // API lấy địa chỉ GHN ( Để lại nếu không cần bỏ được để xem xét)
@@ -332,6 +344,8 @@ Route::prefix('admin')
             Route::get('/trash', [ShipperManagementController::class, 'trash'])->name('trash');
             Route::patch('/{shipper}/restore', [ShipperManagementController::class, 'restore'])->name('restore');
             Route::delete('/{shipper}/force-delete', [ShipperManagementController::class, 'forceDelete'])->name('force-delete');
+            Route::get('/warehouse/{warehouse}', [ShipperManagementController::class, 'showWarehouse'])->name('warehouse.show');
+            Route::get('/warehouses', [ShipperManagementController::class, 'getWarehouses'])->name('warehouses');
         });
         Route::resource('shippers', ShipperManagementController::class);
 
@@ -477,6 +491,12 @@ Route::prefix('admin')
             Route::get('/stores/{storeId}/schedule', [SalesStaffManagement::class, 'showSchedule'])->name('stores.schedule');
             // Quản lý ca làm việc
             Route::get('/work-shifts', [SalesStaffManagement::class, 'showWorkShifts'])->name('work-shifts.index');
+
+            // Routes cho thùng rác (trash)
+            Route::get('/trash', [SalesStaffManagement::class, 'trash'])->name('trash');
+            Route::patch('/restore/{id}', [SalesStaffManagement::class, 'restore'])->name('restore');
+            Route::delete('/force-delete/{id}', [SalesStaffManagement::class, 'forceDelete'])->name('force-delete');
+
             // API Routes
             Route::prefix('api')->name('api.')->group(function () {
                 // API cửa hàng
@@ -492,6 +512,7 @@ Route::prefix('admin')
                 Route::post('/schedule/assign-shift', [SalesStaffManagement::class, 'assignShift'])->name('schedule.assign-shift');
                 // API ca làm việc
                 Route::get('/work-shifts', [SalesStaffManagement::class, 'getWorkShifts'])->name('work-shifts.list');
+                Route::get('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'getWorkShift'])->name('work-shifts.show');
                 Route::post('/work-shifts', [SalesStaffManagement::class, 'addWorkShift'])->name('work-shifts.store');
                 Route::put('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'updateWorkShift'])->name('work-shifts.update');
                 Route::delete('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'deleteWorkShift'])->name('work-shifts.destroy');
@@ -550,7 +571,8 @@ Route::prefix('admin')
         Route::put('/order-manager/{user}', [OrderManagerController::class, 'update'])->name('order-manager.update');
         Route::post('/order-manager/store', [OrderManagerController::class, 'store'])->name('order-manager.store');
         Route::delete('/order-manager/{user}', [OrderManagerController::class, 'destroy'])->name('order-manager.destroy');
-
+        Route::get('/order-manager/warehouses', [OrderManagerController::class, 'getWarehouses'])->name('order-manager.warehouses');
+        Route::get('/order-manager/warehouse/{warehouse}', [OrderManagerController::class, 'showWarehouse'])->name('order-manager.warehouse.show');
 
         // Route khác nếu cần
         Route::get('/staff', [OrderManagerController::class, 'staffIndex'])->name('staff.index');
@@ -622,6 +644,17 @@ Route::prefix('admin')
         Route::patch('bundle-products/restore-bulk', [BundleProductController::class, 'restoreBulk'])->name('bundle-products.restore.bulk');
         Route::delete('bundle-products/force-delete-bulk', [BundleProductController::class, 'forceDeleteBulk'])->name('bundle-products.forceDelete.bulk');
 
+        // Routes cho tra cứu số serial
+        Route::get('/serials/lookup', [SerialLookupController::class, 'showForm'])->name('serial.lookup.form');
+        Route::post('/serials/lookup', [SerialLookupController::class, 'lookup'])->name('serial.lookup');
+
+        // Routes cho báo cáo tồn kho
+        Route::get('/reports/inventory-ledger', [InventoryLedgerController::class, 'index'])->name('inventory-ledger.index');
+        // Route xuất file Excel
+        Route::get('reports/inventory-ledger/export', [InventoryLedgerController::class, 'export'])->name('inventory-ledger.export');
+        // Route API lấy danh sách quận/huyện dựa trên mã tỉnh
+        Route::get('/api/districts/{province_code}', [InventoryLedgerController::class, 'getDistricts'])
+            ->name('districts.get');
 
         // Gói sản phẩm
         Route::get('bundle-products', [BundleProductController::class, 'index'])->name('bundle-products.index');
@@ -662,6 +695,7 @@ Route::prefix('admin')
             Route::post('/{conversation}/close', [AdminChatController::class, 'close'])->name('close');
             Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
             Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
+
         });
 
         // Quản lý thu cũ và hàng mở hộp
@@ -754,45 +788,47 @@ Route::prefix('admin')
             // Route để xác nhận hoàn tất đóng gói
             Route::post('/orders/{orderId}/confirm-packing', [PackingStationController::class, 'confirmPacking'])->name('confirm-packing');
         });
-        // QUẢN LÝ CHUYỂN KHO (STOCK TRANSFERS)
         Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
-            Route::get('/search-products', [StockTransferController::class, 'searchProducts'])->name('search-products');
-            Route::get('/dispatch', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.index');
-            Route::get('/{stockTransfer}/dispatch', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.show');
+
+            // === CÁC ROUTE CHÍNH (Từ Route::resource) ===
+            Route::get('/', [StockTransferController::class, 'index'])->name('index');
+            Route::get('/create', [StockTransferController::class, 'create'])->name('create');
+            Route::post('/', [StockTransferController::class, 'store'])->name('store');
+            Route::get('/{stockTransfer}', [StockTransferController::class, 'show'])->name('show');
+            Route::get('/{stockTransfer}/edit', [StockTransferController::class, 'edit'])->name('edit');
+            Route::put('/{stockTransfer}', [StockTransferController::class, 'update'])->name('update');
+            // Giả sử sẽ có chức năng xóa
+            // Route::delete('/{stockTransfer}', [StockTransferController::class, 'destroy'])->name('destroy');
+
+            // API Routes (đặt gần nhau cho dễ quản lý)
             Route::get('/api/pending', [StockTransferController::class, 'getPendingTransfers'])->name('api.pending');
+            Route::get('/api/search-products', [StockTransferController::class, 'searchProducts'])->name('search-products');
+
+            // Dispatch (Xuất Kho) Routes
+            Route::get('/dispatch/select', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.index'); // Trang chọn phiếu
+            Route::get('/{stockTransfer}/dispatch', [StockTransferController::class, 'showDispatchPage'])->name('dispatch.show'); // Trang xuất kho cho phiếu cụ thể
             Route::post('/{stockTransfer}/dispatch', [StockTransferController::class, 'processDispatch'])->name('dispatch.process');
+
+            // Receive (Nhận Kho) Routes
+            Route::get('/{stockTransfer}/receive', [StockTransferController::class, 'showReceivePage'])->name('receive.show');
+            Route::post('/{stockTransfer}/receive', [StockTransferController::class, 'processReceive'])->name('receive.process');
         });
         Route::resource('stock-transfers', StockTransferController::class);
-        Route::get('/test-my-role', function () {
-    if (!Auth::check()) {
-        return 'Bạn chưa đăng nhập.';
-    }
 
-    $user = Auth::user();
+        // Routes cho Auto Stock Transfer
+        Route::prefix('auto-stock-transfers')->name('auto-stock-transfers.')->group(function () {
+            Route::get('/', [AutoStockTransferController::class, 'index'])->name('index');
+            Route::get('/manage', [AutoStockTransferController::class, 'manage'])->name('manage');
+            Route::get('/statistics', [AutoStockTransferController::class, 'statistics'])->name('statistics');
+            Route::get('/{id}', [AutoStockTransferController::class, 'show'])->name('show');
+            Route::post('/{id}/auto-process', [AutoStockTransferController::class, 'autoProcess'])->name('auto-process');
+            Route::post('/{id}/cancel', [AutoStockTransferController::class, 'cancel'])->name('cancel');
+            Route::post('/check-and-create', [AutoStockTransferController::class, 'checkAndCreateForOrder'])->name('check-and-create');
+        });
 
-    echo "<h2>Kiểm tra vai trò cho User ID: {$user->id} - {$user->name}</h2>";
-
-    // Kiểm tra trực tiếp
-    $hasRole = $user->hasAnyRole(['admin', 'super_admin']);
-
-    echo 'Kết quả của `hasAnyRole([\'admin\', \'super_admin\'])`: ';
-    echo $hasRole ? '<b>TRUE (ĐÚNG)</b>' : '<b>FALSE (SAI)</b>';
-
-    echo "<hr>";
-
-    // In ra tất cả các vai trò mà user này có
-    $roles = $user->roles;
-    if ($roles->isEmpty()) {
-        echo 'User này KHÔNG có vai trò nào được gán trong bảng `role_user`.';
-    } else {
-        echo '<h4>Các vai trò của user này:</h4>';
-        echo '<ul>';
-        foreach ($roles as $role) {
-            echo "<li>ID: {$role->id} - Tên: {$role->name}</li>";
-        }
-        echo '</ul>';
-    }
-});
+        Route::get('/product-variants/{id}/adjust-form', [InventoryAdjustmentController::class, 'showAdjustForm'])->name('product-variants.adjust-form');
+        Route::post('/product-variants/{id}/adjust-stock', [InventoryAdjustmentController::class, 'adjustStock'])->name('product-variants.adjust-stock')->middleware('auth');
+        Route::post('/ajax/calculate-shipping-options', [PaymentController::class, 'ajaxCalculateShippingOptions']);
 
     });
 // Group các route dành cho shipper và bảo vệ chúng
@@ -835,7 +871,6 @@ require __DIR__ . '/auth.php';
 //     ]);
 // });
 
-Route::post('/ajax/ghn/shipping-fee', [PaymentController::class, 'ajaxGhnShippingFee'])->name('ajax.ghn.shipping_fee');
 // Route::get('api/old-provinces', [AddressesController::class, 'getOldProvinces']);
 // Route::get('api/old-districts/{province_code}', [AddressesController::class, 'getOldDistricts']);
 // Route::get('api/old-wards/{district_code}', [AddressesController::class, 'getOldWards']);

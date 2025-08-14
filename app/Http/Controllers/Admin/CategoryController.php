@@ -207,7 +207,7 @@ class CategoryController extends Controller
             'parents',
             'specificationGroups',
             'categorySpecificationGroupIds',
-            'specSearch' 
+            'specSearch'
         ));
     }
    public function update(CategoryRequest $request, Category $category)
@@ -298,6 +298,7 @@ class CategoryController extends Controller
 
         $category->restore();
         $category->update(['deleted_by' => null]);
+        dd($id, Category::onlyTrashed()->pluck('id'));
 
         return redirect()->route('admin.categories.trash')
             ->with('success', 'Danh mục đã được khôi phục thành công.');
@@ -340,7 +341,7 @@ class CategoryController extends Controller
     //     $category->save();
 
     //     $status = $category->show_on_homepage ? 'hiển thị' : 'ẩn';
-        
+
     //     return response()->json([
     //         'success' => true,
     //         'message' => "Danh mục '{$category->name}' đã được {$status} trên trang chủ.",

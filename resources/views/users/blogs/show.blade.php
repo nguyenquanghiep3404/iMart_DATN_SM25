@@ -383,3 +383,23 @@
 }
     </style>
 @endpush
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            fetch('{{ route('users.blogs.increaseViews', $post->id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.message);
+            });
+        }, 60000); // 60 giây
+    });
+</script>
+

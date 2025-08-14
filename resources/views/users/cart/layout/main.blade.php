@@ -1,7 +1,13 @@
 @extends('users.layouts.app')
 @section('content')
-    @include('users.messenger')
+    <div id="loading-overlay">
+        <div class="loader">
+            <img src="https://media.tenor.com/On7kvXhzml4AAAAj/loading-gif.gif" alt="Loading..." />
+            <p>Vui lòng chờ một chút…</p>
+        </div>
+    </div>
     @include('users.cart.layout.partials.css')
+    @include('users.messenger')
     <!-- Breadcrumb -->
     <nav class="container pt-3 my-3 my-md-4" aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -65,7 +71,7 @@
                                 <tr data-item-id="{{ $item->id }}" data-stock="{{ $item->stock_quantity }}">
                                     <td class="py-3 ps-0">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ asset($item->image ?: 'path/to/default.jpg') }}" alt="Ảnh sản phẩm"
+                                            <img src="{{ $item->image }}" alt="Ảnh sản phẩm"
                                                 width="90" height="90">
 
                                             <div class="w-100 min-w-0 ps-2 ps-xl-3">

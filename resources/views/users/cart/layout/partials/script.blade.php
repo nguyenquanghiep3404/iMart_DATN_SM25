@@ -325,6 +325,13 @@
                             .then(response => response.json())
                             .then(data => {
                                 if (data.success) {
+                                    const pointsRow = document.getElementById(
+                                        'points-discount-row');
+                                    if (pointsRow) pointsRow.style.display = 'none';
+
+                                    const pointsAmount = document.getElementById(
+                                        'points-discount-amount');
+                                    if (pointsAmount) pointsAmount.textContent = '-0₫';
                                     // Xóa các dòng sản phẩm
                                     const tbody = document.querySelector('table tbody');
                                     if (tbody) tbody.innerHTML = '';
@@ -426,5 +433,8 @@
                 recalculateCartSummary();
             }
         });
+        setTimeout(() => {
+            document.getElementById("loading-overlay").style.display = "none";
+        }, 1000);
     </script>
 @endpush

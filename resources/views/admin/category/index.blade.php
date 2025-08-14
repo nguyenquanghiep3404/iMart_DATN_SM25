@@ -347,8 +347,6 @@
         </div>
     </div>
 </div>
-
-{{-- DELETE CONFIRMATION MODAL --}}
 <div id="deleteModal" class="category-modal">
     <div class="category-modal-content animated-modal">
         <div class="category-modal-body text-center">

@@ -435,6 +435,8 @@ class HomeController extends Controller
             }
 
             $availableCombinations[] = $combination;
+            Log::info('✅ Combination pushed:', $combination);
+
 
             $now = now();
             $salePrice = (int) $variant->sale_price;
@@ -556,8 +558,8 @@ class HomeController extends Controller
 
 
                 // Lấy hình ảnh sản phẩm chính (ưu tiên primaryImage của variant, sau đó đến coverImage của product)
-                $mainImage = $mainVariant->primaryImage ? Storage::url($mainVariant->primaryImage->path)
-                    : ($mainProductData->coverImage ? Storage::url($mainProductData->coverImage->path)
+                $mainImage = $mainVariant && $mainVariant->primaryImage && file_exists(storage_path('app/public/' . $mainVariant->primaryImage->path)) ? Storage::url($mainVariant->primaryImage->path)
+                    : ($mainProductData && $mainProductData->coverImage && file_exists(storage_path('app/public/' . $mainProductData->coverImage->path)) ? Storage::url($mainProductData->coverImage->path)
                         : asset('images/placeholder.jpg'));
                 // Dữ liệu sản phẩm chính
                 $mainProductItem = [
@@ -599,8 +601,8 @@ class HomeController extends Controller
                         'product_id' => $product->id,
                         'name' => $product->name,
                         'slug' => $product->slug,
-                        'image' => $variant->primaryImage ? Storage::url($variant->primaryImage->path)
-                            : ($product->coverImage ? Storage::url($product->coverImage->path)
+                        'image' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path)
+                            : ($product && $product->coverImage && file_exists(storage_path('app/public/' . $product->coverImage->path)) ? Storage::url($product->coverImage->path)
                                 : asset('images/placeholder.jpg')),
                         'price' => $price,
                         'sale_price' => $salePrice,
@@ -674,30 +676,9 @@ class HomeController extends Controller
 
             $districts = collect();
         }
-        // --- Kết thúc logic kho ---
 
-        // // $comments = $product->comments()
-        // //     ->whereNull('parent_id')
-        // //     ->where(function ($query) {
-        // //         $query->where('status', 'approved');
-
-        //         if (Auth::check()) {
-        //             $query->orWhere(function ($q) {
-        //                 $q->where('user_id', Auth::id())
-        //                     ->whereIn('status', ['pending', 'rejected', 'spam']);
-        //             });
-
-        //             if (Auth::user()->hasRole('admin')) {
-        //                 $query->orWhereIn('status', ['pending', 'rejected', 'spam']);
-        //             }
-        //         }
-        //     })
-        //     ->with(['user', 'replies.user'])
-        //     ->orderByDesc('created_at')
-        //     ->get();
-
-
-
+        // Kêt thúc logic Store Locations
+       
         $initialVariantAttributes = [];
         if ($defaultVariant) {
             foreach ($defaultVariant->attributeValues as $attrValue) {
@@ -707,6 +688,7 @@ class HomeController extends Controller
         $attributesGrouped = collect($attributes)->map(fn($values) => $values->sortBy('value')->values());
 
         $variantCombinations = $availableCombinations;
+        
         // ✅ Lấy thông số kỹ thuật theo nhóm (chỉ lấy từ biến thể mặc định)
         $specGroupsData = [];
         if ($defaultVariant) {
@@ -922,11 +904,31 @@ class HomeController extends Controller
         }
 
         // 💰 Lọc giá
-        if ($request->filled('min_price')) {
-            $query->whereHas('variants', fn($q) => $q->where('price', '>=', $request->min_price));
-        }
-        if ($request->filled('max_price')) {
-            $query->whereHas('variants', fn($q) => $q->where('price', '<=', $request->max_price));
+        if ($request->filled('min_price') || $request->filled('max_price')) {
+            $query->whereHas('variants', function ($q) use ($request) {
+                $q->where(function ($q2) use ($request) {
+                    // Kiểm tra nếu có sale_price
+                    $q2->where(function ($q3) use ($request) {
+                        $q3->where('sale_price', '>', 0);
+                        if ($request->filled('min_price')) {
+                            $q3->where('sale_price', '>=', $request->min_price);
+                        }
+                        if ($request->filled('max_price')) {
+                            $q3->where('sale_price', '<=', $request->max_price);
+                        }
+                    })
+                        // Nếu không có sale_price, dùng giá gốc
+                        ->orWhere(function ($q3) use ($request) {
+                            $q3->where('sale_price', 0)->orWhereNull('sale_price');
+                            if ($request->filled('min_price')) {
+                                $q3->where('price', '>=', $request->min_price);
+                            }
+                            if ($request->filled('max_price')) {
+                                $q3->where('price', '<=', $request->max_price);
+                            }
+                        });
+                });
+            });
         }
 
         // 🔃 Sắp xếp
@@ -937,36 +939,34 @@ class HomeController extends Controller
 
             case 'gia_thap_den_cao':
                 $query->whereHas('variants', fn($q) => $q->whereNull('deleted_at'))
-                    ->orderBy(fn($q) => $q->select('price')
-                        ->from('product_variants')
-                        ->whereColumn('product_id', 'products.id')
-                        ->whereNull('deleted_at')
-                        ->where(function ($q2) {
-                            $q2->where('is_default', true)
-                                ->orWhereRaw('id = (
-                                select min(id) 
-                                from product_variants pv 
-                                where pv.product_id = product_variants.product_id 
-                                and pv.deleted_at is null
-                            )');
-                        })->limit(1));
+                    ->orderByRaw('(
+                    SELECT COALESCE(MIN(sale_price), MIN(price))
+                    FROM product_variants pv
+                    WHERE pv.product_id = products.id
+                    AND pv.deleted_at IS NULL
+                    AND (pv.is_default = true OR pv.id = (
+                        SELECT MIN(id)
+                        FROM product_variants pv2
+                        WHERE pv2.product_id = pv.product_id
+                        AND pv2.deleted_at IS NULL
+                    ))
+                ) ASC');
                 break;
 
             case 'gia_cao_den_thap':
                 $query->whereHas('variants', fn($q) => $q->whereNull('deleted_at'))
-                    ->orderByDesc(fn($q) => $q->select('price')
-                        ->from('product_variants')
-                        ->whereColumn('product_id', 'products.id')
-                        ->whereNull('deleted_at')
-                        ->where(function ($q2) {
-                            $q2->where('is_default', true)
-                                ->orWhereRaw('id = (
-                                select min(id) 
-                                from product_variants pv 
-                                where pv.product_id = product_variants.product_id 
-                                and pv.deleted_at is null
-                            )');
-                        })->limit(1));
+                    ->orderByRaw('(
+                    SELECT COALESCE(MIN(sale_price), MIN(price))
+                    FROM product_variants pv
+                    WHERE pv.product_id = products.id
+                    AND pv.deleted_at IS NULL
+                    AND (pv.is_default = true OR pv.id = (
+                        SELECT MIN(id)
+                        FROM product_variants pv2
+                        WHERE pv2.product_id = pv.product_id
+                        AND pv2.deleted_at IS NULL
+                    ))
+                ) DESC');
                 break;
 
             case 'noi_bat':
@@ -995,7 +995,7 @@ class HomeController extends Controller
         $categories = Category::all();
         $parentCategories = $categories->whereNull('parent_id');
 
-        if ($request->ajax()) {
+        if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'sidebar' => view('users.partials.category_product.product_sidebar', compact('categories', 'parentCategories', 'currentCategory'))->render(),
                 'products' => view('users.partials.category_product.shop_products', compact('products'))->render(),
@@ -1184,7 +1184,6 @@ class HomeController extends Controller
         }
         return $formatted;
     }
-
 
     private function getVariantKey(?ProductVariant $variant): string
     {
@@ -1382,8 +1381,8 @@ class HomeController extends Controller
                             ->where('inventory_type', 'new'); // Chỉ lấy tồn kho loại 'new'
                     });
             })
-            ->orderBy('name')
-            ->get(['code', 'name']);
+                ->orderBy('name')
+                ->get(['code', 'name']);
 
             // Debug: Ghi log kết quả truy vấn
             \Log::info('Provinces found for variant ' . $productVariantId . ': ' . json_encode($provinces));

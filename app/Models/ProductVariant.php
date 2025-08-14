@@ -28,7 +28,8 @@ class ProductVariant extends Model
         'is_default',
         'status',
         'cost_price',
-        'points_awarded_on_purchase'
+        'points_awarded_on_purchase',
+        'has_serial_tracking',
     ];
 
     protected $casts = [
@@ -42,6 +43,7 @@ class ProductVariant extends Model
         'dimensions_width' => 'decimal:2',
         'dimensions_height' => 'decimal:2',
         'is_default' => 'boolean',
+        'has_serial_tracking' => 'boolean',
     ];
 
     public function product()
@@ -101,6 +103,7 @@ class ProductVariant extends Model
 
     /**
      * Lấy tổng số lượng tồn kho có thể bán được (ví dụ: new + open_box).
+     * CŨ: Chỉ tính quantity
      */
     public function getSellableStockAttribute(): int
     {
@@ -108,6 +111,39 @@ class ProductVariant extends Model
         return $this->inventories()
             ->whereIn('inventory_type', $sellableTypes)
             ->sum('quantity');
+    }
+
+    /**
+     * MỚI: Lấy tổng số lượng tồn kho có thể bán được theo mô hình mới
+     * Available Quantity = quantity - quantity_committed
+     */
+    public function getAvailableStockAttribute(): int
+    {
+        $sellableTypes = ['new'];
+        return $this->inventories()
+            ->whereIn('inventory_type', $sellableTypes)
+            ->selectRaw('SUM(quantity - quantity_committed) as total_available')
+            ->value('total_available') ?? 0;
+    }
+
+    /**
+     * Kiểm tra xem có đủ tồn kho để bán không
+     */
+    public function hasAvailableStock($requestedQuantity = 1): bool
+    {
+        return $this->available_stock >= $requestedQuantity;
+    }
+
+    /**
+     * Lấy thông tin chi tiết tồn kho theo từng kho
+     */
+    public function getInventoryDetails()
+    {
+        return $this->inventories()
+            ->with('storeLocation:id,name,address')
+            ->where('inventory_type', 'new')
+            ->selectRaw('*, (quantity - quantity_committed) as available_quantity')
+            ->get();
     }
 
     // Một biến thể sản phẩm (ProductVariant) có thể nằm trong nhiều chương trình flash sale khác nhau.

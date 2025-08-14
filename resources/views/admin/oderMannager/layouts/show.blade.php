@@ -9,7 +9,7 @@
             </h1>
 
             <div class="flex items-center gap-3">
-                <a href="{{ route('admin.order-manager.index') }}"
+                <a href="{{ $currentWarehouse ? route('admin.order-manager.warehouse.show', $currentWarehouse->id) : route('admin.order-manager.index') }}"
                     class="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
                     <i class="fas fa-arrow-left mr-1"></i> Quay lại
                 </a>
@@ -29,6 +29,10 @@
                     <p><i class="fas fa-envelope mr-2 text-indigo-500"></i><strong>Email:</strong> {{ $user->email }}</p>
                     <p><i class="fas fa-phone-alt mr-2 text-indigo-500"></i><strong>SĐT:</strong>
                         {{ $user->phone_number ?? '—' }}</p>
+                    <p><i class="fas fa-map-marker-alt mr-2 text-indigo-500"></i><strong>Tỉnh/Thành phố:</strong>
+                        {{ $user->assignedStoreLocations->first()?->province->name_with_type ?? '—' }}</p>
+                    <p><i class="fas fa-warehouse mr-2 text-indigo-500"></i><strong>Kho làm việc:</strong>
+                        {{ $user->assignedStoreLocations->first()?->name ?? '—' }}</p>
                     <p>
                         <i class="fas fa-circle mr-2 text-indigo-500"></i><strong>Trạng thái:</strong>
                         @if ($user->status === 'active')

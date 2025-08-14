@@ -101,7 +101,11 @@
                                         @endif
 
                                         <div class="ratio mb-2" style="--cz-aspect-ratio: calc(240 / 258 * 100%)">
-                                            <img src="{{ asset($product->productVariant->image_url) }}"
+                                            @php
+                                                $variant = $product->productVariant;
+                                                $imageUrl = $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg'));
+                                            @endphp
+                                            <img src="{{ $imageUrl }}"
                                                 alt="{{ $product->productVariant->name ?? $product->productVariant->product->name }}">
 
                                         </div>

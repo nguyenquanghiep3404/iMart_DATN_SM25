@@ -51,9 +51,6 @@
             outline: 0;
             box-shadow: 0 0 0 0.2rem rgba(79,70,229,.25);
         }
-        .table-custom { width: 100%; min-width: 800px; color: #374151; }
-        .table-custom th, .table-custom td { padding: 0.75rem 1rem; vertical-align: middle !important; border-bottom-width: 1px; border-color: #e5e7eb; white-space: nowrap; }
-        .table-custom thead th { font-weight: 600; color: #4b5563; background-color: #f9fafb; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; text-align: left; }
         
         .status-badge {
             display: inline-flex;
@@ -67,8 +64,8 @@
             vertical-align: baseline;
             border-radius: 0.375rem;
         }
-        .status-pending { background-color: #FEF3C7; color: #92400E; } /* Yellow */
-        .status-received { background-color: #D1FAE5; color: #065F46; } /* Green */
+        .status-pending, .status-waiting_for_scan { background-color: #FEF3C7; color: #92400E; } /* Yellow */
+        .status-completed, .status-received { background-color: #D1FAE5; color: #065F46; } /* Green */
         .status-cancelled { background-color: #FEE2E2; color: #991B1B; } /* Red */
         .status-default { background-color: #E5E7EB; color: #4B5563; } /* Gray */
      </style>
@@ -78,26 +75,25 @@
 <div class="body-content px-4 sm:px-6 md:px-8 py-8">
     <div class="container mx-auto max-w-full">
 
-        <header class="mb-8 flex flex-col sm:flex-row items-center justify-between">
+        <header class="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800">Phiếu Nhập Kho</h1>
                 <p class="text-gray-600 mt-1">Theo dõi và quản lý tất cả các đơn hàng nhập từ nhà cung cấp.</p>
             </div>
-            <div class="flex items-center space-x-2 mt-4 sm:mt-0">
-                 {{-- Button điều hướng đến trang tiếp nhận hàng --}}
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
                 <a href="{{ route('admin.purchase-orders.receiving.index') }}" class="btn btn-success w-full sm:w-auto">
                     <i class="fas fa-dolly-flatbed mr-2"></i>
-                    Đi đến Tiếp Nhận
+                    <span>Tiếp Nhận</span>
                 </a>
                 <a href="{{ route('admin.purchase-orders.create') }}" class="btn btn-primary w-full sm:w-auto">
                     <i class="fas fa-plus mr-2"></i>
-                    Tạo Phiếu Nhập Mới
+                    <span>Tạo Mới</span>
                 </a>
             </div>
         </header>
 
         <div class="card-custom">
-            <div class="card-custom-body">
+            <div class="p-4">
                 <form action="{{ route('admin.purchase-orders.index') }}" method="GET">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="md:col-span-2">
@@ -135,64 +131,58 @@
                 </form>
             </div>
 
-            <div class="overflow-x-auto border-t border-gray-200">
-                <table class="table-custom w-full">
-                    <thead>
+            <!-- DESKTOP TABLE VIEW -->
+            <div class="overflow-x-auto border-t border-gray-200 hidden lg:block">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
                         <tr>
-                            <th>Mã Phiếu</th>
-                            <th>Nhà Cung Cấp</th>
-                            <th>Kho Nhận</th>
-                            <th>Ngày Tạo</th>
-                            <th class="text-center">Trạng Thái</th>
-                            <th class="text-right">Tổng Tiền</th>
-                            <th class="text-center">Hành Động</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Phiếu</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nhà Cung Cấp</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kho Nhận</th>
+                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày Tạo</th>
+                            <th class="p-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng Thái</th>
+                            <th class="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Tiền</th>
+                            <th class="p-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Hành Động</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="bg-white divide-y divide-gray-200">
                         @forelse ($purchaseOrders as $po)
                         <tr class="hover:bg-gray-50">
-                            <td class="font-mono text-gray-800">{{ $po->po_code }}</td>
-                            <td class="font-medium text-gray-900">{{ $po->supplier->name ?? 'N/A' }}</td>
-                            <td>{{ $po->storeLocation->name ?? 'N/A' }}</td>
-                            <td>{{ $po->order_date->format('d/m/Y') }}</td>
-                            <td class="text-center">
+                            <td class="p-3 whitespace-nowrap font-mono text-indigo-600 font-semibold">{{ $po->po_code }}</td>
+                            <td class="p-3 whitespace-nowrap font-medium text-gray-900">{{ $po->supplier->name ?? 'N/A' }}</td>
+                            <td class="p-3 whitespace-nowrap">{{ $po->storeLocation->name ?? 'N/A' }}</td>
+                            <td class="p-3 whitespace-nowrap">{{ $po->order_date->format('d/m/Y') }}</td>
+                            <td class="p-3 whitespace-nowrap text-center">
                                 @php
-                                    $statusClass = 'status-default'; // Mặc định
-                                    if ($po->status == 'pending') $statusClass = 'status-pending';
-                                    elseif ($po->status == 'received') $statusClass = 'status-received';
-                                    elseif ($po->status == 'cancelled') $statusClass = 'status-cancelled';
+                                    $statusClass = 'status-' . ($po->status ?? 'default');
                                 @endphp
                                 <span class="status-badge {{ $statusClass }}">
                                     {{ $statuses[$po->status] ?? ucfirst($po->status) }}
                                 </span>
                             </td>
-                            <td class="text-right font-medium">
+                            <td class="p-3 whitespace-nowrap text-right font-medium">
                                 {{ number_format($po->total_amount, 0, ',', '.') }} ₫
                             </td>
-                            <td class="text-center">
+                            <td class="p-3 whitespace-nowrap text-center">
                                 <div class="flex items-center justify-center gap-x-2">
-                                    {{-- ================== CHANGE START ================== --}}
-                                    @if($po->status == 'pending')
-                                        {{-- Nếu đang chờ, hiển thị nút "Nhận Hàng" --}}
-                                        <a href="{{ route('admin.purchase-orders.receiving.index') }}" class="btn btn-success btn-sm" title="Tiếp nhận hàng hóa">
+                                    @if(in_array($po->status, ['pending', 'waiting_for_scan']))
+                                        <a href="{{ route('admin.purchase-orders.receiving.index', ['po_id' => $po->id]) }}" class="btn btn-success btn-sm" title="Tiếp nhận hàng hóa">
                                             <i class="fas fa-qrcode mr-1"></i> Nhận Hàng
-                                        </a>
-                                    @else
-                                        {{-- Nếu đã xử lý, hiển thị nút xem/sửa thông thường --}}
-                                        <a href="{{ route('admin.purchase-orders.show', $po->id) }}" class="btn btn-primary btn-sm" title="Xem chi tiết">
-                                            <i class="fas fa-eye"></i>
                                         </a>
                                         <a href="{{ route('admin.purchase-orders.edit', $po->id) }}" class="btn btn-secondary btn-sm" title="Sửa phiếu">
                                             <i class="fas fa-pencil-alt"></i>
                                         </a>
+                                    @else
+                                        <a href="{{ route('admin.purchase-orders.show', $po->id) }}" class="btn btn-secondary btn-sm" title="Xem chi tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
                                     @endif
-                                    {{-- =================== CHANGE END =================== --}}
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="text-center py-10 text-gray-500">
+                            <td colspan="7" class="text-center py-12 text-gray-500">
                                 <div class="flex flex-col items-center">
                                     <i class="fas fa-file-invoice-dollar fa-3x mb-3 text-gray-400"></i>
                                     <p class="text-lg font-medium">Không tìm thấy phiếu nhập kho nào.</p>
@@ -205,14 +195,54 @@
                 </table>
             </div>
 
+            <!-- MOBILE CARD VIEW -->
+            <div class="grid grid-cols-1 gap-4 p-4 lg:hidden border-t border-gray-200">
+                @forelse ($purchaseOrders as $po)
+                    <div class="bg-white p-4 rounded-lg shadow border border-gray-200 space-y-3">
+                        <div class="flex justify-between items-start">
+                            <span class="font-mono font-bold text-indigo-600">{{ $po->po_code }}</span>
+                            @php
+                                $statusClass = 'status-' . ($po->status ?? 'default');
+                            @endphp
+                            <span class="status-badge {{ $statusClass }}">
+                                {{ $statuses[$po->status] ?? ucfirst($po->status) }}
+                            </span>
+                        </div>
+                        <div class="text-sm space-y-2">
+                            <p><strong class="text-gray-600">Nhà Cung Cấp:</strong> {{ $po->supplier->name ?? 'N/A' }}</p>
+                            <p><strong class="text-gray-600">Kho Nhận:</strong> {{ $po->storeLocation->name ?? 'N/A' }}</p>
+                            <p><strong class="text-gray-600">Ngày Tạo:</strong> {{ $po->order_date->format('d/m/Y') }}</p>
+                            <p><strong class="text-gray-600">Tổng Tiền:</strong> <span class="font-semibold text-gray-800">{{ number_format($po->total_amount, 0, ',', '.') }} ₫</span></p>
+                        </div>
+                        <div class="flex items-center justify-end gap-x-2 border-t pt-3 mt-3">
+                             @if(in_array($po->status, ['pending', 'waiting_for_scan']))
+                                <a href="{{ route('admin.purchase-orders.receiving.index', ['po_id' => $po->id]) }}" class="btn btn-success btn-sm flex-grow" title="Tiếp nhận hàng hóa">
+                                    <i class="fas fa-qrcode mr-2"></i> Nhận Hàng
+                                </a>
+                                <a href="{{ route('admin.purchase-orders.edit', $po->id) }}" class="btn btn-secondary btn-sm" title="Sửa phiếu">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                            @else
+                                <a href="{{ route('admin.purchase-orders.show', $po->id) }}" class="btn btn-secondary btn-sm flex-grow" title="Xem chi tiết">
+                                    <i class="fas fa-eye mr-2"></i> Xem
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                @empty
+                    <div class="text-center py-12 text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-file-invoice-dollar fa-3x mb-3 text-gray-400"></i>
+                            <p class="text-lg font-medium">Không tìm thấy phiếu nhập kho nào.</p>
+                            <p class="text-sm">Hãy thử điều chỉnh bộ lọc hoặc <a href="{{ route('admin.purchase-orders.create') }}" class="text-indigo-600 hover:underline">tạo một phiếu nhập mới</a>.</p>
+                        </div>
+                    </div>
+                @endforelse
+            </div>
+
             @if ($purchaseOrders->hasPages())
-            <div class="card-custom-footer flex flex-col sm:flex-row items-center justify-between">
-                <span class="text-sm text-gray-700 mb-2 sm:mb-0">
-                    Hiển thị <span class="font-semibold text-gray-900">{{ $purchaseOrders->firstItem() }}</span> đến <span class="font-semibold text-gray-900">{{ $purchaseOrders->lastItem() }}</span> của <span class="font-semibold text-gray-900">{{ $purchaseOrders->total() }}</span> Phiếu nhập
-                </span>
-                <div>
-                    {!! $purchaseOrders->appends(request()->query())->links() !!}
-                </div>
+            <div class="p-4 border-t border-gray-200">
+                {!! $purchaseOrders->appends(request()->query())->links() !!}
             </div>
             @endif
         </div>

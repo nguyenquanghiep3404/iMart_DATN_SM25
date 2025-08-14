@@ -1,114 +1,132 @@
 @extends('admin.layouts.app')
-@include('admin.oderMannager.layouts.css')
-<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 @section('content')
-    <div class="p-4 md:p-8 bg-gray-100 min-h-screen">
-        <div class="max-w-screen-2xl mx-auto space-y-6">
-            {{-- Header --}}
-            @include('admin.oderMannager.layouts.header')
-
-            {{-- Danh sách nhân viên --}}
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                {{-- Bộ lọc --}}
-                @include('admin.oderMannager.layouts.filter')
-
-                {{-- Bảng danh sách nhân viên --}}
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm text-gray-800">
-                        <thead class="bg-gray-50">
-                            <tr class="text-left font-semibold text-gray-600">
-                                <th class="px-6 py-3">STT</th>
-                                <th class="px-6 py-3">Họ tên</th>
-                                <th class="px-6 py-3">Email</th>
-                                <th class="px-6 py-3">SĐT</th>
-                                <th class="px-6 py-3">Trạng thái</th>
-                                <th class="px-6 py-3">Ngày tạo</th>
-                                <th class="px-6 py-3 text-right">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-100">
-                            @forelse($users as $user)
-                                <tr class="hover:bg-gray-50 transition">
-                                    <td class="px-6 py-4">{{ $loop->iteration }}</td> <!-- Số thứ tự -->
-                                    <td class="px-6 py-4 font-medium flex items-center gap-3">
-                                        <div
-                                            class="w-8 h-8 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center font-semibold">
-                                            {{ strtoupper(substr($user->name, 0, 1)) }}
-                                        </div>
-                                        {{ $user->name }}
-                                    </td>
-                                    <td class="px-6 py-4">{{ $user->email }}</td>
-                                    <td class="px-6 py-4">{{ $user->phone_number ?? '—' }}</td>
-                                    <td class="px-6 py-4">
-                                        @if ($user->status === 'active')
-                                            <span
-                                                class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                                Đang hoạt động
-                                            </span>
-                                        @else
-                                            <span
-                                                class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                                                Không hoạt động
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4">{{ \Carbon\Carbon::parse($user->created_at)->format('d/m/Y') }}
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        <a href="{{ route('admin.order-manager.edit', $user->id) }}"
-                                            class="text-indigo-600 hover:underline text-sm font-medium">
-                                            <i class="fas fa-edit mr-1"></i>Sửa
-                                        </a>
-
-                                        <form action="{{ route('admin.order-manager.destroy', $user->id) }}" method="POST"
-                                            class="inline"
-                                            onsubmit="return confirm('Bạn có chắc muốn xóa nhân viên này không?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="text-red-600 hover:underline text-sm font-medium bg-transparent border-0 p-0">
-                                                <i class="fas fa-trash-alt mr-1"></i>Xoá
-                                            </button>
-                                        </form>
-                                        <a href="{{ route('admin.order-manager.show', $user->id) }}"
-                                            class="text-gray-600 hover:underline text-sm font-medium mr-3"
-                                            title="Xem chi tiết">
-                                            <i class="fas fa-eye mr-1"></i>Xem
-                                        </a>
-                                    </td>
-
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="7" class="text-center px-6 py-6 text-gray-500">Không có nhân viên nào
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-
-                    </table>
+<div class="p-4 md:p-8 bg-gray-100 min-h-screen">
+    <div class="max-w-screen-2xl mx-auto space-y-6">
+        {{-- Header --}}
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Quản Lý Nhân viên Đơn hàng - Đóng Gói</h1>
+            <p class="text-gray-500 mt-1">Tổng quan, tìm kiếm kho và quản lý các nhân viên xử lý đơn hàng.</p>
+        </div>
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
+            <div class="flex gap-4 w-full md:w-auto items-center">
+                <select id="province-filter" class="px-4 py-2 rounded-lg border border-gray-300 bg-white min-w-[180px] focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Tất cả Tỉnh/Thành</option>
+                    @foreach($provinces as $province)
+                        <option value="{{ $province->code }}">{{ $province->name_with_type }}</option>
+                    @endforeach
+                </select>
+                <div class="relative w-full md:w-72">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </span>
+                    <input id="warehouse-search-input" type="text" placeholder="Tìm theo tên kho..." class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 w-full focus:ring-2 focus:ring-indigo-500" />
                 </div>
             </div>
-        </div>
-
-        {{-- Modal thêm/sửa nhân viên --}}
-        <div id="staff-modal"
-            class="modal hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <a href="{{ route('admin.order-manager.create') }}"
-                class="modal-content bg-white rounded-2xl shadow-xl w-full max-w-2xl block">
-                <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-                    <h2 id="modal-title" class="text-xl font-bold text-gray-800">Thêm nhân viên mới</h2>
-                    <span class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times fa-lg"></i>
-                    </span>
-                </div>
-                {{-- Bạn có thể hiển thị nội dung tóm tắt ở đây nếu muốn --}}
+            <a href="{{ route('admin.order-manager.create') }}" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2">
+                <i class="fas fa-plus"></i>
+                <span>Thêm nhân viên</span>
             </a>
         </div>
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-sm text-gray-800">
+                    <thead class="bg-gray-50">
+                        <tr class="text-left font-semibold text-gray-600">
+                            <th class="px-6 py-3">TÊN KHO</th>
+                            <th class="px-6 py-3">TỈNH/THÀNH PHỐ</th>
+                            <th class="px-6 py-3">SỐ LƯỢNG NHÂN VIÊN</th>
+                            <th class="px-6 py-3 text-right">HÀNH ĐỘNG</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($warehouses as $warehouse)
+                            <tr class="bg-white border-b last:border-b-0 hover:bg-gray-50" data-province-code="{{ $warehouse->province->code ?? '' }}">
+                                <td class="px-6 py-4 font-medium">
+                                    <div class="flex items-center gap-3">
+                                        <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-indigo-100 text-indigo-600">
+                                            <i class="fas fa-warehouse text-indigo-600"></i>
+                                        </span>
+                                        <div>
+                                            <div class="font-semibold text-base text-gray-800">{{ $warehouse->name }}</div>
+                                            <div class="text-xs text-gray-500">{{ $warehouse->address }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="font-semibold text-gray-800">{{ $warehouse->province->name_with_type ?? '' }}</div>
+                                    <div class="text-xs text-gray-500">{{ $warehouse->district->name_with_type ?? '' }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="font-semibold text-indigo-600 text-lg">{{ $warehouse->orderManagers_count }}</span>
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    <a href="{{ route('admin.order-manager.warehouse.show', $warehouse->id) }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold">
+                                        <i class="fas fa-eye"></i>
+                                        <span>Xem chi tiết</span>
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center px-6 py-6 text-gray-500">Không có kho nào</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            @if($warehouses->hasPages())
+                <div class="bg-white px-4 py-3 border-t border-gray-200">
+                    {!! $warehouses->links() !!}
+                </div>
+            @endif
+        </div>
     </div>
-    {{ $users->links() }}
-    {{-- Scripts --}}
-    @include('admin.oderMannager.layouts.script')
+</div>
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const warehouseSearchInput = document.getElementById('warehouse-search-input');
+        const provinceFilter = document.getElementById('province-filter');
+        // Lưu trữ tất cả warehouses để filter
+        const allWarehouses = [];
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const warehouseName = row.querySelector('td:first-child .font-bold').textContent;
+            const provinceName = row.querySelector('td:nth-child(2) .font-semibold').textContent;
+            const provinceCode = row.getAttribute('data-province-code');
+            allWarehouses.push({
+                row: row,
+                name: warehouseName,
+                province: provinceName,
+                provinceCode: provinceCode
+            });
+        });
+        // Filter theo tên kho
+        if (warehouseSearchInput) {
+            warehouseSearchInput.addEventListener('input', function() {
+                filterWarehouses();
+            });
+        }
+        // Filter theo tỉnh/thành
+        if (provinceFilter) {
+            provinceFilter.addEventListener('change', function() {
+                filterWarehouses();
+            });
+        }
+        // Hàm filter tổng hợp
+        function filterWarehouses() {
+            const searchTerm = warehouseSearchInput ? warehouseSearchInput.value.toLowerCase() : '';
+            const selectedProvinceCode = provinceFilter ? provinceFilter.value : '';
+            allWarehouses.forEach(warehouse => {
+                const nameMatch = !searchTerm || warehouse.name.toLowerCase().includes(searchTerm);
+                const provinceMatch = !selectedProvinceCode || warehouse.provinceCode === selectedProvinceCode;
+                if (nameMatch && provinceMatch) {
+                    warehouse.row.style.display = '';
+                } else {
+                    warehouse.row.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+@endpush
 @endsection

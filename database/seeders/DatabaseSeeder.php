@@ -26,6 +26,10 @@ class DatabaseSeeder extends Seeder
             SystemSettingSeeder::class,
             ContactFormSeeder::class,
             SpecificationSeeder::class,
+             NewAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ MỚI
+            OldAddressSeeder::class,  
+            ProvincesOldRegionSeeder::class, // Seed dữ liệu cho vùng miền cũ
+             ShippingTransitTimesSeeder::class, // Seed dữ liệu thời gian vận chuyển  // Seed dữ liệu cho hệ thống địa chỉ CŨ
             // AbandonedCartSeeder::class,
             // CartSeeder::class,
             OrderSeeder::class,
@@ -33,10 +37,11 @@ class DatabaseSeeder extends Seeder
             ProFeaturesSeeder::class,
             // ActivityLogSeeder::class, // Nếu có 
             // Thêm các seeder cho hệ thống địa chỉ kép
-            NewAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ MỚI
-            OldAddressSeeder::class,    // Seed dữ liệu cho hệ thống địa chỉ CŨ
+           
             CustomerGroupSeeder::class,
             MarketingCampaignSeeder::class,
+            
+           
         ]);
         $this->command->info('All seeders ran successfully!');
     }

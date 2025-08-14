@@ -61,7 +61,7 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            pointer-events: none
+            pointer-events: none;
                 /* background: linear-gradient(45deg, transparent, rgba(255, 68, 68, 0.2), transparent); */
                 /* animation: fire 2s linear infinite; */
         }

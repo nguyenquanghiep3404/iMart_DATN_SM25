@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Requests\OrderRequest;
+use App\Services\InventoryCommitmentService;
 
 
 class OrderController extends Controller
@@ -169,6 +170,27 @@ class OrderController extends Controller
 
             // BƯỚC 5: Cập nhật database một lần duy nhất
             $order->update($updateData);
+
+            // BƯỚC 5.5: Xử lý tồn kho theo trạng thái
+            $inventoryService = new InventoryCommitmentService();
+            
+            switch ($request->status) {
+                case Order::STATUS_SHIPPED: // Xuất kho thực tế
+                case Order::STATUS_OUT_FOR_DELIVERY:
+                    if ($oldStatus !== Order::STATUS_SHIPPED && $oldStatus !== Order::STATUS_OUT_FOR_DELIVERY) {
+                        $inventoryService->fulfillInventoryForOrder($order);
+                        \Log::info("Đã xuất kho cho đơn hàng #{$order->order_code}");
+                    }
+                    break;
+                    
+                case Order::STATUS_CANCELLED: // Thả tồn kho đã tạm giữ
+                case Order::STATUS_RETURNED:
+                    if ($oldStatus !== Order::STATUS_CANCELLED && $oldStatus !== Order::STATUS_RETURNED) {
+                        $inventoryService->releaseInventoryForOrder($order);
+                        \Log::info("Đã thả tồn kho cho đơn hàng #{$order->order_code}");
+                    }
+                    break;
+            }
 
             // Kích hoạt cộng điểm thưởng
             if ($order->status === Order::STATUS_DELIVERED) {
