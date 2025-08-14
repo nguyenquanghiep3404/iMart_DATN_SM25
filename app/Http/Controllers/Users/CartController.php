@@ -842,7 +842,8 @@ class CartController extends Controller
         $request->validate([
             'products' => 'required|array',
             'products.*.product_variant_id' => 'required|integer|exists:product_variants,id',
-            'products.*.quantity' => 'required|integer|min:1|max:5',
+            'products.*.quantity' => 'required|integer|min:1|',
+            // 'products.*.quantity' => 'required|integer|min:1|max:1000',
         ]);
 
         $user = auth()->user();

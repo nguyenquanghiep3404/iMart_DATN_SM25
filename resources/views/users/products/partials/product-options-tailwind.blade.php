@@ -601,7 +601,7 @@
                 const variantKey = inputVariantKey.value?.trim();
                 let quantity = parseInt(quantityInput.value) || 1;
                 const min = parseInt(quantityInput.min) || 1;
-                const max = parseInt(quantityInput.max) || 5;
+                const max = parseInt(quantityInput.max) || 1000;
                 if (quantity < min) quantity = min;
                 if (quantity > max) quantity = max;
                 quantityInput.value = quantity;

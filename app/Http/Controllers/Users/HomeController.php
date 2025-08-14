@@ -493,6 +493,7 @@ class HomeController extends Controller
                 'images' => $images,
                 'primary_image_id' => $variant->primary_image_id,
                 'variant_id' => $variant->id,
+                // 'stock_quantity' => $variant->getSellableStockAttribute(),
             ];
         }
 
