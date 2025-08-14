@@ -1169,7 +1169,7 @@ class PaymentController extends Controller
         $request->validate([
             'product_id' => 'required|integer|exists:products,id',
             'variant_key' => 'nullable|string',
-            'quantity' => 'required|integer|min:1|max:5',
+            'quantity' => 'required|integer|min:1|',
         ]);
         session()->forget(['applied_coupon', 'points_applied']);
         $product = Product::findOrFail($request->product_id);
@@ -1880,20 +1880,18 @@ class PaymentController extends Controller
             return true;
         }
 
-        // Nếu có store_location_id, kiểm tra tồn kho khả dụng tại kho cụ thể
+        // Nếu có store_location_id, kiểm tra tồn kho tại kho cụ thể
         if ($storeLocationId) {
             $availableStock = $variant->inventories()
                 ->where('store_location_id', $storeLocationId)
                 ->where('inventory_type', 'new')
-                ->selectRaw('SUM(quantity - quantity_committed) as available')
-                ->value('available') ?? 0;
+                ->sum('quantity');
             return $availableStock >= $quantity;
         } else {
-            // Nếu không có store_location_id, kiểm tra tổng tồn kho khả dụng
+            // Nếu không có store_location_id, kiểm tra tổng tồn kho
             $availableStock = $variant->inventories()
                 ->where('inventory_type', 'new')
-                ->selectRaw('SUM(quantity - quantity_committed) as available')
-                ->value('available') ?? 0;
+                ->sum('quantity');
             return $availableStock >= $quantity;
         }
     }
@@ -1909,7 +1907,7 @@ class PaymentController extends Controller
 
         $inventory = $variant->inventories()
             ->where('inventory_type', 'new')
-            ->whereRaw('(quantity - quantity_committed) >= ?', [$quantity])
+            ->where('quantity', '>=', $quantity)
             ->orderBy('quantity', 'desc') // Ưu tiên kho có nhiều hàng nhất
             ->first();
 
