@@ -3,11 +3,6 @@
         <i class="ci-menu me-2 "></i> Tất Cả Danh Mục
     </h5>
     <ul class="category-list">
-        @php
-            // Lấy tất cả các tham số từ request, nhưng loại bỏ 'sort' và 'page'
-            $filterParams = request()->except(['sort', 'page']);
-        @endphp
-
         @foreach ($parentCategories as $parent)
             @php
                 $childCategories = $categories->where('parent_id', $parent->id);
@@ -15,16 +10,14 @@
 
                 $currentId = $currentCategory->id ?? null;
                 $currentParentId = $currentCategory->parent_id ?? null;
-
                 $isParentActive = $currentId === $parent->id;
                 $isChildActive = $currentParentId === $parent->id;
                 $isExpanded = $isParentActive || $isChildActive;
             @endphp
 
             <li class="parent-category">
-                <a href="{{ $hasChildren ? '#' : route('products.byCategory', array_merge(['id' => $parent->id, 'slug' => Str::slug($parent->name)], $filterParams)) }}"
-                   class="d-flex align-items-center px-2 py-1 {{ $hasChildren ? 'toggle-category' : 'category-link' }}"
-                   @if ($hasChildren) data-category-id="{{ $parent->id }}" @endif>
+                <a class="d-flex align-items-center px-2 py-1 {{ $hasChildren ? 'toggle-category' : 'category-link' }}"
+                   @if ($hasChildren) data-category-id="{{ $parent->id }}" @else href="{{ route('products.byCategory', ['id' => $parent->id, 'slug' => Str::slug($parent->name)]) }}" @endif>
                     <span class="flex-grow-1">{{ $parent->name }}</span>
                     @if ($hasChildren)
                         <i class="ci-chevron-down ms-2 small"></i>
@@ -34,7 +27,7 @@
                 @if ($hasChildren)
                     <ul class="child-categories {{ $isExpanded ? 'open' : '' }}">
                         <li>
-                            <a href="{{ route('products.byCategory', array_merge(['id' => $parent->id, 'slug' => Str::slug($parent->name)], $filterParams)) }}"
+                            <a href="{{ route('products.byCategory', ['id' => $parent->id, 'slug' => Str::slug($parent->name)]) }}"
                                class="category-link d-flex align-items-center px-2 py-1 rounded-2">
                                 <span class="flex-grow-1">Tất cả {{ $parent->name }}</span>
                             </a>
@@ -42,7 +35,7 @@
                         
                         @foreach ($childCategories as $child)
                             <li>
-                                <a href="{{ route('products.byCategory', array_merge(['id' => $child->id, 'slug' => Str::slug($child->name)], $filterParams)) }}"
+                                <a href="{{ route('products.byCategory', ['id' => $child->id, 'slug' => Str::slug($child->name)]) }}"
                                    class="category-link d-flex align-items-center px-2 py-1 rounded-2">
                                     <span class="flex-grow-1">{{ $child->name }}</span>
                                 </a>
@@ -54,6 +47,7 @@
         @endforeach
     </ul>
 </div>
+
 
 <div class="category-sidebar shadow-lg" style="margin-top: 15px; padding-bottom: 20px;">
     <div class="filter-section price-filter">
@@ -563,7 +557,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-         font-weight: 600;
+        font-weight: 600;
     }
 
     .filter-tag .remove-tag {
@@ -632,7 +626,4 @@
         /* Tùy chỉnh khoảng cách bằng margin thay vì padding để tránh clipping */
         margin: 0 25px 0 10px !important;
     }
-    
 </style>
-
-

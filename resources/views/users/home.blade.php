@@ -1225,21 +1225,21 @@
         </section>
     @endif
 
-    @foreach ($blocks as $block)
-        <section class="container px-4 pt-4 mt-2 mt-sm-3 mt-lg-4 position-relative">
-            <div class="d-flex justify-content-center mb-4">
-                <h1 class="h1 pb-2 d-inline-block text-center">
-                    <i class="fab fa-apple fa-lg me-2"></i>
-                    {{ $block->title }}
-                </h1>
-            </div>
+   @foreach ($blocks as $block)
+    <section class="container px-4 pt-4 mt-2 mt-sm-3 mt-lg-4 position-relative">
+        <div class="d-flex justify-content-center mb-4">
+            <h1 class="h1 pb-2 d-inline-block text-center">
+                <i class="fab fa-apple fa-lg me-2"></i>
+                {{ $block->title }}
+            </h1>
+        </div>
 
-            <div class="product-prev product-prev-{{ $block->id }} swiper-button-prev"></div>
-            <div class="product-next product-next-{{ $block->id }} swiper-button-next"></div>
+        <div class="product-prev product-prev-{{ $block->id }} swiper-button-prev"></div>
+        <div class="product-next product-next-{{ $block->id }} swiper-button-next"></div>
 
-            <div class="position-relative">
-                <div class="swiper product-slider"
-                    data-swiper='{
+        <div class="position-relative">
+            <div class="swiper product-slider"
+                data-swiper='{
                     "slidesPerView": 2,
                     "spaceBetween": 16,
                     "loop": false,
@@ -1253,77 +1253,70 @@
                         "992": { "slidesPerView": 5 } 
                     }
                 }'>
-                    <div class="swiper-wrapper">
-                        {{-- ✅ Sửa lỗi: Lặp qua productVariants thay vì products --}}
-                        @forelse ($block->productVariants as $variant)
-                            @php
-                                $product = $variant->product;
-                                // Sử dụng ảnh chính của biến thể, nếu không có thì dùng ảnh cover của sản phẩm
-                                $imageToShow = $variant->primaryImage ?? $product->coverImage;
-                                $mainImage = $imageToShow
-                                    ? Storage::url($imageToShow->path)
-                                    : asset('images/placeholder.jpg');
-                                $isOnSale = $variant && $variant->sale_price && $variant->price > 0;
-                                $discountPercent = $isOnSale
-                                    ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                                    : 0;
-                            @endphp
-                            <div class="swiper-slide p-2 h-100">
-                                <div class="product-card bg-body rounded-7 border-0 h-100 py-4 position-relative">
-                                    @if ($isOnSale && $discountPercent > 0)
-                                        <div class="discount-badge">Giảm {{ $discountPercent }}%</div>
-                                    @endif
+                <div class="swiper-wrapper">
+                    @forelse ($block->productVariants as $variant)
+                        @php
+                            $product = $variant->product;
+                            // Sử dụng ảnh chính của biến thể, nếu không có thì dùng ảnh cover của sản phẩm
+                            $imageToShow = $variant->primaryImage ?? $product->coverImage;
+                            $mainImage = $imageToShow
+                                ? Storage::url($imageToShow->path)
+                                : asset('images/placeholder.jpg');
+                            $isOnSale = $variant && $variant->sale_price && $variant->price > 0;
+                            $discountPercent = $isOnSale
+                                ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                                : 0;
+                            // Lấy thuộc tính Dung lượng
+                            $capacityAttr = $variant->attributeValues->firstWhere('attribute.name', 'Dung lượng');
+                            $capacityValue = $capacityAttr ? $capacityAttr->value : '';
+                        @endphp
+                        <div class="swiper-slide p-2 h-100">
+                            <div class="product-card bg-body rounded-7 border-0 h-100 py-4 position-relative">
+                                @if ($isOnSale && $discountPercent > 0)
+                                    <div class="discount-badge">Giảm {{ $discountPercent }}%</div>
+                                @endif
 
-                                    {{-- Ảnh sản phẩm --}}
-                                    <div class="position-relative">
-                                        <a href="{{ route('users.products.show', $product->slug) }}">
-                                            <div class="ratio" style="--cz-aspect-ratio: calc(200 / 180 * 100%)">
-                                                <img src="{{ $mainImage }}" alt="{{ $product->name }}"
-                                                    class="img-fluid rounded-3 shadow-sm"
-                                                    style="object-fit:contain; width:100%; height:100%;">
-                                            </div>
-                                        </a>
-                                    </div>
-
-                                    {{-- Thông tin sản phẩm --}}
-                                    <div class="px-2 pb-3 pt-2 text-center">
-                                        <h3 class="fs-6 fw-bold text-truncate">
-                                            <a href="{{ route('users.products.show', $product->slug) }}"
-                                                class="text-dark text-decoration-none">
-                                                {{ $product->name }}
-                                                @php
-                                                    $capacityAttr = $variant->attributeValues->firstWhere(
-                                                        'attribute.name',
-                                                        'Dung lượng',
-                                                    );
-                                                @endphp
-                                                @if ($capacityAttr)
-                                                    {{ $capacityAttr->value }}
-                                                @endif
-                                            </a>
-                                        </h3>
-                                        <div class="text-primary fw-bold">
-                                            @if ($isOnSale)
-                                                {{ number_format($variant->sale_price) }}đ
-                                                <del class="text-muted ms-1">{{ number_format($variant->price) }}đ</del>
-                                            @else
-                                                {{ number_format($variant->price) }}đ
-                                            @endif
+                                {{-- Ảnh sản phẩm --}}
+                                <div class="position-relative">
+                                    <a href="{{ route('users.products.show', $variant->slug) }}">
+                                        <div class="ratio" style="--cz-aspect-ratio: calc(200 / 180 * 100%)">
+                                            <img src="{{ $mainImage }}"
+                                                 alt="{{ $product->name }} {{ $capacityValue }}"
+                                                 class="img-fluid rounded-3 shadow-sm"
+                                                 style="object-fit:contain; width:100%; height:100%;">
                                         </div>
-                                    </div>
+                                    </a>
                                 </div>
 
+                                {{-- Thông tin sản phẩm --}}
+                                <div class="px-2 pb-3 pt-2 text-center">
+                                    <h3 class="fs-6 fw-bold text-truncate">
+                                        <a href="{{ route('users.products.show', $variant->slug) }}"
+                                           class="text-dark text-decoration-none">
+                                            {{ $product->name }} {{ $capacityValue }}
+                                        </a>
+                                    </h3>
+                                    <div class="text-primary fw-bold">
+                                        @if ($isOnSale)
+                                            {{ number_format($variant->sale_price) }}đ
+                                            <del class="text-muted ms-1">{{ number_format($variant->price) }}đ</del>
+                                        @else
+                                            {{ number_format($variant->price) }}đ
+                                        @endif
+                                    </div>
+                                </div>
                             </div>
-                        @empty
-                            <div class="swiper-slide">
-                                <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
-                            </div>
-                        @endforelse
-                    </div>
+                        </div>
+                    @empty
+                        <div class="swiper-slide">
+                            <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
+                        </div>
+                    @endforelse
                 </div>
             </div>
-        </section>
-    @endforeach
+        </div>
+    </section>
+@endforeach
 
     <!-- Subscription form + Featured Blog Posts -->
     <section class="bg-body-tertiary py-5">

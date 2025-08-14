@@ -1096,12 +1096,16 @@
                         currentUrl.searchParams.forEach((value, key) => {
                             if (key === 'muc-gia[]' || key === 'min_price' || key === 'max_price' ||
                                 key === 'storage') {
-                                newUrl.searchParams.set(key, value);
+                                // Thay đổi từ set() sang append() cho các tham số có thể lặp lại
+                                if (key === 'muc-gia[]') {
+                                    newUrl.searchParams.append(key, value);
+                                } else {
+                                    newUrl.searchParams.set(key, value);
+                                }
                             }
                         });
 
                         // Đặt lại tham số sort về mặc định khi chuyển danh mục
-                        // Loại bỏ tham số sort cũ và thêm sort=moi_nhat
                         newUrl.searchParams.delete('sort');
                         newUrl.searchParams.set('sort', 'moi_nhat'); // Thêm sort mặc định
 
