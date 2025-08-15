@@ -66,12 +66,19 @@ class PaymentController extends Controller
 
         if (!empty($insufficientStock)) {
             $messages = collect($insufficientStock)->map(function($item){
-                if(!empty($item['variant'])) {
-                    return "Sản phẩm {$item['name']} ({$item['variant']}) hiện chỉ còn {$item['available']} cái, bạn đã chọn {$item['requested']} cái. Vui lòng giảm số lượng xuống {$item['available']} cái.";
+                if ($item['available'] == 0) {
+                    // Hết hàng
+                    return "Sản phẩm {$item['name']}" 
+                        . (!empty($item['variant']) ? " ({$item['variant']})" : "") 
+                        . " hiện đã hết hàng, vui lòng xóa sản phẩm khỏi giỏ hàng!";
                 } else {
-                    return "Sản phẩm {$item['name']} hiện chỉ còn {$item['available']} cái, bạn đã chọn {$item['requested']} cái. Vui lòng giảm số lượng xuống {$item['available']} cái !";
+                    // Còn hàng nhưng ít hơn số lượng đặt
+                    return "Sản phẩm {$item['name']}" 
+                        . (!empty($item['variant']) ? " ({$item['variant']})" : "") 
+                        . " hiện chỉ còn {$item['available']} cái, bạn đã chọn {$item['requested']} cái. Vui lòng giảm số lượng xuống {$item['available']} cái.";
                 }
             })->implode('<br>');
+
             return redirect()->route('cart.index')->with('toast_error', $messages);
         }
 
@@ -252,48 +259,6 @@ class PaymentController extends Controller
             return response()->json(['success' => false, 'message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
         }
     }
-    // private function handleCodPayment(PaymentRequest $request, array $cartData)
-    // {
-    //     try {
-    //         $order = DB::transaction(function () use ($request, $cartData) {
-    //             // Tạo đơn hàng và các mục liên quan
-    //             $order = $this->createOrderAndItems($request, $cartData);
-
-    //             // Trừ tồn kho ngay lập tức cho COD
-    //             foreach ($order->fulfillments as $fulfillment) {
-    //                 foreach ($fulfillment->items as $fulfillmentItem) {
-    //                     $this->decrementInventoryStock(
-    //                         $fulfillmentItem->orderItem->productVariant,
-    //                         $fulfillmentItem->quantity,
-    //                         $fulfillment->store_location_id // Quan trọng: trừ kho từ đúng location
-    //                     );
-    //                 }
-    //             }
-
-    //             return $order;
-    //         });
-
-    //         // Gửi thông báo Telegram cho COD
-    //         $this->sendTelegramNotification("📦 *Đơn hàng COD mới!*\n", $order);
-
-    //         // Kích hoạt chuyển kho tự động
-    //         $autoTransferService = new AutoStockTransferService();
-    //         $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-            
-    //         if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-    //             Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng: ' . $order->order_code, $transferResult['transfers_created']);
-    //         }
-
-    //         // Xóa giỏ hàng sau khi đặt hàng thành công
-    //         $this->clearPurchaseSession();
-
-    //         return response()->json(['success' => true, 'message' => 'Đặt hàng thành công!', 'order' => $order]);
-
-    //     } catch (\Exception $e) {
-    //         Log::error("Lỗi khi xử lý đơn hàng COD: " . $e->getMessage());
-    //         return response()->json(['success' => false, 'message' => 'Lỗi hệ thống: ' . $e->getMessage()], 500);
-    //     }
-    // }
     private function handleCodPayment(PaymentRequest $request, array $cartData)
     {
         try {

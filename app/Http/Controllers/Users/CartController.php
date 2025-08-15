@@ -1018,18 +1018,26 @@ class CartController extends Controller
 
             $totalRequested = $quantityInCart + $item['quantity'];
 
-            if ($variant->manage_stock && $variant->stock_quantity !== null) {
-                if ($totalRequested > $variant->stock_quantity) {
-                    $remaining = max(0, $variant->stock_quantity - $quantityInCart);
+            if ($variant->manage_stock) {
+                $availableStock = $variant->inventories()
+                    ->where('inventory_type', 'new')
+                    ->selectRaw('SUM(quantity - quantity_committed) as available_stock')
+                    ->value('available_stock');
+
+                if ($availableStock !== null && $totalRequested > $availableStock) {
+                    $remaining = max(0, $availableStock - $quantityInCart);
 
                     $results[] = [
                         'variant_id' => $variant->id,
                         'success' => false,
-                        'message' => "Sản phẩm '{$variant->product->name} - {$variantDescription}' còn tồn kho {$remaining} sản phẩm.",
+                        'message' => $quantityInCart > 0
+                            ? "Bạn đã có {$quantityInCart} sản phẩm trong giỏ. Hệ thống chỉ còn {$remaining} sản phẩm nữa."
+                            : "Sản phẩm '{$variant->product->name} - {$variantDescription}' vượt quá tồn kho. Hiện chỉ còn {$remaining} sản phẩm.",
                     ];
                     continue;
                 }
             }
+
 
             $now = now();
             $isOnSale = $variant->sale_price &&
