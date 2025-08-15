@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Str;
+
 
 class ProductVariant extends Model
 {
@@ -183,4 +185,17 @@ class ProductVariant extends Model
     {
         return $this->hasMany(TradeInItem::class);
     }
+
+    // Trong model ProductVariant.php
+    public function getSlugAttribute()
+{
+    $product = $this->product;
+    $baseSlug = Str::slug($product->name);
+    $attributes = $this->attributeValues
+        ->pluck('value')
+        ->map(fn($value) => Str::slug($value, '-'))
+        ->filter() // Loại bỏ giá trị rỗng
+        ->join('-');
+    return $attributes ? "{$baseSlug}-{$attributes}" : $baseSlug;
+}
 }

@@ -299,7 +299,7 @@ class CategoryController extends Controller
         $category->restore();
         $category->update(['deleted_by' => null]);
 
-        return redirect()->route('admin.categories.trash')
+        return redirect()->route('admin.categories.index')
             ->with('success', 'Danh mục đã được khôi phục thành công.');
     }
     /**
