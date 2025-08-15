@@ -42,8 +42,39 @@ class PaymentController extends Controller
         $cartData = $this->getCartData();
 
         if ($cartData['items']->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
+            return redirect()->route('cart.index')->with('toast_error', 'Giỏ hàng của bạn đang trống.');
         }
+        $items = $cartData['items'];
+
+        // 2. Kiểm tra tồn kho ngay khi tiến hành thanh toán
+        $insufficientStock = [];
+        foreach ($items as $item) {
+            $availableStock = $item->productVariant->inventories()
+                ->where('inventory_type', 'new')
+                ->selectRaw('COALESCE(SUM(quantity - quantity_committed),0) as available_stock')
+                ->value('available_stock');
+
+            if ($item->quantity > $availableStock) {
+                $insufficientStock[] = [
+                    'name' => $item->productVariant->product->name,
+                    'variant' => $item->productVariant->attributeValues->pluck('value')->implode(', '),
+                    'requested' => $item->quantity,
+                    'available' => $availableStock,
+                ];
+            }
+        }
+
+        if (!empty($insufficientStock)) {
+            $messages = collect($insufficientStock)->map(function($item){
+                if(!empty($item['variant'])) {
+                    return "Sản phẩm {$item['name']} ({$item['variant']}) hiện chỉ còn {$item['available']} cái, bạn đã chọn {$item['requested']} cái. Vui lòng giảm số lượng xuống {$item['available']} cái.";
+                } else {
+                    return "Sản phẩm {$item['name']} hiện chỉ còn {$item['available']} cái, bạn đã chọn {$item['requested']} cái. Vui lòng giảm số lượng xuống {$item['available']} cái !";
+                }
+            })->implode('<br>');
+            return redirect()->route('cart.index')->with('toast_error', $messages);
+        }
+
         // Tính tổng khối lượng và kích thước
         $items = $cartData['items'];
         $totalWeight = $items->sum(function ($item) {

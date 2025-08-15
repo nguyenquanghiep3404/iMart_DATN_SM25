@@ -591,7 +591,13 @@ class CartController extends Controller
                 // Số lượng tối đa user có thể đặt thêm cho item này
                 $remainingStock = max(0, $availableStock - $currentCartQty);
 
-                if ($quantity > $remainingStock) {
+                // if ($quantity > $remainingStock) {
+                //     return response()->json([
+                //         'success' => false,
+                //         'message' => "Sản phẩm chỉ còn {$remainingStock} sản phẩm trong kho.",
+                //     ], 422);
+                // }
+                if ($quantity > $item->quantity && $quantity > $remainingStock) {
                     return response()->json([
                         'success' => false,
                         'message' => "Sản phẩm chỉ còn {$remainingStock} sản phẩm trong kho.",
@@ -660,7 +666,8 @@ class CartController extends Controller
             }
 
             $remainingStock = max(0, $availableStock - $currentCartQty);
-            if ($quantity > $remainingStock) {
+            $currentQty = (int) ($cart[$itemId]['quantity'] ?? 0);
+            if ($quantity > $currentQty && $quantity > $remainingStock) {
                 return response()->json([
                     'success' => false,
                     'message' => "Sản phẩm chỉ còn {$remainingStock} sản phẩm trong kho.",

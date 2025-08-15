@@ -511,5 +511,10 @@
         setTimeout(() => {
             document.getElementById("loading-overlay").style.display = "none";
         }, 1000);
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (session('toast_error'))
+                toastr.error(@json(session('toast_error')));
+            @endif
+        });
     </script>
 @endpush

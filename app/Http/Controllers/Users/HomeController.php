@@ -514,8 +514,8 @@ class HomeController extends Controller
             ? $product->variants->firstWhere('id', $variantId)
             : $defaultVariant;
         $availableStock = 0;
-        if ($defaultVariant) {
-            $availableStock = $defaultVariant->inventories()
+        if ($selectedVariant) {
+            $availableStock = $selectedVariant->inventories()
                 ->where('inventory_type', 'new')
                 ->selectRaw('COALESCE(SUM(quantity - quantity_committed), 0) as available_stock')
                 ->value('available_stock');
