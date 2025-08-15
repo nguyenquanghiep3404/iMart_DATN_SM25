@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\StoreLocation;
 use App\Models\User;
 use App\Models\ProductInventory;
+use App\Models\ShippingTransitTime;
+use App\Models\ProvinceOld;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Exception;
@@ -30,10 +32,21 @@ class StockTransferWorkflowService
                 // Bước 1: Xuất hàng từ kho nguồn
                 $this->processDispatch($stockTransfer);
                 
-                // Bước 2: Nhận hàng tại kho đích
-                $this->processReceive($stockTransfer);
+                // Kiểm tra xem có cùng tỉnh thành không
+                $fromLocation = StoreLocation::find($stockTransfer->from_location_id);
+                $toLocation = StoreLocation::find($stockTransfer->to_location_id);
                 
-                // Bước 3: Gán shipper nếu cùng tỉnh
+                if ($fromLocation->province_code === $toLocation->province_code) {
+                    // Cùng tỉnh: Xử lý ngay lập tức
+                    $this->processReceive($stockTransfer);
+                } else {
+                    // Khác tỉnh: Chỉ chuyển sang trạng thái vận chuyển, không nhận hàng ngay
+                    $this->processInTransit($stockTransfer);
+                    // Hàng sẽ được nhận tự động bởi ProcessStockTransferArrival job
+                    // dựa trên thời gian vận chuyển thực tế
+                }
+                
+                // Bước 3: Gán shipper nếu cùng tỉnh với đơn hàng
                 $this->assignShipperIfSameProvince($stockTransfer);
             });
             
@@ -66,19 +79,21 @@ class StockTransferWorkflowService
         
         // Kiểm tra tồn kho tại kho nguồn
         foreach ($stockTransfer->items as $item) {
-            $inventory = ProductInventory::where('product_id', $item->product_id)
+            $inventory = ProductInventory::where('product_variant_id', $item->product_variant_id)
                 ->where('store_location_id', $stockTransfer->from_location_id)
+                ->where('inventory_type', 'new')
                 ->first();
                 
             if (!$inventory || $inventory->quantity < $item->quantity) {
-                throw new Exception("Không đủ hàng tại kho nguồn cho sản phẩm {$item->product->name}");
+                throw new Exception("Không đủ hàng tại kho nguồn cho sản phẩm {$item->productVariant->sku}");
             }
         }
         
         // Trừ tồn kho tại kho nguồn
         foreach ($stockTransfer->items as $item) {
-            $inventory = ProductInventory::where('product_id', $item->product_id)
+            $inventory = ProductInventory::where('product_variant_id', $item->product_variant_id)
                 ->where('store_location_id', $stockTransfer->from_location_id)
+                ->where('inventory_type', 'new')
                 ->first();
                 
             $inventory->decrement('quantity', $item->quantity);
@@ -95,6 +110,50 @@ class StockTransferWorkflowService
     }
     
     /**
+     * Xử lý trạng thái vận chuyển (cho trường hợp khác tỉnh thành)
+     *
+     * @param StockTransfer $stockTransfer
+     * @return void
+     */
+    private function processInTransit(StockTransfer $stockTransfer): void
+    {
+        if ($stockTransfer->status !== 'dispatched') {
+            throw new Exception('Phiếu chuyển kho chưa được xuất hàng');
+        }
+        
+        $fromLocation = StoreLocation::find($stockTransfer->from_location_id);
+        $toLocation = StoreLocation::find($stockTransfer->to_location_id);
+        
+        // Tính thời gian vận chuyển sử dụng ShippingTransitTime
+        $transitTime = ShippingTransitTime::getTransitTime(
+            'store_shipper',
+            $fromLocation->province_code,
+            $toLocation->province_code
+        );
+        
+        // Nếu không có dữ liệu, sử dụng giá trị mặc định dựa trên vùng miền
+        if (!$transitTime) {
+            $fromProvince = ProvinceOld::where('code', $fromLocation->province_code)->first();
+            $toProvince = ProvinceOld::where('code', $toLocation->province_code)->first();
+            
+            $transitDays = $this->calculateDefaultTransitTime($fromProvince, $toProvince);
+        } else {
+            $transitDays = $transitTime->transit_days_max; // Sử dụng thời gian tối đa để đảm bảo
+        }
+        
+        // Tính thời gian dự kiến đến
+        $expectedArrivalTime = now()->addDays($transitDays);
+        
+        // Cập nhật trạng thái vận chuyển
+        $stockTransfer->update([
+            'status' => 'in_transit',
+            'shipped_at' => now()
+        ]);
+        
+        Log::info("Stock transfer {$stockTransfer->id} is now in transit, expected arrival: {$expectedArrivalTime}");
+    }
+    
+    /**
      * Xử lý nhận hàng tại kho đích
      *
      * @param StockTransfer $stockTransfer
@@ -102,16 +161,17 @@ class StockTransferWorkflowService
      */
     private function processReceive(StockTransfer $stockTransfer): void
     {
-        if ($stockTransfer->status !== 'dispatched') {
-            throw new Exception('Phiếu chuyển kho chưa được xuất hàng');
+        if (!in_array($stockTransfer->status, ['dispatched', 'in_transit'])) {
+            throw new Exception('Phiếu chuyển kho chưa được xuất hàng hoặc đang vận chuyển');
         }
         
         // Cộng tồn kho tại kho đích
         foreach ($stockTransfer->items as $item) {
             $inventory = ProductInventory::firstOrCreate(
                 [
-                    'product_id' => $item->product_id,
-                    'store_location_id' => $stockTransfer->to_location_id
+                    'product_variant_id' => $item->product_variant_id,
+                    'store_location_id' => $stockTransfer->to_location_id,
+                    'inventory_type' => 'new'
                 ],
                 ['quantity' => 0]
             );
@@ -208,12 +268,12 @@ class StockTransferWorkflowService
      */
     public function canAutoProcess(StockTransfer $stockTransfer): bool
     {
-        // Chỉ tự động xử lý nếu cùng tỉnh thành
+        // Cho phép tự động xử lý tất cả phiếu chuyển kho hợp lệ
         $fromLocation = StoreLocation::find($stockTransfer->from_location_id);
         $toLocation = StoreLocation::find($stockTransfer->to_location_id);
         
-        return $fromLocation && $toLocation && 
-               $fromLocation->province_code === $toLocation->province_code;
+        // Chỉ cần kiểm tra tồn tại của cả 2 địa điểm
+        return $fromLocation && $toLocation;
     }
     
     /**
@@ -259,8 +319,9 @@ class StockTransferWorkflowService
                 if ($stockTransfer->status === 'dispatched') {
                     // Hoàn tồn kho về kho nguồn
                     foreach ($stockTransfer->items as $item) {
-                        $inventory = ProductInventory::where('product_id', $item->product_id)
+                        $inventory = ProductInventory::where('product_variant_id', $item->product_variant_id)
                             ->where('store_location_id', $stockTransfer->from_location_id)
+                            ->where('inventory_type', 'new')
                             ->first();
                             
                         if ($inventory) {
@@ -270,8 +331,9 @@ class StockTransferWorkflowService
                 } elseif ($stockTransfer->status === 'received') {
                     // Trừ tồn kho tại kho đích
                     foreach ($stockTransfer->items as $item) {
-                        $inventory = ProductInventory::where('product_id', $item->product_id)
+                        $inventory = ProductInventory::where('product_variant_id', $item->product_variant_id)
                             ->where('store_location_id', $stockTransfer->to_location_id)
+                            ->where('inventory_type', 'new')
                             ->first();
                             
                         if ($inventory) {
@@ -299,5 +361,27 @@ class StockTransferWorkflowService
                 'message' => 'Lỗi khi hủy phiếu chuyển kho: ' . $e->getMessage()
             ];
         }
+    }
+    
+    /**
+     * Tính thời gian vận chuyển mặc định dựa trên vùng miền
+     *
+     * @param $fromProvince
+     * @param $toProvince
+     * @return int
+     */
+    private function calculateDefaultTransitTime($fromProvince, $toProvince): int
+    {
+        if (!$fromProvince || !$toProvince) {
+            return 3; // Mặc định 3 ngày nếu không tìm thấy thông tin tỉnh
+        }
+        
+        // Cùng vùng miền: 1-2 ngày
+        if ($fromProvince->region === $toProvince->region) {
+            return 2;
+        }
+        
+        // Khác vùng miền: 3-5 ngày
+        return 4;
     }
 }
