@@ -150,9 +150,12 @@ private function calculateDeliveryOptionsLegacy(Order $order): array
 
         foreach ($originLocationIds as $locationId) {
             $fromProvinceCode = $originProvinces[$locationId];
-            $transitTime = ShippingTransitTime::where('from_province_code', $fromProvinceCode)
-                ->where('to_province_code', $destinationProvinceCode)
-                ->first();
+            // Sử dụng carrier_name 'store_shipper' cho giao hàng nội bộ
+            $transitTime = ShippingTransitTime::getTransitTime(
+                'store_shipper',
+                $fromProvinceCode,
+                $destinationProvinceCode
+            );
 
             $transitDays = $transitTime ? $transitTime->transit_days_max : 7; // Mặc định 7 ngày nếu không có dữ liệu
             $deliveryDates[] = Carbon::now()->addDays($transitDays);

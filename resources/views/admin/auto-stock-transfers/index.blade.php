@@ -207,6 +207,12 @@ function renderTransfersTable(transfers) {
                     <i class="fas fa-times"></i>
                 </button>
             `;
+        } else if (transfer.status === 'in_transit') {
+            actions += `
+                <button type="button" class="inline-flex items-center px-2 py-1 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors" onclick="receiveTransferFromList(${transfer.id})" title="Đã nhận được hàng">
+                    <i class="fas fa-check"></i>
+                </button>
+            `;
         } else if (transfer.status === 'dispatched' || transfer.status === 'received') {
             actions += `
                 <button type="button" class="inline-flex items-center px-2 py-1 border border-yellow-300 text-xs font-medium rounded text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-colors" onclick="cancelTransfer(${transfer.id})" title="Hủy và hoàn tồn kho">
@@ -333,7 +339,7 @@ function renderStatistics(stats) {
 // Xem chi tiết
 function viewDetail(id) {
     $.ajax({
-        url: `{{ url('auto-stock-transfers') }}/${id}`,
+        url: `{{ url('admin/auto-stock-transfers') }}/${id}`,
         method: 'GET',
         success: function(response) {
             if (response.success) {
@@ -425,7 +431,7 @@ function processWorkflow(id) {
     }
     
     $.ajax({
-        url: `{{ url('auto-stock-transfers') }}/${id}/auto-process`,
+        url: `{{ url('admin/auto-stock-transfers') }}/${id}/auto-process`,
         method: 'POST',
         data: {
             _token: '{{ csrf_token() }}'
@@ -454,7 +460,7 @@ function cancelAndRestore(id) {
     }
     
     $.ajax({
-        url: `{{ url('auto-stock-transfers') }}/${id}/cancel`,
+        url: `{{ url('admin/auto-stock-transfers') }}/${id}/cancel`,
         method: 'POST',
         data: {
             _token: '{{ csrf_token() }}'
@@ -476,11 +482,39 @@ function cancelTransfer(id) {
     cancelAndRestore(id);
 }
 
+// Xem chi tiết phiếu chuyển kho
+function viewDetail(id) {
+    window.location.href = `{{ url('admin/auto-stock-transfers') }}/${id}/detail`;
+}
+
+// Nhận hàng ngay lập tức từ danh sách
+function receiveTransferFromList(id) {
+    if (confirm('Bạn có chắc chắn muốn xác nhận đã nhận được hàng?')) {
+        $.ajax({
+            url: `{{ url('admin/auto-stock-transfers') }}/${id}/receive`,
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                showAlert(response.success ? 'success' : 'error', response.message);
+                if (response.success) {
+                    loadTransfers(currentPage);
+                }
+            },
+            error: function() {
+                showAlert('error', 'Lỗi khi xác nhận nhận hàng');
+            }
+        });
+    }
+}
+
 // Helper functions
 function getStatusBadge(status) {
     const statusMap = {
         'pending': '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Chờ xử lý</span>',
         'dispatched': '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Đã xuất kho</span>',
+        'in_transit': '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Đang vận chuyển</span>',
         'received': '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Đã nhận hàng</span>',
         'cancelled': '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Đã hủy</span>'
     };
@@ -496,7 +530,9 @@ function getWorkflowBadge(transfer) {
     if (transfer.status === 'pending') {
         workflow = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><i class="fas fa-clock mr-1"></i> Chờ xuất kho</span>';
     } else if (transfer.status === 'dispatched') {
-        workflow = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fas fa-truck mr-1"></i> Đang vận chuyển</span>';
+        workflow = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fas fa-shipping-fast mr-1"></i> Đã xuất kho</span>';
+    } else if (transfer.status === 'in_transit') {
+        workflow = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"><i class="fas fa-truck mr-1"></i> Đang vận chuyển</span>';
     } else if (transfer.status === 'received') {
         if (hasOrderInfo) {
             workflow = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-check mr-1"></i> Sẵn sàng giao hàng</span>';

@@ -292,6 +292,20 @@ class OrderController extends Controller
                     'message' => 'Chỉ có thể gán shipper cho đơn hàng đang ở trạng thái "Chờ giao hàng".',
                 ], 422);
             }
+            
+            // Kiểm tra điều kiện fulfillment trước khi gán shipper
+            $fulfillmentCheckService = new \App\Services\OrderFulfillmentCheckService();
+            $fulfillmentCheck = $fulfillmentCheckService->canAssignShipper($order);
+            
+            if (!$fulfillmentCheck['can_assign']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $fulfillmentCheck['reason'],
+                    'requires_transfer' => $fulfillmentCheck['requires_transfer'],
+                    'transfer_info' => $fulfillmentCheck['transfer_info'] ?? null,
+                    'estimated_arrival' => $fulfillmentCheck['estimated_arrival'] ?? null
+                ], 422);
+            }
 
             // Cập nhật shipper cho đơn hàng
             $order->update([
