@@ -11,6 +11,7 @@
 @endpush
 
 @section('content')
+<div x-data="shipperDashboard()">
 <header class="page-header p-5 bg-white flex justify-between items-center">
     <div>
         <p class="text-sm text-gray-500">Xin chào,</p>
@@ -150,10 +151,162 @@
         @endforelse
     </div>
 </main>
+
+@include('shipper.partials._barcode_scanner_modal')
+</div>
 @endsection
 
 @push('scripts')
+{{-- Thư viện quét mã vạch --}}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+{{-- Thư viện âm thanh Howler.js --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+
 <script>
+    function shipperDashboard() {
+        return {
+            isScannerOpen: false,
+            currentOrderId: null,
+            html5QrCode: null,
+            beepSound: null,
+            soundInitialized: false,
+
+            init() {
+                this.initializeSound();
+                window.addEventListener('barcode-scanned', (event) => {
+                    this.handleBarcodeScanned(event.detail.code);
+                });
+            },
+
+            initializeSound() {
+                if (this.soundInitialized || typeof Howl === 'undefined') return;
+                this.beepSound = new Howl({
+                    src: ['{{ asset('sounds/shop-scanner-beeps.mp3') }}'],
+                    volume: 0.8,
+                    onload: () => { this.soundInitialized = true; },
+                    onloaderror: (id, err) => { console.error('Sound load error:', err); }
+                });
+            },
+
+            playBeep() {
+                if (this.soundInitialized && this.beepSound) this.beepSound.play();
+            },
+
+            openBarcodeScanner(orderId) {
+                this.currentOrderId = orderId;
+                this.isScannerOpen = true;
+                this.$nextTick(() => this.startScanning());
+            },
+
+            closeBarcodeScanner() {
+                this.stopScanning();
+                this.isScannerOpen = false;
+                this.currentOrderId = null;
+            },
+
+            startScanning() {
+                const readerElement = document.getElementById('reader');
+                const loadingMessage = document.getElementById('loading-message');
+                const errorMessage = document.getElementById('scan-error-message');
+
+                if (typeof Html5Qrcode === "undefined" || !readerElement) return;
+
+                loadingMessage.classList.remove('hidden');
+                errorMessage.classList.add('hidden');
+
+                this.html5QrCode = new Html5Qrcode("reader");
+                const config = { fps: 10, qrbox: { width: 250, height: 150 } };
+
+                const onScanSuccess = (decodedText, decodedResult) => {
+                    if (!this.isScannerOpen) return;
+                    this.playBeep();
+                    try { if (navigator.vibrate) navigator.vibrate(100); } catch (e) {}
+                    window.dispatchEvent(new CustomEvent('barcode-scanned', { detail: { code: decodedText } }));
+                    this.closeBarcodeScanner();
+                };
+
+                this.html5QrCode.start({ facingMode: "environment" }, config, onScanSuccess, (error) => {})
+                .then(() => loadingMessage.classList.add('hidden'))
+                .catch(err => {
+                    loadingMessage.classList.add('hidden');
+                    errorMessage.textContent = `Lỗi camera: ${err}. Vui lòng cấp quyền hoặc sử dụng HTTPS.`;
+                    errorMessage.classList.remove('hidden');
+                });
+            },
+
+            stopScanning() {
+                if (this.html5QrCode && this.html5QrCode.isScanning) {
+                    this.html5QrCode.stop().catch(err => console.error("Error stopping camera:", err));
+                }
+            },
+
+            handleBarcodeScanned(code) {
+                if (!this.currentOrderId) return;
+                
+                console.log('Scanning barcode:', code, 'for order:', this.currentOrderId);
+                
+                // Gửi request để cập nhật trạng thái đơn hàng
+                fetch(`/shipper/orders/${this.currentOrderId}/update-status`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        barcode: code,
+                        status: 'shipped'
+                    })
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        // Log chi tiết lỗi
+                        return response.text().then(text => {
+                            console.error('Error response:', text);
+                            throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Success response:', data);
+                    if (data.success) {
+                        this.showAlert(data.message, 'success');
+                        // Reload trang để cập nhật danh sách đơn hàng
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        this.showAlert(data.message || 'Có lỗi xảy ra', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    this.showAlert('Lỗi kết nối: ' + error.message, 'error');
+                })
+                .finally(() => {
+                    this.closeBarcodeModal();
+                });
+            },
+            
+            showAlert(message, type = 'info') {
+                // Tạo alert đơn giản
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `fixed top-4 right-4 z-50 p-4 rounded-lg text-white ${
+                    type === 'success' ? 'bg-green-500' : 
+                    type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                }`;
+                alertDiv.textContent = message;
+                document.body.appendChild(alertDiv);
+                
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 3000);
+            }
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const tabButtons = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');

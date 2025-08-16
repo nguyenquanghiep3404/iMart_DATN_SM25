@@ -209,7 +209,7 @@ class PackingStationController extends Controller
 
             // 6. Cập nhật trạng thái đơn hàng chính
             $order->update([
-                'status' => 'awaiting_shipment', // << FIX: Trạng thái tiếp theo là "Chờ vận chuyển"
+                'status' => 'awaiting_shipment_packed', // << FIX: Trạng thái tiếp theo là "Chờ vận chuyển đã đóng gói xong"
                 'processed_by' => $packer->id,
                 'store_location_id' => $storeLocationId // Cập nhật luôn kho xử lý cho đơn hàng
             ]);
