@@ -138,7 +138,8 @@ Route::get('/api/filter-stores', [HomeController::class, 'filterStoreLocations']
 // Route để lấy danh sách tỉnh/thành phố theo biến thể sản phẩm
 Route::get('/api/provinces-by-variant', [HomeController::class, 'getProvincesByVariant'])->name('api.provinces.by.variant');
 
-
+// lấy api số lượng sản phẩm
+Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariantStock']);
 
 
 

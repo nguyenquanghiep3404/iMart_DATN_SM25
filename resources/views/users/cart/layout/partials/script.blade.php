@@ -518,3 +518,26 @@
         });
     </script>
 @endpush
+@if (session('success'))
+    <script>
+        if (!sessionStorage.getItem('toast_success_shown')) {
+            toastr.success("{{ session('success') }}");
+            sessionStorage.setItem('toast_success_shown', 'true');
+
+            // Gọi route để xóa session success từ server
+            fetch("{{ route('session.flush.message') }}");
+        }
+    </script>
+@endif
+
+@if (session('error'))
+    <script>
+        if (!sessionStorage.getItem('toast_error_shown')) {
+            toastr.error("{{ session('error') }}");
+            sessionStorage.setItem('toast_error_shown', 'true');
+
+            // Gọi route để xóa session error từ server
+            fetch("{{ route('session.flush.message') }}");
+        }
+    </script>
+@endif
