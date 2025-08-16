@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\StoreLocation;
 use App\Models\User;
 use App\Models\ProductInventory;
+use App\Models\InventorySerial;
+use App\Models\InventoryMovement;
 use App\Models\ShippingTransitTime;
 use App\Models\ProvinceOld;
 use Illuminate\Support\Facades\DB;
@@ -77,26 +79,67 @@ class StockTransferWorkflowService
             throw new Exception('Phiếu chuyển kho không ở trạng thái chờ xử lý');
         }
         
-        // Kiểm tra tồn kho tại kho nguồn
-        foreach ($stockTransfer->items as $item) {
-            $inventory = ProductInventory::where('product_variant_id', $item->product_variant_id)
-                ->where('store_location_id', $stockTransfer->from_location_id)
-                ->where('inventory_type', 'new')
-                ->first();
-                
-            if (!$inventory || $inventory->quantity < $item->quantity) {
-                throw new Exception("Không đủ hàng tại kho nguồn cho sản phẩm {$item->productVariant->sku}");
-            }
-        }
+        $fromLocationId = $stockTransfer->from_location_id;
         
-        // Trừ tồn kho tại kho nguồn
-        foreach ($stockTransfer->items as $item) {
-            $inventory = ProductInventory::where('product_variant_id', $item->product_variant_id)
-                ->where('store_location_id', $stockTransfer->from_location_id)
+        // Kiểm tra tồn kho và xử lý từng item
+        foreach ($stockTransfer->items as $stItem) {
+            $productVariant = $stItem->productVariant;
+            $quantity = $stItem->quantity;
+            
+            // Kiểm tra tồn kho tại kho nguồn
+            $inventory = ProductInventory::where('product_variant_id', $productVariant->id)
+                ->where('store_location_id', $fromLocationId)
                 ->where('inventory_type', 'new')
                 ->first();
                 
-            $inventory->decrement('quantity', $item->quantity);
+            if (!$inventory || $inventory->quantity < $quantity) {
+                throw new Exception("Không đủ hàng tại kho nguồn cho sản phẩm {$productVariant->sku}");
+            }
+            
+            // Xử lý IMEI/Serial tracking nếu sản phẩm có theo dõi serial
+            if ($productVariant->has_serial_tracking) {
+                // Tự động lấy serial có sẵn tại kho nguồn
+                $availableSerials = InventorySerial::where('product_variant_id', $productVariant->id)
+                    ->where('store_location_id', $fromLocationId)
+                    ->where('status', 'available')
+                    ->limit($quantity)
+                    ->get();
+                    
+                if ($availableSerials->count() < $quantity) {
+                    throw new Exception("Không đủ serial có sẵn cho sản phẩm {$productVariant->sku}. Cần {$quantity}, chỉ có {$availableSerials->count()}");
+                }
+                
+                // Cập nhật trạng thái serial thành 'transferred'
+                $serialIds = $availableSerials->pluck('id');
+                InventorySerial::whereIn('id', $serialIds)
+                    ->update(['status' => 'transferred']);
+                
+                // Lưu thông tin serial vào bảng trung gian
+                foreach ($availableSerials as $serial) {
+                    $stItem->serials()->create([
+                        'inventory_serial_id' => $serial->id,
+                        'status' => 'in_transit'
+                    ]);
+                }
+                
+                Log::info("Assigned {$availableSerials->count()} serials for product {$productVariant->sku} in transfer {$stockTransfer->id}");
+            }
+            
+            // Trừ tồn kho tại kho nguồn
+            $inventory->decrement('quantity', $quantity);
+            
+            // Ghi lại lịch sử xuất kho
+            InventoryMovement::create([
+                'product_variant_id' => $productVariant->id,
+                'store_location_id' => $fromLocationId,
+                'inventory_type' => 'new',
+                'quantity_change' => -$quantity,
+                'quantity_after_change' => $inventory->quantity,
+                'reason' => 'stock_transfer_out',
+                'reference_type' => 'stock_transfer',
+                'reference_id' => $stockTransfer->id,
+                'notes' => "Xuất hàng cho phiếu chuyển kho {$stockTransfer->transfer_code}"
+            ]);
         }
         
         // Cập nhật trạng thái
@@ -106,7 +149,7 @@ class StockTransferWorkflowService
             'dispatched_by' => auth()->id() ?? 1 // System user
         ]);
         
-        Log::info("Stock transfer {$stockTransfer->id} dispatched successfully");
+        Log::info("Stock transfer {$stockTransfer->id} dispatched successfully with serial tracking");
     }
     
     /**
@@ -165,18 +208,57 @@ class StockTransferWorkflowService
             throw new Exception('Phiếu chuyển kho chưa được xuất hàng hoặc đang vận chuyển');
         }
         
-        // Cộng tồn kho tại kho đích
-        foreach ($stockTransfer->items as $item) {
+        $toLocationId = $stockTransfer->to_location_id;
+        
+        // Xử lý từng item trong phiếu chuyển kho
+        foreach ($stockTransfer->items as $stItem) {
+            $productVariant = $stItem->productVariant;
+            $quantity = $stItem->quantity;
+            
+            // Xử lý IMEI/Serial tracking nếu sản phẩm có theo dõi serial
+            if ($productVariant->has_serial_tracking) {
+                // Lấy ra các serial đã được gửi đi cho item này
+                $shippedSerials = $stItem->serials()->with('inventorySerial')->get();
+                
+                if ($shippedSerials->count() > 0) {
+                    // Cập nhật trạng thái và vị trí mới cho serial
+                    $shippedSerialIds = $shippedSerials->pluck('inventory_serial_id');
+                    InventorySerial::whereIn('id', $shippedSerialIds)
+                                    ->update([
+                                        'status' => 'available',
+                                        'store_location_id' => $toLocationId
+                                    ]);
+                    
+                    // Cập nhật trạng thái trong bảng trung gian
+                    $stItem->serials()->update(['status' => 'received']);
+                    
+                    Log::info("Updated {$shippedSerials->count()} serials for product {$productVariant->sku} in transfer {$stockTransfer->id}");
+                }
+            }
+            
+            // Tăng tồn kho tại kho nhận cho TẤT CẢ sản phẩm
             $inventory = ProductInventory::firstOrCreate(
                 [
-                    'product_variant_id' => $item->product_variant_id,
-                    'store_location_id' => $stockTransfer->to_location_id,
-                    'inventory_type' => 'new'
+                    'product_variant_id' => $productVariant->id,
+                    'store_location_id' => $toLocationId,
+                    'inventory_type' => 'new',
                 ],
                 ['quantity' => 0]
             );
+            $inventory->increment('quantity', $quantity);
             
-            $inventory->increment('quantity', $item->quantity);
+            // Ghi lại lịch sử nhập kho
+            InventoryMovement::create([
+                'product_variant_id' => $productVariant->id,
+                'store_location_id' => $toLocationId,
+                'inventory_type' => 'new',
+                'quantity_change' => $quantity,
+                'quantity_after_change' => $inventory->quantity,
+                'reason' => 'stock_transfer_in',
+                'reference_type' => 'stock_transfer',
+                'reference_id' => $stockTransfer->id,
+                'notes' => "Nhận hàng từ phiếu chuyển kho {$stockTransfer->transfer_code}"
+            ]);
         }
         
         // Cập nhật trạng thái
@@ -186,7 +268,7 @@ class StockTransferWorkflowService
             'received_by' => auth()->id() ?? 1 // System user
         ]);
         
-        Log::info("Stock transfer {$stockTransfer->id} received successfully");
+        Log::info("Stock transfer {$stockTransfer->id} received successfully with serial tracking");
     }
     
     /**
@@ -276,6 +358,33 @@ class StockTransferWorkflowService
         return $fromLocation && $toLocation;
     }
     
+    /**
+     * Nhận hàng ngay lập tức (public method)
+     *
+     * @param StockTransfer $stockTransfer
+     * @return array
+     */
+    public function receiveTransfer(StockTransfer $stockTransfer): array
+    {
+        try {
+            DB::transaction(function () use ($stockTransfer) {
+                $this->processReceive($stockTransfer);
+            });
+            
+            return [
+                'success' => true,
+                'message' => 'Nhận hàng thành công'
+            ];
+            
+        } catch (Exception $e) {
+            Log::error('Error receiving transfer: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Lỗi khi nhận hàng: ' . $e->getMessage()
+            ];
+        }
+    }
+
     /**
      * Lấy thống kê workflow chuyển kho
      *

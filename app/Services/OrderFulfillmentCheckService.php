@@ -33,11 +33,11 @@ class OrderFulfillmentCheckService
      */
     public function canAssignShipper(Order $order): array
     {
-        // Chỉ kiểm tra đơn hàng ở trạng thái awaiting_shipment
-        if ($order->status !== Order::STATUS_AWAITING_SHIPMENT) {
+        // Chỉ kiểm tra đơn hàng ở trạng thái awaiting_shipment_packed
+        if ($order->status !== Order::STATUS_AWAITING_SHIPMENT_PACKED) {
             return [
                 'can_assign' => false,
-                'reason' => 'Đơn hàng không ở trạng thái chờ giao hàng',
+                'reason' => 'Chỉ có thể gán shipper cho đơn hàng đang ở trạng thái "Chờ vận chuyển: đã đóng gói xong".',
                 'requires_transfer' => false
             ];
         }
