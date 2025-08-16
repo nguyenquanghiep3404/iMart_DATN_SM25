@@ -105,14 +105,13 @@
             }
         });
 
-        // Hàm xử lý gọi ajax dùng chung
         function applyVoucher(voucherCode) {
             $.ajax({
                 url: '{{ route('cart.applyVoucherAjax') }}',
                 method: 'POST',
                 data: {
                     voucher_code: voucherCode,
-                    type: 'buy-now'
+                    type: 'cart'
                 },
                 success: function(response) {
                     const formatMoney = (amount) => amount.toLocaleString('vi-VN') + '₫';
@@ -121,12 +120,24 @@
                         toastr.success(response.message);
                         $('#cart-discount').text('-' + formatMoney(response.discount));
                         $('#cart-total').text(formatMoney(response.total_after_discount));
-                        setTimeout(() => {
-                            location.reload();
-                        }, 1000);
+                        // ✅ Cập nhật nội dung hiển thị mã đã áp dụng
+                        $('#appliedCouponBox').html(`
+                            <div class="flex items-center justify-between bg-gray-100 border border-gray-300 rounded-lg px-4 py-2">
+                                <span class="text-sm text-gray-700">
+                                    Bạn đang áp dụng mã:
+                                    <strong class="text-red-500">${voucherCode}</strong>
+                                </span>
+                                <button id="removeCouponBtn" class="text-xs text-red-500 hover:underline font-semibold">
+                                    Gỡ bỏ
+                                </button>
+                            </div>
+                        `);
                     } else {
                         toastr.error(response.message);
                     }
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
                 },
                 error: function(xhr, status, error) {
                     console.error('Lỗi AJAX:', error);
@@ -134,7 +145,6 @@
                 }
             });
         }
-
         // Gửi từ form nhập mã voucher
         $('#voucher-form').on('submit', function(e) {
             e.preventDefault();
@@ -273,16 +283,31 @@
                 success: function(res) {
                     if (res.success) {
                         toastr.success(res.message);
-                        $messageDiv.html(
-                            `<span class="text-success">${res.message}</span>`);
-
-                        // Cập nhật giao diện tổng tiền
+                        // Cập nhật tổng tiền
                         $('#points-discount-row').show();
                         $('#points-discount-amount').text(
                             `- ${res.discount_amount.toLocaleString('vi-VN')}₫`);
                         $('#cart-total').text(
                             `${res.new_grand_total.toLocaleString('vi-VN')}₫`);
-                        setTimeout(function() {
+
+                        // Cập nhật hoặc thêm appliedPointsBox với giao diện bạn muốn
+                        const appliedPointsHtml = `
+                                <span class="text-sm text-gray-700">
+                                    Bạn đã áp dụng <strong class="text-primary">${parseInt(points).toLocaleString('vi-VN')} điểm thưởng</strong>
+                                </span>
+                                <button id="removePointsBtn" class="text-xs text-primary hover:underline font-semibold">
+                                    Gỡ bỏ
+                                </button>
+                            `;
+                        if ($('#appliedPointsBox').length) {
+                            $('#appliedPointsBox').html(appliedPointsHtml);
+                        } else {
+                            // Thêm vào sau form nhập điểm
+                            $('#points-form').append(
+                                `<div id="appliedPointsBox" class="flex items-center justify-between bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 mt-3">${appliedPointsHtml}</div>`
+                            );
+                        }
+                        setTimeout(() => {
                             location.reload();
                         }, 1000);
                     } else {
@@ -326,5 +351,69 @@
             if (typeof num !== 'number') return '0₫';
             return num.toLocaleString('vi-VN') + '₫';
         }
+    });
+    $(document).ready(function() {
+        $(document).on('click', '#removeCouponBtn', function() {
+            Swal.fire({
+                title: 'Bạn có chắc muốn gỡ mã giảm giá?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Có, gỡ mã!',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('{{ route('cart.removeCoupon') }}', function(res) {
+                        if (res.success) {
+                            toastr.info(res.message);
+                            $('#appliedCouponBox').empty();
+                            $('#cart-discount').text('0₫');
+                            $('#cart-total').text(formatPrice(res.new_total));
+                        } else {
+                            toastr.error(res.message ||
+                                'Xảy ra lỗi khi gỡ mã giảm giá.');
+                        }
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    }).fail(function() {
+                        toastr.error('Không thể kết nối đến server.');
+                    });
+                }
+            });
+        });
+    });
+    $(document).on('click', '#removePointsBtn', function() {
+        Swal.fire({
+            title: 'Bạn có chắc muốn gỡ điểm thưởng đã áp dụng?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Có, gỡ bỏ!',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.post('{{ route('cart.removePoints') }}', function(res) {
+                    if (res.success) {
+                        toastr.info(res.message);
+                        $('#appliedPointsBox').remove();
+                        $('#points-discount-row').hide();
+                        $('#points-discount-amount').text('0₫');
+                        $('#cart-total').text(formatPrice(res.new_total));
+                        $('#points-to-use').val('');
+                        $('#points-message').html('');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        toastr.error(res.message || 'Xảy ra lỗi khi gỡ điểm thưởng.');
+                    }
+                }).fail(function() {
+                    toastr.error('Không thể kết nối đến server.');
+                });
+            }
+        });
     });
 </script>

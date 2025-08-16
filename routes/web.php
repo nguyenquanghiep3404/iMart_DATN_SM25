@@ -90,7 +90,8 @@ Route::post('/cart/clear', [CartController::class, 'clearCart'])->name('cart.cle
 
 Route::post('/cart/apply-points', [CartController::class, 'applyPoints'])->name('cart.applyPoints')->middleware('auth');
 Route::post('/payments/apply-points', [PaymentController::class, 'applyPoints'])->name('payments.applyPoints')->middleware('auth');
-
+Route::post('/cart/remove-points', [CartController::class, 'removePoints'])
+    ->name('cart.removePoints');
 
 // cart_offcanvas
 Route::get('/cart/offcanvas', [CarOffController::class, 'index']);
@@ -137,7 +138,8 @@ Route::get('/api/filter-stores', [HomeController::class, 'filterStoreLocations']
 // Route để lấy danh sách tỉnh/thành phố theo biến thể sản phẩm
 Route::get('/api/provinces-by-variant', [HomeController::class, 'getProvincesByVariant'])->name('api.provinces.by.variant');
 
-
+// lấy api số lượng sản phẩm
+Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariantStock']);
 
 
 
@@ -413,12 +415,12 @@ Route::prefix('admin')
         Route::get('/categories/trash', [CategoryController::class, 'trash'])->name('categories.trash');
         Route::get('/categories/create', [CategoryController::class, 'create'])->name('categories.create');
         Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
-        Route::post('/categories/{id}/restore', [CategoryController::class, 'restore'])->name('categories.restore');
-        Route::delete('/categories/{id}/force-delete', [CategoryController::class, 'forceDelete'])->name('categories.forceDelete');
+        Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
         Route::get('/categories/{category}/edit', [CategoryController::class, 'edit'])->name('categories.edit');
         Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
-        Route::get('/categories/{category}', [CategoryController::class, 'show'])->name('categories.show');
+        Route::post('/categories/restore/{id}', [CategoryController::class, 'restore'])->name('categories.restore');
+        Route::delete('/categories/force-delete/{id}', [CategoryController::class, 'forceDelete'])->name('categories.forceDelete');
         // Route::post('/categories/{category}/toggle-homepage', [CategoryController::class, 'toggleHomepage'])->name('categories.toggleHomepage'); // ẩn hiện danh mục trên trang chủ
         // });
         // Attribute routes
@@ -889,7 +891,4 @@ require __DIR__ . '/auth.php';
 //     $response = Telegram::setWebhook(['url' => $url]);
 //     return 'Webhook setup: ' . $response->getDescription();
 // });
-// Route xử lý khi không có token
-Route::get('/payments/confirm', [PaymentController::class, 'confirmPaymentByToken'])->name('payments.confirm.no-token');
-// Route xử lý khi có token
 Route::get('/payments/confirm/{token}', [PaymentController::class, 'confirmPaymentByToken'])->name('payments.confirm');
