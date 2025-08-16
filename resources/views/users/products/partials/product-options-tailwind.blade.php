@@ -124,7 +124,8 @@
             @continue(strtolower($attrName) === 'màu sắc')
 
             @php
-                $inputName = strtolower(str_replace(' ', '-', $attrName)) . '-options';
+                // Chuẩn hóa tên input để tránh xung đột
+                $inputName = 'attr-' . strtolower(str_replace(' ', '-', $attrName));
             @endphp
             <div>
                 <h4 class="font-medium text-gray-800 mb-2">{{ $attrName }}</h4>
@@ -132,7 +133,8 @@
                     @foreach ($attrValues as $attrValue)
                         @php
                             $inputId = $inputName . '-' . $attrValue->id;
-                            $isColor = $attrValue->attribute->display_type === 'color_swatch' && $attrValue->meta;
+                            $isColor =
+                                $attrValue->attribute->display_type === 'color_swatch' && !empty($attrValue->meta);
                             $isChecked =
                                 isset($initialVariantAttributes[$attrName]) &&
                                 $initialVariantAttributes[$attrName] === $attrValue->value;
@@ -140,8 +142,9 @@
 
                         <label for="{{ $inputId }}"
                             class="option-container px-4 py-2 border-2 rounded-lg text-sm font-semibold cursor-pointer
-                    {{ $isChecked ? 'variant-selected' : 'border-gray-300 text-gray-700 hover:border-blue-500' }}"
-                            data-attr-name="{{ $attrName }}" data-attr-value="{{ $attrValue->value }}">
+                                  {{ $isChecked ? 'variant-selected' : 'border-gray-300 text-gray-700 hover:border-blue-500' }}"
+                            data-attr-name="{{ $attrName }}" data-attr-value="{{ $attrValue->value }}"
+                            title="{{ $attrValue->value }}">
                             <input type="radio" name="{{ $inputName }}" id="{{ $inputId }}"
                                 value="{{ $attrValue->value }}" data-attr-name="{{ $attrName }}" class="hidden"
                                 {{ $isChecked ? 'checked' : '' }}>
@@ -157,13 +160,13 @@
             @php
                 $attrName = 'Màu sắc';
                 $attrValues = $attributes['Màu sắc'];
-                $inputName = 'mau-sac-options';
+                $inputName = 'attr-mau-sac';
             @endphp
             <div>
                 <h4 class="font-medium text-gray-800 mb-2">
                     Màu sắc:
                     <span id="selected-color-name" class="font-bold">
-                        {{ $initialVariantAttributes['Màu sắc'] ?? '' }}
+                        {{ $initialVariantAttributes['Màu sắc'] ?? 'Chưa chọn' }}
                     </span>
                 </h4>
                 <div class="flex gap-2 flex-wrap">
@@ -173,11 +176,13 @@
                             $isChecked =
                                 isset($initialVariantAttributes[$attrName]) &&
                                 $initialVariantAttributes[$attrName] === $attrValue->value;
+                            // Kiểm tra meta để đảm bảo mã màu hợp lệ
+                            $colorValue = !empty($attrValue->meta) ? $attrValue->meta : '#000000';
                         @endphp
 
                         <label for="{{ $inputId }}"
                             class="option-container w-8 h-8 rounded-full border ring-2 {{ $isChecked ? 'ring-blue-500' : 'ring-transparent' }} ring-offset-1 cursor-pointer"
-                            title="{{ $attrValue->value }}" style="background-color: {{ $attrValue->meta }};"
+                            title="{{ $attrValue->value }}" style="background-color: {{ $colorValue }};"
                             data-attr-name="{{ $attrName }}" data-attr-value="{{ $attrValue->value }}">
                             <input type="radio" name="{{ $inputName }}" id="{{ $inputId }}"
                                 value="{{ $attrValue->value }}" data-attr-name="{{ $attrName }}" class="hidden"
@@ -187,7 +192,6 @@
                 </div>
             </div>
         @endif
-
     </div>
 
 

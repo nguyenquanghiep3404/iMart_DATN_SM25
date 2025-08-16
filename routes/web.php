@@ -457,6 +457,14 @@ Route::prefix('admin')
         Route::get('/orders/shippers/list', [OrderController::class, 'getShippers'])->name('orders.shippers');
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
         Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
+        
+        // Routes Order Fulfillment
+        Route::prefix('orders/fulfillment')->name('orders.fulfillment.')->group(function () {
+            Route::get('/awaiting-stock', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'getOrdersAwaitingStock'])->name('awaiting-stock');
+            Route::get('/{order}/status', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'checkFulfillmentStatus'])->name('status');
+            Route::post('/{order}/auto-transfer', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'createAutoTransfer'])->name('auto-transfer');
+        });
+        
         Route::post('/buy-now/clear-session', [PaymentController::class, 'handleClearBuyNowSession'])->name('buy_now.clear_session');
 
         // quản lý giỏ hàng lãng quên
@@ -822,8 +830,10 @@ Route::prefix('admin')
             Route::get('/', [AutoStockTransferController::class, 'index'])->name('index');
             Route::get('/manage', [AutoStockTransferController::class, 'manage'])->name('manage');
             Route::get('/statistics', [AutoStockTransferController::class, 'statistics'])->name('statistics');
+            Route::get('/{id}/detail', [AutoStockTransferController::class, 'detail'])->name('detail');
             Route::get('/{id}', [AutoStockTransferController::class, 'show'])->name('show');
             Route::post('/{id}/auto-process', [AutoStockTransferController::class, 'autoProcess'])->name('auto-process');
+            Route::post('/{id}/receive', [AutoStockTransferController::class, 'receive'])->name('receive');
             Route::post('/{id}/cancel', [AutoStockTransferController::class, 'cancel'])->name('cancel');
             Route::post('/check-and-create', [AutoStockTransferController::class, 'checkAndCreateForOrder'])->name('check-and-create');
         });
@@ -847,7 +857,7 @@ Route::prefix('shipper')
         Route::get('/history', [ShipperController::class, 'history'])->name('history');
         Route::get('/profile', [ShipperController::class, 'profile'])->name('profile');
         Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
-        Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus');
+        Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus')->middleware('can:access_shipper_dashboard');
     });
 Route::get('/test-403', function () {
     abort(403);

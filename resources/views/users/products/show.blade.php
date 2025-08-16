@@ -113,7 +113,12 @@
         $isSale = !$isFlashSale && $salePrice && $salePrice < $originalPrice;
         $priceToDisplay = $isSale || $isFlashSale ? $salePrice : $originalPrice;
 
-        $imageUrl = $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : asset('images/placeholder.jpg');
+        $imageUrl =
+            $variant &&
+            $variant->primaryImage &&
+            file_exists(storage_path('app/public/' . $variant->primaryImage->path))
+                ? Storage::url($variant->primaryImage->path)
+                : asset('images/placeholder.jpg');
     @endphp
 
     <!-- Sticky Add to Cart Bar -->
@@ -580,6 +585,8 @@
     <script>
         window.productType = @json($product->type);
         console.log('Loại sản phẩm:', window.productType);
+        window.baseSlug = @json($product->slug ?? 'default-slug'); // Thêm window.baseSlug
+        console.log('window.baseSlug:', window.baseSlug);
         window.variantData = @json($variantData);
         window.attributeOrder = @json($attributeOrder);
         window.availableCombinations = @json($availableCombinations);
@@ -832,9 +839,9 @@
                     <p class="font-bold text-lg text-red-600">
             ${formatPrice(displayPrice)}
             ${hasSale ? `
-                                                                    <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
-                                                                    <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
-                                                                ` : ''}
+                                                                        <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
+                                                                        <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
+                                                                    ` : ''}
         </p>
         <p class="font-semibold text-gray-800 mt-1">
             ${productName}${variantName ? ` - ${variantName}` : ''}
@@ -1415,8 +1422,8 @@
                 let isFlashSale = false;
                 let isSale = false;
                 let discountPercent = 0;
-                let salePrice = parseInt(variant.sale_price);
-                let originalPrice = parseInt(variant.price);
+                let salePrice = parseInt(variant.sale_price) || 0;
+                let originalPrice = parseInt(variant.price) || 0;
                 if (variant.sale_price_starts_at && variant.sale_price_ends_at) {
                     const start = new Date(variant.sale_price_starts_at);
                     const end = new Date(variant.sale_price_ends_at);
@@ -1452,18 +1459,60 @@
                     normalPriceBlock?.classList.remove('hidden');
                 }
                 const titleEl = document.getElementById('product-title');
-                if (titleEl && currentSelections) {
-                    const selectedValues = Object.values(currentSelections)
-                        .filter(val => val) // loại bỏ undefined/null
-                        .join(' ');
+                if (titleEl) {
+                    const dungLuong = currentSelections['Dung lượng'] || '';
+                    const mauSac = currentSelections['Màu sắc'] || '';
+                    const selectedValues = [dungLuong, mauSac].filter(val => val).join(' ');
                     titleEl.textContent = `${@json($product->name)} ${selectedValues}`;
                     console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent);
                 }
+                // Cập nhật URL
+                console.log('Kiểm tra cập nhật URL:', {
+                    baseSlug: window.baseSlug,
+                    attributeOrder: window.attributeOrder,
+                    currentSelections: window.currentSelections
+                });
+                if (window.baseSlug && window.attributeOrder && window.attributeOrder.length > 0) {
+                    const slugParts = window.attributeOrder.map(attr => {
+                        const value = currentSelections[attr] || '';
+                        if (!value) {
+                            console.warn(`Thiếu giá trị cho thuộc tính ${attr}`);
+                            return '';
+                        }
+                        // Xử lý ký tự tiếng Việt và tạo slug
+                        const slugValue = value
+                            .normalize('NFD') // Chuẩn hóa Unicode
+                            .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu
+                            .toLowerCase()
+                            .replace(/đ/g, 'd') // Thêm dòng này để xử lý chữ 'đ'
+                            .replace(/\s+/g, '-')
+                            .replace(/[^a-z0-9-]/g, '');
 
+                        console.log(`Slug cho ${attr}: ${slugValue}`);
+                        return slugValue;
+                    }).filter(Boolean);
+                    console.log('Slug parts:', slugParts);
+                    if (slugParts.length === window.attributeOrder.length) {
+                        const newSlug = `${window.baseSlug}-${slugParts.join('-')}`;
+                        const newUrl = `/san-pham/${newSlug}`;
+                        console.log('Chuẩn bị cập nhật URL:', newUrl);
+                        window.history.pushState({
+                            path: newUrl
+                        }, '', newUrl);
+                        console.log('URL đã cập nhật:', newUrl);
+                        window.defaultVariantId = variant.variant_id || window.defaultVariantId;
+                    } else {
+                        console.warn('Không đủ thuộc tính để tạo slug mới:', slugParts);
+                    }
+                } else {
+                    console.error('Không thể cập nhật URL: Thiếu baseSlug hoặc attributeOrder', {
+                        baseSlug: window.baseSlug,
+                        attributeOrder: window.attributeOrder
+                    });
+                }
                 window.updateGalleryFromSelection(key);
                 updateSpecifications(key);
                 updateStickyBar(key);
-                // Lưu sản phẩm với biến thể mới vào lịch sử
                 saveRecentProduct();
             }
 

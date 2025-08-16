@@ -1115,19 +1115,7 @@ class PaymentController extends Controller
             'totalPointsToEarn' => $totalPointsToEarn,
         ];
     }
-    /**
-     * Tính phí vận chuyển
-     */
-    private function calculateShippingFee($shippingMethod)
-    {
-        $fees = [
-            'Giao hàng nhanh' => 55000,
-            'Nhận tại cửa hàng' => 0,
-            'Giao hàng tiêu chuẩn' => 25000,
-        ];
 
-        return $fees[$shippingMethod] ?? 25000;
-    }
 
 
 
@@ -1381,7 +1369,7 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1453,7 +1441,7 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1523,7 +1511,7 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1630,7 +1618,7 @@ class PaymentController extends Controller
             }
 
             // --- TÍNH TOÁN LẠI GIÁ TRỊ CUỐI CÙNG ---
-            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
             $totalDiscount = $buyNowData['discount'] + $discountFromPoints;
             $grandTotal = $buyNowData['subtotal'] + $shippingFee - $totalDiscount;
 

@@ -24,6 +24,8 @@
         }
         .status-pending_confirmation { background-color: #e0e7ff; color: #4338ca; }
         .status-processing { background-color: #cffafe; color: #0891b2; }
+        .status-awaiting_shipment_packed { background-color: #fef3c7; color: #d97706; }
+        .status-awaiting_shipment_assigned { background-color: #ddd6fe; color: #7c3aed; }
         .status-shipped { background-color: #d1fae5; color: #059669; }
         .status-delivered { background-color: #dcfce7; color: #16a34a; }
         .status-cancelled { background-color: #fee2e2; color: #dc2626; }
@@ -814,6 +816,8 @@
                             <option value="pending_confirmation">Chờ xác nhận</option>
                             <option value="processing">Đang xử lý</option>
                             <option value="awaiting_shipment" class="delivery-only">Chờ giao hàng</option>
+                            <option value="awaiting_shipment_packed" class="delivery-only">Chờ vận chuyển: đã đóng gói xong</option>
+                            <option value="awaiting_shipment_assigned" class="delivery-only">Chờ vận chuyển: Đã gán shipper</option>
                             <option value="shipped" class="delivery-only">Đã xuất kho</option>
                             <option value="out_for_delivery" class="delivery-only">Đang giao hàng</option>
                             <option value="delivered">Giao thành công</option>
@@ -880,6 +884,8 @@
             { status: 'pending_confirmation', label: 'Chờ xác nhận', icon: '<i class="fas fa-clipboard-check"></i>' },
             { status: 'processing', label: 'Đang xử lý', icon: '<i class="fas fa-cogs"></i>' },
             { status: 'awaiting_shipment', label: 'Chờ giao hàng', icon: '<i class="fas fa-box"></i>' },
+            { status: 'awaiting_shipment_packed', label: 'Đã đóng gói', icon: '<i class="fas fa-box-open"></i>' },
+            { status: 'awaiting_shipment_assigned', label: 'Đã gán shipper', icon: '<i class="fas fa-user-check"></i>' },
             { status: 'shipped', label: 'Đã xuất kho', icon: '<i class="fas fa-shipping-fast"></i>' },
             { status: 'out_for_delivery', label: 'Đang giao', icon: '<i class="fas fa-truck"></i>' },
             { status: 'delivered', label: 'Giao thành công', icon: '<i class="fas fa-check-circle"></i>' }
@@ -919,6 +925,10 @@
                 progressTitle = 'Đơn hàng đang được giao';
             } else if (currentStatus === 'shipped') {
                 progressTitle = 'Đơn hàng đã xuất kho';
+            } else if (currentStatus === 'awaiting_shipment_assigned') {
+                progressTitle = 'Đơn hàng đã gán shipper';
+            } else if (currentStatus === 'awaiting_shipment_packed') {
+                progressTitle = 'Đơn hàng đã đóng gói xong';
             } else if (currentStatus === 'awaiting_shipment') {
                 progressTitle = 'Đơn hàng đang chờ giao';
             }
@@ -1078,6 +1088,8 @@
         pending_confirmation: { text: "Chờ xác nhận", class: "status-pending_confirmation" },
         processing: { text: "Đang xử lý", class: "status-processing" },
         awaiting_shipment: { text: "Chờ giao hàng", class: "status-processing" },
+        awaiting_shipment_packed: { text: "Chờ vận chuyển: đã đóng gói xong", class: "status-awaiting_shipment_packed" },
+        awaiting_shipment_assigned: { text: "Chờ vận chuyển: Đã gán shipper", class: "status-awaiting_shipment_assigned" },
         shipped: { text: "Đã xuất kho", class: "status-shipped" },
         out_for_delivery: { text: "Đang giao hàng", class: "status-shipped" },
         delivered: { text: "Giao thành công", class: "status-delivered" },
@@ -1110,7 +1122,7 @@
         
         // Chỉ hiển thị nút gán shipper cho đơn hàng giao tận nơi (không phải nhận tại cửa hàng)
         let assignShipperButton = '';
-        if (order.status === 'awaiting_shipment' && 
+        if (order.status === 'awaiting_shipment_packed' && 
             isDeliveryOrderNeedShipper(order)) {
             assignShipperButton = `
                 <button onclick='showAssignShipperModal(${order.id}, "${order.order_code}")' 
@@ -1837,6 +1849,7 @@
 
         document.getElementById('update-order-code').textContent = orderCode;
         document.getElementById('new-status').value = currentStatus;
+        document.getElementById('new-status').setAttribute('data-current-status', currentStatus);
         document.getElementById('admin-note').value = '';
         document.getElementById('cancellation-reason').value = '';
         
@@ -1862,8 +1875,9 @@
 
     // Helper function để kiểm tra đơn hàng nhận tại cửa hàng dựa trên store_location_id
     function isPickupOrder(order) {
-        // Đơn hàng nhận tại cửa hàng sẽ có store_location_id
-        return order.store_location_id !== null && order.store_location_id !== undefined;
+        // Đơn hàng nhận tại cửa hàng sẽ có delivery_method = 'pickup'
+        // Không dựa vào store_location_id vì warehouser cũng có thể có store_location_id
+        return order.delivery_method === 'pickup';
     }
 
     // Helper function để kiểm tra đơn hàng giao tận nơi cần shipper
@@ -1916,6 +1930,7 @@
     // Kiểm tra form trước khi gửi
     function validateStatusForm() {
         const newStatus = document.getElementById('new-status').value;
+        const currentStatus = document.getElementById('new-status').getAttribute('data-current-status');
         const isPickup = updateStatusModal.dataset.isPickup === 'true';
         const hasShipper = updateStatusModal.dataset.hasShipper === 'true';
         
@@ -1924,9 +1939,21 @@
             return false;
         }
         
+        // Ngăn chuyển từ 'processing' sang trạng thái khác mà không qua trạm đóng gói
+        if (currentStatus === 'processing' && newStatus !== 'processing' && newStatus !== 'cancelled') {
+            showToast('Đơn hàng đang xử lý phải được xác nhận tại Trạm Đóng Gói trước khi chuyển sang trạng thái khác', 'error');
+            return false;
+        }
+        
         // Kiểm tra shipper cho đơn hàng giao tận nơi (không phải pickup)
         if (!isPickup && newStatus === 'shipped' && !hasShipper) {
             showToast('Vui lòng gán shipper trước khi chuyển sang trạng thái "Đã xuất kho"', 'error');
+            return false;
+        }
+        
+        // Kiểm tra logic chuyển trạng thái cho trường hợp cùng tỉnh
+        if (!isPickup && newStatus === 'awaiting_shipment_assigned' && !hasShipper) {
+            showToast('Vui lòng gán shipper trước khi chuyển sang trạng thái "Đã gán shipper"', 'error');
             return false;
         }
         
@@ -2052,8 +2079,8 @@
         assignShipperModal.classList.add('is-open');
         assignShipperModal.querySelector('div').classList.remove('scale-95');
         
-        // Tải danh sách shipper
-        await loadShippers();
+        // Tải danh sách shipper theo warehouse của đơn hàng
+        await loadShippers(orderId);
     }
 
     function closeAssignShipperModal() {
@@ -2062,7 +2089,7 @@
         currentAssignOrderId = null;
     }
 
-    async function loadShippers() {
+    async function loadShippers(orderId = null) {
         const shipperSelect = document.getElementById('shipper-select');
         const loadingDiv = document.getElementById('shipper-loading');
         
@@ -2071,13 +2098,21 @@
         shipperSelect.disabled = true;
         
         try {
-            // Dùng cache nếu có
-            if (shippersCache) {
+            // Tạo URL với order_id nếu có
+            let url = CONFIG.routes.getShippers;
+            if (orderId) {
+                url += `?order_id=${orderId}`;
+                // Reset cache khi có order_id để lấy shipper theo warehouse
+                shippersCache = null;
+            }
+            
+            // Dùng cache nếu có và không có order_id
+            if (shippersCache && !orderId) {
                 populateShipperSelect(shippersCache);
                 return;
             }
             
-            const response = await fetch(CONFIG.routes.getShippers, {
+            const response = await fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': CONFIG.csrfToken
@@ -2087,7 +2122,9 @@
             const result = await response.json();
             
             if (result.success) {
-                shippersCache = result.data; // Lưu kết quả vào cache
+                if (!orderId) {
+                    shippersCache = result.data; // Chỉ cache khi không có order_id
+                }
                 populateShipperSelect(result.data);
             } else {
                 showToast('Không thể tải danh sách shipper.', 'error', 'Lỗi tải dữ liệu');
@@ -2197,7 +2234,10 @@
             loadOrders();
         @endif
 
-
+        // Auto-refresh orders every 30 seconds to catch status updates from packing station
+        setInterval(() => {
+            loadOrders();
+        }, 30000);
     });
 
     </script>
