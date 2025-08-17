@@ -34,30 +34,25 @@ class AutoStockTransferService
             $destinationRegion = $destinationProvince->region ?? null;
 
             foreach ($order->items as $item) {
-                // Kiểm tra tồn kho tại các warehouse
-                $warehouseInventory = $this->findWarehouseWithStock(
-                    $item->product_variant_id, 
-                    $item->quantity, 
-                    $destinationRegion,
-                    $destinationProvince->code ?? null
-                );
+                // Kiểm tra xem tỉnh đích có warehouse không
+                $destinationWarehouse = $this->findDestinationWarehouse($destinationProvince->code ?? null);
                 
-                if (!$warehouseInventory) {
-                    // Tìm store có hàng để chuyển về warehouse
-                    $storeWithStock = $this->findStoreWithStock($item->product_variant_id, $item->quantity, $destinationRegion);
+                if ($destinationWarehouse) {
+                    // Nếu tỉnh đích có warehouse, kiểm tra warehouse đó có đủ hàng không
+                    $destinationInventory = $this->checkWarehouseStock(
+                        $item->product_variant_id, 
+                        $item->quantity, 
+                        $destinationWarehouse->id
+                    );
                     
-                    if ($storeWithStock) {
-                        // Tìm warehouse gần nhất để nhận hàng
-                        $targetWarehouse = $this->findNearestWarehouse(
-                            $storeWithStock['store_location_id'], 
-                            $destinationRegion,
-                            $destinationProvince->code ?? null
-                        );
+                    if (!$destinationInventory) {
+                        // Warehouse tỉnh đích không có hàng, tìm nguồn hàng để chuyển về
+                        $sourceWithStock = $this->findSourceWithStock($item->product_variant_id, $item->quantity, $destinationRegion, $destinationProvince->code);
                         
-                        if ($targetWarehouse) {
+                        if ($sourceWithStock) {
                             $transfer = $this->createStockTransfer(
-                                $storeWithStock['store_location_id'],
-                                $targetWarehouse->id,
+                                $sourceWithStock['store_location_id'],
+                                $destinationWarehouse->id,
                                 $item->product_variant_id,
                                 $item->quantity,
                                 "Chuyển hàng tự động cho đơn hàng #{$order->order_code}. Order:{$order->order_code}"
@@ -67,11 +62,54 @@ class AutoStockTransferService
                                 $transfersCreated[] = [
                                     'transfer_id' => $transfer->id,
                                     'transfer_code' => $transfer->transfer_code,
-                                    'from_store' => $storeWithStock['store_name'],
-                                    'to_warehouse' => $targetWarehouse->name,
+                                    'from_store' => $sourceWithStock['store_name'],
+                                    'to_warehouse' => $destinationWarehouse->name,
                                     'product_sku' => $item->sku,
                                     'quantity' => $item->quantity
                                 ];
+                            }
+                        }
+                    }
+                } else {
+                    // Tỉnh đích không có warehouse, kiểm tra warehouse khác có hàng không
+                    $warehouseInventory = $this->findWarehouseWithStock(
+                        $item->product_variant_id, 
+                        $item->quantity, 
+                        $destinationRegion,
+                        null // Không ưu tiên tỉnh đích vì không có warehouse
+                    );
+                    
+                    if (!$warehouseInventory) {
+                        // Không có warehouse nào có hàng, tìm store có hàng để chuyển về warehouse gần nhất
+                        $storeWithStock = $this->findStoreWithStock($item->product_variant_id, $item->quantity, $destinationRegion);
+                        
+                        if ($storeWithStock) {
+                            // Tìm warehouse gần nhất để nhận hàng
+                            $targetWarehouse = $this->findNearestWarehouse(
+                                $storeWithStock['store_location_id'], 
+                                $destinationRegion,
+                                null // Không có warehouse tỉnh đích
+                            );
+                            
+                            if ($targetWarehouse) {
+                                $transfer = $this->createStockTransfer(
+                                    $storeWithStock['store_location_id'],
+                                    $targetWarehouse->id,
+                                    $item->product_variant_id,
+                                    $item->quantity,
+                                    "Chuyển hàng tự động cho đơn hàng #{$order->order_code}. Order:{$order->order_code}"
+                                );
+                                
+                                if ($transfer) {
+                                    $transfersCreated[] = [
+                                        'transfer_id' => $transfer->id,
+                                        'transfer_code' => $transfer->transfer_code,
+                                        'from_store' => $storeWithStock['store_name'],
+                                        'to_warehouse' => $targetWarehouse->name,
+                                        'product_sku' => $item->sku,
+                                        'quantity' => $item->quantity
+                                    ];
+                                }
                             }
                         }
                     }
@@ -96,10 +134,58 @@ class AutoStockTransferService
     }
 
     /**
+     * Tìm warehouse tại tỉnh đích
+     */
+    private function findDestinationWarehouse($provinceCode)
+     {
+         if (!$provinceCode) {
+             return null;
+         }
+         
+         return StoreLocation::where('type', 'warehouse')
+             ->where('province_code', $provinceCode)
+             ->where('is_active', true)
+             ->first();
+     }
+    
+    /**
+     * Kiểm tra tồn kho tại warehouse cụ thể
+     */
+    private function checkWarehouseStock($productVariantId, $quantity, $warehouseId)
+    {
+        $inventory = ProductInventory::where('product_variant_id', $productVariantId)
+            ->where('store_location_id', $warehouseId)
+            ->where('inventory_type', 'new')
+            ->first();
+            
+        return $inventory && $inventory->quantity >= $quantity ? $inventory : null;
+    }
+    
+    /**
+      * Tìm nguồn hàng (warehouse hoặc store) có đủ tồn kho
+      */
+     private function findSourceWithStock($productVariantId, $quantity, $region = null, $excludeProvinceCode = null)
+     {
+         // Tìm warehouse có hàng (ưu tiên cùng vùng miền, loại trừ tỉnh đích)
+         $warehouseWithStock = $this->findWarehouseWithStock($productVariantId, $quantity, $region, null, $excludeProvinceCode);
+         
+         if ($warehouseWithStock) {
+             return [
+                 'store_location_id' => $warehouseWithStock['store_location_id'],
+                 'store_name' => $warehouseWithStock['store_name'],
+                 'quantity' => $warehouseWithStock['quantity']
+             ];
+         }
+         
+         // Nếu không có warehouse, tìm store có hàng
+         return $this->findStoreWithStock($productVariantId, $quantity, $region);
+     }
+    
+    /**
      * Tìm warehouse có đủ tồn kho
      * Ưu tiên: 1. Cùng tỉnh với khách hàng, 2. Cùng vùng miền, 3. Warehouse khác
      */
-    private function findWarehouseWithStock(int $productVariantId, int $quantity, ?string $destinationRegion, ?string $destinationProvinceCode = null): ?array
+    private function findWarehouseWithStock(int $productVariantId, int $quantity, ?string $destinationRegion, ?string $destinationProvinceCode = null, ?string $excludeProvinceCode = null): ?array
     {
         $query = ProductInventory::where('product_variant_id', $productVariantId)
             ->where('quantity', '>=', $quantity)
@@ -107,6 +193,11 @@ class AutoStockTransferService
             ->join('store_locations', 'product_inventories.store_location_id', '=', 'store_locations.id')
             ->where('store_locations.type', 'warehouse')
             ->where('store_locations.is_active', true);
+            
+        // Loại trừ tỉnh cụ thể nếu có
+         if ($excludeProvinceCode) {
+             $query->where('store_locations.province_code', '!=', $excludeProvinceCode);
+         }
 
         // Ưu tiên 1: Tìm warehouse cùng tỉnh với khách hàng
         if ($destinationProvinceCode) {
@@ -258,8 +349,7 @@ class AutoStockTransferService
      */
     public function canAutoProcessTransfer(StockTransfer $transfer): bool
     {
-        // Chỉ tự động xử lý nếu cả 2 địa điểm đều thuộc cùng hệ thống
-        // và có đủ điều kiện (ví dụ: cùng thành phố, có kết nối trực tiếp)
+        // Cho phép tự động xử lý tất cả phiếu chuyển kho hợp lệ
         $fromLocation = $transfer->fromLocation;
         $toLocation = $transfer->toLocation;
 
@@ -267,8 +357,8 @@ class AutoStockTransferService
             return false;
         }
 
-        // Kiểm tra khoảng cách (cùng tỉnh thành)
-        return $fromLocation->province_code === $toLocation->province_code;
+        // Chỉ cần kiểm tra tồn tại của cả 2 địa điểm
+        return true;
     }
 
     /**

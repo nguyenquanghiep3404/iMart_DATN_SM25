@@ -73,7 +73,32 @@ class AutoStockTransferController extends Controller
     }
 
     /**
-     * Xem chi tiết phiếu chuyển kho tự động
+     * Hiển thị trang chi tiết phiếu chuyển kho tự động
+     */
+    public function detail(string $id)
+    {
+        try {
+            $transfer = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+                ->with([
+                    'fromLocation',
+                    'toLocation',
+                    'items.productVariant.product',
+                    'items.serials.inventorySerial',
+                    'createdBy'
+                ])
+                ->findOrFail($id);
+
+            return view('admin.auto-stock-transfers.detail', compact('transfer'));
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy chi tiết phiếu chuyển kho: ' . $e->getMessage());
+            return redirect()->route('admin.auto-stock-transfers.manage')
+                ->with('error', 'Không tìm thấy phiếu chuyển kho');
+        }
+    }
+
+    /**
+     * Xem chi tiết phiếu chuyển kho tự động (API)
      */
     public function show(string $id): JsonResponse
     {
@@ -83,6 +108,7 @@ class AutoStockTransferController extends Controller
                     'fromLocation',
                     'toLocation',
                     'items.productVariant.product',
+                    'items.serials.inventorySerial',
                     'createdBy'
                 ])
                 ->findOrFail($id);
@@ -125,7 +151,7 @@ class AutoStockTransferController extends Controller
             if (!$workflowService->canAutoProcess($transfer)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Phiếu chuyển kho này không thể tự động xử lý (khác tỉnh thành)'
+                    'message' => 'Phiếu chuyển kho này không thể tự động xử lý (thiếu thông tin kho)'
                 ], 400);
             }
             
@@ -243,6 +269,46 @@ class AutoStockTransferController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Lỗi khi hủy phiếu chuyển kho'
+            ], 500);
+        }
+    }
+
+    /**
+     * Nhận hàng ngay lập tức (chỉ khi ở trạng thái in_transit)
+     */
+    public function receive(string $id): JsonResponse
+    {
+        try {
+            $transfer = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+                ->findOrFail($id);
+
+            if ($transfer->status !== 'in_transit') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Chỉ có thể nhận hàng khi phiếu đang ở trạng thái vận chuyển'
+                ], 400);
+            }
+
+            // Sử dụng StockTransferWorkflowService để nhận hàng
+            $workflowService = new StockTransferWorkflowService();
+            $result = $workflowService->receiveTransfer($transfer);
+
+            if (!$result['success']) {
+                return response()->json($result, 400);
+            }
+
+            Log::info("Đã nhận hàng ngay lập tức cho phiếu chuyển kho: {$transfer->transfer_code}");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã xác nhận nhận hàng thành công'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi nhận hàng: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi xác nhận nhận hàng'
             ], 500);
         }
     }

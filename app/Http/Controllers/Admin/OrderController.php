@@ -238,15 +238,25 @@ class OrderController extends Controller
         }
     }
 
-    public function getShippers()
+    public function getShippers(Request $request)
     {
         try {
-            $shippers = User::whereHas('roles', function ($query) {
+            $query = User::whereHas('roles', function ($query) {
                 $query->where('name', 'shipper');
             })->select('id', 'name', 'email', 'phone_number')
-                ->where('status', 'active')
-                ->orderBy('name')
-                ->get();
+                ->where('status', 'active');
+
+            // Nếu có order_id, lọc shipper theo warehouse của đơn hàng
+            if ($request->filled('order_id')) {
+                $order = Order::find($request->order_id);
+                if ($order && $order->store_location_id) {
+                    $query->whereHas('warehouseAssignments', function ($q) use ($order) {
+                        $q->where('store_location_id', $order->store_location_id);
+                    });
+                }
+            }
+
+            $shippers = $query->orderBy('name')->get();
 
             return response()->json([
                 'success' => true,
@@ -255,7 +265,8 @@ class OrderController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error fetching shippers:', [
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id()
+                'user_id' => auth()->id(),
+                'order_id' => $request->order_id ?? null
             ]);
 
             return response()->json([
@@ -286,17 +297,32 @@ class OrderController extends Controller
             }
 
             // Kiểm tra trạng thái đơn hàng có thể gán shipper không
-            if ($order->status !== Order::STATUS_AWAITING_SHIPMENT) {
+            if ($order->status !== Order::STATUS_AWAITING_SHIPMENT_PACKED) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Chỉ có thể gán shipper cho đơn hàng đang ở trạng thái "Chờ giao hàng".',
+                    'message' => 'Chỉ có thể gán shipper cho đơn hàng đang ở trạng thái "Chờ vận chuyển: đã đóng gói xong".',
+                ], 422);
+            }
+            
+            // Kiểm tra điều kiện fulfillment trước khi gán shipper
+            $fulfillmentCheckService = new \App\Services\OrderFulfillmentCheckService();
+            $fulfillmentCheck = $fulfillmentCheckService->canAssignShipper($order);
+            
+            if (!$fulfillmentCheck['can_assign']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $fulfillmentCheck['reason'],
+                    'requires_transfer' => $fulfillmentCheck['requires_transfer'],
+                    'transfer_info' => $fulfillmentCheck['transfer_info'] ?? null,
+                    'estimated_arrival' => $fulfillmentCheck['estimated_arrival'] ?? null
                 ], 422);
             }
 
-            // Cập nhật shipper cho đơn hàng
+            // Cập nhật shipper cho đơn hàng và chuyển trạng thái
             $order->update([
                 'shipped_by' => $request->shipper_id,
-                'processed_by' => auth()->id()
+                'processed_by' => auth()->id(),
+                'status' => Order::STATUS_AWAITING_SHIPMENT_ASSIGNED
             ]);
 
             // Load lại dữ liệu để trả về

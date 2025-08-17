@@ -610,6 +610,16 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
+       
+        $alreadyInCart = 0;
+        // Giả sử session('cart') là mảng các item: ['product_variant_id' => 1, 'quantity' => 2, ...]
+        if (session()->has('cart')) {
+            $variantId = $productVariant->id ?? $product->id; // lấy id biến thể hiện tại
+            $alreadyInCart = collect(session('cart'))
+                ->where('product_variant_id', $variantId) // chỉ lấy item cùng biến thể
+                ->sum('quantity');
+        }
+
         $productBundles = ProductBundle::with([
             'mainProducts.productVariant.product.coverImage',
             'suggestedProducts.productVariant.product.coverImage'
@@ -876,7 +886,9 @@ class HomeController extends Controller
             'storeLocations',
             'provinces',
             'districts',
-            'hasWarehouseInventory'
+            'hasWarehouseInventory',
+            'alreadyInCart'
+
         ));
     }
 
@@ -1712,6 +1724,28 @@ class HomeController extends Controller
         } catch (\Exception $e) {
             \Log::error('Lỗi khi lấy sản phẩm kèm theo: ' . $e->getMessage());
             return response()->json(['error' => 'Lỗi server'], 500);
+        }
+    }
+
+    public function getVariantStock($variantId)
+    {
+        try {
+            // Tính tồn kho khả dụng = SUM(quantity - quantity_committed)
+            $availableStock = \DB::table('product_inventories')
+                ->where('product_variant_id', $variantId)
+                ->where('inventory_type', 'new')
+                ->selectRaw('COALESCE(SUM(quantity - quantity_committed), 0) as available_stock')
+                ->value('available_stock');
+
+            \Log::info("Variant {$variantId} có tồn kho khả dụng: {$availableStock}");
+
+            return response()->json([
+                'product_variant_id' => $variantId,
+                'available_stock' => $availableStock
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in getVariantStock: ' . $e->getMessage());
+            return response()->json(['error' => 'Internal Server Error'], 500);
         }
     }
 }

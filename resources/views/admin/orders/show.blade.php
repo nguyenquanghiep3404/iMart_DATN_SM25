@@ -48,6 +48,16 @@
         color: #16a34a;
     }
 
+    .status-awaiting_shipment_packed {
+        background-color: #fef3c7;
+        color: #d97706;
+    }
+
+    .status-awaiting_shipment_assigned {
+        background-color: #ddd6fe;
+        color: #7c3aed;
+    }
+
     .status-cancelled {
         background-color: #fee2e2;
         color: #dc2626;
@@ -402,6 +412,14 @@
             text: "Chờ giao hàng",
             class: "status-processing"
         },
+        awaiting_shipment_packed: {
+            text: "Chờ vận chuyển: đã đóng gói xong",
+            class: "status-awaiting_shipment_packed"
+        },
+        awaiting_shipment_assigned: {
+            text: "Chờ vận chuyển: Đã gán shipper",
+            class: "status-awaiting_shipment_assigned"
+        },
         shipped: {
             text: "Đã xuất kho",
             class: "status-shipped"
@@ -468,9 +486,9 @@
             shipperDisplay = `<span class="text-gray-700 font-medium">${order.shipper.name}</span>`;
         }
 
-        // Show assign shipper button only for "awaiting_shipment" status
+        // Show assign shipper button only for "awaiting_shipment_packed" status
         let assignShipperButton = '';
-        if (order.status === 'awaiting_shipment') {
+        if (order.status === 'awaiting_shipment_packed') {
             assignShipperButton = `
                 <button onclick='showAssignShipperModal(${order.id}, "${order.order_code}")' 
                         class="text-blue-600 hover:text-blue-900 font-medium text-lg ml-4" 
@@ -944,6 +962,7 @@
 
         document.getElementById('update-order-code').textContent = orderCode;
         document.getElementById('new-status').value = currentStatus;
+        document.getElementById('new-status').setAttribute('data-current-status', currentStatus);
         document.getElementById('admin-note').value = '';
         document.getElementById('cancellation-reason').value = '';
 
@@ -976,9 +995,16 @@
     // Validate form before submit
     function validateStatusForm() {
         const newStatus = document.getElementById('new-status').value;
+        const currentStatus = document.getElementById('new-status').getAttribute('data-current-status');
 
         if (!newStatus) {
             showToast('Vui lòng chọn trạng thái mới cho đơn hàng.', 'warning', 'Thiếu thông tin');
+            return false;
+        }
+        
+        // Ngăn chuyển từ 'processing' sang trạng thái khác mà không qua trạm đóng gói
+        if (currentStatus === 'processing' && newStatus !== 'processing' && newStatus !== 'cancelled') {
+            showToast('Đơn hàng đang xử lý phải được xác nhận tại Trạm Đóng Gói trước khi chuyển sang trạng thái khác', 'error');
             return false;
         }
 
@@ -1099,8 +1125,8 @@
         assignShipperModal.classList.add('is-open');
         assignShipperModal.querySelector('div').classList.remove('scale-95');
 
-        // Load shippers
-        await loadShippers();
+        // Load shippers theo warehouse của đơn hàng
+        await loadShippers(orderId);
     }
 
     function closeAssignShipperModal() {
@@ -1109,7 +1135,7 @@
         currentAssignOrderId = null;
     }
 
-    async function loadShippers() {
+    async function loadShippers(orderId = null) {
         const shipperSelect = document.getElementById('shipper-select');
         const loadingDiv = document.getElementById('shipper-loading');
 
@@ -1118,13 +1144,21 @@
         shipperSelect.disabled = true;
 
         try {
-            // Use cache if available
-            if (shippersCache) {
+            // Tạo URL với order_id nếu có
+            let url = CONFIG.routes.getShippers;
+            if (orderId) {
+                url += `?order_id=${orderId}`;
+                // Reset cache khi có order_id để lấy shipper theo warehouse
+                shippersCache = null;
+            }
+            
+            // Use cache if available và không có order_id
+            if (shippersCache && !orderId) {
                 populateShipperSelect(shippersCache);
                 return;
             }
 
-            const response = await fetch(CONFIG.routes.getShippers, {
+            const response = await fetch(url, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': CONFIG.csrfToken
@@ -1134,7 +1168,9 @@
             const result = await response.json();
 
             if (result.success) {
-                shippersCache = result.data; // Cache the result
+                if (!orderId) {
+                    shippersCache = result.data; // Chỉ cache khi không có order_id
+                }
                 populateShipperSelect(result.data);
             } else {
                 showToast('Không thể tải danh sách shipper.', 'error', 'Lỗi tải dữ liệu');
@@ -1238,6 +1274,11 @@
         @else
         loadOrders();
         @endif
+        
+        // Auto-refresh orders every 30 seconds to catch status updates from packing station
+        setInterval(() => {
+            loadOrders();
+        }, 30000);
     });
 </script>
 @endsection
