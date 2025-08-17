@@ -24,7 +24,7 @@ class ReviewController extends Controller
         $user = Auth::user();
 
         // Lấy tất cả review của user, key theo product_variant_id để tra cứu nhanh
-        $userReviews = Review::where('user_id','orderItem.order', $user->id)
+        $userReviews = Review::where('user_id', $user->id)
             ->get()
             ->keyBy('product_variant_id');
 
@@ -37,7 +37,7 @@ class ReviewController extends Controller
             ->flatten()
             ->filter(fn($item) => $item->variant && $item->variant->product) // loại bỏ item lỗi
             ->unique('product_variant_id')
-            ->values(); // reset chỉ số
+            ->values();
 
         // Chuyển thành collection có thông tin cần thiết cho view
         $itemsForReview = $orderItems->map(function ($item) use ($userReviews) {
@@ -54,6 +54,7 @@ class ReviewController extends Controller
 
         return view('users.profile.reviews', compact('itemsForReview'));
     }
+
 
 
     /**
@@ -82,14 +83,17 @@ class ReviewController extends Controller
         $userId = Auth::id();
 
         // Kiểm tra đã đánh giá chưa
-        if (Review::where('user_id', $userId)
-            ->where('product_variant_id', $data['product_variant_id'])->exists()
+        if (
+            !empty($data['order_item_id']) && Review::where('user_id', $userId)
+            ->where('order_item_id', $data['order_item_id'])
+            ->exists()
         ) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn đã đánh giá phiên bản sản phẩm này rồi.'
+                'message' => 'Bạn đã đánh giá cho lần mua này rồi.'
             ], 409);
         }
+
 
         // Kiểm tra đã mua chưa
         $hasOrdered = DB::table('order_items')

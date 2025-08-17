@@ -1061,35 +1061,49 @@ function initReviewModal() {
 
     // ⭐ Render stars
     starsContainer.innerHTML = '';
-    for (let i = 1; i <= 5; i++) {
-        const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        star.setAttribute('class', 'guest-review-star w-8 h-8 text-gray-300 cursor-pointer transition-colors');
-        star.setAttribute('fill', 'currentColor');
-        star.setAttribute('viewBox', '0 0 20 20');
-        star.dataset.rating = i;
-        star.innerHTML = `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
-        starsContainer.appendChild(star);
-    }
+for (let i = 1; i <= 5; i++) {
+    const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    star.setAttribute('class', 'review-star w-8 h-8 text-gray-300 cursor-pointer transition-colors');
+    star.setAttribute('fill', 'currentColor');
+    star.setAttribute('viewBox', '0 0 20 20');
+    star.dataset.rating = i;
+    star.innerHTML = `
+        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0
+        l1.07 3.292a1 1 0 00.95.69h3.462
+        c.969 0 1.371 1.24.588 1.81l-2.8 2.034
+        a1 1 0 00-.364 1.118l1.07 3.292
+        c.3.921-.755 1.688-1.54 1.118l-2.8-2.034
+        a1 1 0 00-1.175 0l-2.8 2.034
+        c-.784.57-1.838-.197-1.539-1.118
+        l1.07-3.292a1 1 0 00-.364-1.118
+        L2.98 8.72c-.783-.57-.38-1.81.588-1.81
+        h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
+    starsContainer.appendChild(star);
+}
 
-    const stars = starsContainer.querySelectorAll('.guest-review-star');
-    stars.forEach(star => {
-        star.addEventListener('mouseover', () => {
-            stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star.dataset.rating));
-        });
-        star.addEventListener('mouseout', () => {
-            stars.forEach(s => {
-                s.classList.remove('text-yellow-400');
-                s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
-            });
-        });
-        star.addEventListener('click', () => {
-            selectedRating = parseInt(star.dataset.rating);
-            stars.forEach(s => {
-                s.classList.remove('text-yellow-400', 'text-gray-300');
-                s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
-            });
+const stars = starsContainer.querySelectorAll('.review-star');
+stars.forEach(star => {
+    star.addEventListener('mouseover', () => {
+        stars.forEach(s => {
+            s.classList.toggle('text-yellow-400', s.dataset.rating <= star.dataset.rating);
+            s.classList.toggle('text-gray-300', s.dataset.rating > star.dataset.rating);
         });
     });
+    star.addEventListener('mouseout', () => {
+        stars.forEach(s => {
+            s.classList.toggle('text-yellow-400', s.dataset.rating <= selectedRating);
+            s.classList.toggle('text-gray-300', s.dataset.rating > selectedRating);
+        });
+    });
+    star.addEventListener('click', () => {
+        selectedRating = parseInt(star.dataset.rating);
+        stars.forEach(s => {
+            s.classList.toggle('text-yellow-400', s.dataset.rating <= selectedRating);
+            s.classList.toggle('text-gray-300', s.dataset.rating > selectedRating);
+        });
+    });
+});
+
 
     function showModal() {
         modal.classList.remove('hidden');

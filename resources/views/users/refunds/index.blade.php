@@ -45,33 +45,33 @@
                 </div>
             </div>
 
-            @php
-            $firstItem = $refund->returnItems->first();
-            $variant = $firstItem?->orderItem?->variant;
-            $product = $variant?->product;
-            $image = $product?->coverImage?->url ?? 'https://placehold.co/80x80/e2e8f0/e2e8f0?text=Sản+phẩm';
-            @endphp
-
-            <div class="p-4 flex items-center space-x-4">
-                <img src="{{ $image }}" alt="Product Image" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
-                <div class="flex-1">
+            <div class="refund-card">
+                <div class="p-4 flex items-center space-x-4">
                     @php
-                    $items = $refund->returnItems ?? collect();
-                    $firstItem = $items->first();
-                    $firstProduct = optional($firstItem?->orderItem?->variant?->product);
-                    $otherCount = $items->count() - 1;
+                    $firstItem = $refund->returnItems->first();
+                    $variant = $firstItem?->orderItem?->variant;
+                    $product = $variant?->product;
+                    $cover = $variant?->coverImage; // ✅ lấy cover image từ variant
+                    $imageUrl = $cover ? $cover->url : 'https://placehold.co/80x80';
                     @endphp
 
-                    <p class="font-semibold text-gray-800">
-                        {{ $firstProduct->name ?? '---' }}{{ $otherCount > 0 ? " và $otherCount sản phẩm khác" : '' }}
-                    </p>
+                  <img src="{{ $variant?->image_url }}" alt="{{ $product?->name }}" class="w-24 h-24 rounded-md">
 
-                    <p class="text-sm text-gray-500">
-                        Số tiền hoàn lại:
-                        <span class="font-medium text-green-600">
-                            {{ number_format($refund->refund_amount, 0, ',', '.') }} VNĐ
-                        </span>
-                    </p>
+
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800">
+                            {{ $product?->name ?? '---' }}
+                            @if($refund->returnItems->count() > 1)
+                            và {{ $refund->returnItems->count() - 1 }} sản phẩm khác
+                            @endif
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            Số tiền hoàn lại:
+                            <span class="font-medium text-green-600">
+                                {{ number_format($refund->refund_amount, 0, ',', '.') }} VNĐ
+                            </span>
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -83,9 +83,9 @@
             </div>
         </div>
         @empty
-        <div class="text-center py-16">
-            <img src="https://i.imgur.com/3a83g2R.png" alt="Empty Box" class="mx-auto h-40">
-            <p class="mt-4 text-gray-600">Bạn chưa có yêu cầu trả hàng nào.</p>
+        <div class="empty-orders-container">
+            <img src="https://fptshop.com.vn/img/empty_state.png?w=640&q=75" alt="Không có đơn hàng">
+            <p>Bạn chưa có đơn hàng nào.</p>
         </div>
         @endforelse
 
@@ -172,6 +172,28 @@
     .status-cancelled {
         background-color: #f3f4f6;
         color: #6b7280;
+    }
+
+    .empty-orders-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 60px 20px;
+        background-color: #f9fafb;
+        border-radius: 8px;
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .empty-orders-container img {
+        width: 250px;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-orders-container p {
+        font-size: 1.1rem;
+        color: #6c757d;
     }
 </style>
 

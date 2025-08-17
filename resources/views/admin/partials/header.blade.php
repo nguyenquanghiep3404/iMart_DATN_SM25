@@ -181,7 +181,7 @@
                             <a href="#" class="px-3 py-2 w-full block hover:bg-gray-100 dark:hover:bg-slate-600 rounded-md hover:text-indigo-600 dark:hover:text-indigo-400">Cài đặt tài khoản</a>
                         </li>
                         <li>
-                            <form method="POST" action="#">
+                            <form action="{{ route('logout') }}" method="POST" class="w-full">
                                 @csrf
                                 <button type="submit" class="text-left px-3 py-2 w-full block hover:bg-red-100 dark:hover:bg-red-500/20 rounded-md hover:text-red-600 dark:hover:text-red-500">
                                     Đăng xuất

@@ -652,7 +652,7 @@
         const nameEl = modal.querySelector('.product-name'); // thêm class này vào thẻ tên
         const skuEl = modal.querySelector('.product-sku'); // thêm class này vào thẻ sku
         const priceEl = modal.querySelector('.product-price'); // thêm class này vào thẻ giá
-        const imageEl = modal.querySelector('.product-image'); // thêm class này vào thẻ <img>
+        const imageEl = modal.querySelector('.product-image');
         openBtns.forEach(button => {
             button.addEventListener('click', () => {
                 // Lấy dữ liệu từ data attribute

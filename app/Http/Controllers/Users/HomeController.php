@@ -1437,6 +1437,7 @@ class HomeController extends Controller
             'categories' => $categories,
             'parentCategories' => $parentCategories,
             'currentCategory' => null, // vì không phải xem theo danh mục
+            'currentSort' => 'moi_nhat',
         ]);
     }
 

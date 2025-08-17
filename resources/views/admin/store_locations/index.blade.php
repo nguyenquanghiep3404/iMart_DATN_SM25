@@ -241,14 +241,14 @@
                                         điểm*</label>
                                     <input type="text" id="name" name="name" x-model="formData.name"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        required>
+                                        >
                                 </div>
                                 <div>
                                     <label for="phone" class="block text-sm font-medium text-gray-700">Số điện
                                         thoại*</label>
                                     <input type="text" id="phone" name="phone" x-model="formData.phone"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        required>
+                                        >
                                 </div>
                                 <div>
                                     <label for="province_code_display"
@@ -256,7 +256,7 @@
                                     <select id="province_code_display" x-model="formData.province_code"
                                         @change="updateDistricts()"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        required>
+                                        >
                                         <option value="">Chọn Tỉnh/Thành phố</option>
                                         <template x-for="province in provinces" :key="province.code">
                                             <option :value="province.code" x-text="province.name"></option>
@@ -269,7 +269,7 @@
                                     <select id="district_code_display" x-model="formData.district_code"
                                         @change="updateWards()"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        :disabled="!formData.province_code" required>
+                                        :disabled="!formData.province_code" >
                                         <option value="">Chọn Quận/Huyện</option>
                                         <template x-for="district in districts" :key="district.code">
                                             <option :value="district.code" x-text="district.name"></option>
@@ -281,7 +281,7 @@
                                         địa điểm*</label>
                                     <select id="type_display" x-model="formData.type"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        required>
+                                        >
                                         <option value="store">Cửa hàng</option>
                                         <option value="warehouse">Kho</option>
                                         <option value="service_center">Trung tâm bảo hành</option>
@@ -292,7 +292,7 @@
                                         class="block text-sm font-medium text-gray-700">Phường/Xã*</label>
                                     <select id="ward_code_display" x-model="formData.ward_code"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        :disabled="!formData.district_code" required>
+                                        :disabled="!formData.district_code" >
                                         <option value="">Chọn Phường/Xã</option>
                                         <template x-for="ward in wards" :key="ward.code">
                                             <option :value="ward.code" x-text="ward.name"></option>
@@ -304,7 +304,7 @@
                                         (số nhà, đường)*</label>
                                     <input type="text" id="address" name="address" x-model="formData.address"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        placeholder="Ví dụ: 123 Lê Lợi" required>
+                                        placeholder="Ví dụ: 123 Lê Lợi" >
                                 </div>
                                 <div class="sm:col-span-2 flex items-center">
                                     <label for="is_active_display" class="relative inline-block w-11 h-6 cursor-pointer">

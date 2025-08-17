@@ -62,7 +62,6 @@ class ReturnRequest extends Model
         };
     }
 
-
     public function order()
     {
         return $this->belongsTo(Order::class);
@@ -102,13 +101,6 @@ class ReturnRequest extends Model
     }
     public function variant()
     {
-        return $this->hasOneThrough(
-            ProductVariant::class,
-            OrderItem::class,
-            'id',            // foreign key on OrderItem
-            'id',            // foreign key on ProductVariant
-            'order_item_id', // local key on ReturnItem
-            'variant_id'     // local key on OrderItem
-        );
+        return $this->belongsTo(ProductVariant::class, 'variant_id');
     }
 }

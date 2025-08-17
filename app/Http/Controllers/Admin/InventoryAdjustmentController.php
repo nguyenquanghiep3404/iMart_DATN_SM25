@@ -76,7 +76,7 @@ public function adjustStock(Request $request, $id)
 
     // Cập nhật tồn kho mới
     $inventory->quantity = $newQty;
-    $inventory->inventory_type = 'manual_adjustment'; // nếu muốn tracking loại cập nhật
+    $inventory->inventory_type = 'new'; // nếu muốn tracking loại cập nhật
     $inventory->save();
 
     // Ghi log điều chỉnh
