@@ -27,6 +27,6 @@ class HomepageProductBlock extends Model
         )
         ->withPivot('order')
         ->withTimestamps()
-        ->orderBy('pivot_order');
+       ->orderBy('homepage_block_product.order');
     }
 }
