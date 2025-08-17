@@ -1225,21 +1225,21 @@
         </section>
     @endif
 
-   @foreach ($blocks as $block)
-    <section class="container px-4 pt-4 mt-2 mt-sm-3 mt-lg-4 position-relative">
-        <div class="d-flex justify-content-center mb-4">
-            <h1 class="h1 pb-2 d-inline-block text-center">
-                <i class="fab fa-apple fa-lg me-2"></i>
-                {{ $block->title }}
-            </h1>
-        </div>
+    @foreach ($blocks as $block)
+        <section class="container px-4 pt-4 mt-2 mt-sm-3 mt-lg-4 position-relative">
+            <div class="d-flex justify-content-center mb-4">
+                <h1 class="h1 pb-2 d-inline-block text-center">
+                    <i class="fab fa-apple fa-lg me-2"></i>
+                    {{ $block->title }}
+                </h1>
+            </div>
 
-        <div class="product-prev product-prev-{{ $block->id }} swiper-button-prev"></div>
-        <div class="product-next product-next-{{ $block->id }} swiper-button-next"></div>
+            <div class="product-prev product-prev-{{ $block->id }} swiper-button-prev"></div>
+            <div class="product-next product-next-{{ $block->id }} swiper-button-next"></div>
 
-        <div class="position-relative">
-            <div class="swiper product-slider"
-                data-swiper='{
+            <div class="position-relative">
+                <div class="swiper product-slider"
+                    data-swiper='{
                     "slidesPerView": 2,
                     "spaceBetween": 16,
                     "loop": false,
@@ -1253,138 +1253,144 @@
                         "992": { "slidesPerView": 5 } 
                     }
                 }'>
-                <div class="swiper-wrapper">
-                    @forelse ($block->productVariants as $variant)
-                        @php
-                            $product = $variant->product;
-                            // Sử dụng ảnh chính của biến thể, nếu không có thì dùng ảnh cover của sản phẩm
-                            $imageToShow = $variant->primaryImage ?? $product->coverImage;
-                            $mainImage = $imageToShow
-                                ? Storage::url($imageToShow->path)
-                                : asset('images/placeholder.jpg');
-                            $isOnSale = $variant && $variant->sale_price && $variant->price > 0;
-                            $discountPercent = $isOnSale
-                                ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                                : 0;
-                            // Lấy thuộc tính Dung lượng
-                            $capacityAttr = $variant->attributeValues->firstWhere('attribute.name', 'Dung lượng');
-                            $capacityValue = $capacityAttr ? $capacityAttr->value : '';
-                        @endphp
-                        <div class="swiper-slide p-2 h-100">
-                            <div class="product-card bg-body rounded-7 border-0 h-100 py-4 position-relative">
-                                @if ($isOnSale && $discountPercent > 0)
-                                    <div class="discount-badge">Giảm {{ $discountPercent }}%</div>
-                                @endif
+                    <div class="swiper-wrapper">
+                        @forelse ($block->productVariants as $variant)
+                            @php
+                                $product = $variant->product;
+                                // Sử dụng ảnh chính của biến thể, nếu không có thì dùng ảnh cover của sản phẩm
+                                $imageToShow = $variant->primaryImage ?? $product->coverImage;
+                                $mainImage = $imageToShow
+                                    ? Storage::url($imageToShow->path)
+                                    : asset('images/placeholder.jpg');
+                                $isOnSale = $variant && $variant->sale_price && $variant->price > 0;
+                                $discountPercent = $isOnSale
+                                    ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                                    : 0;
+                                // Lấy thuộc tính Dung lượng
+                                $capacityAttr = $variant->attributeValues->firstWhere('attribute.name', 'Dung lượng');
+                                $capacityValue = $capacityAttr ? $capacityAttr->value : '';
+                            @endphp
+                            <div class="swiper-slide p-2 h-100">
+                                <div class="product-card bg-body rounded-7 border-0 h-100 py-4 position-relative">
+                                    @if ($isOnSale && $discountPercent > 0)
+                                        <div class="discount-badge">Giảm {{ $discountPercent }}%</div>
+                                    @endif
 
-                                {{-- Ảnh sản phẩm --}}
-                                <div class="position-relative">
-                                    <a href="{{ route('users.products.show', $variant->slug) }}">
-                                        <div class="ratio" style="--cz-aspect-ratio: calc(200 / 180 * 100%)">
-                                            <img src="{{ $mainImage }}"
-                                                 alt="{{ $product->name }} {{ $capacityValue }}"
-                                                 class="img-fluid rounded-3 shadow-sm"
-                                                 style="object-fit:contain; width:100%; height:100%;">
-                                        </div>
-                                    </a>
-                                </div>
-
-                                {{-- Thông tin sản phẩm --}}
-                                <div class="px-2 pb-3 pt-2 text-center">
-                                    <h3 class="fs-6 fw-bold text-truncate">
-                                        <a href="{{ route('users.products.show', $variant->slug) }}"
-                                           class="text-dark text-decoration-none">
-                                            {{ $product->name }} {{ $capacityValue }}
+                                    {{-- Ảnh sản phẩm --}}
+                                    <div class="position-relative">
+                                        <a href="{{ route('users.products.show', $variant->slug) }}">
+                                            <div class="ratio" style="--cz-aspect-ratio: calc(200 / 180 * 100%)">
+                                                <img src="{{ $mainImage }}"
+                                                    alt="{{ $product->name }} {{ $capacityValue }}"
+                                                    class="img-fluid rounded-3 shadow-sm"
+                                                    style="object-fit:contain; width:100%; height:100%;">
+                                            </div>
                                         </a>
-                                    </h3>
-                                    <div class="text-primary fw-bold">
-                                        @if ($isOnSale)
-                                            {{ number_format($variant->sale_price) }}đ
-                                            <del class="text-muted ms-1">{{ number_format($variant->price) }}đ</del>
-                                        @else
-                                            {{ number_format($variant->price) }}đ
-                                        @endif
+                                    </div>
+
+                                    {{-- Thông tin sản phẩm --}}
+                                    <div class="px-2 pb-3 pt-2 text-center">
+                                        <h3 class="fs-6 fw-bold text-truncate">
+                                            <a href="{{ route('users.products.show', $variant->slug) }}"
+                                                class="text-dark text-decoration-none">
+                                                {{ $product->name }} {{ $capacityValue }}
+                                            </a>
+                                        </h3>
+                                        <div class="text-primary fw-bold">
+                                            @if ($isOnSale)
+                                                {{ number_format($variant->sale_price) }}đ
+                                                <del class="text-muted ms-1">{{ number_format($variant->price) }}đ</del>
+                                            @else
+                                                {{ number_format($variant->price) }}đ
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="swiper-slide">
-                            <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
-                        </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-    </section>
-@endforeach
-
-    <!-- Subscription form + Featured Blog Posts -->
-    <section class="bg-body-tertiary py-5">
-        <div class="container px-4 pt-sm-2 pt-md-3 pt-lg-4 pt-xl-5">
-            <div class="row">
-                <!-- Đăng ký nhận bản tin -->
-                <div class="col-md-6 col-lg-5 mb-5 mb-md-0">
-                    <h2 class="h4 mb-2">Đăng ký nhận bản tin của chúng tôi</h2>
-                    <p class="text-body pb-2 pb-ms-3">
-                        Nhận thông tin cập nhật mới nhất về sản phẩm và chương trình khuyến mãi của chúng tôi
-                    </p>
-                    <form class="d-flex needs-validation pb-1 pb-sm-2 pb-md-3 pb-lg-0 mb-4 mb-lg-5" novalidate>
-                        <div class="position-relative w-100 me-2">
-                            <input type="email" class="form-control form-control-lg"
-                                placeholder="Nhập địa chỉ email của bạn" required>
-                        </div>
-                        <button type="submit" class="btn btn-lg btn-primary">Đăng ký</button>
-                    </form>
-                    <div class="d-flex gap-3">
-                        <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Instagram">
-                            <i class="ci-instagram fs-base"></i>
-                        </a>
-                        <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Facebook">
-                            <i class="ci-facebook fs-base"></i>
-                        </a>
-                        <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="YouTube">
-                            <i class="ci-youtube fs-base"></i>
-                        </a>
-                        <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Telegram">
-                            <i class="ci-telegram fs-base"></i>
-                        </a>
-                    </div>
-                </div>
-
-
-                <!-- Bài viết nổi bật -->
-                <div class="col-md-6 col-lg-5 col-xl-4 offset-lg-1 offset-xl-2">
-                    <h2 class="h5 mb-4">📰 Bài viết nổi bật</h2>
-                    <ul class="list-unstyled d-flex flex-column gap-4 ps-md-4 ps-lg-0 mb-3">
-                        @foreach ($featuredPosts as $post)
-                            <li class="nav flex-nowrap align-items-center position-relative">
-                                <img src="{{ $post->coverImage ? asset('storage/' . $post->coverImage->path) : asset('assets/users/img/default-thumbnail.jpg') }}"
-                                    class="rounded" width="140" height="90" style="object-fit: cover;"
-                                    alt="{{ $post->title }}">
-                                <div class="ps-3">
-                                    <div class="fs-xs text-body-secondary lh-sm mb-2">
-                                        {{ $post->published_at ? $post->published_at->format('H:i d/m/Y') : 'Chưa đăng' }}
-                                    </div>
-                                    <a class="nav-link fs-sm hover-effect-underline stretched-link p-0"
-                                        href="{{ route('users.blogs.show', $post->slug) }}">
-                                        {{ Str::limit($post->title, 60) }}
-                                    </a>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ul>
-
-
-                    <div class="nav ps-md-4 ps-lg-0">
-                        <a class="btn nav-link animate-underline text-decoration-none px-0" href="/blog">
-                            <span class="animate-target">Xem tất cả</span>
-                            <i class="ci-chevron-right fs-base ms-1"></i>
-                        </a>
+                        @empty
+                            <div class="swiper-slide">
+                                <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
             </div>
+        </section>
+    @endforeach
+
+    <section class="container py-5 bg-body-tertiary">
+        <div class="d-flex justify-content-center mb-5">
+            <h1 class="h1 text-center">
+                <i class="ci-newspaper fa-lg me-2"></i>
+                Bài viết nổi bật
+            </h1>
+        </div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-5"> {{-- g-5 = khoảng cách rộng hơn --}}
+            @foreach ($featuredPosts->take(4) as $post)
+                <div class="col d-flex">
+                    <div class="post-card shadow-sm flex-fill d-flex flex-column">
+                        <a href="{{ route('users.blogs.show', $post->slug) }}">
+                            <img src="{{ $post->coverImage ? asset('storage/' . $post->coverImage->path) : asset('assets/users/img/default-thumbnail.jpg') }}"
+                                alt="{{ $post->title }}" class="img-fluid w-100 post-card-img">
+                        </a>
+                        <div class="post-card-body flex-grow-1 d-flex flex-column">
+                            <div class="post-meta mb-2">
+                                {{ $post->published_at ? $post->published_at->format('H:i d/m/Y') : 'Chưa đăng' }}
+                            </div>
+                            <h3 class="post-title flex-grow-1">
+                                <a href="{{ route('users.blogs.show', $post->slug) }}"
+                                    class="text-dark text-decoration-none">
+                                    {{ Str::limit($post->title, 60) }}
+                                </a>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+        <div class="d-flex justify-content-center mt-5">
+            <a class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm" href="/blog">
+                <span>Xem tất cả</span>
+                <i class="ci-chevron-right fs-base ms-2"></i>
+            </a>
         </div>
     </section>
+
+
+    <style>
+        .post-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .post-card-img {
+            object-fit: cover;
+            height: 200px;
+        }
+
+        .post-card-body {
+            padding: 16px;
+        }
+
+        .post-meta {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .post-title {
+            font-size: 1rem;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+    </style>
+
 
 @endsection
 @push('scripts')
