@@ -60,7 +60,7 @@ class HomepageController extends Controller
                     $product = $variant->product;
                     $image = $variant && $variant->primaryImage
                         ? asset('storage/' . $variant->primaryImage->path)
-                        : '/images/no-image.png';
+                        : '';
 
                     // Lấy thuộc tính "Dung lượng" từ biến thể để tạo tên hiển thị
                     $capacity = '';

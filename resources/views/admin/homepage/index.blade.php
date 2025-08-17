@@ -181,9 +181,9 @@
                             <li data-id="{{ $banner->id }}" draggable="true"
                                 class="draggable-item flex items-center space-x-4 p-3 border rounded-lg {{ $banner->status !== 'active' ? 'opacity-50' : '' }}">
                                 <i class="fas fa-grip-vertical text-gray-400 cursor-grab"></i>
-                                <img src="{{ $banner->desktopImage ? asset('storage/' . $banner->desktopImage->path) : '/images/no-image.png' }}"
+                                <img src="{{ $banner->desktopImage ? asset('storage/' . $banner->desktopImage->path) : '' }}"
                                     class="w-24 h-10 object-cover rounded-md bg-gray-200"
-                                    onerror="this.src='/images/no-image.png'">
+                                    onerror="this.src=''">
                                 <span class="font-semibold flex-grow">
                                     {{ $banner->title }}
                                     @if ($banner->status !== 'active')
@@ -305,7 +305,7 @@
                                         @forelse ($block->productVariants as $variant)
                                             <li class="flex items-center space-x-4 p-2 border rounded-lg"
                                                 data-id="{{ $variant->id }}">
-                                                <img src="{{ $variant->primaryImage ? asset('storage/' . $variant->primaryImage->path) : '/images/no-image.png' }}"
+                                                <img src="{{ $variant->primaryImage ? asset('storage/' . $variant->primaryImage->path) : '' }}"
                                                     class="w-10 h-10 object-cover rounded-md bg-gray-200">
                                                 <span class="font-semibold flex-grow text-sm">
                                                     {{ $variant->product->name }}
@@ -893,7 +893,7 @@
                                 .map(prod => {
                                     const prodId = parseInt(prod.id);
                                     const prodName = prod.name ? String(prod.name).replace(/</g, '&lt;').replace(/>/g, '&gt;') : 'Unnamed Product';
-                                    const prodImage = prod.image ? String(prod.image).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '/images/no-image.png';
+                                    const prodImage = prod.image ? String(prod.image).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
                                     return `
                                             <li data-id="${prodId}" class="flex items-center space-x-4 p-2 border rounded-lg">
                                                 <img src="${prodImage}" class="w-10 h-10 object-cover rounded-md bg-gray-200" alt="Product image">
