@@ -1440,18 +1440,18 @@ class CartController extends Controller
 
         $subtotal = 0;
 
-        if (Auth::check()) {
-            // Nếu user đã login thì dùng DB cart
+        if ($request->session()->has('buy_now_session')) {
+            // Nếu đang mua ngay, lấy tổng từ session buy_now_session
+            $buyNow = session('buy_now_session');
+            $subtotal = $buyNow['price'] * $buyNow['quantity'];
+        } elseif (Auth::check()) {
+            // Nếu user đã login, lấy từ DB cart
             $cart = Auth::user()->cart?->items ?? collect();
-            $subtotal = $cart->sum(function ($item) {
-                return $item->price * $item->quantity;
-            });
+            $subtotal = $cart->sum(fn($item) => $item->price * $item->quantity);
         } else {
-            // Nếu guest thì vẫn dùng session cart
+            // Guest thì dùng session cart
             $cart = session('cart', []);
-            $subtotal = collect($cart)->sum(function ($item) {
-                return $item['price'] * $item['quantity'];
-            });
+            $subtotal = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
         }
 
         // Trừ tiếp giảm giá từ điểm thưởng nếu có
@@ -1465,6 +1465,7 @@ class CartController extends Controller
         ]);
     }
 
+
     // gỡ điểm thưởng
     public function removePoints(Request $request)
     {
@@ -1473,12 +1474,16 @@ class CartController extends Controller
 
         $subtotal = 0;
 
-        if (Auth::check()) {
-            // Nếu user đã login thì dùng DB cart
+        if ($request->session()->has('buy_now_session')) {
+            // Nếu đang mua ngay, lấy tổng từ session buy_now_session
+            $buyNow = session('buy_now_session');
+            $subtotal = $buyNow['price'] * $buyNow['quantity'];
+        } elseif (Auth::check()) {
+            // Nếu user đã login, lấy từ DB cart
             $cartItems = Auth::user()->cart()->with('items')->first()?->items ?? collect();
             $subtotal = $cartItems->sum(fn($item) => $item->price * $item->quantity);
         } else {
-            // Nếu guest thì vẫn dùng session cart
+            // Guest thì dùng session cart
             $cart = session('cart', []);
             $subtotal = collect($cart)->sum(fn($item) => $item['price'] * $item['quantity']);
         }
@@ -1495,5 +1500,4 @@ class CartController extends Controller
             'new_total' => $totalAfterRemove,
         ]);
     }
-
 }

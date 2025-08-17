@@ -171,9 +171,5 @@
             @include('users.cart.layout.partials.summary_oder')
         </div>
     </section>
-    <!-- Trending products (Carousel) -->
-    @include('users.cart.layout.partials.product_trending')
-    <!-- Subscription form + Vlog -->
-    @include('users.cart.layout.partials.form')
 @endsection
 @include('users.cart.layout.partials.script')
