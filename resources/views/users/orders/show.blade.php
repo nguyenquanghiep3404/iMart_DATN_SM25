@@ -433,35 +433,28 @@
         </main>
 
         <footer class="details-footer">
-            @if($order->status == 'delivered')
 
-            @php
-            $firstItem = $order->items->first();
-            $canReview = $firstItem && !$firstItem->has_reviewed && $firstItem->product_variant_id;
+            {{-- NÚT HỦY ĐƠN --}}
+            @if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
+                <button class="btn-action" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn hàng</button>
+            @endif
 
-            $deliveredAt = $order->desired_delivery_date ?? $order->updated_at;
-            $daysSinceDelivered = $deliveredAt ? \Carbon\Carbon::parse($deliveredAt)->diffInDays(now()) : null;
-            $canRefund = $daysSinceDelivered !== null && $daysSinceDelivered <= 15;
-                @endphp
-
-
-                @if($order->status == 'delivered' && $canRefund)
-                <a href="{{ route('refunds.create', ['orderItem' => $firstItem->id]) }}" class="btn-action btn-action-secondary">
+            {{-- NÚT YÊU CẦU TRẢ HÀNG --}}
+            {{-- Chỉ hiện khi: Đơn đã giao, CHƯA xác nhận, và còn trong hạn 7 ngày --}}
+            @if($order->status == 'delivered' && is_null($order->confirmed_at) && $order->delivered_at && $order->delivered_at->diffInDays(now()) < 7)
+                <a href="{{-- route('returns.create', $order->id) --}}" class="btn-action btn-action-secondary">
                     Yêu cầu trả hàng
                 </a>
-                @endif
-                 @if($canReview)
-                <button type="button" class="btn-action write-review-btn"
-                    data-order-item-id="{{ $firstItem->id }}"
-                    data-product-variant-id="{{ $firstItem->product_variant_id }}"
-                    data-product-name="{{ $firstItem->product_name }}">
-                    Viết đánh giá
-                </button>
-                @endif
-                @endif
-                @if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
-                <button class="btn-action" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn hàng</button>
-                @endif
+            @endif
+
+            {{-- NÚT VIẾT ĐÁNH GIÁ CHO CẢ ĐƠN HÀNG --}}
+    {{-- Chỉ hiện khi đơn hàng đã được xác nhận đã nhận --}}
+    @if(!is_null($order->confirmed_at))
+        <a href="{{ route('orders.review', $order->id) }}" class="btn-action">
+            Viết đánh giá
+        </a>
+    @endif
+
         </footer>
     </div>
 </div>

@@ -300,7 +300,7 @@ class CategoryController extends Controller
         $category->update(['deleted_by' => null]);
         dd($id, Category::onlyTrashed()->pluck('id'));
 
-        return redirect()->route('admin.categories.trash')
+        return redirect()->route('admin.categories.index')
             ->with('success', 'Danh mục đã được khôi phục thành công.');
     }
     /**

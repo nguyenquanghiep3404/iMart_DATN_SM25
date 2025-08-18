@@ -212,7 +212,7 @@
                                             </div>
                                         </div>
                                         {{-- Hidden fields for address system and location codes validation --}}
-                                        <input type="hidden" name="address_system" value="new">
+                                        <input type="hidden" name="address_system" value="old">
                                         <input type="hidden" id="province_code" name="province_code">
                                         <input type="hidden" id="district_code" name="district_code">
                                         <input type="hidden" id="ward_code" name="ward_code">

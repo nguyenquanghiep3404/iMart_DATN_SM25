@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class HomepageProductBlock extends Model
 {
+    // Giữ nguyên tên bảng này
     protected $table = 'homepage_product_blocks';
 
     protected $fillable = [
@@ -14,12 +15,18 @@ class HomepageProductBlock extends Model
         'order',
     ];
 
-    // Một khối sản phẩm có nhiều sản phẩm (qua bảng trung gian)
-    public function products()
+    // ✅ Tên hàm đã được đổi để phản ánh đúng mối quan hệ
+    public function productVariants()
     {
-        return $this->belongsToMany(Product::class, 'homepage_block_product', 'block_id', 'product_id')
-                    ->withPivot('order')
-                    ->withTimestamps()
-                    ->orderBy('pivot_order');
+        // 💡 Sửa các tham số trong belongsToMany
+        return $this->belongsToMany(
+            ProductVariant::class, // Trỏ đến Model ProductVariant
+            'homepage_block_product', // Tên bảng pivot
+            'block_id', // Tên khóa ngoại của Model hiện tại trong bảng pivot
+            'product_variant_id' // Tên khóa ngoại của Model ProductVariant trong bảng pivot
+        )
+        ->withPivot('order')
+        ->withTimestamps()
+        ->orderBy('pivot_order');
     }
 }
