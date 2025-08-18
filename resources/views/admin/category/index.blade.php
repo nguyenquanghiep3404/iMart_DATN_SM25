@@ -157,9 +157,9 @@
                 {{-- FILTERS --}}
                 <form action="{{ route('admin.categories.index') }}" method="GET">
                     {{-- Filters grid --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         {{-- Search Input --}}
-                        <div class="md:col-span-2 lg:col-span-2 xl:col-span-2">
+                        <div class="md:col-span-2 lg:col-span-1">
                             <label for="search_category" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
                             <div class="input-group">
                                 <input type="text" id="search_category" name="search" class="form-input" placeholder="Tên danh mục..." value="{{ request('search') }}">
@@ -182,22 +182,11 @@
                             <label for="filter_parent" class="block text-sm font-medium text-gray-700 mb-1">Danh mục cha</label>
                             <select id="filter_parent" name="parent_id" class="form-select">
                                 <option value="">Tất cả danh mục</option>
-                                <option value="0" {{ request('parent_id') === '0' ? 'selected' : '' }}>Danh mục gốc</option>
                                 @foreach($parentCategories as $parentCategory)
                                     <option value="{{ $parentCategory->id }}" {{ request('parent_id') == $parentCategory->id ? 'selected' : '' }}>
                                         {{ $parentCategory->name }}
                                     </option>
                                 @endforeach
-                            </select>
-                        </div>
-
-                        {{-- Sort Filter --}}
-                        <div>
-                            <label for="filter_sort" class="block text-sm font-medium text-gray-700 mb-1">Sắp xếp</label>
-                            <select id="filter_sort" name="sort" class="form-select">
-                                <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Tên</option>
-                                <option value="id" {{ request('sort') == 'id' ? 'selected' : '' }}>ID</option>
-                                <option value="status" {{ request('sort') == 'status' ? 'selected' : '' }}>Trạng thái</option>
                             </select>
                         </div>
                     </div>
@@ -255,9 +244,6 @@
                                                       {{ isset($category->tree_level) && $category->tree_level > 0 ? 'text-sm' : '' }}">
                                                 {{ $category->name }}
                                             </a>
-                                            @if(isset($category->tree_level) && $category->tree_level > 0)
-                                                <div class="text-xs text-gray-400 italic">Danh mục con</div>
-                                            @endif
                                             <div class="text-xs text-gray-500 md:hidden mt-1">{{ Str::limit($category->description ?? '', 30, '...') }}</div>
                                         </div>
                                     </div>
@@ -323,22 +309,15 @@
             </div>
             {{-- Footer cho tree view --}}
             @elseif(isset($isTreeView) && $isTreeView)
-            <div class="card-custom-footer">
-                <div class="flex justify-center items-center">
-                    <div class="text-sm text-gray-500">
-                        <i class="fas fa-sitemap mr-2"></i>Hiển thị tất cả danh mục theo cấu trúc tree
-                    </div>
-                </div>
-            </div>
             {{-- Footer cho auto pagination hoặc filtered view --}}
             @else
             <div class="card-custom-footer">
                 <div class="flex justify-center items-center">
                     <div class="text-sm text-gray-500">
                         @if(isset($autoPaginatedFlag) && $autoPaginatedFlag)
-                            <i class="fas fa-list mr-2"></i>Tự động phân trang do quá nhiều danh mục
+                            <i class="fas fa-list mr-2"></i>
                         @else
-                            <i class="fas fa-filter mr-2"></i>Kết quả lọc với phân trang
+                            <i class="fas fa-filter mr-2"></i>
                         @endif
                     </div>
                 </div>

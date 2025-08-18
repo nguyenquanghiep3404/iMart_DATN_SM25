@@ -70,11 +70,8 @@
 @section('content')
 <div class="body-content px-4 sm:px-6 md:px-8 py-8">
     <div class="w-full">
-        
-        {{-- TOAST NOTIFICATIONS CONTAINER --}}
+        {{--Thông báo --}}
         <div id="toast-container"></div>
-
-        {{-- Flash messages as toasts --}}
         @if(session('success'))
             <div class="toast success">
                 <div class="flex items-center">
@@ -86,7 +83,6 @@
                 </div>
             </div>
         @endif
-
         @if(session('error'))
             <div class="toast error">
                 <div class="flex items-center">
@@ -98,8 +94,6 @@
                 </div>
             </div>
         @endif
-
-        {{-- Header Section --}}
         <div class="card-custom mb-6">
             <div class="card-custom-header">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -119,14 +113,10 @@
                 </div>
             </div>
         </div>
-
-        {{-- Main Content --}}
         <div class="card-custom">
             <div class="card-custom-body">
-                {{-- Filters Section --}}
                 <form action="{{ route('admin.categories.trash') }}" method="GET" class="mb-6">
                     <div class="flex flex-col md:flex-row gap-4 items-end">
-                        {{-- Search Input --}}
                         <div class="flex-1">
                             <label for="search_category" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm danh mục</label>
                             <div class="input-group">
@@ -136,8 +126,6 @@
                                 </button>
                             </div>
                         </div>
-
-                        {{-- Sort Filter --}}
                         <div class="w-full md:w-48">
                             <label for="filter_sort" class="block text-sm font-medium text-gray-700 mb-1">Sắp xếp theo</label>
                             <select id="filter_sort" name="sort" class="form-select" onchange="this.form.submit()">
@@ -145,8 +133,6 @@
                                 <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>Tên A-Z</option>
                             </select>
                         </div>
-
-                        {{-- Clear Filter --}}
                         @if(request()->filled(['search', 'sort']))
                             <div>
                                 <a href="{{ route('admin.categories.trash') }}" class="btn btn-secondary">
@@ -156,8 +142,6 @@
                         @endif
                     </div>
                 </form>
-
-                {{-- CATEGORIES TABLE --}}
                 <div class="border border-gray-200 rounded-lg shadow-sm bg-white">
                     @if($trashedCategories->isEmpty())
                         <div class="text-center py-16">
@@ -222,8 +206,6 @@
                     @endif
                 </div>
             </div>
-            
-            {{-- PAGINATION --}}
             @if ($trashedCategories->hasPages())
             <div class="card-custom-footer">
                 <div class="flex justify-between items-center">
@@ -239,8 +221,6 @@
         </div>
     </div>
 </div>
-
-{{-- RESTORE CONFIRMATION MODAL --}}
 <div id="restoreModal" class="category-modal">
     <div class="category-modal-content animated-modal">
         <div class="category-modal-body text-center">
@@ -259,8 +239,6 @@
         </div>
     </div>
 </div>
-
-{{-- FORCE DELETE CONFIRMATION MODAL --}}
 <div id="forceDeleteModal" class="category-modal">
     <div class="category-modal-content animated-modal">
         <div class="category-modal-body text-center">
@@ -269,7 +247,7 @@
             </div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">Xác nhận xóa vĩnh viễn</h3>
             <p class="text-sm text-gray-500 mb-4">Bạn có chắc chắn muốn xóa vĩnh viễn danh mục <strong id="categoryNameToForceDelete"></strong>?</p>
-            <p class="text-xs text-red-500 font-medium">⚠️ Hành động này không thể hoàn tác!</p>
+            <p class="text-xs text-red-500 font-medium">Hành động này không thể hoàn tác!</p>
         </div>
         <div class="category-modal-footer">
             <button type="button" class="btn btn-secondary" onclick="closeForceDeleteModal()">Hủy</button>
@@ -338,7 +316,7 @@ function closeRestoreModal() {
 function executeRestore() {
     if (categoryIdToRestore) {
         const form = document.getElementById('restoreForm');
-        form.action = `/admin/categories/${categoryIdToRestore}/restore`;
+        form.action = `/admin/categories/restore/${categoryIdToRestore}`;
         form.submit();
     }
 }
@@ -358,7 +336,7 @@ function closeForceDeleteModal() {
 function executeForceDelete() {
     if (categoryIdToForceDelete) {
         const form = document.getElementById('forceDeleteForm');
-        form.action = `/admin/categories/${categoryIdToForceDelete}/force-delete`;
+        form.action = `/admin/categories/force-delete/${categoryIdToForceDelete}`;
         form.submit();
     }
 }
