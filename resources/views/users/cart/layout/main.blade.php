@@ -30,7 +30,7 @@
                                 <th scope="col" class="fs-sm fw-normal py-3 ps-0"><span class="text-body">Sản Phẩm</span>
                                 </th>
                                 <th scope="col" class="text-body fs-sm fw-normal py-3 d-none d-xl-table-cell"><span
-                                        class="text-body">Gía</span></th>
+                                        class="text-body">Giá</span></th>
                                 <th scope="col" class="text-body fs-sm fw-normal py-3 d-none d-md-table-cell"><span
                                         class="text-body">Số Lượng</span></th>
                                 <th scope="col" class="text-body fs-sm fw-normal py-3 d-none d-md-table-cell"><span
