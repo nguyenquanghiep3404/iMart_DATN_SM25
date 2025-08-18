@@ -56,8 +56,7 @@
                 <button type="button" id="cancel-schedule-modal-btn"
                     class="px-6 py-2 rounded-lg text-gray-700 bg-gray-200 hover:bg-gray-300 font-semibold">Hủy</button>
                 <button type="submit"
-                    class="px-6 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 font-semibold">Lưu
-                    Ca</button>
+                    class="px-6 py-2 rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 font-semibold">Lưu Ca</button>
             </div>
         </form>
     </div>
