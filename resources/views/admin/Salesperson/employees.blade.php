@@ -628,7 +628,6 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Error searching employees:', error);
                         staffTableBody.innerHTML = `
                             <tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">
                             <div class="flex flex-col items-center py-8">
@@ -1041,7 +1040,6 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
                         alert('Lỗi khi tải thông tin nhân viên');
                     });
             }

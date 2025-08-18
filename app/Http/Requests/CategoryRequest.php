@@ -24,7 +24,7 @@ class CategoryRequest extends FormRequest
         $categoryId = $this->route('category')?->id ?? null;
 
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:categories,name' . ($categoryId ? ',' . $categoryId : ''),
             'slug' => 'nullable|string|unique:categories,slug' . ($categoryId ? ',' . $categoryId : ''),
             'parent_id' => 'nullable|exists:categories,id|not_in:' . $categoryId,
             'description' => 'nullable|string',
@@ -47,6 +47,7 @@ class CategoryRequest extends FormRequest
             'name.required' => 'Tên danh mục là bắt buộc.',
             'name.string' => 'Tên danh mục phải là chuỗi.',
             'name.max' => 'Tên danh mục không được vượt quá :max ký tự.',
+            'name.unique' => 'Tên danh mục đã tồn tại. Vui lòng chọn tên khác.',
 
             'slug.string' => 'Slug phải là chuỗi.',
             'slug.unique' => 'Slug đã được sử dụng.',

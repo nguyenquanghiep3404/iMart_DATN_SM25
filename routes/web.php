@@ -526,7 +526,6 @@ Route::prefix('admin')
                 Route::post('/work-shifts', [SalesStaffManagement::class, 'addWorkShift'])->name('work-shifts.store');
                 Route::put('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'updateWorkShift'])->name('work-shifts.update');
                 Route::delete('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'deleteWorkShift'])->name('work-shifts.destroy');
-                Route::post('/work-shifts/create-default', [SalesStaffManagement::class, 'createDefaultWorkShifts'])->name('work-shifts.create-default');
                 // API thống kê
                 Route::get('/statistics', [SalesStaffManagement::class, 'getStaffStatistics'])->name('statistics');
             });

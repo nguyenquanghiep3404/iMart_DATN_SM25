@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Users;
 
 use App\Models\Cart;
 use App\Models\Ward;
+use App\Models\User;
 use App\Models\Order;
 use App\Models\Coupon;
 use App\Models\Address;
@@ -283,6 +284,18 @@ class PaymentController extends Controller
                             ]);
                         }
                     }
+
+                // Tạo CouponUsage cho Cart COD
+                $appliedCoupon = session('applied_coupon');
+                if ($appliedCoupon && isset($appliedCoupon['id'])) {
+                    CouponUsage::create([
+                        'coupon_id' => $appliedCoupon['id'],
+                        'user_id' => $user->id ?? null,
+                        'order_id' => $order->id,
+                        'usage_date' => now(),
+                    ]);
+                }
+
                 // Trừ tồn kho ngay lập tức cho COD
                 foreach ($order->fulfillments as $fulfillment) {
                     foreach ($fulfillment->items as $fulfillmentItem) {
@@ -418,7 +431,6 @@ class PaymentController extends Controller
 
         // ... (xử lý trừ điểm, ghi log coupon, lưu địa chỉ)
         // Phần này giữ nguyên
-
         return $order;
     }
 
@@ -616,6 +628,16 @@ class PaymentController extends Controller
                             }
                         }
                     });
+                    // Tạo CouponUsage sau khi thanh toán thành công
+                    $appliedCoupon = session('applied_coupon');
+                    if ($appliedCoupon && isset($appliedCoupon['id'])) {
+                        CouponUsage::create([
+                            'coupon_id' => $appliedCoupon['id'],
+                            'user_id' => $order->user_id,
+                            'order_id' => $order->id,
+                            'usage_date' => now(),
+                        ]);
+                    }
                     
                     // Kích hoạt chuyển kho tự động
                     $autoTransferService = new AutoStockTransferService();
@@ -874,6 +896,16 @@ class PaymentController extends Controller
                         }
                     }
                     // Sản phẩm cũ không cần trừ tồn kho
+                }
+                // Tạo CouponUsage sau khi thanh toán thành công
+                $appliedCoupon = session('applied_coupon');
+                if ($appliedCoupon && isset($appliedCoupon['id'])) {
+                    CouponUsage::create([
+                        'coupon_id' => $appliedCoupon['id'],
+                        'user_id' => $order->user_id,
+                        'order_id' => $order->id,
+                        'usage_date' => now(),
+                    ]);
                 }
                 
                 // Kích hoạt chuyển kho tự động
@@ -1564,6 +1596,16 @@ class PaymentController extends Controller
                     'total_price' => $item->price * $item->quantity,
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
+                // Tạo CouponUsage cho Bank Transfer QR
+                $appliedCoupon = session('applied_coupon');
+                if ($appliedCoupon && isset($appliedCoupon['id'])) {
+                    CouponUsage::create([
+                        'coupon_id' => $appliedCoupon['id'],
+                        'user_id' => Auth::id(),
+                        'order_id' => $order->id,
+                        'usage_date' => now(),
+                    ]);
+                }
 
                 // Gửi thông báo Telegram
                 $confirmationUrl = route('payments.confirm', ['token' => $order->confirmation_token]);
@@ -1732,16 +1774,24 @@ class PaymentController extends Controller
                 $this->processAutoTransfersIfPossible($transferResult['transfers_created']);
             }
             
-            // --- XỬ LÝ TRỪ ĐIỂM ---
-            if ($user && $pointsUsed > 0) {
-                $user->decrement('loyalty_points_balance', $pointsUsed);
-                LoyaltyPointLog::create([
-                    'user_id' => $user->id,
-                    'order_id' => $order->id,
-                    'points' => -$pointsUsed,
-                    'type' => 'spend',
-                    'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
-                ]);
+            // XỬ LÝ TRỪ ĐIỂM THƯỞNG CHO BUY NOW COD
+            $user = Auth::user();
+            $pointsApplied = session('points_applied');
+            if ($user && $pointsApplied) {
+                $pointsUsed = $pointsApplied['points'] ?? 0;
+                if ($pointsUsed > 0) {
+                    if ($pointsUsed > $user->loyalty_points_balance) {
+                        throw new \Exception('Số dư điểm không đủ để thực hiện giao dịch này.');
+                    }
+                    $user->decrement('loyalty_points_balance', $pointsUsed);
+                    LoyaltyPointLog::create([
+                        'user_id' => $user->id,
+                        'order_id' => $order->id,
+                        'points' => -$pointsUsed,
+                        'type' => 'spend',
+                        'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
+                    ]);
+                }
             }
             // --- Xử lý lượt dùng mã giảm giá ---
             $appliedCoupon = session('applied_coupon');

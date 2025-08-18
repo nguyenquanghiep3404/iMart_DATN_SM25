@@ -29,7 +29,7 @@ class CouponRequest extends FormRequest
             'code' => $this->getCodeRules($couponId),
             'description' => 'nullable|string|max:255',
             'type' => 'required|in:percentage,fixed_amount',
-            'value' => 'required|numeric|min:0',
+            'value' => $this->getValueRules(),
             'max_discount_amount' => 'nullable|numeric|min:1000',
             'max_uses' => 'nullable|integer|min:1',
             'max_uses_per_user' => 'nullable|integer|min:1',
@@ -39,6 +39,27 @@ class CouponRequest extends FormRequest
             'status' => $this->getStatusRules(),
             'is_public' => 'boolean',
         ];
+    }
+    /**
+     * Nhận các quy tắc xác thực cho giá trị giảm
+     */
+    protected function getValueRules(): string|array
+    {
+        $rules = ['required', 'numeric'];
+        // Nếu type là percentage, thêm max:100 và min:0
+        if ($this->input('type') === 'percentage') {
+            $rules[] = 'min:0';
+            $rules[] = 'max:100';
+        }
+        // Nếu type là fixed_amount, thêm min:1000
+        elseif ($this->input('type') === 'fixed_amount') {
+            $rules[] = 'min:1000';
+        }
+        else {
+            // Mặc định min:0 nếu chưa chọn type
+            $rules[] = 'min:0';
+        }
+        return $rules;
     }
 
     /**
@@ -112,7 +133,10 @@ class CouponRequest extends FormRequest
             'type.in' => 'Loại phiếu giảm giá không hợp lệ.',
             'value.required' => 'Giá trị phiếu giảm giá là bắt buộc.',
             'value.numeric' => 'Giá trị phiếu giảm giá phải là số.',
-            'value.min' => 'Giá trị phiếu giảm giá phải lớn hơn hoặc bằng 0.',
+            'value.min' => $this->input('type') === 'fixed_amount' 
+                ? 'Số tiền giảm phải ít nhất 1.000 VND.' 
+                : 'Giá trị phiếu giảm giá phải lớn hơn hoặc bằng 0.',
+            'value.max' => 'Phần trăm giảm giá không được vượt quá 100%.',
             'max_discount_amount.numeric' => 'Số tiền giảm tối đa phải là số.',
             'max_discount_amount.min' => 'Số tiền giảm tối đa phải ít nhất 1.000 VND.',
             'max_uses.integer' => 'Số lượt sử dụng tối đa phải là số nguyên.',
