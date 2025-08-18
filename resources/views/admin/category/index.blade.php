@@ -203,11 +203,10 @@
                     <table class="table-custom table-striped">
                         <thead>
                             <tr>
-                                <th style="width: 60px;">STT</th>
-                                <th style="width: 35%;">Tên danh mục</th>
-                                <th style="width: 30%;" class="hidden md:table-cell">Mô tả</th>
-                                <th style="width: 100px;" class="text-center">Trạng thái</th>
-                                {{-- <th style="width: 120px;" class="text-center">Trang chủ</th> --}}
+                                <th style="width: 80px;">STT</th>
+                                <th style="width: 25%;">Tên danh mục</th>
+                                <th style="width: 50%;" class="hidden md:table-cell">Mô tả</th>
+                                <th style="width: 120px;" class="text-center">Trạng thái</th>
                                 <th style="width: 140px;" class="text-center">Thao tác</th>
                             </tr>
                         </thead>
