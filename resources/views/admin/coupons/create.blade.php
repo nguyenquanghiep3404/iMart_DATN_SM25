@@ -224,7 +224,7 @@
                         <input type="hidden" name="is_public" value="0">
                         <label class="flex items-center">
                             <input type="checkbox" name="is_public" value="1" 
-                                class="h-6 w-7 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 @error('is_public') border-red-300 focus:ring-red-500 @enderror" 
+                                class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 @error('is_public') border-red-300 focus:ring-red-500 @enderror" 
                                 {{ old('is_public') ? 'checked' : '' }}>
                             <span class="ml-2 text-sm text-gray-700">Mã giảm giá công khai</span>
                         </label>
