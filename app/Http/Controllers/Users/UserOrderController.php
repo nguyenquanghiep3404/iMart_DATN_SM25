@@ -8,8 +8,6 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ReturnRequest;
-use App\Models\ProductVariant;
-use Cart;
 
 class UserOrderController extends Controller
 {
@@ -76,11 +74,6 @@ class UserOrderController extends Controller
         foreach ($order->items as $item) {
             $item->has_reviewed = $item->review()->exists(); // true/false
         }
-    //     dd(
-    //     'Item ID đang kiểm tra:', $item->id,
-    //     'Kết quả của ->exists():', $item->review()->exists(),
-    //     'Câu lệnh SQL đang chạy:', $item->review()->toSql()
-    // );
 
         return view('users.orders.show', compact('order'));
     }
