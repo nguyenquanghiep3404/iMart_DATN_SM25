@@ -60,7 +60,7 @@ class HomepageController extends Controller
                     $product = $variant->product;
                     $image = $variant && $variant->primaryImage
                         ? asset('storage/' . $variant->primaryImage->path)
-                        : '/images/no-image.png';
+                        : '';
 
                     // Lấy thuộc tính "Dung lượng" từ biến thể để tạo tên hiển thị
                     $capacity = '';
@@ -120,72 +120,6 @@ class HomepageController extends Controller
     }
 
     /**
-     * Lưu toàn bộ thay đổi của trang chủ
-     */
-    public function update(Request $request)
-    {
-        $data = $request->all();
-
-        // ✅ Lưu banners
-        if (!empty($data['banners'])) {
-            foreach ($data['banners'] as $index => $banner) {
-                // Lưu hoặc sắp xếp lại banners nếu bạn có bảng Banner
-            }
-        }
-
-        // ✅ Lưu danh mục
-        if (!empty($data['categories'])) {
-            foreach ($data['categories'] as $cat) {
-                $category = \App\Models\Category::find($cat['id']);
-                if ($category) {
-                    $category->show_on_homepage = $cat['show_on_homepage'] ?? false;
-                    $category->order = $cat['order'] ?? 0;
-                    $category->save();
-                }
-
-                // Nếu có children:
-                if (!empty($cat['children'])) {
-                    foreach ($cat['children'] as $child) {
-                        $childModel = \App\Models\Category::find($child['id']);
-                        if ($childModel) {
-                            $childModel->show_on_homepage = $child['show_on_homepage'] ?? false;
-                            $childModel->order = $child['order'] ?? 0;
-                            $childModel->save();
-                        }
-                    }
-                }
-            }
-        }
-
-        // ✅ Lưu các khối sản phẩm
-        if (!empty($data['product_blocks'])) {
-            foreach ($data['product_blocks'] as $index => $block) {
-                // Lưu hoặc cập nhật block
-                $productBlock = HomepageProductBlock::updateOrCreate(
-                    ['id' => $block['id']],
-                    [
-                        'title' => $block['title'],
-                        'order' => $block['order'] ?? ($index + 1),
-                        'is_visible' => $block['is_visible'] ?? true
-                    ]
-                );
-
-                // Gán sản phẩm vào block với thứ tự
-                $syncProducts = [];
-                if (!empty($block['products'])) {
-                    foreach ($block['products'] as $i => $product) {
-                        $syncProducts[$product['id']] = ['order' => $i + 1];
-                    }
-                }
-
-                $productBlock->products()->sync($syncProducts);
-            }
-        }
-
-        return response()->json(['message' => '✅ Đã lưu toàn bộ thay đổi']);
-    }
-
-    /**
      * Cập nhật trạng thái hiển thị của danh mục
      */
     public function toggleCategory(Request $request, $categoryId)
@@ -240,6 +174,9 @@ class HomepageController extends Controller
         }
     }
 
+    /**
+     * Tạo một khối sản phẩm mới
+     */
     public function storeProductBlock(Request $request)
     {
         $validated = $request->validate([
@@ -264,12 +201,15 @@ class HomepageController extends Controller
         ]);
     }
 
+    /**
+     * Tìm kiếm sản phẩm theo tên hoặc bộ lọc
+     */
     public function searchProducts(Request $request)
     {
         try {
             $query = $request->query('q');
             $filter = $request->query('filter');
-            $perPage = $request->query('per_page', 15); // 15 biến thể mỗi trang, giống FlashSaleController
+            $perPage = $request->query('per_page', 15); // 15 biến thể mỗi trang
             $page = $request->query('page', 1);
 
             // Lấy tất cả biến thể sản phẩm
@@ -286,17 +226,54 @@ class HomepageController extends Controller
                 }
             });
 
-            // Áp dụng bộ lọc nếu có
+            // Xử lý bộ lọc
             if ($filter === 'featured') {
                 $variantsQuery->whereHas('product', function ($q) {
                     $q->where('is_featured', true);
                 });
+                // Lấy tất cả biến thể và phân trang
+                $variants = $variantsQuery->orderBy('created_at', 'desc')->paginate($perPage);
             } elseif ($filter === 'latest_10') {
-                $variantsQuery->take(10); // Giữ nguyên giới hạn 10 cho bộ lọc này
-            }
+                // Lấy tất cả biến thể trước
+                $allVariants = $variantsQuery->orderBy('created_at', 'desc')->get();
 
-            // Sắp xếp mới nhất trước và phân trang
-            $variants = $variantsQuery->orderBy('created_at', 'desc')->paginate($perPage);
+                // Nhóm biến thể theo product_id và Dung lượng
+                $groupedVariants = $allVariants->groupBy(function ($variant) {
+                    $capacity = 'default';
+                    $capacityAttr = $variant->attributeValues->first(function ($attrVal) {
+                        return $attrVal->attribute && $attrVal->attribute->name === 'Dung lượng';
+                    });
+                    if ($capacityAttr) {
+                        $capacity = trim(strtolower($capacityAttr->value));
+                    }
+                    return $variant->product_id . '_' . $capacity;
+                })->map(function ($group) {
+                    // Chọn biến thể mặc định hoặc đầu tiên
+                    return $group->where('is_default', true)->first() ?? $group->first();
+                })->sortByDesc(function ($variant) {
+                    // Sắp xếp theo created_at của sản phẩm
+                    return $variant->product->created_at;
+                })->values()->take(10); // Lấy 10 mục mới nhất
+
+                // Log số lượng mục sau khi nhóm
+                \Log::info('Number of grouped variants for latest_10:', ['count' => $groupedVariants->count()]);
+
+                // Tạo LengthAwarePaginator thủ công
+                $totalItems = $groupedVariants->count();
+                $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $groupedVariants->forPage($page, $perPage),
+                    $totalItems,
+                    $perPage,
+                    $page,
+                    ['path' => $request->url(), 'query' => $request->query()]
+                );
+
+                // Gán lại $variants để sử dụng ở bước tiếp theo
+                $variants = $paginator;
+            } else {
+                // Bộ lọc mặc định (all) hoặc không có filter
+                $variants = $variantsQuery->orderBy('created_at', 'desc')->paginate($perPage);
+            }
 
             // Log dữ liệu attributeValues để debug
             \Log::info('Variants attributeValues:', $variants->map(function ($variant) {
@@ -311,26 +288,28 @@ class HomepageController extends Controller
                 ];
             })->toArray());
 
-            // Nhóm biến thể theo product_id và Dung lượng
-            $groupedVariants = $variants->getCollection()->groupBy(function ($variant) {
-                $capacity = 'default';
-                $capacityAttr = $variant->attributeValues->first(function ($attrVal) {
-                    return $attrVal->attribute && $attrVal->attribute->name === 'Dung lượng';
-                });
-                if ($capacityAttr) {
-                    $capacity = trim(strtolower($capacityAttr->value));
-                }
-                return $variant->product_id . '_' . $capacity;
-            })->map(function ($group) {
-                // Chọn biến thể mặc định hoặc đầu tiên
-                return $group->where('is_default', true)->first() ?? $group->first();
-            })->values();
+            // Nhóm biến thể theo product_id và Dung lượng (đối với filter != latest_10)
+            if ($filter !== 'latest_10') {
+                $groupedVariants = $variants->getCollection()->groupBy(function ($variant) {
+                    $capacity = 'default';
+                    $capacityAttr = $variant->attributeValues->first(function ($attrVal) {
+                        return $attrVal->attribute && $attrVal->attribute->name === 'Dung lượng';
+                    });
+                    if ($capacityAttr) {
+                        $capacity = trim(strtolower($capacityAttr->value));
+                    }
+                    return $variant->product_id . '_' . $capacity;
+                })->map(function ($group) {
+                    // Chọn biến thể mặc định hoặc đầu tiên
+                    return $group->where('is_default', true)->first() ?? $group->first();
+                })->values();
 
-            // Cập nhật collection của pagination
-            $variants->setCollection($groupedVariants);
+                // Cập nhật collection của pagination
+                $variants->setCollection($groupedVariants);
+            }
 
             // Map dữ liệu sang định dạng chuẩn cho frontend
-            $result = $groupedVariants->map(function ($variant) {
+            $result = $variants->getCollection()->map(function ($variant) {
                 $product = $variant->product;
                 $image = $variant->primaryImage
                     ? asset('storage/' . $variant->primaryImage->path)
@@ -374,7 +353,7 @@ class HomepageController extends Controller
                 'last_page' => $variants->lastPage(),
                 'total' => $variants->total(),
                 'per_page' => $variants->perPage(),
-                'links' => $variants->links()->elements, // Thêm links giống Laravel
+                'links' => $variants->links()->elements,
             ]);
         } catch (\Throwable $e) {
             \Log::error('Lỗi khi tìm sản phẩm: ' . $e->getMessage());
@@ -382,15 +361,14 @@ class HomepageController extends Controller
         }
     }
 
+    /**
+     * Thêm sản phẩm vào khối sản phẩm
+     */
     public function addProductsToBlock(Request $request, HomepageProductBlock $block)
     {
         try {
-            // ✅ Nhận variant ID từ frontend
+            // Nhận variant ID từ frontend
             $variantIds = $request->input('product_variant_ids', []);
-
-            if (empty($variantIds)) {
-                return response()->json(['error' => 'Không có sản phẩm nào được chọn'], 422);
-            }
 
             // Lấy order lớn nhất hiện tại để thêm sản phẩm mới vào cuối danh sách
             $maxOrder = DB::table('homepage_block_product')
@@ -400,13 +378,13 @@ class HomepageController extends Controller
             $syncData = [];
             foreach ($variantIds as $i => $variantId) {
                 // Tạo mảng dữ liệu để thêm biến thể với order tiếp theo
-                $syncData[$variantId] = ['order' => $maxOrder + $i + 1];
+                $syncData[$variantId] = ['order' => $i + 1]; // Sửa maxOrder + $i + 1 thành $i + 1 để reset order
             }
 
-            // ✅ Sử dụng syncWithoutDetaching với mối quan hệ mới
-            $block->productVariants()->syncWithoutDetaching($syncData);
+            // Sử dụng sync thay vì syncWithoutDetaching để xóa các sản phẩm không có trong danh sách
+            $block->productVariants()->sync($syncData);
 
-            // ✅ Tải lại các biến thể trong block sau khi thêm
+            // Tải lại các biến thể trong block sau khi sync
             $variantsInBlock = $block->productVariants()->with([
                 'product',
                 'primaryImage',
@@ -436,7 +414,6 @@ class HomepageController extends Controller
                     ->sum('quantity');
 
                 return [
-                    // ✅ Sửa id từ $product->id sang $variant->id
                     'id' => $variant->id,
                     'product_id' => $product->id,
                     'name' => $displayName,
@@ -463,11 +440,15 @@ class HomepageController extends Controller
         }
     }
 
+    /**
+     * Xóa khối sản phẩm
+     */
     public function destroyProductBlock($id)
     {
         try {
             $block = HomepageProductBlock::findOrFail($id);
-            $block->products()->detach();
+            // ✅ Sửa products() thành productVariants()
+            $block->productVariants()->detach();
             $block->delete();
 
             // Cập nhật lại order
@@ -483,6 +464,9 @@ class HomepageController extends Controller
         }
     }
 
+    /**
+     * Cập nhật thứ tự của các khối sản phẩm
+     */
     public function toggleBlockVisibility($id)
     {
         try {
@@ -501,49 +485,9 @@ class HomepageController extends Controller
         }
     }
 
-    // HomepageController.php
-    // HomepageController.php
-    public function updateBlockOrder(Request $request)
-    {
-        $blockIds = $request->input('block_ids', []);
-        DB::beginTransaction();
-        try {
-            foreach ($blockIds as $index => $blockId) {
-                DB::table('homepage_product_blocks')
-                    ->where('id', $blockId)
-                    ->update(['order' => $index + 1]);
-            }
-            DB::commit();
-            return response()->json(['message' => 'Cập nhật thứ tự khối sản phẩm thành công']);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'Lỗi cập nhật thứ tự khối sản phẩm'], 500);
-        }
-    }
-
-    public function updateProductOrder(Request $request, $blockId)
-    {
-        // ✅ Nhận ID của biến thể sản phẩm từ request
-        $variantIds = $request->input('product_variant_ids', []);
-
-        DB::beginTransaction();
-        try {
-            // ✅ Lặp qua mảng variant IDs
-            foreach ($variantIds as $index => $variantId) {
-                DB::table('homepage_block_product')
-                    ->where('block_id', $blockId)
-                    // ✅ Sửa điều kiện where để tìm theo 'product_variant_id'
-                    ->where('product_variant_id', $variantId)
-                    ->update(['order' => $index + 1]);
-            }
-            DB::commit();
-            return response()->json(['message' => 'Cập nhật thứ tự sản phẩm thành công']);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'Lỗi cập nhật thứ tự sản phẩm'], 500);
-        }
-    }
-
+    /**
+     * Cập nhật thứ tự của các banner
+     */
     public function updateBannerOrder(Request $request)
     {
         $bannerIds = $request->input('banner_ids', []);
@@ -551,5 +495,120 @@ class HomepageController extends Controller
             Banner::where('id', $id)->update(['order' => $index + 1]);
         }
         return response()->json(['message' => 'Cập nhật thứ tự banner thành công']);
+    }
+
+    /**
+     * Xóa sản phẩm khỏi khối
+     */
+    public function removeProductFromBlock($blockId, $variantId)
+    {
+        try {
+            // Kiểm tra khối sản phẩm
+            $block = HomepageProductBlock::find($blockId);
+            if (!$block) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Khối sản phẩm không tồn tại'
+                ], 404);
+            }
+
+            // Kiểm tra biến thể sản phẩm
+            $variant = ProductVariant::find($variantId);
+            if (!$variant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sản phẩm không tồn tại'
+                ], 404);
+            }
+
+            // Kiểm tra xem biến thể có thuộc khối không
+            if (!$block->productVariants()->where('product_variant_id', $variantId)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sản phẩm không thuộc khối này'
+                ], 404);
+            }
+
+            // Gỡ bỏ sản phẩm biến thể
+            $block->productVariants()->detach($variantId);
+
+            // Cập nhật order của các sản phẩm còn lại
+            $remainingVariants = $block->productVariants()->orderBy('pivot_order')->get();
+            foreach ($remainingVariants as $index => $remainingVariant) {
+                $block->productVariants()->updateExistingPivot($remainingVariant->id, ['order' => $index + 1]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Đã xóa sản phẩm khỏi khối thành công'
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Lỗi khi xóa sản phẩm khỏi khối: BlockID=' . $blockId . ', VariantID=' . $variantId . ', Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => '❌ Lỗi: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cập nhật thứ tự của các khối sản phẩm
+     */
+    public function updateBlockOrder(Request $request)
+    {
+        try {
+            $blockIds = $request->input('block_ids', []);
+            if (empty($blockIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Danh sách ID khối không hợp lệ'
+                ], 400);
+            }
+
+            // Kiểm tra tất cả blockIds có tồn tại
+            $existingBlocks = HomepageProductBlock::whereIn('id', $blockIds)->pluck('id')->toArray();
+            if (count($existingBlocks) !== count($blockIds)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Một hoặc nhiều khối không tồn tại'
+                ], 404);
+            }
+
+            // Cập nhật thứ tự
+            foreach ($blockIds as $index => $blockId) {
+                HomepageProductBlock::where('id', $blockId)->update(['order' => $index + 1]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => '✅ Cập nhật thứ tự khối sản phẩm thành công'
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error('Lỗi khi cập nhật thứ tự khối sản phẩm: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => '❌ Lỗi: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cập nhật tiêu đề của khối sản phẩm
+     */
+    public function updateBlockTitle(Request $request, $id)
+    {
+        $block = HomepageProductBlock::findOrFail($id);
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        $block->title = $validated['title'];
+        $block->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật tiêu đề thành công',
+            'title' => $block->title
+        ]);
     }
 }

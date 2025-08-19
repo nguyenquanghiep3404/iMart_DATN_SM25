@@ -155,46 +155,48 @@ class UserOrderController extends Controller
         return redirect()->back()->with('error', 'Không thể thực hiện hành động này.');
     }
     public function buyAgain(Order $order)
-    {
-        // 1. Kiểm tra quyền sở hữu đơn hàng
-        if (auth()->id() !== $order->user_id) {
-            abort(403);
-        }
+{
+    // 1. Kiểm tra quyền sở hữu đơn hàng
+    if (auth()->id() !== $order->user_id) {
+        abort(403);
+    }
 
-        $unavailableProducts = [];
+    // Tải trước các mối quan hệ để tối ưu
+    $order->load('items.productVariant');
 
-        // 2. Lặp qua từng sản phẩm trong đơn hàng cũ
-        foreach ($order->items as $item) {
-            $variant = ProductVariant::find($item->product_variant_id);
+    $unavailableProducts = [];
 
-            // 3. KIỂM TRA QUAN TRỌNG: Sản phẩm có còn tồn tại và còn hàng không?
-            if ($variant && $variant->is_active && $variant->quantity > 0) {
+    // 2. Lặp qua từng sản phẩm trong đơn hàng cũ (ĐÃ MỞ COMMENT)
+    foreach ($order->items as $item) {
+        $variant = $item->productVariant;
 
-                // 4. Thêm sản phẩm vào giỏ hàng
-                // LƯU Ý: 'Cart::add(...)' là mã giả.
-                // Bạn cần thay thế bằng logic thêm vào giỏ hàng thực tế của bạn.
-                Cart::add([
-                    'id' => $variant->id,
-                    'name' => $item->product_name,
-                    'price' => $variant->price, // Lấy giá mới nhất
-                    'quantity' => $item->quantity,
-                    'attributes' => $item->variant_attributes ?? [],
-                    'associatedModel' => $variant
-                ]);
+        // 3. KIỂM TRA QUAN TRỌNG: Sản phẩm có còn tồn tại và còn hàng không?
+        if ($variant && $variant->is_active && $variant->quantity > 0) {
 
-            } else {
-                // Ghi nhận lại các sản phẩm không có sẵn
-                $unavailableProducts[] = $item->product_name;
-            }
-        }
+            // 4. Thêm sản phẩm vào giỏ hàng
+            // LƯU Ý: Thay thế 'Cart::add(...)' bằng logic giỏ hàng thực tế của bạn
+            Cart::add([
+                'id' => $variant->id,
+                'name' => $item->product_name,
+                'price' => $variant->price, // Lấy giá mới nhất
+                'quantity' => $item->quantity,
+                'attributes' => $item->variant_attributes ?? [],
+                'associatedModel' => $variant
+            ]);
 
-        // 5. Chuyển hướng người dùng đến trang giỏ hàng
-        $redirect = redirect()->route('cart.index'); // Thay 'cart.index' bằng route giỏ hàng của bạn
-
-        if (empty($unavailableProducts)) {
-            return $redirect->with('success', 'Đã thêm tất cả sản phẩm vào giỏ hàng!');
         } else {
-            return $redirect->with('warning', 'Một vài sản phẩm không còn bán hoặc đã hết hàng: ' . implode(', ', $unavailableProducts));
+            // Ghi nhận lại các sản phẩm không có sẵn
+            $unavailableProducts[] = $item->product_name;
         }
     }
+
+    // 5. Chuyển hướng người dùng đến trang giỏ hàng
+    $redirect = redirect()->route('cart.index'); // Thay 'cart.index' bằng route giỏ hàng của bạn
+
+    if (empty($unavailableProducts)) {
+        return $redirect->with('success', 'Đã thêm tất cả sản phẩm vào giỏ hàng!');
+    } else {
+        return $redirect->with('warning', 'Một vài sản phẩm không còn bán hoặc đã hết hàng: ' . implode(', ', $unavailableProducts));
+    }
+}
 }

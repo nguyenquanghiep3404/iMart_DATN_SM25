@@ -42,8 +42,46 @@ class PaymentController extends Controller
         $cartData = $this->getCartData();
 
         if ($cartData['items']->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Giỏ hàng của bạn đang trống.');
+            return redirect()->route('cart.index')->with('toast_error', 'Giỏ hàng của bạn đang trống.');
         }
+        $items = $cartData['items'];
+
+        // 2. Kiểm tra tồn kho ngay khi tiến hành thanh toán
+        $insufficientStock = [];
+        foreach ($items as $item) {
+            $availableStock = $item->productVariant->inventories()
+                ->where('inventory_type', 'new')
+                ->selectRaw('COALESCE(SUM(quantity - quantity_committed),0) as available_stock')
+                ->value('available_stock');
+
+            if ($item->quantity > $availableStock) {
+                $insufficientStock[] = [
+                    'name' => $item->productVariant->product->name,
+                    'variant' => $item->productVariant->attributeValues->pluck('value')->implode(', '),
+                    'requested' => $item->quantity,
+                    'available' => $availableStock,
+                ];
+            }
+        }
+
+        if (!empty($insufficientStock)) {
+            $messages = collect($insufficientStock)->map(function($item){
+                if ($item['available'] == 0) {
+                    // Hết hàng
+                    return "Sản phẩm {$item['name']}" 
+                        . (!empty($item['variant']) ? " ({$item['variant']})" : "") 
+                        . " hiện đã hết hàng, vui lòng xóa sản phẩm khỏi giỏ hàng!";
+                } else {
+                    // Còn hàng nhưng ít hơn số lượng đặt
+                    return "Sản phẩm {$item['name']}" 
+                        . (!empty($item['variant']) ? " ({$item['variant']})" : "") 
+                        . " hiện chỉ còn {$item['available']} cái, bạn đã chọn {$item['requested']} cái. Vui lòng giảm số lượng xuống {$item['available']} cái.";
+                }
+            })->implode('<br>');
+
+            return redirect()->route('cart.index')->with('toast_error', $messages);
+        }
+
         // Tính tổng khối lượng và kích thước
         $items = $cartData['items'];
         $totalWeight = $items->sum(function ($item) {
@@ -227,7 +265,24 @@ class PaymentController extends Controller
             $order = DB::transaction(function () use ($request, $cartData) {
                 // Tạo đơn hàng và các mục liên quan
                 $order = $this->createOrderAndItems($request, $cartData);
-
+                $user = Auth::user();
+                    $pointsApplied = session('points_applied');
+                    if ($user && $pointsApplied) {
+                        $pointsUsed = $pointsApplied['points'] ?? 0;
+                        if ($pointsUsed > 0) {
+                            if ($pointsUsed > $user->loyalty_points_balance) {
+                                throw new \Exception('Số dư điểm không đủ để thực hiện giao dịch này.');
+                            }
+                            $user->decrement('loyalty_points_balance', $pointsUsed);
+                            LoyaltyPointLog::create([
+                                'user_id' => $user->id,
+                                'order_id' => $order->id,
+                                'points' => -$pointsUsed,
+                                'type' => 'spend',
+                                'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
+                            ]);
+                        }
+                    }
                 // Trừ tồn kho ngay lập tức cho COD
                 foreach ($order->fulfillments as $fulfillment) {
                     foreach ($fulfillment->items as $fulfillmentItem) {
@@ -787,7 +842,7 @@ class PaymentController extends Controller
                 session()->forget('cart');
             }
         }
-        session()->forget(['applied_voucher', 'applied_coupon', 'discount']);
+        session()->forget(['cart','applied_voucher', 'applied_coupon', 'discount','points_applied']);
     }
     public function showBankTransferQr(Order $order)
     {
@@ -911,19 +966,7 @@ class PaymentController extends Controller
             'totalPointsToEarn' => $totalPointsToEarn,
         ];
     }
-    /**
-     * Tính phí vận chuyển
-     */
-    private function calculateShippingFee($shippingMethod)
-    {
-        $fees = [
-            'Giao hàng nhanh' => 55000,
-            'Nhận tại cửa hàng' => 0,
-            'Giao hàng tiêu chuẩn' => 25000,
-        ];
 
-        return $fees[$shippingMethod] ?? 25000;
-    }
 
     /**
      * Xử lý thông tin thời gian giao hàng
@@ -1072,7 +1115,7 @@ class PaymentController extends Controller
             session()->forget('cart');
         }
         // Xóa voucher đã áp dụng
-        session()->forget(['applied_voucher', 'applied_coupon', 'discount', 'points_applied']);
+        session()->forget(['cart','applied_voucher', 'applied_coupon', 'discount', 'points_applied']);
     }
     /**
      * Tạo phiên Buy Now và chuyển đến trang thanh toán
@@ -1239,7 +1282,7 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1311,7 +1354,7 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1381,7 +1424,7 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1488,7 +1531,7 @@ class PaymentController extends Controller
             }
 
             // --- TÍNH TOÁN LẠI GIÁ TRỊ CUỐI CÙNG ---
-            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : $this->calculateShippingFee($request->shipping_method);
+            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
             $totalDiscount = $buyNowData['discount'] + $discountFromPoints;
             $grandTotal = $buyNowData['subtotal'] + $shippingFee - $totalDiscount;
 

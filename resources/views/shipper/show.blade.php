@@ -77,8 +77,8 @@
                 <a href="tel:{{ $order->customer_phone }}" class="h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full"><i class="fas fa-phone-alt"></i></a>
             </div>
             <div class="flex items-center justify-between">
-                <p class="text-gray-700">{{ $order->shipping_address_line1 }}, {{ $order->shipping_ward }}, {{ $order->shipping_district }}</p>
-                <a href="https://maps.google.com/?q={{ urlencode($order->shipping_address_line1 . ', ' . $order->shipping_ward . ', ' . $order->shipping_district) }}" target="_blank" class="h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full"><i class="fas fa-map-marker-alt"></i></a>
+                <p class="text-gray-700">{{ $order->shipping_full_address }}</p>
+                <a href="https://maps.google.com/?q={{ urlencode($order->shipping_full_address) }}" target="_blank" class="h-10 w-10 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full"><i class="fas fa-map-marker-alt"></i></a>
             </div>
         </div>
 

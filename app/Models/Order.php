@@ -14,6 +14,8 @@ class Order extends Model
     public const STATUS_PENDING_CONFIRMATION = 'pending_confirmation';
     public const STATUS_PROCESSING = 'processing';
     public const STATUS_AWAITING_SHIPMENT = 'awaiting_shipment';
+    public const STATUS_AWAITING_SHIPMENT_PACKED = 'awaiting_shipment_packed';
+    public const STATUS_AWAITING_SHIPMENT_ASSIGNED = 'awaiting_shipment_assigned';
     public const STATUS_SHIPPED = 'shipped';
     public const STATUS_OUT_FOR_DELIVERY = 'out_for_delivery';
     public const STATUS_DELIVERED = 'delivered';
@@ -92,6 +94,8 @@ class Order extends Model
             self::STATUS_PENDING_CONFIRMATION => 'Chờ xác nhận',
             self::STATUS_PROCESSING => 'Đang xử lý',
             self::STATUS_AWAITING_SHIPMENT => 'Chờ giao hàng',
+            self::STATUS_AWAITING_SHIPMENT_PACKED => 'Chờ vận chuyển: đã đóng gói xong',
+            self::STATUS_AWAITING_SHIPMENT_ASSIGNED => 'Chờ vận chuyển: Đã gán shipper',
             self::STATUS_SHIPPED => 'Đã xuất kho',
             self::STATUS_OUT_FOR_DELIVERY => 'Đang giao hàng',
             self::STATUS_DELIVERED => 'Giao thành công',

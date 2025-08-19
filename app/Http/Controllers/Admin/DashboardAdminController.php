@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Product;
 use App\Models\OrderItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -154,16 +155,23 @@ class DashboardAdminController extends Controller
 
     private function getTopSellingProducts(Carbon $start, Carbon $end, $limit = 5)
     {
-        return DB::table('order_items')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->join('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
-            ->join('products', 'product_variants.product_id', '=', 'products.id')
-            ->where('orders.status', 'delivered')
-            ->whereBetween('orders.created_at', [$start, $end])
-            ->select('products.name', DB::raw('SUM(order_items.quantity) as total_quantity'))
-            ->groupBy('products.name')
-            ->orderBy('total_quantity', 'desc')
-            ->limit($limit)
-            ->get();
+        return Product::with([
+            // Tải sẵn các relationship ảnh để tối ưu tốc độ
+            'coverImage',
+            'variants.primaryImage'
+        ])
+        ->select('products.*') // Lấy tất cả các cột từ bảng products
+        ->join('product_variants', 'products.id', '=', 'product_variants.product_id')
+        ->join('order_items', 'product_variants.id', '=', 'order_items.product_variant_id')
+        ->join('orders', 'order_items.order_id', '=', 'orders.id')
+        ->where('orders.status', 'delivered')
+        ->whereBetween('orders.created_at', [$start, $end])
+        // Thêm cột total_quantity được tính toán
+        ->addSelect(DB::raw('SUM(order_items.quantity) as total_quantity'))
+        // Group by ID của sản phẩm để tổng hợp số lượng bán
+        ->groupBy('products.id', 'products.name', 'products.slug', /* ... thêm các cột khác của products ở đây nếu cần */)
+        ->orderBy('total_quantity', 'desc')
+        ->limit($limit)
+        ->get();
     }
 }

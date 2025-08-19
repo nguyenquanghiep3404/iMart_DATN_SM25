@@ -131,22 +131,53 @@ class ShipmentController extends Controller
                 ], 404);
             }
 
-            // Logic tính phí vận chuyển
-            $baseFee = 30000; // Phí cơ bản 30k
-            $weightFee = max(0, ($totalWeight - 1000) * 5); // 5 VND/gram cho phần vượt 1kg
-            
-            // Phí theo khoảng cách vùng miền
+            // Logic tính phí vận chuyển mới
             $originProvince = ProvinceOld::where('code', $storeLocation->province_code)->first();
             $destinationProvince = ProvinceOld::where('code', $destinationProvinceCode)->first();
             
-            $distanceFee = 0;
+            $baseFee = 0;
+            $weightFee = 0;
+            
+            // Kiểm tra xem có kho tại tỉnh đích không
+            $hasWarehouseAtDestination = StoreLocation::where('province_code', $destinationProvinceCode)->exists();
+            
             if ($originProvince && $destinationProvince) {
-                if ($originProvince->region !== $destinationProvince->region) {
-                    $distanceFee = 20000; // Phí liên vùng
+                // Trường hợp 1: Giao hàng nội tỉnh - MIỄN PHÍ
+                if ($originProvince->code === $destinationProvince->code) {
+                    $baseFee = 0;
+                    $weightFee = 0;
                 }
+                // Trường hợp 2: Có kho tại tỉnh đích
+                else if ($hasWarehouseAtDestination) {
+                    if ($originProvince->region === $destinationProvince->region) {
+                        // Cùng vùng miền
+                        $baseFee = 15000;
+                        $weightFee = max(0, ($totalWeight - 1000) * 5); // 5 VND/gram cho phần vượt 1kg
+                    } else {
+                        // Khác vùng miền
+                        $baseFee = 35000;
+                        $weightFee = max(0, ($totalWeight - 1000) * 10); // 10 VND/gram cho phần vượt 1kg
+                    }
+                }
+                // Trường hợp 3: Không có kho tại tỉnh đích
+                else {
+                    if ($originProvince->region === $destinationProvince->region) {
+                        // Cùng vùng miền
+                        $baseFee = 25000;
+                        $weightFee = max(0, ($totalWeight - 1000) * 5); // 5 VND/gram cho phần vượt 1kg
+                    } else {
+                        // Khác vùng miền
+                        $baseFee = 40000;
+                        $weightFee = max(0, ($totalWeight - 1000) * 10); // 10 VND/gram cho phần vượt 1kg
+                    }
+                }
+            } else {
+                // Fallback nếu không tìm thấy thông tin tỉnh
+                $baseFee = 30000;
+                $weightFee = max(0, ($totalWeight - 1000) * 5);
             }
 
-            $totalFee = $baseFee + $weightFee + $distanceFee;
+            $totalFee = $baseFee + $weightFee;
 
             return response()->json([
                 'success' => true,
@@ -154,7 +185,9 @@ class ShipmentController extends Controller
                 'breakdown' => [
                     'base_fee' => $baseFee,
                     'weight_fee' => $weightFee,
-                    'distance_fee' => $distanceFee
+                    'has_warehouse_at_destination' => $hasWarehouseAtDestination,
+                    'is_same_province' => $originProvince && $destinationProvince && $originProvince->code === $destinationProvince->code,
+                    'is_same_region' => $originProvince && $destinationProvince && $originProvince->region === $destinationProvince->region
                 ]
             ]);
 

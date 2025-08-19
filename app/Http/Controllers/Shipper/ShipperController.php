@@ -19,7 +19,7 @@ class ShipperController extends Controller
 
         // Lấy các đơn hàng được gán cho shipper này để xử lý trong ngày
         $ordersToPickup = Order::where('shipped_by', $shipper->id)
-            ->where('status', 'awaiting_shipment')
+            ->where('status', 'awaiting_shipment_assigned')
             ->orderBy('created_at', 'desc')->get();
 
         $ordersInTransit = Order::where('shipped_by', $shipper->id)
@@ -125,11 +125,52 @@ class ShipperController extends Controller
     public function updateStatus(Request $request, Order $order)
     {
         if ($order->shipped_by !== Auth::id()) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Bạn không có quyền thực hiện hành động này.'], 403);
+            }
             return back()->with('error', 'Bạn không có quyền thực hiện hành động này.');
         }
 
+        // Xử lý quét barcode để chuyển từ awaiting_shipment_assigned sang shipped
+        if ($request->has('barcode') && $request->input('status') === 'shipped') {
+            // Kiểm tra trạng thái đơn hàng phải là awaiting_shipment_assigned
+            if ($order->status !== 'awaiting_shipment_assigned') {
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Đơn hàng không ở trạng thái chờ lấy hàng.'], 400);
+                }
+                return back()->with('error', 'Đơn hàng không ở trạng thái chờ lấy hàng.');
+            }
+
+            // Xác thực mã barcode (có thể kiểm tra với order_code hoặc logic khác)
+            $barcode = $request->input('barcode');
+            
+            // Kiểm tra mã barcode có khớp với order_code không
+            if ($barcode !== $order->order_code) {
+                \Log::info('Barcode validation failed', [
+                    'barcode' => $barcode,
+                    'order_code' => $order->order_code
+                ]);
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Mã barcode không khớp với đơn hàng.'], 400);
+                }
+                return back()->with('error', 'Mã barcode không khớp với đơn hàng.');
+            }
+            
+            \Log::info('Barcode validation passed, updating order status');
+
+            // Cập nhật trạng thái sang out_for_delivery (đang giao hàng)
+            $order->status = 'out_for_delivery';
+            $order->save();
+
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'message' => 'Đã xác nhận lấy hàng và bắt đầu giao hàng!']);
+            }
+            return redirect()->route('shipper.dashboard')->with('success', 'Đã xác nhận lấy hàng và bắt đầu giao hàng!');
+        }
+
+        // Logic cũ cho các trạng thái khác
         $validated = $request->validate([
-            'status' => 'required|string|in:shipped,delivered,failed_delivery',
+            'status' => 'required|string|in:out_for_delivery,delivered,failed_delivery',
             'reason' => 'nullable|string|max:255',
             'notes'  => 'nullable|string|max:500' // Ghi chú thêm
         ]);

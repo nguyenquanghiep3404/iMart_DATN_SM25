@@ -100,6 +100,18 @@
                     'route' => 'admin.packing-station.index',
                     'active_check' => ['admin.packing-station.'],
                 ],
+                // MỚI: Thêm route tra cứu serial
+                [
+                    'label' => 'Tra cứu Serial',
+                    'route' => 'admin.serial.lookup.form',
+                    'active_check' => ['admin.serial.lookup.'],
+                ],
+                // MỚI: Thêm route báo cáo tồn kho
+                [
+                    'label' => 'Sổ kho (Báo cáo)',
+                    'route' => 'admin.inventory-ledger.index',
+                    'active_check' => ['admin.inventory-ledger.'],
+                ],
             ],
         ],
 
@@ -308,7 +320,7 @@
                             <li>
                                 <a href="{{ route($navItem['route']) }}"
                                     class="group relative flex items-center px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out
-                                          {{ $isLinkActive ? 'text-indigo-600 font-semibold' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium' }}">
+                                        {{ $isLinkActive ? 'text-indigo-600 font-semibold' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 font-medium' }}">
                                     {{-- THAY ĐỔI: Thêm chỉ báo active --}}
                                     @if ($isLinkActive)
                                         <span
@@ -330,7 +342,7 @@
                                 <button
                                     @click="openNav = (openNav === '{{ $navItem['id'] }}' ? null : '{{ $navItem['id'] }}')"
                                     class="group w-full flex items-center px-3 py-2 text-sm rounded-md transition-all duration-200 ease-in-out font-medium
-                                               {{ $isDropdownActive ? 'text-slate-900' : 'text-slate-700' }} hover:text-slate-900 hover:bg-slate-100">
+                                            {{ $isDropdownActive ? 'text-slate-900' : 'text-slate-700' }} hover:text-slate-900 hover:bg-slate-100">
                                     {{-- THAY ĐỔI: Thêm chỉ báo active --}}
                                     @if ($isDropdownActive)
                                         <span
@@ -366,7 +378,7 @@
                                             {{-- THAY ĐỔI: Giao diện active cho menu con --}}
                                             <a href="{{ route($child['route']) }}"
                                                 class="relative flex items-center w-full py-1.5 px-3 text-sm rounded-md transition-colors duration-150
-                                                      {{ $isChildActive ? 'text-indigo-600 font-semibold' : 'text-slate-600 hover:text-slate-900' }}">
+                                                    {{ $isChildActive ? 'text-indigo-600 font-semibold' : 'text-slate-600 hover:text-slate-900' }}">
                                                 <span
                                                     class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1 rounded-full {{ $isChildActive ? 'bg-indigo-600' : 'bg-slate-400' }}"></span>
                                                 <span class="ml-4">{{ $child['label'] }}</span>

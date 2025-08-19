@@ -587,6 +587,9 @@
         console.log('Loại sản phẩm:', window.productType);
         window.baseSlug = @json($product->slug ?? 'default-slug'); // Thêm window.baseSlug
         console.log('window.baseSlug:', window.baseSlug);
+        window.bundleData = @json($productBundles);
+        console.log('window.bundleData:', window.bundleData);
+        window.productName = @json($product->name);
         window.variantData = @json($variantData);
         window.attributeOrder = @json($attributeOrder);
         window.availableCombinations = @json($availableCombinations);
@@ -676,6 +679,177 @@
                 return price.toLocaleString('vi-VN', {
                     style: 'currency',
                     currency: 'VND'
+                });
+            }
+
+            // Hàm cập nhật HTML sản phẩm chính trong bundle
+            function updateMainProductHtml(bundleContainer, variant) {
+                const mainProductEl = bundleContainer.querySelector('.bundle-main-product');
+                if (!mainProductEl) return;
+                const priceHtml = variant.sale_price ?
+                    `${formatPrice(variant.sale_price)} <span class="text-gray-500 line-through text-xs">${formatPrice(variant.price)}</span>` :
+                    formatPrice(variant.price);
+
+                // Tạo tên sản phẩm động dựa trên attributeOrder và currentSelections
+                let productName = window.productName;
+                if (window.productType === 'variable' && window.attributeOrder && window.currentSelections) {
+                    const selectedValues = window.attributeOrder
+                        .map(attr => window.currentSelections[attr] || '')
+                        .filter(val => val)
+                        .join(' ');
+                    productName = `${window.productName} ${selectedValues}`.trim();
+                }
+
+                mainProductEl.innerHTML = `
+                <img src="${variant.image || '/images/no-image.png'}" class="w-32 h-32 object-contain mb-2" alt="${productName}">
+                <p class="font-semibold text-sm">${productName}</p>
+                <p class="font-bold text-red-600">${priceHtml}</p>
+             `;
+                mainProductEl.dataset.price = variant.sale_price || variant.price;
+                mainProductEl.dataset.variantId = variant.variant_id;
+                console.log(
+                    `[DEBUG] Đã cập nhật sản phẩm chính cho bundle ${bundleContainer.dataset.bundleId}: ${productName}`
+                );
+            }
+
+            // Hàm gọi API lấy sản phẩm kèm theo
+            async function fetchSuggestedProductsForBundle(bundleId, variantId) {
+                console.log(`[DEBUG] 🔄 Fetch API cho bundle ${bundleId} với variantId ${variantId}`);
+                try {
+                    const response = await fetch(`/bundle-suggested-products/${variantId}`, {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    console.log(`[DEBUG] 📦 API trả về cho bundle ${bundleId}:`, data);
+                    if (data.suggested && Array.isArray(data.suggested)) {
+                        // Chuyển đổi is_preselected thành boolean
+                        const suggestedProducts = data.suggested.map(product => ({
+                            ...product,
+                            is_preselected: product.is_preselected ?? false // Fallback nếu thiếu
+                        }));
+                        console.log(`[DEBUG] Sản phẩm kèm theo sau khi xử lý is_preselected:`,
+                            suggestedProducts);
+                        renderSuggestedProductsForBundle(bundleId, suggestedProducts);
+                    } else {
+                        console.error(`[ERROR] 🚨 Dữ liệu API không hợp lệ cho bundle ${bundleId}:`, data);
+                        const bundleContainer = document.getElementById(`bundle-deal-container-${bundleId}`);
+                        if (bundleContainer) {
+                            bundleContainer.querySelector('.bundle-suggested-products').innerHTML =
+                                '<p class="text-red-500">Lỗi: Không tải được sản phẩm kèm theo.</p>';
+                        }
+                    }
+                } catch (error) {
+                    console.error(`[ERROR] 💥 Lỗi khi gọi API cho bundle ${bundleId}:`, error);
+                    const bundleContainer = document.getElementById(`bundle-deal-container-${bundleId}`);
+                    if (bundleContainer) {
+                        bundleContainer.querySelector('.bundle-suggested-products').innerHTML =
+                            '<p class="text-red-500">Lỗi: Không tải được sản phẩm kèm theo.</p>';
+                    }
+                }
+            }
+
+            // Hàm render sản phẩm kèm theo
+            function renderSuggestedProductsForBundle(bundleId, suggestedProducts) {
+                console.log(`[DEBUG] 🎨 Render sản phẩm kèm theo cho bundle ${bundleId}:`, suggestedProducts);
+                const bundleContainer = document.getElementById(`bundle-deal-container-${bundleId}`);
+                if (!bundleContainer) return console.error(
+                    `[ERROR] Không tìm thấy container cho bundle ${bundleId}`);
+                const suggestedContainer = bundleContainer.querySelector('.bundle-suggested-products');
+                if (!suggestedContainer) return console.error('[ERROR] Không tìm thấy container sản phẩm kèm theo');
+                suggestedContainer.innerHTML = '';
+                suggestedProducts.forEach((product, index) => {
+                    const priceHtml = product.sale_price ?
+                        `${formatPrice(product.sale_price)} <span class="text-gray-500 line-through text-xs">${formatPrice(product.price)}</span>` :
+                        formatPrice(product.price);
+                    // Chuyển đổi is_preselected thành boolean với fallback
+                    const isPreselected = product.is_preselected ?? false;
+                    const isChecked = isPreselected ? 'checked' : '';
+                    console.log(
+                        `[DEBUG] Sản phẩm ${product.name}: is_preselected=${product.is_preselected} (raw), isPreselected=${isPreselected}, checked=${isChecked}`
+                        );
+                    const productHtml = `
+                    <div class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
+                        <input type="checkbox"
+                            data-price="${product.sale_price || product.price}"
+                            data-variant-id="${product.variant_id}"
+                            class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+                            ${isChecked}>
+                        <img src="${product.image}" class="w-32 h-32 object-contain mb-2" alt="${product.name}">
+                        <p class="font-semibold text-sm">${product.name}</p>
+                        <p class="font-bold text-red-600">${priceHtml}</p>
+                    </div>
+                `;
+                    if (index > 0) {
+                        suggestedContainer.insertAdjacentHTML('beforeend',
+                            '<div class="text-3xl font-light text-gray-400 plus-sign">+</div>');
+                    }
+                    suggestedContainer.insertAdjacentHTML('beforeend', productHtml);
+                });
+                attachCheckboxEvents(bundleId);
+                updateBundleTotalPrice(bundleId);
+                // Debug trạng thái checkbox sau khi render
+                const checkboxes = suggestedContainer.querySelectorAll('.bundle-checkbox');
+                checkboxes.forEach(checkbox => {
+                    console.log(
+                        `[DEBUG] Checkbox variant_id=${checkbox.dataset.variantId}, checked=${checkbox.checked}`
+                        );
+                });
+            }
+
+            // Hàm gắn sự kiện cho checkbox
+            function attachCheckboxEvents(bundleId) {
+                const bundleContainer = document.getElementById(`bundle-deal-container-${bundleId}`);
+                if (!bundleContainer) return;
+                const checkboxes = bundleContainer.querySelectorAll('.bundle-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.removeEventListener('change', () => updateBundleTotalPrice(bundleId));
+                    checkbox.addEventListener('change', () => updateBundleTotalPrice(bundleId));
+                });
+            }
+
+            // Hàm cập nhật tổng giá bundle
+            function updateBundleTotalPrice(bundleId) {
+                console.log(`[DEBUG] Tính tổng giá cho bundle ${bundleId}`);
+                const bundleContainer = document.getElementById(`bundle-deal-container-${bundleId}`);
+                if (!bundleContainer) return console.error(
+                    `[ERROR] Không tìm thấy container cho bundle ${bundleId}`);
+                const checkboxes = bundleContainer.querySelectorAll('.bundle-checkbox:checked');
+                const mainProductEl = bundleContainer.querySelector('.bundle-main-product');
+                const mainProductPrice = parseInt(mainProductEl.dataset.price) || 0;
+                let totalPrice = mainProductPrice;
+                checkboxes.forEach(checkbox => totalPrice += parseInt(checkbox.dataset.price) || 0);
+                const totalPriceEl = document.getElementById(`bundle-total-price-${bundleId}`);
+                if (totalPriceEl) totalPriceEl.textContent = formatPrice(totalPrice);
+            }
+
+            // Hàm cập nhật tất cả bundle khi thay đổi biến thể
+            function updateBundles(variantKey) {
+                console.log(`[DEBUG] 👉 Bắt đầu update bundles cho variantKey: ${variantKey}`);
+                if (!window.variantData || !window.variantData[variantKey]) {
+                    console.error('[ERROR] ❌ Không tìm thấy biến thể:', variantKey);
+                    return;
+                }
+                const variant = window.variantData[variantKey];
+                const variantId = variant.variant_id;
+
+                console.log('[DEBUG] ✅ Biến thể hiện tại:', variant);
+
+                window.bundleData.forEach(bundle => {
+                    const bundleContainer = document.getElementById(`bundle-deal-container-${bundle.id}`);
+                    if (bundleContainer) {
+                        console.log(`[DEBUG] 📝 Update main product cho bundle ${bundle.id}`);
+                        updateMainProductHtml(bundleContainer, variant);
+                        console.log(
+                            `[DEBUG] 🌐 Gọi API fetchSuggestedProductsForBundle(${bundle.id}, ${variantId})`
+                        );
+                        fetchSuggestedProductsForBundle(bundle.id, variantId);
+                    }
                 });
             }
 
@@ -839,9 +1013,9 @@
                     <p class="font-bold text-lg text-red-600">
             ${formatPrice(displayPrice)}
             ${hasSale ? `
-                                                                        <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
-                                                                        <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
-                                                                    ` : ''}
+                                                                                                <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
+                                                                                                <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
+                                                                                            ` : ''}
         </p>
         <p class="font-semibold text-gray-800 mt-1">
             ${productName}${variantName ? ` - ${variantName}` : ''}
@@ -1514,6 +1688,10 @@
                 updateSpecifications(key);
                 updateStickyBar(key);
                 saveRecentProduct();
+                // Thêm lời gọi để cập nhật bundle
+                if (window.bundleData) {
+                    updateBundles(key);
+                }
             }
 
             function initializeGallery() {
@@ -2050,6 +2228,20 @@
                 }
                 initDragScroll();
                 scrollObserver.observe(mainCtaButtons);
+
+                // Thêm khởi tạo bundle tại đây
+                if (window.productType === 'variable') {
+                    const defaultKey = getVariantKey();
+                    console.log('[DEBUG] Khởi tạo bundle với defaultKey:', defaultKey);
+                    if (defaultKey && window.bundleData) {
+                        updateBundles(defaultKey);
+                    }
+                } else {
+                    console.log('[DEBUG] Sản phẩm không có biến thể, khởi tạo bundle với default');
+                    if (window.bundleData) {
+                        updateBundles('default');
+                    }
+                }
             });
 
             // Gắn sự kiện đóng modal (nút X)

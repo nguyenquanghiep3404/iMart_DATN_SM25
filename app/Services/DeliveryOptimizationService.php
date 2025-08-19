@@ -16,78 +16,7 @@ use Exception;
  */
 class DeliveryOptimizationService
 {
-    /**
-     * Lấy tất cả các tùy chọn giao hàng có thể cho đơn hàng
-     *
-     * @param Order $order
-     * @return array
-     */
-    public function getAllDeliveryOptions(Order $order): array
-    {
-        try {
-            $options = [];
-            $destinationProvince = ProvinceOld::find($order->shipping_old_province_code);
-            
-            if (!$destinationProvince) {
-                return [
-                    'success' => false,
-                    'message' => 'Không tìm thấy thông tin tỉnh đích'
-                ];
-            }
 
-            // Tùy chọn 1: Giao hàng nội bộ (nếu có kho trong tỉnh)
-            $warehouseInProvince = $this->findWarehouseInProvince($destinationProvince->code);
-            if ($warehouseInProvince && $this->checkStockAvailability($order, $warehouseInProvince->id)) {
-                $internalOption = $this->getInternalShippingOption($order, $warehouseInProvince);
-                if ($internalOption['success']) {
-                    $options[] = [
-                        'type' => 'internal',
-                        'name' => 'Giao hàng nội bộ',
-                        'description' => 'Shipper nội bộ giao hàng từ kho trong tỉnh',
-                        'estimated_days' => 1,
-                        'shipping_fee' => $internalOption['shipping_fee'],
-                        'warehouse_id' => $warehouseInProvince->id,
-                        'warehouse_name' => $warehouseInProvince->name,
-                        'priority' => 1
-                    ];
-                }
-            }
-
-            // Tùy chọn 2: API bên thứ 3
-            $externalOption = $this->getExternalShippingOption($order);
-            if ($externalOption['success']) {
-                $options[] = [
-                    'type' => 'external',
-                    'name' => 'Giao hàng qua đối tác',
-                    'description' => 'Sử dụng dịch vụ giao hàng bên thứ 3',
-                    'estimated_days' => $externalOption['estimated_days'],
-                    'shipping_fee' => $externalOption['shipping_fee'],
-                    'provider' => $externalOption['provider'],
-                    'priority' => 2
-                ];
-            }
-
-            // Sắp xếp theo độ ưu tiên
-            usort($options, function($a, $b) {
-                return $a['priority'] <=> $b['priority'];
-            });
-
-            $recommended = !empty($options) ? $options[0] : null;
-
-            return [
-                'success' => true,
-                'options' => $options,
-                'recommended' => $recommended
-            ];
-
-        } catch (Exception $e) {
-            Log::error('Error getting delivery options: ' . $e->getMessage());
-            return [
-                'success' => false,
-                'message' => 'Lỗi khi lấy tùy chọn giao hàng: ' . $e->getMessage()
-            ];
-        }
-    }
     /**
      * Xác định phương thức giao hàng tối ưu cho đơn hàng
      *
@@ -119,8 +48,11 @@ class DeliveryOptimizationService
                 // Có kho và có hàng trong tỉnh -> Ưu tiên shipper nội bộ
                 return $this->getInternalShippingOption($order, $warehouseInProvince);
             } else {
-                // Không có kho hoặc không có hàng -> Dùng API bên thứ 3
-                return $this->getExternalShippingOption($order);
+                // Không có kho hoặc không có hàng -> Trả về lỗi
+                return [
+                    'success' => false,
+                    'message' => 'Không thể giao hàng đến địa chỉ này'
+                ];
             }
 
         } catch (Exception $e) {
@@ -170,6 +102,20 @@ class DeliveryOptimizationService
         // Tìm shipper có thể giao hàng từ warehouse này
         $availableShippers = $this->findAvailableShippers($warehouse->id);
 
+        // Tính thời gian vận chuyển từ bảng shipping_transit_times
+        $transitTime = \App\Models\ShippingTransitTime::getTransitTime(
+            'store_shipper',
+            $warehouse->province_code,
+            $order->shipping_old_province_code
+        );
+
+        // Nếu không có dữ liệu, mặc định là 7 ngày
+        $transitDaysMin = $transitTime ? $transitTime->transit_days_min : 7;
+        $transitDaysMax = $transitTime ? $transitTime->transit_days_max : 7;
+        $estimatedDeliveryTime = $transitDaysMin == $transitDaysMax ? 
+            "{$transitDaysMin} ngày" : 
+            "{$transitDaysMin}-{$transitDaysMax} ngày";
+
         return [
             'success' => true,
             'method' => 'internal_shipping',
@@ -180,38 +126,17 @@ class DeliveryOptimizationService
                 'province' => $warehouse->province_code
             ],
             'available_shippers' => $availableShippers,
-            'estimated_delivery_time' => '1-2 ngày',
+            'estimated_delivery_time' => $estimatedDeliveryTime,
+            'transit_days_min' => $transitDaysMin,
+            'transit_days_max' => $transitDaysMax,
+            'estimated_delivery_date' => now()->addDays($transitDaysMax)->format('Y-m-d'),
             'shipping_fee' => $this->calculateInternalShippingFee($order, $warehouse),
             'priority' => 1, // Ưu tiên cao nhất
-            'description' => 'Giao hàng bởi shipper nội bộ từ kho trong tỉnh'
+            'description' => 'Giao hàng bởi shipper nội bộ từ kho'
         ];
     }
 
-    /**
-     * Lấy tùy chọn giao hàng bên ngoài (API GHN, GHTK, etc.)
-     */
-    private function getExternalShippingOption(Order $order): array
-    {
-        return [
-            'success' => true,
-            'method' => 'external_shipping',
-            'method_name' => 'Giao hàng nhanh',
-            'providers' => [
-                [
-                    'name' => 'Giao Hàng Nhanh (GHN)',
-                    'estimated_delivery_time' => '2-3 ngày',
-                    'shipping_fee' => $this->calculateExternalShippingFee($order, 'ghn')
-                ],
-                [
-                    'name' => 'Giao Hàng Tiết Kiệm (GHTK)',
-                    'estimated_delivery_time' => '3-5 ngày',
-                    'shipping_fee' => $this->calculateExternalShippingFee($order, 'ghtk')
-                ]
-            ],
-            'priority' => 2, // Ưu tiên thấp hơn
-            'description' => 'Giao hàng qua đối tác bên ngoài'
-        ];
-    }
+
 
     /**
      * Tìm shipper có thể giao hàng từ warehouse
@@ -235,41 +160,62 @@ class DeliveryOptimizationService
     }
 
     /**
-     * Tính phí giao hàng nội bộ
+     * Tính phí giao hàng nội bộ - sử dụng logic từ ShipmentController
      */
     private function calculateInternalShippingFee(Order $order, StoreLocation $warehouse): int
     {
-        // Logic tính phí giao hàng nội bộ
-        // Có thể dựa trên khoảng cách, trọng lượng, v.v.
-        $baseFee = 25000; // Phí cơ bản 25k
+        // Sử dụng logic tính phí từ ShipmentController
+        $totalWeight = $this->calculateOrderWeight($order) * 1000; // Chuyển từ kg sang gram
         
-        // Tính thêm phí theo trọng lượng (nếu có)
-        $totalWeight = $this->calculateOrderWeight($order);
-        $weightFee = max(0, ($totalWeight - 1) * 5000); // 5k cho mỗi kg sau kg đầu tiên
+        $originProvince = ProvinceOld::where('code', $warehouse->province_code)->first();
+         $destinationProvince = ProvinceOld::where('code', $order->shipping_old_province_code)->first();
+         
+         $baseFee = 0;
+         $weightFee = 0;
+         
+         // Kiểm tra xem có kho tại tỉnh đích không
+         $hasWarehouseAtDestination = StoreLocation::where('province_code', $order->shipping_old_province_code)->exists();
+        
+        if ($originProvince && $destinationProvince) {
+            // Trường hợp 1: Giao hàng nội tỉnh - MIỄN PHÍ
+            if ($originProvince->code === $destinationProvince->code) {
+                $baseFee = 0;
+                $weightFee = 0;
+            }
+            // Trường hợp 2: Có kho tại tỉnh đích
+            else if ($hasWarehouseAtDestination) {
+                if ($originProvince->region === $destinationProvince->region) {
+                    // Cùng vùng miền
+                    $baseFee = 15000;
+                    $weightFee = max(0, ($totalWeight - 1000) * 5); // 5 VND/gram cho phần vượt 1kg
+                } else {
+                    // Khác vùng miền
+                    $baseFee = 35000;
+                    $weightFee = max(0, ($totalWeight - 1000) * 10); // 10 VND/gram cho phần vượt 1kg
+                }
+            }
+            // Trường hợp 3: Không có kho tại tỉnh đích - PHÍ CỐ ĐỊNH
+            else {
+                if ($originProvince->region === $destinationProvince->region) {
+                    // Cùng vùng miền - PHÍ CỐ ĐỊNH
+                    $baseFee = 25000;
+                    $weightFee = 0; // KHÔNG tính theo trọng lượng
+                } else {
+                    // Khác vùng miền - PHÍ CỐ ĐỊNH
+                    $baseFee = 40000;
+                    $weightFee = 0; // KHÔNG tính theo trọng lượng
+                }
+            }
+        } else {
+            // Fallback nếu không tìm thấy thông tin tỉnh
+            $baseFee = 30000;
+            $weightFee = 0; // Cũng nên là phí cố định
+        }
         
         return $baseFee + $weightFee;
     }
 
-    /**
-     * Tính phí giao hàng bên ngoài
-     */
-    private function calculateExternalShippingFee(Order $order, string $provider): int
-    {
-        // Logic tính phí giao hàng bên ngoài
-        // Có thể tích hợp API thực tế của các nhà cung cấp
-        $baseFees = [
-            'ghn' => 35000,
-            'ghtk' => 30000
-        ];
-        
-        $baseFee = $baseFees[$provider] ?? 35000;
-        
-        // Tính thêm phí theo trọng lượng
-        $totalWeight = $this->calculateOrderWeight($order);
-        $weightFee = max(0, ($totalWeight - 1) * 8000); // 8k cho mỗi kg sau kg đầu tiên
-        
-        return $baseFee + $weightFee;
-    }
+
 
     /**
      * Tính tổng trọng lượng đơn hàng
@@ -306,14 +252,6 @@ class DeliveryOptimizationService
                 $pickupOption = $this->getPickupOption($order, $destinationProvince);
                 if ($pickupOption['success']) {
                     $options[] = $pickupOption;
-                }
-                
-                // Nếu tùy chọn tối ưu là nội bộ, thêm tùy chọn bên ngoài
-                if ($optimalOption['success'] && $optimalOption['method'] === 'internal_shipping') {
-                    $externalOption = $this->getExternalShippingOption($order);
-                    if ($externalOption['success']) {
-                        $options[] = $externalOption;
-                    }
                 }
             }
             
@@ -394,5 +332,37 @@ class DeliveryOptimizationService
         }
 
         return ['needs_transfer' => false, 'reason' => 'Đã có đủ hàng trong tỉnh đích'];
+    }
+
+    /**
+     * Tìm kho gần nhất với tỉnh đích
+     */
+    private function findNearestWarehouse($destinationProvinceCode): ?StoreLocation
+    {
+        // Tìm kho trong cùng tỉnh trước
+        $warehouse = StoreLocation::where('province_code', $destinationProvinceCode)
+            ->where('is_active', true)
+            ->first();
+            
+        if ($warehouse) {
+            return $warehouse;
+        }
+        
+        // Nếu không có kho trong tỉnh, tìm kho trong cùng vùng miền
+        $destinationProvince = ProvinceOld::where('code', $destinationProvinceCode)->first();
+        if ($destinationProvince) {
+            $warehouse = StoreLocation::join('provinces_old', 'store_locations.province_code', '=', 'provinces_old.code')
+                ->where('provinces_old.region', $destinationProvince->region)
+                ->where('store_locations.is_active', true)
+                ->select('store_locations.*')
+                ->first();
+                
+            if ($warehouse) {
+                return $warehouse;
+            }
+        }
+        
+        // Cuối cùng, trả về kho đầu tiên có sẵn
+        return StoreLocation::where('is_active', true)->first();
     }
 }

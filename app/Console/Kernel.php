@@ -9,13 +9,17 @@ class Kernel extends ConsoleKernel
 {
     protected $commands = [
         \App\Console\Commands\CancelUnpaidQrOrders::class,
+        \App\Console\Commands\ProcessStockTransferArrivals::class,
     ];
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('app:detect-abandoned-carts')->everyMinute();
         $schedule->command('customers:update-groups')->daily();
         $schedule->command('orders:cancel-unpaid-qr')->daily();
+
         $schedule->command('orders:autocomplete')->dailyAt('02:00');
+
+        $schedule->command('stock-transfer:process-arrivals')->hourly();
     }
 
     protected function commands()
