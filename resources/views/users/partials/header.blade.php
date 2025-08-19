@@ -1,11 +1,3 @@
-{{--
-    Tệp header này đã được hợp nhất.
-    Nó bao gồm các chức năng từ header cũ của bạn (menu di động, tìm kiếm, hiệu ứng cuộn)
-    và đã được tích hợp thêm hệ thống thông báo từ header mới.
-    JavaScript cũng đã được kết hợp để xử lý tất cả các tương tác,
-    bao gồm cả việc chuyển đổi giữa menu chính và chế độ xem thông báo trong dropdown của người dùng.
---}}
-
 <style>
     /* --- CSS cho hiệu ứng chuyển động --- */
     #mobile-menu {
@@ -49,7 +41,7 @@
 
     /* --- Styles for Animated Search Bar --- */
     .search-wrapper.is-focused {
-        background-image: linear-gradient(to right, #9aadf9, #b0d4d2, #f2adda, #b0d4d2, #9aadf9);
+
         background-size: 300% auto;
         animation: animated-gradient 8s linear infinite;
     }
@@ -59,7 +51,7 @@
     }
 
     .search-wrapper .relative.is-focused-inner .search-input {
-        color: #1f2937;
+        color: #ffffffff;
     }
 
     .search-wrapper .relative.is-focused-inner .search-input::placeholder {
@@ -81,7 +73,6 @@
     }
 
     .search-submit-btn.is-focused {
-        background-image: linear-gradient(to right, #9aadf9, #b0d4d2, #f2adda, #b0d4d2, #9aadf9);
         background-size: 300% auto;
         animation: animated-gradient 8s linear infinite;
     }
@@ -91,7 +82,7 @@
         background-color: rgba(17, 24, 39, 0.85);
         -webkit-backdrop-filter: blur(16px);
         backdrop-filter: blur(16px);
-        border-bottom-color: rgba(55, 65, 81, 0.6);
+        border-bottom-color: rgba(0, 0, 0, 0.6);
     }
 
     .after\:transition-all::after {
@@ -111,10 +102,21 @@
             <div class="flex-1 flex justify-center">
                 <nav class="hidden lg:flex items-center space-x-8">
                     @foreach ($menuCategories ?? [] as $cat)
-                        <a href="{{ route('products.byCategory', ['id' => $cat->id, 'slug' => $cat->slug]) }}"
-                            class="text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">
-                            {{ $cat->name }}
-                        </a>
+                        @php
+                            // Tạo slug từ tên danh mục bằng Str::slug
+                            $slug = Illuminate\Support\Str::slug($cat->name);
+                        @endphp
+                        @if ($cat->children->isNotEmpty())
+                            <a href="{{ route('products.byCategory', ['id' => $cat->id, 'slug' => $slug]) }}"
+                                class="category-link text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">
+                                {{ $cat->name }}
+                            </a>
+                        @else
+                            <a href="{{ route('products.byCategory', ['id' => $cat->id, 'slug' => $slug]) }}"
+                                class="category-link text-sm font-medium text-gray-300 hover:text-white transition-colors duration-200 whitespace-nowrap">
+                                {{ $cat->name }}
+                            </a>
+                        @endif
                     @endforeach
                 </nav>
             </div>
@@ -141,62 +143,75 @@
                         </svg>
                     </a>
 
-                    <!-- User Menu Container -->
                     <div class="relative">
                         <button id="user-menu-trigger"
                             class="relative w-10 h-10 rounded-full flex items-center justify-center text-gray-300 hover:bg-white/10 transition-colors overflow-hidden">
 
-                            @guest
-                                {{-- Icon user mặc định cho khách chưa đăng nhập --}}
+                            {{-- ✅ BẮT ĐẦU SỬA ĐỔI LOGIC --}}
+                            @auth
+                                {{-- Nếu là khách (có session tạm) thì hiển thị icon mặc định --}}
+                                @if (Auth::user()->is_guest)
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                    {{-- Nếu là người dùng thật thì hiển thị avatar --}}
+                                @else
+                                    @if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
+                                        <span id="avatar-ping"
+                                            class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10 animate-ping"></span>
+                                        <span id="avatar-dot"
+                                            class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10"></span>
+                                    @endif
+
+                                    @if (Auth::user()->avatar_url)
+                                        <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
+                                            class="w-full h-full object-cover rounded-full">
+                                    @else
+                                        <span class="text-sm font-semibold text-white uppercase">
+                                            {{ strtoupper(Auth::user()->name[0]) }}
+                                        </span>
+                                    @endif
+                                @endif
+                            @else
+                                {{-- Nếu chưa đăng nhập, hiển thị icon mặc định --}}
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor" stroke-width="2">
                                     <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                                     <circle cx="12" cy="7" r="4" />
                                 </svg>
-                            @else
-                                {{-- Hiển thị chấm đỏ nếu có thông báo chưa đọc --}}
-                                @if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
-                                    <span id="avatar-ping"
-                                        class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10 animate-ping"></span>
-                                    <span id="avatar-dot"
-                                        class="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full ring-2 ring-white z-10"></span>
-                                @endif
-
-                                {{-- Avatar người dùng hoặc chữ cái đầu --}}
-                                @if (Auth::user()->avatar_url)
-                                    <img src="{{ Auth::user()->avatar_url }}" alt="Avatar"
-                                        class="w-full h-full object-cover rounded-full">
-                                @else
-                                    <span class="text-sm font-semibold text-white uppercase">
-                                        {{ strtoupper(Auth::user()->name[0]) }}
-                                    </span>
-                                @endif
-                            @endguest
+                            @endauth
+                            {{-- ✅ KẾT THÚC SỬA ĐỔI LOGIC --}}
                         </button>
-                        <!-- Dropdown Container -->
+
                         <div id="user-dropdown-menu"
                             class="absolute top-full right-0 mt-2 w-56 bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-20 overflow-hidden">
 
-                            <!-- Main Menu View -->
                             <div id="main-menu-view">
-                                @guest
+                                {{-- ✅ BẮT ĐẦU SỬA ĐỔI LOGIC --}}
+                                {{-- Nếu là khách vãng lai (chưa đăng nhập) HOẶC là khách có session tạm, thì hiển thị menu Đăng nhập/Đăng ký --}}
+                                @if (Auth::guest() || (Auth::check() && Auth::user()->is_guest))
                                     <div class="py-2">
-                                        <a href="{{ route('login') }}"
+                                        <a href="{{ route('logout.guest') }}"
                                             class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3">
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                class="w-5 h-5 mr-3">
                                                 <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
                                                 <polyline points="10 17 15 12 10 7"></polyline>
-                                                <line x1="15" y1="12" x2="3" y2="12"></line>
+                                                <line x1="15" y1="12" x2="3" y2="12">
+                                                </line>
                                             </svg>
                                             <span>Đăng nhập</span>
                                         </a>
                                         <a href="{{ route('register') }}"
                                             class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 mr-3">
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                class="w-5 h-5 mr-3">
                                                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
                                                 <circle cx="9" cy="7" r="4"></circle>
                                                 <line x1="19" x2="19" y1="8" y2="14">
@@ -207,6 +222,7 @@
                                             <span>Đăng ký</span>
                                         </a>
                                     </div>
+                                    {{-- Ngược lại (là người dùng thật đã đăng nhập), hiển thị menu người dùng --}}
                                 @else
                                     @php $user = Auth::user(); @endphp
                                     <div class="px-4 py-3 border-b border-gray-700">
@@ -220,13 +236,13 @@
                                         {{-- Nút chuyển đến tab thông báo --}}
                                         <a href="#" id="notification-trigger"
                                             class="flex items-center px-4 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors relative">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-3"
+                                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                stroke-width="2">
                                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                                                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                                             </svg>
                                             <span>Thông báo</span>
-                                            {{-- Giả sử bạn truyền biến $unreadNotificationsCount từ controller --}}
                                             @if (isset($unreadNotificationsCount) && $unreadNotificationsCount > 0)
                                                 <span
                                                     class="ml-auto text-xs bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center">{{ $unreadNotificationsCount }}</span>
@@ -274,16 +290,17 @@
                                                     class="w-5 h-5 mr-3">
                                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                                     <polyline points="16 17 21 12 16 7"></polyline>
-                                                    <line x1="21" y1="12" x2="9" y2="12">
+                                                    <line x1="21" y1="12" x2="9"
+                                                        y2="12">
                                                     </line>
                                                 </svg>
                                                 <span>Đăng xuất</span>
                                             </button>
                                         </form>
                                     </div>
-                                @endauth
+                                @endif
+                                {{-- ✅ KẾT THÚC SỬA ĐỔI LOGIC --}}
                             </div>
-
                             <!-- Notification Detail View (initially hidden) -->
                             <div id="notification-detail-view" class="hidden">
                                 <div class="p-3 border-b border-gray-700">
@@ -413,7 +430,7 @@
 
         <div id="header-search" class="hidden items-center justify-center h-full">
             <div class="w-full max-w-2xl flex items-center space-x-4">
-                <div class="search-wrapper w-full rounded-full p-1 bg-white/10">
+                <div class="search-wrapper relative  w-full rounded-full p-1 bg-white/10">
                     <form action="{{ route('users.products.search') }}" method="GET">
                         <div class="relative bg-transparent rounded-full">
                             <input type="search" name="q" id="live-search-input" autocomplete="off"
@@ -421,7 +438,7 @@
                                 class="search-input w-full bg-transparent text-gray-300 rounded-full py-2.5 pl-6 pr-16 text-base placeholder-gray-400 focus:outline-none" />
 
                             <button type="submit"
-                                class="search-submit-btn absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-110 focus:outline-none">
+                                class="search-submit-btn absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-gray-500 text-white rounded-full hover:bg-blue-700 transition-all duration-300 transform hover:scale-110 focus:outline-none">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                     stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
@@ -431,10 +448,6 @@
                             </button>
                             <div id="live-search-results"
                                 class="absolute z-50 mt-2 w-full max-h-80 overflow-y-auto bg-white text-black rounded-lg shadow-xl hidden">
-                            </div>
-                            <div id="search-suggestions"
-                                class="absolute z-50 bg-white border border-gray-200 rounded-lg mt-2 w-full shadow-lg hidden max-h-80 overflow-auto">
-                                {{-- nội dung suggestion sẽ được JS đổ vào --}}
                             </div>
                         </div>
                     </form>
@@ -747,28 +760,7 @@
             }
         });
     }
-    let cachedCartHtml = null;
 
-    document.querySelector('[data-bs-target="#shoppingCart"]').addEventListener('click', function() {
-        if (cachedCartHtml) {
-            document.getElementById('cart-content').innerHTML = cachedCartHtml;
-            return;
-        }
-
-        fetch('/cart/offcanvas', {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(res => res.text())
-            .then(html => {
-                cachedCartHtml = html; // Lưu cache
-                document.getElementById('cart-content').innerHTML = html;
-            })
-            .catch(() => {
-                document.getElementById('cart-content').innerHTML = '<p>Có lỗi xảy ra.</p>';
-            });
-    });
     document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById('live-search-input');
         const resultBox = document.getElementById('live-search-results');
@@ -837,60 +829,60 @@
             }
         });
     });
-    document.addEventListener('DOMContentLoaded', () => {
-        const input = document.getElementById('search-input');
-        const resultBox = document.getElementById('search-suggestions');
-        let timeout;
 
-        input.addEventListener('input', function() {
-            const keyword = this.value.trim();
+    let cachedCartHtml = null;
 
-            clearTimeout(timeout);
-            if (keyword.length < 2) {
-                resultBox.innerHTML = '';
-                resultBox.classList.add('hidden');
-                return;
-            }
+    document.querySelector('[data-bs-target="#shoppingCart"]').addEventListener('click', function() {
+        if (cachedCartHtml) {
+            document.getElementById('cart-content').innerHTML = cachedCartHtml;
+            return;
+        }
 
-            timeout = setTimeout(() => {
-                fetch(`/api/search-suggestions?q=${encodeURIComponent(keyword)}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (!data.length) {
-                            resultBox.innerHTML =
-                                `<div class="px-4 py-2 text-sm text-gray-500">Không tìm thấy kết quả.</div>`;
-                            resultBox.classList.remove('hidden');
-                            return;
-                        }
+        fetch('/cart/offcanvas', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.text())
+            .then(html => {
+                cachedCartHtml = html; // Lưu cache
+                document.getElementById('cart-content').innerHTML = html;
+            })
+            .catch(() => {
+                document.getElementById('cart-content').innerHTML = '<p>Có lỗi xảy ra.</p>';
+            });
+    });
+</script>
 
-                        resultBox.innerHTML = `
-                        <div class="px-4 py-2 font-semibold text-sm text-gray-700 border-b">Sản phẩm đề xuất</div>
-                        ${data.map(p => `
-                            <a href="/san-pham/${p.slug}" class="flex px-4 py-2 items-center hover:bg-gray-100 transition">
-                                <img src="${p.image_url}" alt="${p.name}" class="w-10 h-10 object-cover rounded mr-3">
-                                <div>
-                                    <p class="text-sm font-medium text-gray-800">${p.name}</p>
-                                    ${
-                                        p.sale_price
-                                        ? `<p class="text-xs font-semibold text-red-600">${p.sale_price} <span class="line-through text-gray-400 text-xs ml-1">${p.price}</span></p>`
-                                        : `<p class="text-xs text-gray-800">${p.price}</p>`
-                                    }
-                                </div>
-                            </a>
-                        `).join('')}
-                    `;
-                        resultBox.classList.remove('hidden');
-                    })
-                    .catch(err => {
-                        console.error('Lỗi tìm kiếm:', err);
-                    });
-            }, 300);
-        });
-
-        // Đóng kết quả khi click ra ngoài
+{{-- Thêm đoạn script này vào ngay dưới phần HTML của header --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Lắng nghe sự kiện click trên toàn bộ document
         document.addEventListener('click', function(e) {
-            if (!input.contains(e.target) && !resultBox.contains(e.target)) {
-                resultBox.classList.add('hidden');
+            const target = e.target.closest('a');
+
+            // Kiểm tra xem phần tử được click có class 'category-link' không
+            if (target && target.classList.contains('category-link')) {
+                e.preventDefault();
+
+                const currentUrl = new URL(window.location.href);
+                const newUrl = new URL(target.href, window.location.origin);
+
+                // Giữ lại các tham số lọc hiện có (nếu có)
+                currentUrl.searchParams.forEach((value, key) => {
+                    if (key === 'muc-gia[]' || key === 'min_price' || key === 'max_price' ||
+                        key === 'storage') {
+                        newUrl.searchParams.set(key, value);
+                    }
+                });
+
+                // Thêm tham số sắp xếp mặc định
+                newUrl.searchParams.set('sort', 'moi_nhat');
+
+                const finalUrl = newUrl.toString();
+
+                // Chuyển hướng trình duyệt đến URL mới
+                window.location.href = finalUrl;
             }
         });
     });

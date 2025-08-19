@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\ReturnRequest;
 
 class UserOrderController extends Controller
 {
@@ -20,31 +21,38 @@ class UserOrderController extends Controller
     {
         $user = Auth::user();
 
+        if ($status === 'returned') {
+            $refunds = ReturnRequest::with(['order:id,order_code', 'orderItem.variant.product.coverImage'])
+                ->whereHas('order', fn($q) => $q->where('user_id', $user->id))
+                ->latest()
+                ->paginate(10);
+
+            return view('users.orders.index', [
+                'orders' => collect([]),
+                'status' => $status,
+                'refunds' => $refunds
+            ]);
+        }
+
         $ordersQuery = Order::where('user_id', $user->id)
-            ->with(['items' => function ($query) {
-                $query->with('productVariant');
-            }]);
+            ->with(['items' => fn($q) => $q->with('productVariant')]);
 
         if ($status) {
             $ordersQuery->where('status', $this->mapStatus($status));
         }
 
-        // Thêm tìm kiếm nếu có
         if ($request->has('search')) {
             $search = $request->input('search');
             $ordersQuery->where(function ($query) use ($search) {
                 $query->where('order_code', 'like', "%$search%")
-                    ->orWhereHas('items', function ($q) use ($search) {
-                        $q->where('product_name', 'like', "%$search%");
-                    });
+                    ->orWhereHas('items', fn($q) => $q->where('product_name', 'like', "%$search%"));
             });
         }
 
-        $orders = $ordersQuery->orderBy('created_at', 'desc')->paginate(10);
+        $orders = $ordersQuery->latest()->paginate(10);
 
         return view('users.orders.index', compact('orders', 'status'));
     }
-
     /**
      * Hiển thị chi tiết đơn hàng
      */
@@ -94,10 +102,10 @@ class UserOrderController extends Controller
         $statusMap = [
             'pending_confirmation' => 'pending_confirmation',
             'processing' => 'processing',
-            'shipped' => 'shipped',
+            'out_for_delivery' => 'out_for_delivery',
             'delivered' => 'delivered',
             'cancelled' => 'cancelled',
-            'returned' => 'returned'
+            'failed_delivery' => 'failed_delivery'
         ];
 
         return $statusMap[$status] ?? $status;
@@ -121,10 +129,61 @@ class UserOrderController extends Controller
             'cancelled_at' => now(),
             'cancellation_reason' => $request->reason
         ]);
+        
+        // Cập nhật trạng thái packages khi user hủy đơn hàng
+        $this->updatePackageStatusBasedOnOrderStatus($order);
 
         // Gửi email thông báo hủy đơn (có thể triển khai sau)
 
         return redirect()->route('orders.show', $order->id)
             ->with('success', 'Đơn hàng đã được hủy thành công.');
+    }
+    
+    /**
+     * Cập nhật trạng thái packages dựa trên trạng thái đơn hàng
+     */
+    private function updatePackageStatusBasedOnOrderStatus(Order $order)
+    {
+        try {
+            // Lấy tất cả packages của đơn hàng thông qua fulfillments
+            $packages = \App\Models\Package::whereHas('fulfillment', function($query) use ($order) {
+                $query->where('order_id', $order->id);
+            })->get();
+            
+            // Mapping trạng thái order sang package status
+            $statusMapping = [
+                'pending_confirmation' => \App\Models\Package::STATUS_PENDING_CONFIRMATION,
+                'processing' => \App\Models\Package::STATUS_PROCESSING,
+                'out_for_delivery' => \App\Models\Package::STATUS_OUT_FOR_DELIVERY,
+                'delivered' => \App\Models\Package::STATUS_DELIVERED,
+                'cancelled' => \App\Models\Package::STATUS_CANCELLED,
+                'failed_delivery' => \App\Models\Package::STATUS_FAILED_DELIVERY,
+                'returned' => \App\Models\Package::STATUS_RETURNED,
+            ];
+            
+            $newPackageStatus = $statusMapping[$order->status] ?? null;
+            
+            if ($newPackageStatus) {
+                foreach ($packages as $package) {
+                    $package->updateStatus(
+                        $newPackageStatus,
+                        "Cập nhật từ user khi đơn hàng chuyển sang {$order->status}",
+                        Auth::id()
+                    );
+                }
+                
+                \Log::info('Package statuses updated successfully from user action', [
+                    'order_id' => $order->id,
+                    'order_status' => $order->status,
+                    'package_status' => $newPackageStatus,
+                    'packages_count' => $packages->count()
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error updating package statuses from user action', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

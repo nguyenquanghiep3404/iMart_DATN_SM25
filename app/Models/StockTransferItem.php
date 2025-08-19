@@ -25,6 +25,7 @@ class StockTransferItem extends Model
         'stock_transfer_id',
         'product_variant_id',
         'quantity',
+        'imei_serials',
     ];
 
     /**
@@ -41,5 +42,13 @@ class StockTransferItem extends Model
     public function productVariant()
     {
         return $this->belongsTo(ProductVariant::class);
+    }
+
+    /**
+     * Get the serial numbers associated with this stock transfer item.
+     */
+    public function serials()
+    {
+        return $this->hasMany(StockTransferItemSerial::class);
     }
 }

@@ -2,809 +2,229 @@
 
 @section('title', 'Danh sách sản phẩm')
 
-@push('styles')
-    {{-- Custom Styles inspired by TailwindCSS for a modern look --}}
-    <style>
-        .card-custom {
-            border-radius: 0.75rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            background-color: #fff;
-        }
-
-        .card-custom-header {
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-            background-color: #f9fafb;
-            border-top-left-radius: 0.75rem;
-            border-top-right-radius: 0.75rem;
-        }
-
-        .card-custom-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .card-custom-body {
-            padding: 1.5rem;
-        }
-
-        .card-custom-footer {
-            background-color: #f9fafb;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid #e5e7eb;
-            border-bottom-left-radius: 0.75rem;
-            border-bottom-right-radius: 0.75rem;
-        }
-
-        .btn {
-            border-radius: 0.5rem;
-            transition: all 0.2s ease-in-out;
-            font-weight: 500;
-            padding: 0.625rem 1.25rem;
-            font-size: 0.875rem;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1.25rem;
-        }
-
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.75rem;
-            line-height: 1rem;
-        }
-
-        .btn-primary {
-            background-color: #4f46e5;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background-color: #4338ca;
-        }
-
-        .btn-secondary {
-            background-color: #e5e7eb;
-            color: #374151;
-            border: 1px solid #d1d5db;
-        }
-
-        .btn-secondary:hover {
-            background-color: #d1d5db;
-        }
-
-        .btn-danger {
-            background-color: #ef4444;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background-color: #dc2626;
-        }
-
-        .btn-outline-secondary {
-            color: #4a5568;
-            background-color: #fff;
-            border: 1px solid #d1d5db;
-        }
-
-        .btn-outline-secondary:hover {
-            background-color: #f9fafb;
-        }
-
-        .btn-default {
-            background-color: #e5e7eb;
-            color: #374151;
-            border: 1px solid #d1d5db;
-            border-left: 0;
-        }
-
-        .btn-default:hover {
-            background-color: #d1d5db;
-        }
-
-        .form-input,
-        .form-select {
-            width: 100%;
-            padding: 0.625rem 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db;
-            font-size: 0.875rem;
-            background-color: white;
-        }
-
-        .form-input:focus,
-        .form-select:focus {
-            border-color: #4f46e5;
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(79, 70, 229, 0.25);
-        }
-
-        .input-group {
-            display: flex;
-        }
-
-        .input-group .form-input {
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
-        }
-
-        .input-group .btn {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-        }
-
-        .table-custom {
-            width: 100%;
-            min-width: 800px;
-            /* Set a min-width for horizontal scrolling */
-            color: #374151;
-        }
-
-        .table-custom th,
-        .table-custom td {
-            padding: 0.75rem 1rem;
-            vertical-align: middle !important;
-            border-bottom-width: 1px;
-            border-color: #e5e7eb;
-            white-space: nowrap;
-            /* Prevent content from wrapping */
-        }
-
-        .table-custom thead th {
-            font-weight: 600;
-            color: #4b5563;
-            background-color: #f9fafb;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-            text-align: left;
-            border-bottom-width: 2px;
-        }
-
-        .table-striped tbody tr:nth-of-type(odd) {
-            background-color: rgba(0, 0, 0, .03);
-        }
-
-        .img-thumbnail-custom {
-            width: 60px;
-            height: 60px;
-            object-fit: cover;
-            border: 1px solid #dee2e6;
-            border-radius: 0.375rem;
-            padding: 0.25rem;
-            background-color: #fff;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            cursor: zoom-in;
-        }
-
-        .img-thumbnail-custom:hover {
-            transform: scale(3.5);
-            z-index: 20;
-            position: relative;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-        }
-
-        .badge-custom {
-            display: inline-block;
-            padding: 0.35em 0.65em;
-            font-size: .75em;
-            font-weight: 700;
-            line-height: 1;
-            color: #fff;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: baseline;
-            border-radius: 0.375rem;
-        }
-
-        .badge-success-custom {
-            background-color: #10b981;
-        }
-
-        .badge-info-custom {
-            background-color: #3b82f6;
-        }
-
-        .badge-warning-custom {
-            background-color: #f59e0b;
-            color: #1f2937;
-        }
-
-        .badge-secondary-custom {
-            background-color: #6b7280;
-        }
-
-        .product-modal {
-            display: none;
-            position: fixed;
-            z-index: 1050;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.6);
-        }
-
-        .product-modal.show {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .product-modal-content {
-            background-color: #fff;
-            margin: auto;
-            border: none;
-            width: 90%;
-            max-width: 500px;
-            border-radius: 0.75rem;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-
-        .product-modal-body {
-            position: relative;
-            flex: 1 1 auto;
-            padding: 1.5rem;
-            color: #374151;
-        }
-
-        .product-modal-footer {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: flex-end;
-            padding: 1rem 1.5rem;
-            border-top: 1px solid #e5e7eb;
-            background-color: #f9fafb;
-            border-bottom-left-radius: 0.75rem;
-            border-bottom-right-radius: 0.75rem;
-        }
-
-        .icon-spin {
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .toast-container {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 1100;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .toast {
-            opacity: 1;
-            transform: translateX(0);
-            transition: all 0.3s ease-in-out;
-        }
-
-        .toast.hide {
-            opacity: 0;
-            transform: translateX(100%);
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-
-            to {
-                opacity: 1;
-            }
-        }
-
-        .product-modal.show .animated-modal {
-            animation: fadeInScale 0.3s ease-out forwards;
-        }
-
-        @keyframes fadeInScale {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .product-modal-footer.justify-center {
-            justify-content: center;
-            gap: 0.75rem;
-            padding-top: 0;
-            padding-bottom: 1.5rem;
-            border-top: none;
-            background-color: #fff;
-        }
-    </style>
-@endpush
-
 @section('content')
-    <div class="body-content px-4 sm:px-6 md:px-8 py-8">
-        <div class="container mx-auto max-w-full"> {{-- Changed to max-w-full for better stretching --}}
+<div class="px-4 sm:px-6 lg:px-8 py-8 w-full max-w-9xl mx-auto">
 
-            {{-- TOAST NOTIFICATIONS CONTAINER --}}
-            <div id="toast-container" class="toast-container">
-                @if (session('success'))
-                    <div id="toast-success"
-                        class="toast flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-lg"
-                        role="alert">
-                        <div
-                            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg">
-                            <i class="fas fa-check"></i>
-                        </div>
-                        <div class="ml-3 text-sm font-normal">{{ session('success') }}</div>
-                        <button type="button"
-                            class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8"
-                            data-dismiss-target="#toast-success" aria-label="Close"><span class="sr-only">Close</span><i
-                                class="fas fa-times"></i></button>
-                    </div>
-                @endif
-                @if (session('error'))
-                    <div id="toast-error"
-                        class="toast flex items-center w-full max-w-xs p-4 text-gray-500 bg-white rounded-lg shadow-lg"
-                        role="alert">
-                        <div
-                            class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="ml-3 text-sm font-normal">{{ session('error') }}</div>
-                        <button type="button"
-                            class="ml-auto -mx-1.5 -my-1.5 bg-white text-gray-400 hover:text-gray-900 rounded-lg focus:ring-2 focus:ring-gray-300 p-1.5 hover:bg-gray-100 inline-flex h-8 w-8"
-                            data-dismiss-target="#toast-error" aria-label="Close"><span class="sr-only">Close</span><i
-                                class="fas fa-times"></i></button>
-                    </div>
-                @endif
-            </div>
+    {{-- Page Header --}}
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-800">Quản lý sản phẩm</h1>
+        <nav aria-label="breadcrumb" class="mt-2">
+            <ol class="flex text-sm text-slate-500">
+                <li><a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a></li>
+                <li class="text-slate-400 mx-2">/</li>
+                <li class="font-medium" aria-current="page">Sản phẩm</li>
+            </ol>
+        </nav>
+    </div>
 
-            {{-- PAGE HEADER --}}
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-800">Quản lý sản phẩm</h1>
-                <nav aria-label="breadcrumb" class="mt-2">
-                    <ol class="flex text-sm text-gray-500">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}"
-                                class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a></li>
-                        <li class="text-gray-400 mx-2">/</li>
-                        <li class="breadcrumb-item active text-gray-700 font-medium" aria-current="page">Sản phẩm</li>
-                    </ol>
-                </nav>
-            </div>
-
-            <div class="card-custom">
-                <div class="card-custom-header">
-                    {{-- Responsive header layout --}}
-                    <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center w-full">
-                        <h3 class="card-custom-title">Danh sách sản phẩm ({{ $products->total() }})</h3>
-                        <div class="flex items-center space-x-2">
-                            <a href="{{ route('admin.products.index') }}" id="refresh-products-button"
-                                class="btn btn-outline-secondary btn-sm" title="Làm mới danh sách"><i
-                                    class="fas fa-sync-alt"></i></a>
-                            <a href="{{ route('admin.products.create') }}" class="btn btn-primary"><i
-                                    class="fas fa-plus mr-2"></i>Thêm sản phẩm</a>
-                        </div>
-                    </div>
+    {{-- Main Card --}}
+    <div class="bg-white rounded-xl shadow-lg">
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 rounded-t-xl">
+            {{-- Card Header --}}
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                <h2 class="text-xl font-semibold text-slate-800">
+                    Danh sách sản phẩm <span class="text-slate-500 font-medium">({{ $products->total() }})</span>
+                </h2>
+                <div class="flex items-center space-x-2 mt-3 sm:mt-0">
+                    <a href="{{ route('admin.products.index') }}" title="Làm mới danh sách"
+                        class="inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors bg-white border border-slate-300 text-slate-600 hover:bg-slate-100">
+                        <i class="fas fa-sync-alt"></i>
+                    </a>
+                    <a href="{{ route('admin.products.create') }}"
+                        class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-indigo-600 text-white hover:bg-indigo-700">
+                        <i class="fas fa-plus mr-2"></i>Thêm sản phẩm
+                    </a>
                 </div>
-                <div class="card-custom-body">
-                    {{-- FILTERS --}}
-                    <form action="{{ route('admin.products.index') }}" method="GET">
-                        {{-- Filters grid --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
-                            {{-- Search Input: Spans full width on mobile, half on medium, quarter on XL --}}
-                            <div class="md:col-span-2 xl:col-span-1">
-                                <label for="search_product" class="block text-sm font-medium text-gray-700 mb-1">Tìm
-                                    kiếm</label>
-                                <div class="input-group">
-                                    <input type="text" id="search_product" name="search" class="form-input"
-                                        placeholder="Tên sản phẩm, SKU..." value="{{ request('search') }}">
-                                    <button type="submit" class="btn btn-default -ml-px" aria-label="Search"><i
-                                            class="fas fa-search"></i></button>
-                                </div>
-                            </div>
-
-                            {{-- Category Filter --}}
-                            <div>
-                                <label for="filter_category" class="block text-sm font-medium text-gray-700 mb-1">Danh
-                                    mục</label>
-                                <select id="filter_category" name="category_id" class="form-select">
-                                    <option value="">Tất cả danh mục</option>
-                                    @if (isset($categories))
-                                        @foreach ($categories as $category)
-                                            <option value="{{ $category->id }}"
-                                                {{ request('category_id') == $category->id ? 'selected' : '' }}>
-                                                {{ $category->name }}
-                                            </option>
-                                        @endforeach
-                                    @endif
-                                </select>
-                            </div>
-
-                            {{-- Status Filter --}}
-                            <div>
-                                <label for="filter_status" class="block text-sm font-medium text-gray-700 mb-1">Trạng
-                                    thái</label>
-                                <select id="filter_status" name="status" class="form-select">
-                                    <option value="">Tất cả trạng thái</option>
-                                    <option value="published" {{ request('status') == 'published' ? 'selected' : '' }}>Công
-                                        khai</option>
-                                    <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Bản nháp
-                                    </option>
-                                    <option value="pending_review"
-                                        {{ request('status') == 'pending_review' ? 'selected' : '' }}>Chờ duyệt</option>
-                                </select>
-                            </div>
-
-                            {{-- Type Filter --}}
-                            <div>
-                                <label for="filter_type" class="block text-sm font-medium text-gray-700 mb-1">Loại sản
-                                    phẩm</label>
-                                <select id="filter_type" name="type" class="form-select">
-                                    <option value="">Tất cả loại</option>
-                                    <option value="simple" {{ request('type') == 'simple' ? 'selected' : '' }}>Đơn giản
-                                    </option>
-                                    <option value="variable" {{ request('type') == 'variable' ? 'selected' : '' }}>Có biến
-                                        thể</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {{-- Action buttons row --}}
-                        <div class="flex justify-end gap-x-3 pt-2 mb-6">
-                            <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">Xóa lọc</a>
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-filter mr-2"></i>Lọc sản
-                                phẩm</button>
-                        </div>
-                    </form>
-
-                    {{-- SORT DROPDOWN --}}
-                    <div class="flex justify-end mb-4">
-                        <div class="relative" x-data="{ openSort: false }" @click.away="openSort = false">
-                            <button @click="openSort = !openSort" type="button"
-                                class="btn btn-outline-secondary btn-sm">
-                                Sắp xếp theo: {{ request('sort_by_text', 'Mới nhất') }} <i
-                                    class="fas fa-chevron-down ml-1 text-xs"></i>
-                            </button>
-                            <div x-show="openSort" id="sortDropdown"
-                                class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 py-1 border border-gray-200"
-                                x-cloak>
-                                <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'created_at', 'sort_dir' => 'desc', 'sort_by_text' => 'Mới nhất']) }}"
-                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mới nhất</a>
-                                <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'name', 'sort_dir' => 'asc', 'sort_by_text' => 'Tên: A-Z']) }}"
-                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tên: A-Z</a>
-                                <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'name', 'sort_dir' => 'desc', 'sort_by_text' => 'Tên: Z-A']) }}"
-                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Tên: Z-A</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- PRODUCTS TABLE WRAPPER FOR HORIZONTAL SCROLLING --}}
-                    <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                        <table class="table-custom table-striped">
-                            <thead>
-                                <tr>
-                                    <th style="width: 50px;">STT</th>
-                                    <th style="width: 80px;">Ảnh</th>
-                                    <th>Tên sản phẩm</th>
-                                    <th>Danh mục</th>
-                                    <th>Giá</th>
-                                    <th>SL Tồn</th>
-                                    <th>Loại</th>
-                                    <th>Trạng thái</th>
-                                    <th style="width: 100px;" class="text-center">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse ($products as $product)
-                                    <tr>
-                                        <td>{{ ($products->currentPage() - 1) * $products->perPage() + $loop->iteration }}
-                                        </td>
-                                        <td>
-                                            @php
-                                                $displayVariantForImage =
-                                                    $product->variants->firstWhere('is_default', true) ??
-                                                    $product->variants->first();
-                                                $imageToShow =
-                                                    $displayVariantForImage?->primaryImage ?? $product->coverImage;
-                                                $imageUrl = $imageToShow
-                                                    ? Storage::url($imageToShow->path)
-                                                    : asset('assets/admin/img/placeholder-image.png');
-                                                $altText = $imageToShow?->alt_text ?? $product->name;
-                                            @endphp
-                                            <img src="{{ $imageUrl }}" alt="{{ $altText }}"
-                                                class="img-thumbnail-custom"
-                                                onerror="this.onerror=null;this.src='{{ asset('assets/admin/img/placeholder-image.png') }}';">
-                                        </td>
-                                        <td>
-                                            <a href="{{ route('admin.products.edit', $product) }}"
-                                                class="font-semibold text-indigo-600 hover:text-indigo-800">{{ $product->name }}</a>
-                                            <small class="block text-gray-500">SKU:
-                                                {{ $displayVariantForImage->sku ?? 'N/A' }}</small>
-                                        </td>
-                                        <td>{{ $product->category->name ?? 'N/A' }}</td>
-                                        <td>
-                                            @if ($product->type == 'simple')
-                                                @php
-                                                    $variant = $product->variants->first();
-                                                @endphp
-                                                @if ($variant)
-                                                    @if ($variant->sale_price && $variant->sale_price > 0 && $variant->sale_price < $variant->price)
-                                                        <span
-                                                            class="font-semibold text-red-600">{{ number_format($variant->sale_price, 0, ',', '.') }}
-                                                            ₫</span>
-                                                        <small
-                                                            class="block text-gray-500 line-through">{{ number_format($variant->price, 0, ',', '.') }}
-                                                            ₫</small>
-                                                    @else
-                                                        <span
-                                                            class="font-semibold">{{ number_format($variant->price, 0, ',', '.') }}
-                                                            ₫</span>
-                                                    @endif
-                                                @else
-                                                    N/A
-                                                @endif
-                                            @elseif($product->type == 'variable')
-                                                @php
-                                                    // Get variants with a valid sale price (greater than 0)
-                                                    $variantsWithSalePrice = $product->variants->filter(function (
-                                                        $variant,
-                                                    ) {
-                                                        return $variant->sale_price && $variant->sale_price > 0;
-                                                    });
-
-                                                    if ($variantsWithSalePrice->isNotEmpty()) {
-                                                        // If there are sale prices, find the variant with the lowest sale price
-                                                        $minSaleVariant = $variantsWithSalePrice
-                                                            ->sortBy('sale_price')
-                                                            ->first();
-                                                        $priceToShow = $minSaleVariant->sale_price;
-                                                        $originalPrice = $minSaleVariant->price;
-                                                    } else {
-                                                        $minPriceVariant = $product->variants->sortBy('price')->first();
-                                                        $priceToShow = $minPriceVariant
-                                                            ? $minPriceVariant->price
-                                                            : null;
-                                                        $originalPrice = null;
-                                                    }
-                                                @endphp
-
-                                                @if ($priceToShow !== null)
-                                                    @if ($originalPrice && $priceToShow < $originalPrice)
-                                                        <span
-                                                            class="font-semibold text-red-600">{{ number_format($priceToShow, 0, ',', '.') }}
-                                                            ₫</span>
-                                                        <small
-                                                            class="block text-gray-500 line-through">{{ number_format($originalPrice, 0, ',', '.') }}
-                                                            ₫</small>
-                                                        <small class="text-gray-500 text-xs block">(Thấp nhất)</small>
-                                                    @else
-                                                        <span
-                                                            class="font-semibold">{{ number_format($priceToShow, 0, ',', '.') }}
-                                                            ₫</span>
-                                                        <small class="text-gray-500 text-xs block">(Thấp nhất)</small>
-                                                    @endif
-                                                @else
-                                                    N/A
-                                                @endif
-                                            @else
-                                                N/A
-                                            @endif
-
-                                        </td>
-                                        <td>
-                                            @php
-                                                // Lấy tất cả các bản ghi inventories từ tất cả các biến thể của sản phẩm này
-                                                $allInventories = $product->variants->pluck('inventories')->flatten();
-
-                                                // Tính tổng cho từng loại mới: 'new' và 'defective'
-                                                $newStock = $allInventories
-                                                    ->where('inventory_type', 'new')
-                                                    ->sum('quantity');
-                                                $defectiveStock = $allInventories
-                                                    ->where('inventory_type', 'defective')
-                                                    ->sum('quantity');
-
-                                                $totalStock = $newStock + $defectiveStock;
-
-                                                $stockDetails = [];
-                                                if ($newStock > 0) {
-                                                    $stockDetails[] = 'mới: ' . $newStock;
-                                                }
-                                                if ($defectiveStock > 0) {
-                                                    $stockDetails[] = 'lỗi: ' . $defectiveStock;
-                                                }
-                                            @endphp
-
-                                            <span class="font-semibold text-gray-800">{{ $totalStock }}</span>
-
-                                            @if (!empty($stockDetails))
-                                                <small class="block text-gray-500 text-xs">
-                                                    ({{ implode(', ', $stockDetails) }})
-                                                </small>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if ($product->type == 'simple')
-                                                <span class="badge-custom badge-info-custom">Đơn giản</span>
-                                            @elseif($product->type == 'variable')
-                                                <span class="badge-custom badge-warning-custom">Biến thể
-                                                    ({{ $product->variants->count() }})</span>
-                                            @else
-                                                <span
-                                                    class="badge-custom badge-secondary-custom">{{ Str::title($product->type) }}</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if ($product->status == 'published')
-                                                <span class="badge-custom badge-success-custom">Công khai</span>
-                                            @elseif($product->status == 'draft')
-                                                <span class="badge-custom badge-secondary-custom">Bản nháp</span>
-                                            @else
-                                                <span class="badge-custom badge-info-custom">Chờ duyệt</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="inline-flex space-x-1">
-                                                <a href="{{ route('admin.products.edit', $product) }}"
-                                                    class="btn btn-primary btn-sm" title="Chỉnh sửa"><i
-                                                        class="fas fa-edit"></i></a>
-                                                <button type="button" class="btn btn-danger btn-sm" title="Xóa"
-                                                    onclick="openProductModal('deleteProductModal{{ $product->id }}')"><i
-                                                        class="fas fa-trash"></i></button>
-                                            </div>
-                                        </td>
-                                    </tr>
-
-                                    <div id="deleteProductModal{{ $product->id }}" class="product-modal"
-                                        tabindex="-1">
-                                        <div class="product-modal-content animated-modal">
-                                            <form action="{{ route('admin.products.destroy', $product->id) }}"
-                                                method="POST">
-                                                @csrf
-                                                @method('DELETE')
-                                                <div class="product-modal-body text-center p-6">
-                                                    <div
-                                                        class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4">
-                                                        <i class="fas fa-trash-alt fa-2x text-red-500"></i>
-                                                    </div>
-                                                    <h5 class="text-xl font-semibold text-gray-800">Chuyển vào thùng rác?
-                                                    </h5>
-                                                    <p class="text-gray-600 mt-2">Bạn có chắc chắn muốn chuyển sản
-                                                        phẩm<br>"<strong>{{ $product->name }}</strong>" vào thùng rác
-                                                        không?</p>
-                                                    <p class="text-gray-500 mt-2 text-sm">Bạn vẫn có thể khôi phục lại sản
-                                                        phẩm này sau.</p>
-                                                </div>
-                                                <div class="product-modal-footer justify-center">
-                                                    <button type="button" class="btn btn-secondary"
-                                                        onclick="closeProductModal('deleteProductModal{{ $product->id }}')">Hủy
-                                                        bỏ</button>
-                                                    <button type="submit" class="btn btn-danger">Đồng ý, chuyển
-                                                        đi</button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                @empty
-                                    <tr>
-                                        <td colspan="9" class="text-center py-10 text-gray-500">
-                                            <div class="flex flex-col items-center">
-                                                <i class="fas fa-box-open fa-3x mb-3 text-gray-400"></i>
-                                                <p class="text-lg font-medium">Không tìm thấy sản phẩm nào.</p>
-                                                <p class="text-sm">Hãy thử điều chỉnh bộ lọc hoặc <a
-                                                        href="{{ route('admin.products.create') }}"
-                                                        class="text-indigo-600 hover:underline">thêm sản phẩm mới</a>.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                @if ($products->hasPages())
-                    <div class="card-custom-footer">
-                        <div class="flex flex-col gap-4 md:flex-row md:justify-between md:items-center w-full">
-                            <p class="text-sm text-gray-700 leading-5">
-                                Hiển thị từ <span class="font-medium">{{ $products->firstItem() }}</span> đến <span
-                                    class="font-medium">{{ $products->lastItem() }}</span> trên tổng số <span
-                                    class="font-medium">{{ $products->total() }}</span> kết quả
-                            </p>
-                            <div>
-                                {!! $products->appends(request()->query())->links() !!}
-                            </div>
-                        </div>
-                    </div>
-                @endif
             </div>
         </div>
+        <div class="p-6">
+            {{-- Filters --}}
+            <form action="{{ route('admin.products.index') }}" method="GET">
+                <div class="mb-6">
+                    <div class="flex flex-wrap items-end gap-4">
+                        {{-- Search Input --}}
+                        <div class="flex-1 min-w-[220px]">
+                            <label for="search_product" class="block text-sm font-medium text-slate-700 mb-1">Tìm kiếm</label>
+                            <div class="relative">
+                                <input type="text" id="search_product" name="search" placeholder="Tên sản phẩm, SKU..." value="{{ request('search') }}"
+                                    class="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-slate-400"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Other Filters --}}
+                        @php
+                        $filters = [
+                        ['name' => 'category_id', 'label' => 'Danh mục', 'placeholder' => 'Tất cả danh mục', 'options' => $categories ?? [], 'value_key' => 'id', 'text_key' => 'name'],
+                        ['name' => 'status', 'label' => 'Trạng thái', 'placeholder' => 'Tất cả trạng thái', 'options' => [['value' => 'published', 'text' => 'Công khai'], ['value' => 'draft', 'text' => 'Bản nháp'], ['value' => 'pending_review', 'text' => 'Chờ duyệt']]],
+                        ['name' => 'type', 'label' => 'Loại sản phẩm', 'placeholder' => 'Tất cả loại', 'options' => [['value' => 'simple', 'text' => 'Đơn giản'], ['value' => 'variable', 'text' => 'Có biến thể']]]
+                        ];
+                        @endphp
+
+                        @foreach ($filters as $filter)
+                        <div class="flex-1 min-w-[200px]">
+                            <label for="filter_{{ $filter['name'] }}" class="block text-sm font-medium text-slate-700 mb-1">{{ $filter['label'] }}</label>
+                            <select id="filter_{{ $filter['name'] }}" name="{{ $filter['name'] }}" class="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-500">
+                                <option value="">{{ $filter['placeholder'] }}</option>
+                                @foreach ($filter['options'] as $option)
+                                <option value="{{ $option['value'] ?? $option->{$filter['value_key']} }}"
+                                    {{ request($filter['name']) == ($option['value'] ?? $option->{$filter['value_key']}) ? 'selected' : '' }}>
+                                    {{ $option['text'] ?? $option->{$filter['text_key']} }}
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endforeach
+
+                        {{-- Action Buttons --}}
+                        <div class="flex items-center gap-x-2">
+                            <a href="{{ route('admin.products.index') }}" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-white border border-slate-300 text-slate-600 hover:bg-slate-100">Xóa lọc</a>
+                            <button type="submit" class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-indigo-600 text-white hover:bg-indigo-700">
+                                <i class="fas fa-filter mr-2"></i>Lọc
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            {{-- Table Wrapper --}}
+            <div class="overflow-x-auto border border-slate-200 rounded-lg">
+                <table class="w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-12">STT</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-20">Ảnh</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider min-w-[250px]">Tên sản phẩm</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Danh mục</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Giá</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Loại</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider w-24">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                        @forelse ($products as $product)
+                        <tr class="hover:bg-slate-50" x-data="{ deleteModalOpen: false }">
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ $loop->iteration + $products->firstItem() - 1 }}</td>
+                            <td class="px-4 py-3">
+                                @php
+                                // Simplified image logic
+                                $image = $product->coverImage ?? $product->variants->first()?->primaryImage;
+                                $imageUrl = $image ? Storage::url($image->path) : asset('assets/admin/img/placeholder-image.png');
+                                @endphp
+                                <img src="{{ $imageUrl }}" alt="{{ $product->name }}" class="w-14 h-14 object-cover rounded-md border border-slate-200 p-1 bg-white">
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                <a href="{{ route('admin.products.edit', $product) }}" class="font-semibold text-indigo-600 hover:text-indigo-800">{{ $product->name }}</a>
+                                <p class="text-slate-500 text-xs mt-1">SKU: {{ $product->variants->first()->sku ?? 'N/A' }}</p>
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">{{ $product->category->name ?? 'N/A' }}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                                {{-- Simplified Price Logic --}}
+                                @php
+                                $variant = $product->variants->sortBy('price')->first();
+                                @endphp
+                                <span class="font-semibold">{{ number_format($variant->sale_price ?? $variant->price, 0, ',', '.') }} ₫</span>
+                                @if($variant->sale_price && $variant->sale_price < $variant->price)
+                                    <span class="block text-xs text-slate-500 line-through">{{ number_format($variant->price, 0, ',', '.') }} ₫</span>
+                                    @endif
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                @if ($product->type == 'simple')
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-sky-100 text-sky-700">Đơn giản</span>
+                                @elseif($product->type == 'variable')
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">Biến thể ({{ $product->variants->count() }})</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                @if ($product->status == 'published')
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">Công khai</span>
+                                @elseif($product->status == 'draft')
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-700">Bản nháp</span>
+                                @else
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">Chờ duyệt</span>
+                                @endif
+                            </td>
+                            <td class="px-4 py-3 whitespace-nowrap text-center text-sm">
+                                <div class="inline-flex rounded-lg shadow-sm">
+                                    <a href="{{ route('admin.product-variants.adjust-form', $variant->id) }}"
+                                        class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition">
+                                        🛠
+                                    </a>
+                                    <a href="{{ route('admin.products.edit', $product) }}" title="Chỉnh sửa" class="px-3 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-l-md hover:bg-indigo-700 focus:z-10 focus:ring-2 focus:ring-indigo-500">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button @click="deleteModalOpen = true" title="Xóa" type="button" class="px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-r-md hover:bg-red-700 focus:z-10 focus:ring-2 focus:ring-red-500">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+
+                            {{-- AlpineJS Delete Modal --}}
+                            <div x-show="deleteModalOpen" x-trap.noscroll="deleteModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-60" style="display: none;">
+                                <div @click.away="deleteModalOpen = false" class="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto" x-show="deleteModalOpen" x-transition>
+                                    <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <div class="p-6 text-center">
+                                            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4">
+                                                <i class="fas fa-trash-alt fa-2x text-red-500"></i>
+                                            </div>
+                                            <h3 class="text-xl font-semibold text-slate-800">Chuyển vào thùng rác?</h3>
+                                            <p class="text-slate-600 mt-2">Bạn có chắc muốn chuyển sản phẩm<br>"<strong>{{ $product->name }}</strong>" vào thùng rác không?</p>
+                                            <p class="text-slate-500 mt-2 text-sm">Bạn vẫn có thể khôi phục lại sản phẩm này sau.</p>
+                                        </div>
+                                        <div class="flex justify-center gap-4 bg-slate-50 p-4 rounded-b-lg">
+                                            <button type="button" @click="deleteModalOpen = false" class="px-6 py-2 text-sm font-medium rounded-lg transition-colors bg-white border border-slate-300 text-slate-600 hover:bg-slate-100">Hủy bỏ</button>
+                                            <button type="submit" class="px-6 py-2 text-sm font-medium text-white rounded-lg transition-colors bg-red-600 hover:bg-red-700">Đồng ý</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="9" class="text-center py-16 text-slate-500">
+                                <div class="flex flex-col items-center">
+                                    <i class="fas fa-box-open fa-4x mb-4 text-slate-400"></i>
+                                    <p class="text-lg font-semibold">Không tìm thấy sản phẩm nào.</p>
+                                    <p class="mt-1">Hãy thử điều chỉnh bộ lọc hoặc <a href="{{ route('admin.products.create') }}" class="text-indigo-600 hover:underline">thêm sản phẩm mới</a>.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if ($products->hasPages())
+        <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 rounded-b-xl">
+            {{ $products->appends(request()->query())->links() }}
+        </div>
+        @endif
     </div>
+</div>
+
+{{-- AlpineJS Toast Notifications --}}
+@if (session('success') || session('error'))
+<div x-data="{ show: true }" x-init="setTimeout(() => show = false, 5000)" x-show="show" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 transform translate-x-full" x-transition:enter-end="opacity-100 transform translate-x-0" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100 transform translate-x-0" x-transition:leave-end="opacity-0 transform translate-x-full"
+    class="fixed top-8 right-8 z-50 flex items-center w-full max-w-xs p-4 text-slate-500 bg-white rounded-lg shadow-lg" role="alert" style="display: none;">
+    <div class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg {{ session('success') ? 'text-green-500 bg-green-100' : 'text-red-500 bg-red-100' }}">
+        <i class="fas {{ session('success') ? 'fa-check' : 'fa-exclamation-triangle' }}"></i>
+    </div>
+    <div class="ml-3 text-sm font-normal">{{ session('success') ?? session('error') }}</div>
+    <button type="button" @click="show = false" class="ml-auto -mx-1.5 -my-1.5 bg-white text-slate-400 hover:text-slate-900 rounded-lg p-1.5 hover:bg-slate-100 inline-flex h-8 w-8">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+@endif
+
 @endsection
 
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.x.x/dist/alpine.min.js" defer></script>
-    <script>
-        // MODAL SCRIPT
-        function openProductModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.style.display = 'flex';
-                setTimeout(() => modal.classList.add('show'), 10); // Delay for animation
-                document.body.style.overflow = 'hidden';
-            }
-        }
-
-        function closeProductModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal) {
-                modal.classList.remove('show');
-                setTimeout(() => {
-                    modal.style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                }, 300);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            window.addEventListener('click', function(event) {
-                const openModal = document.querySelector('.product-modal.show');
-                if (openModal && event.target == openModal) {
-                    closeProductModal(openModal.id);
-                }
-            });
-
-            window.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') {
-                    const openModal = document.querySelector('.product-modal.show');
-                    if (openModal) {
-                        closeProductModal(openModal.id);
-                    }
-                }
-            });
-
-            const toasts = document.querySelectorAll('.toast');
-            const hideToast = (toastElement) => {
-                if (toastElement) {
-                    toastElement.classList.add('hide');
-                    setTimeout(() => toastElement.remove(), 350);
-                }
-            };
-            toasts.forEach(toast => {
-                const autoHideTimeout = setTimeout(() => hideToast(toast), 5000);
-                const closeButton = toast.querySelector('[data-dismiss-target]');
-                if (closeButton) {
-                    closeButton.addEventListener('click', function() {
-                        clearTimeout(autoHideTimeout);
-                        const targetId = this.getAttribute('data-dismiss-target');
-                        hideToast(document.querySelector(targetId));
-                    });
-                }
-            });
-
-            const refreshButton = document.getElementById('refresh-products-button');
-            if (refreshButton) {
-                refreshButton.addEventListener('click', function(event) {
-                    const icon = this.querySelector('i');
-                    if (icon) {
-                        icon.classList.add('icon-spin');
-                    }
-                });
-            }
-        });
-    </script>
+{{-- AlpineJS v3 is now recommended --}}
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 @endpush

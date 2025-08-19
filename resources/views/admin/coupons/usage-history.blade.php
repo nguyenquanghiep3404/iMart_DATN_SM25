@@ -105,7 +105,7 @@
                                                                     {{ $usage->created_at->format('d/m/Y H:i') }}
                             </td>
                             <td class="px-6 py-4 font-medium text-gray-900">
-                                <a href="{{ route('admin.orders.show', $usage->order_id) }}" class="text-indigo-600 hover:text-indigo-900">
+                                <a href="{{ route('admin.orders.view', $usage->order_id) }}" class="text-indigo-600 hover:text-indigo-900">
                                     #{{ $usage->order_id }}
                                 </a>
                             </td>
@@ -131,49 +131,16 @@
                             </td>
                             <td class="px-6 py-4">
                                 @if ($usage->order)
-                                    @switch($usage->order->status)
-                                        @case('pending')
-                                            <span class="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-800">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-yellow-600 mr-1"></span>
-                                                Chờ xử lý
-                                            </span>
-                                            @break
-                                        @case('processing')
-                                            <span class="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-blue-600 mr-1"></span>
-                                                Đang xử lý
-                                            </span>
-                                            @break
-                                        @case('shipped')
-                                            <span class="inline-flex items-center rounded-full bg-purple-100 px-2.5 py-1 text-xs font-medium text-purple-800">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-purple-600 mr-1"></span>
-                                                Đang vận chuyển
-                                            </span>
-                                            @break
-                                        @case('delivered')
-                                            <span class="inline-flex items-center rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-green-600 mr-1"></span>
-                                                Đã giao hàng
-                                            </span>
-                                            @break
-                                        @case('canceled')
-                                            <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-red-600 mr-1"></span>
-                                                Đã huỷ
-                                            </span>
-                                            @break
-                                        @default
-                                            <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-800">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-gray-600 mr-1"></span>
-                                                {{ $usage->order->status }}
-                                            </span>
-                                    @endswitch
+                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-800">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-gray-600 mr-1"></span>
+                                        {{ $usage->order->status_text }}
+                                    </span>
                                 @else
                                     <span class="text-gray-400">--</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <a href="{{ route('admin.orders.show', $usage->order_id) }}" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none">
+                                <a href="{{ route('admin.orders.view', $usage->order_id) }}" class="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="-ml-0.5 mr-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />

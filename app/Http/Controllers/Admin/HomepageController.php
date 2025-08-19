@@ -6,6 +6,7 @@ use App\Models\Banner;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Models\ProductVariant;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\HomepageProductBlock;
@@ -42,10 +43,8 @@ class HomepageController extends Controller
 
         // Lấy các khối sản phẩm từ DB
         $productBlocks = HomepageProductBlock::with([
-            'products' => function ($query) {
-                $query->with(['variants' => function ($q) {
-                    $q->where('is_default', true)->with('primaryImage');
-                }])->orderBy('pivot_order');
+            'productVariants' => function ($query) { // Sử dụng mối quan hệ mới
+                $query->with(['product', 'primaryImage', 'attributeValues.attribute'])->orderBy('pivot_order');
             }
         ])->orderBy('order')->get();
 
@@ -56,15 +55,29 @@ class HomepageController extends Controller
                 'title' => $block->title,
                 'order' => $block->order,
                 'is_visible' => $block->is_visible,
-                'products' => $block->products->map(function ($product) {
-                    $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+                // ✅ Sửa từ $block->products sang $block->productVariants
+                'products' => $block->productVariants->map(function ($variant) {
+                    $product = $variant->product;
                     $image = $variant && $variant->primaryImage
                         ? asset('storage/' . $variant->primaryImage->path)
                         : '/images/no-image.png';
+
+                    // Lấy thuộc tính "Dung lượng" từ biến thể để tạo tên hiển thị
+                    $capacity = '';
+                    $capacityAttr = $variant->attributeValues->first(function ($attrVal) {
+                        return $attrVal->attribute && $attrVal->attribute->name === 'Dung lượng';
+                    });
+                    if ($capacityAttr) {
+                        $capacity = $capacityAttr->value;
+                    }
+                    $displayName = $product->name . ($capacity ? ' ' . $capacity : '');
+
                     return [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'image' => $image, // Đồng bộ với searchProducts và addProductsToBlock
+                        // ✅ Sửa id từ $product->id thành $variant->id
+                        'id' => $variant->id,
+                        'product_id' => $product->id,
+                        'name' => $displayName, // Sử dụng tên hiển thị mới
+                        'image' => $image,
                         'price' => $variant?->price ? (string) $variant->price : null,
                         'sale_price' => $variant?->sale_price ? (string) $variant->sale_price : null,
                         'discount_percent' => ($variant && $variant->price > 0 && $variant->sale_price)
@@ -256,129 +269,193 @@ class HomepageController extends Controller
         try {
             $query = $request->query('q');
             $filter = $request->query('filter');
+            $perPage = $request->query('per_page', 15); // 15 biến thể mỗi trang, giống FlashSaleController
+            $page = $request->query('page', 1);
 
-            $productsQuery = Product::with(['variants.primaryImage'])
-                ->where('status', 'published');
-
-            // Nếu có từ khóa tìm kiếm thì thêm điều kiện LIKE
-            if ($query) {
-                $productsQuery->where('name', 'like', '%' . $query . '%');
-            }
+            // Lấy tất cả biến thể sản phẩm
+            $variantsQuery = ProductVariant::with([
+                'product' => function ($q) {
+                    $q->where('status', 'published');
+                },
+                'primaryImage',
+                'attributeValues.attribute'
+            ])->whereHas('product', function ($q) use ($query) {
+                $q->where('status', 'published');
+                if ($query) {
+                    $q->where('name', 'like', '%' . $query . '%');
+                }
+            });
 
             // Áp dụng bộ lọc nếu có
-            if ($filter === 'top_selling') {
-                $products = Product::with([
-                    'variants' => function ($q) {
-                        $q->where('is_default', true)->with('primaryImage');
-                    }
-                ])
-                    ->where('status', 'published')
-                    ->withSum(['variants as sold_quantity' => function ($q) {
-                        $q->where('is_default', true)
-                            ->join('order_items', 'product_variants.id', '=', 'order_items.product_variant_id');
-                    }], 'order_items.quantity')
-                    ->orderByDesc('sold_quantity')
-                    ->take(10)
-                    ->get();
-            } elseif ($filter === 'featured') {
-                // Top sản phẩm nổi bật
-                $products = $productsQuery->where('is_featured', true)
-                    ->latest()
-                    ->take(10)
-                    ->get();
+            if ($filter === 'featured') {
+                $variantsQuery->whereHas('product', function ($q) {
+                    $q->where('is_featured', true);
+                });
             } elseif ($filter === 'latest_10') {
-                // Top 10 sản phẩm mới nhất
-                $products = $productsQuery->latest()->take(10)->get();
-            } else {
-                // Không có filter: lấy tối đa 20 sản phẩm phù hợp
-                $products = $productsQuery->take(20)->get();
+                $variantsQuery->take(10); // Giữ nguyên giới hạn 10 cho bộ lọc này
             }
 
+            // Sắp xếp mới nhất trước và phân trang
+            $variants = $variantsQuery->orderBy('created_at', 'desc')->paginate($perPage);
+
+            // Log dữ liệu attributeValues để debug
+            \Log::info('Variants attributeValues:', $variants->map(function ($variant) {
+                return [
+                    'id' => $variant->id,
+                    'attributeValues' => $variant->attributeValues->map(function ($attrVal) {
+                        return [
+                            'attribute_name' => $attrVal->attribute->name,
+                            'value' => $attrVal->value
+                        ];
+                    })->toArray()
+                ];
+            })->toArray());
+
+            // Nhóm biến thể theo product_id và Dung lượng
+            $groupedVariants = $variants->getCollection()->groupBy(function ($variant) {
+                $capacity = 'default';
+                $capacityAttr = $variant->attributeValues->first(function ($attrVal) {
+                    return $attrVal->attribute && $attrVal->attribute->name === 'Dung lượng';
+                });
+                if ($capacityAttr) {
+                    $capacity = trim(strtolower($capacityAttr->value));
+                }
+                return $variant->product_id . '_' . $capacity;
+            })->map(function ($group) {
+                // Chọn biến thể mặc định hoặc đầu tiên
+                return $group->where('is_default', true)->first() ?? $group->first();
+            })->values();
+
+            // Cập nhật collection của pagination
+            $variants->setCollection($groupedVariants);
+
             // Map dữ liệu sang định dạng chuẩn cho frontend
-            $result = $products->map(function ($product) {
-                $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
-
-                $image = $variant && $variant->primaryImage
+            $result = $groupedVariants->map(function ($variant) {
+                $product = $variant->product;
+                $image = $variant->primaryImage
                     ? asset('storage/' . $variant->primaryImage->path)
-                    : 'https://via.placeholder.com/300x300?text=No+Image';
+                    : '';
 
-                // Ưu tiên dùng sold_quantity từ withSum nếu có
-                $totalSold = $product->sold_quantity ?? DB::table('order_items')
-                    ->where('product_variant_id', $variant?->id)
+                $totalSold = DB::table('order_items')
+                    ->where('product_variant_id', $variant->id)
                     ->sum('quantity');
 
+                // Tạo tên hiển thị: tên sản phẩm + Dung lượng
+                $capacity = '';
+                $capacityAttr = $variant->attributeValues->first(function ($attrVal) {
+                    return $attrVal->attribute && $attrVal->attribute->name === 'Dung lượng';
+                });
+                if ($capacityAttr) {
+                    $capacity = $capacityAttr->value;
+                }
+                $displayName = $product->name . ($capacity ? ' ' . $capacity : '');
+
                 return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'price' => $variant?->price ?? 0,
-                    'sale_price' => $variant?->sale_price ?? null,
-                    'discount_percent' => ($variant && $variant->price > 0 && $variant->sale_price)
+                    'id' => $variant->id, // ID của biến thể đại diện
+                    'product_id' => $product->id,
+                    'name' => $displayName, // Tên sản phẩm + Dung lượng
+                    'price' => $variant->price ?? 0,
+                    'sale_price' => $variant->sale_price ?? null,
+                    'discount_percent' => ($variant->price > 0 && $variant->sale_price)
                         ? round(100 - ($variant->sale_price / $variant->price) * 100)
                         : 0,
                     'image' => $image,
-                    'stock_quantity' => $variant ? $variant->getSellableStockAttribute() : 0,
+                    'stock_quantity' => $variant->getSellableStockAttribute() ?? 0,
                     'is_featured' => $product->is_featured,
                     'release_date' => $product->created_at->toDateString(),
                     'sold_quantity' => $totalSold,
                 ];
             });
 
-            return response()->json($result);
+            // Trả về dữ liệu phân trang
+            return response()->json([
+                'data' => $result,
+                'current_page' => $variants->currentPage(),
+                'last_page' => $variants->lastPage(),
+                'total' => $variants->total(),
+                'per_page' => $variants->perPage(),
+                'links' => $variants->links()->elements, // Thêm links giống Laravel
+            ]);
         } catch (\Throwable $e) {
             \Log::error('Lỗi khi tìm sản phẩm: ' . $e->getMessage());
             return response()->json(['error' => 'Lỗi khi tìm sản phẩm.'], 500);
         }
     }
 
-
     public function addProductsToBlock(Request $request, HomepageProductBlock $block)
     {
         try {
-            $productIds = $request->input('product_ids', []);
+            // ✅ Nhận variant ID từ frontend
+            $variantIds = $request->input('product_variant_ids', []);
 
-            if (empty($productIds)) {
+            if (empty($variantIds)) {
                 return response()->json(['error' => 'Không có sản phẩm nào được chọn'], 422);
             }
 
-            // Lấy order lớn nhất hiện tại
-            $maxOrder = $block->products()->max('homepage_block_product.order') ?? 0;
+            // Lấy order lớn nhất hiện tại để thêm sản phẩm mới vào cuối danh sách
+            $maxOrder = DB::table('homepage_block_product')
+                ->where('block_id', $block->id)
+                ->max('order') ?? 0;
 
-            foreach ($productIds as $i => $productId) {
-                // Tránh thêm trùng
-                if (!$block->products->contains($productId)) {
-                    $block->products()->attach($productId, [
-                        'order' => $maxOrder + $i + 1,
-                    ]);
-                }
+            $syncData = [];
+            foreach ($variantIds as $i => $variantId) {
+                // Tạo mảng dữ liệu để thêm biến thể với order tiếp theo
+                $syncData[$variantId] = ['order' => $maxOrder + $i + 1];
             }
 
-            // Tải lại sản phẩm với ảnh và thông tin cần thiết
-            $products = $block->products()
-                ->with([
-                    'variants' => function ($q) {
-                        $q->where('is_default', true)->with('primaryImage');
-                    }
-                ])
-                ->orderBy('homepage_block_product.order')
-                ->get()
-                ->map(function ($product) {
-                    $variant = $product->variants->first();
+            // ✅ Sử dụng syncWithoutDetaching với mối quan hệ mới
+            $block->productVariants()->syncWithoutDetaching($syncData);
 
-                    return [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'price' => $variant?->price ?? 0,
-                        'sale_price' => $variant?->sale_price ?? null,
-                        'discount_percent' => ($variant?->sale_price && $variant?->price > 0)
-                            ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                            : 0,
-                        'image' => $variant?->image_url ?? '/images/no-image.png',
-                    ];
+            // ✅ Tải lại các biến thể trong block sau khi thêm
+            $variantsInBlock = $block->productVariants()->with([
+                'product',
+                'primaryImage',
+                'attributeValues.attribute'
+            ])->orderBy('pivot_order')->get();
+
+            // Ánh xạ dữ liệu để đồng bộ với cấu trúc trả về của searchProducts
+            $result = $variantsInBlock->map(function ($variant) {
+                $product = $variant->product;
+                $image = $variant?->primaryImage
+                    ? asset('storage/' . $variant->primaryImage->path)
+                    : '';
+
+                // Tạo tên hiển thị (tên sản phẩm + Dung lượng)
+                $capacity = '';
+                $capacityAttr = $variant->attributeValues->first(function ($attrVal) {
+                    return $attrVal->attribute && $attrVal->attribute->name === 'Dung lượng';
                 });
+                if ($capacityAttr) {
+                    $capacity = $capacityAttr->value;
+                }
+                $displayName = $product->name . ($capacity ? ' ' . $capacity : '');
+
+                // Lấy số lượng bán được
+                $totalSold = DB::table('order_items')
+                    ->where('product_variant_id', $variant->id)
+                    ->sum('quantity');
+
+                return [
+                    // ✅ Sửa id từ $product->id sang $variant->id
+                    'id' => $variant->id,
+                    'product_id' => $product->id,
+                    'name' => $displayName,
+                    'price' => $variant?->price ?? 0,
+                    'sale_price' => $variant?->sale_price ?? null,
+                    'discount_percent' => ($variant?->price > 0 && $variant?->sale_price)
+                        ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                        : 0,
+                    'image' => $image,
+                    'stock_quantity' => $variant?->getSellableStockAttribute() ?? 0,
+                    'is_featured' => $product->is_featured,
+                    'release_date' => $product->created_at->toDateString(),
+                    'sold_quantity' => $totalSold,
+                ];
+            });
 
             return response()->json([
                 'success' => true,
-                'products' => $products
+                'products' => $result
             ]);
         } catch (\Throwable $e) {
             \Log::error('Lỗi khi thêm sản phẩm vào khối: ' . $e->getMessage());
@@ -446,13 +523,17 @@ class HomepageController extends Controller
 
     public function updateProductOrder(Request $request, $blockId)
     {
-        $productIds = $request->input('product_ids', []);
+        // ✅ Nhận ID của biến thể sản phẩm từ request
+        $variantIds = $request->input('product_variant_ids', []);
+
         DB::beginTransaction();
         try {
-            foreach ($productIds as $index => $productId) {
+            // ✅ Lặp qua mảng variant IDs
+            foreach ($variantIds as $index => $variantId) {
                 DB::table('homepage_block_product')
                     ->where('block_id', $blockId)
-                    ->where('product_id', $productId)
+                    // ✅ Sửa điều kiện where để tìm theo 'product_variant_id'
+                    ->where('product_variant_id', $variantId)
                     ->update(['order' => $index + 1]);
             }
             DB::commit();

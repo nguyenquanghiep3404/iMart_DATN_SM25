@@ -31,11 +31,11 @@
             </div>
 
         </main>
-               @include('users.products.partials.product-details-tailwind', [
-    'product' => $product,
-    'orderItemId' => $orderItemId,
-    'hasReviewed' => $hasReviewed
-])
+        @include('users.products.partials.product-details-tailwind', [
+            'product' => $product,
+            'orderItemId' => $orderItemId,
+            'hasReviewed' => $hasReviewed,
+        ])
 
     </div>
     <!-- Image Lightbox Modal -->
@@ -113,11 +113,17 @@
         $isSale = !$isFlashSale && $salePrice && $salePrice < $originalPrice;
         $priceToDisplay = $isSale || $isFlashSale ? $salePrice : $originalPrice;
 
-        $imageUrl = $variant->primaryImage ? Storage::url($variant->primaryImage->path) : asset('placeholder.png');
+        $imageUrl =
+            $variant &&
+            $variant->primaryImage &&
+            file_exists(storage_path('app/public/' . $variant->primaryImage->path))
+                ? Storage::url($variant->primaryImage->path)
+                : asset('images/placeholder.jpg');
     @endphp
 
     <!-- Sticky Add to Cart Bar -->
-    <div id="sticky-bar" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-5xl bg-white/80 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-2xl transform translate-y-full z-40">
+    <div id="sticky-bar"
+        class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-5xl bg-white/80 backdrop-blur-lg p-3 sm:p-4 rounded-2xl shadow-2xl transform translate-y-full z-40">
         <div class="container mx-auto flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <img id="sticky-image" src="{{ $imageUrl }}" alt="Ảnh sản phẩm"
@@ -154,7 +160,7 @@
                 </button>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <!-- Compare Modal -->
     <div id="compare-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden"
@@ -579,6 +585,8 @@
     <script>
         window.productType = @json($product->type);
         console.log('Loại sản phẩm:', window.productType);
+        window.baseSlug = @json($product->slug ?? 'default-slug'); // Thêm window.baseSlug
+        console.log('window.baseSlug:', window.baseSlug);
         window.variantData = @json($variantData);
         window.attributeOrder = @json($attributeOrder);
         window.availableCombinations = @json($availableCombinations);
@@ -672,109 +680,112 @@
             }
 
             // Hàm lấy sản phẩm đã xem từ localStorage
-           async function fetchSuggestedProducts(variantId) {
-    try {
-        const recentProducts = JSON.parse(localStorage.getItem('recent_product_ids') || '[]');
-        console.log('Gửi danh sách sản phẩm đã xem:', recentProducts);
+            async function fetchSuggestedProducts(variantId) {
+                try {
+                    const recentProducts = JSON.parse(localStorage.getItem('recent_product_ids') || '[]');
+                    console.log('Gửi danh sách sản phẩm đã xem:', recentProducts);
 
-        if (!recentProducts.length) {
-            console.warn('Không có sản phẩm đã xem trong localStorage');
-            suggestedProductsContainer.innerHTML =
-                '<p class="text-gray-500">Chưa có sản phẩm nào đã xem gần đây.</p>';
-            return;
-        }
+                    if (!recentProducts.length) {
+                        console.warn('Không có sản phẩm đã xem trong localStorage');
+                        suggestedProductsContainer.innerHTML =
+                            '<p class="text-gray-500">Chưa có sản phẩm nào đã xem gần đây.</p>';
+                        return;
+                    }
 
-        const response = await fetch('/api/compare-suggestions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-            },
-            body: JSON.stringify({
-                variant_id: variantId,
-                recent_product_ids: recentProducts.map(item => ({
-                    id: parseInt(item.id),
-                    variant_key: item.variant_key || '',
-                    specs: item.specs || {} // Gửi specs từ recent_product_ids
-                }))
-            })
-        });
+                    const response = await fetch('/api/compare-suggestions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+                        },
+                        body: JSON.stringify({
+                            variant_id: variantId,
+                            recent_product_ids: recentProducts.map(item => ({
+                                id: parseInt(item.id),
+                                variant_key: item.variant_key || '',
+                                specs: item.specs ||
+                                    {} // Gửi specs từ recent_product_ids
+                            }))
+                        })
+                    });
 
-        console.log('Phản hồi từ API:', response);
+                    console.log('Phản hồi từ API:', response);
 
-        if (!response.ok) {
-            console.error('API trả về lỗi:', response.status, response.statusText);
-            suggestedProductsContainer.innerHTML =
-                '<p class="text-red-500">Lỗi khi tải sản phẩm đã xem gần đây.</p>';
-            return;
-        }
+                    if (!response.ok) {
+                        console.error('API trả về lỗi:', response.status, response.statusText);
+                        suggestedProductsContainer.innerHTML =
+                            '<p class="text-red-500">Lỗi khi tải sản phẩm đã xem gần đây.</p>';
+                        return;
+                    }
 
-        const data = await response.json();
-        console.log('Dữ liệu từ API:', data);
+                    const data = await response.json();
+                    console.log('Dữ liệu từ API:', data);
 
-        if (data.suggested && Array.isArray(data.suggested) && data.suggested.length > 0) {
-            renderSuggestedProducts(data.suggested);
-        } else {
-            console.warn('Không có sản phẩm gợi ý:', data);
-            suggestedProductsContainer.innerHTML =
-                '<p class="text-gray-500">Chưa có sản phẩm nào đã xem gần đây.</p>';
-        }
-    } catch (error) {
-        console.error('Lỗi khi gọi API /api/compare-suggestions:', error);
-        suggestedProductsContainer.innerHTML =
-            '<p class="text-red-500">Lỗi khi tải sản phẩm đã xem gần đây.</p>';
-    }
-}
+                    if (data.suggested && Array.isArray(data.suggested) && data.suggested.length > 0) {
+                        renderSuggestedProducts(data.suggested);
+                    } else {
+                        console.warn('Không có sản phẩm gợi ý:', data);
+                        suggestedProductsContainer.innerHTML =
+                            '<p class="text-gray-500">Chưa có sản phẩm nào đã xem gần đây.</p>';
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi gọi API /api/compare-suggestions:', error);
+                    suggestedProductsContainer.innerHTML =
+                        '<p class="text-red-500">Lỗi khi tải sản phẩm đã xem gần đây.</p>';
+                }
+            }
 
             function saveRecentProduct() {
-    const productId = window.currentProductId;
-    const productName = @json($product->name);
-    const attributeOrder = window.attributeOrder || [];
-    const currentSelections = window.currentSelections || {};
-    const variantKey = window.productType === 'variable' ? attributeOrder.map(attr => currentSelections[attr] || '').join('_') : 'default';
-    const variant = window.variantData[variantKey] || window.variantData['default'];
-    const variantName = attributeOrder.map(attr => currentSelections[attr]).filter(Boolean).join(' ');
-    let image = variant?.image;
-    if (!image || typeof image !== 'string') {
-        image = @json($product->coverImage ? Storage::url($product->coverImage->path) : '/images/placeholder.jpg');
-    }
-    const price = variant?.price ? parseInt(variant.price) : parseInt(@json($product->price));
-    const salePrice = variant?.sale_price ? parseInt(variant.sale_price) : null;
-    const specs = window.variantSpecs?.[variantKey] || {}; // Lấy specs từ window.variantSpecs
+                const productId = window.currentProductId;
+                const productName = @json($product->name);
+                const attributeOrder = window.attributeOrder || [];
+                const currentSelections = window.currentSelections || {};
+                const variantKey = window.productType === 'variable' ? attributeOrder.map(attr => currentSelections[
+                    attr] || '').join('_') : 'default';
+                const variant = window.variantData[variantKey] || window.variantData['default'];
+                const variantName = attributeOrder.map(attr => currentSelections[attr]).filter(Boolean).join(' ');
+                let image = variant?.image;
+                if (!image || typeof image !== 'string') {
+                    image = @json($product->coverImage ? Storage::url($product->coverImage->path) : '/images/placeholder.jpg');
+                }
+                const price = variant?.price ? parseInt(variant.price) : parseInt(@json($product->price));
+                const salePrice = variant?.sale_price ? parseInt(variant.sale_price) : null;
+                const specs = window.variantSpecs?.[variantKey] || {}; // Lấy specs từ window.variantSpecs
 
-    const key = 'recent_product_ids';
-    const maxItems = 10;
-    let recentProducts = JSON.parse(localStorage.getItem(key)) || [];
+                const key = 'recent_product_ids';
+                const maxItems = 10;
+                let recentProducts = JSON.parse(localStorage.getItem(key)) || [];
 
-    // Loại bỏ bản ghi trùng lặp
-    recentProducts = recentProducts.filter(item => window.productType === 'variable' ?
-        `${item.id}_${item.variant_key || ''}` !== `${productId}_${variantKey}` : item.id !== productId);
+                // Loại bỏ bản ghi trùng lặp
+                recentProducts = recentProducts.filter(item => window.productType === 'variable' ?
+                    `${item.id}_${item.variant_key || ''}` !== `${productId}_${variantKey}` : item.id !==
+                    productId);
 
-    // Thêm sản phẩm mới với specs
-    recentProducts.unshift({
-        id: productId,
-        name: productName,
-        variant_key: variantKey,
-        variant_name: variantName,
-        image: image,
-        price: price,
-        sale_price: salePrice,
-        specs: specs // Thêm specs vào đây
-    });
+                // Thêm sản phẩm mới với specs
+                recentProducts.unshift({
+                    id: productId,
+                    name: productName,
+                    variant_key: variantKey,
+                    variant_name: variantName,
+                    image: image,
+                    price: price,
+                    sale_price: salePrice,
+                    specs: specs // Thêm specs vào đây
+                });
 
-    // Giới hạn số lượng sản phẩm
-    recentProducts = recentProducts.slice(0, maxItems);
-    localStorage.setItem(key, JSON.stringify(recentProducts));
+                // Giới hạn số lượng sản phẩm
+                recentProducts = recentProducts.slice(0, maxItems);
+                localStorage.setItem(key, JSON.stringify(recentProducts));
 
-    console.log('✅ Đã lưu sản phẩm vào danh sách đã xem:', {
-        id: productId,
-        image: image,
-        variantKey: variantKey,
-        specs: specs, // Debug specs
-        recentProducts: recentProducts
-    });
-}
+                console.log('✅ Đã lưu sản phẩm vào danh sách đã xem:', {
+                    id: productId,
+                    image: image,
+                    variantKey: variantKey,
+                    specs: specs, // Debug specs
+                    recentProducts: recentProducts
+                });
+            }
 
 
             function renderSuggestedProducts(products) {
@@ -805,45 +816,43 @@
                     const buttonHtml = isAdded ?
                         `<span class="text-gray-400 text-sm italic">✔️ Đã thêm vào so sánh</span>` :
                         `
-<button class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0"
-    data-product-id="${product.id}"
-    data-product-name="${productName}"
-    data-product-variant-name="${variantName}"
-    data-product-variant="${product.variant_id || ''}"
-    data-product-image="${imageUrl}"
-    data-product-price="${rawPrice}"
-    data-product-sale-price="${rawSalePrice ?? ''}"
-    data-variant-key="${product.variant_key || ''}"
->
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    Thêm vào so sánh
-</button>`;
+                    <button class="add-to-compare flex items-center gap-1.5 text-blue-600 font-semibold text-sm hover:text-blue-800 flex-shrink-0"
+                    data-product-id="${product.id}"
+                    data-product-name="${productName}"
+                    data-product-variant-name="${variantName}"
+                    data-product-variant="${product.variant_id || ''}"
+                    data-product-image="${imageUrl}"
+                    data-product-price="${rawPrice}"
+                    data-product-sale-price="${rawSalePrice ?? ''}"
+                    data-variant-key="${product.variant_key || ''}"
+                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Thêm vào so sánh
+                    </button>`;
 
                     const productHtml = `
-<div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
-    <img src="${imageUrl}" alt="${productName} ${variantName}" class="w-24 h-24 object-cover rounded-md flex-shrink-0">
-    <div class="flex-grow">
-        <p class="font-bold text-lg text-red-600">
+                    <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-transparent hover:border-blue-500 hover:bg-white transition-all">
+                    <img src="${imageUrl}" alt="${productName} ${variantName}" class="w-24 h-24 object-cover rounded-md flex-shrink-0">
+                    <div class="flex-grow">
+                    <p class="font-bold text-lg text-red-600">
             ${formatPrice(displayPrice)}
             ${hasSale ? `
-                                                        <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
-                                                        <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
-                                                    ` : ''}
+                                                                        <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
+                                                                        <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
+                                                                    ` : ''}
         </p>
         <p class="font-semibold text-gray-800 mt-1">
             ${productName}${variantName ? ` - ${variantName}` : ''}
         </p>
-    </div>
-    ${buttonHtml}
-</div>`;
+                        </div>
+                      ${buttonHtml}
+                        </div>`;
 
                     suggestedProductsContainer.insertAdjacentHTML('beforeend', productHtml);
                 });
             }
-
-
 
 
             // Hàm mở modal và lấy sản phẩm gợi ý
@@ -881,7 +890,7 @@
                         .productSalePrice) : null;
 
                     // ✅ Thêm specs từ window.variantSpecs
-                const specs = window.variantSpecs?.[variantKey] || {};
+                    const specs = window.variantSpecs?.[variantKey] || {};
 
                     let list = getCompareList();
                     if (!list.some(item => item.id === productId && item.variant_id === variantId)) {
@@ -912,9 +921,6 @@
                     fetchSuggestedProducts(window.defaultVariantId);
                 }
             });
-
-
-
 
             // Xóa tất cả sản phẩm so sánh
             clearCompareBtn?.addEventListener('click', () => {
@@ -1081,9 +1087,6 @@
                     container.appendChild(section);
                 });
             }
-
-
-
 
 
             // Hàm lấy danh sách so sánh từ localStorage
@@ -1419,8 +1422,8 @@
                 let isFlashSale = false;
                 let isSale = false;
                 let discountPercent = 0;
-                let salePrice = parseInt(variant.sale_price);
-                let originalPrice = parseInt(variant.price);
+                let salePrice = parseInt(variant.sale_price) || 0;
+                let originalPrice = parseInt(variant.price) || 0;
                 if (variant.sale_price_starts_at && variant.sale_price_ends_at) {
                     const start = new Date(variant.sale_price_starts_at);
                     const end = new Date(variant.sale_price_ends_at);
@@ -1457,16 +1460,59 @@
                 }
                 const titleEl = document.getElementById('product-title');
                 if (titleEl) {
-                    const dungLuong = currentSelections['Dung lượng lưu trữ'] || '';
+                    const dungLuong = currentSelections['Dung lượng'] || '';
                     const mauSac = currentSelections['Màu sắc'] || '';
                     const selectedValues = [dungLuong, mauSac].filter(val => val).join(' ');
                     titleEl.textContent = `${@json($product->name)} ${selectedValues}`;
                     console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent);
                 }
+                // Cập nhật URL
+                console.log('Kiểm tra cập nhật URL:', {
+                    baseSlug: window.baseSlug,
+                    attributeOrder: window.attributeOrder,
+                    currentSelections: window.currentSelections
+                });
+                if (window.baseSlug && window.attributeOrder && window.attributeOrder.length > 0) {
+                    const slugParts = window.attributeOrder.map(attr => {
+                        const value = currentSelections[attr] || '';
+                        if (!value) {
+                            console.warn(`Thiếu giá trị cho thuộc tính ${attr}`);
+                            return '';
+                        }
+                        // Xử lý ký tự tiếng Việt và tạo slug
+                        const slugValue = value
+                            .normalize('NFD') // Chuẩn hóa Unicode
+                            .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu
+                            .toLowerCase()
+                            .replace(/đ/g, 'd') // Thêm dòng này để xử lý chữ 'đ'
+                            .replace(/\s+/g, '-')
+                            .replace(/[^a-z0-9-]/g, '');
+
+                        console.log(`Slug cho ${attr}: ${slugValue}`);
+                        return slugValue;
+                    }).filter(Boolean);
+                    console.log('Slug parts:', slugParts);
+                    if (slugParts.length === window.attributeOrder.length) {
+                        const newSlug = `${window.baseSlug}-${slugParts.join('-')}`;
+                        const newUrl = `/san-pham/${newSlug}`;
+                        console.log('Chuẩn bị cập nhật URL:', newUrl);
+                        window.history.pushState({
+                            path: newUrl
+                        }, '', newUrl);
+                        console.log('URL đã cập nhật:', newUrl);
+                        window.defaultVariantId = variant.variant_id || window.defaultVariantId;
+                    } else {
+                        console.warn('Không đủ thuộc tính để tạo slug mới:', slugParts);
+                    }
+                } else {
+                    console.error('Không thể cập nhật URL: Thiếu baseSlug hoặc attributeOrder', {
+                        baseSlug: window.baseSlug,
+                        attributeOrder: window.attributeOrder
+                    });
+                }
                 window.updateGalleryFromSelection(key);
                 updateSpecifications(key);
                 updateStickyBar(key);
-                // Lưu sản phẩm với biến thể mới vào lịch sử
                 saveRecentProduct();
             }
 

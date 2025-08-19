@@ -10,11 +10,11 @@ class Address extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 
-        'address_label', 
-        'full_name', 
-        'phone_number', 
-        'address_line1', 
+        'user_id',
+        'address_label',
+        'full_name',
+        'phone_number',
+        'address_line1',
         'address_line2',
         'address_system',
         'new_province_code',
@@ -22,7 +22,7 @@ class Address extends Model
         'old_province_code',
         'old_district_code',
         'old_ward_code',
-        'is_default_shipping', 
+        'is_default_shipping',
         'is_default_billing',
     ];
 
@@ -63,6 +63,22 @@ class Address extends Model
         return $this->belongsTo(WardOld::class, 'old_ward_code', 'code');
     }
 
+    // Alias cho tương thích với code hiện tại
+    public function provinceOld()
+    {
+        return $this->oldProvince();
+    }
+
+    public function districtOld()
+    {
+        return $this->oldDistrict();
+    }
+
+    public function wardOld()
+    {
+        return $this->oldWard();
+    }
+
     // Quan hệ động dựa trên hệ thống
     public function province()
     {
@@ -87,7 +103,8 @@ class Address extends Model
         if ($this->address_system === 'old') {
             return $this->oldDistrict();
         }
-        return null;
+        // Trả về relationship rỗng thay vì null
+        return $this->belongsTo(DistrictOld::class, 'old_district_code', 'code');
     }
 
     // Accessor để lấy địa chỉ đầy đủ
@@ -100,7 +117,7 @@ class Address extends Model
             $this->district?->name,
             $this->province?->name,
         ]);
-        
+
         return implode(', ', $parts);
     }
 
@@ -114,7 +131,7 @@ class Address extends Model
             $this->district?->name_with_type,
             $this->province?->name_with_type,
         ]);
-        
+
         return implode(', ', $parts);
     }
 

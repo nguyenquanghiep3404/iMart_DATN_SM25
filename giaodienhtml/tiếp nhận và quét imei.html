@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiếp nhận Hàng & Quét IMEI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .card { background-color: white; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        [x-cloak] { display: none !important; }
+        .progress-bar-bg { background-color: #e5e7eb; }
+        .progress-bar-fill { background-color: #2563eb; transition: width 0.3s ease-in-out; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    </style>
+</head>
+<body class="antialiased" x-data="pageData()">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <!-- Header -->
+        <header class="mb-8 flex flex-col sm:flex-row items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Tiếp nhận Hàng hóa</h1>
+                <p class="text-gray-600 mt-1">Chọn Đơn Mua Hàng và quét IMEI/Serial cho sản phẩm.</p>
+            </div>
+            <!-- === FIXED BUTTON START === -->
+            <div x-show="selectedPO" x-cloak class="mt-4 sm:mt-0 w-full sm:w-auto">
+                 <button @click="confirmReception()"
+                        :disabled="!isPOFullyScanned"
+                        class="flex w-full sm:w-auto items-center justify-center text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors"
+                        :class="{
+                            'bg-purple-600 hover:bg-purple-700': isPOFullyScanned,
+                            'bg-gray-400 cursor-not-allowed': !isPOFullyScanned
+                        }">
+                    <i class="fas fa-check-circle mr-2" x-show="isPOFullyScanned"></i>
+                    <span x-text="isPOFullyScanned ? 'Hoàn thành' : 'Cần quét đủ số lượng'"></span>
+                </button>
+            </div>
+            <!-- === FIXED BUTTON END === -->
+        </header>
+
+        <!-- Main Content -->
+        <div class="card p-6">
+            <!-- Purchase Order Selection -->
+            <template x-if="!selectedPO">
+                <div class="max-w-xl mx-auto text-center">
+                    <h2 class="text-xl font-semibold text-gray-800">Chọn Đơn Mua Hàng để bắt đầu</h2>
+                    <p class="text-gray-500 mt-2">Chọn phiếu nhập kho bạn muốn tiếp nhận hàng hóa.</p>
+                    <div class="mt-6 space-y-3">
+                        <template x-for="po in purchaseOrders" :key="po.id">
+                            <div @click="selectPO(po.id)" class="p-4 border rounded-lg hover:bg-blue-50 hover:border-blue-400 cursor-pointer transition-colors text-left">
+                                <div class="flex justify-between items-center">
+                                    <p class="font-bold text-blue-600" x-text="po.po_code"></p>
+                                    <span class="text-xs font-semibold px-2 py-1 rounded-full bg-yellow-200 text-yellow-800">Chờ nhận hàng</span>
+                                </div>
+                                <p class="text-sm text-gray-700">NCC: <span class="font-medium" x-text="po.supplier_name"></span></p>
+                                <p class="text-sm text-gray-500">Ngày đặt: <span x-text="new Date(po.order_date).toLocaleDateString('vi-VN')"></span></p>
+                            </div>
+                        </template>
+                         <template x-if="purchaseOrders.length === 0">
+                            <p class="text-gray-500 pt-4">Không có đơn hàng nào chờ nhận.</p>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Scanning Interface -->
+            <template x-if="selectedPO">
+                <div x-cloak>
+                    <div class="flex justify-between items-start mb-6 pb-6 border-b">
+                        <div>
+                            <p class="text-gray-500">Đang tiếp nhận cho đơn hàng:</p>
+                            <h2 class="text-2xl font-bold text-gray-800" x-text="selectedPO.po_code"></h2>
+                            <p class="text-gray-700">Nhà cung cấp: <span class="font-semibold" x-text="selectedPO.supplier_name"></span></p>
+                        </div>
+                        <button @click="resetSelection()" class="text-sm font-semibold text-blue-600 hover:text-blue-800">
+                           <i class="fas fa-arrow-left mr-1"></i> Quay lại chọn đơn
+                        </button>
+                    </div>
+
+                    <div class="space-y-6">
+                        <template x-for="item in selectedPO.items" :key="item.id">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                                <!-- Product Info -->
+                                <div class="md:col-span-1">
+                                    <p class="font-semibold text-gray-900" x-text="item.name"></p>
+                                    <p class="text-xs text-gray-500" x-text="'SKU: ' + item.sku"></p>
+                                </div>
+                                <!-- Progress -->
+                                <div class="md:col-span-1">
+                                     <div class="flex justify-between items-center mb-1">
+                                         <p class="text-sm font-medium text-gray-700">Tiến độ quét</p>
+                                         <p class="text-sm font-bold" :class="scannedData[item.id].length === item.quantity ? 'text-green-600' : 'text-gray-800'">
+                                             <span x-text="scannedData[item.id].length"></span> / <span x-text="item.quantity"></span>
+                                         </p>
+                                     </div>
+                                    <div class="w-full progress-bar-bg rounded-full h-2.5">
+                                        <div class="progress-bar-fill h-2.5 rounded-full" :style="`width: ${(scannedData[item.id].length / item.quantity) * 100}%`"></div>
+                                    </div>
+                                </div>
+                                <!-- Action Button -->
+                                <div class="md:col-span-1 text-right">
+                                     <button @click="openScanningModal(item)"
+                                             class="w-full md:w-auto px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors"
+                                             :class="scannedData[item.id].length === item.quantity ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700 hover:bg-blue-200'">
+                                         <i class="fas" :class="scannedData[item.id].length === item.quantity ? 'fa-check-circle' : 'fa-barcode'"></i>
+                                         <span x-text="scannedData[item.id].length === item.quantity ? 'Đã quét đủ' : 'Bắt đầu quét'"></span>
+                                     </button>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    
+    <!-- Scanning Modal -->
+    <div x-show="isScanningModalOpen" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div @click.outside="closeScanningModal()" class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <header class="p-5 border-b flex justify-between items-center">
+                <div>
+                     <h3 class="text-xl font-bold text-gray-800">Quét IMEI/Serial</h3>
+                     <p x-text="currentItemForScanning.name" class="text-sm text-gray-600"></p>
+                </div>
+                <button @click="closeScanningModal()" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
+            </header>
+            <main class="flex-1 p-5 grid grid-cols-1 md:grid-cols-2 gap-5 overflow-hidden">
+                <!-- Left: Input Area -->
+                <div class="flex flex-col">
+                     <form @submit.prevent="addSerial()" class="space-y-3">
+                         <label for="serial-input" class="font-semibold text-gray-700">
+                             Quét mã cho sản phẩm (<span x-text="scannedData[currentItemForScanning?.id]?.length || 0"></span>/<span x-text="currentItemForScanning.quantity"></span>)
+                         </label>
+                         <input type="text" id="serial-input" x-model="currentSerialInput"
+                                class="w-full p-3 border border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="IMEI/Serial Number...">
+                         <p x-show="scanError" x-text="scanError" class="text-sm text-red-600"></p>
+                         <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors">Thêm</button>
+                     </form>
+                </div>
+                <!-- Right: Scanned List -->
+                <div class="bg-gray-50 rounded-lg flex flex-col overflow-hidden">
+                    <p class="p-3 font-semibold text-gray-700 border-b">Danh sách đã quét</p>
+                    <div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+                        <template x-if="!scannedData[currentItemForScanning?.id] || scannedData[currentItemForScanning?.id].length === 0">
+                            <p class="text-center text-gray-500 pt-10">Chưa có mã nào được quét.</p>
+                        </template>
+                        <template x-for="serial in scannedData[currentItemForScanning?.id]" :key="serial">
+                             <div class="flex justify-between items-center bg-white p-2 rounded-md border text-sm">
+                                 <span class="font-mono text-gray-700" x-text="serial"></span>
+                                 <button @click="removeSerial(currentItemForScanning.id, serial)" class="text-red-500 hover:text-red-700 text-xs">
+                                     <i class="fas fa-trash-alt"></i>
+                                 </button>
+                             </div>
+                        </template>
+                    </div>
+                </div>
+            </main>
+            <footer class="p-4 bg-gray-50 border-t text-right">
+                <button @click="closeScanningModal()" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Hoàn tất</button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- === NEW SUCCESS MODAL START === -->
+    <div x-show="isSuccessModalOpen" x-cloak x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center p-4">
+        <div @click.outside="closeSuccessModal()" class="bg-white rounded-xl shadow-2xl w-full max-w-md text-center p-8">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">
+                 <i class="fas fa-check text-green-600 text-3xl"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mt-5">Thành công!</h3>
+            <p x-text="successMessage" class="text-gray-600 mt-2"></p>
+            <button @click="closeSuccessModal()" class="mt-8 w-full px-5 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors">OK</button>
+        </div>
+    </div>
+    <!-- === NEW SUCCESS MODAL END === -->
+
+    <script>
+    function pageData() {
+        return {
+            purchaseOrders: [],
+            selectedPO: null,
+            scannedData: {},
+            isScanningModalOpen: false,
+            currentItemForScanning: null,
+            currentSerialInput: '',
+            scanError: '',
+            // New state for success modal
+            isSuccessModalOpen: false,
+            successMessage: '',
+
+            init() {
+                // Sample data - Replace with your API call
+                this.purchaseOrders = [
+                    { 
+                        id: 1, 
+                        po_code: 'PO-2025-001', 
+                        supplier_name: 'Apple Việt Nam',
+                        order_date: '2025-07-28',
+                        items: [
+                            { id: 101, name: 'iPhone 15 Plus 256GB Tím', sku: 'IP15P-256-PUR', quantity: 5 },
+                            { id: 102, name: 'iPhone 14 Plus 128GB Tím', sku: 'IP14P-128-PUR', quantity: 3 }
+                        ]
+                    },
+                    { 
+                        id: 2, 
+                        po_code: 'PO-2025-002', 
+                        supplier_name: 'Synnex FPT',
+                        order_date: '2025-07-27',
+                        items: [
+                            { id: 201, name: 'MacBook Air M3 13-inch', sku: 'MBA-M3-13-256', quantity: 4 }
+                        ]
+                    }
+                ];
+            },
+
+            selectPO(poId) {
+                this.selectedPO = this.purchaseOrders.find(p => p.id === poId);
+                // Initialize scannedData for this PO
+                this.scannedData = {};
+                this.selectedPO.items.forEach(item => {
+                    this.scannedData[item.id] = [];
+                });
+            },
+
+            resetSelection() {
+                this.selectedPO = null;
+                this.scannedData = {};
+            },
+            
+            // Using a getter makes the template code cleaner
+            get isPOFullyScanned() {
+                if (!this.selectedPO) return false;
+                return this.selectedPO.items.every(item => {
+                    // Ensure scannedData has an entry for the item before checking length
+                    return this.scannedData[item.id] && (this.scannedData[item.id].length === item.quantity);
+                });
+            },
+
+            openScanningModal(item) {
+                this.currentItemForScanning = item;
+                this.isScanningModalOpen = true;
+                // Auto-focus the input field when the modal opens
+                this.$nextTick(() => {
+                    document.getElementById('serial-input').focus();
+                });
+            },
+            
+            closeScanningModal() {
+                this.isScanningModalOpen = false;
+                this.currentItemForScanning = null;
+                this.currentSerialInput = '';
+                this.scanError = '';
+            },
+
+            addSerial() {
+                const trimmedSerial = this.currentSerialInput.trim();
+                if (!trimmedSerial) {
+                    this.scanError = 'IMEI/Serial không được để trống.';
+                    return;
+                }
+                const currentList = this.scannedData[this.currentItemForScanning.id];
+                
+                // Check max quantity
+                if (currentList.length >= this.currentItemForScanning.quantity) {
+                    this.scanError = 'Đã quét đủ số lượng cho sản phẩm này.';
+                    return;
+                }
+                
+                // Check for duplicates
+                if (currentList.includes(trimmedSerial)) {
+                    this.scanError = 'IMEI/Serial này đã được quét.';
+                    return;
+                }
+                
+                // Add to the list
+                currentList.push(trimmedSerial);
+                
+                // Reset for next scan
+                this.currentSerialInput = '';
+                this.scanError = '';
+                document.getElementById('serial-input').focus();
+            },
+
+            removeSerial(itemId, serialToRemove) {
+                const list = this.scannedData[itemId];
+                const index = list.indexOf(serialToRemove);
+                if (index > -1) {
+                    list.splice(index, 1);
+                }
+            },
+
+            // Modified function to show modal instead of alert
+            confirmReception() {
+                if(this.isPOFullyScanned) {
+                    // Here you would call your API to save the data
+                    // 1. Create new records in 'inventory_lots'
+                    // 2. Create new records in 'inventory_serials' from 'scannedData'
+                    // 3. Update quantities in 'product_inventories'
+                    // 4. Update the status of the Purchase Order
+                    console.log("Submitting data to server:", { 
+                        po_id: this.selectedPO.id, 
+                        scanned_serials: this.scannedData 
+                    });
+                    
+                    this.successMessage = `Đã nhập kho thành công cho đơn hàng ${this.selectedPO.po_code}!`;
+                    this.isSuccessModalOpen = true;
+                }
+            },
+            
+            // New function to handle closing the success modal and resetting the UI
+            closeSuccessModal() {
+                this.isSuccessModalOpen = false;
+                // Remove the completed PO from the list and reset the main view
+                this.purchaseOrders = this.purchaseOrders.filter(p => p.id !== this.selectedPO.id);
+                this.resetSelection();
+            }
+        }
+    }
+    </script>
+</body>
+</html>

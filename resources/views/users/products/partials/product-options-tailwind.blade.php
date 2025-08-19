@@ -1,8 +1,7 @@
 <div class="product-info flex flex-col">
     @php
-        $productName = $product->name; // Ví dụ: "iPhone 16"
-        $dungLuong = $initialVariantAttributes['Dung lượng lưu trữ'] ?? '';
-        $mauSac = $initialVariantAttributes['Màu sắc'] ?? '';
+        $productName = $product->name;
+        $variantSuffix = collect($initialVariantAttributes)->implode(' ');
     @endphp
     <!-- CDN Toastr -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
@@ -10,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     @include('users.cart.layout.partials.css')
     <h1 id="product-title" class="text-2xl md:text-3xl font-bold text-gray-900">
-        {{ $productName }} {{ $dungLuong }} {{ $mauSac }}
+        {{ $productName }} {{ $variantSuffix }}
     </h1>
     <div class="flex items-center flex-wrap gap-4 mt-2">
         <span
@@ -125,7 +124,8 @@
             @continue(strtolower($attrName) === 'màu sắc')
 
             @php
-                $inputName = strtolower(str_replace(' ', '-', $attrName)) . '-options';
+                // Chuẩn hóa tên input để tránh xung đột
+                $inputName = 'attr-' . strtolower(str_replace(' ', '-', $attrName));
             @endphp
             <div>
                 <h4 class="font-medium text-gray-800 mb-2">{{ $attrName }}</h4>
@@ -133,7 +133,8 @@
                     @foreach ($attrValues as $attrValue)
                         @php
                             $inputId = $inputName . '-' . $attrValue->id;
-                            $isColor = $attrValue->attribute->display_type === 'color_swatch' && $attrValue->meta;
+                            $isColor =
+                                $attrValue->attribute->display_type === 'color_swatch' && !empty($attrValue->meta);
                             $isChecked =
                                 isset($initialVariantAttributes[$attrName]) &&
                                 $initialVariantAttributes[$attrName] === $attrValue->value;
@@ -141,8 +142,9 @@
 
                         <label for="{{ $inputId }}"
                             class="option-container px-4 py-2 border-2 rounded-lg text-sm font-semibold cursor-pointer
-                    {{ $isChecked ? 'variant-selected' : 'border-gray-300 text-gray-700 hover:border-blue-500' }}"
-                            data-attr-name="{{ $attrName }}" data-attr-value="{{ $attrValue->value }}">
+                                  {{ $isChecked ? 'variant-selected' : 'border-gray-300 text-gray-700 hover:border-blue-500' }}"
+                            data-attr-name="{{ $attrName }}" data-attr-value="{{ $attrValue->value }}"
+                            title="{{ $attrValue->value }}">
                             <input type="radio" name="{{ $inputName }}" id="{{ $inputId }}"
                                 value="{{ $attrValue->value }}" data-attr-name="{{ $attrName }}" class="hidden"
                                 {{ $isChecked ? 'checked' : '' }}>
@@ -158,13 +160,13 @@
             @php
                 $attrName = 'Màu sắc';
                 $attrValues = $attributes['Màu sắc'];
-                $inputName = 'mau-sac-options';
+                $inputName = 'attr-mau-sac';
             @endphp
             <div>
                 <h4 class="font-medium text-gray-800 mb-2">
                     Màu sắc:
                     <span id="selected-color-name" class="font-bold">
-                        {{ $initialVariantAttributes['Màu sắc'] ?? '' }}
+                        {{ $initialVariantAttributes['Màu sắc'] ?? 'Chưa chọn' }}
                     </span>
                 </h4>
                 <div class="flex gap-2 flex-wrap">
@@ -174,11 +176,13 @@
                             $isChecked =
                                 isset($initialVariantAttributes[$attrName]) &&
                                 $initialVariantAttributes[$attrName] === $attrValue->value;
+                            // Kiểm tra meta để đảm bảo mã màu hợp lệ
+                            $colorValue = !empty($attrValue->meta) ? $attrValue->meta : '#000000';
                         @endphp
 
                         <label for="{{ $inputId }}"
                             class="option-container w-8 h-8 rounded-full border ring-2 {{ $isChecked ? 'ring-blue-500' : 'ring-transparent' }} ring-offset-1 cursor-pointer"
-                            title="{{ $attrValue->value }}" style="background-color: {{ $attrValue->meta }};"
+                            title="{{ $attrValue->value }}" style="background-color: {{ $colorValue }};"
                             data-attr-name="{{ $attrName }}" data-attr-value="{{ $attrValue->value }}">
                             <input type="radio" name="{{ $inputName }}" id="{{ $inputId }}"
                                 value="{{ $attrValue->value }}" data-attr-name="{{ $attrName }}" class="hidden"
@@ -188,7 +192,6 @@
                 </div>
             </div>
         @endif
-
     </div>
 
 
@@ -295,79 +298,108 @@
 
 
 
-    <div class="promotions mt-6">
-        <h3 class="font-semibold text-gray-800 mb-2">Khuyến mãi & Ưu đãi</h3>
-        <ul class="space-y-2 text-sm">
-            <li class="flex items-start gap-2 text-gray-700"><svg xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg><span>Giảm thêm <span class="font-bold">500.000₫</span> khi thanh toán qua VNPAY.</span></li>
-            <li class="flex items-start gap-2 text-gray-700"><svg xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8c1.657 0 3-1.343 3-3S13.657 2 12 2 9 3.343 9 5s1.343 3 3 3zm0 0v1m0-1c-1.657 0-3 1.343-3 3S10.343 11 12 11s3-1.343 3-3-1.343-3-3-3zm0 0c1.657 0 3 1.343 3 3s-1.343 3-3 3m0 0v7m0-7c-1.657 0-3 1.343-3 3s1.343 3 3 3">
-                    </path>
-                </svg><span>Tặng <span class="font-bold">Ốp lưng MagSafe</span> trị giá 1.200.000₫.</span></li>
-            <li class="flex items-start gap-2 text-gray-700"><svg xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
-                    </path>
-                </svg><span>Hỗ trợ <span class="font-bold">trả góp 0%</span> qua thẻ tín dụng.</span></li>
-        </ul>
-    </div>
-
-    <!-- Additional Promotions Section -->
-    <div class="mt-6 p-4 border border-gray-200 rounded-lg">
-        <h3 class="font-bold text-red-600">Khuyến mãi trị giá 500.000₫</h3>
-        <p class="text-sm text-gray-600 mt-1">Giá và khuyến mãi có thể kết thúc sớm hơn dự kiến</p>
-        <div class="mt-4 space-y-2 text-sm text-gray-800">
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">1</span>
-                <span>Phiếu mua hàng AirPods, Apple Watch, Macbook trị giá 500,000đ</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">2</span>
-                <span>Phiếu mua hàng máy lạnh trị giá 300.000đ (<a href="#"
-                        class="text-blue-600 hover:underline">Xem chi tiết tại đây</a>)</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">3</span>
-                <span>Phiếu mua hàng áp dụng mua Sạc dự phòng (trừ hãng AVA+, Hydrus), đồng hồ thông minh (trừ Apple),
-                    Tai nghe và Loa bluetooth (hãng JBL, Marshall, Harman Kardon, Sony) trị giá 100.000đ</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">4</span>
-                <span>Phiếu mua hàng máy lọc nước trị giá 300.000đ</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">5</span>
-                <span>Phiếu mua hàng áp dụng mua tất cả sim có gói Mobi, Itel, Local, Vina và VNMB trị giá 50,000đ. (<a
-                        href="#" class="text-blue-600 hover:underline">Xem chi tiết tại đây</a>)</span>
-            </div>
-            <div class="flex items-start gap-2">
-                <span
-                    class="flex-shrink-0 flex items-center justify-center w-5 h-5 bg-blue-500 text-white rounded-full text-xs font-bold">6</span>
-                <span>Trả chậm 0% lãi suất. Đặc biệt giảm đến 10% tối đa 5 triệu khi thanh toán qua Kredivo (<a
-                        href="#" class="text-blue-600 hover:underline">Xem chi tiết tại đây</a>)</span>
-            </div>
+    <!-- Thay đổi hiển thị chi nhánh -->
+    <section class="mt-6 p-4 sm:p-5 bg-gray-50 rounded-xl border border-gray-200">
+        <div>
+            <h3 class="font-semibold text-gray-900">Xem chi nhánh có hàng</h3>
+            <p class="text-sm text-gray-600 mt-1">Có <span id="store-count"
+                    class="font-bold text-blue-600">{{ $storeLocations->count() }}</span> cửa hàng có sản phẩm</p>
         </div>
-        <ul class="mt-4 space-y-1 text-sm text-gray-800 list-inside">
-            <li class="flex items-start gap-2"><span class="text-red-500 mt-1.5 flex-shrink-0">•</span><span>Giao hàng
-                    nhanh chóng (tuỳ khu vực)</span></li>
-            <li class="flex items-start gap-2"><span class="text-red-500 mt-1.5 flex-shrink-0">•</span><span>Mỗi số
-                    điện thoại chỉ mua 3 sản phẩm trong 1 tháng</span></li>
-        </ul>
-    </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+            <select id="province-select"
+                class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Tất cả tỉnh/thành phố</option> {{-- Option mặc định --}}
+                @foreach ($provinces as $province)
+                    <option value="{{ $province->code }}">{{ $province->name }}</option>
+                @endforeach
+            </select>
+            <select id="district-select"
+                class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                disabled>
+                <option value="">Tất cả Quận/Huyện</option> {{-- Option mặc định --}}
+                {{-- Districts sẽ được load động bằng JavaScript --}}
+            </select>
+        </div>
+        <!-- Store List Carousel -->
+        <div class="relative mt-4">
+            <div id="store-swiper" class="swiper -mx-1 px-1 pb-2">
+                <div class="swiper-wrapper">
+                    {{-- Vòng lặp Blade để hiển thị các cửa hàng động --}}
+                    @forelse($storeLocations as $store)
+                        <div class="swiper-slide w-64 sm:w-72">
+                            <div
+                                class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
+                                {{-- Hiển thị địa chỉ của cửa hàng --}}
+                                <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
+                                    {{-- Hiển thị địa chỉ chi tiết --}}
+                                    {{ $store->address }}
+                                    {{-- Thêm xã/phường --}}
+                                    @if ($store->ward)
+                                        , {{ $store->ward->name }}
+                                    @endif
+                                    {{-- Thêm quận/huyện --}}
+                                    @if ($store->district)
+                                        , {{ $store->district->name }}
+                                    @endif
+                                    {{-- Thêm tỉnh/thành phố --}}
+                                    @if ($store->province)
+                                        , {{ $store->province->name }}
+                                    @endif
+                                </p>
+                                <div class="flex gap-2 mt-3 text-center">
+                                    {{-- Kiểm tra nếu có số điện thoại thì mới hiển thị liên kết gọi --}}
+                                    @if ($store->phone)
+                                        <a href="tel:{{ $store->phone }}"
+                                            class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
+                                            <span>📞</span>
+                                            <span>{{ $store->phone }}</span>
+                                        </a>
+                                    @endif
+                                    {{-- Liên kết đến Google Maps --}}
+                                    {{-- Lưu ý: URL của Google Maps cần được xây dựng chuẩn hơn nếu muốn hiển thị chính xác trên bản đồ.
+                                 'https://www.google.com/maps/search/?api=1&query=' không phải là định dạng chuẩn.
+                                 Bạn nên dùng 'https://www.google.com/maps/search/?api=1&query=' và truyền địa chỉ đầy đủ vào.
+                            --}}
+                                    <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($store->address . ', ' . ($store->ward->name ?? '') . ', ' . ($store->district->name ?? '') . ', ' . ($store->province->name ?? '')) }}"
+                                        target="_blank"
+                                        class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path
+                                                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38
+                                                    0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" />
+                                        </svg>
+                                        <span>Bản đồ</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        {{-- Hiển thị thông báo nếu không có cửa hàng nào --}}
+                        <div class="swiper-slide w-full text-center py-4 text-gray-500">
+                            Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+            <button id="store-prev-btn"
+                class="absolute top-1/2 -translate-y-1/2 -left-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7">
+                    </path>
+                </svg>
+            </button>
+            <button id="store-next-btn"
+                class="absolute top-1/2 -translate-y-1/2 -right-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+    </section>
+
     <form action="{{ route('cart.add') }}" method="POST" id="add-to-cart-form">
         @csrf
         <input type="hidden" name="product_variant_id" id="wishlist-variant-id">
@@ -384,26 +416,13 @@
                         <i class="ci-minus"></i>
                     </button>
                     <input type="number" class="form-control form-control-lg" name="quantity" id="quantity_input"
-                        value="1" min="1" max="1000">
+                        value="1" min="1">
                     <button type="button" class="btn btn-icon btn-lg" data-increment aria-label="Tăng số lượng">
                         <i class="ci-plus"></i>
                     </button>
                 </div>
             </div>
             <div id="main-cta-buttons" class="mt-auto pt-6 flex flex-col sm:flex-row gap-3">
-                <button type="submit"
-                    class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                        stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
-                    </svg>
-                    THÊM VÀO GIỎ HÀNG
-                </button>
-                <button type="button" id="buy-now-btn"
-                    class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
-                    MUA NGAY
-                </button>
             </div>
         </div>
     </form>
@@ -413,163 +432,112 @@
         <button id="slide-alert-close" class="ml-2 font-bold focus:outline-none">&times;</button>
     </div>
 </div>
-@if (session('success'))
-    <script>
-        if (!sessionStorage.getItem('toast_success_shown')) {
-            toastr.success("{{ session('success') }}");
-            sessionStorage.setItem('toast_success_shown', 'true');
-
-            // Gọi route để xóa session success từ server
-            fetch("{{ route('session.flush.message') }}");
-        }
-    </script>
-@endif
-
-@if (session('error'))
-    <script>
-        if (!sessionStorage.getItem('toast_error_shown')) {
-            toastr.error("{{ session('error') }}");
-            sessionStorage.setItem('toast_error_shown', 'true');
-
-            // Gọi route để xóa session error từ server
-            fetch("{{ route('session.flush.message') }}");
-        }
-    </script>
-@endif
 
 @include('users.cart.layout.partials.script')
+@include('users.products.partials.script-addCart')
+@include('users.products.partials.script-whistlist')
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const inputVariantId = document.getElementById('wishlist-variant-id'); // id đồng nhất với form
-        const inputVariantKey = document.getElementById('wishlist-variant-key');
-        const inputImage = document.getElementById('wishlist-variant-image');
-        const quantityInput = document.getElementById('quantity_input');
+    // Biến toàn cục lưu stock tính toán sau khi fetch
+    let realAvailableStock = 0;
+    // Biến toàn cục lưu số lượng đã có trong giỏ (đưa từ server)
+    const alreadyInCart = {{ $alreadyInCart }};
+    const quantityInput = document.getElementById('quantity_input');
 
-        const variantData = window.variantData || {};
-        const attributeOrder = window.attributeOrder || [];
-
-        let currentSelections = {}; // khởi tạo rỗng, hoặc từ biến global nếu có
-
-        // Hàm cập nhật variant fields
-        function updateVariantFields() {
-            const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
-            inputVariantKey.value = key;
-
-            if (variantData[key]) {
-                inputVariantId.value = variantData[key].id || '';
-                inputImage.value = variantData[key].image || '';
-
-                // Cập nhật max số lượng theo tồn kho biến thể
-                if (variantData[key].stock_quantity !== undefined) {
-                    quantityInput.max = variantData[key].stock_quantity;
-                } else {
-                    quantityInput.removeAttribute('max');
-                }
-            } else {
-                inputVariantId.value = '';
-                inputImage.value = '';
-                quantityInput.removeAttribute('max');
+    // Hàm cập nhật max quantity input và kiểm tra số lượng nhập
+    function updateQuantityInputMax(stock) {
+        realAvailableStock = Math.max(stock - alreadyInCart, 0);
+        if (quantityInput) {
+            quantityInput.max = realAvailableStock;
+            // Nếu giá trị hiện tại > max thì reset về max hoặc 1
+            let currentVal = parseInt(quantityInput.value) || 1;
+            if (currentVal > realAvailableStock) {
+                quantityInput.value = realAvailableStock > 0 ? realAvailableStock : 1;
             }
-
-            // Reset số lượng về 1 mỗi khi chọn biến thể mới
-            quantityInput.value = 1;
-
-            console.log('Variant Key:', key);
-            console.log('Variant ID:', inputVariantId.value);
-            console.log('Image:', inputImage.value);
-            console.log('Max Quantity:', quantityInput.max);
         }
+    }
 
-        // Bắt sự kiện radio chọn thuộc tính
-        document.querySelectorAll('input[type="radio"][data-attr-name]').forEach(input => {
-            input.addEventListener('change', function() {
-                const attrName = this.dataset.attrName;
-                const attrValue = this.value;
-                currentSelections[attrName] = attrValue;
-                updateVariantFields();
-            });
+    if (quantityInput) {
+        quantityInput.addEventListener('input', function() {
+            const enteredQuantity = parseInt(this.value) || 0;
+            if (enteredQuantity > realAvailableStock) {
+                toastr.error(
+                    `Bạn đã có ${alreadyInCart} sản phẩm trong giỏ. Hệ thống chỉ còn ${realAvailableStock} sản phẩm nữa.`
+                );
+                this.value = realAvailableStock;
+            } else if (enteredQuantity < 1) {
+                this.value = 1;
+            }
         });
+    }
 
-        // Xử lý submit form Thêm vào giỏ
-        document.getElementById('add-to-cart-form').addEventListener('submit', function(e) {
-            e.preventDefault();
+    function fetchVariantStock(variantId) {
+        fetch(`/api/variant-stock/${variantId}`)
+            .then(res => res.json())
+            .then(data => {
+                const availableStock = data.available_stock ?? 0;
 
-            // Lấy giá trị số lượng hiện tại và giới hạn min/max
-            let quantity = parseInt(quantityInput.value);
-            const min = parseInt(quantityInput.min) || 1;
-            const max = parseInt(quantityInput.max) || 1000;
+                // Cập nhật hiển thị tồn kho
+                const stockEl = document.getElementById('variant-stock');
+                if (stockEl) stockEl.textContent = `Còn lại: ${availableStock} sản phẩm`;
 
-            if (isNaN(quantity) || quantity < min) quantity = min;
-            if (quantity > max) quantity = max;
-            quantityInput.value = quantity; // cập nhật lại input số lượng nếu vượt giới hạn
+                // Cập nhật max quantity dựa trên số lượng trong giỏ và tồn kho hiện tại
+                updateQuantityInputMax(availableStock);
 
-            const token = this.querySelector('input[name="_token"]').value;
+                // Cập nhật nút CTA
+                updateCTAButtons(realAvailableStock);
+            })
+            .catch(err => console.error('Lỗi lấy tồn kho:', err));
+    }
 
-            const postData = {
-                product_variant_id: inputVariantId.value,
-                variant_key: inputVariantKey.value,
-                image: inputImage.value,
-                product_id: this.querySelector('input[name="product_id"]').value,
-                quantity: quantity,
-                _token: token,
-            };
+    function updateCTAButtons(quantity) {
+        const ctaContainer = document.getElementById('main-cta-buttons');
+        if (!ctaContainer) return;
 
-            fetch("{{ route('cart.add') }}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json",
-                        "X-CSRF-TOKEN": token,
-                    },
-                    body: JSON.stringify(postData)
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        const cartUrl = "{{ route('cart.index') }}";
-                        const message =
-                            `${data.success} <br><a href="${cartUrl}" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>`;
+        if (quantity > 0) {
+            ctaContainer.innerHTML = `
+                <button type="submit"
+                    class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                        stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
+                    </svg>
+                    THÊM VÀO GIỎ HÀNG
+                </button>
 
-                        toastr.options = {
-                            closeButton: true,
-                            progressBar: true,
-                            escapeHtml: false,
-                            timeOut: 3000,
-                            positionClass: 'toast-bottom-right'
-                        };
+                <button type="button" id="buy-now-btn"
+                    class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+                    MUA NGAY
+                </button>
+            `;
 
-                        toastr.success(message);
+            attachBuyNowListener();
+        } else {
+            ctaContainer.innerHTML = `
+                <button type="button" disabled
+                    class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-gray-400 text-gray-400 font-bold rounded-lg cursor-not-allowed">
+                    HẾT HÀNG
+                </button>
+            `;
+        }
+    }
 
-                        const cartBadge = document.getElementById('cart-badge');
-                        if (cartBadge) {
-                            if (data.cartItemCount > 0) {
-                                cartBadge.textContent = data.cartItemCount;
-                                cartBadge.style.display = 'flex';
-                            } else {
-                                cartBadge.style.display = 'none';
-                            }
-                        }
-                    } else if (data.error) {
-                        toastr.error(data.error);
-                    }
-                })
-                .catch(err => {
-                    toastr.error('Có lỗi xảy ra, vui lòng thử lại.');
-                    console.error(err);
-                });
-        });
-
-        // Xử lý nút "Mua ngay"
+    function attachBuyNowListener() {
         const buyNowBtn = document.getElementById('buy-now-btn');
         if (buyNowBtn) {
             buyNowBtn.addEventListener('click', function() {
                 const form = document.getElementById('add-to-cart-form');
                 const formData = new FormData(form);
 
-                const variantKey = inputVariantKey.value?.trim();
+                const inputVariantKey = document.getElementById('wishlist-variant-key');
+                const quantityInput = document.getElementById('quantity_input');
+                const variantData = window.variantData || {};
+
+                const variantKey = inputVariantKey?.value?.trim();
                 let quantity = parseInt(quantityInput.value) || 1;
                 const min = parseInt(quantityInput.min) || 1;
-                const max = parseInt(quantityInput.max) || 5;
+                const max = parseInt(quantityInput.max) || 1000;
                 if (quantity < min) quantity = min;
                 if (quantity > max) quantity = max;
                 quantityInput.value = quantity;
@@ -587,19 +555,14 @@
                     return;
                 }
 
-                const currentVariant = variantData[variantKey];
-                if (currentVariant && currentVariant.stock_quantity !== undefined) {
-                    if (quantity > currentVariant.stock_quantity) {
-                        toastr.error(
-                            `Số lượng vượt quá tồn kho. Chỉ còn ${currentVariant.stock_quantity} sản phẩm.`
-                        );
-                        return;
-                    }
+                // Kiểm tra tồn kho theo variantData và quantityInput.max = realAvailableStock
+                if (quantity > max) {
+                    toastr.error(`Số lượng vượt quá tồn kho. Chỉ còn ${max} sản phẩm.`);
+                    return;
                 }
 
                 buyNowBtn.disabled = true;
-                buyNowBtn.innerHTML =
-                    '<span class="inline-block animate-spin mr-2"></span>Đang xử lý...';
+                buyNowBtn.innerHTML = '<span class="inline-block animate-spin mr-2"></span>Đang xử lý...';
 
                 const buyNowData = {
                     product_id: parseInt(productId),
@@ -611,8 +574,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .content,
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
                             'Accept': 'application/json'
                         },
                         body: JSON.stringify(buyNowData)
@@ -647,352 +609,302 @@
                     });
             });
         }
+    }
 
-        // Khởi tạo cập nhật lần đầu
-        updateVariantFields();
-    });
-</script>
-<script>
-    window.variantData = @json($variantData);
-    window.attributeOrder = @json($attributeOrder);
-</script>
-<script>
-    const wishlistVariantIds = @json($wishlistVariantIds ?? []);
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const variantData = window.variantData;
-        const attributeOrder = window.attributeOrder;
-
-        const inputVariantId = document.getElementById('wishlist-variant-id');
-        const inputVariantKey = document.getElementById('wishlist-variant-key');
-        const inputImage = document.getElementById('wishlist-variant-image');
-        const wishlistBtn = document.getElementById('wishlist-submit-btn');
-        const radios = document.querySelectorAll('.variants input[type="radio"]');
-
-        // Lấy selection hiện tại
-        function getCurrentSelection() {
-            const selection = {};
-            radios.forEach(radio => {
-                if (radio.checked) {
-                    const attrName = radio.getAttribute('data-attr-name');
-                    const value = radio.value;
-                    selection[attrName] = value;
+    // Lắng nghe khi người dùng chọn biến thể
+    document.querySelectorAll('.variants input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            setTimeout(() => {
+                const variantIdInput = document.querySelector('[name="product_variant_id"]');
+                if (variantIdInput && variantIdInput.value) {
+                    fetchVariantStock(variantIdInput.value);
                 }
-            });
-            return selection;
-        }
-
-        // Xây variant key
-        function buildVariantKey(selection) {
-            return attributeOrder.map(attr => selection[attr] || '').join('_');
-        }
-
-        // Cập nhật input hidden
-        function updateWishlistForm(variantKey, variantInfo) {
-            if (!variantInfo) return;
-            inputVariantId.value = variantInfo.variant_id;
-            inputVariantKey.value = variantKey;
-            inputImage.value = variantInfo.image;
-        }
-
-        // Cập nhật màu nút yêu thích
-        function updateWishlistButton(variantId) {
-            if (wishlistVariantIds.includes(Number(variantId))) {
-                wishlistBtn.classList.add('text-red-500', 'hover:text-red-600');
-                wishlistBtn.classList.remove('text-gray-500');
-            } else {
-                wishlistBtn.classList.remove('text-red-500', 'hover:text-red-600');
-                wishlistBtn.classList.add('text-gray-500');
-            }
-        }
-
-        // Khi đổi biến thể
-        function handleVariantChange() {
-            const selection = getCurrentSelection();
-            const variantKey = buildVariantKey(selection);
-            const variantInfo = variantData[variantKey];
-            updateWishlistForm(variantKey, variantInfo);
-            if (variantInfo) {
-                updateWishlistButton(variantInfo.variant_id);
-            }
-        }
-
-        // Gắn sự kiện
-        radios.forEach(radio => {
-            radio.addEventListener('change', handleVariantChange);
+            }, 100);
         });
-        document.querySelectorAll('.option-container').forEach(label => {
-            label.addEventListener('click', () => {
-                setTimeout(() => handleVariantChange(), 10);
-            });
-        });
+    });
 
-        // Gọi khi trang load
-        handleVariantChange();
-
-        // Gửi form AJAX
-        document.getElementById('wishlist-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const variantId = Number(inputVariantId.value);
-            const variantKey = inputVariantKey.value;
-            const image = inputImage.value;
-            const productId = this.querySelector('input[name="product_id"]').value;
-            const token = this.querySelector('input[name="_token"]').value;
-
-            const postData = {
-                product_variant_id: variantId,
-                variant_key: variantKey,
-                image: image,
-                product_id: productId,
-                _token: token
-            };
-
-            fetch("{{ route('wishlist.add') }}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json",
-                        "X-CSRF-TOKEN": token
-                    },
-                    body: JSON.stringify(postData)
-                })
-                .then(response => {
-                    if (!response.ok) return response.json().then(err => Promise.reject(err));
-                    return response.json();
-                })
-                .then(data => {
-                    toastr.options = {
-                        closeButton: true,
-                        progressBar: true,
-                        positionClass: "toast-top-right",
-                        timeOut: "3000",
-                        showDuration: "300",
-                        hideDuration: "1000",
-                        showMethod: "slideDown",
-                        hideMethod: "slideUp"
-                    };
-
-                    if (data.success) {
-                        toastr.success(data.success);
-
-                        const idx = wishlistVariantIds.indexOf(variantId);
-                        if (data.success.includes('xóa')) {
-                            if (idx > -1) wishlistVariantIds.splice(idx, 1);
-                        } else {
-                            if (idx === -1) wishlistVariantIds.push(variantId);
-                        }
-
-                        updateWishlistButton(variantId);
-                    } else if (data.error) {
-                        toastr.error(data.error);
-                    }
-                })
-                .catch(err => {
-                    toastr.error(err?.error || 'Có lỗi xảy ra, vui lòng thử lại.');
-                    console.error('Lỗi AJAX:', err);
-                });
-        });
+    // Khi trang load, kiểm tra tồn kho ban đầu
+    document.addEventListener('DOMContentLoaded', () => {
+        const variantIdInput = document.querySelector('[name="product_variant_id"]');
+        if (variantIdInput && variantIdInput.value) {
+            fetchVariantStock(variantIdInput.value);
+        }
     });
 </script>
 
-{{-- <script>
+<script>
+    // Script xử lý cập nhật danh sách cửa hàng tồn kho theo biến thể sản phẩm
     document.addEventListener('DOMContentLoaded', function() {
-        const variantData = window.variantData;
-        const attributeOrder = window.attributeOrder;
-
-        const inputVariantId = document.getElementById('wishlist-variant-id');
-        const inputVariantKey = document.getElementById('wishlist-variant-key');
-        const inputImage = document.getElementById('wishlist-variant-image');
-
-        // Lấy tất cả input radio
-        const radios = document.querySelectorAll('.variants input[type="radio"]');
-
-        // Lấy selection hiện tại
-        function getCurrentSelection() {
-            const selection = {};
-            radios.forEach(radio => {
-                if (radio.checked) {
-                    const attrName = radio.getAttribute('data-attr-name');
-                    const value = radio.value;
-                    selection[attrName] = value;
+        // Khởi tạo Swiper cho danh sách cửa hàng
+        let swiper = new Swiper('#store-swiper', {
+            slidesPerView: 'auto',
+            spaceBetween: 12,
+            freeMode: true,
+            navigation: {
+                nextEl: '#store-next-btn',
+                prevEl: '#store-prev-btn',
+            },
+            on: {
+                // Ẩn/hiện nút điều hướng khi không cần thiết
+                init: function() {
+                    const container = this.el.parentElement;
+                    container.classList.toggle('navigation-hidden', this.isLocked);
+                },
+                resize: function() {
+                    const container = this.el.parentElement;
+                    container.classList.toggle('navigation-hidden', this.isLocked);
                 }
-            });
-            console.log('🔍 Current selection:', selection);
-            return selection;
-        }
+            }
+        });
 
-        // Xây dựng variantKey theo thứ tự
-        function buildVariantKey(selection) {
-            const key = attributeOrder.map(attr => selection[attr] || '').join('_');
-            console.log('🔑 Built variant key:', key);
-            return key;
-        }
+        // Lưu swiper vào window để truy cập từ các hàm khác
+        window.storeSwiper = swiper;
 
-        // Cập nhật các input ẩn trong form
-        function updateWishlistForm(variantKey, variantInfo) {
-            if (!variantInfo) {
-                console.warn('❌ Không tìm thấy variantInfo với key:', variantKey);
-                return;
+        // Flag để ngăn gọi API trùng lặp
+        let isUpdatingStores = false;
+
+        // Hàm chính để cập nhật danh sách cửa hàng dựa trên biến thể
+        function updateStoreLocations(variantId) {
+            // Ngăn gọi API nếu đang xử lý
+            if (isUpdatingStores) return;
+
+            const provinceSelect = document.getElementById('province-select');
+            const districtSelect = document.getElementById('district-select');
+            const storeWrapper = document.getElementById('store-swiper')?.querySelector('.swiper-wrapper');
+            const storeCount = document.getElementById('store-count');
+
+            if (!storeWrapper || !storeCount) return;
+
+            // Cập nhật danh sách tỉnh/thành phố theo biến thể
+            async function updateProvincesForVariant() {
+                try {
+                    const response = await fetch(
+                        `/api/provinces-by-variant?product_variant_id=${variantId}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                    const provinces = await response.json();
+                    const currentProvinceValue = provinceSelect.value;
+
+                    // Cập nhật danh sách tỉnh
+                    provinceSelect.innerHTML = '<option value="">Tất cả tỉnh/thành phố</option>';
+                    provinces.forEach(province => {
+                        const option = document.createElement('option');
+                        option.value = province.code;
+                        option.textContent = province.name;
+                        provinceSelect.appendChild(option);
+                    });
+
+                    // Reset quận/huyện
+                    districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
+                    districtSelect.disabled = true;
+
+                    // Reset tỉnh nếu không tồn tại trong danh sách mới
+                    const provinceExists = provinces.some(p => p.code === currentProvinceValue);
+                    if (!provinceExists) provinceSelect.value = '';
+                } catch (error) {
+                    // Giữ nguyên danh sách tỉnh nếu lỗi
+                }
             }
 
-            inputVariantId.value = variantInfo.variant_id;
-            inputVariantKey.value = variantKey;
-            inputImage.value = variantInfo.image;
+            // Lọc và hiển thị danh sách cửa hàng
+            async function filterStores(provinceCode, districtCode) {
+                try {
+                    const query = new URLSearchParams();
+                    if (provinceCode) query.append('province_code', provinceCode);
+                    if (districtCode) query.append('district_code', districtCode);
+                    query.append('product_variant_id', variantId);
 
-            console.log('✅ Updated hidden inputs:', {
-                variant_id: inputVariantId.value,
-                variant_key: inputVariantKey.value,
-                image: inputImage.value
-            });
-        }
+                    const response = await fetch(`/api/filter-stores?${query.toString()}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-        // Xử lý khi người dùng chọn biến thể
-        function handleVariantChange() {
-            const selection = getCurrentSelection();
-            const variantKey = buildVariantKey(selection);
-            const variantInfo = variantData[variantKey];
-            updateWishlistForm(variantKey, variantInfo);
-        }
+                    const {
+                        stores,
+                        count
+                    } = await response.json();
+                    storeCount.textContent = count;
+                    storeWrapper.innerHTML = '';
 
-        // Gán sự kiện change cho từng radio
-        radios.forEach(radio => {
-            radio.addEventListener('change', handleVariantChange);
-        });
-
-        // Gán sự kiện click cho label để đảm bảo cập nhật kịp trước submit
-        document.querySelectorAll('.option-container').forEach(label => {
-            label.addEventListener('click', () => {
-                // Đợi radio cập nhật xong mới xử lý (không preventDefault)
-                setTimeout(() => {
-                    handleVariantChange();
-                }, 10); // delay rất nhỏ giúp smooth, không lag
-            });
-        });
-
-
-        // Gọi lần đầu khi trang load
-        handleVariantChange();
-
-        // Debug khi form submit
-        document.getElementById('wishlist-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const variantId = inputVariantId.value;
-            const variantKey = inputVariantKey.value;
-            const image = inputImage.value;
-            const productId = this.querySelector('input[name="product_id"]').value;
-            const token = this.querySelector('input[name="_token"]').value;
-
-            const postData = {
-                product_variant_id: variantId,
-                variant_key: variantKey,
-                image: image,
-                product_id: productId,
-                _token: token
-            };
-
-            fetch("{{ route('wishlist.add') }}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json",
-                        "X-CSRF-TOKEN": token
-                    },
-                    body: JSON.stringify(postData)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(errData => Promise.reject(errData));
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    toastr.options = {
-                        closeButton: true,
-                        progressBar: true,
-                        positionClass: "toast-top-right",
-                        timeOut: "3000",
-                        showDuration: "300",
-                        hideDuration: "1000",
-                        showMethod: "slideDown",
-                        hideMethod: "slideUp"
-                    };
-
-                    if (data.success) {
-                        toastr.success(data.success);
-
-                        const wishlistBtn = document.getElementById('wishlist-submit-btn');
-
-                        // Nếu message chứa "xóa" => màu xám, ngược lại màu đỏ
-                        if (data.success.includes('xóa')) {
-                            wishlistBtn.classList.remove('text-red-500');
-                            wishlistBtn.classList.add('text-gray-500');
-                            wishlistBtn.classList.remove('hover:text-red-600');
-                        } else {
-                            wishlistBtn.classList.add('text-red-500');
-                            wishlistBtn.classList.remove('text-gray-500');
-                            wishlistBtn.classList.add('hover:text-red-600');
-                        }
-                    } else if (data.info) {
-                        toastr.info(data.info);
-                    } else if (data.error) {
-                        toastr.error(data.error);
-                    }
-                })
-
-                .catch(err => {
-                    toastr.options = {
-                        closeButton: true,
-                        progressBar: true,
-                        positionClass: "toast-top-right",
-                        timeOut: "3000",
-                        showDuration: "300",
-                        hideDuration: "1000",
-                        showMethod: "slideDown",
-                        hideMethod: "slideUp"
-                    };
-
-                    if (err && err.error) {
-                        toastr.error(err.error);
+                    if (stores.length === 0) {
+                        storeWrapper.innerHTML =
+                            '<div class="swiper-slide w-full text-center py-4 text-gray-500">Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!</div>';
                     } else {
-                        toastr.error('Có lỗi xảy ra, vui lòng thử lại.');
+                        stores.forEach(store => {
+                            const slide = document.createElement('div');
+                            slide.className = 'swiper-slide w-64 sm:w-72';
+                            slide.innerHTML = `
+                            <div class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
+                                <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
+                                    ${store.address}${store.ward ? `, ${store.ward}` : ''}${store.district ? `, ${store.district}` : ''}${store.province ? `, ${store.province}` : ''}
+                                </p>
+                                <div class="flex gap-2 mt-3 text-center">
+                                    ${store.phone ? `
+                                        <a href="tel:${store.phone}" class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
+                                            <span>📞</span>
+                                            <span>${store.phone}</span>
+                                        </a>
+                                    ` : ''}
+                                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address + (store.ward ? `, ${store.ward}` : '') + (store.district ? `, ${store.district}` : '') + (store.province ? `, ${store.province}` : ''))}" target="_blank" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 
+                                                     0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                                        </svg>
+                                        <span>Bản đồ</span>
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                            storeWrapper.appendChild(slide);
+                        });
                     }
-                    console.error('Lỗi AJAX:', err);
+
+                    // Cập nhật Swiper sau khi thêm slides
+                    if (window.storeSwiper) window.storeSwiper.update();
+                } catch (error) {
+                    storeWrapper.innerHTML =
+                        '<div class="swiper-slide w-full text-center py-4 text-gray-500">Đã xảy ra lỗi khi tải danh sách cửa hàng.</div>';
+                    storeCount.textContent = '0';
+                    if (window.storeSwiper) window.storeSwiper.update();
+                }
+            }
+
+            // Chỉ cập nhật tỉnh khi thay đổi biến thể
+            if (variantId !== window.lastVariantId) {
+                window.lastVariantId = variantId;
+                isUpdatingStores = true;
+                updateProvincesForVariant().then(() => {
+                    const currentProvince = provinceSelect ? provinceSelect.value : '';
+                    const currentDistrict = districtSelect ? districtSelect.value : '';
+                    filterStores(currentProvince, currentDistrict).finally(() => {
+                        isUpdatingStores = false;
+                    });
                 });
-        });
-
-    });
-</script>
-<script>
-    const wishlistVariantIds = @json($wishlistVariantIds);
-    document.addEventListener('DOMContentLoaded', function() {
-        const wishlistVariantIds = @json($wishlistVariantIds ?? []);
-
-        const wishlistBtn = document.getElementById('wishlist-submit-btn');
-        const variantRadios = document.querySelectorAll('.variant-radio'); // class radio biến thể bạn dùng
-
-        function updateWishlistButton(variantId) {
-            if (wishlistVariantIds.includes(variantId)) {
-                wishlistBtn.classList.add('text-red-500');
-                wishlistBtn.classList.remove('text-gray-500');
-                wishlistBtn.classList.add('hover:text-red-600');
             } else {
-                wishlistBtn.classList.remove('text-red-500');
-                wishlistBtn.classList.add('text-gray-500');
-                wishlistBtn.classList.remove('hover:text-red-600');
+                const currentProvince = provinceSelect ? provinceSelect.value : '';
+                const currentDistrict = districtSelect ? districtSelect.value : '';
+                isUpdatingStores = true;
+                filterStores(currentProvince, currentDistrict).finally(() => {
+                    isUpdatingStores = false;
+                });
             }
         }
 
-        // Gọi lần đầu với biến thể mặc định
-        updateWishlistButton(@json($defaultVariant->id ?? null));
-
-        // Lắng nghe sự kiện thay đổi biến thể
-        variantRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
-                const selectedVariantId = parseInt(this.value);
-                updateWishlistButton(selectedVariantId);
+        // Lắng nghe thay đổi biến thể sản phẩm
+        function listenForVariantChanges() {
+            const radioButtons = document.querySelectorAll('.variants input[type="radio"][data-attr-name]');
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    setTimeout(() => {
+                        const variantIdInput = document.querySelector(
+                            '[name="product_variant_id"]');
+                        if (variantIdInput && variantIdInput.value) {
+                            updateStoreLocations(variantIdInput.value);
+                        }
+                    }, 100);
+                });
             });
-        });
+
+            const optionLabels = document.querySelectorAll('.option-container');
+            optionLabels.forEach(label => {
+                label.addEventListener('click', function() {
+                    setTimeout(() => {
+                        const variantIdInput = document.querySelector(
+                            '[name="product_variant_id"]');
+                        if (variantIdInput && variantIdInput.value) {
+                            updateStoreLocations(variantIdInput.value);
+                        }
+                    }, 200);
+                });
+            });
+        }
+
+        // Tạo listener cho province select
+        function createProvinceSelectListener() {
+            document.addEventListener('change', async function(event) {
+                if (event.target.id === 'province-select') {
+                    const provinceCode = event.target.value;
+                    const districtSelect = document.getElementById('district-select');
+                    const variantIdInput = document.querySelector('[name="product_variant_id"]');
+                    const productVariantId = variantIdInput ? variantIdInput.value : '';
+
+                    districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
+                    districtSelect.disabled = true;
+
+                    if (provinceCode && productVariantId) {
+                        try {
+                            const response = await fetch(
+                                `/api/districts-by-province?province_code=${encodeURIComponent(provinceCode)}&product_variant_id=${encodeURIComponent(productVariantId)}`
+                            );
+                            if (!response.ok) throw new Error(
+                                `HTTP error! status: ${response.status}`);
+
+                            const districts = await response.json();
+                            if (districts.length === 0) {
+                                districtSelect.innerHTML =
+                                    '<option value="">Không có quận/huyện</option>';
+                            } else {
+                                districts.forEach(district => {
+                                    const option = document.createElement('option');
+                                    option.value = district.code;
+                                    option.textContent = district.name;
+                                    districtSelect.appendChild(option);
+                                });
+                                districtSelect.disabled = false;
+                            }
+                        } catch (error) {
+                            districtSelect.innerHTML =
+                                '<option value="">Không có quận/huyện</option>';
+                        }
+                    }
+
+                    updateStoreLocations(productVariantId);
+                }
+            });
+        }
+
+        // Khởi tạo các listener
+        listenForVariantChanges();
+
+        // Theo dõi thay đổi variantId input
+        const variantIdInput = document.querySelector('[name="product_variant_id"]');
+        if (variantIdInput) {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                        const newValue = variantIdInput.value;
+                        if (newValue) updateStoreLocations(newValue);
+                    }
+                });
+            });
+            observer.observe(variantIdInput, {
+                attributes: true,
+                attributeFilter: ['value']
+            });
+            variantIdInput.addEventListener('input', function() {
+                if (this.value) updateStoreLocations(this.value);
+            });
+        }
+
+        // Listener cho district select
+        const districtSelect = document.getElementById('district-select');
+        if (districtSelect) {
+            districtSelect.addEventListener('change', async function() {
+                const provinceSelect = document.getElementById('province-select');
+                const provinceCode = provinceSelect ? provinceSelect.value : '';
+                const districtCode = this.value;
+                const variantIdInput = document.querySelector('[name="product_variant_id"]');
+                const productVariantId = variantIdInput ? variantIdInput.value : '';
+                updateStoreLocations(productVariantId);
+            });
+        }
+
+        // Cập nhật lần đầu khi trang tải
+        setTimeout(() => {
+            const variantIdInput = document.querySelector('[name="product_variant_id"]');
+            if (variantIdInput && variantIdInput.value) {
+                window.lastVariantId = variantIdInput.value;
+                updateStoreLocations(variantIdInput.value);
+            }
+            createProvinceSelectListener();
+        }, 200);
     });
-</script> --}}
+</script>

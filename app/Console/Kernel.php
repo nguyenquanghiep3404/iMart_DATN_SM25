@@ -7,9 +7,16 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
+    protected $commands = [
+        \App\Console\Commands\CancelUnpaidQrOrders::class,
+        \App\Console\Commands\ProcessStockTransferArrivals::class,
+    ];
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('app:detect-abandoned-carts')->everyMinute();
+        $schedule->command('customers:update-groups')->daily();
+        $schedule->command('orders:cancel-unpaid-qr')->daily();
+        $schedule->command('stock-transfer:process-arrivals')->hourly();
     }
 
     protected function commands()
@@ -18,4 +25,5 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+    
 }

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài khoản của tôi - Chi tiết Trả hàng</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+        }
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s, color 0.2s;
+            color: #374151;
+        }
+        .sidebar-link:hover {
+            background-color: #f3f4f6;
+        }
+        .sidebar-link.active {
+            background-color: #fee2e2;
+            color: #dc2626;
+            font-weight: 600;
+        }
+        .tab-link {
+            padding: 0.5rem 1rem;
+            border-bottom: 2px solid transparent;
+            transition: border-color 0.2s, color 0.2s;
+            color: #6b7280;
+        }
+        .tab-link:hover {
+            color: #111827;
+        }
+        .tab-link.active {
+            color: #dc2626;
+            border-color: #dc2626;
+            font-weight: 600;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-completed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-processing {
+            background-color: #feefc7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <div class="max-w-screen-xl mx-auto flex space-x-8">
+        <!-- Sidebar -->
+        <aside class="w-1/4 xl:w-1/5 flex-shrink-0">
+            <div class="p-4">
+                <div class="flex items-center space-x-3 mb-8">
+                    <img src="https://placehold.co/48x48/e2e8f0/e2e8f0?text=A" alt="Avatar" class="w-12 h-12 rounded-full">
+                    <div>
+                        <p class="font-bold text-gray-800">Super Admin</p>
+                        <a href="#" class="text-sm text-gray-500 hover:text-red-600">Chỉnh sửa</a>
+                    </div>
+                </div>
+                <nav class="space-y-2">
+                    <a href="#" class="sidebar-link active">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        <span>Đơn hàng của tôi</span>
+                        <span class="ml-auto bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">1</span>
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        <span>Danh sách yêu thích</span>
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+                        <span>Phương thức thanh toán</span>
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.522 4.662a1 1 0 00.95.69h4.904c.969 0 1.371 1.24.588 1.81l-3.968 2.88a1 1 0 00-.364 1.118l1.522 4.661c.3.921-.755 1.688-1.54 1.118l-3.968-2.88a1 1 0 00-1.175 0l-3.968 2.88c-.784.57-1.838-.197-1.539-1.118l1.522-4.661a1 1 0 00-.364-1.118L2.07 10.09c-.783-.57-.38-1.81.588-1.81h4.904a1 1 0 00.95-.69L11.049 2.927z"></path></svg>
+                        <span>Đánh giá của tôi</span>
+                    </a>
+                    
+                    <div class="pt-4">
+                        <p class="px-4 text-xs font-semibold uppercase text-gray-400">Manage account</p>
+                    </div>
+                    <a href="#" class="sidebar-link">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        <span>Thông tin cá nhân</span>
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <span>Địa chỉ</span>
+                    </a>
+                    <a href="#" class="sidebar-link">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <span>Thông báo</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="w-3/4 xl:w-4/5">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900">Đơn hàng của tôi</h1>
+                    <div class="mt-4 sm:mt-0 relative">
+                        <input type="search" placeholder="Tìm theo tên, mã đơn hàng" class="pl-10 pr-4 py-2 border rounded-lg w-full sm:w-64">
+                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                </div>
+
+                <!-- Order Status Tabs -->
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-6">
+                        <a href="#" class="tab-link">Tất cả</a>
+                        <a href="#" class="tab-link">Đang xử lý</a>
+                        <a href="#" class="tab-link">Đang giao</a>
+                        <a href="#" class="tab-link">Hoàn tất</a>
+                        <a href="#" class="tab-link">Đã hủy</a>
+                        <a href="#" class="tab-link active">Trả hàng</a>
+                    </nav>
+                </div>
+
+                <!-- List of Return Requests -->
+                <div class="mt-8">
+                    <div class="space-y-6">
+                        
+                        <!-- Item 1: Completed -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="p-4 flex flex-col sm:flex-row justify-between sm:items-center border-b bg-gray-50">
+                                <div class="flex items-center space-x-4">
+                                    <span class="font-semibold text-gray-800">Yêu cầu #RT123456789</span>
+                                    <span class="text-gray-400">|</span>
+                                    <span class="text-sm text-gray-600">Từ đơn hàng <a href="#" class="text-red-600 font-medium hover:underline">#DH987654321</a></span>
+                                </div>
+                                <div class="mt-2 sm:mt-0">
+                                    <span class="status-badge status-completed">Đã hoàn tất</span>
+                                </div>
+                            </div>
+                            <div class="p-4 flex items-center space-x-4">
+                                <img src="https://placehold.co/80x80/e2e8f0/e2e8f0?text=Sản+phẩm" alt="Product Image" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
+                                <div class="flex-1">
+                                    <p class="font-semibold text-gray-800">iPhone 15 Pro Max 256GB</p>
+                                    <p class="text-sm text-gray-500">Màu: Titan Tự nhiên</p>
+                                    <p class="text-sm text-gray-500">Số tiền hoàn lại: <span class="font-medium text-green-600">30.490.000 VNĐ</span></p>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-gray-50 text-right">
+                                <a href="#" class="inline-block bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm">
+                                    Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Item 2: In Progress -->
+                        <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
+                            <div class="p-4 flex flex-col sm:flex-row justify-between sm:items-center border-b bg-gray-50">
+                                <div class="flex items-center space-x-4">
+                                    <span class="font-semibold text-gray-800">Yêu cầu #RT112233445</span>
+                                    <span class="text-gray-400">|</span>
+                                    <span class="text-sm text-gray-600">Từ đơn hàng <a href="#" class="text-red-600 font-medium hover:underline">#DH556677889</a></span>
+                                </div>
+                                <div class="mt-2 sm:mt-0">
+                                    <span class="status-badge status-processing">Đang xử lý</span>
+                                </div>
+                            </div>
+                            <div class="p-4 flex items-center space-x-4">
+                                <img src="https://placehold.co/80x80/e2e8f0/e2e8f0?text=Sản+phẩm" alt="Product Image" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
+                                <div class="flex-1">
+                                    <p class="font-semibold text-gray-800">Tai nghe Bluetooth XYZ</p>
+                                    <p class="text-sm text-gray-500">Màu: Trắng</p>
+                                    <p class="text-sm text-gray-500">Trạng thái: <span class="font-medium text-yellow-700">Đã nhận hàng trả về</span></p>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-gray-50 text-right">
+                                <a href="#" class="inline-block bg-red-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm">
+                                    Xem chi tiết
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Empty State (Uncomment this section to see the empty state) -->
+                        <!--
+                        <div class="text-center py-16">
+                            <img src="https://i.imgur.com/3a83g2R.png" alt="Empty Box" class="mx-auto h-40">
+                            <p class="mt-4 text-gray-600">Bạn chưa có đơn hàng nào.</p>
+                        </div>
+                        -->
+
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -4,21 +4,21 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Carbon\Carbon;
 
 class Order extends Model
 {
     use HasFactory;
 
-    // Status constants
+    // Status constants - Rút gọn theo yêu cầu
     public const STATUS_PENDING_CONFIRMATION = 'pending_confirmation';
     public const STATUS_PROCESSING = 'processing';
-    public const STATUS_AWAITING_SHIPMENT = 'awaiting_shipment';
-    public const STATUS_SHIPPED = 'shipped';
+    public const STATUS_AWAITING_SHIPMENT_PACKED = 'awaiting_shipment_packed';
     public const STATUS_OUT_FOR_DELIVERY = 'out_for_delivery';
     public const STATUS_DELIVERED = 'delivered';
     public const STATUS_CANCELLED = 'cancelled';
-    public const STATUS_RETURNED = 'returned';
     public const STATUS_FAILED_DELIVERY = 'failed_delivery';
+    public const STATUS_RETURNED = 'returned';
 
     // Payment status constants
     public const PAYMENT_PENDING = 'pending';
@@ -28,19 +28,49 @@ class Order extends Model
     public const PAYMENT_PARTIALLY_REFUNDED = 'partially_refunded';
 
     protected $fillable = [
-        'user_id', 'guest_id', 'order_code', 'customer_name', 'customer_email', 'customer_phone',
-        'shipping_address_line1', 'shipping_address_line2', 'shipping_zip_code', 'shipping_country',
-        'shipping_address_system', 'shipping_new_province_code', 'shipping_new_ward_code',
-        'shipping_old_province_code', 'shipping_old_district_code', 'shipping_old_ward_code',
-        'billing_address_line1', 'billing_address_line2', 'billing_zip_code', 'billing_country',
-        'billing_address_system', 'billing_new_province_code', 'billing_new_ward_code',
-        'billing_old_province_code', 'billing_old_district_code', 'billing_old_ward_code',
-        'sub_total', 'shipping_fee', 'discount_amount', 'tax_amount', 'grand_total',
-        'payment_method', 'payment_status', 'shipping_method', 'status',
-        'notes_from_customer', 'notes_for_shipper', 'admin_note',
-        'desired_delivery_date', 'desired_delivery_time_slot',
-        'processed_by', 'shipped_by', 'delivered_at', 'cancelled_at',
-        'cancellation_reason', 'failed_delivery_reason', 'ip_address', 'user_agent',
+        'user_id',
+        'guest_id',
+        'order_code',
+        'customer_name',
+        'customer_email',
+        'customer_phone',
+        'shipping_address_line1',
+        'shipping_address_line2',
+        'shipping_zip_code',
+        'shipping_country',
+        'shipping_old_province_code',
+        'shipping_old_district_code',
+        'shipping_old_ward_code',
+        'billing_address_line1',
+        'billing_address_line2',
+        'billing_zip_code',
+        'billing_country',
+        'billing_old_province_code',
+        'billing_old_district_code',
+        'billing_old_ward_code',
+        'sub_total',
+        'shipping_fee',
+        'discount_amount',
+        'tax_amount',
+        'grand_total',
+        'payment_method',
+        'payment_status',
+        'shipping_method',
+        'status',
+        'notes_from_customer',
+        'notes_for_shipper',
+        'admin_note',
+        'desired_delivery_date',
+        'desired_delivery_time_slot',
+        'processed_by',
+        'shipped_by',
+        'delivered_at',
+        'cancelled_at',
+        'cancellation_reason',
+        'failed_delivery_reason',
+        'ip_address',
+        'user_agent',
+        'store_location_id',
     ];
 
     protected $casts = [
@@ -59,13 +89,11 @@ class Order extends Model
         return [
             self::STATUS_PENDING_CONFIRMATION => 'Chờ xác nhận',
             self::STATUS_PROCESSING => 'Đang xử lý',
-            self::STATUS_AWAITING_SHIPMENT => 'Chờ giao hàng',
-            self::STATUS_SHIPPED => 'Đã xuất kho',
             self::STATUS_OUT_FOR_DELIVERY => 'Đang giao hàng',
-            self::STATUS_DELIVERED => 'Giao thành công',
-            self::STATUS_CANCELLED => 'Đã hủy',
-            self::STATUS_RETURNED => 'Đã trả hàng',
-            self::STATUS_FAILED_DELIVERY => 'Giao hàng thất bại'
+            self::STATUS_DELIVERED => 'Giao hàng thành công',
+            self::STATUS_CANCELLED => 'Hủy',
+            self::STATUS_FAILED_DELIVERY => 'Giao hàng thất bại',
+            self::STATUS_RETURNED => 'Trả hàng'
         ];
     }
 
@@ -79,6 +107,7 @@ class Order extends Model
         return !in_array($this->status, [
             self::STATUS_DELIVERED,
             self::STATUS_CANCELLED,
+            self::STATUS_FAILED_DELIVERY,
             self::STATUS_RETURNED
         ]);
     }
@@ -88,8 +117,6 @@ class Order extends Model
         return in_array($this->status, [
             self::STATUS_PENDING_CONFIRMATION,
             self::STATUS_PROCESSING,
-            self::STATUS_AWAITING_SHIPMENT,
-            self::STATUS_SHIPPED,
             self::STATUS_OUT_FOR_DELIVERY
         ]);
     }
@@ -120,15 +147,15 @@ class Order extends Model
         return $this->hasMany(CouponUsage::class);
     }
 
+    public function storeLocation()
+    {
+        return $this->belongsTo(StoreLocation::class);
+    }
+
     // Địa chỉ mới - Shipping
     public function shippingNewProvince()
     {
         return $this->belongsTo(Province::class, 'shipping_new_province_code', 'code');
-    }
-
-    public function shippingNewWard()
-    {
-        return $this->belongsTo(Ward::class, 'shipping_new_ward_code', 'code');
     }
 
     // Hệ thống CŨ - Shipping
@@ -147,18 +174,7 @@ class Order extends Model
         return $this->belongsTo(WardOld::class, 'shipping_old_ward_code', 'code');
     }
 
-    // Hệ thống MỚI - Billing
-    public function billingNewProvince()
-    {
-        return $this->belongsTo(Province::class, 'billing_new_province_code', 'code');
-    }
-
-    public function billingNewWard()
-    {
-        return $this->belongsTo(Ward::class, 'billing_new_ward_code', 'code');
-    }
-
-    // Địa chỉ cũ - Billing
+    // Hệ thống CŨ - Billing
     public function billingOldProvince()
     {
         return $this->belongsTo(ProvinceOld::class, 'billing_old_province_code', 'code');
@@ -198,8 +214,8 @@ class Order extends Model
         if ($this->shipping_address_system === 'old') {
             return $this->shippingOldDistrict();
         }
-        // Hệ thống mới không có district
-        return null;
+        // Hệ thống mới không có district, trả về relationship rỗng
+        return $this->belongsTo(DistrictOld::class, 'shipping_old_district_code', 'code');
     }
 
     // Quan hệ động dựa trên địa chỉ mới - Billing
@@ -226,8 +242,8 @@ class Order extends Model
         if ($this->billing_address_system === 'old') {
             return $this->billingOldDistrict();
         }
-        // Hệ thống mới không có district
-        return null;
+        // Hệ thống mới không có district, trả về relationship rỗng
+        return $this->belongsTo(DistrictOld::class, 'billing_old_district_code', 'code');
     }
 
     // Accessors để lấy địa chỉ đầy đủ
@@ -239,9 +255,8 @@ class Order extends Model
             $this->shippingWard?->name,
             $this->shipping_address_system === 'old' ? $this->shippingDistrict?->name : null,
             $this->shippingProvince?->name,
-            $this->shipping_country,
         ]);
-        
+
         return implode(', ', $parts);
     }
 
@@ -253,16 +268,15 @@ class Order extends Model
             $this->shippingWard?->name_with_type,
             $this->shipping_address_system === 'old' ? $this->shippingDistrict?->name_with_type : null,
             $this->shippingProvince?->name_with_type,
-            $this->shipping_country,
         ]);
-        
+
         return implode(', ', $parts);
     }
 
     public function getBillingFullAddressAttribute()
     {
         if (!$this->billing_address_line1) {
-            return null;
+            return '';
         }
 
         $parts = array_filter([
@@ -271,16 +285,15 @@ class Order extends Model
             $this->billingWard?->name,
             $this->billing_address_system === 'old' ? $this->billingDistrict?->name : null,
             $this->billingProvince?->name,
-            $this->billing_country,
         ]);
-        
+
         return implode(', ', $parts);
     }
 
     public function getBillingFullAddressWithTypeAttribute()
     {
         if (!$this->billing_address_line1) {
-            return null;
+            return '';
         }
 
         $parts = array_filter([
@@ -289,9 +302,8 @@ class Order extends Model
             $this->billingWard?->name_with_type,
             $this->billing_address_system === 'old' ? $this->billingDistrict?->name_with_type : null,
             $this->billingProvince?->name_with_type,
-            $this->billing_country,
         ]);
-        
+
         return implode(', ', $parts);
     }
 
@@ -306,38 +318,62 @@ class Order extends Model
         return $query->whereNotIn('status', [
             self::STATUS_DELIVERED,
             self::STATUS_CANCELLED,
+            self::STATUS_FAILED_DELIVERY,
             self::STATUS_RETURNED
         ]);
     }
 
     public function scopeByProvince($query, $provinceCode)
     {
-        return $query->where(function($q) use ($provinceCode) {
-            $q->where('shipping_new_province_code', $provinceCode)
-              ->orWhere('shipping_old_province_code', $provinceCode);
-        });
+        return $query->where('shipping_old_province_code', $provinceCode);
     }
 
     public function scopeByWard($query, $wardCode)
     {
-        return $query->where(function($q) use ($wardCode) {
-            $q->where('shipping_new_ward_code', $wardCode)
-              ->orWhere('shipping_old_ward_code', $wardCode);
-        });
-    }
-
-    // Scope để lọc theo hệ thống
-    public function scopeNewSystem($query)
-    {
-        return $query->where('shipping_address_system', 'new');
-    }
-
-    public function scopeOldSystem($query)
-    {
-        return $query->where('shipping_address_system', 'old');
+        return $query->where('shipping_old_ward_code', $wardCode);
     }
     public function orderItems()
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    // Định dạng cho ngày giao hàng 
+    public function getFormattedDeliveryDateAttribute()
+    {
+        if (!$this->desired_delivery_date) {
+            return '';
+        }
+        // Nếu ngày đã được lưu theo định dạng d/m/Y thì trả về trực tiếp
+        if (preg_match('/^\d{1,2}\/\d{1,2}\/\d{4}$/', $this->desired_delivery_date)) {
+            return $this->desired_delivery_date;
+        }
+        // Kiểm tra xem có phải là ngày tháng hợp lệ không
+        try {
+            // Nếu ngày được lưu theo định dạng Y-m-d, format lại thành d/m/Y
+            return Carbon::parse($this->desired_delivery_date)->format('d/m/Y');
+        } catch (\Exception $e) {
+            // Nếu không parse được, trả về giá trị gốc hoặc chuỗi rỗng
+            return $this->desired_delivery_date;
+        }
+    }
+    public function returnRequests()
+    {
+        return $this->hasMany(\App\Models\ReturnRequest::class);
+    }
+
+    // Phương thức để lấy mã đơn hàng
+    public function getCode()
+    {
+        return $this->order_code;
+    }
+    public function fulfillments()
+    {
+        return $this->hasMany(OrderFulfillment::class);
+    }
+    
+    public function packages()
+    {
+        return $this->hasManyThrough(Package::class, OrderFulfillment::class, 'order_id', 'order_fulfillment_id');
+    }
+
 }

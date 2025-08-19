@@ -128,8 +128,7 @@
                                     class="ci-x"></i></a>
                             <a class="btn btn-icon fs-base btn-outline-secondary border-0" href="#"><i
                                     class="ci-facebook"></i></a>
-                            <a class="btn btn-icon fs-base btn-outline-secondary border-0" href="#"><i
-                                    class="ci-telegram"></i></a>
+
                         </div>
                     </div>
                 </div>

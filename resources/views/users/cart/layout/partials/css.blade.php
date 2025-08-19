@@ -148,4 +148,109 @@
         background: #f3f4f6;
         /* hover:bg-gray-100 */
     }
+
+    body {
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+
+    /* Custom scrollbar for better aesthetics */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Custom radio button appearance */
+    .custom-radio {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 2px solid #cbd5e1;
+        border-radius: 50%;
+        outline: none;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .custom-radio:checked {
+        border-color: #ef4444;
+        /* red-500 */
+        background-color: #ef4444;
+        /* red-500 */
+        box-shadow: 0 0 0 3px white, 0 0 0 5px #ef4444;
+        /* red-500 */
+    }
+
+    .promo-item.selected {
+        border-color: #ef4444;
+        /* red-500 */
+        background-color: #fef2f2;
+        /* red-50 */
+    }
+
+    #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.3);
+        /* giảm mờ nền */
+        z-index: 9999;
+
+        /* căn giữa loader theo cả chiều ngang và dọc */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .loader {
+        /* dùng flex theo chiều cột, căn giữa nội dung */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .loader img {
+        width: 100px;
+        height: auto;
+        animation: bounce 1s infinite;
+        display: block;
+        /* tránh khoảng trống dưới ảnh */
+        margin: 0;
+    }
+
+    .loader p {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 10px;
+        line-height: 1.2;
+    }
+
+    @keyframes bounce {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+    }
 </style>

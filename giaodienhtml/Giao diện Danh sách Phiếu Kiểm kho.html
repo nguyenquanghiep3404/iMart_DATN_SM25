@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách Phiếu Kiểm kho</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Danh sách Phiếu Kiểm kho</h1>
+                    <p class="text-gray-600 mt-1">Quản lý và theo dõi tất cả các phiên kiểm kê kho.</p>
+                </div>
+                <div class="mt-4 sm:mt-0">
+                    <button class="flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 transition-colors duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Tạo Phiếu Kiểm kho mới
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Filter Section -->
+        <div class="bg-white p-4 rounded-xl shadow-md border border-gray-200 mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Location Filter -->
+                <div>
+                    <label for="location" class="block text-sm font-medium text-gray-700">Địa điểm</label>
+                    <select id="location" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option>Tất cả địa điểm</option>
+                        <option>Kho Tổng HN</option>
+                        <option>Kho Tổng TPHCM</option>
+                        <option>CH Ba Đình</option>
+                        <option>CH Đà Nẵng</option>
+                    </select>
+                </div>
+                <!-- Status Filter -->
+                <div>
+                    <label for="status" class="block text-sm font-medium text-gray-700">Trạng thái</label>
+                    <select id="status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                        <option>Tất cả trạng thái</option>
+                        <option>Đang kiểm</option>
+                        <option>Chờ xử lý</option>
+                        <option>Hoàn tất</option>
+                    </select>
+                </div>
+                <!-- Date Filter -->
+                <div>
+                    <label for="date" class="block text-sm font-medium text-gray-700">Ngày tạo</label>
+                    <input type="date" id="date" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                </div>
+                <!-- Filter Button -->
+                <div class="flex items-end">
+                    <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-300">Lọc</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stocktake Table -->
+        <div class="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-gray-50 text-xs text-gray-600 uppercase">
+                        <tr>
+                            <th class="px-6 py-3">Mã phiếu</th>
+                            <th class="px-6 py-3">Địa điểm</th>
+                            <th class="px-6 py-3">Ngày tạo</th>
+                            <th class="px-6 py-3">Người phụ trách</th>
+                            <th class="px-6 py-3 text-center">Trạng thái</th>
+                            <th class="px-6 py-3 text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-700">
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-6 py-4 font-semibold text-gray-900">PKK-HN-0825</td>
+                            <td class="px-6 py-4">Kho Tổng HN</td>
+                            <td class="px-6 py-4">05/08/2025</td>
+                            <td class="px-6 py-4">Nguyễn Văn A</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Đang kiểm</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <a href="#" class="font-medium text-indigo-600 hover:text-indigo-900">Xem chi tiết</a>
+                            </td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-6 py-4 font-semibold text-gray-900">PKK-DN-0825</td>
+                            <td class="px-6 py-4">CH Đà Nẵng</td>
+                            <td class="px-6 py-4">02/08/2025</td>
+                            <td class="px-6 py-4">Trần Thị B</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Chờ xử lý</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <a href="#" class="font-medium text-indigo-600 hover:text-indigo-900">Xem chi tiết</a>
+                            </td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-6 py-4 font-semibold text-gray-900">PKK-HCM-0725</td>
+                            <td class="px-6 py-4">Kho Tổng TPHCM</td>
+                            <td class="px-6 py-4">15/07/2025</td>
+                            <td class="px-6 py-4">Lê Văn C</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Hoàn tất</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <a href="#" class="font-medium text-indigo-600 hover:text-indigo-900">Xem chi tiết</a>
+                            </td>
+                        </tr>
+                         <tr class="border-b hover:bg-gray-50">
+                            <td class="px-6 py-4 font-semibold text-gray-900">PKK-BD-0725</td>
+                            <td class="px-6 py-4">CH Ba Đình</td>
+                            <td class="px-6 py-4">10/07/2025</td>
+                            <td class="px-6 py-4">Phạm Thị D</td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">Hoàn tất</span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <a href="#" class="font-medium text-indigo-600 hover:text-indigo-900">Xem chi tiết</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <!-- Pagination -->
+            <div class="p-4 flex items-center justify-between">
+                <span class="text-sm text-gray-600">Hiển thị 1-4 của 50 kết quả</span>
+                <div class="flex items-center space-x-2">
+                    <button class="px-3 py-1 border rounded-md hover:bg-gray-100 disabled:opacity-50" disabled>Trước</button>
+                    <button class="px-3 py-1 border rounded-md hover:bg-gray-100">Sau</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

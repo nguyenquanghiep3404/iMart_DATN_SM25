@@ -62,8 +62,19 @@ class StockTransfer extends Model
     /**
      * Get the items for the stock transfer.
      */
-    public function stockTransferItems()
+    public function items() // <-- ĐÃ ĐỔI TÊN TỪ stockTransferItems SANG items
     {
         return $this->hasMany(StockTransferItem::class);
+    }
+
+
+
+    /**
+     * Accessor để lấy mã chuyển kho.
+     * Cách dùng trong view: $stockTransfer->getCode()
+     */
+    public function getCode()
+    {
+        return $this->transfer_code;
     }
 }

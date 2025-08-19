@@ -384,7 +384,7 @@
                         </div>
                         @endif
                         <div class="flex-1">
-                            <p class="font-semibold text-gray-800">{{ optional($review->user)->name ?? 'Khách vãng lai' }}</p>
+                            <p class="font-semibold text-gray-800"> {{ $review->user->name ?? ($review->orderItem->order->customer_name) }}</p>
 
                             {{-- Sao đánh giá --}}
                             <div class="flex text-yellow-400 text-sm my-1">
@@ -739,7 +739,7 @@
                     const verifiedProductsSection = document.getElementById('verifiedProductsSection');
                     const productList = document.getElementById('productList');
                     productList.innerHTML = ''; // Clear trước
-
+                    
                     // Render từng item
                     data.items.forEach(item => {
                         const productHTML = `

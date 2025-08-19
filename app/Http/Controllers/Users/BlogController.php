@@ -53,6 +53,9 @@ class BlogController extends Controller
             'parentCategories'
         ));
     }
+    /**
+     * Hiển thị danh sách bài viết với phân trang và lọc theo danh mục hoặc tag.
+     */
     public function index(Request $request)
     {
         // 🟦 Lấy danh sách danh mục cha (parent_id = null)
@@ -102,21 +105,15 @@ class BlogController extends Controller
         return view('users.blogs.index', compact('posts', 'parentCategories', 'featuredPosts', 'currentCategory'));
     }
 
-
-
-
-
-
-
+    /**
+     * Hiển thị chi tiết bài viết.
+     */
     public function show($slug)
     {
         $post = Post::with(['coverImage', 'category', 'tags', 'user'])
             ->where('slug', $slug)
             ->where('status', 'published')
             ->firstOrFail();
-
-        // Tăng lượt xem
-        $post->increment('view_count');
 
         $relatedPosts = Post::where('id', '!=', $post->id)
             ->where('status', 'published')
@@ -148,7 +145,9 @@ class BlogController extends Controller
         ));
     }
 
-
+    /**
+     * Hiển thị bài viết theo tag.
+     */
     public function tag($slug)
     {
         $tag = PostTag::where('slug', $slug)->firstOrFail();
@@ -161,6 +160,10 @@ class BlogController extends Controller
 
         return view('users.blogs.tag', compact('tag', 'posts'));
     }
+
+    /**
+     * Tìm kiếm bài viết và sản phẩm.
+     */
     public function search(Request $request)
     {
         $query = $request->input('q');
@@ -194,5 +197,16 @@ class BlogController extends Controller
             'suggestedProducts' => [],
             'currentCategory' => null,
         ]);
+    }
+
+    /**
+     * Tăng lượt xem bài viết.
+     */
+    public function increaseViews(Request $request, $id)
+    {
+        $post = Post::findOrFail($id);
+        $post->increment('view_count');
+
+        return response()->json(['message' => 'View count increased']);
     }
 }

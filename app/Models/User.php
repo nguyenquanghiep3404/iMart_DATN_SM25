@@ -20,8 +20,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_number',
         'status',
         'last_login_at',
+        'is_guest',
         'password',
         'avatar_path',
+        'loyalty_points_balance',
     ];
 
     protected $hidden = [
@@ -33,6 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
         'password' => 'hashed',
+        'is_guest' => 'boolean',
     ];
 
     public function roles()
@@ -147,5 +150,119 @@ class User extends Authenticatable implements MustVerifyEmail
         // Quan hệ: Một user (shipper) có thể có nhiều đơn hàng
         return $this->hasMany(Order::class, 'shipped_by');
     }
-    
+
+    public function conversations()
+    {
+        return $this->hasMany(ChatConversation::class, 'user_id');
+    }
+
+    public function assignedConversations()
+    {
+        return $this->hasMany(ChatConversation::class, 'assigned_to');
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(ChatMessage::class, 'sender_id');
+    }
+
+    public function chatParticipants()
+    {
+        return $this->hasMany(ChatParticipant::class, 'user_id');
+    }
+    public function loyaltyPointLogs()
+    {
+        return $this->hasMany(LoyaltyPointLog::class);
+    }
+
+    // --- Quan Hệ Quản Lý Nhân Viên Bán Hàng ---
+
+    /**
+     * Lấy tất cả cửa hàng mà người dùng này được gán làm nhân viên.
+     */
+    public function assignedStoreLocations()
+    {
+        return $this->belongsToMany(StoreLocation::class, 'user_store_location', 'user_id', 'store_location_id');
+    }
+
+    /**
+     * Lấy tất cả lịch làm việc của nhân viên cho người dùng này.
+     */
+    public function employeeSchedules()
+    {
+        return $this->hasMany(EmployeeSchedule::class);
+    }
+
+    /**
+     * Lấy các lịch làm việc được tạo bởi người dùng này.
+     */
+    public function createdSchedules()
+    {
+        return $this->hasMany(EmployeeSchedule::class, 'created_by');
+    }
+
+    /**
+     * Lấy các lịch làm việc được cập nhật bởi người dùng này.
+     */
+    public function updatedSchedules()
+    {
+        return $this->hasMany(EmployeeSchedule::class, 'updated_by');
+    }
+
+    /**
+     * Kiểm tra xem người dùng có được gán vào một cửa hàng cụ thể không.
+     */
+    public function kiemTraDuocGanVaoCuaHang($storeLocationId)
+    {
+        return $this->assignedStoreLocations()->where('store_location_id', $storeLocationId)->exists();
+    }
+
+    /**
+     * Lấy lịch làm việc của người dùng cho một ngày cụ thể.
+     */
+    public function layLichLamViecTheoNgay($date)
+    {
+        return $this->employeeSchedules()
+                    ->with(['workShift', 'storeLocation'])
+                    ->where('date', $date)
+                    ->first();
+    }
+
+    /**
+     * Lấy lịch làm việc của người dùng cho một khoảng thời gian.
+     */
+    public function layLichLamViecTheoKhoangThoiGian($startDate, $endDate)
+    {
+        return $this->employeeSchedules()
+                    ->with(['workShift', 'storeLocation'])
+                    ->whereBetween('date', [$startDate, $endDate])
+                    ->orderBy('date')
+                    ->get();
+    }
+
+    /**
+     * Kiểm tra xem người dùng có phải là nhân viên bán hàng không (có bất kỳ gán cửa hàng nào).
+     */
+    public function laNhanVienBanHang()
+    {
+        return $this->assignedStoreLocations()->exists();
+    }
+
+    public function customerGroups()
+    {
+        return $this->belongsToMany(CustomerGroup::class, 'customer_group_user');
+    }
+    public function storeLocations()
+    {
+        return $this->belongsToMany(StoreLocation::class, 'user_store_location');
+    }
+
+    /**
+     * Lấy tất cả kho (warehouse) mà shipper này được gán.
+     */
+    public function warehouseAssignments()
+    {
+        return $this->belongsToMany(StoreLocation::class, 'user_store_location', 'user_id', 'store_location_id')
+                    ->where('type', 'warehouse');
+    }
 }

@@ -34,9 +34,9 @@
                             {{ $post->created_at->format('d/m/Y H:i') }}
                         </span>
                         <hr class="vr my-1 mx-1">
-                                        <span class="text-body-tertiary fs-xs">
-                                            <i class="fas fa-eye"></i> Lượt xem: {{ $post->view_count ?? 0 }}
-                                        </span>
+                        <span class="text-body-tertiary fs-xs">
+                            <i class="fas fa-eye"></i> Lượt xem: {{ $post->view_count ?? 0 }}
+                        </span>
                     </div>
 
                     <!-- Excerpt -->
@@ -83,8 +83,7 @@
                                 <span class="text-secondary fw-medium">Chia sẻ:</span>
                                 <a class="btn btn-icon btn-sm btn-outline-secondary border-0" href="#"><i
                                         class="ci-facebook"></i></a>
-                                <a class="btn btn-icon btn-sm btn-outline-secondary border-0" href="#"><i
-                                        class="ci-telegram"></i></a>
+
                                 <a class="btn btn-icon btn-sm btn-outline-secondary border-0" href="#"><i
                                         class="ci-x"></i></a>
                             </div>
@@ -192,8 +191,7 @@
                                         class="ci-x"></i></a>
                                 <a class="btn btn-icon fs-base btn-outline-secondary border-0" href="#"><i
                                         class="ci-facebook"></i></a>
-                                <a class="btn btn-icon fs-base btn-outline-secondary border-0" href="#"><i
-                                        class="ci-telegram"></i></a>
+
                             </div>
                         </div>
                     </div>
@@ -356,9 +354,9 @@
         }
 
         /* #blogSidebar .blog-category-btn {
-            color: #0d6efd;
-            border-color: #0d6efd;
-        } */
+                color: #0d6efd;
+                border-color: #0d6efd;
+            } */
 
         #blogSidebar .blog-category-btn:hover {
             background-color: #f4f4ff;
@@ -379,7 +377,26 @@
         }
 
         #blogSidebar {
-    z-index: 10;
-}
+            z-index: 0;
+        }
     </style>
 @endpush
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            fetch('{{ route('users.blogs.increaseViews', $post->id) }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                });
+        }, 60000); // 60 giây
+    });
+</script>

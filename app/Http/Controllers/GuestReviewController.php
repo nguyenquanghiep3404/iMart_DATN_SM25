@@ -7,6 +7,8 @@ use App\Models\Order;
 use App\Models\Review;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+
 
 class GuestReviewController extends Controller
 {
@@ -35,7 +37,11 @@ class GuestReviewController extends Controller
                 'product_variant_id'  => $item->product_variant_id,
                 'product_name' => $item->variant->product->name ?? '',
                 'variant_name' => $item->variant->name ?? '',
-                'image_url' => $item->variant->image_url ?? '',
+                'image_url' => $item->variant->primaryImage
+                    ? \Storage::url($item->variant->primaryImage->path)
+                    : ($item->variant->product->coverImage
+                        ? \Storage::url($item->variant->product->coverImage->path)
+                        : asset('images/no-image.png')),
             ];
         });
 

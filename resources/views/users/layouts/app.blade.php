@@ -4,7 +4,12 @@
 <head>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <!-- Font Awesome for icons -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider/dist/nouislider.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     @include('users.partials.head')
 </head>
 
@@ -19,7 +24,7 @@
     @include('users.partials.header')
 
     <!-- Page content -->
-    <main class="content-wrapper bg-body">
+    <main class="content-wrapper bg-body ">
         @yield('content')
     </main>
 
@@ -30,7 +35,10 @@
     @include('users.partials.back_to_top_button')
 
     <!-- Vendor scripts -->
+    <!-- Vendor scripts -->
     <script src="{{ asset('assets/users/vendor/swiper/swiper-bundle.min.js') }}"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/nouislider/dist/nouislider.min.js"></script>
 
     <!-- Bootstrap + Theme scripts -->
     <script src="{{ asset('assets/users/js/theme.min.js') }}"></script>

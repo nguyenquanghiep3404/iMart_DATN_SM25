@@ -1,13 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <!-- Tailwind CSS for styling -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hỗ trợ trực tuyến</title>
+
+    {{-- Laravel CSRF token --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {{-- Fonts và Tailwind CSS CDN (tạm thời, nên dùng Tailwind qua Vite trong production) --}}
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Marked.js for Markdown parsing -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-     <style>
+
+    <style>
         /* --- Cài đặt chung và Biến màu (Theme Glassmorphism) --- */
         :root {
             --primary-color: #000000;
@@ -23,10 +31,9 @@
         body {
             font-family: var(--font-family);
             margin: 0;
-            /* CẬP NHẬT: Xóa background-image, chỉ giữ màu nền trắng */
             background-color: var(--background-color);
         }
-        
+
         * {
             box-sizing: border-box;
         }
@@ -62,15 +69,13 @@
         /* --- Khung Modal Chat (Hiệu ứng gương) --- */
         .chat-modal {
             position: fixed;
-            bottom: 30px; 
+            bottom: 30px;
             right: 30px;
             width: 370px;
             max-width: 90vw;
-            height: 600px; 
+            height: 600px;
             max-height: 85vh;
-            /* CẬP NHẬT: Hiệu ứng gương */
             background: rgba(255, 255, 255, 0.5); /* Tăng độ mờ nền */
-            /* CẬP NHẬT: Giảm độ mờ hiệu ứng blur */
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border-radius: 20px;
@@ -92,7 +97,7 @@
             opacity: 1;
             visibility: visible;
         }
-        
+
         /* --- Header của Modal --- */
         .modal-header {
             background-color: var(--primary-color);
@@ -103,7 +108,7 @@
             align-items: center;
             flex-shrink: 0;
         }
-        
+
         .header-title {
             display: flex;
             align-items: center;
@@ -174,13 +179,13 @@
         .welcome-form .start-chat-btn:hover {
             background-color: #333;
         }
-        
+
         /* Giao diện chat chính */
         .main-chat-interface {
             display: none;
             flex-direction: column;
             flex-grow: 1;
-            overflow: hidden; 
+            overflow: hidden;
         }
 
         /* --- Thanh Tabs --- */
@@ -224,7 +229,7 @@
         .tab-content.active {
             display: flex;
         }
-        
+
         .modal-body {
             flex-grow: 1;
             padding: 20px;
@@ -234,7 +239,7 @@
             gap: 15px;
             background-color: transparent;
         }
-        
+
         .message {
             display: flex;
             flex-direction: column;
@@ -247,7 +252,7 @@
             font-size: 0.95rem;
             line-height: 1.4;
         }
-        
+
         .message .timestamp {
             font-size: 0.75rem;
             color: #555;
@@ -257,11 +262,11 @@
         .message.received { align-self: flex-start; }
         .message.received .content { background-color: var(--admin-message-bg); color: var(--text-dark); border-top-left-radius: 4px; }
         .message.received .timestamp { margin-left: 5px; text-align: left; }
-        
+
         .message.sent { align-self: flex-end; }
         .message.sent .content { background-color: var(--user-message-bg); color: var(--text-light); border-top-right-radius: 4px; }
         .message.sent .timestamp { margin-right: 5px; text-align: right; }
-        
+
         .message.ai .content { background-color: var(--admin-message-bg); color: var(--text-dark); }
 
         .modal-footer {
@@ -284,7 +289,7 @@
             transition: border-color 0.2s;
             background-color: rgba(255, 255, 255, 0.5);
         }
-        
+
         .modal-footer input:focus { border-color: var(--primary-color); }
         .modal-footer input::placeholder { color: #555; }
 
@@ -300,11 +305,27 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        
+
         .modal-footer .send-btn:hover { background-color: #333; }
         .modal-footer .send-btn svg { width: 20px; height: 20px; fill: white; transform: translateX(1px); }
 
     </style>
+
+    {{-- Các biến Blade được truyền vào đối tượng window để JavaScript có thể truy cập --}}
+    {{-- Đây là cách an toàn để truyền dữ liệu từ PHP sang JS khi dùng Vite --}}
+    <script>
+        window.APP_AUTH_ID = {{ Auth::check() ? Auth::id() : 'null' }};
+        window.APP_GUEST_USER_ID = {{ Illuminate\Support\Js::from($guestUserId ?? null) }};
+        window.APP_CONVERSATIONS_DATA = {{ Illuminate\Support\Js::from($conversations ?? collect()) }};
+        // Log để debug trong console (có thể xóa sau khi mọi thứ hoạt động)
+        console.log('APP_AUTH_ID:', window.APP_AUTH_ID);
+        console.log('APP_GUEST_USER_ID:', window.APP_GUEST_USER_ID);
+        console.log('APP_CONVERSATIONS_DATA:', window.APP_CONVERSATIONS_DATA);
+    </script>
+
+    {{-- Bao gồm các tài nguyên được Vite xử lý (CSS và JavaScript chính của bạn) --}}
+    {{-- Đảm bảo bạn đã chạy "npm install" và "npm run dev" --}}
+    @vite(['resources/js/chat.js'])
 </head>
 <body>
 
@@ -346,30 +367,40 @@
             </div>
 
             <div class="tab-content active" id="humanChat">
-                <div class="modal-body">
-                    <div class="message received">
-                        <div class="content">Xin chào! Tôi có thể giúp gì cho bạn?</div>
-                        <div class="timestamp">10:30 SA</div>
-                    </div>
+                <div class="modal-body" id="humanChatBody">
+                    {{-- Các tin nhắn sẽ được tải động tại đây --}}
+                    @if(isset($conversations) && $conversations->isNotEmpty())
+                        @foreach($conversations->first()->messages as $message)
+                            <div class="message {{ $message->sender_id == (Auth::id() ?? ($guestUserId ?? null)) ? 'sent' : 'received' }}">
+                                <div class="content">{{ $message->content }}</div>
+                                <div class="timestamp">{{ \Carbon\Carbon::parse($message->created_at)->format('H:i A') }}</div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="message received">
+                            <div class="content">Xin chào! Tôi có thể giúp gì cho bạn?</div>
+                            <div class="timestamp">{{ \Carbon\Carbon::now()->format('H:i A') }}</div>
+                        </div>
+                    @endif
                 </div>
                 <div class="modal-footer">
-                    <input type="text" class="chat-input" placeholder="Nhập tin nhắn...">
-                    <button class="send-btn">
+                    <input type="text" class="chat-input" id="humanMessageInput" placeholder="Nhập tin nhắn...">
+                    <button class="send-btn" id="humanSendButton">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                     </button>
                 </div>
             </div>
 
             <div class="tab-content" id="aiChat">
-                <div class="modal-body">
+                <div class="modal-body" id="aiChatBody">
                     <div class="message received ai">
                         <div class="content">Xin chào, tôi là trợ lý ảo. Bạn cần thông tin về vấn đề gì?</div>
                         <div class="timestamp">10:35 SA</div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <input type="text" class="chat-input" placeholder="Hỏi trợ lý ảo...">
-                    <button class="send-btn">
+                    <input type="text" class="chat-input" id="aiMessageInput" placeholder="Hỏi trợ lý ảo...">
+                    <button class="send-btn" id="aiSendButton">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                     </button>
                 </div>
@@ -377,133 +408,5 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // --- MÔ PHỎNG TRẠNG THÁI ĐĂNG NHẬP ---
-            const isUserLoggedIn = false; 
-            const loggedInUserName = "Nguyễn Văn A"; 
-
-            // --- LẤY CÁC PHẦN TỬ DOM ---
-            const chatBubble = document.getElementById('chatBubble');
-            const chatModal = document.getElementById('chatModal');
-            const closeModalBtn = document.getElementById('closeModal');
-            const welcomeScreen = document.getElementById('welcomeScreen');
-            const welcomeForm = document.getElementById('welcomeForm');
-            const mainChatInterface = document.getElementById('mainChatInterface');
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            // --- HÀM CHỨC NĂNG ---
-            function showMainChat() {
-                welcomeScreen.style.display = 'none';
-                mainChatInterface.style.display = 'flex';
-            }
-
-            function openModal() {
-                chatModal.classList.add('show');
-                chatBubble.style.opacity = '0';
-                chatBubble.style.visibility = 'hidden';
-                chatBubble.style.transform = 'scale(0)';
-
-                if (isUserLoggedIn) {
-                    showMainChat();
-                    const humanChatBody = document.querySelector('#humanChat .modal-body');
-                    humanChatBody.innerHTML = '';
-                    displayMessage(humanChatBody, `Xin chào ${loggedInUserName}! Tôi có thể giúp gì cho bạn?`, 'received');
-                } else {
-                    welcomeScreen.style.display = 'flex';
-                    mainChatInterface.style.display = 'none';
-                }
-            }
-
-            function closeModal() {
-                chatModal.classList.remove('show');
-                chatBubble.style.opacity = '1';
-                chatBubble.style.visibility = 'visible';
-                chatBubble.style.transform = 'scale(1)';
-            }
-
-            // --- GÁN SỰ KIỆN ---
-            chatBubble.addEventListener('click', openModal);
-            closeModalBtn.addEventListener('click', closeModal);
-
-            welcomeForm.addEventListener('submit', function(event) {
-                event.preventDefault(); 
-                const guestName = document.getElementById('guestName').value;
-                if (guestName.trim() !== '') {
-                    showMainChat();
-                    const humanChatBody = document.querySelector('#humanChat .modal-body');
-                    humanChatBody.innerHTML = '';
-                    displayMessage(humanChatBody, `Xin chào ${guestName}! Tôi có thể giúp gì cho bạn?`, 'received');
-                }
-            });
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
-                    button.classList.add('active');
-                    document.querySelector(button.dataset.target).classList.add('active');
-                });
-            });
-
-            function displayMessage(container, text, type) {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('message', type);
-                
-                if (type === 'received' && container.parentElement.id === 'aiChat') {
-                    messageElement.classList.add('ai');
-                }
-
-                messageElement.innerHTML = `
-                    <div class="content">${text}</div>
-                    <div class="timestamp">${new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
-                `;
-                container.appendChild(messageElement);
-                container.scrollTop = container.scrollHeight;
-            }
-
-            function handleSendMessage(tabContent) {
-                const input = tabContent.querySelector('.chat-input');
-                const sendButton = tabContent.querySelector('.send-btn');
-                const chatBody = tabContent.querySelector('.modal-body');
-
-                function send() {
-                    const messageText = input.value.trim();
-                    if (messageText === '') return;
-                    displayMessage(chatBody, messageText, 'sent');
-                    input.value = '';
-                    input.focus();
-                    if (tabContent.id === 'aiChat') {
-                        simulateAiResponse(chatBody, messageText);
-                    }
-                }
-
-                sendButton.addEventListener('click', send);
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') send();
-                });
-            }
-
-            tabContents.forEach(handleSendMessage);
-
-            function simulateAiResponse(container, userMessage) {
-                setTimeout(() => {
-                    let aiReply = "Tôi chưa hiểu câu hỏi của bạn. Bạn có thể hỏi về 'bảo hành', 'khuyến mãi', hoặc 'địa chỉ'.";
-                    const lowerCaseMessage = userMessage.toLowerCase();
-
-                    if (lowerCaseMessage.includes('bảo hành')) {
-                        aiReply = "Sản phẩm chính hãng được bảo hành 12 tháng tại tất cả các cửa hàng trên toàn quốc ạ.";
-                    } else if (lowerCaseMessage.includes('khuyến mãi') || lowerCaseMessage.includes('giảm giá')) {
-                        aiReply = "Hiện tại đang có chương trình giảm giá 10% cho các phụ kiện khi mua kèm điện thoại. Bạn xem chi tiết tại trang khuyến mãi nhé.";
-                    } else if (lowerCaseMessage.includes('địa chỉ') || lowerCaseMessage.includes('cửa hàng')) {
-                        aiReply = "Cửa hàng chính của chúng tôi ở tại 123 Đường ABC, Quận 1, TP.HCM. Rất hân hạnh được phục vụ bạn!";
-                    }
-                    
-                    displayMessage(container, aiReply, 'received');
-                }, 1000); 
-            }
-        });
-    </script>
 </body>
 </html>
