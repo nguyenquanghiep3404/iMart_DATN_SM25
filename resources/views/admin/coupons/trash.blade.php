@@ -280,7 +280,7 @@
             </div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">Xác nhận xóa vĩnh viễn</h3>
             <p class="text-sm text-gray-500 mb-4">Bạn có chắc chắn muốn xóa vĩnh viễn mã giảm giá <strong id="couponCodeToForceDelete"></strong>?</p>
-            <p class="text-xs text-red-500 font-medium">⚠️ Hành động này không thể hoàn tác!</p>
+            <p class="text-xs text-red-500 font-medium">Hành động này không thể hoàn tác!</p>
         </div>
         <div class="coupon-modal-footer">
             <button type="button" class="btn btn-secondary" onclick="closeForceDeleteModal()">Hủy</button>

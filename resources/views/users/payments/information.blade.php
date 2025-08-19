@@ -765,6 +765,17 @@
                 ->map(function ($item) {
                     $productVariant = $item->productVariant ?? ($item->cartable ?? null);
                     if ($productVariant && $productVariant->product) {
+                        // Chọn URL ảnh: ưu tiên ảnh từ session -> primaryImage -> coverImage -> placeholder
+                        $image = collect([
+                            $item->image ?? null,
+                            ($productVariant->primaryImage && file_exists(storage_path('app/public/' . $productVariant->primaryImage->path)))
+                                ? \Illuminate\Support\Facades\Storage::url($productVariant->primaryImage->path)
+                                : null,
+                            ($productVariant->product && $productVariant->product->coverImage && file_exists(storage_path('app/public/' . $productVariant->product->coverImage->path)))
+                                ? \Illuminate\Support\Facades\Storage::url($productVariant->product->coverImage->path)
+                                : null,
+                        ])->first(fn($u) => !empty($u)) ?? asset('images/placeholder.jpg');
+
                         return [
                             'id' => $item->id,
                             'product_variant_id' => $productVariant->id,
@@ -772,7 +783,7 @@
                             'variant' => $productVariant->attributeValues->pluck('value')->implode(', '),
                             'quantity' => $item->quantity,
                             'price' => $item->price,
-                            'image' => $productVariant->image_url ?? asset('assets/users/img/no-image.png'),
+                            'image' => $image,
                             'store_location_name' => $item->store_location_name ?? 'Kho tổng',
                             'store_location_id' => $item->store_location_id ?? null,
                             'weight' => $productVariant->weight ?? 1000,

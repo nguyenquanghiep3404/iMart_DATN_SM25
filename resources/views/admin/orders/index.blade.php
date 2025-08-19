@@ -664,8 +664,39 @@
                         </div>
 
                          <div>
-                            <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Ghi chú</h3>
-                            <p class="text-gray-600 italic" id="modal-customer-notes">Không có ghi chú.</p>
+                            <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Ghi chú</h3>    
+                            <!-- Ghi chú từ khách hàng -->
+                            <div id="customer-notes-section" class="mb-4 hidden">
+                                <h4 class="font-medium text-gray-700 mb-2">Ghi chú từ khách hàng:</h4>
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <p class="text-blue-800" id="modal-customer-notes"></p>
+                                </div>
+                            </div>
+                            <!-- Ghi chú từ admin -->
+                            <div id="admin-notes-section" class="mb-4 hidden">
+                                <h4 class="font-medium text-gray-700 mb-2">Ghi chú từ admin:</h4>
+                                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                                    <p class="text-green-800" id="modal-admin-notes"></p>
+                                </div>
+                            </div>
+                            <!-- Ghi chú dành cho shipper -->
+                            <div id="shipper-notes-section" class="mb-4 hidden">
+                                <h4 class="font-medium text-gray-700 mb-2">Ghi chú dành cho shipper:</h4>
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                                    <p class="text-yellow-800" id="modal-shipper-notes"></p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Thông tin lý do hủy/thất bại -->
+                        <div id="modal-cancellation-info" class="hidden">
+                            <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Lý do hủy/thất bại</h3>
+                            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <div>
+                                    <p class="text-red-800 font-medium mb-1" id="modal-cancellation-title">Lý do hủy đơn hàng:</p>
+                                    <p class="text-red-700" id="modal-cancellation-reason">Không có thông tin.</p>
+                                    <p class="text-red-600 text-sm mt-2" id="modal-cancellation-date"></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <!-- Right Column: Order Info & Items -->
@@ -1394,9 +1425,37 @@
         } else {
             shipperInfo.classList.add('hidden');
         }
-
-        // Hiển thị tổng tiền và các khoản
-        document.getElementById('modal-customer-notes').textContent = order.notes_from_customer || "Không có ghi chú.";
+        // Hiển thị các loại ghi chú
+        const customerNotesSection = document.getElementById('customer-notes-section');
+        const adminNotesSection = document.getElementById('admin-notes-section');
+        const shipperNotesSection = document.getElementById('shipper-notes-section');
+        const customerNotesElement = document.getElementById('modal-customer-notes');
+        const adminNotesElement = document.getElementById('modal-admin-notes');
+        const shipperNotesElement = document.getElementById('modal-shipper-notes');
+        // Xử lý ghi chú từ khách hàng
+        const customerNotes = order.notes_from_customer;
+        if (customerNotes && customerNotes.trim() !== '') {
+            customerNotesElement.textContent = customerNotes;
+            customerNotesSection.classList.remove('hidden');
+        } else {
+            customerNotesSection.classList.add('hidden');
+        }
+        // Xử lý ghi chú từ admin
+        const adminNotes = order.admin_note;
+        if (adminNotes && adminNotes.trim() !== '') {
+            adminNotesElement.textContent = adminNotes;
+            adminNotesSection.classList.remove('hidden');
+        } else {
+            adminNotesSection.classList.add('hidden');
+        }
+        // Xử lý ghi chú dành cho shipper
+        const shipperNotes = order.notes_for_shipper;
+        if (shipperNotes && shipperNotes.trim() !== '') {
+            shipperNotesElement.textContent = shipperNotes;
+            shipperNotesSection.classList.remove('hidden');
+        } else {
+            shipperNotesSection.classList.add('hidden');
+        }
         document.getElementById('modal-order-date').textContent = order.created_at ? formatDate(order.created_at) : 'N/A';
         
         const orderStatus = statusMap[order.status] || { text: 'N/A', class: '' };
@@ -1450,6 +1509,35 @@
             }
         } else {
             couponInfo.classList.add('hidden');
+        }
+        // Hiển thị thông tin lý do hủy/thất bại nếu có
+        const cancellationInfo = document.getElementById('modal-cancellation-info');
+        const cancellationTitle = document.getElementById('modal-cancellation-title');
+        const cancellationReason = document.getElementById('modal-cancellation-reason');
+        const cancellationDate = document.getElementById('modal-cancellation-date');
+        if ((order.status === 'cancelled' || order.status === 'failed_delivery' || order.status === 'returned') && 
+            (order.cancellation_reason || order.failed_delivery_reason)) { 
+            // Xác định tiêu đề và lý do phù hợp
+            let title = 'Lý do hủy đơn hàng:';
+            let reason = order.cancellation_reason || 'Không có thông tin.';
+            let dateInfo = '';
+            if (order.status === 'failed_delivery') {
+                title = 'Lý do giao hàng thất bại:';
+                reason = order.failed_delivery_reason || order.cancellation_reason || 'Không có thông tin.';
+            } else if (order.status === 'returned') {
+                title = 'Lý do trả hàng:';
+                reason = order.cancellation_reason || 'Trả hàng theo yêu cầu khách hàng.';
+            }
+            // Hiển thị thời gian hủy nếu có
+            if (order.cancelled_at) {
+                dateInfo = `Thời gian: ${formatDateTime(order.cancelled_at)}`;
+            }
+            cancellationTitle.textContent = title;
+            cancellationReason.textContent = reason;
+            cancellationDate.textContent = dateInfo;
+            cancellationInfo.classList.remove('hidden');
+        } else {
+            cancellationInfo.classList.add('hidden');
         }
 
         // Hiển thị progress bar trạng thái đơn hàng
@@ -1986,16 +2074,19 @@
         if (status === 'cancelled') {
             cancellationField.style.display = 'block';
             cancellationTextarea.setAttribute('required', 'required');
+            cancellationTextarea.setAttribute('name', 'cancellation_reason');
             fieldLabel.innerHTML = 'Lý do hủy đơn <span class="text-red-500">*</span>';
             cancellationTextarea.setAttribute('placeholder', 'Nhập lý do hủy đơn hàng...');
         } else if (status === 'failed_delivery') {
             cancellationField.style.display = 'block';
             cancellationTextarea.setAttribute('required', 'required');
+            cancellationTextarea.setAttribute('name', 'failed_delivery_reason');
             fieldLabel.innerHTML = 'Lý do giao hàng thất bại <span class="text-red-500">*</span>';
             cancellationTextarea.setAttribute('placeholder', 'Nhập lý do giao hàng thất bại...');
         } else {
             cancellationField.style.display = 'none';
             cancellationTextarea.removeAttribute('required');
+            cancellationTextarea.setAttribute('name', 'cancellation_reason');
             fieldLabel.innerHTML = 'Lý do hủy đơn <span class="text-red-500">*</span>';
             cancellationTextarea.setAttribute('placeholder', 'Nhập lý do hủy đơn hàng...');
         }
@@ -2028,8 +2119,8 @@
         }
         
         if (newStatus === 'failed_delivery') {
-            const cancellationReason = document.getElementById('cancellation-reason').value;
-            if (!cancellationReason.trim()) {
+            const reasonField = document.getElementById('cancellation-reason').value;
+            if (!reasonField.trim()) {
                 showToast('Vui lòng nhập lý do giao hàng thất bại', 'error');
                 return false;
             }
@@ -2058,6 +2149,18 @@
         }
 
         const formData = new FormData(e.target);
+        const status = formData.get('status');
+        // Chuẩn bị dữ liệu gửi
+        const requestData = {
+            status: status,
+            admin_note: formData.get('admin_note')
+        };
+        // Thêm lý do hủy/thất bại tùy theo trạng thái
+        if (status === 'cancelled') {
+            requestData.cancellation_reason = formData.get('cancellation_reason');
+        } else if (status === 'failed_delivery') {
+            requestData.failed_delivery_reason = formData.get('failed_delivery_reason') || formData.get('cancellation_reason');
+        }
         
         try {
             const response = await fetch(CONFIG.routes.updateStatus.replace(':id', currentOrderId), {
@@ -2067,11 +2170,7 @@
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    status: formData.get('status'),
-                    admin_note: formData.get('admin_note'),
-                    cancellation_reason: formData.get('cancellation_reason')
-                })
+                body: JSON.stringify(requestData)
             });
 
             const result = await response.json();
