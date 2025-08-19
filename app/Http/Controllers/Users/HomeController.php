@@ -610,7 +610,7 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-       
+
         $alreadyInCart = 0;
         // Giả sử session('cart') là mảng các item: ['product_variant_id' => 1, 'quantity' => 2, ...]
         if (session()->has('cart')) {
