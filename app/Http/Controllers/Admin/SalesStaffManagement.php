@@ -265,7 +265,6 @@ class SalesStaffManagement extends Controller
     public function updateEmployee(int $userId, SalesStaffRequest $request): JsonResponse
     {
         $data = $request->validated();
-
         try {
             DB::transaction(function () use ($userId, $data) {
                 $user = User::findOrFail($userId);
@@ -303,17 +302,7 @@ class SalesStaffManagement extends Controller
     public function removeEmployee(int $storeId, int $userId): JsonResponse
     {
         try {
-            // Debug: Log thông tin để kiểm tra
-            \Log::info('Removing employee', [
-                'storeId' => $storeId,
-                'userId' => $userId,
-                'userExists' => User::find($userId) ? 'Yes' : 'No',
-                'storeExists' => StoreLocation::find($storeId) ? 'Yes' : 'No',
-                'assignmentExists' => UserStoreLocation::where('user_id', $userId)
-                    ->where('store_location_id', $storeId)
-                    ->exists(),
-                'nhanVienThuocCuaHang' => UserStoreLocation::nhanVienThuocCuaHang($userId, $storeId)
-            ]);
+
             // Kiểm tra nhân viên có thuộc cửa hàng không
             $assignmentExists = UserStoreLocation::where('user_id', $userId)
                 ->where('store_location_id', $storeId)
@@ -326,10 +315,8 @@ class SalesStaffManagement extends Controller
             if (!$user) {
                 return response()->json(['message' => 'Không tìm thấy nhân viên'], 404);
             }
-
             // Xóa mềm user (chuyển vào thùng rác)
             $user->delete();
-
             // Xóa lịch làm việc của nhân viên tại cửa hàng này
             EmployeeSchedule::where('user_id', $userId)
                 ->where('store_location_id', $storeId)
@@ -349,7 +336,6 @@ class SalesStaffManagement extends Controller
             ->with(['assignedStoreLocations.province'])
             ->orderBy('deleted_at', 'desc')
             ->paginate(10);
-
         return view('admin.Salesperson.trash', compact('trashedUsers'));
     }
     /**
@@ -359,7 +345,6 @@ class SalesStaffManagement extends Controller
     {
         $user = User::onlyTrashed()->findOrFail($id);
         $user->restore();
-
         return redirect()->route('admin.sales-staff.trash')
             ->with('success', "Đã khôi phục nhân viên '{$user->name}' thành công!");
     }
@@ -386,9 +371,21 @@ class SalesStaffManagement extends Controller
     {
         $weekStartDate = Carbon::parse($request->get('week_start', Carbon::now()->startOfWeek()));
         $schedules = EmployeeSchedule::layLichLamViecTuanCuaCuaHang($storeId, $weekStartDate->format('Y-m-d'));
+        $transformedSchedules = $schedules->map(function ($schedule) {
+            return [
+                'user_id' => $schedule->user_id,
+                'date' => $schedule->date->format('Y-m-d'),
+                'work_shift_name' => $schedule->workShift->name ?? null,
+                'work_shift_color' => $schedule->workShift->color_code ?? null,
+            ];
+        });
         return response()->json([
-            'schedules' => $schedules,
+            'schedules' => $transformedSchedules,
             'week_start' => $weekStartDate->format('Y-m-d')
+        ], 200, [
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
         ]);
     }
     /**
@@ -402,16 +399,13 @@ class SalesStaffManagement extends Controller
             'work_shift_name' => 'required|string',
             'date' => 'required|date',
         ]);
-
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
-
         // Kiểm tra nhân viên có thuộc cửa hàng không
         if (!UserStoreLocation::nhanVienThuocCuaHang($request->user_id, $request->store_location_id)) {
             return response()->json(['message' => 'Nhân viên không thuộc cửa hàng này'], 404);
         }
-
         try {
             if ($request->work_shift_name === 'Nghỉ') {
                 // Xóa ca làm việc nếu chọn "Nghỉ"
@@ -419,7 +413,7 @@ class SalesStaffManagement extends Controller
                 $message = 'Đã xóa ca làm việc';
             } else {
                 // Gán ca làm việc
-                EmployeeSchedule::ganCaTheoTen(
+                $result = EmployeeSchedule::ganCaTheoTen(
                     $request->user_id,
                     $request->store_location_id,
                     $request->work_shift_name,
@@ -428,7 +422,6 @@ class SalesStaffManagement extends Controller
                 );
                 $message = 'Gán ca làm việc thành công';
             }
-
             return response()->json(['message' => $message]);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
@@ -462,7 +455,6 @@ class SalesStaffManagement extends Controller
                 'end_time' => $request->end_time,
                 'color_code' => $request->color_code,
             ]);
-
             return response()->json([
                 'message' => 'Thêm ca làm việc thành công',
                 'work_shift' => $workShift
@@ -473,7 +465,6 @@ class SalesStaffManagement extends Controller
             ], 500);
         }
     }
-
     /**
      * API: Cập nhật ca làm việc
      */
@@ -505,24 +496,11 @@ class SalesStaffManagement extends Controller
         $workShift = WorkShift::findOrFail($workShiftId);
         // Kiểm tra xem ca làm việc có đang được sử dụng không
         $isUsed = EmployeeSchedule::where('work_shift_id', $workShiftId)->exists();
-
         if ($isUsed) {
             return response()->json(['message' => 'Không thể xóa ca làm việc đang được sử dụng'], 400);
         }
         $workShift->delete();
         return response()->json(['message' => 'Xóa ca làm việc thành công']);
-    }
-    /**
-     * API: Tạo ca làm việc mặc định
-     */
-    public function createDefaultWorkShifts(): JsonResponse
-    {
-        try {
-            WorkShift::taoCaLamViecMacDinh();
-            return response()->json(['message' => 'Tạo ca làm việc mặc định thành công']);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
-        }
     }
     /**
      * API: Lấy thống kê nhân viên theo cửa hàng

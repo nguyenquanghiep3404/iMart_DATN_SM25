@@ -17,7 +17,7 @@
 
 
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <form action="{{ route('admin.coupons.update', $coupon->id) }}" method="POST">
+        <form action="{{ route('admin.coupons.update', $coupon->id) }}" method="POST" novalidate>
             @csrf
             @method('PUT')
             
@@ -237,21 +237,36 @@
                     <div class="mb-5">
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái <span class="text-red-500">*</span></label>
                         <select id="status" name="status" 
-                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('status') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror">
+                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('status') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror"
+                            @if($coupon->expired()) disabled @endif>
                             <option value="">Chọn trạng thái</option>
                             <option value="active" {{ old('status', $coupon->status) == 'active' ? 'selected' : '' }}>Hoạt động</option>
                             <option value="inactive" {{ old('status', $coupon->status) == 'inactive' ? 'selected' : '' }}>Vô hiệu</option>
                             <option value="expired" {{ old('status', $coupon->status) == 'expired' ? 'selected' : '' }}>Hết hạn</option>
                         </select>
+                        @if($coupon->expired())
+                            <!-- Hidden input để duy trì giá trị khi disabled -->
+                            <input type="hidden" name="status" value="{{ $coupon->status }}">
+                        @endif
                         @error('status')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @else
+                            @if($coupon->expired())
+                                <p class="mt-1 text-sm text-red-600 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                    Mã giảm giá đã hết hạn, không thể thay đổi trạng thái.
+                                </p>
+                            @endif
                         @enderror
                     </div>
                     
                     <div class="mb-5">
+                        <input type="hidden" name="is_public" value="0">
                         <label class="flex items-center">
                             <input type="checkbox" name="is_public" value="1" 
-                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 @error('is_public') border-red-300 focus:ring-red-500 @enderror" 
+                                class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 @error('is_public') border-red-300 focus:ring-red-500 @enderror" 
                                 {{ old('is_public', $coupon->is_public) ? 'checked' : '' }}>
                             <span class="ml-2 text-sm text-gray-700">Mã giảm giá công khai</span>
                         </label>

@@ -70,18 +70,6 @@
                     <p>{{ session('error') }}</p>
                 </div>
             @endif
-
-            <!-- Validation Errors -->
-            @if ($errors->any())
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-md" role="alert">
-                    <p class="font-bold">Vui lòng kiểm tra lại dữ liệu nhập vào:</p>
-                    <ul class="mt-2 list-disc list-inside text-sm">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
         </div>
 
         <!-- Main Form Card -->
@@ -102,24 +90,33 @@
                         <!-- Category Name -->
                         <div>
                             <label for="name" class="block text-sm font-semibold text-gray-700 mb-1">Tên danh mục <span class="text-red-500">*</span></label>
-                            <input type="text" name="name" id="name" value="{{ old('name', $category->name) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+                            <input type="text" name="name" id="name" value="{{ old('name', $category->name) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('name') border-red-500 focus:border-red-500 focus:ring-red-500 @enderror" required>
+                            @error('name')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Slug -->
                         <div>
                             <label for="slug" class="block text-sm font-semibold text-gray-700 mb-1">Slug (URL thân thiện)</label>
-                            <input type="text" name="slug" id="slug" value="{{ old('slug', $category->slug) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Để trống để tự động tạo">
+                            <input type="text" name="slug" id="slug" value="{{ old('slug', $category->slug) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('slug') border-red-500 focus:border-red-500 focus:ring-red-500 @enderror" placeholder="Để trống để tự động tạo">
+                            @error('slug')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Parent Category -->
                         <div>
                             <label for="parent_id" class="block text-sm font-semibold text-gray-700 mb-1">Danh mục cha</label>
-                            <select name="parent_id" id="parent_id" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <select name="parent_id" id="parent_id" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('parent_id') border-red-500 focus:border-red-500 focus:ring-red-500 @enderror">
                                 <option value="">Không có danh mục cha</option>
                                 @foreach($parents as $id => $name)
                                     <option value="{{ $id }}" {{ old('parent_id', $category->parent_id) == $id ? 'selected' : '' }}>{{ $name }}</option>
                                 @endforeach
                             </select>
+                            @error('parent_id')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
 
@@ -128,21 +125,30 @@
                         <!-- Description -->
                         <div>
                             <label for="description" class="block text-sm font-semibold text-gray-700 mb-1">Mô tả</label>
-                            <textarea name="description" id="description" rows="4" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">{{ old('description', $category->description) }}</textarea>
+                            <textarea name="description" id="description" rows="4" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('description') border-red-500 focus:border-red-500 focus:ring-red-500 @enderror">{{ old('description', $category->description) }}</textarea>
+                            @error('description')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <!-- Order and Status -->
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label for="order" class="block text-sm font-semibold text-gray-700 mb-1">Thứ tự</label>
-                                <input type="number" name="order" id="order" min="0" value="{{ old('order', $category->order) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <input type="number" name="order" id="order" min="0" value="{{ old('order', $category->order) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('order') border-red-500 focus:border-red-500 focus:ring-red-500 @enderror">
+                                @error('order')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                             <div>
                                 <label for="status" class="block text-sm font-semibold text-gray-700 mb-1">Trạng thái <span class="text-red-500">*</span></label>
-                                <select name="status" id="status" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+                                <select name="status" id="status" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('status') border-red-500 focus:border-red-500 focus:ring-red-500 @enderror" required>
                                     <option value="active" {{ old('status', $category->status) == 'active' ? 'selected' : '' }}>Hoạt động</option>
                                     <option value="inactive" {{ old('status', $category->status) == 'inactive' ? 'selected' : '' }}>Không hoạt động</option>
                                 </select>
+                                @error('status')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
                     </div>
@@ -185,15 +191,24 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                         <div>
                             <label for="meta_title" class="block text-sm font-semibold text-gray-700 mb-1">Tiêu đề SEO</label>
-                            <input type="text" name="meta_title" id="meta_title" value="{{ old('meta_title', $category->meta_title) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <input type="text" name="meta_title" id="meta_title" value="{{ old('meta_title', $category->meta_title) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('meta_title') border-red-500 focus:border-red-500 focus:ring-red-500 @enderror">
+                            @error('meta_title')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                         <div>
                             <label for="meta_keywords" class="block text-sm font-semibold text-gray-700 mb-1">Từ khóa SEO</label>
-                            <input type="text" name="meta_keywords" id="meta_keywords" value="{{ old('meta_keywords', $category->meta_keywords) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Các từ khóa cách nhau bởi dấu phẩy">
+                            <input type="text" name="meta_keywords" id="meta_keywords" value="{{ old('meta_keywords', $category->meta_keywords) }}" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('meta_keywords') border-red-500 focus:border-red-500 focus:ring-red-500 @enderror" placeholder="Các từ khóa cách nhau bởi dấu phẩy">
+                            @error('meta_keywords')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                         <div class="md:col-span-2">
                             <label for="meta_description" class="block text-sm font-semibold text-gray-700 mb-1">Mô tả SEO</label>
-                            <textarea name="meta_description" id="meta_description" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">{{ old('meta_description', $category->meta_description) }}</textarea>
+                            <textarea name="meta_description" id="meta_description" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 @error('meta_description') border-red-500 focus:border-red-500 focus:ring-red-500 @enderror">{{ old('meta_description', $category->meta_description) }}</textarea>
+                            @error('meta_description')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
                 </div>
