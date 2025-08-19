@@ -1758,26 +1758,8 @@ class PaymentController extends Controller
                     'type' => 'spend',
                     'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
                 ]);
-
-            // XỬ LÝ TRỪ ĐIỂM THƯỞNG CHO BUY NOW COD
-            $user = Auth::user();
-            $pointsApplied = session('points_applied');
-            if ($user && $pointsApplied) {
-                $pointsUsed = $pointsApplied['points'] ?? 0;
-                if ($pointsUsed > 0) {
-                    if ($pointsUsed > $user->loyalty_points_balance) {
-                        throw new \Exception('Số dư điểm không đủ để thực hiện giao dịch này.');
-                    }
-                    $user->decrement('loyalty_points_balance', $pointsUsed);
-                    LoyaltyPointLog::create([
-                        'user_id' => $user->id,
-                        'order_id' => $order->id,
-                        'points' => -$pointsUsed,
-                        'type' => 'spend',
-                        'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
-                    ]);
-                }
             }
+            
             // --- Xử lý lượt dùng mã giảm giá ---
             $appliedCoupon = session('applied_coupon');
             if ($appliedCoupon && isset($appliedCoupon['id'])) {
