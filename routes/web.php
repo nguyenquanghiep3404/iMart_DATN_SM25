@@ -197,6 +197,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
+    Route::get('/orders/{order}/review', [ReviewController::class, 'createForOrder'])->name('orders.review');
 
     // Routes cho quản lý địa chỉ của người dùng
     Route::resource('addresses', AddressesController::class)->except(['show']);
@@ -208,6 +209,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
         Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
         Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
+        Route::post('/my-orders/{order}/confirm-receipt', [UserOrderController::class, 'confirmReceipt'])->name('orders.confirm_receipt');
+        Route::post('/orders/{order}/buy-again', [UserOrderController::class, 'buyAgain'])->name('orders.buy_again');
         Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
     });
 

@@ -158,7 +158,7 @@
                 <div class="mt-8 pt-8 border-t border-gray-200">
                     <h3 class="text-lg font-bold text-gray-900 mb-2">Nhóm thông số kỹ thuật</h3>
                     <p class="text-sm text-gray-500">Chọn các nhóm thông số sẽ được áp dụng cho sản phẩm thuộc danh mục này.</p>
-                    
+
                     <!-- !!! FIX: Search functionality without a nested form -->
                     <div class="my-6">
                         <div class="relative">

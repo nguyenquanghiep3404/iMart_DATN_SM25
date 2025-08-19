@@ -228,6 +228,9 @@ class CategoryController extends Controller
         $this->authorize('restore', $category);
         $category->restore();
         $category->update(['deleted_by' => null]);
+
+        dd($id, Category::onlyTrashed()->pluck('id'));
+
         return redirect()->route('admin.categories.index')
             ->with('success', 'Danh mục đã được khôi phục thành công.');
     }
