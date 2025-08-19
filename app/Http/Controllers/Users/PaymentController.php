@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\PaymentRequest;
-use Telegram\Bot\Laravel\Facades\Telegram;
+
 use App\Models\OrderFulfillment;
 use App\Services\AutoStockTransferService;
 use App\Models\OrderFulfillmentItem;
@@ -244,9 +244,7 @@ class PaymentController extends Controller
                 return $this->createMomoPayment($order);
             }
             if ($request->payment_method === 'bank_transfer_qr') {
-                // Gửi thông báo Telegram cho QR
-                $confirmationUrl = route('payments.confirm', ['token' => $order->confirmation_token]);
-                $this->sendTelegramNotification("🔔 *Đơn hàng QR mới!*\n", $order, $confirmationUrl);
+
 
                 return response()->json([
                     'success' => true,
@@ -283,22 +281,13 @@ class PaymentController extends Controller
                             ]);
                         }
                     }
-                // Trừ tồn kho ngay lập tức cho COD
-                foreach ($order->fulfillments as $fulfillment) {
-                    foreach ($fulfillment->items as $fulfillmentItem) {
-                        $this->decrementInventoryStock(
-                            $fulfillmentItem->orderItem->productVariant,
-                            $fulfillmentItem->quantity,
-                            $fulfillment->store_location_id // Quan trọng: trừ kho từ đúng location
-                        );
-                    }
-                }
+                // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService.commitInventoryForOrder()
+                // để tránh trừ kho 2 lần. COD orders sẽ có inventory được commit ngay khi tạo đơn hàng.
 
                 return $order;
             });
 
-            // Gửi thông báo Telegram cho COD
-            $this->sendTelegramNotification("📦 *Đơn hàng COD mới!*\n", $order);
+
 
             // Kích hoạt chuyển kho tự động
             $autoTransferService = new AutoStockTransferService();
@@ -396,14 +385,27 @@ class PaymentController extends Controller
         }
 
         // MỚI: Sử dụng FulfillmentService để tạo Order Fulfillments
+        $fulfillmentService = new FulfillmentService();
+        
         if ($request->delivery_method === 'delivery') {
-            $fulfillmentService = new FulfillmentService();
-            $fulfillmentService->createOrderFulfillments($order, $cartData['items'], $request->input('shipments', []), $orderItemsMap);
+            $shipments = $request->input('shipments', []);
+            // Nếu shipments rỗng hoặc không đầy đủ, sử dụng createFulfillmentsForOrder
+            if (empty($shipments) || !$this->validateShipmentsData($shipments, $cartData['items'])) {
+                $fulfillmentService->createFulfillmentsForOrder($order);
+            } else {
+                $fulfillmentService->createOrderFulfillments($order, $cartData['items'], $shipments, $orderItemsMap);
+            }
         } else if ($request->delivery_method === 'pickup') {
             // Tạo fulfillments cho pickup method dựa trên pickup shipments
-            $fulfillmentService = new FulfillmentService();
             $pickupShipments = $this->calculatePickupShipments($cartData['items'], $request->store_location_id);
-            $fulfillmentService->createOrderFulfillments($order, $cartData['items'], $pickupShipments, $orderItemsMap);
+            if (empty($pickupShipments) || !$this->validateShipmentsData($pickupShipments, $cartData['items'])) {
+                $fulfillmentService->createFulfillmentsForOrder($order);
+            } else {
+                $fulfillmentService->createOrderFulfillments($order, $cartData['items'], $pickupShipments, $orderItemsMap);
+            }
+        } else {
+            // Fallback: luôn tạo fulfillments với createFulfillmentsForOrder
+            $fulfillmentService->createFulfillmentsForOrder($order);
         }
 
         // MỚI: Tạm giữ tồn kho cho đơn hàng
@@ -485,6 +487,29 @@ class PaymentController extends Controller
             'shipping_method' => 'Nhận tại cửa hàng',
             'shipping_fee' => 0,
         ]];
+    }
+
+    /**
+     * Kiểm tra xem shipments data có đầy đủ để tạo fulfillment items không
+     */
+    private function validateShipmentsData($shipments, $cartItems)
+    {
+        if (empty($shipments)) {
+            return false;
+        }
+
+        // Kiểm tra xem tất cả cart items có store_location_id khớp với shipments không
+        $shipmentStoreIds = collect($shipments)->pluck('store_location_id')->toArray();
+        $cartItemStoreIds = $cartItems->pluck('store_location_id')->unique()->toArray();
+        
+        // Nếu có cart items không có store_location_id trong shipments, data không đầy đủ
+        foreach ($cartItemStoreIds as $storeId) {
+            if (!in_array($storeId, $shipmentStoreIds)) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     private function createVnpayPayment(Order $order, Request $request)
@@ -605,16 +630,9 @@ class PaymentController extends Controller
                         $order->paid_at = now();
                         $order->save();
                         
-                        // MỚI: Trừ kho theo từng fulfillment
-                        foreach ($order->fulfillments as $fulfillment) {
-                            foreach ($fulfillment->items as $fulfillmentItem) {
-                                $this->decrementInventoryStock(
-                                    $fulfillmentItem->orderItem->productVariant,
-                                    $fulfillmentItem->quantity,
-                                    $fulfillment->store_location_id
-                                );
-                            }
-                        }
+                        // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
+                        // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
+                        // thông qua InventoryCommitmentService.fulfillInventoryForOrder()
                     });
                     
                     // Kích hoạt chuyển kho tự động
@@ -696,15 +714,8 @@ class PaymentController extends Controller
                             }
                         }
 
-                        foreach ($order->items as $item) {
-                            if ($item->product_variant_id) {
-                                $variant = ProductVariant::find($item->product_variant_id);
-                                if ($variant && $storeLocationId) {
-                                    $this->decrementInventoryStock($variant, $item->quantity, $storeLocationId);
-                                }
-                            }
-                            // Sản phẩm cũ không cần trừ tồn kho
-                        }
+                        // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
+                        // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
                     }
                 } else {
                     $order->status = Order::STATUS_CANCELLED;
@@ -866,15 +877,8 @@ class PaymentController extends Controller
                     }
                 }
                 
-                foreach ($order->items as $item) {
-                    if ($item->product_variant_id) {
-                        $variant = ProductVariant::find($item->product_variant_id);
-                        if ($variant && $storeLocationId) {
-                            $this->decrementInventoryStock($variant, $item->quantity, $storeLocationId);
-                        }
-                    }
-                    // Sản phẩm cũ không cần trừ tồn kho
-                }
+                // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
+                // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
                 
                 // Kích hoạt chuyển kho tự động
                 $autoTransferService = new AutoStockTransferService();
@@ -956,15 +960,8 @@ class PaymentController extends Controller
                     }
                 }
                 
-                foreach ($order->items as $item) {
-                    if ($item->product_variant_id) {
-                        $variant = ProductVariant::find($item->product_variant_id);
-                        if ($variant && $storeLocationId) {
-                            $this->decrementInventoryStock($variant, $item->quantity, $storeLocationId);
-                        }
-                    }
-                    // Sản phẩm cũ không cần trừ tồn kho
-                }
+                // Inventory deduction is now handled by InventoryCommitmentService to prevent double deductions
+                // The commitInventoryForOrder method handles both inventory commitment and fulfillment creation
             }
         } else {
             $order->status = Order::STATUS_CANCELLED;
@@ -1565,20 +1562,7 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
-                // Gửi thông báo Telegram
-                $confirmationUrl = route('payments.confirm', ['token' => $order->confirmation_token]);
-                $text = sprintf(
-                    "🔔 *Đơn hàng QR mới (Mua Ngay)!*\n\n*Mã ĐH:* `%s`\n*Khách hàng:* %s\n*Tổng tiền:* %s VNĐ",
-                    $order->order_code,
-                    $order->customer_name,
-                    number_format($order->grand_total)
-                );
-                Telegram::sendMessage([
-                    'chat_id' => env('TELEGRAM_ADMIN_CHAT_ID'),
-                    'text' => $text,
-                    'parse_mode' => 'Markdown',
-                    'reply_markup' => json_encode(['inline_keyboard' => [[['text' => '✅ Xác nhận đã thanh toán', 'url' => $confirmationUrl]]]])
-                ]);
+
 
                 if (Auth::check() && $request->save_address && !$request->address_id) {
                     $this->saveNewAddress($request);
@@ -2403,40 +2387,7 @@ class PaymentController extends Controller
             'data' => $districts
         ]);
     }
-    /**
-     * Gửi thông báo Telegram cho admin
-     */
-    private function sendTelegramNotification($prefix, $order, $confirmationUrl = null)
-    {
-        try {
-            $text = sprintf(
-                "%s\n\n*Mã ĐH:* `%s`\n*Khách hàng:* %s\n*Tổng tiền:* %s VNĐ",
-                $prefix,
-                $order->order_code,
-                $order->customer_name,
-                number_format($order->grand_total)
-            );
 
-            $messageData = [
-                'chat_id' => env('TELEGRAM_ADMIN_CHAT_ID'),
-                'text' => $text,
-                'parse_mode' => 'Markdown'
-            ];
-
-            // Thêm nút xác nhận nếu có URL
-            if ($confirmationUrl) {
-                $messageData['reply_markup'] = json_encode([
-                    'inline_keyboard' => [[
-                        ['text' => '✅ Xác nhận đã thanh toán', 'url' => $confirmationUrl]
-                    ]]
-                ]);
-            }
-
-            Telegram::sendMessage($messageData);
-        } catch (\Exception $e) {
-            Log::error('Lỗi gửi thông báo Telegram: ' . $e->getMessage());
-        }
-    }
 
     public function confirmPaymentByToken($token = null)
     {
@@ -2463,15 +2414,8 @@ class PaymentController extends Controller
             $order->paid_at = now();
             $order->save();
 
-            // Trừ tồn kho
-            foreach ($order->items as $item) {
-                if ($item->product_variant_id) {
-                    $variant = ProductVariant::find($item->product_variant_id);
-                    if ($variant) {
-                        $this->decrementInventoryStock($variant, $item->quantity, $order->store_location_id ?? 1);
-                    }
-                }
-            }
+            // Inventory deduction is now handled by InventoryCommitmentService to prevent double deductions
+            // The commitInventoryForOrder method handles both inventory commitment and fulfillment creation
             
             // Kích hoạt chuyển kho tự động
             $autoTransferService = new AutoStockTransferService();

@@ -26,4 +26,9 @@ public function storeLocation()
     return $this->belongsTo(StoreLocation::class, 'store_location_id');
 }
 
+public function packages()
+{
+    return $this->hasMany(Package::class);
+}
+
 }

@@ -367,82 +367,53 @@
                             <div id="payment_method_error" class="error-message mb-3"><i
                                     class="fas fa-exclamation-circle"></i><span>Vui lòng chọn phương thức thanh toán</span>
                             </div>
-                            <div class="row g-3">
+                            <div class="d-flex flex-column gap-3">
                                 {{-- Content from payment_methods.blade.php --}}
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <div class="form-check">
-                                            <input id="cod" name="payment_method" type="radio" value="cod"
-                                                class="form-check-input">
-                                            <label for="cod" class="form-check-label w-100 cursor-pointer">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fas fa-truck fs-4 text-muted me-3"></i>
-                                                    <div>
-                                                        <div class="fw-medium">Thanh toán khi nhận hàng (COD)</div>
-                                                        <small class="text-muted">Thanh toán bằng tiền mặt</small>
-                                                    </div>
+                                <div class="border rounded p-3">
+                                    <div class="form-check">
+                                        <input id="cod" name="payment_method" type="radio" value="cod"
+                                            class="form-check-input">
+                                        <label for="cod" class="form-check-label w-100 cursor-pointer">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <div class="fw-medium">Thanh toán khi nhận hàng (COD)</div>
+                                                    <small class="text-muted">Thanh toán bằng tiền mặt</small>
                                                 </div>
-                                            </label>
-                                        </div>
+                                                <i class="fas fa-money-bill-wave fs-4 text-success"></i>
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <div class="form-check">
-                                            <input id="qrcode" name="payment_method" type="radio"
-                                                value="bank_transfer_qr" class="form-check-input">
-                                            <label for="qrcode" class="form-check-label w-100 cursor-pointer">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fas fa-qrcode fs-4 text-muted me-3"></i>
-                                                    <div>
-                                                        <div class="fw-medium">Thanh toán bằng mã QR</div>
-                                                        <small class="text-muted">Quét mã QR để chuyển khoản</small>
-                                                    </div>
+                                <div class="border rounded p-3">
+                                    <div class="form-check">
+                                        <input id="vnpay" name="payment_method" type="radio" value="vnpay"
+                                            class="form-check-input">
+                                        <label for="vnpay" class="form-check-label w-100 cursor-pointer">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <div class="fw-medium">Thanh toán qua VNPay</div>
+                                                    <small class="text-muted">Hỗ trợ thẻ ATM & Ví điện tử</small>
                                                 </div>
-                                            </label>
-                                        </div>
+                                                <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Icon-VNPAY-QR.png"
+                                                    alt="VNPay" style="height: 24px;">
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <div class="form-check">
-                                            <input id="vnpay" name="payment_method" type="radio" value="vnpay"
-                                                class="form-check-input">
-                                            <label for="vnpay" class="form-check-label w-100 cursor-pointer">
-                                                <div class="d-flex align-items-center justify-content-between">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-credit-card fs-4 text-muted me-3"></i>
-                                                        <div>
-                                                            <div class="fw-medium">Thanh toán qua VNPay</div>
-                                                            <small class="text-muted">Hỗ trợ thẻ ATM & Ví điện tử</small>
-                                                        </div>
-                                                    </div>
-                                                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Icon-VNPAY-QR.png"
-                                                        alt="VNPay" style="height: 24px;">
+                                <div class="border rounded p-3">
+                                    <div class="form-check">
+                                        <input id="momo" name="payment_method" type="radio" value="momo"
+                                            class="form-check-input">
+                                        <label for="momo" class="form-check-label w-100 cursor-pointer">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <div class="fw-medium">Thanh toán qua Ví MoMo</div>
+                                                    <small class="text-muted">Ví điện tử MoMo</small>
                                                 </div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <div class="form-check">
-                                            <input id="momo" name="payment_method" type="radio" value="momo"
-                                                class="form-check-input">
-                                            <label for="momo" class="form-check-label w-100 cursor-pointer">
-                                                <div class="d-flex align-items-center justify-content-between">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-wallet fs-4 text-muted me-3"></i>
-                                                        <div>
-                                                            <div class="fw-medium">Thanh toán qua Ví MoMo</div>
-                                                            <small class="text-muted">Ví điện tử MoMo</small>
-                                                        </div>
-                                                    </div>
-                                                    <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png"
-                                                        alt="MoMo" style="height: 24px;">
-                                                </div>
-                                            </label>
-                                        </div>
+                                                <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png"
+                                                    alt="MoMo" style="height: 24px;">
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
                                 {{-- End of payment_methods.blade.php content --}}

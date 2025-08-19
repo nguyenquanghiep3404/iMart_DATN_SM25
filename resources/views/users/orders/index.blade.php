@@ -203,9 +203,10 @@
             <a href="{{ route('orders.index') }}" class="tab-link {{ empty($status) ? 'active' : '' }}">Tất cả</a>
             <a href="{{ route('orders.index', ['status' => 'pending_confirmation']) }}" class="tab-link {{ $status == 'pending_confirmation' ? 'active' : '' }}">Chờ xác nhận</a>
             <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="tab-link {{ $status == 'processing' ? 'active' : '' }}">Đang xử lý</a>
-            <a href="{{ route('orders.index', ['status' => 'shipped']) }}" class="tab-link {{ $status == 'shipped' ? 'active' : '' }}">Đang giao</a>
-            <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Hoàn tất</a>
-            <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Đã hủy</a>
+            <a href="{{ route('orders.index', ['status' => 'out_for_delivery']) }}" class="tab-link {{ $status == 'out_for_delivery' ? 'active' : '' }}">Đang giao hàng</a>
+            <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Giao hàng thành công</a>
+            <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Hủy</a>
+            <a href="{{ route('orders.index', ['status' => 'failed_delivery']) }}" class="tab-link {{ $status == 'failed_delivery' ? 'active' : '' }}">Giao hàng thất bại</a>
             <a href="{{ route('orders.returns') }}" class="tab-link {{ request()->routeIs('orders.returns') ? 'active' : '' }}">Trả hàng</a>
         </nav>
     </div>

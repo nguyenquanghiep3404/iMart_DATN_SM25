@@ -1345,9 +1345,7 @@
                         <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="YouTube">
                             <i class="ci-youtube fs-base"></i>
                         </a>
-                        <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Telegram">
-                            <i class="ci-telegram fs-base"></i>
-                        </a>
+
                     </div>
                 </div>
 
