@@ -364,7 +364,8 @@ class PaymentController extends Controller
             'payment_method' => $request->payment_method,
             'payment_status' => Order::PAYMENT_PENDING,
             'status' => Order::STATUS_PENDING_CONFIRMATION,
-            'shipping_method' => $request->delivery_method === 'delivery' ? 'Giao hàng tận nơi' : 'Nhận tại cửa hàng',
+            'delivery_method' => $request->delivery_method,
+            'shipping_method' => null,
             'notes_from_customer' => $request->notes,
             // ... các trường khác
         ]);
@@ -908,14 +909,61 @@ class PaymentController extends Controller
             }
         }
         $totalPointsEarned = 0;
+        $relatedProducts = collect();
         if ($order) {
             // Tính tổng điểm thưởng từ tất cả các sản phẩm trong đơn hàng
             $totalPointsEarned = $order->items->sum(function ($item) {
                 // Lấy điểm từ productVariant và nhân với số lượng
                 return ($item->productVariant->points_awarded_on_purchase ?? 0) * $item->quantity;
             });
+            // Lấy sản phẩm liên quan dựa trên đơn hàng vừa đặt
+            $categoryIds = $order->items->pluck('productVariant.product.category_id')->unique()->filter();
+            $purchasedProductIds = $order->items->pluck('productVariant.product.id')->unique();
+            if ($categoryIds->isNotEmpty()) {
+                $relatedProducts = Product::with([
+                    'coverImage',
+                    'variants' => function ($query) {
+                        $query->where('is_default', true)->orWhere('status', 'active');
+                    },
+                    'variants.primaryImage'
+                ])
+                    ->withCount(['reviews as reviews_count' => function ($query) {
+                        $query->where('reviews.status', 'approved');
+                    }])
+                    ->withAvg(['reviews as average_rating' => function ($query) {
+                        $query->where('reviews.status', 'approved');
+                    }], 'rating')
+                    ->whereIn('category_id', $categoryIds)
+                    ->whereNotIn('id', $purchasedProductIds)
+                    ->where('products.status', 'published')
+                    ->inRandomOrder()
+                    ->limit(4)
+                    ->get()
+                    ->map(function ($product) {
+                        // Lấy biến thể mặc định hoặc biến thể đầu tiên
+                        $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+                        if ($variant) {
+                            // Tính phần trăm giảm giá
+                            $discountPercent = 0;
+                            if ($variant->sale_price && $variant->price > $variant->sale_price) {
+                                $discountPercent = round(100 - ($variant->sale_price / $variant->price) * 100);
+                            }
+                            // Thêm thông tin vào product
+                            $product->default_variant = $variant;
+                            $product->discount_percent = $discountPercent;
+                            $product->display_price = $variant->sale_price ?: $variant->price;
+                            $product->original_price = $variant->price;
+                            $product->image_url = $variant->primaryImage ?
+                                asset('storage/' . $variant->primaryImage->path) : ($product->coverImage ? asset('storage/' . $product->coverImage->path) : null);
+                        }
+                        return $product;
+                    })
+                    ->filter(function ($product) {
+                        return $product->default_variant !== null;
+                    });
+            }
         }
-        return view('users.payments.success', compact('order', 'totalPointsEarned'));
+        return view('users.payments.success', compact('order', 'totalPointsEarned', 'relatedProducts'));
     }
     /**
      * Lấy dữ liệu giỏ hàng
@@ -1313,7 +1361,8 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+                // Tính tổng phí ship từ mảng shipments (Buy Now)
+                $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1339,7 +1388,8 @@ class PaymentController extends Controller
                     'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'],
                     'payment_method' => 'vnpay',
                     'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_method' => $request->shipping_method,
+                    'delivery_method' => $request->delivery_method,
+                    'shipping_method' => null,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
                     'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
@@ -1385,7 +1435,8 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+                // Tính tổng phí ship từ mảng shipments (Buy Now)
+                $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1411,7 +1462,8 @@ class PaymentController extends Controller
                     'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'],
                     'payment_method' => 'momo',
                     'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_method' => $request->shipping_method,
+                    'delivery_method' => $request->delivery_method,
+                    'shipping_method' => null,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
                     'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
@@ -1455,7 +1507,8 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+                // Tính tổng phí ship từ mảng shipments (Buy Now)
+                $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1481,7 +1534,8 @@ class PaymentController extends Controller
                     'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'], // SỬA: Dùng buyNowData
                     'payment_method' => 'bank_transfer_qr',
                     'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_method' => $request->shipping_method,
+                    'delivery_method' => $request->delivery_method,
+                    'shipping_method' => null,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
                     'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
@@ -1572,7 +1626,11 @@ class PaymentController extends Controller
             }
 
             // --- TÍNH TOÁN LẠI GIÁ TRỊ CUỐI CÙNG ---
-            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+            // LẤY PHÍ SHIP TỪ MẢNG SHIPMENTS
+            $shippingFee = 0;
+            if ($request->delivery_method === 'delivery') {
+                $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
+            }
             $totalDiscount = $buyNowData['discount'] + $discountFromPoints;
             $grandTotal = $buyNowData['subtotal'] + $shippingFee - $totalDiscount;
 
@@ -1624,7 +1682,8 @@ class PaymentController extends Controller
                 'grand_total' => $grandTotal,
                 'payment_method' => $request->payment_method,
                 'payment_status' => $request->payment_method === 'cod' ? Order::PAYMENT_PENDING : Order::PAYMENT_PENDING,
-                'shipping_method' => $request->shipping_method,
+                'delivery_method' => $request->delivery_method,
+                'shipping_method' => null,
                 'status' => Order::STATUS_PENDING_CONFIRMATION,
                 'notes_from_customer' => $request->notes,
                 'admin_note' => $adminNote,
@@ -1699,26 +1758,8 @@ class PaymentController extends Controller
                     'type' => 'spend',
                     'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
                 ]);
-
-            // XỬ LÝ TRỪ ĐIỂM THƯỞNG CHO BUY NOW COD
-            $user = Auth::user();
-            $pointsApplied = session('points_applied');
-            if ($user && $pointsApplied) {
-                $pointsUsed = $pointsApplied['points'] ?? 0;
-                if ($pointsUsed > 0) {
-                    if ($pointsUsed > $user->loyalty_points_balance) {
-                        throw new \Exception('Số dư điểm không đủ để thực hiện giao dịch này.');
-                    }
-                    $user->decrement('loyalty_points_balance', $pointsUsed);
-                    LoyaltyPointLog::create([
-                        'user_id' => $user->id,
-                        'order_id' => $order->id,
-                        'points' => -$pointsUsed,
-                        'type' => 'spend',
-                        'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
-                    ]);
-                }
             }
+            
             // --- Xử lý lượt dùng mã giảm giá ---
             $appliedCoupon = session('applied_coupon');
             if ($appliedCoupon && isset($appliedCoupon['id'])) {

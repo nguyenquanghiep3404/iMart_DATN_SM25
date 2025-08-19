@@ -1002,8 +1002,9 @@ class HomeController extends Controller
         $query = Product::with([
             'category',
             'coverImage',
+            'galleryImages',
             'variants' => function ($query) use ($request, $storages, $priceRangesSelected) {
-                $query->with(['attributeValues', 'primaryImage']);
+                $query->with(['attributeValues', 'primaryImage', 'images']);
                 if ($request->sort === 'dang_giam_gia') {
                     $query->where('sale_price', '>', 0)
                         ->where('sale_price', '<', \DB::raw('price'))
@@ -1159,6 +1160,15 @@ class HomeController extends Controller
                     ? round(100 * (1 - ($variant->sale_price / $variant->price)))
                     : 0;
 
+                // Xác định URL ảnh hiển thị cho biến thể và sản phẩm
+                $path = collect([
+                    $variant->primaryImage?->path,
+                    $variant->images->first()?->path,
+                    $product->coverImage?->path,
+                    $product->galleryImages->first()?->path,
+                ])->first(fn ($p) => !empty($p));
+                $variantImageUrl = $path ? \Storage::url($path) : asset('images/placeholder.jpg');
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -1173,7 +1183,7 @@ class HomeController extends Controller
                         'price' => $onSale ? $variant->sale_price : $variant->price,
                         'original_price' => $variant->price,
                         'discount_percent' => $discountPercent,
-                        'image_url' => $variant->image_url,
+                        'image_url' => $variantImageUrl,
                         'stock' => $variant->sellable_stock,
                     ],
                 ];
