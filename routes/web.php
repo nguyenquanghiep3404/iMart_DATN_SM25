@@ -137,7 +137,7 @@ Route::get('/api/filter-stores', [HomeController::class, 'filterStoreLocations']
 
 // Route để lấy danh sách tỉnh/thành phố theo biến thể sản phẩm
 Route::get('/api/provinces-by-variant', [HomeController::class, 'getProvincesByVariant'])->name('api.provinces.by.variant');
-
+Route::get('/bundle-suggested-products/{variantId}', [HomeController::class, 'getSuggestedProducts'])->name('bundle.suggested-products');
 // lấy api số lượng sản phẩm
 Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariantStock']);
 
@@ -197,6 +197,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::get('/reviews/{id}', [ReviewController::class, 'show'])->name('reviews.show');
+    Route::get('/orders/{order}/review', [ReviewController::class, 'createForOrder'])->name('orders.review');
 
     // Routes cho quản lý địa chỉ của người dùng
     Route::resource('addresses', AddressesController::class)->except(['show']);
@@ -208,6 +209,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
         Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
         Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
+        Route::post('/my-orders/{order}/confirm-receipt', [UserOrderController::class, 'confirmReceipt'])->name('orders.confirm_receipt');
+        Route::post('/orders/{order}/buy-again', [UserOrderController::class, 'buyAgain'])->name('orders.buy_again');
         Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
     });
 
@@ -501,12 +504,12 @@ Route::prefix('admin')
             Route::get('/stores/{storeId}/schedule', [SalesStaffManagement::class, 'showSchedule'])->name('stores.schedule');
             // Quản lý ca làm việc
             Route::get('/work-shifts', [SalesStaffManagement::class, 'showWorkShifts'])->name('work-shifts.index');
-            
+
             // Routes cho thùng rác (trash)
             Route::get('/trash', [SalesStaffManagement::class, 'trash'])->name('trash');
             Route::patch('/restore/{id}', [SalesStaffManagement::class, 'restore'])->name('restore');
             Route::delete('/force-delete/{id}', [SalesStaffManagement::class, 'forceDelete'])->name('force-delete');
-            
+
             // API Routes
             Route::prefix('api')->name('api.')->group(function () {
                 // API cửa hàng
@@ -526,7 +529,6 @@ Route::prefix('admin')
                 Route::post('/work-shifts', [SalesStaffManagement::class, 'addWorkShift'])->name('work-shifts.store');
                 Route::put('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'updateWorkShift'])->name('work-shifts.update');
                 Route::delete('/work-shifts/{workShiftId}', [SalesStaffManagement::class, 'deleteWorkShift'])->name('work-shifts.destroy');
-                Route::post('/work-shifts/create-default', [SalesStaffManagement::class, 'createDefaultWorkShifts'])->name('work-shifts.create-default');
                 // API thống kê
                 Route::get('/statistics', [SalesStaffManagement::class, 'getStaffStatistics'])->name('statistics');
             });
@@ -613,26 +615,26 @@ Route::prefix('admin')
 
         // Route quản lí trang chủ (client)
         Route::get('/homepage', [HomepageController::class, 'index'])->name('homepage.index');
-        Route::post('/homepage/update', [HomepageController::class, 'update'])->name('homepage.update');
-        Route::post('/homepage/banners/sort', [HomepageController::class, 'sortBanners'])->name('admin.homepage.banners.sort');
         Route::post('/homepage/categories', [HomepageController::class, 'saveCategories'])->name('admin.homepage.categories.save');
-        Route::post('/homepage/categories/sort', [HomepageController::class, 'sortCategories'])->name('admin.homepage.categories.sort');
-        Route::get('/homepage/categories/list', [HomepageController::class, 'getCategories'])->name('admin.homepage.categories.list');
         Route::post('/homepage/product-blocks', [HomepageController::class, 'storeProductBlock'])->name('homepage.blocks.store');
         Route::delete('/homepage/product-blocks/{id}', [HomepageController::class, 'destroyProductBlock'])->name('homepage.blocks.destroy');
         Route::get('/homepage/products/search', [HomepageController::class, 'searchProducts'])->name('homepage.products.search');
         Route::patch('/homepage/blocks/{id}/toggle-visibility', [HomepageController::class, 'toggleBlockVisibility'])
             ->name('homepage.blocks.toggleVisibility');
-        Route::post('/homepage/product-blocks/update-order', [HomepageController::class, 'updateBlockOrder'])->name('homepage.blocks.update-order');
-        Route::post('/homepage/product-blocks/{blockId}/update-order', [HomepageController::class, 'updateProductOrder'])
-            ->name('homepage.blocks.products.update-order');
         Route::post('/homepage/banners/update-order', [HomepageController::class, 'updateBannerOrder'])->name('homepage.banners.update-order');
-        Route::post('/homepage/product-blocks/sort', [HomepageController::class, 'sortProductBlocks'])->name('homepage.blocks.sort');
         Route::post('/homepage/block/{block}/add-products', [HomepageController::class, 'addProductsToBlock'])->name('homepage.blocks.add-products');
         Route::post('/homepage/product-blocks/{block}/products', [HomepageController::class, 'addProductsToBlock'])
             ->name('homepage.blocks.add-products');
         Route::patch('/homepage/categories/{categoryId}/toggle', [HomepageController::class, 'toggleCategory'])->name('homepage.categories.toggle');
         Route::post('/homepage/categories/update-order', [HomepageController::class, 'updateCategoryOrder'])->name('homepage.categories.update-order');
+        Route::delete('/homepage/product-blocks/{blockId}/products/{variantId}', [HomepageController::class, 'removeProductFromBlock'])
+            ->name('homepage.blocks.products.remove');
+        // Thêm route mới để cập nhật thứ tự khối sản phẩm
+        Route::post('/homepage/product-blocks/update-order', [HomepageController::class, 'updateBlockOrder'])
+            ->name('homepage.blocks.update-order');
+        // Thêm route để cập nhật tên khối sản phẩm
+        Route::patch('/homepage/product-blocks/{id}/title', [HomepageController::class, 'updateBlockTitle'])
+            ->name('homepage.blocks.update-title');
 
         // Route Quản lí Flash Sale
         Route::resource('flash-sales', \App\Http\Controllers\Admin\FlashSaleController::class);
@@ -653,7 +655,8 @@ Route::prefix('admin')
         Route::delete('bundle-products/{id}/force-delete', [BundleProductController::class, 'forceDelete'])->name('bundle-products.forceDelete');
         Route::patch('bundle-products/restore-bulk', [BundleProductController::class, 'restoreBulk'])->name('bundle-products.restore.bulk');
         Route::delete('bundle-products/force-delete-bulk', [BundleProductController::class, 'forceDeleteBulk'])->name('bundle-products.forceDelete.bulk');
-
+        Route::get('bundle-products/products', [BundleProductController::class, 'getProductsByCategory'])->name('bundle-products.products');
+        
         // Routes cho tra cứu số serial
         Route::get('/serials/lookup', [SerialLookupController::class, 'showForm'])->name('serial.lookup.form');
         Route::post('/serials/lookup', [SerialLookupController::class, 'lookup'])->name('serial.lookup');
@@ -675,7 +678,6 @@ Route::prefix('admin')
         Route::delete('bundle-products/{bundle}', [BundleProductController::class, 'destroy'])->name('bundle-products.destroy');
         Route::get('bundle-products/{bundle}', [BundleProductController::class, 'show'])->name('bundle-products.show');
         Route::patch('bundle-products/{bundle}/toggle-status', [BundleProductController::class, 'toggleStatus'])->name('bundle-products.toggle-status');
-
         // Xóa mềm gói sản phẩm
 
         // Post routes
@@ -705,7 +707,6 @@ Route::prefix('admin')
             Route::post('/{conversation}/close', [AdminChatController::class, 'close'])->name('close');
             Route::post('/{conversation}/invite-admin', [AdminChatController::class, 'inviteAdmin'])->name('inviteAdmin');
             Route::get('/{conversation}', [AdminChatController::class, 'show'])->name('show');
-
         });
 
         // Quản lý thu cũ và hàng mở hộp
@@ -824,7 +825,7 @@ Route::prefix('admin')
             Route::post('/{stockTransfer}/receive', [StockTransferController::class, 'processReceive'])->name('receive.process');
         });
         Route::resource('stock-transfers', StockTransferController::class);
-        
+
         // Routes cho Auto Stock Transfer
         Route::prefix('auto-stock-transfers')->name('auto-stock-transfers.')->group(function () {
             Route::get('/', [AutoStockTransferController::class, 'index'])->name('index');
@@ -837,11 +838,10 @@ Route::prefix('admin')
             Route::post('/{id}/cancel', [AutoStockTransferController::class, 'cancel'])->name('cancel');
             Route::post('/check-and-create', [AutoStockTransferController::class, 'checkAndCreateForOrder'])->name('check-and-create');
         });
-        
+
         Route::get('/product-variants/{id}/adjust-form', [InventoryAdjustmentController::class, 'showAdjustForm'])->name('product-variants.adjust-form');
         Route::post('/product-variants/{id}/adjust-stock', [InventoryAdjustmentController::class, 'adjustStock'])->name('product-variants.adjust-stock')->middleware('auth');
         Route::post('/ajax/calculate-shipping-options', [PaymentController::class, 'ajaxCalculateShippingOptions']);
-
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')

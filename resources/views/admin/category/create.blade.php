@@ -91,7 +91,7 @@
                                 Danh mục cha
                             </label>
                             <select name="parent_id" id="parent_id" class="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                                <option value="">Không có danh mục cha</option>
+                                <option value="">Chọn danh mục cha</option>
                                 @foreach($parents as $parent)
                                     <option value="{{ $parent->id }}" {{ old('parent_id') == $parent->id ? 'selected' : '' }}>
                                         {{ $parent->name }}

@@ -196,6 +196,19 @@
             </form>
         </div>
     </div>
+    {{-- // DÁN ĐOẠN CODE HIỂN THỊ THÔNG BÁO VÀO ĐÂY --}}
+    @if(session('success'))
+        <div class="alert alert-success" role="alert">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger" role="alert">
+            {{ session('error') }}
+        </div>
+    @endif
+    {{-- // KẾT THÚC PHẦN THÔNG BÁO --}}
 
     {{-- Các tab lọc trạng thái --}}
     <div class="border-bottom mb-4">
@@ -234,6 +247,8 @@
                     $statusClass = 'status-completed'; $statusText = 'Hoàn tất'; break;
                     case 'processing':
                     $statusClass = 'status-processing'; $statusText = 'Đang xử lý'; break;
+                    case 'pending_confirmation':
+                    $statusClass = 'pending_confirmation'; $statusText = 'Chờ xác nhận'; break;
                     case 'shipped': case 'out_for_delivery':
                     $statusClass = 'status-shipping'; $statusText = 'Đang giao'; break;
                     case 'cancelled': case 'failed_delivery':
@@ -269,7 +284,17 @@
             </div>
             <div class="order-card-footer">
                 @if($order->status == 'delivered' || $order->status == 'cancelled')
-                <a href="#" class="btn-secondary">Mua lại</a>
+                <form action="{{ route('orders.buy_again', $order->id) }}" method="POST" class="d-inline-block">
+                    @csrf
+                    <button type="submit" class="btn-secondary">Mua lại</button>
+                </form>
+                @endif
+                {{-- Hiển thị nút khi đơn hàng đã giao VÀ chưa được xác nhận --}}
+                @if($order->status == 'delivered' && is_null($order->confirmed_at))
+                    <form action="{{ route('orders.confirm_receipt', $order->id) }}" method="POST" class="d-inline-block">
+                        @csrf
+                        <button type="submit" class="btn-secondary">Đã nhận hàng</button>
+                    </form>
                 @endif
                 <a href="{{ route('orders.show', $order->id) }}" class="btn-view-details">Xem chi tiết</a>
             </div>

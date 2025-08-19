@@ -99,7 +99,7 @@
                 href="{{ route('orders.index') }}">
                 <i class="ci-shopping-bag fs-base opacity-75 me-2"></i>
                 Đơn hàng của tôi
-                <span class="badge bg-primary rounded-pill ms-auto">1</span>
+                <!-- <span class="badge bg-primary rounded-pill ms-auto">1</span> -->
             </a>
             <a class="list-group-item list-group-item-action d-flex align-items-center"
                 href="{{ route('wishlist.index') }}">

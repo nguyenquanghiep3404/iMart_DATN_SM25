@@ -19,14 +19,6 @@
                 <p class="text-gray-500">Thêm, sửa, xóa các ca làm việc</p>
             </div>
             <div class="flex items-center gap-3">
-                <button id="create-default-shifts-btn"
-                    class="flex items-center gap-2 bg-green-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2v20M2 12h20"></path>
-                    </svg>
-                    Tạo Ca Mặc Định
-                </button>
                 <button id="add-work-shift-btn"
                     class="flex items-center gap-2 bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
@@ -105,8 +97,7 @@
                                             <polyline points="12,6 12,12 16,14"></polyline>
                                         </svg>
                                         <h3 class="mt-2 text-sm font-medium text-gray-900">Chưa có ca làm việc</h3>
-                                        <p class="mt-1 text-sm text-gray-500">Hãy thêm ca làm việc đầu tiên hoặc tạo ca mặc
-                                            định.</p>
+                                        <p class="mt-1 text-sm text-gray-500">Hãy thêm ca làm việc đầu tiên.</p>
                                     </div>
                                 </td>
                             </tr>
@@ -194,7 +185,6 @@
             };
 
             const addWorkShiftBtn = document.getElementById('add-work-shift-btn');
-            const createDefaultShiftsBtn = document.getElementById('create-default-shifts-btn');
             const workShiftModal = document.getElementById('work-shift-modal');
             const cancelWorkShiftModalBtn = document.getElementById('cancel-work-shift-modal-btn');
             const workShiftForm = document.getElementById('work-shift-form');
@@ -217,28 +207,7 @@
                 showNotification(successMessage, 'success');
                 sessionStorage.removeItem('work_shift_success_message');
             }
-            addWorkShiftBtn.addEventListener('click', openAddModal)
-            // Tạo ca làm việc mặc định
-            createDefaultShiftsBtn.addEventListener('click', function() {
-                if (confirm('Bạn có chắc muốn tạo các ca làm việc mặc định?')) {
-                    fetch('{{ route('admin.sales-staff.api.work-shifts.create-default') }}', {
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                    .getAttribute('content')
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.message) {
-                                sessionStorage.setItem('work_shift_success_message', data.message);
-                                location.reload();
-                            }
-                        })
-                        .catch(() => showNotification('Có lỗi xảy ra khi tạo ca làm việc mặc định',
-                            'error'));
-                }
-            });
+            addWorkShiftBtn.addEventListener('click', openAddModal);
             //Chỉnh sửa ca làm việc
             workShiftsTableBody.addEventListener('click', function(e) {
                 const editBtn = e.target.closest('.edit-shift-btn');

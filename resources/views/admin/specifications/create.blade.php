@@ -28,7 +28,7 @@
 @section('content')
 <div class="body-content px-4 sm:px-6 md:px-8 py-8">
     <div class="container mx-auto max-w-4xl">
-        
+
         {{-- TOAST NOTIFICATIONS CONTAINER --}}
         <div id="toast-container" class="toast-container">
              @if ($errors->any())
@@ -63,11 +63,11 @@
                 </div>
                 <div class="card-custom-body">
                     <div class="space-y-6">
-                        
+
                         {{-- Nhóm thông số --}}
                         <div>
                             <label for="specification_group_id" class="form-label">Nhóm thông số <span class="text-red-500">*</span></label>
-                            <select id="specification_group_id" name="specification_group_id" class="form-select @error('specification_group_id') is-invalid @enderror" required>
+                            <select id="specification_group_id" name="specification_group_id" class="form-select @error('specification_group_id') is-invalid @enderror" >
                                 <option value="">-- Chọn nhóm --</option>
                                 @foreach($groups as $group)
                                     <option value="{{ $group->id }}" {{ old('specification_group_id') == $group->id ? 'selected' : '' }}>
@@ -83,7 +83,7 @@
                         {{-- Tên Thông số --}}
                         <div>
                             <label for="name" class="form-label">Tên thông số <span class="text-red-500">*</span></label>
-                            <input type="text" id="name" name="name" class="form-input @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="Ví dụ: CPU, RAM, Camera chính" required>
+                            <input type="text" id="name" name="name" class="form-input @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="Ví dụ: CPU, RAM, Camera chính" >
                             @error('name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

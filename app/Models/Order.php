@@ -74,6 +74,7 @@ class Order extends Model
         'ip_address',
         'user_agent',
         'store_location_id',
+        'confirmed_at',
     ];
 
     protected $casts = [
@@ -344,7 +345,7 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    // Định dạng cho ngày giao hàng 
+    // Định dạng cho ngày giao hàng
     public function getFormattedDeliveryDateAttribute()
     {
         if (!$this->desired_delivery_date) {

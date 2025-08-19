@@ -14,6 +14,7 @@ use App\Notifications\NewReviewOrCommentPending;
 use App\Models\User;
 use App\Models\ProductVariant;
 
+
 class ReviewController extends Controller
 {
     /**
@@ -24,7 +25,7 @@ class ReviewController extends Controller
         $user = Auth::user();
 
         // Lấy tất cả review của user, key theo product_variant_id để tra cứu nhanh
-        $userReviews = Review::where('user_id','orderItem.order', $user->id)
+        $userReviews = Review::where('user_id', $user->id)
             ->get()
             ->keyBy('product_variant_id');
 
@@ -37,7 +38,7 @@ class ReviewController extends Controller
             ->flatten()
             ->filter(fn($item) => $item->variant && $item->variant->product) // loại bỏ item lỗi
             ->unique('product_variant_id')
-            ->values(); // reset chỉ số
+            ->values();
 
         // Chuyển thành collection có thông tin cần thiết cho view
         $itemsForReview = $orderItems->map(function ($item) use ($userReviews) {
@@ -54,6 +55,7 @@ class ReviewController extends Controller
 
         return view('users.profile.reviews', compact('itemsForReview'));
     }
+
 
 
     /**
@@ -82,14 +84,17 @@ class ReviewController extends Controller
         $userId = Auth::id();
 
         // Kiểm tra đã đánh giá chưa
-        if (Review::where('user_id', $userId)
-            ->where('product_variant_id', $data['product_variant_id'])->exists()
+        if (
+            !empty($data['order_item_id']) && Review::where('user_id', $userId)
+            ->where('order_item_id', $data['order_item_id'])
+            ->exists()
         ) {
             return response()->json([
                 'success' => false,
-                'message' => 'Bạn đã đánh giá phiên bản sản phẩm này rồi.'
+                'message' => 'Bạn đã đánh giá cho lần mua này rồi.'
             ], 409);
         }
+
 
         // Kiểm tra đã mua chưa
         $hasOrdered = DB::table('order_items')
@@ -195,5 +200,27 @@ class ReviewController extends Controller
         $product = $variant->product;
 
         return view('users.profile.detail_reviews', compact('review', 'product', 'variant'));
+    }
+    public function createForOrder(Order $order)
+    {
+        // 1. Kiểm tra quyền sở hữu
+        if (auth()->id() !== $order->user_id) {
+            abort(403);
+        }
+
+        // 2. Kiểm tra đơn hàng đã được xác nhận đã nhận chưa
+        if (is_null($order->confirmed_at)) {
+            return redirect()->route('orders.show', $order->id)->with('error', 'Vui lòng xác nhận đã nhận hàng trước khi đánh giá.');
+        }
+
+        // 3. Lấy thông tin các sản phẩm và trạng thái đã đánh giá của chúng
+        $order->load('items.review'); // Tải các item và review tương ứng
+
+        // Gán thuộc tính 'has_reviewed' cho tiện sử dụng trong view
+        foreach ($order->items as $item) {
+            $item->has_reviewed = $item->review()->exists();
+        }
+
+        return view('users.orders.create_for_order', compact('order'));
     }
 }
