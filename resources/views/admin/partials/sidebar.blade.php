@@ -40,6 +40,7 @@
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M21.08,7a2,2,0,0,0-1.7-1H6.58L6,3.74A1,1,0,0,0,5,3H3A1,1,0,0,0,3,5H4.24L7,15.26A1,1,0,0,0,8,16H18a1,1,0,0,0,.93-.66L21.23,9.34A2,2,0,0,0,21.08,7Zm-2.39,7H8.74L7.22,7H19.38Z" /><circle cx="8.5" cy="19.5" r="1.5" /><circle cx="17.5" cy="19.5" r="1.5" /></svg>',
             'children' => [
                 ['label' => 'Đơn hàng', 'route' => 'admin.orders.index', 'active_check' => ['admin.orders.']],
+                ['label' => 'Gán shipper', 'route' => 'admin.shipper-assignment.index', 'active_check' => ['admin.shipper-assignment.']],
                 ['label' => 'Hoàn tiền', 'route' => 'admin.refunds.index', 'active_check' => ['admin.refunds.']],
                 [
                     'label' => 'Giỏ hàng bỏ lỡ',

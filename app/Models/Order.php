@@ -10,18 +10,15 @@ class Order extends Model
 {
     use HasFactory;
 
-    // Status constants
+    // Status constants - Rút gọn theo yêu cầu
     public const STATUS_PENDING_CONFIRMATION = 'pending_confirmation';
     public const STATUS_PROCESSING = 'processing';
-    public const STATUS_AWAITING_SHIPMENT = 'awaiting_shipment';
     public const STATUS_AWAITING_SHIPMENT_PACKED = 'awaiting_shipment_packed';
-    public const STATUS_AWAITING_SHIPMENT_ASSIGNED = 'awaiting_shipment_assigned';
-    public const STATUS_SHIPPED = 'shipped';
     public const STATUS_OUT_FOR_DELIVERY = 'out_for_delivery';
     public const STATUS_DELIVERED = 'delivered';
     public const STATUS_CANCELLED = 'cancelled';
-    public const STATUS_RETURNED = 'returned';
     public const STATUS_FAILED_DELIVERY = 'failed_delivery';
+    public const STATUS_RETURNED = 'returned';
 
     // Payment status constants
     public const PAYMENT_PENDING = 'pending';
@@ -93,15 +90,11 @@ class Order extends Model
         return [
             self::STATUS_PENDING_CONFIRMATION => 'Chờ xác nhận',
             self::STATUS_PROCESSING => 'Đang xử lý',
-            self::STATUS_AWAITING_SHIPMENT => 'Chờ giao hàng',
-            self::STATUS_AWAITING_SHIPMENT_PACKED => 'Chờ vận chuyển: đã đóng gói xong',
-            self::STATUS_AWAITING_SHIPMENT_ASSIGNED => 'Chờ vận chuyển: Đã gán shipper',
-            self::STATUS_SHIPPED => 'Đã xuất kho',
             self::STATUS_OUT_FOR_DELIVERY => 'Đang giao hàng',
-            self::STATUS_DELIVERED => 'Giao thành công',
-            self::STATUS_CANCELLED => 'Đã hủy',
-            self::STATUS_RETURNED => 'Đã trả hàng',
-            self::STATUS_FAILED_DELIVERY => 'Giao hàng thất bại'
+            self::STATUS_DELIVERED => 'Giao hàng thành công',
+            self::STATUS_CANCELLED => 'Hủy',
+            self::STATUS_FAILED_DELIVERY => 'Giao hàng thất bại',
+            self::STATUS_RETURNED => 'Trả hàng'
         ];
     }
 
@@ -115,6 +108,7 @@ class Order extends Model
         return !in_array($this->status, [
             self::STATUS_DELIVERED,
             self::STATUS_CANCELLED,
+            self::STATUS_FAILED_DELIVERY,
             self::STATUS_RETURNED
         ]);
     }
@@ -124,8 +118,6 @@ class Order extends Model
         return in_array($this->status, [
             self::STATUS_PENDING_CONFIRMATION,
             self::STATUS_PROCESSING,
-            self::STATUS_AWAITING_SHIPMENT,
-            self::STATUS_SHIPPED,
             self::STATUS_OUT_FOR_DELIVERY
         ]);
     }
@@ -327,6 +319,7 @@ class Order extends Model
         return $query->whereNotIn('status', [
             self::STATUS_DELIVERED,
             self::STATUS_CANCELLED,
+            self::STATUS_FAILED_DELIVERY,
             self::STATUS_RETURNED
         ]);
     }
@@ -375,8 +368,13 @@ class Order extends Model
         return $this->order_code;
     }
     public function fulfillments()
-{
-    return $this->hasMany(OrderFulfillment::class);
-}
+    {
+        return $this->hasMany(OrderFulfillment::class);
+    }
+    
+    public function packages()
+    {
+        return $this->hasManyThrough(Package::class, OrderFulfillment::class, 'order_id', 'order_fulfillment_id');
+    }
 
 }

@@ -12,6 +12,8 @@ use App\Models\ProvinceOld;
 use App\Models\InventoryMovement;
 use App\Services\AutoStockTransferService;
 use App\Services\DeliveryOptimizationService;
+use App\Services\TrackingCodeService;
+use App\Services\PackageService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
@@ -218,42 +220,32 @@ foreach ($itemsByLocation as $locationId => $items) {
  // Chèn hàng loạt để tối ưu hiệu suất
  DB::table('order_fulfillment_items')->insert($fulfillmentItemsData);
 
- // Trừ tồn kho và ghi lại bút toán vào SỔ CÁI KHO (inventory_movements)
- foreach ($items as $orderItem) {
- $variant = $orderItem->productVariant;
- 
- if ($variant && $variant->manage_stock) {
-$inventory = ProductInventory::where('product_variant_id', $variant->id)
-->where('store_location_id', $locationId)
-->where('inventory_type', 'new')
-->first();
+ // REMOVED: Logic trừ tồn kho đã được chuyển sang InventoryCommitmentService
+ // để tránh trừ kho 2 lần. Fulfillment chỉ tạo cấu trúc fulfillment,
+ // việc trừ kho sẽ được xử lý bởi InventoryCommitmentService.commitInventoryForOrder()
 
-if (!$inventory || $inventory->quantity < $orderItem->quantity) {
-throw new Exception("Hết hàng cho sản phẩm {$variant->sku} tại kho {$locationId} ngay trước khi trừ kho.");
+ // MỚI: Tạo package mặc định cho fulfillment này
+ $packageService = new PackageService();
+ $packageService->createDefaultPackageForFulfillment($fulfillment);
 }
 
-// Trừ tồn kho
-$inventory->decrement('quantity', $orderItem->quantity);
+// Tạo tracking codes cho tất cả fulfillments
+$trackingCodeService = new TrackingCodeService();
+$trackingCodes = $trackingCodeService->generateTrackingCodesForAllFulfillments($order);
 
-// GHI LẠI BÚT TOÁN (Tác vụ quan trọng nhất)
-InventoryMovement::create([
-'product_variant_id'    => $variant->id,
-'store_location_id'     => $locationId,
-'inventory_type'        => 'new',
-'quantity_change'       => -$orderItem->quantity,
-'quantity_after_change' => $inventory->quantity,
-'reason'                => 'Bán hàng',
-'reference_type'        => Order::class,
-'reference_id'          => $order->id,
-'user_id'               => auth()->id() ?? null,
+\Log::info('Generated tracking codes for all fulfillments', [
+    'order_id' => $order->id,
+    'order_code' => $order->order_code,
+    'tracking_codes' => $trackingCodes,
+    'fulfillments_count' => count($trackingCodes)
 ]);
- }
- }
-}
 
-// Cập nhật trạng thái của đơn hàng chính
-$order->status = 'processing';
-$order->save();
+// Chỉ cập nhật trạng thái thành 'processing' nếu đơn hàng đã được thanh toán
+// COD orders sẽ giữ trạng thái 'pending_confirmation' cho đến khi được xác nhận
+if ($order->payment_status === 'paid') {
+    $order->status = 'processing';
+    $order->save();
+}
 });
 }
 
@@ -262,6 +254,8 @@ $order->save();
  */
 public function createOrderFulfillments($order, $cartItems, $shipments, $orderItemsMap)
 {
+    $createdItems = [];
+    
     foreach ($shipments as $shipmentData) {
         $fulfillment = OrderFulfillment::create([
             'order_id' => $order->id,
@@ -276,12 +270,55 @@ public function createOrderFulfillments($order, $cartItems, $shipments, $orderIt
         // Tìm các sản phẩm thuộc kho này và tạo fulfillment items
         $itemsForThisFulfillment = $cartItems->where('store_location_id', $shipmentData['store_location_id']);
         foreach ($itemsForThisFulfillment as $item) {
-            OrderFulfillmentItem::create([
+            $fulfillmentItem = OrderFulfillmentItem::create([
                 'order_fulfillment_id' => $fulfillment->id,
                 'order_item_id' => $orderItemsMap[$item->product_variant_id],
                 'quantity' => $item->quantity,
             ]);
+            $createdItems[] = $item->product_variant_id;
         }
+
+        // MỚI: Tạo package mặc định cho fulfillment này
+        $packageService = new PackageService();
+        $packageService->createDefaultPackageForFulfillment($fulfillment);
     }
+    
+    // Kiểm tra xem có order items nào chưa được tạo fulfillment items không
+    $allOrderItems = $order->orderItems;
+    $missingItems = $allOrderItems->whereNotIn('product_variant_id', $createdItems);
+    
+    if ($missingItems->count() > 0) {
+        // Tạo fulfillment mặc định cho các items còn thiếu
+        $defaultFulfillment = OrderFulfillment::create([
+            'order_id' => $order->id,
+            'store_location_id' => $shipments[0]['store_location_id'] ?? 1, // Sử dụng store đầu tiên hoặc mặc định
+            'status' => 'pending',
+            'shipping_carrier' => 'Giao hàng mặc định',
+            'shipping_fee' => 0,
+        ]);
+        
+        foreach ($missingItems as $orderItem) {
+            OrderFulfillmentItem::create([
+                'order_fulfillment_id' => $defaultFulfillment->id,
+                'order_item_id' => $orderItem->id,
+                'quantity' => $orderItem->quantity,
+            ]);
+        }
+
+        // MỚI: Tạo package mặc định cho fulfillment mặc định này
+        $packageService = new PackageService();
+        $packageService->createDefaultPackageForFulfillment($defaultFulfillment);
+    }
+    
+    // Tạo tracking codes cho tất cả fulfillments
+    $trackingCodeService = new TrackingCodeService();
+    $trackingCodes = $trackingCodeService->generateTrackingCodesForAllFulfillments($order);
+    
+    \Log::info('Generated tracking codes for all fulfillments in createOrderFulfillments', [
+        'order_id' => $order->id,
+        'order_code' => $order->order_code,
+        'tracking_codes' => $trackingCodes,
+        'fulfillments_count' => count($trackingCodes)
+    ]);
 }
 }

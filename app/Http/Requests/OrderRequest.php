@@ -78,14 +78,11 @@ class OrderRequest extends FormRequest
     {
         $validTransitions = [
             Order::STATUS_PENDING_CONFIRMATION => [Order::STATUS_PROCESSING, Order::STATUS_CANCELLED],
-            Order::STATUS_PROCESSING => [Order::STATUS_AWAITING_SHIPMENT, Order::STATUS_CANCELLED],
-            Order::STATUS_AWAITING_SHIPMENT => [Order::STATUS_SHIPPED, Order::STATUS_CANCELLED],
-            Order::STATUS_SHIPPED => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_DELIVERED, Order::STATUS_FAILED_DELIVERY, Order::STATUS_CANCELLED],
+            Order::STATUS_PROCESSING => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_CANCELLED],
             Order::STATUS_OUT_FOR_DELIVERY => [Order::STATUS_DELIVERED, Order::STATUS_FAILED_DELIVERY, Order::STATUS_CANCELLED],
-            Order::STATUS_DELIVERED => [Order::STATUS_RETURNED], 
-            Order::STATUS_CANCELLED => [], 
-            Order::STATUS_RETURNED => [], 
-            Order::STATUS_FAILED_DELIVERY => [Order::STATUS_SHIPPED, Order::STATUS_CANCELLED] 
+            Order::STATUS_DELIVERED => [], // Trạng thái cuối
+            Order::STATUS_CANCELLED => [], // Trạng thái cuối
+            Order::STATUS_FAILED_DELIVERY => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_CANCELLED] 
         ];
 
         return in_array($newStatus, $validTransitions[$currentStatus] ?? []) || $currentStatus === $newStatus;

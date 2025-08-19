@@ -8,6 +8,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Http\Requests\OrderRequest;
 use App\Services\InventoryCommitmentService;
+use App\Services\AutoStockTransferService;
+use App\Services\StockTransferWorkflowService;
+use App\Services\TrackingCodeService;
 
 
 class OrderController extends Controller
@@ -80,6 +83,23 @@ class OrderController extends Controller
             'storeLocation.district:code,name,name_with_type',
             'storeLocation.ward:code,name,name_with_type',
             'couponUsages.coupon:id,code,type,value,description',
+            // Load thông tin fulfillments cho mô hình đa kho
+            'fulfillments.storeLocation:id,name,address,phone,province_code,district_code,ward_code,type',
+            'fulfillments.storeLocation.province:code,name,name_with_type',
+            'fulfillments.storeLocation.district:code,name,name_with_type', 
+            'fulfillments.storeLocation.ward:code,name,name_with_type',
+            'fulfillments.items',
+            'fulfillments.items.orderItem:id,product_variant_id,product_name,variant_attributes,sku,quantity,price,total_price',
+            'fulfillments.items.orderItem.productVariant:id,sku,product_id,primary_image_id',
+            'fulfillments.items.orderItem.productVariant.product:id,name',
+            'fulfillments.items.orderItem.productVariant.primaryImage',
+            'fulfillments.items.orderItem.productVariant.product.coverImage',
+            // Load thông tin packages cho mô hình quản lý gói hàng
+            'fulfillments.packages:id,order_fulfillment_id,package_code,description,shipping_carrier,tracking_code,status,shipped_at,delivered_at',
+            'fulfillments.packages.fulfillmentItems:id,package_id,order_fulfillment_id,order_item_id,quantity',
+            'fulfillments.packages.fulfillmentItems.orderItem:id,product_variant_id,product_name,variant_attributes,sku,quantity,price,total_price',
+            'fulfillments.packages.statusHistory:id,package_id,status,timestamp,notes,created_by',
+            'fulfillments.packages.statusHistory.createdBy:id,name',
         ]);
 
         return response()->json([
@@ -96,7 +116,24 @@ class OrderController extends Controller
             'items.productVariant.primaryImage',
             'processor:id,name',
             'shipper:id,name',
-            'couponUsages.coupon:id,code,type,value,description'
+            'couponUsages.coupon:id,code,type,value,description',
+            // Load thông tin fulfillments cho mô hình đa kho
+            'fulfillments.storeLocation:id,name,address,phone,province_code,district_code,ward_code,type',
+            'fulfillments.storeLocation.province:code,name,name_with_type',
+            'fulfillments.storeLocation.district:code,name,name_with_type', 
+            'fulfillments.storeLocation.ward:code,name,name_with_type',
+            'fulfillments.items',
+            'fulfillments.items.orderItem:id,product_variant_id,product_name,variant_attributes,sku,quantity,price,total_price',
+            'fulfillments.items.orderItem.productVariant:id,sku,product_id,primary_image_id',
+            'fulfillments.items.orderItem.productVariant.product:id,name',
+            'fulfillments.items.orderItem.productVariant.primaryImage',
+            'fulfillments.items.orderItem.productVariant.product.coverImage',
+            // Load thông tin packages cho mô hình quản lý gói hàng
+            'fulfillments.packages:id,order_fulfillment_id,package_code,description,shipping_carrier,tracking_code,status,shipped_at,delivered_at',
+            'fulfillments.packages.fulfillmentItems:id,package_id,order_fulfillment_id,order_item_id,quantity',
+            'fulfillments.packages.fulfillmentItems.orderItem:id,product_variant_id,product_name,variant_attributes,sku,quantity,price,total_price',
+            'fulfillments.packages.statusHistory:id,package_id,status,timestamp,notes,created_by',
+            'fulfillments.packages.statusHistory.createdBy:id,name',
         ]);
 
         return view('admin.orders.show', compact('order'));
@@ -130,8 +167,58 @@ class OrderController extends Controller
 
             // BƯỚC 4: Xử lý logic đặc biệt theo từng trạng thái
             switch ($request->status) {
-                case Order::STATUS_SHIPPED: // Xuất kho
-                case Order::STATUS_OUT_FOR_DELIVERY: // Đang giao
+                case Order::STATUS_PROCESSING: // Đang xử lý
+                    if ($oldStatus === Order::STATUS_PENDING_CONFIRMATION) {
+                        // Tự động tạo tracking code khi xác nhận đơn hàng
+                        $trackingCodeService = new TrackingCodeService();
+                        $trackingCode = $trackingCodeService->assignTrackingCodeToOrder($order);
+                        
+                        \Log::info('Order confirmed and tracking code generated', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code,
+                            'tracking_code' => $trackingCode,
+                            'confirmed_by' => auth()->id()
+                        ]);
+                        
+                        // Tự động tạo phiếu chuyển kho cho đơn hàng khác tỉnh
+                        \Log::info('Bắt đầu kiểm tra tạo phiếu chuyển kho tự động', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code,
+                            'shipping_province' => $order->shipping_old_province_code,
+                            'items_count' => $order->items->count(),
+                            'confirmed_by' => auth()->id()
+                        ]);
+                        
+                        $autoTransferService = new AutoStockTransferService();
+                        $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
+                        
+                        \Log::info('Kết quả kiểm tra tạo phiếu chuyển kho tự động', [
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code,
+                            'result' => $transferResult
+                        ]);
+                        
+                        if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
+                            $updateData['admin_note'] = ($updateData['admin_note'] ?? '') . 
+                                " Đã tạo tự động " . count($transferResult['transfers_created']) . " phiếu chuyển kho.";
+                            
+                            \Log::info('Đã tạo phiếu chuyển kho tự động thành công', [
+                                'order_id' => $order->id,
+                                'order_code' => $order->order_code,
+                                'transfers_count' => count($transferResult['transfers_created']),
+                                'transfers' => $transferResult['transfers_created']
+                            ]);
+                        } else {
+                            \Log::info('Không tạo phiếu chuyển kho tự động', [
+                                'order_id' => $order->id,
+                                'order_code' => $order->order_code,
+                                'reason' => $transferResult['message'] ?? 'Không rõ lý do'
+                            ]);
+                        }
+                    }
+                    break;
+                    
+                case Order::STATUS_OUT_FOR_DELIVERY: // Đang giao hàng
                     if ($request->filled('shipped_by')) {
                         $updateData['shipped_by'] = $request->shipped_by;
                     }
@@ -152,32 +239,30 @@ class OrderController extends Controller
                     if ($order->payment_status === Order::PAYMENT_PAID) {
                         $updateData['payment_status'] = Order::PAYMENT_REFUNDED;
                     }
+                    
+                    // TỰ ĐỘNG: Hủy các phiếu chuyển kho tự động liên quan
+                    $this->cancelRelatedAutoStockTransfers($order);
                     break;
 
                 case Order::STATUS_FAILED_DELIVERY: // Giao thất bại
                     $updateData['failed_delivery_reason'] = $request->failed_delivery_reason;
                     break;
 
-                case Order::STATUS_RETURNED: // Trả hàng
-                    $updateData['cancelled_at'] = now();
-                    $updateData['cancellation_reason'] = 'Returned by customer';
-                    // TỰ ĐỘNG: Hoàn tiền
-                    if ($order->payment_status === Order::PAYMENT_PAID) {
-                        $updateData['payment_status'] = Order::PAYMENT_REFUNDED;
-                    }
-                    break;
+
             }
 
             // BƯỚC 5: Cập nhật database một lần duy nhất
             $order->update($updateData);
 
+            // BƯỚC 5.1: Cập nhật trạng thái packages theo trạng thái đơn hàng
+            $this->updatePackageStatusBasedOnOrderStatus($order, $request->status, $oldStatus);
+
             // BƯỚC 5.5: Xử lý tồn kho theo trạng thái
             $inventoryService = new InventoryCommitmentService();
             
             switch ($request->status) {
-                case Order::STATUS_SHIPPED: // Xuất kho thực tế
-                case Order::STATUS_OUT_FOR_DELIVERY:
-                    if ($oldStatus !== Order::STATUS_SHIPPED && $oldStatus !== Order::STATUS_OUT_FOR_DELIVERY) {
+                case Order::STATUS_OUT_FOR_DELIVERY: // Xuất kho thực tế
+                    if ($oldStatus !== Order::STATUS_OUT_FOR_DELIVERY) {
                         $inventoryService->fulfillInventoryForOrder($order);
                         \Log::info("Đã xuất kho cho đơn hàng #{$order->order_code}");
                     }
@@ -304,6 +389,15 @@ class OrderController extends Controller
                 ], 422);
             }
             
+            // Kiểm tra đơn hàng phải có mã vận đơn từ fulfillment
+            $fulfillment = $order->fulfillments()->whereNotNull('tracking_code')->first();
+            if (!$fulfillment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Đơn hàng chưa có mã vận đơn. Vui lòng xác nhận đơn hàng trước khi gán shipper.',
+                ], 422);
+            }
+            
             // Kiểm tra điều kiện fulfillment trước khi gán shipper
             $fulfillmentCheckService = new \App\Services\OrderFulfillmentCheckService();
             $fulfillmentCheck = $fulfillmentCheckService->canAssignShipper($order);
@@ -318,12 +412,25 @@ class OrderController extends Controller
                 ], 422);
             }
 
-            // Cập nhật shipper cho đơn hàng và chuyển trạng thái
-            $order->update([
-                'shipped_by' => $request->shipper_id,
-                'processed_by' => auth()->id(),
-                'status' => Order::STATUS_AWAITING_SHIPMENT_ASSIGNED
-            ]);
+            // Kiểm tra xem đơn hàng có cần chuyển kho không để quyết định trạng thái
+            $requiresTransfer = $fulfillmentCheck['requires_transfer'] ?? false;
+            
+            if ($requiresTransfer) {
+                // Đơn hàng khác tỉnh: chuyển sang 'Đã xuất kho' ngay
+                $order->update([
+                    'shipped_by' => $request->shipper_id,
+                    'processed_by' => auth()->id(),
+                    'status' => Order::STATUS_OUT_FOR_DELIVERY,
+                    'shipped_at' => now()
+                ]);
+            } else {
+                // Đơn hàng cùng tỉnh: chuyển sang 'Chờ vận chuyển: đã gán shipper'
+                $order->update([
+                    'shipped_by' => $request->shipper_id,
+                    'processed_by' => auth()->id(),
+                    'status' => Order::STATUS_AWAITING_SHIPMENT_ASSIGNED
+                ]);
+            }
 
             // Load lại dữ liệu để trả về
             $order->load('shipper:id,name,email,phone_number');
@@ -358,6 +465,157 @@ class OrderController extends Controller
                 'message' => 'Không thể gán shipper. Vui lòng thử lại sau.',
                 'error' => app()->isLocal() ? $e->getMessage() : 'Internal server error'
             ], 500);
+        }
+    }
+
+    /**
+     * Hủy các phiếu chuyển kho tự động liên quan đến đơn hàng
+     */
+    private function cancelRelatedAutoStockTransfers(Order $order)
+    {
+        try {
+            // Tìm các phiếu chuyển kho tự động liên quan thông qua notes
+            $relatedTransfers = \App\Models\StockTransfer::where('notes', 'like', '%Order:' . $order->order_code . '%')
+                ->where('status', '!=', 'cancelled')
+                ->get();
+
+            if ($relatedTransfers->isEmpty()) {
+                \Log::info('Không tìm thấy phiếu chuyển kho tự động nào liên quan đến đơn hàng', [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code
+                ]);
+                return;
+            }
+
+            $workflowService = new \App\Services\StockTransferWorkflowService();
+            $cancelledCount = 0;
+
+            foreach ($relatedTransfers as $transfer) {
+                try {
+                    $result = $workflowService->cancelTransfer($transfer);
+                    if ($result['success']) {
+                        $cancelledCount++;
+                        \Log::info('Đã hủy phiếu chuyển kho tự động', [
+                            'transfer_id' => $transfer->id,
+                            'transfer_code' => $transfer->transfer_code,
+                            'order_id' => $order->id,
+                            'order_code' => $order->order_code,
+                            'cancelled_by' => auth()->id()
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Lỗi khi hủy phiếu chuyển kho tự động', [
+                        'transfer_id' => $transfer->id,
+                        'transfer_code' => $transfer->transfer_code,
+                        'order_id' => $order->id,
+                        'order_code' => $order->order_code,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            \Log::info('Hoàn thành hủy phiếu chuyển kho tự động cho đơn hàng', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'total_transfers' => $relatedTransfers->count(),
+                'cancelled_count' => $cancelledCount,
+                'cancelled_by' => auth()->id()
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi hủy phiếu chuyển kho tự động liên quan đến đơn hàng', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
+        }
+    }
+
+    /**
+     * Cập nhật trạng thái packages dựa trên trạng thái đơn hàng
+     */
+    private function updatePackageStatusBasedOnOrderStatus(Order $order, string $newStatus, string $oldStatus)
+    {
+        try {
+            // Lấy tất cả packages của đơn hàng
+            $packages = $order->fulfillments()->with('packages')->get()->pluck('packages')->flatten();
+            
+            if ($packages->isEmpty()) {
+                \Log::info('Không có packages nào để cập nhật cho đơn hàng', [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code
+                ]);
+                return;
+            }
+
+            $packageStatus = null;
+            $notes = null;
+
+            // Mapping trạng thái đơn hàng sang trạng thái package
+            switch ($newStatus) {
+                case Order::STATUS_PENDING_CONFIRMATION:
+                    $packageStatus = \App\Models\Package::STATUS_PENDING_CONFIRMATION;
+                    $notes = 'Gói hàng chờ xác nhận';
+                    break;
+                    
+                case Order::STATUS_PROCESSING:
+                    $packageStatus = \App\Models\Package::STATUS_PROCESSING;
+                    $notes = 'Gói hàng đang xử lý';
+                    break;
+                    
+                case Order::STATUS_OUT_FOR_DELIVERY:
+                    $packageStatus = \App\Models\Package::STATUS_OUT_FOR_DELIVERY;
+                    $notes = 'Gói hàng đang giao hàng';
+                    break;
+                    
+                case Order::STATUS_DELIVERED:
+                    $packageStatus = \App\Models\Package::STATUS_DELIVERED;
+                    $notes = 'Gói hàng đã giao thành công';
+                    break;
+                    
+                case Order::STATUS_CANCELLED:
+                    $packageStatus = \App\Models\Package::STATUS_CANCELLED;
+                    $notes = 'Gói hàng đã hủy';
+                    break;
+                    
+                case Order::STATUS_FAILED_DELIVERY:
+                    $packageStatus = \App\Models\Package::STATUS_FAILED_DELIVERY;
+                    $notes = 'Gói hàng giao thất bại';
+                    break;
+                    
+                case Order::STATUS_RETURNED:
+                    $packageStatus = \App\Models\Package::STATUS_RETURNED;
+                    $notes = 'Gói hàng đã trả lại';
+                    break;
+            }
+
+            // Cập nhật trạng thái cho tất cả packages nếu có mapping
+            if ($packageStatus && $notes) {
+                foreach ($packages as $package) {
+                    $package->updateStatus($packageStatus, $notes, auth()->id());
+                }
+                
+                \Log::info('Đã cập nhật trạng thái packages theo đơn hàng', [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code,
+                    'old_order_status' => $oldStatus,
+                    'new_order_status' => $newStatus,
+                    'package_status' => $packageStatus,
+                    'packages_count' => $packages->count(),
+                    'updated_by' => auth()->id()
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi cập nhật trạng thái packages', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'new_status' => $newStatus,
+                'old_status' => $oldStatus,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
+            ]);
         }
     }
 }
