@@ -362,7 +362,6 @@ class HomeController extends Controller
             $possibleValues = $attributeValuesMap[$attrName];
             $matchedValue = null;
 
-            // Thử khớp từng đoạn slug với các giá trị thuộc tính
             for ($length = 1; $length <= count($attributeValues) - $currentIndex; $length++) {
                 $testParts = array_slice($attributeValues, $currentIndex, $length);
                 $testSlug = implode('-', $testParts);
@@ -435,6 +434,107 @@ class HomeController extends Controller
                 $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
             }
         }
+        // ... các phần code trước đó của controller ...
+
+        // Kiểm tra flash sale cho tất cả biến thể
+        $now = now(); // Lấy thời gian hiện tại đầy đủ (ví dụ: 2025-08-22 16:30:00)
+
+        // Eager load flash sale, các khung thời gian của nó và các sản phẩm trong các khung thời gian đó
+        $flashSale = FlashSale::with(['flashSaleTimeSlots.products'])
+            ->where('status', 'active')
+            ->where('start_time', '<=', $now)
+            ->where('end_time', '>=', $now)
+            ->first();
+
+        // Log thông tin về Flash Sale chính được tìm thấy
+        Log::info('Flash sale found (main query):', [
+            'flash_sale_id' => $flashSale?->id,
+            'flash_sale_start_time' => $flashSale?->start_time?->toDateTimeString(), // Đảm bảo log dưới dạng datetime string
+            'flash_sale_end_time' => $flashSale?->end_time?->toDateTimeString(),     // Đảm bảo log dưới dạng datetime string
+            'current_full_datetime' => $now->toDateTimeString(),
+            'flashSaleExists' => (bool)$flashSale,
+        ]);
+
+        $flashSaleEndTime = null;
+        $flashSaleProducts = []; // Mảng chứa thông tin flash price của các biến thể
+        if ($flashSale) {
+            Log::info('Processing flash sale time slots for FlashSale ID:', [
+                'flash_sale_id' => $flashSale->id,
+                'product_id_being_viewed' => $product->id, // Log ID sản phẩm đang xem
+                'default_variant_id_being_checked' => $defaultVariant->id, // Log ID biến thể mặc định
+            ]);
+
+            // Lấy chỉ phần thời gian của thời điểm hiện tại (ví dụ: "16:30:00")
+            $currentTimeOnly = $now->format('H:i:s');
+
+            foreach ($flashSale->flashSaleTimeSlots as $slot) {
+                // Log thông tin về khung thời gian đang được đánh giá
+                Log::info('Evaluating FlashSaleTimeSlot:', [
+                    'slot_id' => $slot->id,
+                    'slot_start_time' => $slot->start_time, // Các giá trị này là chuỗi 'H:i:s' từ DB
+                    'slot_end_time' => $slot->end_time,     // Các giá trị này là chuỗi 'H:i:s' từ DB
+                    'current_time_only_for_comparison' => $currentTimeOnly,
+                ]);
+
+                // So sánh thời gian hiện tại (chuỗi) với thời gian bắt đầu/kết thúc của slot (chuỗi)
+                if ($currentTimeOnly >= $slot->start_time && $currentTimeOnly <= $slot->end_time) {
+                    Log::info('Active time slot identified:', [
+                        'slot_id' => $slot->id,
+                        'slot_start_time' => $slot->start_time,
+                        'slot_end_time' => $slot->end_time,
+                    ]);
+
+                    // Kiểm tra xem có sản phẩm FlashSale nào được tải trong khung thời gian hoạt động này không
+                    if ($slot->products->isEmpty()) {
+                        Log::warning('No FlashSaleProducts found within this active time slot:', ['slot_id' => $slot->id]);
+                    } else {
+                        Log::info('FlashSaleProducts loaded for this active time slot:', [
+                            'slot_id' => $slot->id,
+                            // Log tất cả các product_variant_id được tải để kiểm tra
+                            'loaded_product_variant_ids' => $slot->products->pluck('product_variant_id')->toArray()
+                        ]);
+                    }
+
+                    foreach ($slot->products as $fsProduct) {
+                        // Điền thông tin flash price vào mảng flashSaleProducts
+                        $flashSaleProducts[$fsProduct->product_variant_id] = [
+                            'flash_price' => (int) $fsProduct->flash_price,
+                            'quantity_limit' => $fsProduct->quantity_limit,
+                            'quantity_sold' => $fsProduct->quantity_sold,
+                        ];
+
+                        // Nếu biến thể mặc định hiện tại được tìm thấy trong sản phẩm của slot này, hãy đặt thời gian kết thúc flash sale
+                        if ($fsProduct->product_variant_id == $defaultVariant->id) {
+                            // Kết hợp ngày hiện tại với thời gian kết thúc của slot để tạo một datetime đầy đủ cho bộ đếm ngược
+                            $flashSaleEndTime = Carbon::parse($now->toDateString() . ' ' . $slot->end_time)->toIso8601String();
+                            Log::info('FlashSaleEndTime set for default variant:', [
+                                'default_variant_id' => $defaultVariant->id,
+                                'flash_sale_end_time_string' => $flashSaleEndTime,
+                                'source_slot_id' => $slot->id,
+                            ]);
+                        }
+                    }
+                } else {
+                    Log::info('Time slot not active at current time:', [
+                        'slot_id' => $slot->id,
+                        'slot_start_time' => $slot->start_time,
+                        'slot_end_time' => $slot->end_time,
+                        'current_time_only' => $currentTimeOnly,
+                    ]);
+                }
+            }
+        }
+
+        // Log kết quả cuối cùng của việc xử lý flash sale
+        Log::info('Final flash sale products map after processing all slots:', [
+            'total_products_in_map' => count($flashSaleProducts),
+            'keys_in_map' => array_keys($flashSaleProducts), // Xem các khóa (product_variant_id) có trong mảng
+            'final_flashSaleEndTime' => $flashSaleEndTime,
+            'default_variant_id_being_checked' => $defaultVariant->id,
+            'is_default_variant_in_flashSaleProducts_map' => isset($flashSaleProducts[$defaultVariant->id])
+        ]);
+
+        // ... các phần code còn lại của controller của bạn (chắc chắn biến $flashSaleProducts được truyền vào view)
 
         // Chuẩn bị variantData
         $variantData = [];
@@ -456,18 +556,6 @@ class HomeController extends Controller
             }
 
             $availableCombinations[] = $combination;
-            Log::info('✅ Combination pushed:', $combination);
-
-            $now = now();
-            $salePrice = (int) $variant->sale_price;
-            $originalPrice = (int) $variant->price;
-
-            $hasFlashTime = !empty($variant->sale_price_starts_at) && !empty($variant->sale_price_ends_at);
-            $isFlashSale = $hasFlashTime && $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
-            $isSale = !$isFlashSale && $salePrice && $salePrice < $originalPrice;
-
-            $displayPrice = $isFlashSale || $isSale ? $salePrice : $originalPrice;
-            $displayOriginalPrice = ($isFlashSale || $isSale) && $originalPrice > $salePrice ? $originalPrice : null;
 
             $variantKey = [];
             foreach ($attributeOrder as $attrName) {
@@ -475,6 +563,16 @@ class HomeController extends Controller
                 $variantKey[] = $attrValue?->value ?? '';
             }
             $variantKeyStr = implode('_', $variantKey);
+
+            $salePrice = (int) $variant->sale_price;
+            $originalPrice = (int) $variant->price;
+            $flashPrice = isset($flashSaleProducts[$variant->id]) ? (int) $flashSaleProducts[$variant->id]['flash_price'] : null;
+
+            $isSale = $salePrice && $salePrice < $originalPrice;
+            $isFlashSale = $flashPrice && $flashSaleEndTime && now()->lte(Carbon::parse($flashSaleEndTime));
+
+            $displayPrice = $isFlashSale ? $flashPrice : ($isSale ? $salePrice : $originalPrice);
+            $displayOriginalPrice = ($isFlashSale || $isSale) && $originalPrice > $displayPrice ? $originalPrice : null;
 
             $images = $variant->images->map(fn($image) => $image->url)->toArray();
             if (empty($images)) {
@@ -485,8 +583,7 @@ class HomeController extends Controller
             $variantData[$variantKeyStr] = [
                 'price' => $originalPrice,
                 'sale_price' => $salePrice,
-                'sale_price_starts_at' => $variant->sale_price_starts_at,
-                'sale_price_ends_at' => $variant->sale_price_ends_at,
+                'flash_price' => $flashPrice,
                 'display_price' => $displayPrice,
                 'display_original_price' => $displayOriginalPrice,
                 'status' => $variant->status,
@@ -494,7 +591,6 @@ class HomeController extends Controller
                 'images' => $images,
                 'primary_image_id' => $variant->primary_image_id,
                 'variant_id' => $variant->id,
-                // 'stock_quantity' => $variant->getSellableStockAttribute(),
             ];
         }
 
@@ -657,7 +753,6 @@ class HomeController extends Controller
                     ]);
                 }
 
-                // Main product (chỉ price & sale_price)
                 $mainPrice = (int) $mainVariant->price;
                 $mainSalePrice = $mainVariant->sale_price && $mainVariant->sale_price < $mainPrice
                     ? (int) $mainVariant->sale_price
@@ -685,7 +780,6 @@ class HomeController extends Controller
                     'sale_price'   => $mainSalePrice,
                 ];
 
-                // Suggested products
                 $suggestedProducts = $bundle->suggestedProducts->sortBy('display_order')->map(function ($suggested) {
                     $variant = $suggested->productVariant;
                     $product = $variant?->product;
@@ -727,20 +821,13 @@ class HomeController extends Controller
                     'main_product'       => $mainProductItem,
                     'suggested_products' => $suggestedProducts,
                 ];
-            });
-
+            })->filter();
 
         $productVariantId = $selectedVariant ? $selectedVariant->id : null;
-        Log::info('productVariantId: ' . ($productVariantId ?? 'null')); // Log giá trị productVariantId
-        $hasWarehouseInventory = false; // Khởi tạo biến mặc định là false
+        Log::info('productVariantId: ' . ($productVariantId ?? 'null'));
 
-        if (!$productVariantId) {
-            Log::info('No productVariantId provided, initializing empty collections');
-            $storeLocations = collect();
-            $provinces = collect();
-            $districts = collect();
-        } else {
-            // 1. Truy vấn các cửa hàng có sản phẩm
+        $hasWarehouseInventory = false;
+        if ($productVariantId) {
             $storeLocations = StoreLocation::with(['province', 'district', 'ward'])
                 ->where('is_active', 1)
                 ->whereNull('deleted_at')
@@ -753,10 +840,7 @@ class HomeController extends Controller
                 ->orderBy('name')
                 ->get();
             Log::info('storeLocations count: ' . $storeLocations->count());
-            Log::info('storeLocations: ' . json_encode($storeLocations->toArray()));
 
-            // 2. Kiểm tra tồn kho kho trong mọi trường hợp
-            Log::info('Checking warehouse inventory for product_variant_id: ' . $productVariantId);
             $hasWarehouseInventory = ProductInventory::where('product_variant_id', $productVariantId)
                 ->where('inventory_type', 'new')
                 ->whereHas('storeLocation', function ($query) {
@@ -766,7 +850,6 @@ class HomeController extends Controller
                 ->exists();
             Log::info('hasWarehouseInventory for variant ' . $productVariantId . ': ' . ($hasWarehouseInventory ? 'true' : 'false'));
 
-            // 3. Lấy danh sách tỉnh/thành phố (dựa trên kết quả từ $storeLocations)
             $provinces = ProvinceOld::whereHas('storeLocations', function ($query) use ($productVariantId) {
                 $query->where('is_active', 1)
                     ->whereNull('deleted_at')
@@ -780,13 +863,14 @@ class HomeController extends Controller
                 ->orderBy('name')
                 ->get();
             Log::info('provinces count: ' . $provinces->count());
-            Log::info('provinces: ' . json_encode($provinces->toArray()));
 
             $districts = collect();
             Log::info('districts initialized as empty collection');
+        } else {
+            $storeLocations = collect();
+            $provinces = collect();
+            $districts = collect();
         }
-
-        // ... Các phần khác của controller
 
         $attributesGrouped = collect($attributes)->map(fn($values) => $values->sortBy('value')->values());
         $variantCombinations = $availableCombinations;
@@ -887,8 +971,8 @@ class HomeController extends Controller
             'provinces',
             'districts',
             'hasWarehouseInventory',
-            'alreadyInCart'
-
+            'flashSaleEndTime',
+            'flashSaleProducts',
         ));
     }
 
@@ -1002,8 +1086,9 @@ class HomeController extends Controller
         $query = Product::with([
             'category',
             'coverImage',
+            'galleryImages',
             'variants' => function ($query) use ($request, $storages, $priceRangesSelected) {
-                $query->with(['attributeValues', 'primaryImage']);
+                $query->with(['attributeValues', 'primaryImage', 'images']);
                 if ($request->sort === 'dang_giam_gia') {
                     $query->where('sale_price', '>', 0)
                         ->where('sale_price', '<', \DB::raw('price'))
@@ -1159,6 +1244,15 @@ class HomeController extends Controller
                     ? round(100 * (1 - ($variant->sale_price / $variant->price)))
                     : 0;
 
+                // Xác định URL ảnh hiển thị cho biến thể và sản phẩm
+                $path = collect([
+                    $variant->primaryImage?->path,
+                    $variant->images->first()?->path,
+                    $product->coverImage?->path,
+                    $product->galleryImages->first()?->path,
+                ])->first(fn($p) => !empty($p));
+                $variantImageUrl = $path ? \Storage::url($path) : asset('images/placeholder.jpg');
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -1173,7 +1267,7 @@ class HomeController extends Controller
                         'price' => $onSale ? $variant->sale_price : $variant->price,
                         'original_price' => $variant->price,
                         'discount_percent' => $discountPercent,
-                        'image_url' => $variant->image_url,
+                        'image_url' => $variantImageUrl,
                         'stock' => $variant->sellable_stock,
                     ],
                 ];
@@ -1651,12 +1745,12 @@ class HomeController extends Controller
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
     }
-
     public function getSuggestedProducts($variantId)
     {
         try {
             // Tìm variant
             $selectedVariant = ProductVariant::findOrFail($variantId);
+            Log::info('Tìm variant trong API', ['variant_id' => $variantId]);
 
             // Lấy danh sách bundle chứa variantId
             $productBundles = ProductBundle::with([
@@ -1669,42 +1763,85 @@ class HomeController extends Controller
                 })
                 ->get()
                 ->map(function ($bundle) use ($selectedVariant) {
-                    // Lấy tất cả main products của bundle
-                    $mainProducts = $bundle->mainProducts->map(function ($mainProduct) {
-                        $variant = $mainProduct->productVariant;
-                        $product = $variant->product;
+                    Log::info('Đang xử lý bundle trong API', ['bundle_id' => $bundle->id]);
 
-                        $price = (int) $variant->price;
-                        $salePrice = $variant->sale_price && $variant->sale_price < $price
-                            ? (int) $variant->sale_price
-                            : null;
+                    $mainProduct = $bundle->mainProducts->firstWhere('product_variant_id', $selectedVariant->id);
+                    if (!$mainProduct) {
+                        Log::warning('Không tìm thấy mainProduct', [
+                            'bundle_id' => $bundle->id,
+                            'variant_id' => $selectedVariant->id
+                        ]);
+                        return null;
+                    }
 
-                        $image = $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path))
-                            ? Storage::url($variant->primaryImage->path)
-                            : ($product && $product->coverImage && file_exists(storage_path('app/public/' . $product->coverImage->path))
-                                ? Storage::url($product->coverImage->path)
-                                : asset('images/placeholder.jpg'));
+                    $mainVariant = $mainProduct->productVariant;
+                    if (!$mainVariant) {
+                        Log::warning('Không tìm thấy mainVariant', [
+                            'bundle_id' => $bundle->id,
+                            'main_product_id' => $mainProduct->id ?? null,
+                        ]);
+                        return null;
+                    }
 
-                        return [
-                            'variant_id'   => $variant->id,
-                            'product_id'   => $product->id,
-                            'name'         => $product->name,
-                            'slug'         => $product->slug,
-                            'image'        => $image,
-                            'price'        => $price,
-                            'sale_price'   => $salePrice,
-                        ];
-                    })->toArray();
+                    $mainProductData = $mainVariant->product;
+                    if (!$mainProductData) {
+                        Log::warning('Không tìm thấy product từ variant', [
+                            'variant_id' => $mainVariant->id,
+                        ]);
+                        return null;
+                    }
+
+                    // Main product (chỉ price & sale_price)
+                    $mainPrice = (int) $mainVariant->price;
+                    $mainSalePrice = $mainVariant->sale_price && $mainVariant->sale_price < $mainPrice
+                        ? (int) $mainVariant->sale_price
+                        : null;
+
+                    Log::info('Main product info', [
+                        'variant_id' => $mainVariant->id,
+                        'price' => $mainPrice,
+                        'sale_price' => $mainSalePrice,
+                    ]);
+
+                    $mainImage = $mainVariant && $mainVariant->primaryImage && file_exists(storage_path('app/public/' . $mainVariant->primaryImage->path))
+                        ? Storage::url($mainVariant->primaryImage->path)
+                        : ($mainProductData && $mainProductData->coverImage && file_exists(storage_path('app/public/' . $mainProductData->coverImage->path))
+                            ? Storage::url($mainProductData->coverImage->path)
+                            : asset('images/placeholder.jpg'));
+
+                    $mainProductItem = [
+                        'variant_id'   => $mainVariant->id,
+                        'product_id'   => $mainProductData->id,
+                        'name'         => $mainProductData->name,
+                        'slug'         => $mainProductData->slug,
+                        'image'        => $mainImage,
+                        'price'        => $mainPrice,
+                        'sale_price'   => $mainSalePrice,
+                    ];
 
                     // Suggested products
                     $suggestedProducts = $bundle->suggestedProducts->map(function ($suggested) {
                         $variant = $suggested->productVariant;
                         $product = $variant->product;
 
+                        if (!$variant) {
+                            Log::warning('Suggested product missing variant', [
+                                'suggested_id' => $suggested->id,
+                            ]);
+                            return null;
+                        }
+
                         $price = (int) $variant->price;
                         $salePrice = $variant->sale_price && $variant->sale_price < $price
                             ? (int) $variant->sale_price
                             : null;
+
+                        Log::info('Suggested product info', [
+                            'suggested_id' => $suggested->id,
+                            'variant_id' => $variant->id,
+                            'name' => $product->name,
+                            'is_preselected' => $suggested->is_preselected,
+                        ]);
 
                         return [
                             'variant_id'     => $variant->id,
@@ -1718,38 +1855,32 @@ class HomeController extends Controller
                                     : asset('images/placeholder.jpg')),
                             'price'          => $price,
                             'sale_price'     => $salePrice,
-                            'is_preselected' => $suggested->is_preselected ?? false,
+                            'is_preselected' => (bool) $suggested->is_preselected,
+                            'display_order'  => $suggested->display_order,
                         ];
-                    })->toArray();
+                    })->filter()->sortBy('display_order')->values()->toArray();
 
-                    // Tạo mã định danh duy nhất cho bundle dựa trên tất cả main products và suggested products
-                    $mainVariantIds = array_column($mainProducts, 'variant_id');
-                    $suggestedVariantIds = array_column($suggestedProducts, 'variant_id');
-                    $bundleKey = md5(json_encode(array_merge($mainVariantIds, $suggestedVariantIds)));
+                    // Tạo mã định danh duy nhất cho bundle dựa trên main và suggested products
+                    // Sắp xếp suggested_products theo variant_id để đảm bảo bundleKey duy nhất
+                    $suggestedVariantIds = collect($suggestedProducts)->pluck('variant_id')->sort()->values()->toArray();
+                    $bundleKey = md5(json_encode([$mainProductItem['variant_id'], $suggestedVariantIds]));
 
                     return [
                         'id'                 => $bundle->id,
                         'name'               => $bundle->name,
                         'display_title'      => $bundle->display_title,
                         'description'        => $bundle->description,
-                        'main_products'      => $mainProducts, // Trả về tất cả main products
+                        'main_product'       => $mainProductItem,
                         'suggested_products' => $suggestedProducts,
-                        'bundle_key'         => $bundleKey,
+                        'bundle_key'         => $bundleKey, // Thêm key để kiểm tra trùng lặp
                     ];
-                })
-                ->filter() // Loại bỏ các bundle null
-                ->unique('bundle_key') // Loại bỏ các bundle trùng lặp
-                ->values() // Đặt lại các key của mảng
-                ->toArray();
+                })->filter()->unique('bundle_key')->values()->toArray();
 
-            // Lấy danh sách suggested_products từ tất cả bundle
-            $suggested = collect($productBundles)->flatMap(function ($bundle) {
-                return $bundle['suggested_products'];
-            })->toArray();
-
-            return response()->json(['suggested' => $suggested], 200);
+            // ❌ Thay đổi dòng này để trả về mảng các bundle đã được lọc
+            Log::info('Trả về danh sách bundle đã lọc', ['bundles_count' => count($productBundles)]);
+            return response()->json(['bundles' => $productBundles], 200);
         } catch (\Exception $e) {
-            \Log::error('Lỗi khi lấy sản phẩm kèm theo: ' . $e->getMessage());
+            Log::error('Lỗi khi lấy sản phẩm kèm theo: ' . $e->getMessage());
             return response()->json(['error' => 'Lỗi server'], 500);
         }
     }
@@ -1757,22 +1888,158 @@ class HomeController extends Controller
     public function getVariantStock($variantId)
     {
         try {
-            // Tính tồn kho khả dụng = SUM(quantity - quantity_committed)
+            // Tính tồn kho khả dụng trong DB
             $availableStock = \DB::table('product_inventories')
                 ->where('product_variant_id', $variantId)
                 ->where('inventory_type', 'new')
                 ->selectRaw('COALESCE(SUM(quantity - quantity_committed), 0) as available_stock')
                 ->value('available_stock');
 
-            \Log::info("Variant {$variantId} có tồn kho khả dụng: {$availableStock}");
+            // Lấy số lượng đã có trong giỏ hàng (session)
+            $cart = session('cart', []);
+            $alreadyInCarts = collect($cart)
+                ->where('variant_id', $variantId)
+                ->sum('quantity');
+
+            // Tồn kho còn lại = tồn kho DB - đã có trong giỏ
+            $remaining = max($availableStock - $alreadyInCarts, 0);
+
+            \Log::info("Variant {$variantId}: tồn kho DB = {$availableStock}, trong giỏ = {$alreadyInCarts}, còn lại = {$remaining}");
 
             return response()->json([
                 'product_variant_id' => $variantId,
-                'available_stock' => $availableStock
+                'available_stock'    => $availableStock,
+                'alreadyInCarts'    => $alreadyInCarts,
+                'remaining'          => $remaining,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error in getVariantStock: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
+        }
+    }
+
+    public function searchProducts(Request $request)
+    {
+        try {
+            $query = $request->input('query');
+            $variantId = $request->input('variant_id');
+
+            Log::info('📥 Nhận yêu cầu tìm kiếm sản phẩm:', [
+                'query' => $query,
+                'variant_id' => $variantId,
+            ]);
+
+            if (empty($query)) {
+                return response()->json([
+                    'products' => [],
+                    'count' => 0,
+                    'message' => 'Vui lòng nhập từ khóa tìm kiếm.'
+                ], 200);
+            }
+
+            // Bước 1: Xác định các category_id cần lọc
+            $categoryIdsToFilter = [];
+            if ($variantId) {
+                $currentVariant = ProductVariant::with(['product.category.parent'])->find($variantId);
+                if ($currentVariant && $currentVariant->product && $currentVariant->product->category) {
+                    $category = $currentVariant->product->category;
+                    $parentCategory = $category->parent ?? $category;
+
+                    $categoryIdsToFilter = Category::where('id', $parentCategory->id)
+                        ->orWhere('parent_id', $parentCategory->id)
+                        ->pluck('id')
+                        ->toArray();
+
+                    Log::info('✅ Đã tìm thấy danh mục cha từ variant_id:', [
+                        'parent_category_id' => $parentCategory->id,
+                        'category_ids' => $categoryIdsToFilter
+                    ]);
+                } else {
+                    Log::warning('⚠️ Không tìm thấy sản phẩm, danh mục hoặc variant từ variant_id.');
+                }
+            }
+
+            // Bước 2: Xây dựng truy vấn tìm kiếm sản phẩm và ÁP DỤNG BỘ LỌC ĐỒNG THỜI
+            $productsQuery = Product::with([
+                'variants.attributeValues.attribute',
+                'coverImage',
+                'variants.primaryImage',
+                'variants.specifications'
+            ])->where('status', 'published');
+
+            // Nhóm các điều kiện tìm kiếm vào một closure
+            $productsQuery->where(function ($q) use ($query, $categoryIdsToFilter) {
+                // Điều kiện BẮT BUỘC: tên sản phẩm phải chứa từ khóa
+                $q->where('name', 'like', "%{$query}%");
+
+                // Điều kiện BỔ SUNG: nếu có danh mục để lọc, thì áp dụng
+                if (!empty($categoryIdsToFilter)) {
+                    $q->whereIn('category_id', $categoryIdsToFilter);
+                }
+            });
+
+            if (!empty($categoryIdsToFilter)) {
+                Log::info('Áp dụng bộ lọc danh mục cho truy vấn.');
+            } else {
+                Log::info('Không có bộ lọc danh mục được áp dụng. Tìm kiếm trên toàn bộ sản phẩm.');
+            }
+
+            // Lấy sản phẩm và chuẩn bị dữ liệu trả về
+            $products = $productsQuery->take(5)->get();
+
+            $results = $products->flatMap(function ($product) {
+                $variants = $product->variants;
+
+                return $variants->map(function ($variant) use ($product) {
+                    $variantName = $variant->attributeValues
+                        ->sortBy(fn($attr) => $attr->attribute->id)
+                        ->pluck('value')
+                        ->implode(' ');
+
+                    $imageUrl = $variant->primaryImage?->path
+                        ?? $variant->image?->path
+                        ?? $product->coverImage?->path;
+
+                    $price = (int) $variant->price;
+                    $salePrice = $variant->sale_price !== null ? (int) $variant->sale_price : null;
+                    $onSale = $salePrice !== null && $salePrice < $price;
+                    $discountPercent = $onSale && $price > 0
+                        ? round(100 * (1 - ($salePrice / $price)))
+                        : 0;
+
+                    $specs = $variant->specifications ? $this->formatSpecs($variant->specifications) : [];
+
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'variant_id' => $variant->id,
+                        'variant_name' => $variantName,
+                        'variant_key' => $this->getVariantKey($variant),
+                        'cover_image' => $imageUrl ? Storage::url($imageUrl) : asset('/images/no-image.png'),
+                        'price' => $price,
+                        'sale_price' => $salePrice,
+                        'discount_percent' => $discountPercent,
+                        'display_price' => $onSale ? $salePrice : $price,
+                        'display_original_price' => $onSale ? $price : null,
+                        'specs' => $specs
+                    ];
+                })->filter()->values();
+            })->filter()->values();
+
+            Log::info('📤 Trả về kết quả tìm kiếm:', [
+                'count' => $results->count(),
+                'products' => $results->toArray()
+            ]);
+
+            return response()->json([
+                'products' => $results,
+                'count' => $results->count(),
+                'message' => $results->isEmpty() ? 'Không tìm thấy sản phẩm phù hợp.' : 'Tìm kiếm thành công.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('❌ Lỗi tìm kiếm sản phẩm:', ['msg' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['error' => 'Đã xảy ra lỗi khi tìm kiếm sản phẩm.'], 500);
         }
     }
 }

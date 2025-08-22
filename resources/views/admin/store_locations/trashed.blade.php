@@ -1,4 +1,9 @@
 @extends('admin.layouts.app')
+<style>
+    [x-cloak] {
+        display: none !important;
+    }
+</style>
 
 @section('title', 'Quản lý Cửa hàng đã xóa mềm')
 
@@ -335,36 +340,34 @@
                     this.locationToRestoreId = null;
                 },
                 async confirmRestore() {
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    try {
-                        const response = await fetch(`/admin/store-locations/${this.locationToRestoreId}/restore`, {
-                            method: 'POST', // Phương thức POST cho restore
-                            headers: {
-                                'X-CSRF-TOKEN': csrfToken,
-                                'Accept': 'application/json'
-                            }
-                        });
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    try {
+        const response = await fetch(`/admin/store-locations/${this.locationToRestoreId}/restore`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+        });
 
-                        const data = await response.json();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || `Không thể khôi phục.`);
 
-                        if (!response.ok) {
-                            throw new Error(data.message || `Không thể khôi phục địa điểm. Trạng thái: ${response.status}`);
-                        }
+        this.showMessage(data.message || 'Khôi phục thành công!', 'success');
 
-                        this.showMessage(data.message || 'Khôi phục địa điểm thành công!', 'success');
-                        this.closeRestoreModal();
-                        // Loại bỏ mục đã khôi phục khỏi danh sách hiển thị NGAY LẬP TỨC
-                        const updatedLocations = this.allLocations.filter(loc => loc.id !== this.locationToRestoreId);
-                        this.allLocations = [...updatedLocations]; // Kích hoạt reactivity
+        // BƯỚC 1: Cập nhật danh sách TRƯỚC
+        const updatedLocations = this.allLocations.filter(loc => loc.id != this.locationToRestoreId);
+        this.allLocations = [...updatedLocations];
 
-                        if (this.paginatedLocations.length === 0 && this.currentPage > 1) {
-                            this.currentPage--;
-                        }
-                    } catch (error) {
-                        console.error('Lỗi khi khôi phục địa điểm:', error);
-                        this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server khi khôi phục.', 'error');
-                    }
-                },
+        if (this.paginatedLocations.length === 0 && this.currentPage > 1) {
+            this.currentPage--;
+        }
+
+        // BƯỚC 2: Đóng modal SAU CÙNG
+        this.closeRestoreModal();
+
+    } catch (error) {
+        console.error('Lỗi khi khôi phục địa điểm:', error);
+        this.showMessage(error.message, 'error');
+    }
+},
 
                 openForceDeleteModal(id) {
                     this.locationToForceDeleteId = id;
@@ -375,36 +378,34 @@
                     this.locationToForceDeleteId = null;
                 },
                 async confirmForceDelete() {
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    try {
-                        const response = await fetch(`/admin/store-locations/${this.locationToForceDeleteId}/force-delete`, {
-                            method: 'DELETE', // Phương thức DELETE cho force-delete
-                            headers: {
-                                'X-CSRF-TOKEN': csrfToken,
-                                'Accept': 'application/json'
-                            }
-                        });
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    try {
+        const response = await fetch(`/admin/store-locations/${this.locationToForceDeleteId}/force-delete`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
+        });
 
-                        const data = await response.json();
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || `Không thể xóa vĩnh viễn.`);
 
-                        if (!response.ok) {
-                             throw new Error(data.message || `Không thể xóa vĩnh viễn địa điểm. Trạng thái: ${response.status}`);
-                        }
+        this.showMessage(data.message || 'Xóa vĩnh viễn thành công!', 'success');
 
-                        this.showMessage(data.message || 'Xóa vĩnh viễn địa điểm thành công!', 'success');
-                        this.closeForceDeleteModal();
-                        // Loại bỏ mục đã xóa vĩnh viễn khỏi danh sách NGAY LẬP TỨC
-                        const updatedLocations = this.allLocations.filter(loc => loc.id !== this.locationToForceDeleteId);
-                        this.allLocations = [...updatedLocations]; // Kích hoạt reactivity
+        // BƯỚC 1: Cập nhật danh sách TRƯỚC
+        const updatedLocations = this.allLocations.filter(loc => loc.id != this.locationToForceDeleteId);
+        this.allLocations = [...updatedLocations];
 
-                        if (this.paginatedLocations.length === 0 && this.currentPage > 1) {
-                            this.currentPage--;
-                        }
-                    } catch (error) {
-                        console.error('Lỗi khi xóa vĩnh viễn địa điểm:', error);
-                        this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server khi xóa vĩnh viễn.', 'error');
-                    }
-                },
+        if (this.paginatedLocations.length === 0 && this.currentPage > 1) {
+            this.currentPage--;
+        }
+
+        // BƯỚC 2: Đóng modal SAU CÙNG
+        this.closeForceDeleteModal();
+
+    } catch (error) {
+        console.error('Lỗi khi xóa vĩnh viễn địa điểm:', error);
+        this.showMessage(error.message, 'error');
+    }
+},
             }));
         });
     </script>

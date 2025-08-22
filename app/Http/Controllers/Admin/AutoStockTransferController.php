@@ -312,4 +312,105 @@ class AutoStockTransferController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Lưu IMEI/Serial cho sản phẩm trong phiếu chuyển kho
+     */
+    public function saveImei(Request $request, $id): JsonResponse
+    {
+        try {
+            $transfer = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+                ->with('items')
+                ->findOrFail($id);
+
+            $request->validate([
+                'product_variant_id' => 'required|integer',
+                'imei_serials' => 'required|array',
+                'imei_serials.*' => 'required|string'
+            ]);
+
+            // Tìm item trong phiếu chuyển kho
+            $transferItem = $transfer->items()->where('product_variant_id', $request->product_variant_id)->first();
+            
+            if (!$transferItem) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy sản phẩm trong phiếu chuyển kho'
+                ], 404);
+            }
+
+            // Kiểm tra sản phẩm có yêu cầu quản lý IMEI/Serial không
+            $productVariant = $transferItem->productVariant;
+            if (!$productVariant->has_serial_tracking) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sản phẩm này không yêu cầu quản lý IMEI/Serial'
+                ], 400);
+            }
+
+            // Kiểm tra số lượng IMEI/Serial có khớp với số lượng yêu cầu
+            if (count($request->imei_serials) !== $transferItem->quantity) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Số lượng IMEI/Serial (" . count($request->imei_serials) . ") không khớp với số lượng yêu cầu ({$transferItem->quantity})"
+                ], 400);
+            }
+
+            // Kiểm tra trùng lặp IMEI/Serial trong request
+            $uniqueImeis = array_unique($request->imei_serials);
+            if (count($uniqueImeis) !== count($request->imei_serials)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Có IMEI/Serial trùng lặp trong danh sách'
+                ], 400);
+            }
+
+            // Validate từng IMEI/Serial
+            foreach ($request->imei_serials as $imei) {
+                $serial = \App\Models\InventorySerial::where('serial_number', $imei)
+                    ->where('product_variant_id', $request->product_variant_id)
+                    ->first();
+
+                if (!$serial) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "IMEI/Serial '{$imei}' không tồn tại cho sản phẩm này"
+                    ], 400);
+                }
+
+                if ($serial->status !== 'available') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "IMEI/Serial '{$imei}' đã được sử dụng hoặc không khả dụng (trạng thái: {$serial->status})"
+                    ], 400);
+                }
+
+                // Kiểm tra IMEI có đang ở kho nguồn không (nếu cần)
+                if ($serial->store_location_id !== $transfer->from_location_id) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "IMEI/Serial '{$imei}' không có trong kho nguồn"
+                    ], 400);
+                }
+            }
+
+            // Lưu IMEI/Serial vào cột imei_serials dưới dạng JSON
+            $transferItem->imei_serials = json_encode($request->imei_serials);
+            $transferItem->save();
+
+            Log::info("Đã lưu IMEI/Serial cho sản phẩm {$request->product_variant_id} trong phiếu chuyển kho {$transfer->transfer_code}");
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã lưu IMEI/Serial thành công'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lưu IMEI/Serial: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi lưu IMEI/Serial'
+            ], 500);
+        }
+    }
 }

@@ -533,14 +533,14 @@
                     async editLocation(location) {
                         this.isEditMode = true;
                         this.resetForm();
+
                         try {
                             const response = await fetch(`/admin/store-locations/${location.id}/edit`);
-                            if (!response.ok) {
-                                const errorText = await response.text();
-                                throw new Error(`Không thể lấy dữ liệu địa điểm. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
-                            }
+                            if (!response.ok) throw new Error('Không thể tải dữ liệu để chỉnh sửa.');
+
                             const fullLocation = await response.json();
 
+                            // Gán dữ liệu vào form, LƯU Ý: chưa gán district_code và ward_code
                             this.formData = {
                                 id: fullLocation.id,
                                 name: fullLocation.name,
@@ -548,24 +548,36 @@
                                 type: fullLocation.type,
                                 is_active: fullLocation.is_active,
                                 province_code: fullLocation.province_code || '',
-                                district_code: fullLocation.district_code || '',
-                                ward_code: fullLocation.ward_code || '',
+                                district_code: '', // << Tạm thời để trống
+                                ward_code: '',     // << Tạm thời để trống
                                 address: fullLocation.address || '',
                             };
 
-                            // Tải lại các dropdown địa chỉ theo thứ tự
+                            // Mở modal trước để các element select tồn tại trong DOM
+                            this.isModalOpen = true;
+
+                            // Đợi DOM cập nhật sau khi mở modal
+                            await this.$nextTick();
+
+                            // Bắt đầu chuỗi tải địa chỉ
                             if (this.formData.province_code) {
-                                await this.updateDistricts(true);
+                                await this.updateDistricts(true); // Tải danh sách quận/huyện
+
+                                // Gán district_code VÀ đợi DOM cập nhật
+                                this.formData.district_code = fullLocation.district_code || '';
+                                await this.$nextTick();
+
                                 if (this.formData.district_code) {
-                                    await new Promise(resolve => setTimeout(resolve, 100));
-                                    await this.updateWards(true);
+                                    await this.updateWards(true); // Tải danh sách phường/xã
+
+                                    // Gán ward_code VÀ đợi DOM cập nhật
+                                    this.formData.ward_code = fullLocation.ward_code || '';
+                                    await this.$nextTick();
                                 }
                             }
-
-                            this.isModalOpen = true;
                         } catch (error) {
                             console.error('Lỗi khi lấy địa điểm để chỉnh sửa:', error);
-                            this.showMessage(error.message || 'Lỗi khi tải thông tin cửa hàng để sửa.', 'error');
+                            this.showMessage(error.message || 'Lỗi khi tải thông tin cửa hàng.', 'error');
                         }
                     },
 
@@ -758,6 +770,7 @@
                             this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server.', 'error');
                         }
                     },
+
 
                     async fetchLocations() {
                         try {

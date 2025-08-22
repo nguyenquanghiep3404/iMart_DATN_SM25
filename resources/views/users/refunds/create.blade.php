@@ -147,7 +147,7 @@
                         <!-- Lựa chọn 1: Điểm thưởng -->
                         <label for="refund-points" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
                             <div class="flex items-center">
-                                <input type="radio" id="refund-points" name="refund_method" value="points" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                <input type="radio" id="refund-points" name="refund_method" value="points" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
                                 <div class="ml-3">
                                     <p class="font-semibold text-gray-800">Hoàn tiền bằng Điểm thưởng</p>
                                     <p class="text-sm text-gray-500">Số điểm dự kiến được hoàn: <span id="expected-points" class="font-bold text-green-600">0 điểm</span>. Dùng để mua sắm cho lần sau.</p>
@@ -156,7 +156,7 @@
                         </label>
 
 
-                        <label for="refund-bank" class="interactive-card block rounded-lg p-4 cursor-pointer">
+                        <label for="refund-bank" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
                             <div class="flex items-center">
                                 <input type="radio" id="refund-bank" name="refund_method" value="bank" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
                                 <div class="ml-3">
@@ -183,7 +183,7 @@
 
                     <label for="refund-coupon" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
                         <div class="flex items-center">
-                            <input type="radio" id="refund-coupon" name="refund_method" value="coupon" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <input type="radio" id="refund-coupon" name="refund_method" value="coupon" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
                             <div class="ml-3">
                                 <p class="font-semibold text-gray-800">Nhận Mã giảm giá</p>
                                 <p class="text-sm text-gray-500">Bạn sẽ nhận được mã giảm giá trị giá <span id="refund-total-coupon" class="font-bold text-green-600">0 VNĐ</span>, chỉ áp dụng một lần cho tài khoản này.</p>

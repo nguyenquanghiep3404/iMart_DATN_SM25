@@ -27,9 +27,8 @@
 
 
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <form action="{{ route('admin.coupons.store') }}" method="POST">
+        <form action="{{ route('admin.coupons.store') }}" method="POST" novalidate>
             @csrf
-            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <div class="mb-5">
@@ -118,7 +117,7 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
                                 <p class="mt-1 text-sm text-gray-500">
-                                    <span class="text-blue-600">💡 Ví dụ:</span> Mã giảm 20% nhưng tối đa chỉ 100.000 VND.
+                                    <span class="text-blue-600">Ví dụ:</span> Mã giảm 20% nhưng tối đa chỉ 100.000 VND.
                                 </p>
                             @enderror
                         </div>
@@ -222,10 +221,11 @@
                     </div>
                     
                     <div class="mb-5">
+                        <input type="hidden" name="is_public" value="0">
                         <label class="flex items-center">
                             <input type="checkbox" name="is_public" value="1" 
-                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 @error('is_public') border-red-300 focus:ring-red-500 @enderror" 
-                                {{ old('is_public', '1') == '1' ? 'checked' : '' }}>
+                                class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 @error('is_public') border-red-300 focus:ring-red-500 @enderror" 
+                                {{ old('is_public') ? 'checked' : '' }}>
                             <span class="ml-2 text-sm text-gray-700">Mã giảm giá công khai</span>
                         </label>
                         @error('is_public')
@@ -422,7 +422,6 @@
                 endDateInput.setAttribute('min', minEndDate);
             }
         }
-        
         // Event listeners
         typeSelect.addEventListener('change', updateDiscountType);
         startDateInput.addEventListener('change', function() {

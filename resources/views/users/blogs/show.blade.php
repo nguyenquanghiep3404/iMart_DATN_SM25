@@ -83,8 +83,7 @@
                                 <span class="text-secondary fw-medium">Chia sẻ:</span>
                                 <a class="btn btn-icon btn-sm btn-outline-secondary border-0" href="#"><i
                                         class="ci-facebook"></i></a>
-                                <a class="btn btn-icon btn-sm btn-outline-secondary border-0" href="#"><i
-                                        class="ci-telegram"></i></a>
+
                                 <a class="btn btn-icon btn-sm btn-outline-secondary border-0" href="#"><i
                                         class="ci-x"></i></a>
                             </div>
@@ -192,8 +191,7 @@
                                         class="ci-x"></i></a>
                                 <a class="btn btn-icon fs-base btn-outline-secondary border-0" href="#"><i
                                         class="ci-facebook"></i></a>
-                                <a class="btn btn-icon fs-base btn-outline-secondary border-0" href="#"><i
-                                        class="ci-telegram"></i></a>
+
                             </div>
                         </div>
                     </div>

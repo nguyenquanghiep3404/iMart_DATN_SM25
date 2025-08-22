@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\ProductVariant;
 use App\Models\ReturnItem;
+use Illuminate\Support\Facades\Storage;
 
 class OrderItem extends Model
 {
@@ -43,7 +44,7 @@ class OrderItem extends Model
 
     public function review()
     {
-        return $this->hasOne(Review::class);
+        return $this->hasOne(Review::class, 'order_item_id', 'id');
     }
     public function variant()
     {
@@ -77,5 +78,22 @@ class OrderItem extends Model
     public function returnItem()
     {
         return $this->hasOne(ReturnItem::class);
+    }
+    public function getImageUrlAttribute()
+    {
+        $variant = $this->productVariant; // Lấy biến thể sản phẩm
+
+        // Ưu tiên 1: Lấy ảnh chính của biến thể
+        if ($variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path))) {
+            return Storage::url($variant->primaryImage->path);
+        }
+
+        // Ưu tiên 2: Lấy ảnh bìa của sản phẩm gốc
+        if ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path))) {
+            return Storage::url($variant->product->coverImage->path);
+        }
+
+        // Nếu không có ảnh nào, trả về ảnh mặc định
+        return asset('images/placeholder.jpg');
     }
 }

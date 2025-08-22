@@ -14,6 +14,7 @@ use App\Notifications\NewReviewOrCommentPending;
 use App\Models\User;
 use App\Models\ProductVariant;
 
+
 class ReviewController extends Controller
 {
     /**
@@ -199,5 +200,27 @@ class ReviewController extends Controller
         $product = $variant->product;
 
         return view('users.profile.detail_reviews', compact('review', 'product', 'variant'));
+    }
+    public function createForOrder(Order $order)
+    {
+        // 1. Kiểm tra quyền sở hữu
+        if (auth()->id() !== $order->user_id) {
+            abort(403);
+        }
+
+        // 2. Kiểm tra đơn hàng đã được xác nhận đã nhận chưa
+        if (is_null($order->confirmed_at)) {
+            return redirect()->route('orders.show', $order->id)->with('error', 'Vui lòng xác nhận đã nhận hàng trước khi đánh giá.');
+        }
+
+        // 3. Lấy thông tin các sản phẩm và trạng thái đã đánh giá của chúng
+        $order->load('items.review'); // Tải các item và review tương ứng
+
+        // Gán thuộc tính 'has_reviewed' cho tiện sử dụng trong view
+        foreach ($order->items as $item) {
+            $item->has_reviewed = $item->review()->exists();
+        }
+
+        return view('users.orders.create_for_order', compact('order'));
     }
 }
