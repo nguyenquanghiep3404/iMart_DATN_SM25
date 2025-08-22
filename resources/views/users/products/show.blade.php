@@ -611,6 +611,62 @@
             width: 100%;
             box-sizing: border-box;
         }
+
+        .js-flash-sale-progress {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .progress-wrapper {
+            background-color: #e5e7eb;
+            /* Màu nền xám nhạt */
+            border-radius: 9999px;
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-inner {
+            height: 100%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
+        .progress-bar-inner[style*="width: 100%"],
+        .progress-bar-inner[style*="width: 90%"],
+        .progress-bar-inner[style*="width: 80%"] {
+            background-color: #fcb701;
+            /* Xanh lá khi gần đầy (80-100%) */
+        }
+
+        .progress-bar-inner[style*="width: 50%"],
+        .progress-bar-inner[style*="width: 60%"],
+        .progress-bar-inner[style*="width: 70%"] {
+            background-color: #fcb701;
+            /* Vàng khi còn 50-70% */
+        }
+
+        .progress-bar-inner[style*="width: 0%"],
+        .progress-bar-inner[style*="width: 10%"],
+        .progress-bar-inner[style*="width: 20%"],
+        .progress-bar-inner[style*="width: 30%"],
+        .progress-bar-inner[style*="width: 40%"] {
+            background-color: #fcb701;
+            /* Đỏ khi còn dưới 50% */
+        }
+
+        .progress-text {
+            color: rgb(0, 0, 0);
+            font-size: 12px;
+            font-weight: 500;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            text-align: center;
+            z-index: 10;
+            /* Đảm bảo văn bản nằm trên thanh tiến trình */
+        }
     </style>
 @endpush
 
@@ -630,6 +686,10 @@
         window.bundleData = @json($productBundles);
         console.log('window.bundleData:', window.bundleData);
         window.productName = @json($product->name);
+        window.flashSaleProducts = @json($flashSaleProducts);
+        console.log('window.flashSaleProducts:', window.flashSaleProducts);
+        window.flashSaleEndTime = @json($flashSaleEndTime);
+        console.log('window.flashSaleEndTime:', window.flashSaleEndTime);
         window.variantData = @json($variantData);
         window.attributeOrder = @json($attributeOrder);
         window.availableCombinations = @json($availableCombinations);
@@ -1131,9 +1191,9 @@
                     <p class="font-bold text-lg text-red-600">
             ${formatPrice(displayPrice)}
             ${hasSale ? `
-                                                                                                                                                                                <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
-                                                                                                                                                                                <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
-                                                                                                                                                                            ` : ''}
+                                                                                                                                                                                                        <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
+                                                                                                                                                                                                        <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
+                                                                                                                                                                                                    ` : ''}
         </p>
         <p class="font-semibold text-gray-800 mt-1">
             ${productName}${variantName ? ` - ${variantName}` : ''}
@@ -1355,9 +1415,9 @@
                     <p class="font-bold text-lg text-red-600">
                         ${formatPrice(displayPrice)}
                         ${hasSale ? `
-                                        <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
-                                        <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
-                                    ` : ''}
+                                                                <span class="text-sm text-gray-500 line-through ml-2">${formatPrice(rawPrice)}</span>
+                                                                <span class="text-sm font-semibold text-red-500 bg-red-100 px-2 py-0.5 rounded-md">-${discount}%</span>
+                                                            ` : ''}
                     </p>
                     <p class="font-semibold text-gray-800 mt-1">
                         ${productName}${variantName ? ` - ${variantName}` : ''}
@@ -2107,20 +2167,45 @@
                     console.error('Không tìm thấy biến thể cho key:', key);
                     return;
                 }
+
                 const now = new Date();
                 let isFlashSale = false;
                 let isSale = false;
                 let discountPercent = 0;
-                let salePrice = parseInt(variant.sale_price) || 0;
                 let originalPrice = parseInt(variant.price) || 0;
-                if (variant.sale_price_starts_at && variant.sale_price_ends_at) {
-                    const start = new Date(variant.sale_price_starts_at);
-                    const end = new Date(variant.sale_price_ends_at);
-                    isFlashSale = salePrice && start <= now && now <= end;
+                let salePrice = parseInt(variant.sale_price) || 0;
+
+                // Lấy flashPrice, quantity_limit và quantity_sold từ window.flashSaleProducts
+                const flashSaleData = window.flashSaleProducts && window.flashSaleProducts[variant.variant_id] ?
+                    window.flashSaleProducts[variant.variant_id] :
+                    null;
+                const flashPrice = flashSaleData ? parseInt(flashSaleData.flash_price) || null : null;
+                const quantityLimit = flashSaleData ? parseInt(flashSaleData.quantity_limit) || 0 : 0;
+                const quantitySold = flashSaleData ? parseInt(flashSaleData.quantity_sold) || 0 : 0;
+
+                // Kiểm tra flash sale
+                let parsedFlashSaleEndTime = null;
+                if (window.flashSaleEndTime) {
+                    parsedFlashSaleEndTime = new Date(window.flashSaleEndTime);
+                    isFlashSale = flashPrice && parsedFlashSaleEndTime && now <= parsedFlashSaleEndTime;
                 }
+
+                // Kiểm tra khuyến mãi thường
                 isSale = !isFlashSale && salePrice && salePrice < originalPrice;
-                discountPercent = (isFlashSale || isSale) ? Math.round(100 - (salePrice / originalPrice) * 100) : 0;
-                const displayPrice = (isFlashSale || isSale) ? salePrice : originalPrice;
+
+                // Tính giá hiển thị
+                const displayPrice = isFlashSale ? flashPrice : (isSale ? salePrice : originalPrice);
+
+                // Tính phần trăm giảm giá
+                if (originalPrice > 0) {
+                    if (isFlashSale && flashPrice) {
+                        discountPercent = Math.round(100 - (flashPrice / originalPrice) * 100);
+                    } else if (isSale) {
+                        discountPercent = Math.round(100 - (salePrice / originalPrice) * 100);
+                    }
+                }
+
+                // Cập nhật giao diện
                 priceEls.forEach(el => el.textContent = displayPrice.toLocaleString('vi-VN') + '₫');
                 originalPriceEls.forEach(el => {
                     if (isFlashSale || isSale) {
@@ -2138,15 +2223,43 @@
                         el.classList.add('hidden');
                     }
                 });
-                if (statusEl && variant.status) statusEl.textContent = variant.status;
+
+                // Cập nhật thanh tiến trình flash sale
+                const flashSaleProgress = document.querySelector('.js-flash-sale-progress');
+                const progressBarInner = flashSaleProgress?.querySelector('.progress-bar-inner');
+                const progressText = flashSaleProgress?.querySelector('.progress-text');
+                if (isFlashSale && flashSaleData && flashSaleProgress && progressBarInner && progressText) {
+                    const remaining = quantityLimit - quantitySold;
+                    const percent = quantityLimit > 0 ? Math.round((remaining / quantityLimit) * 100) : 0;
+                    flashSaleProgress.classList.remove('hidden');
+                    progressBarInner.style.width = `${percent}%`;
+                    progressText.textContent = `🔥 Còn ${remaining}/${quantityLimit} suất`;
+                    console.log('Cập nhật thanh tiến trình:', {
+                        percent,
+                        remaining,
+                        quantityLimit
+                    });
+                } else if (flashSaleProgress) {
+                    flashSaleProgress.classList.add('hidden');
+                    progressBarInner.style.width = '0%';
+                    progressText.textContent = '';
+                    console.log('Không có flash sale, ẩn thanh tiến trình');
+                }
+
+                // Hiển thị/ẩn khối flash sale và giá thường
                 if (isFlashSale) {
                     flashSaleBlock?.classList.remove('hidden');
                     normalPriceBlock?.classList.add('hidden');
-                    updateCountdown(variant.sale_price_ends_at);
+                    updateCountdown(window.flashSaleEndTime);
                 } else {
                     flashSaleBlock?.classList.add('hidden');
                     normalPriceBlock?.classList.remove('hidden');
                 }
+
+                // Cập nhật trạng thái
+                if (statusEl && variant.status) statusEl.textContent = variant.status;
+
+                // Cập nhật tiêu đề sản phẩm
                 const titleEl = document.getElementById('product-title');
                 if (titleEl) {
                     const dungLuong = currentSelections['Dung lượng'] || '';
@@ -2155,12 +2268,8 @@
                     titleEl.textContent = `${@json($product->name)} ${selectedValues}`;
                     console.log('Tiêu đề sau khi cập nhật:', titleEl.textContent);
                 }
+
                 // Cập nhật URL
-                console.log('Kiểm tra cập nhật URL:', {
-                    baseSlug: window.baseSlug,
-                    attributeOrder: window.attributeOrder,
-                    currentSelections: window.currentSelections
-                });
                 if (window.baseSlug && window.attributeOrder && window.attributeOrder.length > 0) {
                     const slugParts = window.attributeOrder.map(attr => {
                         const value = currentSelections[attr] || '';
@@ -2168,19 +2277,16 @@
                             console.warn(`Thiếu giá trị cho thuộc tính ${attr}`);
                             return '';
                         }
-                        // Xử lý ký tự tiếng Việt và tạo slug
                         const slugValue = value
-                            .normalize('NFD') // Chuẩn hóa Unicode
-                            .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '')
                             .toLowerCase()
-                            .replace(/đ/g, 'd') // Thêm dòng này để xử lý chữ 'đ'
+                            .replace(/đ/g, 'd')
                             .replace(/\s+/g, '-')
                             .replace(/[^a-z0-9-]/g, '');
-
                         console.log(`Slug cho ${attr}: ${slugValue}`);
                         return slugValue;
                     }).filter(Boolean);
-                    console.log('Slug parts:', slugParts);
                     if (slugParts.length === window.attributeOrder.length) {
                         const newSlug = `${window.baseSlug}-${slugParts.join('-')}`;
                         const newUrl = `/san-pham/${newSlug}`;
@@ -2199,11 +2305,14 @@
                         attributeOrder: window.attributeOrder
                     });
                 }
+
+                // Cập nhật gallery, thông số và sticky bar
                 window.updateGalleryFromSelection(key);
                 updateSpecifications(key);
                 updateStickyBar(key);
                 saveRecentProduct();
-                // Thêm lời gọi để cập nhật bundle
+
+                // Cập nhật bundle
                 if (window.bundleData) {
                     updateBundles(key);
                 }
@@ -2639,57 +2748,48 @@
                     return;
                 }
                 console.log('✅ Biến thể tìm được:', variant);
+
                 const stickyImage = document.getElementById('sticky-image');
                 const stickyName = document.getElementById('sticky-name');
                 const stickyVariant = document.getElementById('sticky-variant');
                 const stickyPrice = document.getElementById('sticky-price');
                 const stickyOriginalPrice = document.getElementById('sticky-original-price');
+
                 if (stickyImage) {
-                    if (variant?.image) {
-                        stickyImage.src = variant.image;
-                        console.log('🖼️ Ảnh chính được cập nhật từ variant.image:', variant.image);
-                    } else if (variant?.images?.length > 0) {
-                        stickyImage.src = variant.images[0];
-                        console.log('🖼️ Ảnh được lấy từ variant.images[0]:', variant.images[0]);
-                    } else {
-                        stickyImage.src = '/images/no-image.png';
-                        console.warn('⚠️ Không có ảnh sản phẩm, dùng fallback /images/no-image.png');
-                    }
+                    stickyImage.src = variant?.image || variant?.images?.[0] || '/images/no-image.png';
+                    console.log('🖼️ Ảnh chính:', stickyImage.src);
                 }
                 if (stickyVariant) {
-                    if (attributeOrder?.length > 0) {
-                        const attrValues = attributeOrder.map(attr => {
-                            const selected = document.querySelector(
-                                `input[data-attr-name="${attr}"]:checked`);
-                            return selected?.value || '';
-                        });
-                        stickyVariant.textContent = attrValues.join(', ');
-                        console.log('🔤 Thuộc tính biến thể:', attrValues);
-                    } else {
-                        stickyVariant.textContent = '';
-                        console.log('ℹ️ Không có attributeOrder hoặc rỗng');
-                    }
+                    const attrValues = attributeOrder?.map(attr => {
+                        const selected = document.querySelector(`input[data-attr-name="${attr}"]:checked`);
+                        return selected?.value || '';
+                    }) || [];
+                    stickyVariant.textContent = attrValues.join(', ');
+                    console.log('🔤 Thuộc tính biến thể:', attrValues);
                 }
-                const salePrice = parseInt(variant?.sale_price) || 0;
+
                 const originalPrice = parseInt(variant?.price) || 0;
-                const displayPrice = salePrice && salePrice < originalPrice ? salePrice : originalPrice;
-                const formattedPrice = variant?.formatted_price || displayPrice.toLocaleString('vi-VN') + '₫';
-                if (stickyPrice) {
-                    stickyPrice.textContent = formattedPrice;
-                    console.log('💰 Giá hiển thị:', formattedPrice);
-                }
+                let salePrice = parseInt(variant?.sale_price) || 0;
+                const flashPrice = window.flashSaleProducts && window.flashSaleProducts[variant.variant_id] ?
+                    parseInt(window.flashSaleProducts[variant.variant_id].flash_price) || null :
+                    null;
+
                 let isFlashSale = false;
                 const now = new Date();
-                if (variant?.sale_price_starts_at && variant?.sale_price_ends_at) {
-                    const start = new Date(variant.sale_price_starts_at);
-                    const end = new Date(variant.sale_price_ends_at);
-                    isFlashSale = salePrice && start <= now && now <= end;
-                    console.log('⏰ Flash Sale?', isFlashSale,
-                        `(Từ ${start.toLocaleString()} đến ${end.toLocaleString()})`);
+                if (window.flashSaleEndTime && flashPrice) {
+                    const end = new Date(window.flashSaleEndTime);
+                    isFlashSale = now <= end;
                 }
-                const hasSale = salePrice && salePrice < originalPrice;
+
+                const isSale = !isFlashSale && salePrice && salePrice < originalPrice;
+                const displayPrice = isFlashSale ? flashPrice : (isSale ? salePrice : originalPrice);
+
+                if (stickyPrice) {
+                    stickyPrice.textContent = displayPrice.toLocaleString('vi-VN') + '₫';
+                    console.log('💰 Giá hiển thị:', stickyPrice.textContent);
+                }
                 if (stickyOriginalPrice) {
-                    if ((hasSale || isFlashSale) && originalPrice > 0) {
+                    if ((isFlashSale || isSale) && originalPrice > 0) {
                         stickyOriginalPrice.textContent = originalPrice.toLocaleString('vi-VN') + '₫';
                         stickyOriginalPrice.classList.remove('hidden');
                         console.log('📉 Giá gốc (gạch):', stickyOriginalPrice.textContent);
@@ -2698,7 +2798,7 @@
                         console.log('📉 Không có giảm giá, ẩn giá gốc');
                     }
                 }
-                console.log('✅ Cập nhật sticky bar hoàn tất\n');
+                console.log('✅ Cập nhật sticky bar hoàn tất');
             }
 
             const stickyBar = document.getElementById('sticky-bar');

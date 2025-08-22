@@ -362,7 +362,6 @@ class HomeController extends Controller
             $possibleValues = $attributeValuesMap[$attrName];
             $matchedValue = null;
 
-            // Thử khớp từng đoạn slug với các giá trị thuộc tính
             for ($length = 1; $length <= count($attributeValues) - $currentIndex; $length++) {
                 $testParts = array_slice($attributeValues, $currentIndex, $length);
                 $testSlug = implode('-', $testParts);
@@ -435,6 +434,107 @@ class HomeController extends Controller
                 $initialVariantAttributes[$attrValue->attribute->name] = $attrValue->value;
             }
         }
+        // ... các phần code trước đó của controller ...
+
+        // Kiểm tra flash sale cho tất cả biến thể
+        $now = now(); // Lấy thời gian hiện tại đầy đủ (ví dụ: 2025-08-22 16:30:00)
+
+        // Eager load flash sale, các khung thời gian của nó và các sản phẩm trong các khung thời gian đó
+        $flashSale = FlashSale::with(['flashSaleTimeSlots.products'])
+            ->where('status', 'active')
+            ->where('start_time', '<=', $now)
+            ->where('end_time', '>=', $now)
+            ->first();
+
+        // Log thông tin về Flash Sale chính được tìm thấy
+        Log::info('Flash sale found (main query):', [
+            'flash_sale_id' => $flashSale?->id,
+            'flash_sale_start_time' => $flashSale?->start_time?->toDateTimeString(), // Đảm bảo log dưới dạng datetime string
+            'flash_sale_end_time' => $flashSale?->end_time?->toDateTimeString(),     // Đảm bảo log dưới dạng datetime string
+            'current_full_datetime' => $now->toDateTimeString(),
+            'flashSaleExists' => (bool)$flashSale,
+        ]);
+
+        $flashSaleEndTime = null;
+        $flashSaleProducts = []; // Mảng chứa thông tin flash price của các biến thể
+        if ($flashSale) {
+            Log::info('Processing flash sale time slots for FlashSale ID:', [
+                'flash_sale_id' => $flashSale->id,
+                'product_id_being_viewed' => $product->id, // Log ID sản phẩm đang xem
+                'default_variant_id_being_checked' => $defaultVariant->id, // Log ID biến thể mặc định
+            ]);
+
+            // Lấy chỉ phần thời gian của thời điểm hiện tại (ví dụ: "16:30:00")
+            $currentTimeOnly = $now->format('H:i:s');
+
+            foreach ($flashSale->flashSaleTimeSlots as $slot) {
+                // Log thông tin về khung thời gian đang được đánh giá
+                Log::info('Evaluating FlashSaleTimeSlot:', [
+                    'slot_id' => $slot->id,
+                    'slot_start_time' => $slot->start_time, // Các giá trị này là chuỗi 'H:i:s' từ DB
+                    'slot_end_time' => $slot->end_time,     // Các giá trị này là chuỗi 'H:i:s' từ DB
+                    'current_time_only_for_comparison' => $currentTimeOnly,
+                ]);
+
+                // So sánh thời gian hiện tại (chuỗi) với thời gian bắt đầu/kết thúc của slot (chuỗi)
+                if ($currentTimeOnly >= $slot->start_time && $currentTimeOnly <= $slot->end_time) {
+                    Log::info('Active time slot identified:', [
+                        'slot_id' => $slot->id,
+                        'slot_start_time' => $slot->start_time,
+                        'slot_end_time' => $slot->end_time,
+                    ]);
+
+                    // Kiểm tra xem có sản phẩm FlashSale nào được tải trong khung thời gian hoạt động này không
+                    if ($slot->products->isEmpty()) {
+                        Log::warning('No FlashSaleProducts found within this active time slot:', ['slot_id' => $slot->id]);
+                    } else {
+                        Log::info('FlashSaleProducts loaded for this active time slot:', [
+                            'slot_id' => $slot->id,
+                            // Log tất cả các product_variant_id được tải để kiểm tra
+                            'loaded_product_variant_ids' => $slot->products->pluck('product_variant_id')->toArray()
+                        ]);
+                    }
+
+                    foreach ($slot->products as $fsProduct) {
+                        // Điền thông tin flash price vào mảng flashSaleProducts
+                        $flashSaleProducts[$fsProduct->product_variant_id] = [
+                            'flash_price' => (int) $fsProduct->flash_price,
+                            'quantity_limit' => $fsProduct->quantity_limit,
+                            'quantity_sold' => $fsProduct->quantity_sold,
+                        ];
+
+                        // Nếu biến thể mặc định hiện tại được tìm thấy trong sản phẩm của slot này, hãy đặt thời gian kết thúc flash sale
+                        if ($fsProduct->product_variant_id == $defaultVariant->id) {
+                            // Kết hợp ngày hiện tại với thời gian kết thúc của slot để tạo một datetime đầy đủ cho bộ đếm ngược
+                            $flashSaleEndTime = Carbon::parse($now->toDateString() . ' ' . $slot->end_time)->toIso8601String();
+                            Log::info('FlashSaleEndTime set for default variant:', [
+                                'default_variant_id' => $defaultVariant->id,
+                                'flash_sale_end_time_string' => $flashSaleEndTime,
+                                'source_slot_id' => $slot->id,
+                            ]);
+                        }
+                    }
+                } else {
+                    Log::info('Time slot not active at current time:', [
+                        'slot_id' => $slot->id,
+                        'slot_start_time' => $slot->start_time,
+                        'slot_end_time' => $slot->end_time,
+                        'current_time_only' => $currentTimeOnly,
+                    ]);
+                }
+            }
+        }
+
+        // Log kết quả cuối cùng của việc xử lý flash sale
+        Log::info('Final flash sale products map after processing all slots:', [
+            'total_products_in_map' => count($flashSaleProducts),
+            'keys_in_map' => array_keys($flashSaleProducts), // Xem các khóa (product_variant_id) có trong mảng
+            'final_flashSaleEndTime' => $flashSaleEndTime,
+            'default_variant_id_being_checked' => $defaultVariant->id,
+            'is_default_variant_in_flashSaleProducts_map' => isset($flashSaleProducts[$defaultVariant->id])
+        ]);
+
+        // ... các phần code còn lại của controller của bạn (chắc chắn biến $flashSaleProducts được truyền vào view)
 
         // Chuẩn bị variantData
         $variantData = [];
@@ -456,18 +556,6 @@ class HomeController extends Controller
             }
 
             $availableCombinations[] = $combination;
-            Log::info('✅ Combination pushed:', $combination);
-
-            $now = now();
-            $salePrice = (int) $variant->sale_price;
-            $originalPrice = (int) $variant->price;
-
-            $hasFlashTime = !empty($variant->sale_price_starts_at) && !empty($variant->sale_price_ends_at);
-            $isFlashSale = $hasFlashTime && $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
-            $isSale = !$isFlashSale && $salePrice && $salePrice < $originalPrice;
-
-            $displayPrice = $isFlashSale || $isSale ? $salePrice : $originalPrice;
-            $displayOriginalPrice = ($isFlashSale || $isSale) && $originalPrice > $salePrice ? $originalPrice : null;
 
             $variantKey = [];
             foreach ($attributeOrder as $attrName) {
@@ -475,6 +563,16 @@ class HomeController extends Controller
                 $variantKey[] = $attrValue?->value ?? '';
             }
             $variantKeyStr = implode('_', $variantKey);
+
+            $salePrice = (int) $variant->sale_price;
+            $originalPrice = (int) $variant->price;
+            $flashPrice = isset($flashSaleProducts[$variant->id]) ? (int) $flashSaleProducts[$variant->id]['flash_price'] : null;
+
+            $isSale = $salePrice && $salePrice < $originalPrice;
+            $isFlashSale = $flashPrice && $flashSaleEndTime && now()->lte(Carbon::parse($flashSaleEndTime));
+
+            $displayPrice = $isFlashSale ? $flashPrice : ($isSale ? $salePrice : $originalPrice);
+            $displayOriginalPrice = ($isFlashSale || $isSale) && $originalPrice > $displayPrice ? $originalPrice : null;
 
             $images = $variant->images->map(fn($image) => $image->url)->toArray();
             if (empty($images)) {
@@ -485,8 +583,7 @@ class HomeController extends Controller
             $variantData[$variantKeyStr] = [
                 'price' => $originalPrice,
                 'sale_price' => $salePrice,
-                'sale_price_starts_at' => $variant->sale_price_starts_at,
-                'sale_price_ends_at' => $variant->sale_price_ends_at,
+                'flash_price' => $flashPrice,
                 'display_price' => $displayPrice,
                 'display_original_price' => $displayOriginalPrice,
                 'status' => $variant->status,
@@ -494,7 +591,6 @@ class HomeController extends Controller
                 'images' => $images,
                 'primary_image_id' => $variant->primary_image_id,
                 'variant_id' => $variant->id,
-                // 'stock_quantity' => $variant->getSellableStockAttribute(),
             ];
         }
 
@@ -647,7 +743,6 @@ class HomeController extends Controller
                     ]);
                 }
 
-                // Main product (chỉ price & sale_price)
                 $mainPrice = (int) $mainVariant->price;
                 $mainSalePrice = $mainVariant->sale_price && $mainVariant->sale_price < $mainPrice
                     ? (int) $mainVariant->sale_price
@@ -675,7 +770,6 @@ class HomeController extends Controller
                     'sale_price'   => $mainSalePrice,
                 ];
 
-                // Suggested products
                 $suggestedProducts = $bundle->suggestedProducts->sortBy('display_order')->map(function ($suggested) {
                     $variant = $suggested->productVariant;
                     $product = $variant?->product;
@@ -717,20 +811,13 @@ class HomeController extends Controller
                     'main_product'       => $mainProductItem,
                     'suggested_products' => $suggestedProducts,
                 ];
-            });
-
+            })->filter();
 
         $productVariantId = $selectedVariant ? $selectedVariant->id : null;
-        Log::info('productVariantId: ' . ($productVariantId ?? 'null')); // Log giá trị productVariantId
-        $hasWarehouseInventory = false; // Khởi tạo biến mặc định là false
+        Log::info('productVariantId: ' . ($productVariantId ?? 'null'));
 
-        if (!$productVariantId) {
-            Log::info('No productVariantId provided, initializing empty collections');
-            $storeLocations = collect();
-            $provinces = collect();
-            $districts = collect();
-        } else {
-            // 1. Truy vấn các cửa hàng có sản phẩm
+        $hasWarehouseInventory = false;
+        if ($productVariantId) {
             $storeLocations = StoreLocation::with(['province', 'district', 'ward'])
                 ->where('is_active', 1)
                 ->whereNull('deleted_at')
@@ -743,10 +830,7 @@ class HomeController extends Controller
                 ->orderBy('name')
                 ->get();
             Log::info('storeLocations count: ' . $storeLocations->count());
-            Log::info('storeLocations: ' . json_encode($storeLocations->toArray()));
 
-            // 2. Kiểm tra tồn kho kho trong mọi trường hợp
-            Log::info('Checking warehouse inventory for product_variant_id: ' . $productVariantId);
             $hasWarehouseInventory = ProductInventory::where('product_variant_id', $productVariantId)
                 ->where('inventory_type', 'new')
                 ->whereHas('storeLocation', function ($query) {
@@ -756,7 +840,6 @@ class HomeController extends Controller
                 ->exists();
             Log::info('hasWarehouseInventory for variant ' . $productVariantId . ': ' . ($hasWarehouseInventory ? 'true' : 'false'));
 
-            // 3. Lấy danh sách tỉnh/thành phố (dựa trên kết quả từ $storeLocations)
             $provinces = ProvinceOld::whereHas('storeLocations', function ($query) use ($productVariantId) {
                 $query->where('is_active', 1)
                     ->whereNull('deleted_at')
@@ -770,13 +853,14 @@ class HomeController extends Controller
                 ->orderBy('name')
                 ->get();
             Log::info('provinces count: ' . $provinces->count());
-            Log::info('provinces: ' . json_encode($provinces->toArray()));
 
             $districts = collect();
             Log::info('districts initialized as empty collection');
+        } else {
+            $storeLocations = collect();
+            $provinces = collect();
+            $districts = collect();
         }
-
-        // ... Các phần khác của controller
 
         $attributesGrouped = collect($attributes)->map(fn($values) => $values->sortBy('value')->values());
         $variantCombinations = $availableCombinations;
@@ -874,10 +958,11 @@ class HomeController extends Controller
             'ratingFilter',
             'productBundles',
             'storeLocations',
-            'provinces', // Thêm provinces để view có thể dùng
-            'districts', // Districts sẽ được load động bằng JS
-            // Thêm biến mới
+            'provinces',
+            'districts',
             'hasWarehouseInventory',
+            'flashSaleEndTime',
+            'flashSaleProducts',
         ));
     }
 
@@ -1155,7 +1240,7 @@ class HomeController extends Controller
                     $variant->images->first()?->path,
                     $product->coverImage?->path,
                     $product->galleryImages->first()?->path,
-                ])->first(fn ($p) => !empty($p));
+                ])->first(fn($p) => !empty($p));
                 $variantImageUrl = $path ? \Storage::url($path) : asset('images/placeholder.jpg');
 
                 return [
