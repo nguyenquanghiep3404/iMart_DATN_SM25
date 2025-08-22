@@ -10,37 +10,54 @@ use App\Services\CartManager;
 class ReorderController extends Controller
 {
     public function reorder(Request $request, Order $order)
-    {
+{
+    $cartService = app(CartManager::class);
+    $addedCount = 0;
+    $skipped = [];
 
-        $cartService = app(CartManager::class);
-        $addedCount = 0;
-        $skipped = [];
+    foreach ($order->items as $item) {
+        $variant = $item->variant;
 
-        foreach ($order->items as $item) {
-            $variant = $item->variant;
-
-            if (!$variant || $variant->stock_status !== 'in_stock' || $variant->sellable_stock < $item->quantity) {
-                $skipped[] = $variant?->product?->name ?? 'Không xác định';
-                continue;
-            }
-
-            if ($cartService->addToCart($variant->id, $item->quantity)) {
-                $addedCount++;
-            } else {
-                $skipped[] = $variant->product->name ?? 'Không xác định';
-            }
+        if (
+            !$variant 
+            || $variant->stock_status !== 'in_stock' 
+            || !$variant->hasAvailableStock($item->quantity)
+        ) {
+            $skipped[] = $variant?->product?->name ?? 'Không xác định';
+            continue;
         }
 
-        $total = $order->items->count();
+        if ($cartService->addToCart($variant->id, $item->quantity)) {
+            $addedCount++;
+        } else {
+            $skipped[] = $variant->product->name ?? 'Không xác định';
+        }
+    }
+
+    $total = $order->items->count();
+
+    if ($request->ajax()) {
         if ($addedCount === $total) {
-            Session::flash('success', '✅ Đã thêm tất cả sản phẩm từ đơn hàng cũ vào giỏ hàng của bạn.');
+            return response()->json(['status' => 'success', 'message' => '✅ Đã thêm tất cả sản phẩm từ đơn hàng cũ vào giỏ hàng của bạn.']);
         } elseif ($addedCount > 0) {
             $missing = implode(', ', $skipped);
-            Session::flash('warning', "⚠️ Đã thêm {$addedCount}/{$total} sản phẩm. Một số sản phẩm đã hết hàng: {$missing}");
+            return response()->json(['status' => 'warning', 'message' => "⚠️ Đã thêm {$addedCount}/{$total} sản phẩm. Một số sản phẩm đã hết hàng: {$missing}"]);
         } else {
-            Session::flash('error', '❌ Không thể thêm sản phẩm nào vì tất cả đã hết hàng.');
+            return response()->json(['status' => 'error', 'message' => '❌ Không thể thêm sản phẩm nào vì tất cả đã hết hàng.']);
         }
-
-        return redirect()->route('cart.index');
     }
+
+    // Nếu không phải AJAX thì quay lại trang trước
+    if ($addedCount === $total) {
+        Session::flash('success', '✅ Đã thêm tất cả sản phẩm từ đơn hàng cũ vào giỏ hàng của bạn.');
+    } elseif ($addedCount > 0) {
+        $missing = implode(', ', $skipped);
+        Session::flash('warning', "⚠️ Đã thêm {$addedCount}/{$total} sản phẩm. Một số sản phẩm đã hết hàng: {$missing}");
+    } else {
+        Session::flash('error', '❌ Không thể thêm sản phẩm nào vì tất cả đã hết hàng.');
+    }
+
+    return redirect()->back();
+}
+
 }
