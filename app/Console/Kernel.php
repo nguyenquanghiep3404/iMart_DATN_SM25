@@ -16,6 +16,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:detect-abandoned-carts')->everyMinute();
         $schedule->command('customers:update-groups')->daily();
         $schedule->command('orders:cancel-unpaid-qr')->daily();
+
+        $schedule->command('orders:autocomplete')->dailyAt('02:00');
+
         $schedule->command('stock-transfer:process-arrivals')->hourly();
     }
 
@@ -25,5 +28,5 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
-    
+
 }

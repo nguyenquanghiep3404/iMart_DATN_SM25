@@ -86,6 +86,12 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
+                        alreadyInCarts += quantity;
+                        realAvailableStock = Math.max(realAvailableStock - quantity, 0);
+
+                        // ✅ Cập nhật lại input và nút CTA
+                        updateQuantityInputMax();
+                        updateCTAButtons(realAvailableStock);
                         const cartUrl = "{{ route('cart.index') }}";
                         const message =
                             `${data.success} <br><a href="${cartUrl}" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>`;

@@ -131,7 +131,7 @@ class ShipperController extends Controller
             return back()->with('error', 'Bạn không có quyền thực hiện hành động này.');
         }
 
-        // Xử lý quét barcode để chuyển từ awaiting_shipment_assigned sang shipped
+        // Xử lý quét barcode để chuyển từ awaiting_shipment_assigned sang out_for_delivery
         if ($request->has('barcode') && $request->input('status') === 'shipped') {
             // Kiểm tra trạng thái đơn hàng phải là awaiting_shipment_assigned
             if ($order->status !== 'awaiting_shipment_assigned') {
@@ -161,11 +161,61 @@ class ShipperController extends Controller
             // Cập nhật trạng thái sang out_for_delivery (đang giao hàng)
             $order->status = 'out_for_delivery';
             $order->save();
+            
+            // Cập nhật trạng thái packages sang out_for_delivery
+            $this->updatePackageStatusBasedOnOrderStatus($order);
 
             if ($request->expectsJson()) {
                 return response()->json(['success' => true, 'message' => 'Đã xác nhận lấy hàng và bắt đầu giao hàng!']);
             }
             return redirect()->route('shipper.dashboard')->with('success', 'Đã xác nhận lấy hàng và bắt đầu giao hàng!');
+        }
+
+        // Xử lý quét QR code để chuyển từ out_for_delivery sang delivered
+        if ($request->has('qr_code') && $request->input('status') === 'delivered') {
+            // Kiểm tra trạng thái đơn hàng phải là out_for_delivery
+            if ($order->status !== 'out_for_delivery') {
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Đơn hàng không ở trạng thái đang giao hàng.'], 400);
+                }
+                return back()->with('error', 'Đơn hàng không ở trạng thái đang giao hàng.');
+            }
+
+            // Xác thực mã QR code (có thể kiểm tra với order_code hoặc logic khác)
+            $qrCode = $request->input('qr_code');
+            
+            // Kiểm tra mã QR code có khớp với order_code không
+            if ($qrCode !== $order->order_code) {
+                \Log::info('QR code validation failed', [
+                    'qr_code' => $qrCode,
+                    'order_code' => $order->order_code
+                ]);
+                if ($request->expectsJson()) {
+                    return response()->json(['success' => false, 'message' => 'Mã QR code không khớp với đơn hàng.'], 400);
+                }
+                return back()->with('error', 'Mã QR code không khớp với đơn hàng.');
+            }
+            
+            \Log::info('QR code validation passed, updating order to delivered');
+
+            // Cập nhật trạng thái sang delivered (giao thành công)
+            $order->status = 'delivered';
+            $order->delivered_at = now();
+            
+            // Kiểm tra nếu phương thức thanh toán là COD thì cập nhật trạng thái thanh toán là 'paid'
+            if (strtolower($order->payment_method) === 'cod') {
+                $order->payment_status = 'paid';
+            }
+            
+            $order->save();
+            
+            // Cập nhật trạng thái packages sang delivered
+            $this->updatePackageStatusBasedOnOrderStatus($order);
+
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'message' => 'Đã xác nhận giao hàng thành công!']);
+            }
+            return redirect()->route('shipper.dashboard')->with('success', 'Đã xác nhận giao hàng thành công!');
         }
 
         // Logic cũ cho các trạng thái khác
@@ -195,7 +245,58 @@ class ShipperController extends Controller
         }
 
         $order->save();
+        
+        // Cập nhật trạng thái packages cho các trạng thái khác
+        $this->updatePackageStatusBasedOnOrderStatus($order);
 
         return redirect()->route('shipper.dashboard')->with('success', 'Cập nhật trạng thái đơn hàng ' . $order->order_code . ' thành công!');
+    }
+    
+    /**
+     * Cập nhật trạng thái packages dựa trên trạng thái đơn hàng
+     */
+    private function updatePackageStatusBasedOnOrderStatus(Order $order)
+    {
+        try {
+            // Lấy tất cả packages của đơn hàng thông qua fulfillments
+            $packages = \App\Models\Package::whereHas('fulfillment', function($query) use ($order) {
+                $query->where('order_id', $order->id);
+            })->get();
+            
+            // Mapping trạng thái order sang package status
+            $statusMapping = [
+                'pending_confirmation' => \App\Models\Package::STATUS_PENDING_CONFIRMATION,
+                'processing' => \App\Models\Package::STATUS_PROCESSING,
+                'out_for_delivery' => \App\Models\Package::STATUS_OUT_FOR_DELIVERY,
+                'delivered' => \App\Models\Package::STATUS_DELIVERED,
+                'cancelled' => \App\Models\Package::STATUS_CANCELLED,
+                'failed_delivery' => \App\Models\Package::STATUS_FAILED_DELIVERY,
+                'returned' => \App\Models\Package::STATUS_RETURNED,
+            ];
+            
+            $newPackageStatus = $statusMapping[$order->status] ?? null;
+            
+            if ($newPackageStatus) {
+                foreach ($packages as $package) {
+                    $package->updateStatus(
+                        $newPackageStatus,
+                        "Cập nhật từ shipper khi đơn hàng chuyển sang {$order->status}",
+                        Auth::id()
+                    );
+                }
+                
+                \Log::info('Package statuses updated successfully', [
+                    'order_id' => $order->id,
+                    'order_status' => $order->status,
+                    'package_status' => $newPackageStatus,
+                    'packages_count' => $packages->count()
+                ]);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error updating package statuses from shipper', [
+                'order_id' => $order->id,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

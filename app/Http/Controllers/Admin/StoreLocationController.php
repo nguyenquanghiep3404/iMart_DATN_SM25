@@ -75,6 +75,7 @@ class StoreLocationController extends Controller
             'ward_code' => 'required|string|exists:wards_old,code',
             'is_active' => 'boolean',
         ];
+        // dd($request->all());
 
         try {
             $validatedData = $request->validate($rules);

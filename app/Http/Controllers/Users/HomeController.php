@@ -610,16 +610,6 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-
-        $alreadyInCart = 0;
-        // Giả sử session('cart') là mảng các item: ['product_variant_id' => 1, 'quantity' => 2, ...]
-        if (session()->has('cart')) {
-            $variantId = $productVariant->id ?? $product->id; // lấy id biến thể hiện tại
-            $alreadyInCart = collect(session('cart'))
-                ->where('product_variant_id', $variantId) // chỉ lấy item cùng biến thể
-                ->sum('quantity');
-        }
-
         $productBundles = ProductBundle::with([
             'mainProducts.productVariant.product.coverImage',
             'suggestedProducts.productVariant.product.coverImage'
@@ -884,11 +874,10 @@ class HomeController extends Controller
             'ratingFilter',
             'productBundles',
             'storeLocations',
-            'provinces',
-            'districts',
+            'provinces', // Thêm provinces để view có thể dùng
+            'districts', // Districts sẽ được load động bằng JS
+            // Thêm biến mới
             'hasWarehouseInventory',
-            'alreadyInCart'
-
         ));
     }
 
@@ -1002,8 +991,9 @@ class HomeController extends Controller
         $query = Product::with([
             'category',
             'coverImage',
+            'galleryImages',
             'variants' => function ($query) use ($request, $storages, $priceRangesSelected) {
-                $query->with(['attributeValues', 'primaryImage']);
+                $query->with(['attributeValues', 'primaryImage', 'images']);
                 if ($request->sort === 'dang_giam_gia') {
                     $query->where('sale_price', '>', 0)
                         ->where('sale_price', '<', \DB::raw('price'))
@@ -1159,6 +1149,15 @@ class HomeController extends Controller
                     ? round(100 * (1 - ($variant->sale_price / $variant->price)))
                     : 0;
 
+                // Xác định URL ảnh hiển thị cho biến thể và sản phẩm
+                $path = collect([
+                    $variant->primaryImage?->path,
+                    $variant->images->first()?->path,
+                    $product->coverImage?->path,
+                    $product->galleryImages->first()?->path,
+                ])->first(fn ($p) => !empty($p));
+                $variantImageUrl = $path ? \Storage::url($path) : asset('images/placeholder.jpg');
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -1173,7 +1172,7 @@ class HomeController extends Controller
                         'price' => $onSale ? $variant->sale_price : $variant->price,
                         'original_price' => $variant->price,
                         'discount_percent' => $discountPercent,
-                        'image_url' => $variant->image_url,
+                        'image_url' => $variantImageUrl,
                         'stock' => $variant->sellable_stock,
                     ],
                 ];
@@ -1624,7 +1623,6 @@ class HomeController extends Controller
             return response()->json(['error' => 'Internal Server Error'], 500);
         }
     }
-
     public function getSuggestedProducts($variantId)
     {
         try {
@@ -1768,18 +1766,29 @@ class HomeController extends Controller
     public function getVariantStock($variantId)
     {
         try {
-            // Tính tồn kho khả dụng = SUM(quantity - quantity_committed)
+            // Tính tồn kho khả dụng trong DB
             $availableStock = \DB::table('product_inventories')
                 ->where('product_variant_id', $variantId)
                 ->where('inventory_type', 'new')
                 ->selectRaw('COALESCE(SUM(quantity - quantity_committed), 0) as available_stock')
                 ->value('available_stock');
 
-            \Log::info("Variant {$variantId} có tồn kho khả dụng: {$availableStock}");
+            // Lấy số lượng đã có trong giỏ hàng (session)
+            $cart = session('cart', []);
+            $alreadyInCarts = collect($cart)
+                ->where('variant_id', $variantId)
+                ->sum('quantity');
+
+            // Tồn kho còn lại = tồn kho DB - đã có trong giỏ
+            $remaining = max($availableStock - $alreadyInCarts, 0);
+
+            \Log::info("Variant {$variantId}: tồn kho DB = {$availableStock}, trong giỏ = {$alreadyInCarts}, còn lại = {$remaining}");
 
             return response()->json([
                 'product_variant_id' => $variantId,
-                'available_stock' => $availableStock
+                'available_stock'    => $availableStock,
+                'alreadyInCarts'    => $alreadyInCarts,
+                'remaining'          => $remaining,
             ]);
         } catch (\Exception $e) {
             \Log::error('Error in getVariantStock: ' . $e->getMessage());

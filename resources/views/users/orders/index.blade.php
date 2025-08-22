@@ -196,6 +196,19 @@
             </form>
         </div>
     </div>
+    {{-- // DÁN ĐOẠN CODE HIỂN THỊ THÔNG BÁO VÀO ĐÂY --}}
+    @if(session('success'))
+        <div class="alert alert-success" role="alert">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger" role="alert">
+            {{ session('error') }}
+        </div>
+    @endif
+    {{-- // KẾT THÚC PHẦN THÔNG BÁO --}}
 
     {{-- Các tab lọc trạng thái --}}
     <div class="border-bottom mb-4">
@@ -203,9 +216,10 @@
             <a href="{{ route('orders.index') }}" class="tab-link {{ empty($status) ? 'active' : '' }}">Tất cả</a>
             <a href="{{ route('orders.index', ['status' => 'pending_confirmation']) }}" class="tab-link {{ $status == 'pending_confirmation' ? 'active' : '' }}">Chờ xác nhận</a>
             <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="tab-link {{ $status == 'processing' ? 'active' : '' }}">Đang xử lý</a>
-            <a href="{{ route('orders.index', ['status' => 'shipped']) }}" class="tab-link {{ $status == 'shipped' ? 'active' : '' }}">Đang giao</a>
-            <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Hoàn tất</a>
-            <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Đã hủy</a>
+            <a href="{{ route('orders.index', ['status' => 'out_for_delivery']) }}" class="tab-link {{ $status == 'out_for_delivery' ? 'active' : '' }}">Đang giao hàng</a>
+            <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Giao hàng thành công</a>
+            <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Hủy</a>
+            <a href="{{ route('orders.index', ['status' => 'failed_delivery']) }}" class="tab-link {{ $status == 'failed_delivery' ? 'active' : '' }}">Giao hàng thất bại</a>
             <a href="{{ route('orders.returns') }}" class="tab-link {{ request()->routeIs('orders.returns') ? 'active' : '' }}">Trả hàng</a>
         </nav>
     </div>
@@ -234,6 +248,8 @@
                     $statusClass = 'status-completed'; $statusText = 'Hoàn tất'; break;
                     case 'processing':
                     $statusClass = 'status-processing'; $statusText = 'Đang xử lý'; break;
+                    case 'pending_confirmation':
+                    $statusClass = 'pending_confirmation'; $statusText = 'Chờ xác nhận'; break;
                     case 'shipped': case 'out_for_delivery':
                     $statusClass = 'status-shipping'; $statusText = 'Đang giao'; break;
                     case 'cancelled': case 'failed_delivery':
@@ -269,7 +285,17 @@
             </div>
             <div class="order-card-footer">
                 @if($order->status == 'delivered' || $order->status == 'cancelled')
-                <a href="#" class="btn-secondary">Mua lại</a>
+                <form action="{{ route('orders.buy_again', $order->id) }}" method="POST" class="d-inline-block">
+                    @csrf
+                    <button type="submit" class="btn-secondary">Mua lại</button>
+                </form>
+                @endif
+                {{-- Hiển thị nút khi đơn hàng đã giao VÀ chưa được xác nhận --}}
+                @if($order->status == 'delivered' && is_null($order->confirmed_at))
+                    <form action="{{ route('orders.confirm_receipt', $order->id) }}" method="POST" class="d-inline-block">
+                        @csrf
+                        <button type="submit" class="btn-secondary">Đã nhận hàng</button>
+                    </form>
                 @endif
                 <a href="{{ route('orders.show', $order->id) }}" class="btn-view-details">Xem chi tiết</a>
             </div>
