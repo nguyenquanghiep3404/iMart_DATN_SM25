@@ -182,8 +182,7 @@
                                 class="draggable-item flex items-center space-x-4 p-3 border rounded-lg {{ $banner->status !== 'active' ? 'opacity-50' : '' }}">
                                 <i class="fas fa-grip-vertical text-gray-400 cursor-grab"></i>
                                 <img src="{{ $banner->desktopImage ? asset('storage/' . $banner->desktopImage->path) : '' }}"
-                                    class="w-24 h-10 object-cover rounded-md bg-gray-200"
-                                    onerror="this.src=''">
+                                    class="w-24 h-10 object-cover rounded-md bg-gray-200" onerror="this.src=''">
                                 <span class="font-semibold flex-grow">
                                     {{ $banner->title }}
                                     @if ($banner->status !== 'active')
@@ -522,7 +521,7 @@
                 </p>
                 <input type="hidden" id="remove-product-id">
                 <input type="hidden" id="remove-product-block-id">
-            </p>
+                </p>
             </div>
 
             <!-- Footer -->
@@ -626,7 +625,9 @@
                     notificationCloseBtn.addEventListener('click', () => {
                         clearTimeout(autoClose);
                         notificationModal.classList.add('hidden');
-                    }, { once: true });
+                    }, {
+                        once: true
+                    });
                 }
             };
 
@@ -657,10 +658,16 @@
                 if (!categoryList || !categorySortingSection) return;
                 const categoriesToShow = [];
                 mockData.categories.forEach(cat => {
-                    if (cat.show_on_homepage) categoriesToShow.push({ ...cat, isChild: false });
+                    if (cat.show_on_homepage) categoriesToShow.push({
+                        ...cat,
+                        isChild: false
+                    });
                     if (Array.isArray(cat.children)) {
                         cat.children.forEach(child => {
-                            if (child.show_on_homepage) categoriesToShow.push({ ...child, isChild: true });
+                            if (child.show_on_homepage) categoriesToShow.push({
+                                ...child,
+                                isChild: true
+                            });
                         });
                     }
                 });
@@ -706,7 +713,9 @@
                                         'X-CSRF-TOKEN': document.querySelector(
                                             'meta[name="csrf-token"]').content
                                     },
-                                    body: JSON.stringify({ show_on_homepage: isActive })
+                                    body: JSON.stringify({
+                                        show_on_homepage: isActive
+                                    })
                                 });
                             const data = await response.json();
                             if (!response.ok || !data.success) {
@@ -720,7 +729,8 @@
                                 if (cat.id === categoryId) cat.show_on_homepage = isActive;
                                 if (Array.isArray(cat.children)) {
                                     cat.children.forEach(child => {
-                                        if (child.id === categoryId) child.show_on_homepage = isActive;
+                                        if (child.id === categoryId) child
+                                            .show_on_homepage = isActive;
                                     });
                                 }
                             });
@@ -795,7 +805,8 @@
                             if (parent.id === cat.id) parent.order = index + 1;
                             if (Array.isArray(parent.children)) {
                                 parent.children.forEach(child => {
-                                    if (child.id === cat.id) child.order = index + 1;
+                                    if (child.id === cat.id) child.order =
+                                        index + 1;
                                 });
                             }
                         });
@@ -809,7 +820,9 @@
                                 'X-CSRF-TOKEN': document.querySelector(
                                     'meta[name="csrf-token"]').content
                             },
-                            body: JSON.stringify({ category_ids: newOrderIds })
+                            body: JSON.stringify({
+                                category_ids: newOrderIds
+                            })
                         });
                         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                         const data = await response.json();
@@ -832,10 +845,15 @@
                     const box = child.getBoundingClientRect();
                     const offset = y - box.top - box.height / 2;
                     if (offset < 0 && offset > closest.offset) {
-                        return { offset, element: child };
+                        return {
+                            offset,
+                            element: child
+                        };
                     }
                     return closest;
-                }, { offset: Number.NEGATIVE_INFINITY }).element;
+                }, {
+                    offset: Number.NEGATIVE_INFINITY
+                }).element;
             };
 
             // --- FORMAT CURRENCY ---
@@ -895,12 +913,12 @@
                                     const prodName = prod.name ? String(prod.name).replace(/</g, '&lt;').replace(/>/g, '&gt;') : 'Unnamed Product';
                                     const prodImage = prod.image ? String(prod.image).replace(/</g, '&lt;').replace(/>/g, '&gt;') : '';
                                     return `
-                                            <li data-id="${prodId}" class="flex items-center space-x-4 p-2 border rounded-lg">
-                                                <img src="${prodImage}" class="w-10 h-10 object-cover rounded-md bg-gray-200" alt="Product image">
-                                                <span class="font-semibold flex-grow text-sm">${prodName}</span>
-                                                <button class="text-red-500 hover:text-red-700 text-lg remove-product-btn" data-id="${prodId}"><i class="fas fa-times-circle"></i></button>
-                                            </li>
-                                        `;
+                                                <li data-id="${prodId}" class="flex items-center space-x-4 p-2 border rounded-lg">
+                                                    <img src="${prodImage}" class="w-10 h-10 object-cover rounded-md bg-gray-200" alt="Product image">
+                                                    <span class="font-semibold flex-grow text-sm">${prodName}</span>
+                                                    <button class="text-red-500 hover:text-red-700 text-lg remove-product-btn" data-id="${prodId}"><i class="fas fa-times-circle"></i></button>
+                                                </li>
+                                            `;
                                 })
                                 .join('')}
                             ${products.length === 0 ? `<li class="text-center text-gray-400 text-sm py-4">Chưa có sản phẩm nào.</li>` : ''}
@@ -978,11 +996,13 @@
                             }
                             const data = await response.json();
                             if (data.success) {
-                                const block = mockData.product_blocks.find(b => b.id === blockId);
+                                const block = mockData.product_blocks.find(b => b.id ===
+                                    blockId);
                                 if (block) block.is_visible = data.is_visible;
                                 renderProductBlocks();
                                 showNotification(data.message ||
-                                    '✅ Cập nhật trạng thái hiển thị thành công', 'success');
+                                    '✅ Cập nhật trạng thái hiển thị thành công',
+                                    'success');
                             } else {
                                 checkbox.checked = !checkbox.checked;
                                 showNotification(data.message ||
@@ -991,7 +1011,8 @@
                         } catch (err) {
                             console.error('Toggle visibility error:', err);
                             checkbox.checked = !checkbox.checked;
-                            showNotification(`❌ Lỗi kết nối máy chủ: ${err.message}`, 'error');
+                            showNotification(`❌ Lỗi kết nối máy chủ: ${err.message}`,
+                                'error');
                         }
                     });
                 });
@@ -1028,7 +1049,7 @@
                                 method: 'DELETE',
                                 headers: {
                                     'X-CSRF-TOKEN': document.querySelector(
-                                            'meta[name="csrf-token"]')?.content || '',
+                                        'meta[name="csrf-token"]')?.content || '',
                                 },
                             });
                         if (!response.ok) {
@@ -1082,7 +1103,7 @@
                                 method: 'DELETE',
                                 headers: {
                                     'X-CSRF-TOKEN': document.querySelector(
-                                            'meta[name="csrf-token"]')?.content || '',
+                                        'meta[name="csrf-token"]')?.content || '',
                                 },
                             });
                         if (!response.ok) {
@@ -1148,7 +1169,9 @@
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
                                     .content
                             },
-                            body: JSON.stringify({ banner_ids: newOrderIds })
+                            body: JSON.stringify({
+                                banner_ids: newOrderIds
+                            })
                         })
                         .then(res => {
                             if (!res.ok) throw new Error(`Lỗi HTTP: ${res.status}`);
@@ -1202,7 +1225,9 @@
                                     'X-CSRF-TOKEN': document.querySelector(
                                         'meta[name="csrf-token"]').content
                                 },
-                                body: JSON.stringify({ title: newTitle })
+                                body: JSON.stringify({
+                                    title: newTitle
+                                })
                             });
 
                         if (!response.ok) {
@@ -1237,14 +1262,16 @@
                 document.querySelectorAll('.move-up-btn').forEach(btn => {
                     btn.addEventListener('click', async () => {
                         const blockId = parseInt(btn.dataset.id);
-                        const blockIndex = mockData.product_blocks.findIndex(b => b.id === blockId);
+                        const blockIndex = mockData.product_blocks.findIndex(b => b.id ===
+                            blockId);
                         if (blockIndex <= 0) {
                             showNotification('❌ Khối đã ở vị trí đầu tiên', 'info');
                             return;
                         }
 
                         const temp = mockData.product_blocks[blockIndex];
-                        mockData.product_blocks[blockIndex] = mockData.product_blocks[blockIndex - 1];
+                        mockData.product_blocks[blockIndex] = mockData.product_blocks[
+                            blockIndex - 1];
                         mockData.product_blocks[blockIndex - 1] = temp;
 
                         mockData.product_blocks.forEach((block, index) => {
@@ -1261,12 +1288,16 @@
                                         'X-CSRF-TOKEN': document.querySelector(
                                             'meta[name="csrf-token"]').content
                                     },
-                                    body: JSON.stringify({ block_ids: newOrderIds })
+                                    body: JSON.stringify({
+                                        block_ids: newOrderIds
+                                    })
                                 });
-                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            if (!response.ok) throw new Error(
+                                `HTTP error! status: ${response.status}`);
                             const data = await response.json();
                             renderProductBlocks();
-                            showNotification(data.message || '✅ Di chuyển khối lên thành công', 'success');
+                            showNotification(data.message ||
+                                '✅ Di chuyển khối lên thành công', 'success');
                         } catch (err) {
                             console.error('Lỗi khi di chuyển khối lên:', err);
                             showNotification('❌ Di chuyển khối thất bại', 'error');
@@ -1277,14 +1308,16 @@
                 document.querySelectorAll('.move-down-btn').forEach(btn => {
                     btn.addEventListener('click', async () => {
                         const blockId = parseInt(btn.dataset.id);
-                        const blockIndex = mockData.product_blocks.findIndex(b => b.id === blockId);
+                        const blockIndex = mockData.product_blocks.findIndex(b => b.id ===
+                            blockId);
                         if (blockIndex >= mockData.product_blocks.length - 1) {
                             showNotification('❌ Khối đã ở vị trí cuối cùng', 'info');
                             return;
                         }
 
                         const temp = mockData.product_blocks[blockIndex];
-                        mockData.product_blocks[blockIndex] = mockData.product_blocks[blockIndex + 1];
+                        mockData.product_blocks[blockIndex] = mockData.product_blocks[
+                            blockIndex + 1];
                         mockData.product_blocks[blockIndex + 1] = temp;
 
                         mockData.product_blocks.forEach((block, index) => {
@@ -1301,12 +1334,16 @@
                                         'X-CSRF-TOKEN': document.querySelector(
                                             'meta[name="csrf-token"]').content
                                     },
-                                    body: JSON.stringify({ block_ids: newOrderIds })
+                                    body: JSON.stringify({
+                                        block_ids: newOrderIds
+                                    })
                                 });
-                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            if (!response.ok) throw new Error(
+                                `HTTP error! status: ${response.status}`);
                             const data = await response.json();
                             renderProductBlocks();
-                            showNotification(data.message || '✅ Di chuyển khối xuống thành công', 'success');
+                            showNotification(data.message ||
+                                '✅ Di chuyển khối xuống thành công', 'success');
                         } catch (err) {
                             console.error('Lỗi khi di chuyển khối xuống:', err);
                             showNotification('❌ Di chuyển khối thất bại', 'error');
@@ -1320,46 +1357,55 @@
             let currentPage = 1;
             const perPage = 15;
             let initialProductIds = []; // Biến lưu trạng thái ban đầu của sản phẩm được chọn
+            let selectedVariantIds = [];
+async function loadProducts(query = '', filter = '', page = 1) {
+    try {
+        productSelectionList.innerHTML =
+            '<tr><td colspan="8" class="text-center py-4">Đang tải...</td></tr>';
 
-            async function loadProducts(query = '', filter = '', page = 1) {
-                try {
-                    productSelectionList.innerHTML =
-                        '<tr><td colspan="8" class="text-center py-4">Đang tải...</td></tr>';
-
-                    const response = await fetch(
-                        `/admin/homepage/products/search?q=${encodeURIComponent(query)}&filter=${encodeURIComponent(filter)}&page=${page}&per_page=${perPage}`, {
-                            method: 'GET',
-                            headers: {
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            }
-                        }
-                    );
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const data = await response.json();
-                    currentPage = data.current_page || 1;
-                    renderProductSelection(data.data);
-                    renderPagination(data.current_page || 1, data.last_page || 1);
-                } catch (err) {
-                    console.error('Không tải được sản phẩm:', err);
-                    productSelectionList.innerHTML =
-                        `<tr><td colspan="8" class="text-center py-4 text-red-500">Không tải được sản phẩm: ${err.message}</td></tr>`;
+        const response = await fetch(
+            `/admin/homepage/products/search?q=${encodeURIComponent(query)}&filter=${encodeURIComponent(filter)}&page=${page}&per_page=${perPage}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 }
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        currentPage = data.current_page || 1;
+
+        renderProductSelection(data.data);
+        renderPagination(data.current_page || 1, data.last_page || 1);
+    } catch (err) {
+        console.error('Không tải được sản phẩm:', err);
+        productSelectionList.innerHTML =
+            `<tr><td colspan="8" class="text-center py-4 text-red-500">Không tải được sản phẩm: ${err.message}</td></tr>`;
+    }
+}
+
+            function setupProductCheckboxEvent() {
+                const checkboxes = productSelectionList.querySelectorAll('.product-checkbox');
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', () => {
+                        const variantId = parseInt(checkbox.value);
+                        if (checkbox.checked) {
+                            if (!selectedVariantIds.includes(variantId)) {
+                                selectedVariantIds.push(variantId);
+                            }
+                        } else {
+                            selectedVariantIds = selectedVariantIds.filter(id => id !== variantId);
+                        }
+                    });
+                });
             }
 
             function renderProductSelection(variants) {
-                const block = mockData.product_blocks.find(b => b.id === selectedBlockId);
-                const existingProductIds = block && Array.isArray(block.products)
-                    ? block.products.map(p => parseInt(p.id))
-                    : [];
-
-                // Lưu trạng thái ban đầu của các sản phẩm được chọn
-                initialProductIds = [...existingProductIds];
-
                 productSelectionList.innerHTML = variants.map(v => `
         <tr>
             <td class="px-4 py-2">
@@ -1369,7 +1415,7 @@
             <td class="px-4 py-2 text-center">
                 ${v.sale_price && v.sale_price < v.price
                     ? `<span class="text-red-600 font-semibold">${formatCurrency(v.sale_price)}</span><br>
-                       <span class="line-through text-gray-400 text-xs">${formatCurrency(v.price)}</span>`
+                           <span class="line-through text-gray-400 text-xs">${formatCurrency(v.price)}</span>`
                     : `<span>${formatCurrency(v.price)}</span>`}
             </td>
             <td class="px-4 py-2 text-center">${v.stock_quantity ?? 0}</td>
@@ -1378,10 +1424,11 @@
             </td>
             <td class="px-4 py-2">${v.release_date ?? '—'}</td>
             <td class="px-4 py-2 text-center">
-                <input type="checkbox" value="${v.id}" class="product-checkbox h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500" ${existingProductIds.includes(v.id) ? 'checked' : ''}>
+                <input type="checkbox" value="${v.id}" class="product-checkbox h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500" ${selectedVariantIds.includes(v.id) ? 'checked' : ''}>
             </td>
         </tr>
     `).join('');
+                setupProductCheckboxEvent(); // Gắn sự kiện sau khi render
             }
 
             function renderPagination(currentPage, lastPage) {
@@ -1428,17 +1475,25 @@
                 paginationContainer.appendChild(nextButton);
             }
 
-            document.addEventListener('click', function(e) {
-                const addProductBtn = e.target.closest('.add-product-btn');
-                if (addProductBtn) {
-                    selectedBlockId = parseInt(addProductBtn.dataset.blockId);
-                    productSearchInput.value = '';
-                    filterType.value = '';
-                    currentPage = 1;
-                    addProductModal.classList.remove('hidden');
-                    loadProducts();
-                }
-            });
+           document.addEventListener('click', function(e) {
+    const addProductBtn = e.target.closest('.add-product-btn');
+    if (addProductBtn) {
+        selectedBlockId = parseInt(addProductBtn.dataset.blockId);
+        productSearchInput.value = '';
+        filterType.value = '';
+        currentPage = 1;
+
+        // Khởi tạo selectedVariantIds từ block.products khi mở modal
+        const block = mockData.product_blocks.find(b => b.id === selectedBlockId);
+        selectedVariantIds = block && Array.isArray(block.products)
+            ? block.products.map(p => parseInt(p.id))
+            : [];
+        initialProductIds = [...selectedVariantIds]; // Lưu trạng thái ban đầu
+
+        addProductModal.classList.remove('hidden');
+        loadProducts();
+    }
+});
 
             productSearchInput.addEventListener('input', () => {
                 currentPage = 1;
@@ -1460,14 +1515,14 @@
                     return;
                 }
 
-                const selectedVariantIds = [...productSelectionList.querySelectorAll(
-                        '.product-checkbox:checked')]
-                    .map(input => parseInt(input.value));
-
-                const hasChanges = JSON.stringify(selectedVariantIds.sort()) !== JSON.stringify(initialProductIds.sort());
+                // Kiểm tra xem có thay đổi nào trong danh sách đã chọn
+                const hasChanges = JSON.stringify(selectedVariantIds.sort()) !== JSON.stringify(
+                    initialProductIds.sort());
 
                 if (!hasChanges) {
-                    showNotification('❌ Vui lòng thực hiện ít nhất một thay đổi (thêm hoặc bỏ chọn sản phẩm).', 'error');
+                    showNotification(
+                        '❌ Vui lòng thực hiện ít nhất một thay đổi (thêm hoặc bỏ chọn sản phẩm).',
+                        'error');
                     return;
                 }
 
@@ -1480,7 +1535,9 @@
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
                                     .content
                             },
-                            body: JSON.stringify({ product_variant_ids: selectedVariantIds })
+                            body: JSON.stringify({
+                                product_variant_ids: selectedVariantIds
+                            })
                         });
 
                     if (!response.ok) {
@@ -1503,6 +1560,8 @@
 
             cancelAddProductBtn.addEventListener('click', () => {
                 addProductModal.classList.add('hidden');
+                selectedVariantIds = []; // Reset danh sách đã chọn
+                initialProductIds = []; // Reset trạng thái ban đầu
             });
 
             // --- MODAL LOGIC ---
@@ -1532,7 +1591,9 @@
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
                                     .content
                             },
-                            body: JSON.stringify({ title: newTitle })
+                            body: JSON.stringify({
+                                title: newTitle
+                            })
                         })
                         .then(res => {
                             if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);

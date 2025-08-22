@@ -190,16 +190,6 @@
                             <dd class="mt-1 text-sm text-gray-900">{{ $bundle->display_title }}</dd>
                         </div>
                         <div>
-                            <dt class="text-sm font-medium text-gray-700">Thời gian hiệu lực</dt>
-                            <dd class="mt-1 text-sm text-gray-900">
-                                {{ optional($bundle->start_date)->format('d/m/Y') ?? '—' }} -
-                                {{ optional($bundle->end_date)->format('d/m/Y') ?? '—' }}
-                                @if ($bundle->end_date && now()->diffInDays($bundle->end_date) <= 7 && now()->lte($bundle->end_date))
-                                    <span class="text-warning text-xs ml-2">Sắp hết hạn</span>
-                                @endif
-                            </dd>
-                        </div>
-                        <div>
                             <dt class="text-sm font-medium text-gray-700">Trạng thái</dt>
                             <dd class="mt-1 text-sm">
                                 @if ($bundle->status === 'active' && $bundle->end_date && now()->gt($bundle->end_date))
@@ -414,62 +404,7 @@
                 </div>
             </div>
 
-            <div class="card-custom mb-6">
-                <div class="card-custom-header">
-                    <h3 class="card-custom-title">Tổng giá trị & Khuyến mãi</h3>
-                </div>
-                <div class="card-custom-body">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Số liệu chính -->
-                        <dl class="space-y-4">
-                            <div>
-                                <dt class="text-sm font-medium text-gray-700">Tổng giá trị gốc</dt>
-                                <dd class="mt-1 text-lg font-semibold text-gray-900">
-                                    {{ number_format($priceStats['total_original'] ?? 0) }} VNĐ</dd>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-gray-700">Giá sau khuyến mãi</dt>
-                                <dd class="mt-1 text-lg font-semibold text-green-700">
-                                    {{ number_format($priceStats['total_discounted'] ?? 0) }} VNĐ</dd>
-                                <p class="text-xs text-gray-500 mt-1">Tiết kiệm
-                                    {{ number_format($priceStats['total_original'] - $priceStats['total_discounted']) }}
-                                    VNĐ cho khách hàng.</p>
-                            </div>
-                            <div>
-                                <dt class="text-sm font-medium text-gray-700">Mức giảm</dt>
-                                <dd class="mt-1 text-lg font-semibold text-red-700">
-                                    {{ round((($priceStats['total_original'] - $priceStats['total_discounted']) / $priceStats['total_original']) * 100, 1) ?? 0 }}%
-                                </dd>
-                            </div>
-                        </dl>
-                        <!-- Biểu đồ -->
-                        <div>
-
-
-
-                            <!-- Usage Statistics -->
-                            <div class="card-custom mb-6">
-                                <div class="card-custom-header">
-                                    <h3 class="card-custom-title">Thống kê sử dụng</h3>
-                                </div>
-                                <div class="card-custom-body">
-                                    <dl class="grid-cols-auto-fit">
-                                        <div>
-                                            <dt class="text-sm font-medium text-gray-700">Số lượt mua</dt>
-                                            <dd class="mt-1 text-sm text-gray-900">
-                                                {{ $usageStats['purchase_count'] ?? 0 }} lượt</dd>
-                                        </div>
-                                        <div>
-                                            <dt class="text-sm font-medium text-gray-700">Doanh thu từ deal</dt>
-                                            <dd class="mt-1 text-sm text-gray-900">
-                                                {{ number_format($usageStats['total_revenue'] ?? 0) }}
-                                                VNĐ</dd>
-                                        </div>
-                                    </dl>
-                                </div>
-                            </div>
-
-                            <!-- Actions -->
+             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="action-buttons">
                                 <a href="{{ route('admin.bundle-products.index') }}" class="btn btn-secondary">
                                     <i class="fas fa-arrow-left mr-2"></i>Quay lại
@@ -507,6 +442,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
+
+        </div>
         @endsection
