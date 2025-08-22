@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('flash_sale_products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('flash_sale_id')->constrained()->onDelete('cascade');
-            $table->foreignId('flash_sale_time_slot_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('flash_sale_time_slot_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_variant_id')->constrained()->onDelete('cascade');
             $table->decimal('flash_price', 10, 2);
             $table->integer('quantity_limit');
@@ -22,7 +22,8 @@ return new class extends Migration
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
 
-            $table->unique(['flash_sale_id', 'product_variant_id']);
+            // Đặt tên cho ràng buộc duy nhất
+            $table->unique(['flash_sale_id', 'product_variant_id', 'flash_sale_time_slot_id'], 'flash_sale_products_unique');
         });
     }
 

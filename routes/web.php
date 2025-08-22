@@ -138,6 +138,7 @@ Route::get('/api/filter-stores', [HomeController::class, 'filterStoreLocations']
 // Route để lấy danh sách tỉnh/thành phố theo biến thể sản phẩm
 Route::get('/api/provinces-by-variant', [HomeController::class, 'getProvincesByVariant'])->name('api.provinces.by.variant');
 Route::get('/bundle-suggested-products/{variantId}', [HomeController::class, 'getSuggestedProducts'])->name('bundle.suggested-products');
+Route::post('/cart/add-bundle', [CartController::class, 'addBundle'])->name('cart.addBundle');
 // lấy api số lượng sản phẩm
 Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariantStock']);
 
@@ -148,6 +149,8 @@ Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariant
 Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestions'])->name('products.compare_suggestions');
 Route::post('/compare-suggestions', [TradeInPublicController::class, 'compareSuggestions']);
 Route::post('/api/compare-suggestions', [HomeController::class, 'compareSuggestions']);
+// Thêm route mới cho tìm kiếm sản phẩm
+Route::get('/search-products', [HomeController::class, 'searchProducts'])->name('search-products');
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
@@ -306,8 +309,7 @@ Route::prefix('api/store-locations')->name('api.stores.')->group(function () {
 //==========================================================================
 Route::prefix('admin')
     ->name('admin.')
-    ->middleware(['auth', 'role:admin,content_manager', 'check.content.access'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified',  'role:admin,content_manager', 'check.content.access'])
     ->group(function () {
 
         // http://127.0.0.1:8000/admin/dashboard

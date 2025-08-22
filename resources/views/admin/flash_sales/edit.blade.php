@@ -54,24 +54,30 @@
                                 class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                 required>
                         </div>
-                        {{-- Start time --}}
+                        {{-- Thời gian bắt đầu --}}
                         <div>
-                            <label for="start_time" class="block mb-2 text-sm font-medium text-gray-900">Thời gian bắt
-                                đầu</label>
-                            <input type="datetime-local" id="start_time" name="start_time"
-                                value="{{ old('start_time', \Carbon\Carbon::parse($flashSale->start_time)->format('Y-m-d\TH:i')) }}"
-                                class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                step="60" required>
+                            <label for="start_time" class="block mb-2 text-sm font-medium text-gray-900">Thời gian bắt đầu
+                                chiến dịch</label>
+                            <input type="date" id="start_time" name="start_time"
+                                value="{{ old('start_time', \Carbon\Carbon::parse($flashSale->start_time)->format('Y-m-d')) }}"
+                                class="w-full p-2.5 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error('start_time') border-red-500 @enderror">
+                            @error('start_time')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
-                        {{-- End time --}}
+
+                        {{-- Thời gian kết thúc --}}
                         <div>
-                            <label for="end_time" class="block mb-2 text-sm font-medium text-gray-900">Thời gian kết
-                                thúc</label>
-                            <input type="datetime-local" id="end_time" name="end_time"
-                                value="{{ old('end_time', \Carbon\Carbon::parse($flashSale->end_time)->format('Y-m-d\TH:i')) }}"
-                                class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                step="60" required>
+                            <label for="end_time" class="block mb-2 text-sm font-medium text-gray-900">Thời gian kết thúc
+                                chiến dịch</label>
+                            <input type="date" id="end_time" name="end_time"
+                                value="{{ old('end_time', \Carbon\Carbon::parse($flashSale->end_time)->format('Y-m-d')) }}"
+                                class="w-full p-2.5 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error('end_time') border-red-500 @enderror">
+                            @error('end_time')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
                         </div>
+
                         {{-- Danh sách khung giờ --}}
                         <div class="md:col-span-2">
                             <label class="block mb-2 text-sm font-medium text-gray-900">Khung giờ</label>
@@ -109,17 +115,35 @@
                         {{-- Trạng thái --}}
                         <div class="md:col-span-2">
                             <label for="status" class="block mb-2 text-sm font-medium text-gray-900">Trạng thái</label>
-                            <select id="status" name="status"
-                                class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                required>
-                                <option value="active"
-                                    {{ old('status', $flashSale->status) == 'active' ? 'selected' : '' }}>Tiếp tục
-                                </option>
-                                <option value="inactive"
-                                    {{ old('status', $flashSale->status) == 'inactive' ? 'selected' : '' }}>Tạm dừng
-                                </option>
-                            </select>
+
+                            {{-- Dòng debug này không còn cần thiết nữa --}}
+                            {{-- <p>Current Flash Sale Status: {{ $flashSale->status }}</p> --}}
+
+                            @if ($flashSale->status === 'scheduled')
+                                <input type="text" value="Đã lên lịch"
+                                    class="w-full p-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                                    disabled>
+                                <input type="hidden" name="status" value="scheduled">
+                            @elseif ($flashSale->status === 'finished')
+                                <input type="text" value="Đã kết thúc"
+                                    class="w-full p-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                                    disabled>
+                                <input type="hidden" name="status" value="finished">
+                            @else
+                                {{-- Nếu trạng thái là 'active' hoặc 'inactive', hiển thị dropdown cho phép chọn --}}
+                                <select id="status" name="status"
+                                    class="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                                    required>
+                                    <option value="active"
+                                        {{ old('status', $flashSale->status) == 'active' ? 'selected' : '' }}>Đang hoạt
+                                        động</option>
+                                    <option value="inactive"
+                                        {{ old('status', $flashSale->status) == 'inactive' ? 'selected' : '' }}>Tạm dừng
+                                    </option>
+                                </select>
+                            @endif
                         </div>
+
                     </div>
                     <div class="mt-6 flex justify-end space-x-2">
                         <a href="{{ route('admin.flash-sales.index') }}" class="btn btn-secondary">Hủy</a>
@@ -203,9 +227,12 @@
             nameInput.addEventListener('input', function() {
                 const slug = nameInput.value
                     .toLowerCase()
-                    .replace(/[^a-z0-9\s-]/g, '')
-                    .replace(/\s+/g, '-')
-                    .replace(/-+/g, '-')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/đ/g, 'd')
+                    .replace(/ /g, '-')
+                    .replace(/[^\w-]+/g, '')
+                    .replace(/--+/g, '-')
                     .trim();
                 slugInput.value = slug;
             });

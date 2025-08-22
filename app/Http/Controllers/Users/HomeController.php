@@ -610,7 +610,6 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-
         $productBundles = ProductBundle::with([
             'mainProducts.productVariant.product.coverImage',
             'suggestedProducts.productVariant.product.coverImage'
@@ -1629,6 +1628,7 @@ class HomeController extends Controller
         try {
             // Tìm variant
             $selectedVariant = ProductVariant::findOrFail($variantId);
+            Log::info('Tìm variant trong API', ['variant_id' => $variantId]);
 
             // Lấy danh sách bundle chứa variantId
             $productBundles = ProductBundle::with([
@@ -1641,42 +1641,85 @@ class HomeController extends Controller
                 })
                 ->get()
                 ->map(function ($bundle) use ($selectedVariant) {
-                    // Lấy tất cả main products của bundle
-                    $mainProducts = $bundle->mainProducts->map(function ($mainProduct) {
-                        $variant = $mainProduct->productVariant;
-                        $product = $variant->product;
+                    Log::info('Đang xử lý bundle trong API', ['bundle_id' => $bundle->id]);
 
-                        $price = (int) $variant->price;
-                        $salePrice = $variant->sale_price && $variant->sale_price < $price
-                            ? (int) $variant->sale_price
-                            : null;
+                    $mainProduct = $bundle->mainProducts->firstWhere('product_variant_id', $selectedVariant->id);
+                    if (!$mainProduct) {
+                        Log::warning('Không tìm thấy mainProduct', [
+                            'bundle_id' => $bundle->id,
+                            'variant_id' => $selectedVariant->id
+                        ]);
+                        return null;
+                    }
 
-                        $image = $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path))
-                            ? Storage::url($variant->primaryImage->path)
-                            : ($product && $product->coverImage && file_exists(storage_path('app/public/' . $product->coverImage->path))
-                                ? Storage::url($product->coverImage->path)
-                                : asset('images/placeholder.jpg'));
+                    $mainVariant = $mainProduct->productVariant;
+                    if (!$mainVariant) {
+                        Log::warning('Không tìm thấy mainVariant', [
+                            'bundle_id' => $bundle->id,
+                            'main_product_id' => $mainProduct->id ?? null,
+                        ]);
+                        return null;
+                    }
 
-                        return [
-                            'variant_id'   => $variant->id,
-                            'product_id'   => $product->id,
-                            'name'         => $product->name,
-                            'slug'         => $product->slug,
-                            'image'        => $image,
-                            'price'        => $price,
-                            'sale_price'   => $salePrice,
-                        ];
-                    })->toArray();
+                    $mainProductData = $mainVariant->product;
+                    if (!$mainProductData) {
+                        Log::warning('Không tìm thấy product từ variant', [
+                            'variant_id' => $mainVariant->id,
+                        ]);
+                        return null;
+                    }
+
+                    // Main product (chỉ price & sale_price)
+                    $mainPrice = (int) $mainVariant->price;
+                    $mainSalePrice = $mainVariant->sale_price && $mainVariant->sale_price < $mainPrice
+                        ? (int) $mainVariant->sale_price
+                        : null;
+
+                    Log::info('Main product info', [
+                        'variant_id' => $mainVariant->id,
+                        'price' => $mainPrice,
+                        'sale_price' => $mainSalePrice,
+                    ]);
+
+                    $mainImage = $mainVariant && $mainVariant->primaryImage && file_exists(storage_path('app/public/' . $mainVariant->primaryImage->path))
+                        ? Storage::url($mainVariant->primaryImage->path)
+                        : ($mainProductData && $mainProductData->coverImage && file_exists(storage_path('app/public/' . $mainProductData->coverImage->path))
+                            ? Storage::url($mainProductData->coverImage->path)
+                            : asset('images/placeholder.jpg'));
+
+                    $mainProductItem = [
+                        'variant_id'   => $mainVariant->id,
+                        'product_id'   => $mainProductData->id,
+                        'name'         => $mainProductData->name,
+                        'slug'         => $mainProductData->slug,
+                        'image'        => $mainImage,
+                        'price'        => $mainPrice,
+                        'sale_price'   => $mainSalePrice,
+                    ];
 
                     // Suggested products
                     $suggestedProducts = $bundle->suggestedProducts->map(function ($suggested) {
                         $variant = $suggested->productVariant;
                         $product = $variant->product;
 
+                        if (!$variant) {
+                            Log::warning('Suggested product missing variant', [
+                                'suggested_id' => $suggested->id,
+                            ]);
+                            return null;
+                        }
+
                         $price = (int) $variant->price;
                         $salePrice = $variant->sale_price && $variant->sale_price < $price
                             ? (int) $variant->sale_price
                             : null;
+
+                        Log::info('Suggested product info', [
+                            'suggested_id' => $suggested->id,
+                            'variant_id' => $variant->id,
+                            'name' => $product->name,
+                            'is_preselected' => $suggested->is_preselected,
+                        ]);
 
                         return [
                             'variant_id'     => $variant->id,
@@ -1690,38 +1733,32 @@ class HomeController extends Controller
                                     : asset('images/placeholder.jpg')),
                             'price'          => $price,
                             'sale_price'     => $salePrice,
-                            'is_preselected' => $suggested->is_preselected ?? false,
+                            'is_preselected' => (bool) $suggested->is_preselected,
+                            'display_order'  => $suggested->display_order,
                         ];
-                    })->toArray();
+                    })->filter()->sortBy('display_order')->values()->toArray();
 
-                    // Tạo mã định danh duy nhất cho bundle dựa trên tất cả main products và suggested products
-                    $mainVariantIds = array_column($mainProducts, 'variant_id');
-                    $suggestedVariantIds = array_column($suggestedProducts, 'variant_id');
-                    $bundleKey = md5(json_encode(array_merge($mainVariantIds, $suggestedVariantIds)));
+                    // Tạo mã định danh duy nhất cho bundle dựa trên main và suggested products
+                    // Sắp xếp suggested_products theo variant_id để đảm bảo bundleKey duy nhất
+                    $suggestedVariantIds = collect($suggestedProducts)->pluck('variant_id')->sort()->values()->toArray();
+                    $bundleKey = md5(json_encode([$mainProductItem['variant_id'], $suggestedVariantIds]));
 
                     return [
                         'id'                 => $bundle->id,
                         'name'               => $bundle->name,
                         'display_title'      => $bundle->display_title,
                         'description'        => $bundle->description,
-                        'main_products'      => $mainProducts, // Trả về tất cả main products
+                        'main_product'       => $mainProductItem,
                         'suggested_products' => $suggestedProducts,
-                        'bundle_key'         => $bundleKey,
+                        'bundle_key'         => $bundleKey, // Thêm key để kiểm tra trùng lặp
                     ];
-                })
-                ->filter() // Loại bỏ các bundle null
-                ->unique('bundle_key') // Loại bỏ các bundle trùng lặp
-                ->values() // Đặt lại các key của mảng
-                ->toArray();
+                })->filter()->unique('bundle_key')->values()->toArray();
 
-            // Lấy danh sách suggested_products từ tất cả bundle
-            $suggested = collect($productBundles)->flatMap(function ($bundle) {
-                return $bundle['suggested_products'];
-            })->toArray();
-
-            return response()->json(['suggested' => $suggested], 200);
+            // ❌ Thay đổi dòng này để trả về mảng các bundle đã được lọc
+            Log::info('Trả về danh sách bundle đã lọc', ['bundles_count' => count($productBundles)]);
+            return response()->json(['bundles' => $productBundles], 200);
         } catch (\Exception $e) {
-            \Log::error('Lỗi khi lấy sản phẩm kèm theo: ' . $e->getMessage());
+            Log::error('Lỗi khi lấy sản phẩm kèm theo: ' . $e->getMessage());
             return response()->json(['error' => 'Lỗi server'], 500);
         }
     }
@@ -1756,6 +1793,131 @@ class HomeController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error in getVariantStock: ' . $e->getMessage());
             return response()->json(['error' => 'Internal Server Error'], 500);
+        }
+    }
+
+    public function searchProducts(Request $request)
+    {
+        try {
+            $query = $request->input('query');
+            $variantId = $request->input('variant_id');
+
+            Log::info('📥 Nhận yêu cầu tìm kiếm sản phẩm:', [
+                'query' => $query,
+                'variant_id' => $variantId,
+            ]);
+
+            if (empty($query)) {
+                return response()->json([
+                    'products' => [],
+                    'count' => 0,
+                    'message' => 'Vui lòng nhập từ khóa tìm kiếm.'
+                ], 200);
+            }
+
+            // Bước 1: Xác định các category_id cần lọc
+            $categoryIdsToFilter = [];
+            if ($variantId) {
+                $currentVariant = ProductVariant::with(['product.category.parent'])->find($variantId);
+                if ($currentVariant && $currentVariant->product && $currentVariant->product->category) {
+                    $category = $currentVariant->product->category;
+                    $parentCategory = $category->parent ?? $category;
+
+                    $categoryIdsToFilter = Category::where('id', $parentCategory->id)
+                        ->orWhere('parent_id', $parentCategory->id)
+                        ->pluck('id')
+                        ->toArray();
+
+                    Log::info('✅ Đã tìm thấy danh mục cha từ variant_id:', [
+                        'parent_category_id' => $parentCategory->id,
+                        'category_ids' => $categoryIdsToFilter
+                    ]);
+                } else {
+                    Log::warning('⚠️ Không tìm thấy sản phẩm, danh mục hoặc variant từ variant_id.');
+                }
+            }
+
+            // Bước 2: Xây dựng truy vấn tìm kiếm sản phẩm và ÁP DỤNG BỘ LỌC ĐỒNG THỜI
+            $productsQuery = Product::with([
+                'variants.attributeValues.attribute',
+                'coverImage',
+                'variants.primaryImage',
+                'variants.specifications'
+            ])->where('status', 'published');
+
+            // Nhóm các điều kiện tìm kiếm vào một closure
+            $productsQuery->where(function ($q) use ($query, $categoryIdsToFilter) {
+                // Điều kiện BẮT BUỘC: tên sản phẩm phải chứa từ khóa
+                $q->where('name', 'like', "%{$query}%");
+
+                // Điều kiện BỔ SUNG: nếu có danh mục để lọc, thì áp dụng
+                if (!empty($categoryIdsToFilter)) {
+                    $q->whereIn('category_id', $categoryIdsToFilter);
+                }
+            });
+
+            if (!empty($categoryIdsToFilter)) {
+                Log::info('Áp dụng bộ lọc danh mục cho truy vấn.');
+            } else {
+                Log::info('Không có bộ lọc danh mục được áp dụng. Tìm kiếm trên toàn bộ sản phẩm.');
+            }
+
+            // Lấy sản phẩm và chuẩn bị dữ liệu trả về
+            $products = $productsQuery->take(5)->get();
+
+            $results = $products->flatMap(function ($product) {
+                $variants = $product->variants;
+
+                return $variants->map(function ($variant) use ($product) {
+                    $variantName = $variant->attributeValues
+                        ->sortBy(fn($attr) => $attr->attribute->id)
+                        ->pluck('value')
+                        ->implode(' ');
+
+                    $imageUrl = $variant->primaryImage?->path
+                        ?? $variant->image?->path
+                        ?? $product->coverImage?->path;
+
+                    $price = (int) $variant->price;
+                    $salePrice = $variant->sale_price !== null ? (int) $variant->sale_price : null;
+                    $onSale = $salePrice !== null && $salePrice < $price;
+                    $discountPercent = $onSale && $price > 0
+                        ? round(100 * (1 - ($salePrice / $price)))
+                        : 0;
+
+                    $specs = $variant->specifications ? $this->formatSpecs($variant->specifications) : [];
+
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'slug' => $product->slug,
+                        'variant_id' => $variant->id,
+                        'variant_name' => $variantName,
+                        'variant_key' => $this->getVariantKey($variant),
+                        'cover_image' => $imageUrl ? Storage::url($imageUrl) : asset('/images/no-image.png'),
+                        'price' => $price,
+                        'sale_price' => $salePrice,
+                        'discount_percent' => $discountPercent,
+                        'display_price' => $onSale ? $salePrice : $price,
+                        'display_original_price' => $onSale ? $price : null,
+                        'specs' => $specs
+                    ];
+                })->filter()->values();
+            })->filter()->values();
+
+            Log::info('📤 Trả về kết quả tìm kiếm:', [
+                'count' => $results->count(),
+                'products' => $results->toArray()
+            ]);
+
+            return response()->json([
+                'products' => $results,
+                'count' => $results->count(),
+                'message' => $results->isEmpty() ? 'Không tìm thấy sản phẩm phù hợp.' : 'Tìm kiếm thành công.'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('❌ Lỗi tìm kiếm sản phẩm:', ['msg' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return response()->json(['error' => 'Đã xảy ra lỗi khi tìm kiếm sản phẩm.'], 500);
         }
     }
 }

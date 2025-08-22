@@ -300,113 +300,104 @@
 
     <!-- Thay đổi hiển thị chi nhánh -->
     <section class="mt-6 p-4 sm:p-5 bg-gray-50 rounded-xl border border-gray-200">
-        <div>
-            <h3 class="font-semibold text-gray-900">Xem chi nhánh có hàng</h3>
-            <p id="store-message" class="text-sm text-gray-600 mt-1">
-                @if ($storeLocations->count() > 0)
-                    Có <span id="store-count" class="font-bold text-blue-600">
-                        {{ $storeLocations->count() }}
-                    </span> cửa hàng có sản phẩm
-                @elseif (isset($hasWarehouseInventory) && $hasWarehouseInventory)
-                    Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.
-                @else
-                    Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!
-                @endif
-            </p>
-        </div>
-
-        <div id="filter-container" class="@if ($storeLocations->count() == 0) hidden @endif">
-            @if ($storeLocations->count() > 0)
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                    <select id="province-select"
-                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Tất cả tỉnh/thành phố</option>
-                        @foreach ($provinces as $province)
-                            <option value="{{ $province->code }}">{{ $province->name }}</option>
-                        @endforeach
-                    </select>
-                    <select id="district-select"
-                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        disabled>
-                        <option value="">Tất cả Quận/Huyện</option>
-                    </select>
-                </div>
+    <div>
+        <h3 class="font-semibold text-gray-900">Xem chi nhánh có hàng</h3>
+        <p id="store-message" class="text-sm text-gray-600 mt-1">
+            @if ($storeLocations->count() >= 0)
+                Có <span id="store-count" class="font-bold text-blue-600">
+                    {{ $storeLocations->count() }}
+                </span> cửa hàng có sản phẩm
+            @elseif (isset($hasWarehouseInventory) && $hasWarehouseInventory)
+                Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.
+            @else
+                Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!
             @endif
-        </div>
+        </p>
+    </div>
 
-        <div class="relative mt-4">
-            <div id="store-swiper" class="swiper -mx-1 px-1 pb-2">
-                <div class="swiper-wrapper">
-                    @forelse($storeLocations as $store)
-                        <div class="swiper-slide w-64 sm:w-72">
-                            <div
-                                class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
-                                <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
-                                    {{ $store->address }}
-                                    @if ($store->ward)
-                                        , {{ $store->ward->name }}
-                                    @endif
-                                    @if ($store->district)
-                                        , {{ $store->district->name }}
-                                    @endif
-                                    @if ($store->province)
-                                        , {{ $store->province->name }}
-                                    @endif
-                                </p>
-                                <div class="flex gap-2 mt-3 text-center">
-                                    @if ($store->phone)
-                                        <a href="tel:{{ $store->phone }}"
-                                            class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
-                                            <span>📞</span>
-                                            <span>{{ $store->phone }}</span>
-                                        </a>
-                                    @endif
-                                    <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($store->address . ', ' . ($store->ward->name ?? '') . ', ' . ($store->district->name ?? '') . ', ' . ($store->province->name ?? '')) }}"
-                                        target="_blank"
-                                        class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
-                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
-                                            viewBox="0 0 24 24">
-                                            <path
-                                                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" />
-                                        </svg>
-                                        <span>Bản đồ</span>
+    <div id="filter-container">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+            <select id="province-select"
+                class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Tất cả tỉnh/thành phố</option>
+                @foreach ($provinces as $province)
+                    <option value="{{ $province->code }}">{{ $province->name }}</option>
+                @endforeach
+            </select>
+            <select id="district-select"
+                class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                disabled>
+                <option value="">Tất cả Quận/Huyện</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="relative mt-4">
+        <div id="store-swiper" class="swiper -mx-1 px-1 pb-2">
+            <div class="swiper-wrapper">
+                @forelse($storeLocations as $store)
+                    <div class="swiper-slide w-64 sm:w-72">
+                        <div
+                            class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
+                            <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
+                                {{ $store->address }}
+                                @if ($store->ward)
+                                    , {{ $store->ward->name }}
+                                @endif
+                                @if ($store->district)
+                                    , {{ $store->district->name }}
+                                @endif
+                                @if ($store->province)
+                                    , {{ $store->province->name }}
+                                @endif
+                            </p>
+                            <div class="flex gap-2 mt-3 text-center">
+                                @if ($store->phone)
+                                    <a href="tel:{{ $store->phone }}"
+                                        class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
+                                        <span>📞</span>
+                                        <span>{{ $store->phone }}</span>
                                     </a>
-                                </div>
+                                @endif
+                                <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($store->address . ', ' . ($store->ward->name ?? '') . ', ' . ($store->district->name ?? '') . ', ' . ($store->province->name ?? '')) }}"
+                                    target="_blank"
+                                    class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path
+                                            d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" />
+                                    </svg>
+                                    <span>Bản đồ</span>
+                                </a>
                             </div>
                         </div>
-                    @empty
-                        <div class="swiper-slide w-full text-center py-4 text-gray-500">
-                            @if (isset($hasWarehouseInventory) && $hasWarehouseInventory)
-                                Sản phẩm này hiện <strong>không có sẵn tại hệ thống cửa hàng</strong>. Nhưng vẫn sẵn
-                                sàng để mua online.
-                            @else
-                                Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!
-                            @endif
-                        </div>
-                    @endforelse
-                </div>
+                    </div>
+                @empty
+                    <div class="swiper-slide w-full"></div>
+                @endforelse
             </div>
-
-            @if ($storeLocations->count() > 0)
-                <button id="store-prev-btn"
-                    class="absolute top-1/2 -translate-y-1/2 -left-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
-                    <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7">
-                        </path>
-                    </svg>
-                </button>
-                <button id="store-next-btn"
-                    class="absolute top-1/2 -translate-y-1/2 -right-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
-                    <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7">
-                        </path>
-                    </svg>
-                </button>
-            @endif
         </div>
-    </section>
+
+        @if ($storeLocations->count() > 0)
+            <button id="store-prev-btn"
+                class="absolute top-1/2 -translate-y-1/2 -left-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7">
+                    </path>
+                </svg>
+            </button>
+            <button id="store-next-btn"
+                class="absolute top-1/2 -translate-y-1/2 -right-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7">
+                    </path>
+                </svg>
+            </button>
+        @endif
+    </div>
+</section>
 
     <form action="{{ route('cart.add') }}" method="POST" id="add-to-cart-form">
         @csrf
@@ -644,16 +635,16 @@
 </script>
 
 <script>
-    // Script xử lý cập nhật danh sách cửa hàng tồn kho theo biến thể sản phẩm
-   document.addEventListener('DOMContentLoaded', function() {
+  // Script xử lý cập nhật danh sách cửa hàng tồn kho theo biến thể sản phẩm
+document.addEventListener('DOMContentLoaded', function() {
     // Khởi tạo Swiper cho danh sách cửa hàng
     let swiper = new Swiper('#store-swiper', {
         slidesPerView: 'auto',
         spaceBetween: 12,
         freeMode: true,
         navigation: {
-            nextEl: '#store-prev-btn',
-            prevEl: '#store-next-btn',
+            nextEl: '#store-next-btn',
+            prevEl: '#store-prev-btn',
         },
         on: {
             init: function() {
@@ -676,23 +667,9 @@
         const districtSelect = document.getElementById('district-select');
         const storeWrapper = document.getElementById('store-swiper')?.querySelector('.swiper-wrapper');
         const storeMessage = document.getElementById('store-message');
-        const filterContainer = document.getElementById('filter-container');
 
-        let storeCount = document.getElementById('store-count');
-        if (!storeCount) {
-            storeMessage.innerHTML = `
-                Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-            `;
-            storeCount = document.getElementById('store-count');
-        }
-
-        if (!storeWrapper || !storeCount || !storeMessage || !filterContainer) {
-            console.error('Missing DOM elements:', {
-                storeWrapper,
-                storeCount,
-                storeMessage,
-                filterContainer
-            });
+        if (!storeWrapper || !storeMessage) {
+            console.error('Missing required DOM elements.');
             return;
         }
 
@@ -702,6 +679,7 @@
             if (districtCode) query.append('district_code', districtCode);
             query.append('product_variant_id', variantId);
 
+            // Hiển thị trạng thái tải
             storeWrapper.innerHTML = `
                 <div class="swiper-slide w-full text-center py-4 text-gray-500">
                     Đang tải danh sách cửa hàng...
@@ -709,52 +687,31 @@
             `;
             if (window.storeSwiper) window.storeSwiper.update();
 
-            console.log('Calling filterStores with variantId:', variantId, 'province:', provinceCode, 'district:', districtCode);
             const response = await fetch(`/api/filter-stores?${query.toString()}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-            const { stores, count, hasWarehouseInventory } = await response.json();
-            console.log('filterStores response:', { stores, count, hasWarehouseInventory });
+            const {
+                stores,
+                count,
+                hasWarehouseInventory
+            } = await response.json();
 
-            storeCount.textContent = count;
-
-            if (count > 0) {
-                storeMessage.innerHTML = `
-                    Có <span id="store-count" class="font-bold text-blue-600">${count}</span> cửa hàng có sản phẩm
-                `;
-                filterContainer.classList.remove('hidden');
+            // Cập nhật thông báo tồn kho chính (chỉ ở đây)
+            if (count >= 0) {
+                storeMessage.innerHTML = `Có <span id="store-count" class="font-bold text-blue-600">${count}</span> cửa hàng có sản phẩm`;
             } else if (hasWarehouseInventory) {
-                storeMessage.innerHTML = `
-                     Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.
-                `;
-                filterContainer.classList.remove('hidden');
-                if (!document.getElementById('store-count')) {
-                    storeMessage.innerHTML = `
-                        Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-                    `;
-                    storeCount = document.getElementById('store-count');
-                    storeCount.textContent = '0';
-                }
+                storeMessage.innerHTML = `Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.`;
             } else {
-                storeMessage.innerHTML = `
-                    Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!
-                `;
-                filterContainer.classList.add('hidden');
-                if (!document.getElementById('store-count')) {
-                    storeMessage.innerHTML = `
-                        Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-                    `;
-                    storeCount = document.getElementById('store-count');
-                    storeCount.textContent = '0';
-                }
+                storeMessage.innerHTML = `Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!`;
             }
 
+            // Render danh sách cửa hàng
             storeWrapper.innerHTML = '';
             if (stores.length === 0) {
                 storeWrapper.innerHTML = `
                     <div class="swiper-slide w-full text-center py-4 text-gray-500">
                         ${hasWarehouseInventory ? 
-                            'Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.' : 
+                            'Sản phẩm này hiện <strong>không có sẵn tại hệ thống cửa hàng</strong>. Nhưng vẫn sẵn sàng để mua online.' : 
                             'Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!'}
                     </div>
                 `;
@@ -762,10 +719,12 @@
                 stores.forEach(store => {
                     const slide = document.createElement('div');
                     slide.className = 'swiper-slide w-64 sm:w-72';
+                    const fullAddress = `${store.address}${store.ward ? `, ${store.ward.name}` : ''}${store.district ? `, ${store.district.name}` : ''}${store.province ? `, ${store.province.name}` : ''}`;
+                    
                     slide.innerHTML = `
                         <div class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
                             <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
-                                ${store.address}${store.ward ? `, ${store.ward.name}` : ''}${store.district ? `, ${store.district.name}` : ''}${store.province ? `, ${store.province.name}` : ''}
+                                ${fullAddress}
                             </p>
                             <div class="flex gap-2 mt-3 text-center">
                                 ${store.phone ? `
@@ -774,7 +733,7 @@
                                         <span>${store.phone}</span>
                                     </a>
                                 ` : ''}
-                                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address + (store.ward ? `, ${store.ward.name}` : '') + (store.district ? `, ${store.district.name}` : '') + (store.province ? `, ${store.province.name}` : ''))}" target="_blank" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                <a href="https://www.google.com/maps/search/?api=1&query={encodeURIComponent(fullAddress)}" target="_blank" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
                                     <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
                                     </svg>
@@ -791,7 +750,6 @@
                 window.storeSwiper.update();
                 const container = window.storeSwiper.el.parentElement;
                 container.classList.toggle('navigation-hidden', window.storeSwiper.isLocked);
-                console.log('Swiper updated:', window.storeSwiper.isLocked);
             }
         } catch (error) {
             console.error('Error fetching stores:', error);
@@ -800,11 +758,7 @@
                     Đã xảy ra lỗi khi tải danh sách cửa hàng.
                 </div>
             `;
-            storeCount.textContent = '0';
-            storeMessage.innerHTML = `
-                Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-            `;
-            filterContainer.classList.add('hidden');
+            storeMessage.innerHTML = `Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!`;
             if (window.storeSwiper) window.storeSwiper.update();
         }
     }
@@ -812,38 +766,17 @@
     // Hàm chính để cập nhật danh sách cửa hàng dựa trên biến thể
     function updateStoreLocations(variantId) {
         if (isUpdatingStores) return;
+        isUpdatingStores = true;
 
         const provinceSelect = document.getElementById('province-select');
         const districtSelect = document.getElementById('district-select');
-        const storeWrapper = document.getElementById('store-swiper')?.querySelector('.swiper-wrapper');
-        const storeMessage = document.getElementById('store-message');
-        const filterContainer = document.getElementById('filter-container');
-
-        let storeCount = document.getElementById('store-count');
-        if (!storeCount) {
-            storeMessage.innerHTML = `
-                Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-            `;
-            storeCount = document.getElementById('store-count');
-        }
-
-        if (!storeWrapper || !storeCount || !storeMessage || !filterContainer) {
-            console.error('Missing DOM elements:', {
-                storeWrapper,
-                storeCount,
-                storeMessage,
-                filterContainer
-            });
-            return;
-        }
-
+        
+        // Cập nhật danh sách tỉnh/thành phố có hàng cho biến thể này
         async function updateProvincesForVariant() {
             try {
                 const response = await fetch(`/api/provinces-by-variant?product_variant_id=${variantId}`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
                 const provinces = await response.json();
-                console.log('Provinces response:', provinces);
 
                 if (provinceSelect) {
                     const currentProvince = provinceSelect.value;
@@ -870,8 +803,7 @@
                 console.error('Error fetching provinces:', error);
             }
         }
-
-        isUpdatingStores = true;
+        
         updateProvincesForVariant().then(() => {
             const currentProvince = provinceSelect ? provinceSelect.value : '';
             const currentDistrict = districtSelect ? districtSelect.value : '';
@@ -888,7 +820,6 @@
                 setTimeout(() => {
                     const variantIdInput = document.querySelector('[name="product_variant_id"]');
                     if (variantIdInput && variantIdInput.value) {
-                        console.log('Variant changed to:', variantIdInput.value);
                         updateStoreLocations(variantIdInput.value);
                     }
                 }, 100);
@@ -901,7 +832,6 @@
                 setTimeout(() => {
                     const variantIdInput = document.querySelector('[name="product_variant_id"]');
                     if (variantIdInput && variantIdInput.value) {
-                        console.log('Variant clicked, changed to:', variantIdInput.value);
                         updateStoreLocations(variantIdInput.value);
                     }
                 }, 200);
@@ -930,7 +860,6 @@
                         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                         const districts = await response.json();
-                        console.log('Districts response:', districts);
 
                         if (districtSelect) {
                             if (districts.length === 0) {
@@ -952,8 +881,6 @@
                         }
                     }
                 }
-
-                // Sửa: Gọi filterStores với productVariantId
                 filterStores(productVariantId, provinceCode, '');
             }
         });
@@ -968,7 +895,6 @@
                 if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
                     const newValue = variantIdInput.value;
                     if (newValue) {
-                        console.log('Variant ID input changed to:', newValue);
                         updateStoreLocations(newValue);
                     }
                 }
@@ -980,7 +906,6 @@
         });
         variantIdInput.addEventListener('input', function() {
             if (this.value) {
-                console.log('Variant ID input updated to:', this.value);
                 updateStoreLocations(this.value);
             }
         });
@@ -994,8 +919,6 @@
             const districtCode = this.value;
             const variantIdInput = document.querySelector('[name="product_variant_id"]');
             const productVariantId = variantIdInput ? variantIdInput.value : '';
-            console.log('District changed:', { provinceCode, districtCode, productVariantId });
-            // Sửa: Gọi filterStores với productVariantId
             filterStores(productVariantId, provinceCode, districtCode);
         });
     }
@@ -1003,7 +926,6 @@
     setTimeout(() => {
         const variantIdInput = document.querySelector('[name="product_variant_id"]');
         if (variantIdInput && variantIdInput.value) {
-            console.log('Initial variant ID:', variantIdInput.value);
             window.lastVariantId = variantIdInput.value;
             updateStoreLocations(variantIdInput.value);
         }

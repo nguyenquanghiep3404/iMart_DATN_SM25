@@ -16,12 +16,45 @@ class CategorySeeder extends Seeder
         // Category::truncate(); // Cẩn thận
 
         $categoriesData = [
-            'Điện thoại' => ['iPhone', 'Samsung Galaxy', 'Xiaomi', 'Oppo'],
-            'Máy tính xách tay' => ['MacBook', 'Dell XPS', 'HP Spectre', 'Lenovo ThinkPad'],
-            'Máy tính bảng' => ['iPad', 'Samsung Galaxy Tab', 'Lenovo Tab'],
-            'Đồng hồ thông minh' => ['Apple Watch', 'Samsung Galaxy Watch', 'Garmin'],
-            'Tai nghe' => ['AirPods', 'Sony WH-1000XM5', 'Bose QuietComfort', 'Sennheiser Momentum'],
-            'Phụ kiện' => ['Ốp lưng', 'Sạc & Cáp', 'Bàn phím', 'Chuột', 'Loa di động'],
+            'iPhone' => [
+                'iPhone 16 Series',
+                'iPhone 15 Series',
+                'iPhone 14 Series',
+                'iPhone 13 Series',
+                'iPhone 12 Series',
+            ],
+            'iPad' => [
+                'iPad Pro',
+                'iPad Air',
+                'iPad mini',
+                'iPad',
+            ],
+            'Mac' => [
+                'MacBook Air',
+                'MacBook Pro',
+                'iMac',
+                'Mac mini',
+                'Mac Studio',
+            ],
+            'Watch' => [
+                'Apple Watch Ultra',
+                'Apple Watch Series 9',
+                'Apple Watch SE',
+            ],
+            'Tai Nghe' => [
+                'AirPods Pro',
+                'AirPods',
+                'AirPods Max',
+                'HomePod',
+            ],
+            'Phụ kiện' => [
+                'Phụ kiện iPhone',
+                'Phụ kiện iPad',
+                'Phụ kiện Mac',
+                'Phụ kiện Apple Watch',
+                'AirTag',
+                'Apple Pencil',
+            ],
         ];
 
         foreach ($categoriesData as $parentName => $childrenNames) {
@@ -30,7 +63,7 @@ class CategorySeeder extends Seeder
                 Category::factory()->make(['name' => $parentName, 'parent_id' => null, 'status' => 'active'])->toArray()
             );
             if (!$parentCategory->images()->where('type', 'category_image')->exists()) {
-                 UploadedFile::factory()->attachedTo($parentCategory, 'category_image')->create();
+                UploadedFile::factory()->attachedTo($parentCategory, 'category_image')->create();
             }
 
 

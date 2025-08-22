@@ -24,7 +24,7 @@
     @include('users.partials.header')
 
     <!-- Page content -->
-    <main class="content-wrapper bg-body ">
+    <main class="content-wrapper bg-body bg-body-tertiary">
         @yield('content')
     </main>
 
