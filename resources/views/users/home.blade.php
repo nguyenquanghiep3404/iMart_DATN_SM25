@@ -616,6 +616,9 @@
         }
 
         .progress-wrapper {
+            /* Giữ nguyên các thuộc tính khác của progress-wrapper */
+            position: relative;
+            /* Rất quan trọng để position: absolute của progress-text hoạt động */
             height: 26px;
             background: #e5e5e5;
             border-radius: 20px;
@@ -624,29 +627,29 @@
             font-weight: bold;
             color: #000;
             margin-top: 6px;
-            position: relative;
         }
 
         .progress-bar-inner {
+            /* Giữ nguyên các thuộc tính khác của progress-bar-inner */
             background: linear-gradient(to right, #ffd55f, #ffa500);
             height: 100%;
-            display: flex;
-            align-items: center;
-            /* căn giữa theo chiều dọc */
-            justify-content: center;
-            /* căn giữa theo chiều ngang */
-            padding: 0 10px;
-            white-space: nowrap;
+            transition: width 0.3s ease;
             border-top-left-radius: 20px;
             border-bottom-left-radius: 20px;
-            transition: width 0.3s ease;
-            color: #000;
         }
 
         .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             display: flex;
             align-items: center;
             gap: 4px;
+            white-space: nowrap;
+            /* Ngăn text bị xuống dòng */
+            z-index: 2;
+            /* Đảm bảo text hiển thị trên thanh progress bar */
         }
 
         .flash-sale-title-img {
@@ -777,6 +780,7 @@
                                             <script>
                                                 document.addEventListener('DOMContentLoaded', function() {
                                                     let endTime = new Date(@json($slot->end_time));
+
                                                     function updateCountdown_{{ $sale->id }}_{{ $slot->id }}() {
                                                         let now = new Date();
                                                         let diff = Math.max(0, Math.floor((endTime - now) / 1000));
@@ -811,12 +815,22 @@
                                                 @php
                                                     $variant = $fsProduct->productVariant;
                                                     $product = $variant->product ?? null;
-                                                    $mainImage = $variant?->primaryImage?->url ?? ($product?->thumbnail_url ?? asset('images/placeholder.jpg'));
+                                                    $mainImage =
+                                                        $variant?->primaryImage?->url ??
+                                                        ($product?->thumbnail_url ?? asset('images/placeholder.jpg'));
                                                     $attributes = $variant->attributeValues ?? collect();
-                                                    $nonColor = $attributes->filter(fn($v) => $v->attribute->name !== 'Màu sắc')->pluck('value')->join(' ');
-                                                    $color = $attributes->firstWhere(fn($v) => $v->attribute->name === 'Màu sắc')?->value;
+                                                    $nonColor = $attributes
+                                                        ->filter(fn($v) => $v->attribute->name !== 'Màu sắc')
+                                                        ->pluck('value')
+                                                        ->join(' ');
+                                                    $color = $attributes->firstWhere(
+                                                        fn($v) => $v->attribute->name === 'Màu sắc',
+                                                    )?->value;
                                                     $variantName = trim($nonColor . ' ' . $color);
-                                                    $quantityLeft = max(0, $fsProduct->quantity_limit - $fsProduct->quantity_sold);
+                                                    $quantityLeft = max(
+                                                        0,
+                                                        $fsProduct->quantity_limit - $fsProduct->quantity_sold,
+                                                    );
                                                     $total = $fsProduct->quantity_limit;
                                                     $sold = $fsProduct->quantity_sold ?? 0;
                                                     $remaining = $total - $sold;
@@ -825,20 +839,27 @@
                                                 <div class="swiper-slide">
                                                     <div class="product-card bg-body shadow-lg border-1">
                                                         <div class="position-relative">
-                                                            <a href="{{ route('users.products.show', $variant->slug) }}">
-                                                                <div class="ratio" style="--cz-aspect-ratio: calc(250 / 220 * 100%)">
-                                                                    <img src="{{ $mainImage }}" alt="{{ $product?->name }}"
-                                                                        class="img-fluid rounded-3 shadow-sm" style="object-fit:contain; width:100%; height:100%;">
+                                                            <a
+                                                                href="{{ route('users.products.show', $variant->slug)}}">
+                                                                <div class="ratio"
+                                                                    style="--cz-aspect-ratio: calc(250 / 220 * 100%)">
+                                                                    <img src="{{ $mainImage }}"
+                                                                        alt="{{ $product?->name }}"
+                                                                        class="img-fluid rounded-3 shadow-sm"
+                                                                        style="object-fit:contain; width:100%; height:100%;">
                                                                 </div>
                                                             </a>
                                                         </div>
                                                         <div class="px-3 pb-3 pt-2 text-center">
-                                                            <h2 class="fw-bold" style="line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em;">
-                                                                <a href="{{ route('users.products.show', $product?->slug) }}" class="text-dark text-decoration-none">
+                                                            <h2 class="fw-bold"
+                                                                style="line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em;">
+                                                                <a href="{{ route('users.products.show', $product?->slug) }}"
+                                                                    class="text-dark text-decoration-none">
                                                                     {{ $product?->name }} {{ $variantName }}
                                                                 </a>
                                                             </h2>
-                                                            <div class="fw-bold js-flash-sale-price" data-flash-price="{{ $fsProduct->flash_price }}"
+                                                            <div class="fw-bold js-flash-sale-price"
+                                                                data-flash-price="{{ $fsProduct->flash_price }}"
                                                                 style="color:#da272a; font-size: 20px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                                                 @if ($isUpcoming)
                                                                     @php
@@ -858,14 +879,17 @@
                                                                     {{ number_format($fsProduct->flash_price, 0, ',', '.') }}₫
                                                                 @endif
                                                             </div>
-                                                            <div class="text-muted" style="font-size: 14px; text-decoration: line-through;">
+                                                            <div class="text-muted"
+                                                                style="font-size: 14px; text-decoration: line-through;">
                                                                 {{ number_format($variant->price) }}₫
                                                             </div>
                                                             <div class="js-flash-sale-progress">
                                                                 <div class="progress-wrapper">
-                                                                    <div class="progress-bar-inner" style="width: {{ $percent }}%">
+                                                                    <div class="progress-bar-inner"
+                                                                        style="width: {{ $percent }}%">
                                                                         <span class="progress-text">
-                                                                            🔥 Còn {{ $remaining }}/{{ $total }} suất
+                                                                            🔥 Còn {{ $remaining }}/{{ $total }}
+                                                                            suất
                                                                         </span>
                                                                     </div>
                                                                 </div>
@@ -954,9 +978,15 @@
                         new Swiper(slot.querySelector('.swiper'), {
                             slidesPerView: 2,
                             breakpoints: {
-                                576: { slidesPerView: 3 },
-                                768: { slidesPerView: 4 },
-                                992: { slidesPerView: 6 }
+                                576: {
+                                    slidesPerView: 3
+                                },
+                                768: {
+                                    slidesPerView: 4
+                                },
+                                992: {
+                                    slidesPerView: 6
+                                }
                             },
                             navigation: false,
                             pagination: false,
