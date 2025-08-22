@@ -52,9 +52,6 @@
 
 
                             @foreach ($items as $item)
-                                {{-- <pre>
-        @dd($item)
-    </pre> --}}
                                 @php
                                     // Dùng cú pháp object ->
                                     $isNewProduct = $item->cartable_type === \App\Models\ProductVariant::class;
@@ -71,8 +68,7 @@
                                 <tr data-item-id="{{ $item->id }}" data-stock="{{ $item->stock_quantity }}">
                                     <td class="py-3 ps-0">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ $item->image }}" alt="Ảnh sản phẩm"
-                                                width="90" height="90">
+                                            <img src="{{ $item->image }}" alt="Ảnh sản phẩm" width="90" height="90">
 
                                             <div class="w-100 min-w-0 ps-2 ps-xl-3">
                                                 @php
@@ -87,11 +83,11 @@
                                                     </a>
 
                                                     {{-- Hiển thị loại sản phẩm --}}
-                                                    @if ($isNewProduct)
+                                                    {{-- @if ($isNewProduct)
                                                         <span class="badge bg-success ms-2">Sản phẩm mới</span>
                                                     @else
                                                         <span class="badge bg-warning ms-2">Hàng cũ</span>
-                                                    @endif
+                                                    @endif --}}
                                                 </h5>
 
                                                 {{-- Thuộc tính biến thể (chỉ có với hàng mới) --}}

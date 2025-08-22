@@ -67,7 +67,23 @@
                         <div class="interactive-card rounded-lg p-4">
                             <div class="flex items-start space-x-4">
                                 <input type="checkbox" name="order_item_ids[]" value="{{ $item->id }}" class="h-5 w-5 mt-1 text-red-600 border-gray-300 rounded focus:ring-red-500">
-                                <img src="{{ optional($item->variant->product->coverImage)->url ?? 'https://placehold.co/80x80' }}" alt="Ảnh sản phẩm" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
+                                @php
+                                $variant = $item->variant;
+                                $product = $variant?->product;
+
+                                if ($variant && $variant->primaryImage && Storage::disk('public')->exists($variant->primaryImage->path)) {
+                                $imageUrl = Storage::url($variant->primaryImage->path);
+                                } elseif ($product && $product->coverImage && Storage::disk('public')->exists($product->coverImage->path)) {
+                                $imageUrl = Storage::url($product->coverImage->path);
+                                } else {
+                                $imageUrl = 'https://placehold.co/80x80';
+                                }
+                                @endphp
+
+                                <img src="{{ $imageUrl }}"
+                                    alt="{{ $variant?->name ?? $product?->name ?? 'Sản phẩm' }}"
+                                    class="w-20 h-20 rounded-md object-cover flex-shrink-0">
+
                                 <div class="flex-1">
                                     <p class="font-semibold text-gray-800">{{ $item->variant->product->name }}</p>
                                     <p class="text-sm text-gray-500">Biến thể: {{ $item->variant->name }}</p>

@@ -291,7 +291,7 @@ class AutoStockTransferController extends Controller
 
             // Sử dụng StockTransferWorkflowService để nhận hàng
             $workflowService = new StockTransferWorkflowService();
-            $result = $workflowService->processReceive($transfer);
+            $result = $workflowService->receiveTransfer($transfer);
 
             if (!$result['success']) {
                 return response()->json($result, 400);

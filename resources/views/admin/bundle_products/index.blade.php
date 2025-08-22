@@ -259,7 +259,6 @@
                                     <th>Tên Deal</th>
                                     <th class="text-center">Số SP chính</th>
                                     <th class="text-center">Số SP bán kèm</th>
-                                    <th>Thời gian hiệu lực</th>
                                     <th>Trạng thái</th>
                                     <th style="width: 120px;" class="text-center">Thao tác</th>
                                 </tr>
@@ -275,10 +274,6 @@
                                         </td>
                                         <td class="text-center">{{ $bundle->mainProducts->count() }}</td>
                                         <td class="text-center">{{ $bundle->suggestedProducts->count() }}</td>
-                                        <td>
-                                            {{ optional($bundle->start_date)->format('d/m/Y') ?? '—' }} -
-                                            {{ optional($bundle->end_date)->format('d/m/Y') ?? '—' }}
-                                        </td>
                                         <td>
                                             @if ($bundle->status === 'active')
                                                 <span class="badge-custom badge-success-custom">Đang kích hoạt</span>

@@ -336,7 +336,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
-                        alert(data.message);
+                        alert(data.message + '\n\nLưu ý: Vui lòng refresh trang Quản lý đơn hàng để thấy trạng thái mới và nút gán shipper.');
                         this.selectedOrder = null;
                         this.fetchOrders(); 
                     } else {

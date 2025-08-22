@@ -51,12 +51,17 @@
                     $firstItem = $refund->returnItems->first();
                     $variant = $firstItem?->orderItem?->variant;
                     $product = $variant?->product;
-                    $cover = $variant?->coverImage; // ✅ lấy cover image từ variant
-                    $imageUrl = $cover ? $cover->url : 'https://placehold.co/80x80';
+
+                    if ($variant && $variant->primaryImage && Storage::disk('public')->exists($variant->primaryImage->path)) {
+                    $imageUrl = Storage::url($variant->primaryImage->path);
+                    } elseif ($product && $product->coverImage && Storage::disk('public')->exists($product->coverImage->path)) {
+                    $imageUrl = Storage::url($product->coverImage->path);
+                    } else {
+                    $imageUrl = asset('images/placeholder.jpg'); 
+                    }
                     @endphp
-
-                  <img src="{{ $variant?->image_url }}" alt="{{ $product?->name }}" class="w-24 h-24 rounded-md">
-
+                    
+                    <img src="{{ $imageUrl }}" alt="{{ $variant?->name ?? $product?->name ?? 'Sản phẩm' }}" class="w-24 h-24 rounded-md">
 
                     <div class="flex-1">
                         <p class="font-semibold text-gray-800">
