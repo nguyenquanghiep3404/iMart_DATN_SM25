@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống Kê Chiến Dịch Flash Sale Nâng Cao</title>
+    <!-- Thêm Tailwind CSS từ CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome cho icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <!-- Thêm thư viện Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 p-8 font-sans">
+
+    <div class="p-4 sm:p-6 lg:p-8">
+
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row items-center justify-between pb-6 border-b border-gray-200 mb-6">
+            <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                <i class="fa-solid fa-bolt text-4xl text-yellow-500"></i>
+                <h1 class="text-3xl font-bold text-gray-800">Thống Kê Chiến Dịch Flash Sale</h1>
+            </div>
+            <div class="text-gray-500 text-sm text-right">
+                <p>Chiến dịch: **Flash Sale 12.12**</p>
+                <p>Thời gian: **12/12/2024 (12:00 - 14:00)**</p>
+            </div>
+        </div>
+
+        <!-- Metric Cards: Giữ lại 3 ô và chia đều -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Card 1: Tổng Doanh Thu -->
+            <div class="bg-red-500 text-white rounded-lg p-6 shadow-md transform transition-transform duration-300 hover:scale-105">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm uppercase font-semibold">Tổng Doanh Thu</span>
+                    <i class="fa-solid fa-sack-dollar text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold">25.000.000đ</div>
+                <p class="text-sm mt-1">Tăng 15% so với kỳ trước</p>
+            </div>
+
+            <!-- Card 2: Tổng Lượt Bán -->
+            <div class="bg-green-500 text-white rounded-lg p-6 shadow-md transform transition-transform duration-300 hover:scale-105">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm uppercase font-semibold">Tổng Lượt Bán</span>
+                    <i class="fa-solid fa-cart-shopping text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold">502</div>
+                <p class="text-sm mt-1">Đã bán hết 80% sản phẩm</p>
+            </div>
+
+            <!-- Card 3: Tổng Lợi Nhuận Gộp -->
+            <div class="bg-teal-500 text-white rounded-lg p-6 shadow-md transform transition-transform duration-300 hover:scale-105">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm uppercase font-semibold">Tổng Lợi Nhuận Gộp</span>
+                    <i class="fa-solid fa-money-bill-trend-up text-xl"></i>
+                </div>
+                <div class="text-3xl font-bold">10.250.000đ</div>
+                <p class="text-sm mt-1">Tỷ suất lợi nhuận: 41%</p>
+            </div>
+        </div>
+
+        <!-- Biểu đồ tỷ lệ sản phẩm (toàn bộ chiều rộng) với chú giải bên phải -->
+        <div class="bg-gray-50 rounded-lg p-6 shadow-md mb-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Tỷ lệ doanh thu theo sản phẩm</h2>
+            <div class="h-96 flex items-center justify-center"> 
+                <canvas id="productPieChart" class="max-h-full"></canvas>
+            </div>
+        </div>
+        
+        <!-- Bảng thống kê chi tiết sản phẩm -->
+        <div class="bg-gray-50 rounded-lg p-6 shadow-md overflow-x-auto">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Thống kê chi tiết sản phẩm</h2>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tên Sản Phẩm</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Giá Gốc</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Giá Sale</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">SL Giới Hạn FS</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Đã Bán (FS)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tồn Kho FS</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tổng Tồn Kho</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tổng Tồn Kho Sau FS</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Doanh Thu</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Lợi Nhuận Gộp</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Tai Nghe Bluetooth XYZ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">90.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500 font-semibold">150.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">50</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">50</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">0</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">200</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">150</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">7.500.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">60.000đ/sp</td>
+                    </tr>
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Sạc Dự Phòng ABC</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">65.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500 font-semibold">120.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">100</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">80</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">20</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">300</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">220</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">9.600.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">55.000đ/sp</td>
+                    </tr>
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Bàn phím cơ ZETA</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">250.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500 font-semibold">450.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">30</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">25</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">5</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">150</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">125</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">11.250.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">200.000đ/sp</td>
+                    </tr>
+                    <!-- Thêm các dòng sản phẩm khác nếu cần -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bảng riêng cho các sản phẩm chưa bán hết (trong hạn mức FS) -->
+        <div class="bg-gray-50 rounded-lg p-6 shadow-md overflow-x-auto mt-8">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Sản Phẩm Còn Lại (trong hạn mức Flash Sale)</h2>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tên Sản Phẩm</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Giá Gốc</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Giá Sale</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">SL Giới Hạn FS</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Đã Bán (FS)</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tồn Kho FS</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tổng Tồn Kho</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tổng Tồn Kho Sau FS</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Doanh Thu</th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Lợi Nhuận Gộp</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <!-- Chỉ hiển thị các sản phẩm còn tồn kho FS > 0 -->
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Sạc Dự Phòng ABC</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">65.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500 font-semibold">120.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">100</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">80</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">20</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">300</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">220</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">9.600.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">55.000đ/sp</td>
+                    </tr>
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Bàn phím cơ ZETA</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">250.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-500 font-semibold">450.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">30</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">25</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">5</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">150</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">125</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">11.250.000đ</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">200.000đ/sp</td>
+                    </tr>
+                </tbody>
+            </table>
+          </div>
+    </div>
+
+    <!-- Script tạo biểu đồ -->
+    <script>
+        // Biểu đồ tròn Tỷ lệ doanh thu sản phẩm 
+        const pieCtx = document.getElementById('productPieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Tai Nghe Bluetooth XYZ', 'Sạc Dự Phòng ABC', 'Bàn phím cơ ZETA'],
+                datasets: [{
+                    label: 'Tỷ lệ Doanh thu',
+                    data: [7500000, 9600000, 11250000], // Doanh thu của từng sản phẩm
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(255, 206, 86, 0.8)',
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right', // Đặt chú giải bên phải
+                        align: 'center',    // Căn giữa theo chiều dọc
+                        labels: {
+                            usePointStyle: true, // Dùng hình tròn thay vì hình vuông
+                            padding: 20,         // Khoảng cách giữa các mục chú giải
+                            font: {
+                                size: 14         // Kích thước chữ
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                let label = tooltipItem.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                const value = tooltipItem.raw;
+                                label += new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+                                return label;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>
