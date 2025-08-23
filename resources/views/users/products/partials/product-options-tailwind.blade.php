@@ -206,7 +206,6 @@
         $originalPrice = (int) $variant->price;
         $salePrice = (int) $variant->sale_price;
 
-        // --- Sửa lỗi ở đây ---
         // Lấy thông tin flash sale của biến thể hiện tại từ mảng flashSaleProducts
         $flashPrice = isset($flashSaleProducts[$variant->id])
             ? (int) $flashSaleProducts[$variant->id]['flash_price']
@@ -218,41 +217,29 @@
                 ? Carbon::parse($flashSaleEndTime)->timezone(config('app.timezone'))
                 : null;
 
-        // Kiểm tra flash sale
+        // Kiểm tra flash sale và trạng thái hết hàng
         $isFlashSale = $flashPrice && $parsedFlashSaleEndTime && $now->lte($parsedFlashSaleEndTime);
-        // --- Kết thúc sửa lỗi ---
+        $remaining = isset($flashSaleProducts[$variant->id])
+            ? $flashSaleProducts[$variant->id]['quantity_limit'] - $flashSaleProducts[$variant->id]['quantity_sold']
+            : 0;
+        $isSoldOut = $isFlashSale && $remaining <= 0;
 
         // Kiểm tra khuyến mãi thường
-        $isSale = !$isFlashSale && $salePrice && $salePrice < $originalPrice;
+        $isSale = $salePrice && $salePrice < $originalPrice;
 
         // Tính giá hiển thị
-        $displayPrice = $isFlashSale ? $flashPrice : ($isSale ? $salePrice : $originalPrice);
+        $displayPrice = $isFlashSale && !$isSoldOut ? $flashPrice : ($isSale ? $salePrice : $originalPrice);
 
         // Tính % giảm
         $discountPercent = 0;
         if ($originalPrice > 0) {
-            if ($isFlashSale) {
+            if ($isFlashSale && !$isSoldOut) {
                 $discountPercent = round(100 - ($flashPrice / $originalPrice) * 100);
             } elseif ($isSale) {
                 $discountPercent = round(100 - ($salePrice / $originalPrice) * 100);
             }
         }
 
-        // dd() để kiểm tra nếu cần, sau khi xong thì xoá đi
-        // dd([
-        //     'flash_price' => $flashPrice,
-        //     'flash_end_time' => $parsedFlashSaleEndTime,
-        //     'now' => $now,
-        //     'is_flash_sale' => $isFlashSale,
-        //     'is_sale' => $isSale,
-        //     'display_price' => $displayPrice,
-        //     'discount_percent' => $discountPercent,
-        // ]);
-
-    @endphp
-
-    {{-- Giữ nguyên phần HTML của bạn ở dưới đây --}}
-    @php
         // Tính phần trăm và số lượng còn lại cho flash sale
         $percent =
             isset($flashSaleProducts[$variant->id]) && $flashSaleProducts[$variant->id]['quantity_limit'] > 0
@@ -263,18 +250,15 @@
                         100,
                 )
                 : 0;
-        $remaining = isset($flashSaleProducts[$variant->id])
-            ? $flashSaleProducts[$variant->id]['quantity_limit'] - $flashSaleProducts[$variant->id]['quantity_sold']
-            : 0;
         $total = isset($flashSaleProducts[$variant->id]) ? $flashSaleProducts[$variant->id]['quantity_limit'] : 0;
     @endphp
 
     <div id="price-section" class="mt-4">
-        @if ($isFlashSale)
+        @if ($isFlashSale && !$isSoldOut)
             <div id="flash-sale-block" class="bg-orange-500 text-white p-4 rounded-lg">
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center position-relative">
                     <div>
-                        <p class="text-sm font-semibold">⚡ Online Giá Rẻ Quá</p>
+                        <p class="text-lg font-semibold">Online Giá Rẻ Quá</p>
                         <p id="product-price" class="text-3xl font-bold">
                             {{ number_format($displayPrice) }}₫
                         </p>
@@ -328,28 +312,13 @@
                 </div>
             </div>
         @else
-            <div id="normal-price-block" class="price-block bg-gray-100 p-4 rounded-lg">
-                <div class="flex items-baseline gap-3">
-                    <span id="product-price" class="text-3xl font-bold text-red-600">
-                        {{ number_format($displayPrice) }}₫
-                    </span>
-                    @if ($isSale)
-                        <span id="original-price" class="text-lg text-gray-500 line-through">
-                            {{ number_format($originalPrice) }}₫
-                        </span>
-                        <span id="discount-percent"
-                            class="bg-red-200 text-red-800 text-sm font-semibold px-2 py-0.5 rounded-md">
-                            -{{ $discountPercent }}%
-                        </span>
-                    @endif
-                </div>
-            </div>
-            <div id="flash-sale-block" class="bg-orange-500 text-white p-4 rounded-lg hidden">
-                <div class="flex justify-between items-center">
+            <div id="flash-sale-block"
+                class="bg-orange-500 text-white p-4 rounded-lg mb-4 {{ $isSoldOut ? 'sold-out' : 'hidden' }}">
+                <div class="flex justify-between items-center position-relative">
                     <div>
-                        <p class="text-sm font-semibold">⚡ Online Giá Rẻ Quá</p>
+                        <p class="text-lg font-semibold">Online Giá Rẻ Quá</p>
                         <p id="product-price" class="text-3xl font-bold">
-                            {{ number_format($displayPrice) }}₫
+                            {{ number_format($flashPrice) }}₫
                         </p>
                         <p class="text-sm opacity-80">
                             <span id="original-price" class="line-through">
@@ -369,15 +338,41 @@
                             <span id="minutes" class="timer-box">00</span>:
                             <span id="seconds" class="timer-box">00</span>
                         </div>
-                        <!-- Thanh tiến trình rỗng khi flash sale không diễn ra -->
-                        <div class="js-flash-sale-progress mt-2 hidden">
-                            <div class="progress-wrapper">
-                                <div class="progress-bar-inner" style="width: 0%">
-                                    <span class="progress-text"></span>
+                        <!-- Thanh tiến trình flash sale -->
+                        @if (isset($flashSaleProducts[$variant->id]))
+                            <div class="js-flash-sale-progress mt-2">
+                                <div class="progress-wrapper">
+                                    <div class="progress-bar-inner" style="width: {{ $percent }}%">
+                                        <span class="progress-text">
+                                            🔥 Còn {{ $remaining }}/{{ $total }} suất
+                                        </span>
+                                    </div>
                                 </div>
+                                @if ($isSoldOut)
+                                    <img src="{{ asset('assets/users/logo/out-of-deal.png') }}" alt="Sold Out"
+                                        class="sold-out-overlay"
+                                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 50%;廊
+                                     max-height: 50%; object-fit: contain;">
+                                @endif
                             </div>
-                        </div>
+                        @endif
                     </div>
+                </div>
+            </div>
+            <div id="normal-price-block" class="price-block bg-gray-100 p-4 rounded-lg">
+                <div class="flex items-baseline gap-3">
+                    <span id="product-price" class="text-3xl font-bold text-red-600">
+                        {{ number_format($isSale ? $salePrice : $originalPrice) }}₫
+                    </span>
+                    @if ($isSale)
+                        <span id="original-price" class="text-lg text-gray-500 line-through">
+                            {{ number_format($originalPrice) }}₫
+                        </span>
+                        <span id="discount-percent"
+                            class="bg-red-200 text-red-800 text-sm font-semibold px-2 py-0.5 rounded-md">
+                            -{{ $discountPercent }}%
+                        </span>
+                    @endif
                 </div>
             </div>
         @endif

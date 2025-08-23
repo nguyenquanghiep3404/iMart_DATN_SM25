@@ -59,13 +59,13 @@
         <div class="price-filter-content">
             <h6 class="mb-3 mt-3">Chọn mức giá nhanh</h6>
             <div class="d-flex flex-column gap-2 mb-4">
-                <label><input type="checkbox" name="muc-gia[]" value="all"> Tất cả</label>
-                <label><input type="checkbox" name="muc-gia[]" value="duoi-2-trieu"> Dưới 2 triệu</label>
-                <label><input type="checkbox" name="muc-gia[]" value="tu-2-4-trieu"> Từ 2 - 4 triệu</label>
-                <label><input type="checkbox" name="muc-gia[]" value="tu-4-7-trieu"> Từ 4 - 7 triệu</label>
-                <label><input type="checkbox" name="muc-gia[]" value="tu-7-13-trieu"> Từ 7 - 13 triệu</label>
-                <label><input type="checkbox" name="muc-gia[]" value="tu-13-20-trieu"> Từ 13 - 20 triệu</label>
-                <label><input type="checkbox" name="muc-gia[]" value="tren-20-trieu"> Trên 20 triệu</label>
+                <label><input type="checkbox" name="muc-gia" value="all"> Tất cả</label>
+                <label><input type="checkbox" name="muc-gia" value="duoi-2-trieu"> Dưới 2 triệu</label>
+                <label><input type="checkbox" name="muc-gia" value="tu-2-4-trieu"> Từ 2 - 4 triệu</label>
+                <label><input type="checkbox" name="muc-gia" value="tu-4-7-trieu"> Từ 4 - 7 triệu</label>
+                <label><input type="checkbox" name="muc-gia" value="tu-7-13-trieu"> Từ 7 - 13 triệu</label>
+                <label><input type="checkbox" name="muc-gia" value="tu-13-20-trieu"> Từ 13 - 20 triệu</label>
+                <label><input type="checkbox" name="muc-gia" value="tren-20-trieu"> Trên 20 triệu</label>
             </div>
 
             <h6 class="mb-3 mt-3">Hoặc chọn khoảng giá phù hợp với bạn</h6>

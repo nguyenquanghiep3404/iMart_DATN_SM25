@@ -7,10 +7,11 @@
         @include('admin.partials.flash_message')
         <div id="campaign-detail-view">
             <div class="mb-6">
-                <a href="{{ route('admin.flash-sales.index') }}"
-                    class="back-to-list-btn flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800">
-                    <i class="fas fa-arrow-left"></i> Quay lại danh sách
-                </a>
+               <a href="{{ route('admin.flash-sales.index') }}" 
+               class="mb-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Quay lại danh sách
+            </a>
                 <h1 class="text-3xl font-bold text-gray-800 mt-2">
                     {{ $flashSale->name }}
                 </h1>
@@ -158,11 +159,11 @@
                                                     <div class="flex flex-col gap-1">
                                                         <div class="w-full bg-gray-200 rounded-full h-2.5">
                                                             <div class="bg-green-600 h-2.5 rounded-full"
-                                                                style="width: {{ round((($flashProduct->sold_quantity ?? 0) / $flashProduct->quantity_limit) * 100) }}%">
+                                                                style="width: {{ round((($flashProduct->quantity_sold ?? 0) / $flashProduct->quantity_limit) * 100) }}%">
                                                             </div>
                                                         </div>
                                                         <span class="text-xs">Đã bán
-                                                            {{ $flashProduct->sold_quantity ?? 0 }} /
+                                                            {{ $flashProduct->quantity_sold ?? 0 }} /
                                                             {{ $flashProduct->quantity_limit }}</span>
                                                     </div>
                                                 </td>

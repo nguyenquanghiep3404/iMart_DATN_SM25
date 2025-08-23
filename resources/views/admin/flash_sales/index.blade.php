@@ -71,6 +71,17 @@
             background-color: #dc2626;
         }
 
+        .btn-info {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background-color: #2563eb;
+        }
+
+
+
         .table-custom {
             width: 100%;
             color: #374151;
@@ -204,9 +215,21 @@
                                         </td>
                                         <td class="text-left text-base font-medium">
                                             <div class="inline-flex space-x-1">
-                                                <a href="{{ route('admin.flash-sales.show', $flashSale->id) }}"
-                                                    class="btn btn-sm btn-primary" title="Chi tiết"><i
-                                                        class="fas fa-list"></i></a>
+                                                {{-- Nút "Thống kê" chỉ hiển thị khi flash sale đã kết thúc --}}
+                                                {{-- Nút "Thống kê" chỉ hiển thị khi flash sale đã kết thúc --}}
+                                                @if ($flashSale->status === 'finished')
+                                                    <a href="{{ route('admin.flash-sales.statistics', $flashSale->id) }}"
+                                                        class="btn btn-sm btn-info" title="Thống kê">
+                                                        <i class="fas fa-chart-bar"></i>
+                                                    </a>
+                                                @endif
+                                                {{-- Nút "Chi tiết" --}}
+                                                @unless ($flashSale->status === 'finished')
+                                                    <a href="{{ route('admin.flash-sales.show', $flashSale->id) }}"
+                                                        class="btn btn-sm btn-primary" title="Chi tiết"><i
+                                                            class="fas fa-list"></i></a>
+                                                @endunless
+
                                                 {{-- Ẩn nút "Sửa" nếu trạng thái là "Đã kết thúc" --}}
                                                 @unless ($flashSale->status === 'finished')
                                                     <a href="{{ route('admin.flash-sales.edit', $flashSale->id) }}"

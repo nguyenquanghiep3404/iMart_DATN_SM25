@@ -763,7 +763,6 @@ class CartController extends Controller
         ]);
     }
 
-
     public function applyVoucherAjax(Request $request)
     {
         try {
@@ -915,8 +914,6 @@ class CartController extends Controller
             ], 500);
         }
     }
-
-
     private function calculateTotal()
     {
         $cart = auth()->user()->cart;

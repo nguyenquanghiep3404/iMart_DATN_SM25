@@ -835,18 +835,24 @@
                                                     $sold = $fsProduct->quantity_sold ?? 0;
                                                     $remaining = $total - $sold;
                                                     $percent = $total > 0 ? ($remaining / $total) * 100 : 0;
+                                                    $isSoldOut = $quantityLeft === 0;
                                                 @endphp
                                                 <div class="swiper-slide">
-                                                    <div class="product-card bg-body shadow-lg border-1">
+                                                    <div
+                                                        class="product-card bg-body shadow-lg border-1 {{ $isSoldOut ? 'sold-out' : '' }}">
                                                         <div class="position-relative">
-                                                            <a
-                                                                href="{{ route('users.products.show', $variant->slug)}}">
+                                                            <a href="{{ route('users.products.show', $variant->slug) }}">
                                                                 <div class="ratio"
                                                                     style="--cz-aspect-ratio: calc(250 / 220 * 100%)">
                                                                     <img src="{{ $mainImage }}"
                                                                         alt="{{ $product?->name }}"
                                                                         class="img-fluid rounded-3 shadow-sm"
-                                                                        style="object-fit:contain; width:100%; height:100%;">
+                                                                        style="object-fit:contain; width:100%; height:100%; {{ $isSoldOut ? 'opacity: 0.5; filter: grayscale(100%);' : '' }}">
+                                                                    @if ($isSoldOut)
+                                                                        <img src="{{ asset('assets/users/logo/out-of-deal.png') }}"
+                                                                            alt="Sold Out" class="sold-out-overlay"
+                                                                            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 50%; max-height: 50%; object-fit: contain;">
+                                                                    @endif
                                                                 </div>
                                                             </a>
                                                         </div>
@@ -854,7 +860,8 @@
                                                             <h2 class="fw-bold"
                                                                 style="line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em;">
                                                                 <a href="{{ route('users.products.show', $product?->slug) }}"
-                                                                    class="text-dark text-decoration-none">
+                                                                    class="text-dark text-decoration-none {{ $isSoldOut ? 'text-muted' : '' }}"
+                                                                    style="{{ $isSoldOut ? 'pointer-events: none;' : '' }}">
                                                                     {{ $product?->name }} {{ $variantName }}
                                                                 </a>
                                                             </h2>
@@ -903,6 +910,16 @@
                                                 </div>
                                             @endforelse
                                         </div>
+
+                                        <style>
+                                            .sold-out {
+                                                opacity: 0.7;
+                                            }
+
+                                            .sold-out-overlay {
+                                                z-index: 10;
+                                            }
+                                        </style>
                                     </div>
                                 </div>
                             @endforeach
@@ -1029,93 +1046,88 @@
     @endif
 
     @foreach ($blocks as $block)
-        <section class="container px-4 pt-4 mt-2 mt-sm-3 mt-lg-4 position-relative">
-            <div class="d-flex justify-content-center mb-4">
-                <h1 class="h1 pb-2 d-inline-block text-center">
-                    <i class="fab fa-apple fa-lg me-2"></i>
-                    {{ $block->title }}
-                </h1>
-            </div>
-            <div class="position-relative">
-                <div class="swiper product-slider"
-                    data-swiper='{
-                    "slidesPerView": 2,
-                    "spaceBetween": 16,
-                    "loop": false,
-                    "navigation": {
-                        "nextEl": ".product-next-{{ $block->id }}",
-                        "prevEl": ".product-prev-{{ $block->id }}"
-                    },
-                    "breakpoints": {
-                        "576": { "slidesPerView": 3 },
-                        "768": { "slidesPerView": 4 },
-                        "992": { "slidesPerView": 5 } 
-                    }
-                }'>
-                    <div class="swiper-wrapper">
-                        @forelse ($block->productVariants as $variant)
-                            @php
-                                $product = $variant->product;
-                                // Sử dụng ảnh chính của biến thể, nếu không có thì dùng ảnh cover của sản phẩm
-                                $imageToShow = $variant->primaryImage ?? $product->coverImage;
-                                $mainImage = $imageToShow
-                                    ? Storage::url($imageToShow->path)
-                                    : asset('images/placeholder.jpg');
-                                $isOnSale = $variant && $variant->sale_price && $variant->price > 0;
-                                $discountPercent = $isOnSale
-                                    ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                                    : 0;
-                                // Lấy thuộc tính Dung lượng
-                                $capacityAttr = $variant->attributeValues->firstWhere('attribute.name', 'Dung lượng');
-                                $capacityValue = $capacityAttr ? $capacityAttr->value : '';
-                            @endphp
-                            <div class="swiper-slide p-2 h-100">
-                                <div class="product-card bg-body rounded-7 border-0 h-100 py-4 position-relative">
-                                    @if ($isOnSale && $discountPercent > 0)
-                                        <div class="discount-badge">Giảm {{ $discountPercent }}%</div>
-                                    @endif
+    <section class="container px-4 pt-4 mt-2 mt-sm-3 mt-lg-4 position-relative">
+        <div class="d-flex justify-content-center mb-4">
+            <h1 class="h1 pb-2 d-inline-block text-center">
+                <i class="fab fa-apple fa-lg me-2"></i>
+                {{ $block->title }}
+            </h1>
+        </div>
+        <div class="position-relative">
+            <div class="swiper product-slider"
+                data-swiper='{
+                "slidesPerView": 2,
+                "spaceBetween": 16,
+                "loop": false,
+                "navigation": {
+                    "nextEl": ".product-next-{{ $block->id }}",
+                    "prevEl": ".product-prev-{{ $block->id }}"
+                },
+                "breakpoints": {
+                    "576": { "slidesPerView": 3 },
+                    "768": { "slidesPerView": 4 },
+                    "992": { "slidesPerView": 5 } 
+                }
+            }'>
+                <div class="swiper-wrapper">
+                    @forelse ($block->productVariants as $variant)
+                        @php
+                            $product = $variant->product;
+                            $imageToShow = $variant->primaryImage ?? $product->coverImage;
+                            $mainImage = $imageToShow
+                                ? Storage::url($imageToShow->path)
+                                : asset('images/placeholder.jpg');
+                            $isOnSale = $variant->is_flash_sale || ($variant->sale_price && $variant->price > 0);
+                            $displayPrice = $variant->is_flash_sale ? $variant->flash_price : ($variant->sale_price ?? $variant->price);
+                            $discountPercent = $variant->discount_percent ?? 0;
+                            $capacityAttr = $variant->attributeValues->firstWhere('attribute.name', 'Dung lượng');
+                            $capacityValue = $capacityAttr ? $capacityAttr->value : '';
+                        @endphp
+                        <div class="swiper-slide p-2 h-100">
+                            <div class="product-card bg-body rounded-7 border-0 h-100 py-4 position-relative">
+                                @if ($isOnSale && $discountPercent > 0)
+                                    <div class="discount-badge">Giảm {{ $discountPercent }}%</div>
+                                @endif
 
-                                    {{-- Ảnh sản phẩm --}}
-                                    <div class="position-relative">
-                                        <a href="{{ route('users.products.show', $variant->slug) }}">
-                                            <div class="ratio" style="--cz-aspect-ratio: calc(200 / 180 * 100%)">
-                                                <img src="{{ $mainImage }}"
-                                                    alt="{{ $product->name }} {{ $capacityValue }}"
-                                                    class="img-fluid rounded-3 shadow-sm"
-                                                    style="object-fit:contain; width:100%; height:100%;">
-                                            </div>
-                                        </a>
-                                    </div>
-
-                                    {{-- Thông tin sản phẩm --}}
-                                    <div class="px-3 pb-3 pt-2 text-center">
-                                        <h3 class="fs-6 fw-bold text-truncate">
-                                            <a href="{{ route('users.products.show', $variant->slug) }}"
-                                                class="text-dark text-decoration-none">
-                                                {{ $product->name }} {{ $capacityValue }}
-                                            </a>
-                                        </h3>
-                                        <div class="text-primary fw-bold">
-                                            @if ($isOnSale)
-                                                {{ number_format($variant->sale_price) }}đ
-                                                <del class="text-muted ms-1">{{ number_format($variant->price) }}đ</del>
-                                            @else
-                                                {{ number_format($variant->price) }}đ
-                                            @endif
+                                {{-- Ảnh sản phẩm --}}
+                                <div class="position-relative">
+                                    <a href="{{ route('users.products.show', $variant->slug) }}">
+                                        <div class="ratio" style="--cz-aspect-ratio: calc(200 / 180 * 100%)">
+                                            <img src="{{ $mainImage }}"
+                                                alt="{{ $product->name }} {{ $capacityValue }}"
+                                                class="img-fluid rounded-3 shadow-sm"
+                                                style="object-fit:contain; width:100%; height:100%;">
                                         </div>
+                                    </a>
+                                </div>
+
+                                {{-- Thông tin sản phẩm --}}
+                                <div class="px-3 pb-3 pt-2 text-center">
+                                    <h3 class="fs-6 fw-bold text-truncate">
+                                        <a href="{{ route('users.products.show', $variant->slug) }}"
+                                            class="text-dark text-decoration-none">
+                                            {{ $product->name }} {{ $capacityValue }}
+                                        </a>
+                                    </h3>
+                                    <div class="text-primary fw-bold">
+                                        {{ number_format($displayPrice) }}đ
+                                        @if ($isOnSale)
+                                            <del class="text-muted ms-1">{{ number_format($variant->price) }}đ</del>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
-                        @empty
-                            <div class="swiper-slide">
-                                <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
-                            </div>
-                        @endforelse
-                    </div>
+                        </div>
+                    @empty
+                        <div class="swiper-slide">
+                            <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
+                        </div>
+                    @endforelse
                 </div>
             </div>
-        </section>
-    @endforeach
+        </div>
+    </section>
+@endforeach
 
     <section class="container py-5 bg-body-tertiary">
         <div class="d-flex justify-content-center mb-5">
