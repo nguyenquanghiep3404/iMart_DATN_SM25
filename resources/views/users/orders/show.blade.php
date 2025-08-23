@@ -436,24 +436,33 @@
 
             {{-- NÚT HỦY ĐƠN --}}
             @if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
-                <button class="btn-action" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn hàng</button>
+            <button class="btn-action" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn hàng</button>
             @endif
 
             {{-- NÚT YÊU CẦU TRẢ HÀNG --}}
             {{-- Chỉ hiện khi: Đơn đã giao, CHƯA xác nhận, và còn trong hạn 7 ngày --}}
-            @if($order->status == 'delivered' && is_null($order->confirmed_at) && $order->delivered_at && $order->delivered_at->diffInDays(now()) < 7)
-                <a href="{{-- route('returns.create', $order->id) --}}" class="btn-action btn-action-secondary">
-                    Yêu cầu trả hàng
-                </a>
-            @endif
+            @php
+            $firstItem = $order->items->first();
+            $canReview = $firstItem && !$firstItem->has_reviewed && $firstItem->product_variant_id;
 
-            {{-- NÚT VIẾT ĐÁNH GIÁ CHO CẢ ĐƠN HÀNG --}}
-    {{-- Chỉ hiện khi đơn hàng đã được xác nhận đã nhận --}}
-    @if(!is_null($order->confirmed_at))
-        <a href="{{ route('orders.review', $order->id) }}" class="btn-action">
-            Viết đánh giá
-        </a>
-    @endif
+            $deliveredAt = $order->desired_delivery_date ?? $order->updated_at;
+            $daysSinceDelivered = $deliveredAt ? \Carbon\Carbon::parse($deliveredAt)->diffInDays(now()) : null;
+            $canRefund = $daysSinceDelivered !== null && $daysSinceDelivered <= 15;
+                @endphp
+
+                @if($order->status == 'delivered' && is_null($order->confirmed_at) && $order->delivered_at && $order->delivered_at->diffInDays(now()) < 7)
+                    <a href="{{ route('refunds.create', ['orderItem' => $firstItem->id]) }}" class="btn-action btn-action-secondary">
+                    Yêu cầu trả hàng
+                    </a>
+                    @endif
+
+                    {{-- NÚT VIẾT ĐÁNH GIÁ CHO CẢ ĐƠN HÀNG --}}
+                    {{-- Chỉ hiện khi đơn hàng đã được xác nhận đã nhận --}}
+                    @if(!is_null($order->confirmed_at))
+                    <a href="{{ route('orders.review', $order->id) }}" class="btn-action">
+                        Viết đánh giá
+                    </a>
+                    @endif
 
         </footer>
     </div>
@@ -645,7 +654,7 @@
         const nameEl = modal.querySelector('.product-name'); // thêm class này vào thẻ tên
         const skuEl = modal.querySelector('.product-sku'); // thêm class này vào thẻ sku
         const priceEl = modal.querySelector('.product-price'); // thêm class này vào thẻ giá
-        const imageEl = modal.querySelector('.product-image'); // thêm class này vào thẻ <img>
+        const imageEl = modal.querySelector('.product-image');
         openBtns.forEach(button => {
             button.addEventListener('click', () => {
                 // Lấy dữ liệu từ data attribute

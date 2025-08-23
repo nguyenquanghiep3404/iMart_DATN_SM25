@@ -722,6 +722,16 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
+
+        $alreadyInCart = 0;
+        // Giả sử session('cart') là mảng các item: ['product_variant_id' => 1, 'quantity' => 2, ...]
+        if (session()->has('cart')) {
+            $variantId = $productVariant->id ?? $product->id; // lấy id biến thể hiện tại
+            $alreadyInCart = collect(session('cart'))
+                ->where('product_variant_id', $variantId) // chỉ lấy item cùng biến thể
+                ->sum('quantity');
+        }
+
         $productBundles = ProductBundle::with([
             'mainProducts.productVariant.product.coverImage',
             'suggestedProducts.productVariant.product.coverImage'
@@ -1983,7 +1993,6 @@ class HomeController extends Controller
         }
 
         // Tab mặc định: Sản phẩm
-        // Tab mặc định: Sản phẩm
         $products = Product::with(['category', 'variants', 'coverImage'])
             ->where('status', 'published')
             ->where(function ($q) use ($query) {
@@ -1992,19 +2001,38 @@ class HomeController extends Controller
             })
             ->paginate(12);
 
-        // ✅ Thêm dòng này để truyền danh mục vào view
-        $categories = Category::all();
-        $parentCategories = $categories->whereNull('parent_id');
+        // **Chuyển đổi products sang mảng để Blade dùng kiểu mảng**
+        // Thay vì map(), dùng transform() trực tiếp trên paginator
+        $products->getCollection()->transform(function ($product) {
+            $displayVariant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+            return [
+                'slug' => $product->slug,
+                'name' => $product->name,
+                'cover_image' => $product->coverImage?->path ? Storage::url($product->coverImage->path) : null,
+                'variant' => $displayVariant ? [
+                    'storage' => $displayVariant->attributeValues->firstWhere('attribute.name', 'Dung lượng')?->value,
+                    'price' => $displayVariant->sale_price ?? $displayVariant->price,
+                    'original_price' => $displayVariant->price,
+                    'discount_percent' => $displayVariant && $displayVariant->sale_price
+                        ? round(100 - ($displayVariant->sale_price / $displayVariant->price) * 100)
+                        : 0,
+                    'image_url' => $displayVariant->primaryImage?->path ? Storage::url($displayVariant->primaryImage->path) : null,
+                ] : null,
+            ];
+        });
 
+        // Bây giờ $products vẫn là LengthAwarePaginator, có thể dùng ->withQueryString()
         return view('users.shop', [
             'products' => $products,
             'searchQuery' => $query,
             'tab' => $tab,
-            'categories' => $categories,
-            'parentCategories' => $parentCategories,
-            'currentCategory' => null, // vì không phải xem theo danh mục
+            'categories' => Category::all(),
+            'parentCategories' => Category::whereNull('parent_id')->get(),
+            'currentCategory' => null,
+            'currentSort' => 'moi_nhat',
         ]);
     }
+
 
     public function searchSuggestions(Request $request)
     {
@@ -2022,12 +2050,21 @@ class HomeController extends Controller
                 $minSalePrice = $variants->whereNotNull('sale_price')->min('sale_price');
                 $minPrice = $variants->min('price');
 
+                $variant = $variants->first();
+                if ($variant && $variant->primaryImage && Storage::disk('public')->exists($variant->primaryImage->path)) {
+                    $imageUrl = Storage::url($variant->primaryImage->path);
+                } elseif ($product->coverImage && Storage::disk('public')->exists($product->coverImage->path)) {
+                    $imageUrl = Storage::url($product->coverImage->path);
+                } else {
+                    $imageUrl = asset('images/no-image.png'); // hoặc placehold.co
+                }
+
                 return [
                     'name' => $product->name,
                     'slug' => $product->slug,
                     'price' => $minPrice ? number_format($minPrice) . ' ₫' : null,
                     'sale_price' => $minSalePrice ? number_format($minSalePrice) . ' ₫' : null,
-                    'image_url' => $product->coverImage->url ?? asset('images/no-image.png'),
+                    'image_url'  => $imageUrl,
                 ];
             });
 

@@ -15,17 +15,19 @@
             </div>
         </div>
 
-        <div class="border-bottom mb-4">
-            <nav class="d-flex flex-wrap" style="gap: 1.5rem;">
-                <a href="{{ route('orders.index') }}" class="tab-link {{ empty($status) ? 'active' : '' }}">Tất cả</a>
-                <a href="{{ route('orders.index', ['status' => 'pending_confirmation']) }}" class="tab-link {{ $status == 'pending_confirmation' ? 'active' : '' }}">Chờ xác nhận</a>
-                <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="tab-link {{ $status == 'processing' ? 'active' : '' }}">Đang xử lý</a>
-                <a href="{{ route('orders.index', ['status' => 'shipped']) }}" class="tab-link {{ $status == 'shipped' ? 'active' : '' }}">Đang giao</a>
-                <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Hoàn tất</a>
-                <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Đã hủy</a>
-                <a href="{{ route('orders.returns') }}" class="tab-link {{ request()->routeIs('orders.returns') ? 'active' : '' }}">Trả hàng</a>
-            </nav>
-        </div>
+       <div class="border-bottom mb-4">
+        <nav class="d-flex flex-wrap" style="gap: 1.5rem;">
+            <a href="{{ route('orders.index') }}" class="tab-link {{ empty($status) ? 'active' : '' }}">Tất cả</a>
+            <a href="{{ route('orders.index', ['status' => 'pending_confirmation']) }}" class="tab-link {{ $status == 'pending_confirmation' ? 'active' : '' }}">Chờ xác nhận</a>
+            <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="tab-link {{ $status == 'processing' ? 'active' : '' }}">Đang xử lý</a>
+            <a href="{{ route('orders.index', ['status' => 'out_for_delivery']) }}" class="tab-link {{ $status == 'out_for_delivery' ? 'active' : '' }}">Đang giao hàng</a>
+            <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Giao hàng thành công</a>
+            <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Hủy</a>
+            <a href="{{ route('orders.index', ['status' => 'failed_delivery']) }}" class="tab-link {{ $status == 'failed_delivery' ? 'active' : '' }}">Giao hàng thất bại</a>
+            <a href="{{ route('orders.returns') }}" class="tab-link {{ request()->routeIs('orders.returns') ? 'active' : '' }}">Trả hàng</a>
+        </nav>
+    </div>
+
         @forelse ($refunds as $refund)
         <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div class="p-4 flex flex-col sm:flex-row justify-between sm:items-center border-b bg-gray-50">
@@ -45,33 +47,38 @@
                 </div>
             </div>
 
-            @php
-            $firstItem = $refund->returnItems->first();
-            $variant = $firstItem?->orderItem?->variant;
-            $product = $variant?->product;
-            $image = $product?->coverImage?->url ?? 'https://placehold.co/80x80/e2e8f0/e2e8f0?text=Sản+phẩm';
-            @endphp
-
-            <div class="p-4 flex items-center space-x-4">
-                <img src="{{ $image }}" alt="Product Image" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
-                <div class="flex-1">
+            <div class="refund-card">
+                <div class="p-4 flex items-center space-x-4">
                     @php
-                    $items = $refund->returnItems ?? collect();
-                    $firstItem = $items->first();
-                    $firstProduct = optional($firstItem?->orderItem?->variant?->product);
-                    $otherCount = $items->count() - 1;
+                    $firstItem = $refund->returnItems->first();
+                    $variant = $firstItem?->orderItem?->variant;
+                    $product = $variant?->product;
+
+                    if ($variant && $variant->primaryImage && Storage::disk('public')->exists($variant->primaryImage->path)) {
+                    $imageUrl = Storage::url($variant->primaryImage->path);
+                    } elseif ($product && $product->coverImage && Storage::disk('public')->exists($product->coverImage->path)) {
+                    $imageUrl = Storage::url($product->coverImage->path);
+                    } else {
+                    $imageUrl = asset('images/placeholder.jpg'); 
+                    }
                     @endphp
+                    
+                    <img src="{{ $imageUrl }}" alt="{{ $variant?->name ?? $product?->name ?? 'Sản phẩm' }}" class="w-24 h-24 rounded-md">
 
-                    <p class="font-semibold text-gray-800">
-                        {{ $firstProduct->name ?? '---' }}{{ $otherCount > 0 ? " và $otherCount sản phẩm khác" : '' }}
-                    </p>
-
-                    <p class="text-sm text-gray-500">
-                        Số tiền hoàn lại:
-                        <span class="font-medium text-green-600">
-                            {{ number_format($refund->refund_amount, 0, ',', '.') }} VNĐ
-                        </span>
-                    </p>
+                    <div class="flex-1">
+                        <p class="font-semibold text-gray-800">
+                            {{ $product?->name ?? '---' }}
+                            @if($refund->returnItems->count() > 1)
+                            và {{ $refund->returnItems->count() - 1 }} sản phẩm khác
+                            @endif
+                        </p>
+                        <p class="text-sm text-gray-500">
+                            Số tiền hoàn lại:
+                            <span class="font-medium text-green-600">
+                                {{ number_format($refund->refund_amount, 0, ',', '.') }} VNĐ
+                            </span>
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -83,9 +90,9 @@
             </div>
         </div>
         @empty
-        <div class="text-center py-16">
-            <img src="https://i.imgur.com/3a83g2R.png" alt="Empty Box" class="mx-auto h-40">
-            <p class="mt-4 text-gray-600">Bạn chưa có yêu cầu trả hàng nào.</p>
+        <div class="empty-orders-container">
+            <img src="https://fptshop.com.vn/img/empty_state.png?w=640&q=75" alt="Không có đơn hàng">
+            <p>Bạn chưa có đơn hàng nào.</p>
         </div>
         @endforelse
 
@@ -172,6 +179,28 @@
     .status-cancelled {
         background-color: #f3f4f6;
         color: #6b7280;
+    }
+
+    .empty-orders-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 60px 20px;
+        background-color: #f9fafb;
+        border-radius: 8px;
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .empty-orders-container img {
+        width: 250px;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-orders-container p {
+        font-size: 1.1rem;
+        color: #6c757d;
     }
 </style>
 

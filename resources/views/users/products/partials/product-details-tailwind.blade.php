@@ -1114,7 +1114,6 @@
         let selectedFiles = [];
 
         if (!modal || !closeBtn || !starsContainer) return;
-
         // ⭐ Render stars
         starsContainer.innerHTML = '';
         for (let i = 1; i <= 5; i++) {

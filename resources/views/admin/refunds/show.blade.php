@@ -57,7 +57,14 @@
                     <h2 class="text-xl font-semibold text-gray-800 mb-4">Chi tiết sản phẩm trả</h2>
                     @foreach ($returnRequest->returnItems as $item)
                     <div class="flex items-start space-x-4">
-                        <img src="{{ $item->orderItem->variant->product->thumbnail_url ?? 'https://placehold.co/100x100' }}" class="w-24 h-24 rounded-md">
+                        @php
+                        $variant = $item->orderItem?->variant;
+                        $product = $variant?->product;
+                        $cover = $variant?->coverImage;
+                        $imageUrl = $cover ? $cover->url : 'https://placehold.co/80x80';
+                        @endphp
+
+                        <img src="{{ $variant?->image_url ?? $imageUrl }}" alt="{{ $product?->name }}" class="w-24 h-24 rounded-md">
                         <div class="flex-grow">
                             <p class="font-bold">{{ $item->orderItem->variant->product->name ?? 'Sản phẩm đã xóa' }}</p>
                             <p class="text-sm text-gray-500">SKU: {{ $item->orderItem->variant->sku ?? 'N/A' }}</p>
