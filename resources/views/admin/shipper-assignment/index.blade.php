@@ -12,8 +12,8 @@
                 <p class="mt-1 text-sm text-gray-600">Quản lý và gán shipper cho các đơn hàng</p>
             </div>
             <div class="flex items-center space-x-4">
-                <span class="text-sm text-gray-500">Tổng gói hàng: <span id="total-packages" class="font-semibold text-blue-600">0</span></span>
-                <span class="text-sm text-gray-500">Đã chọn: <span id="selected-packages" class="font-semibold text-green-600">0</span></span>
+                <span class="text-sm text-gray-500">Tổng đơn hàng: <span id="total-orders" class="font-semibold text-blue-600">0</span></span>
+                <span class="text-sm text-gray-500">Đã chọn: <span id="selected-orders" class="font-semibold text-green-600">0</span></span>
             </div>
         </div>
     </div>
@@ -21,7 +21,7 @@
 
 <!-- Main Content -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Left Column: Package List -->
+    <!-- Left Column: Order List -->
     <div class="lg:col-span-2">
         <div class="bg-white rounded-lg shadow-sm">
             <!-- Filters -->
@@ -56,7 +56,7 @@
                 </div>
             </div>
 
-            <!-- Package List Header -->
+            <!-- Order List Header -->
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center space-x-4">
@@ -70,15 +70,15 @@
                         </button>
                     </div>
                     <div class="text-sm text-gray-500">
-                        Hiển thị: <span id="showing-count" class="font-medium">0</span> gói hàng
+                        Hiển thị: <span id="showing-count" class="font-medium">0</span> đơn hàng
                     </div>
                 </div>
             </div>
 
-            <!-- Package List -->
+            <!-- Order List -->
             <div class="relative">
                 <!-- Loading State -->
-                <div id="loading-packages" class="hidden p-8 text-center">
+                <div id="loading-orders" class="hidden p-8 text-center">
                     <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-blue-500 bg-blue-100">
                         <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -89,17 +89,17 @@
                 </div>
 
                 <!-- Empty State -->
-                <div id="empty-packages" class="hidden p-8 text-center">
+                <div id="empty-orders" class="hidden p-8 text-center">
                     <div class="text-gray-400 mb-4">
                         <i class="fas fa-box-open text-4xl"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Không có gói hàng nào</h3>
-                    <p class="text-gray-500">Hiện tại không có gói hàng nào cần gán shipper.</p>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Không có đơn hàng nào</h3>
+                    <p class="text-gray-500">Hiện tại không có đơn hàng nào cần gán shipper.</p>
                 </div>
 
-                <!-- Package List Container -->
-                <div id="package-list" class="divide-y divide-gray-200">
-                    <!-- Packages will be loaded here -->
+                <!-- Order List Container -->
+                <div id="order-list" class="divide-y divide-gray-200">
+                    <!-- Orders will be loaded here -->
                 </div>
             </div>
         </div>
@@ -116,7 +116,7 @@
                 <!-- Selected Summary -->
                 <div id="selected-summary" class="mb-6 p-4 bg-blue-50 rounded-lg hidden">
                     <h4 class="text-sm font-medium text-blue-900 mb-2">Đã chọn</h4>
-                    <p class="text-sm text-blue-700">Bạn đã chọn <span id="selected-count">0</span> gói hàng để gán shipper.</p>
+                    <p class="text-sm text-blue-700">Bạn đã chọn <span id="selected-count">0</span> đơn hàng để gán shipper.</p>
                 </div>
 
                 <!-- Shipper Selection -->
@@ -184,7 +184,7 @@ console.log('=== SCRIPT LOADED ===');
 // Configuration
 const CONFIG = {
     routes: {
-        getPackages: '{{ route("admin.shipper-assignment.packages") }}',
+        getOrders: '{{ route("admin.shipper-assignment.orders") }}',
         getShippers: '{{ route("admin.shipper-assignment.shippers") }}',
         assignShipper: '{{ route("admin.shipper-assignment.assign") }}',
         getProvinces: '{{ route("admin.shipper-assignment.provinces") }}',
@@ -194,19 +194,19 @@ const CONFIG = {
 };
 
 // Global variables
-let packages = [];
-let filteredPackages = [];
-let selectedPackages = new Set();
+let orders = [];
+let filteredOrders = [];
+let selectedOrders = new Set();
 let shippers = [];
 let provinces = [];
 let districts = [];
 
 // DOM elements
-const packageList = document.getElementById('package-list');
-const loadingPackages = document.getElementById('loading-packages');
-const emptyPackages = document.getElementById('empty-packages');
-const totalPackagesSpan = document.getElementById('total-packages');
-const selectedPackagesSpan = document.getElementById('selected-packages');
+const orderList = document.getElementById('order-list');
+const loadingOrders = document.getElementById('loading-orders');
+const emptyOrders = document.getElementById('empty-orders');
+const totalOrdersSpan = document.getElementById('total-orders');
+const selectedOrdersSpan = document.getElementById('selected-orders');
 const showingCountSpan = document.getElementById('showing-count');
 const selectedSummary = document.getElementById('selected-summary');
 const shipperSelect = document.getElementById('shipper-select');
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('=== DOM CONTENT LOADED ===');
     loadProvinces();
     loadShippers();
-    loadPackages();
+    loadOrders();
     setupEventListeners();
 });
 
@@ -322,22 +322,22 @@ async function loadShippers() {
     }
 }
 
-async function loadPackages() {
+async function loadOrders() {
     showLoading();
     
     try {
-        const response = await fetch(CONFIG.routes.getPackages);
+        const response = await fetch(CONFIG.routes.getOrders);
         const result = await response.json();
         
         if (result.success) {
-            packages = result.data;
-            filteredPackages = [...packages];
-            renderPackages();
+            orders = result.data;
+            filteredOrders = [...orders];
+            renderOrders();
             updateCounts();
         }
     } catch (error) {
-        console.error('Error loading packages:', error);
-        showToast('Không thể tải danh sách gói hàng', 'error');
+        console.error('Error loading orders:', error);
+        showToast('Không thể tải danh sách đơn hàng', 'error');
     } finally {
         hideLoading();
     }
@@ -439,84 +439,84 @@ function applyFilters() {
     const deadline = deadlineFilter.value;
     const searchTerm = searchInput.value.toLowerCase();
     
-    filteredPackages = packages.filter(pkg => {
+    filteredOrders = orders.filter(order => {
         // Province filter
-        if (provinceId && pkg.province_id != provinceId) return false;
+        if (provinceId && order.province_id != provinceId) return false;
         
         // District filter
-        if (districtId && pkg.district_id != districtId) return false;
+        if (districtId && order.district_id != districtId) return false;
         
         // Deadline filter
         if (deadline) {
             const today = new Date();
-            const pkgDeadline = new Date(pkg.deadline);
+            const orderDeadline = new Date(order.deadline);
             
             switch (deadline) {
                 case 'today':
-                    if (pkgDeadline.toDateString() !== today.toDateString()) return false;
+                    if (orderDeadline.toDateString() !== today.toDateString()) return false;
                     break;
                 case 'tomorrow':
                     const tomorrow = new Date(today);
                     tomorrow.setDate(tomorrow.getDate() + 1);
-                    if (pkgDeadline.toDateString() !== tomorrow.toDateString()) return false;
+                    if (orderDeadline.toDateString() !== tomorrow.toDateString()) return false;
                     break;
                 case 'overdue':
-                    if (pkgDeadline >= today) return false;
+                    if (orderDeadline >= today) return false;
                     break;
             }
         }
         
         // Search filter
-        if (searchTerm && !pkg.order_code.toLowerCase().includes(searchTerm)) return false;
+        if (searchTerm && !order.order_code.toLowerCase().includes(searchTerm)) return false;
         
         return true;
     });
     
-    renderPackages();
+    renderOrders();
     updateCounts();
 }
 
 // Render functions
-function renderPackages() {
-    if (filteredPackages.length === 0) {
+function renderOrders() {
+    if (filteredOrders.length === 0) {
         showEmpty();
         return;
     }
     
     hideEmpty();
     
-    const html = filteredPackages.map(pkg => `
-        <div class="package-item p-4 hover:bg-gray-50 cursor-pointer" data-package-id="${pkg.id}">
+    const html = filteredOrders.map(order => `
+        <div class="order-item p-4 hover:bg-gray-50 cursor-pointer" data-order-id="${order.id}">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <input type="checkbox" class="package-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-                           data-package-id="${pkg.id}" ${selectedPackages.has(pkg.id) ? 'checked' : ''}>
+                    <input type="checkbox" class="order-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                           data-order-id="${order.id}" ${selectedOrders.has(order.id) ? 'checked' : ''}>
                     <div>
-                        <div class="font-medium text-gray-900">${pkg.order_code}</div>
-                        <div class="text-sm text-gray-500">${pkg.customer_name} - ${pkg.customer_phone}</div>
-                        <div class="text-sm text-gray-500">${pkg.address}</div>
+                        <div class="font-medium text-gray-900">${order.order_code}</div>
+                        <div class="text-sm text-gray-500">${order.customer_name} - ${order.customer_phone}</div>
+                        <div class="text-sm text-gray-500">${order.address}</div>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="text-sm font-medium text-gray-900">${formatCurrency(pkg.total_amount)}</div>
-                    <div class="text-sm text-gray-500">Hạn: ${formatDate(pkg.deadline)}</div>
-                    <div class="text-xs ${getDeadlineClass(pkg.deadline)}">${getDeadlineText(pkg.deadline)}</div>
+                    <div class="text-sm font-medium text-gray-900">${formatCurrency(order.total_amount)}</div>
+                    <div class="text-sm text-gray-500">Hạn: ${formatDate(order.deadline)}</div>
+                    <div class="text-xs ${getDeadlineClass(order.deadline)}">${getDeadlineText(order.deadline)}</div>
                 </div>
             </div>
         </div>
     `).join('');
     
-    packageList.innerHTML = html;
+    orderList.innerHTML = html;
     
     // Add event listeners
-    document.querySelectorAll('.package-checkbox').forEach(checkbox => {
-        checkbox.addEventListener('change', handlePackageSelection);
+    document.querySelectorAll('.order-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', handleOrderSelection);
     });
     
-    document.querySelectorAll('.package-item').forEach(item => {
+    document.querySelectorAll('.order-item').forEach(item => {
         item.addEventListener('click', function(e) {
             if (e.target.type !== 'checkbox') {
-                const checkbox = this.querySelector('.package-checkbox');
+                const checkbox = this.querySelector('.order-checkbox');
                 checkbox.checked = !checkbox.checked;
                 checkbox.dispatchEvent(new Event('change'));
             }
@@ -525,13 +525,13 @@ function renderPackages() {
 }
 
 // Selection functions
-function handlePackageSelection(e) {
-    const packageId = parseInt(e.target.dataset.packageId);
+function handleOrderSelection(e) {
+    const orderId = parseInt(e.target.dataset.orderId);
     
     if (e.target.checked) {
-        selectedPackages.add(packageId);
+        selectedOrders.add(orderId);
     } else {
-        selectedPackages.delete(packageId);
+        selectedOrders.delete(orderId);
     }
     
     updateCounts();
@@ -540,11 +540,11 @@ function handlePackageSelection(e) {
 }
 
 function selectAllFiltered() {
-    filteredPackages.forEach(pkg => {
-        selectedPackages.add(pkg.id);
+    filteredOrders.forEach(order => {
+        selectedOrders.add(order.id);
     });
     
-    document.querySelectorAll('.package-checkbox').forEach(checkbox => {
+    document.querySelectorAll('.order-checkbox').forEach(checkbox => {
         checkbox.checked = true;
     });
     
@@ -554,9 +554,9 @@ function selectAllFiltered() {
 }
 
 function clearSelection() {
-    selectedPackages.clear();
+    selectedOrders.clear();
     
-    document.querySelectorAll('.package-checkbox').forEach(checkbox => {
+    document.querySelectorAll('.order-checkbox').forEach(checkbox => {
         checkbox.checked = false;
     });
     
@@ -567,16 +567,16 @@ function clearSelection() {
 
 // Update functions
 function updateCounts() {
-    totalPackagesSpan.textContent = packages.length;
-    selectedPackagesSpan.textContent = selectedPackages.size;
-    showingCountSpan.textContent = filteredPackages.length;
+    totalOrdersSpan.textContent = orders.length;
+    selectedOrdersSpan.textContent = selectedOrders.size;
+    showingCountSpan.textContent = filteredOrders.length;
 }
 
 function updateSelectedSummary() {
     const selectedCount = document.getElementById('selected-count');
-    selectedCount.textContent = selectedPackages.size;
+    selectedCount.textContent = selectedOrders.size;
     
-    if (selectedPackages.size > 0) {
+    if (selectedOrders.size > 0) {
         selectedSummary.classList.remove('hidden');
     } else {
         selectedSummary.classList.add('hidden');
@@ -584,7 +584,7 @@ function updateSelectedSummary() {
 }
 
 function updateAssignButton() {
-    const hasSelection = selectedPackages.size > 0;
+    const hasSelection = selectedOrders.size > 0;
     const hasShipper = shipperSelect.value !== '';
     
     assignBtn.disabled = !(hasSelection && hasShipper);
@@ -604,12 +604,12 @@ function hideShipperInfo() {
 
 // Assignment function
 async function assignShipper() {
-    if (selectedPackages.size === 0 || !shipperSelect.value) {
-        showToast('Vui lòng chọn gói hàng và shipper', 'error');
+    if (selectedOrders.size === 0 || !shipperSelect.value) {
+        showToast('Vui lòng chọn đơn hàng và shipper', 'error');
         return;
     }
     
-    const packageIds = Array.from(selectedPackages);
+    const orderIds = Array.from(selectedOrders);
     const shipperId = shipperSelect.value;
     
     try {
@@ -624,7 +624,7 @@ async function assignShipper() {
                 'Accept': 'application/json'
             },
             body: JSON.stringify({
-                package_ids: packageIds,
+                order_ids: orderIds,
                 shipper_id: shipperId
             })
         });
@@ -634,7 +634,7 @@ async function assignShipper() {
         if (result.success) {
             showToast('Gán shipper thành công!', 'success');
             clearSelection();
-            loadPackages(); // Reload packages
+            loadOrders(); // Reload orders
         } else {
             showToast(result.message || 'Có lỗi xảy ra khi gán shipper', 'error');
         }
@@ -650,24 +650,24 @@ async function assignShipper() {
 
 // Utility functions
 function showLoading() {
-    loadingPackages.classList.remove('hidden');
-    packageList.classList.add('hidden');
-    emptyPackages.classList.add('hidden');
+    loadingOrders.classList.remove('hidden');
+    orderList.classList.add('hidden');
+    emptyOrders.classList.add('hidden');
 }
 
 function hideLoading() {
-    loadingPackages.classList.add('hidden');
-    packageList.classList.remove('hidden');
+    loadingOrders.classList.add('hidden');
+    orderList.classList.remove('hidden');
 }
 
 function showEmpty() {
-    emptyPackages.classList.remove('hidden');
-    packageList.classList.add('hidden');
+    emptyOrders.classList.remove('hidden');
+    orderList.classList.add('hidden');
 }
 
 function hideEmpty() {
-    emptyPackages.classList.add('hidden');
-    packageList.classList.remove('hidden');
+    emptyOrders.classList.add('hidden');
+    orderList.classList.remove('hidden');
 }
 
 function formatCurrency(amount) {

@@ -1894,12 +1894,51 @@
                 if (orderData.delivery_method === 'delivery') {
                     if (this.state.selectedAddressId) {
                         orderData.address_id = this.state.selectedAddressId;
+                        
+                        // Log thông tin debug cho địa chỉ có sẵn
+                        const debugInfo = {
+                            timestamp: new Date().toISOString(),
+                            saveAddressCheckbox: 'not_applicable',
+                            checked: false,
+                            isLoggedIn: this.state.isLoggedIn,
+                            hasAddresses: this.state.hasAddresses,
+                            addressId: orderData.address_id,
+                            addressMode: 'existing',
+                            selectedAddressId: this.state.selectedAddressId
+                        };
+                        
+                        console.log('Address selection debug info:', debugInfo);
+                        
+                        // Lưu vào sessionStorage
+                        const existingLogs = JSON.parse(sessionStorage.getItem('payment_debug_logs') || '[]');
+                        existingLogs.push(debugInfo);
+                        sessionStorage.setItem('payment_debug_logs', JSON.stringify(existingLogs));
                     } else {
                         const formFields = new FormData(this.elements.addressForm);
                         for (let [key, value] of formFields.entries()) {
                             orderData[key] = value;
                         }
-                        orderData.save_address = document.getElementById('save-address-check')?.checked || false;
+                        const saveAddressCheckbox = document.getElementById('save-address-check');
+                        orderData.save_address = saveAddressCheckbox?.checked || false;
+                        
+                        // Log thông tin để debug và lưu vào sessionStorage
+                        const debugInfo = {
+                            timestamp: new Date().toISOString(),
+                            saveAddressCheckbox: saveAddressCheckbox ? 'found' : 'not found',
+                            checked: orderData.save_address,
+                            isLoggedIn: this.state.isLoggedIn,
+                            hasAddresses: this.state.hasAddresses,
+                            addressId: orderData.address_id || 'new_address',
+                            addressMode: this.state.selectedAddressId ? 'existing' : 'new',
+                            selectedAddressId: this.state.selectedAddressId || 'none'
+                        };
+                        
+                        console.log('Save address debug info:', debugInfo);
+                        
+                        // Lưu vào sessionStorage để có thể xem lại sau khi chuyển trang
+                        const existingLogs = JSON.parse(sessionStorage.getItem('payment_debug_logs') || '[]');
+                        existingLogs.push(debugInfo);
+                        sessionStorage.setItem('payment_debug_logs', JSON.stringify(existingLogs));
                     }
 
                     orderData.shipments = [];
@@ -2561,4 +2600,7 @@
             }
         });
     </script>
+    
+    <!-- Payment Debug Helper -->
+    <script src="{{ asset('js/payment-debug-helper.js') }}"></script>
 @endpush

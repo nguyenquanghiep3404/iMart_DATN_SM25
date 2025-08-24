@@ -24,12 +24,12 @@ class ShipperAssignmentController extends Controller
     }
 
     /**
-     * Get packages that need shipper assignment
+     * Get orders that need shipper assignment
      */
-    public function getPackages(Request $request)
+    public function getOrders(Request $request)
     {
         try {
-            $packages = Order::with(['user', 'province', 'district', 'fulfillments'])
+            $orders = Order::with(['user', 'province', 'district', 'fulfillments'])
                 ->where('status', 'confirmed') // Only confirmed orders
                 ->whereNull('shipper_id') // Not assigned to any shipper yet
                 ->whereNotNull('delivery_deadline') // Has delivery deadline
@@ -67,7 +67,7 @@ class ShipperAssignmentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $packages
+                'data' => $orders
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -214,22 +214,19 @@ class ShipperAssignmentController extends Controller
             $trackingCodes = [];
 
             foreach ($orders as $order) {
+                // Gán shipper cho tất cả fulfillments của đơn hàng
+                $order->fulfillments()->update([
+                    'shipper_id' => $shipperId,
+                    'status' => \App\Models\OrderFulfillment::STATUS_SHIPPED,
+                    'shipped_at' => Carbon::now()
+                ]);
+                
                 // Update order with shipper only - tracking code should already exist
                 $order->update([
                     'shipper_id' => $shipperId,
                     'status' => 'shipping', // Change status to shipping
                     'shipped_at' => Carbon::now()
                 ]);
-
-                // Cập nhật trạng thái packages thành 'awaiting_shipment_assigned'
-                $packages = $order->fulfillments()->with('packages')->get()->pluck('packages')->flatten();
-                foreach ($packages as $package) {
-                    $package->updateStatus(
-                        \App\Models\Package::STATUS_AWAITING_SHIPMENT_ASSIGNED,
-                        'Gói hàng đã được gán shipper: ' . $shipper->name,
-                        auth()->id()
-                    );
-                }
 
                 $updatedCount++;
                 $fulfillment = $order->fulfillments()->whereNotNull('tracking_code')->first();

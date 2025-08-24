@@ -13,7 +13,7 @@ use App\Models\InventoryMovement;
 use App\Services\AutoStockTransferService;
 use App\Services\DeliveryOptimizationService;
 use App\Services\TrackingCodeService;
-use App\Services\PackageService;
+// REMOVED: PackageService - now using order_fulfillments directly
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
@@ -224,9 +224,7 @@ foreach ($itemsByLocation as $locationId => $items) {
  // để tránh trừ kho 2 lần. Fulfillment chỉ tạo cấu trúc fulfillment,
  // việc trừ kho sẽ được xử lý bởi InventoryCommitmentService.commitInventoryForOrder()
 
- // MỚI: Tạo package mặc định cho fulfillment này
- $packageService = new PackageService();
- $packageService->createDefaultPackageForFulfillment($fulfillment);
+ // REMOVED: Package creation - now using order_fulfillments directly
 }
 
 // Tạo tracking codes cho tất cả fulfillments
@@ -278,9 +276,7 @@ public function createOrderFulfillments($order, $cartItems, $shipments, $orderIt
             $createdItems[] = $item->product_variant_id;
         }
 
-        // MỚI: Tạo package mặc định cho fulfillment này
-        $packageService = new PackageService();
-        $packageService->createDefaultPackageForFulfillment($fulfillment);
+        // REMOVED: Package creation - now using order_fulfillments directly
     }
     
     // Kiểm tra xem có order items nào chưa được tạo fulfillment items không
@@ -305,9 +301,7 @@ public function createOrderFulfillments($order, $cartItems, $shipments, $orderIt
             ]);
         }
 
-        // MỚI: Tạo package mặc định cho fulfillment mặc định này
-        $packageService = new PackageService();
-        $packageService->createDefaultPackageForFulfillment($defaultFulfillment);
+        // REMOVED: Package creation - now using order_fulfillments directly
     }
     
     // Tạo tracking codes cho tất cả fulfillments
