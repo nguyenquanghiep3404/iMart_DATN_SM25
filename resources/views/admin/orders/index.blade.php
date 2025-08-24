@@ -1080,7 +1080,10 @@
 
     // Kiểm tra đơn hàng mới: chỉ dựa vào việc đã 'được xử lý/xem' hay chưa
     const isNewOrder = (createdAt, orderId) => {
-        return !viewedOrders.has(orderId);
+        // Force JavaScript tính toán viewedOrders để tránh tối ưu hóa
+        const viewedOrdersArray = Array.from(viewedOrders);
+        const isNew = !viewedOrders.has(orderId);
+        return isNew;
     };
 
     // Đánh dấu đơn hàng đã xem
