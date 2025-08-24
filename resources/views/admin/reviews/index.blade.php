@@ -128,12 +128,21 @@
                             'rejected' => 'bg-red-100 text-red-800',
                             default => 'bg-gray-100 text-gray-800',
                             };
+
+                            $statusLabel = match($review->status) {
+                            'approved' => 'Đã duyệt',
+                            'pending' => 'Chờ duyệt',
+                            'rejected' => 'Đã từ chối',
+                            default => ucfirst($review->status),
+                            };
                             @endphp
+
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $badge }}">
                                 <i data-lucide="{{ $review->status === 'approved' ? 'check-circle' : ($review->status === 'rejected' ? 'x-circle' : 'clock') }}" class="w-4 h-4 mr-1"></i>
-                                {{ ucfirst($review->status) }}
+                                {{ $statusLabel }}
                             </span>
                         </td>
+
                         <td class="px-6 py-4 text-sm text-gray-500">{{ $review->created_at->format('d/m/Y') }}</td>
                         <td class="px-6 py-4 text-right">
                             <button

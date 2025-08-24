@@ -5,20 +5,16 @@
 @section('content')
     <div class="p-4 sm:p-6 lg:p-8">
         @include('admin.partials.flash_message')
-        <!-- View 2: Trang chi tiết quản lý một chiến dịch -->
         <div id="campaign-detail-view">
             <div class="mb-6">
-                <button class="back-to-list-btn flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800">
-                    <a href="{{ route('admin.flash-sales.index') }}"
-                        class="back-to-list-btn flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800">
-                        <i class="fas fa-arrow-left"></i> Quay lại danh sách
-                    </a>
-
-                </button>
+               <a href="{{ route('admin.flash-sales.index') }}" 
+               class="mb-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Quay lại danh sách
+            </a>
                 <h1 class="text-3xl font-bold text-gray-800 mt-2">
                     {{ $flashSale->name }}
                 </h1>
-
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -59,8 +55,6 @@
                                                 {{ $color ? ' ' . $color : '' }}
                                             </p>
 
-
-
                                             <p class="text-xs text-gray-500">SKU: {{ $variant->sku }}</p>
                                         </div>
                                         <form method="POST"
@@ -70,7 +64,8 @@
                                                 data-variant-id="{{ $variant->id }}"
                                                 data-name="{{ $variant->product->name }}{{ $nonColor ? ' ' . $nonColor : '' }}{{ $color ? ' ' . $color : '' }}"
                                                 data-image="{{ $variant->primaryImage?->url ?? 'https://placehold.co/80x80/E2E8F0/4A5568?text=IMG' }}"
-                                                data-price="{{ number_format($variant->price) }}">
+                                                data-price="{{ number_format($variant->price) }}"
+                                                data-available-stock="{{ $variant->available_stock }}">
                                                 <i class="fas fa-plus"></i>
                                             </button>
                                         </form>
@@ -91,7 +86,26 @@
                 <div class="lg:col-span-8">
                     <div class="card-custom">
                         <div class="card-custom-header">
-                            <h3 class="card-custom-title text-lg">Sản phẩm trong chiến dịch</h3>
+                            <div class="flex justify-between items-center">
+                                <h3 class="card-custom-title text-lg">Sản phẩm trong chiến dịch</h3>
+                                @if ($flashSale->flashSaleTimeSlots->count())
+                                    <form method="GET" action="{{ route('admin.flash-sales.show', $flashSale->id) }}">
+                                        <select name="time_slot_id" onchange="this.form.submit()"
+                                            class="p-2 w-52 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                            <option value="all"
+                                                {{ $timeSlotId === 'all' || !$timeSlotId ? 'selected' : '' }}>
+                                                Tất cả khung giờ
+                                            </option>
+                                            @foreach ($flashSale->flashSaleTimeSlots as $slot)
+                                                <option value="{{ $slot->id }}"
+                                                    {{ $timeSlotId == $slot->id ? 'selected' : '' }}>
+                                                    {{ $slot->label ?? $slot->start_time . ' - ' . $slot->end_time }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                         <div class="card-custom-body p-0">
                             <div class="overflow-x-auto">
@@ -131,14 +145,12 @@
                                                                         fn($v) => $v->attribute->name === 'Màu sắc',
                                                                     )?->value;
                                                                 @endphp
-
                                                                 {{ $nonColor ? ' ' . $nonColor : '' }}
                                                                 {{ $color ? ' ' . $color : '' }}
                                                             </p>
                                                             <p class="text-xs text-gray-500">Gốc:
                                                                 {{ number_format($variant->price) }}₫</p>
                                                         </div>
-
                                                     </div>
                                                 </td>
                                                 <td class="font-semibold text-red-600">
@@ -147,22 +159,19 @@
                                                     <div class="flex flex-col gap-1">
                                                         <div class="w-full bg-gray-200 rounded-full h-2.5">
                                                             <div class="bg-green-600 h-2.5 rounded-full"
-                                                                style="width: {{ round((($flashProduct->sold_quantity ?? 0) / $flashProduct->quantity_limit) * 100) }}%">
+                                                                style="width: {{ round((($flashProduct->quantity_sold ?? 0) / $flashProduct->quantity_limit) * 100) }}%">
                                                             </div>
                                                         </div>
                                                         <span class="text-xs">Đã bán
-                                                            {{ $flashProduct->sold_quantity ?? 0 }} /
+                                                            {{ $flashProduct->quantity_sold ?? 0 }} /
                                                             {{ $flashProduct->quantity_limit }}</span>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     {{ $flashProduct->timeSlot?->label ?? ($flashProduct->timeSlot ? $flashProduct->timeSlot->start_time . ' - ' . $flashProduct->timeSlot->end_time : 'Toàn chiến dịch') }}
                                                 </td>
-
-
                                                 <td class="text-center">
                                                     <div class="flex justify-center gap-2">
-                                                        {{-- Nút Sửa --}}
                                                         <button type="button"
                                                             class="edit-product-btn btn btn-primary btn-sm"
                                                             data-id="{{ $flashProduct->id }}"
@@ -172,12 +181,10 @@
                                                             data-time-slot-id="{{ $flashProduct->flash_sale_time_slot_id ?? '' }}"
                                                             data-name="{{ $product->name }}{{ $nonColor ? ' ' . $nonColor : '' }}{{ $color ? ' ' . $color : '' }}"
                                                             data-image="{{ $variant->primaryImage?->url ?? $product->thumbnail_url }}"
-                                                            data-original-price="{{ number_format($variant->price) }}">
+                                                            data-original-price="{{ number_format($variant->price) }}"
+                                                            data-available-stock="{{ $variant->available_stock }}">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
-
-
-                                                        {{-- Nút xoá --}}
                                                         <form method="POST"
                                                             action="{{ route('admin.flash-sales.detachProduct', [$flashSale->id, $flashProduct->id]) }}">
                                                             @csrf
@@ -189,15 +196,13 @@
                                                         </form>
                                                     </div>
                                                 </td>
-
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="4" class="text-center py-4 text-gray-500">Chưa có sản phẩm
+                                                <td colspan="5" class="text-center py-4 text-gray-500">Chưa có sản phẩm
                                                     nào trong chiến dịch.</td>
                                             </tr>
                                         @endforelse
-
                                     </tbody>
                                 </table>
                             </div>
@@ -207,15 +212,19 @@
             </div>
         </div>
 
-        <!-- Modal 2: Thêm sản phẩm vào chiến dịch -->
         <div id="add-product-modal" class="custom-modal">
             <div class="custom-modal-content">
-                <form method="POST" action="{{ route('admin.flash-sales.attachProduct', $flashSale->id) }}">
+                {{-- Thêm thuộc tính novalidate để Laravel xử lý lỗi --}}
+                <form method="POST" action="{{ route('admin.flash-sales.attachProduct', $flashSale->id) }}" novalidate>
                     @csrf
-                    <input type="hidden" name="product_variant_id" id="modal-product-variant-id">
+                    {{-- Thêm thuộc tính name --}}
+                    <input type="hidden" name="form_type" value="add">
+                    <input type="hidden" name="product_variant_id" id="modal-product-variant-id"
+                        value="{{ old('product_variant_id') }}">
                     <div class="p-4 border-b flex justify-between items-center">
                         <h3 class="text-lg font-bold">Thêm sản phẩm</h3>
-                        <button type="button" class="modal-close-btn text-gray-400 hover:text-gray-700 text-2xl">×</button>
+                        <button type="button"
+                            class="modal-close-btn text-gray-400 hover:text-gray-700 text-2xl">×</button>
                     </div>
                     <div class="p-6">
                         <div class="flex items-center gap-4 mb-6">
@@ -224,6 +233,7 @@
                             <div>
                                 <p id="modal-product-name" class="font-bold"></p>
                                 <p id="modal-product-original-price" class="text-sm text-gray-500"></p>
+                                <p id="modal-product-stock" class="text-sm text-gray-500 mt-1"></p>
                             </div>
                         </div>
                         <div class="space-y-4">
@@ -234,9 +244,9 @@
                                         giờ</label>
                                     <select name="flash_sale_time_slot_id"
                                         class="w-full p-2.5 border border-gray-300 rounded-lg">
-                                        <option value="">-- Toàn thời gian --</option>
                                         @foreach ($flashSale->flashSaleTimeSlots as $slot)
-                                            <option value="{{ $slot->id }}">
+                                            <option value="{{ $slot->id }}"
+                                                @if (old('flash_sale_time_slot_id') == $slot->id) selected @endif>
                                                 {{ $slot->label ? $slot->label : $slot->start_time . ' - ' . $slot->end_time }}
                                             </option>
                                         @endforeach
@@ -245,18 +255,26 @@
                             @endif
 
                             <div>
-                                <label for="flash-price" class="block mb-2 text-sm font-medium">Giá Flash (VNĐ)</label>
+                                <label for="flash_price" class="block mb-2 text-sm font-medium">Giá Flash (VNĐ)</label>
                                 <input type="number" name="flash_price"
-                                    class="w-full p-2.5 border border-gray-300 rounded-lg" required>
+                                    class="w-full p-2.5 border border-gray-300 rounded-lg"
+                                    value="{{ old('flash_price') }}" required>
+                                @error('flash_price')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                             <div>
-                                <label for="flash-quantity" class="block mb-2 text-sm font-medium">Số lượng giới
+                                <label for="quantity_limit" class="block mb-2 text-sm font-medium">Số lượng giới
                                     hạn</label>
                                 <input type="number" name="quantity_limit"
-                                    class="w-full p-2.5 border border-gray-300 rounded-lg" required>
+                                    class="w-full p-2.5 border border-gray-300 rounded-lg"
+                                    value="{{ old('quantity_limit') }}" required>
+                                {{-- Hiển thị thông báo lỗi validation ở đây --}}
+                                @error('quantity_limit')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
-
                     </div>
                     <div class="p-4 border-t flex justify-end space-x-2">
                         <button type="button" class="modal-close-btn btn btn-secondary">Hủy</button>
@@ -266,32 +284,39 @@
             </div>
         </div>
 
-        <!-- Modal: Sửa sản phẩm -->
         <div id="edit-product-modal" class="custom-modal">
             <div class="custom-modal-content">
-                <form method="POST" id="edit-product-form" action="">
+                {{-- Thêm thuộc tính novalidate để Laravel xử lý lỗi --}}
+                <form method="POST" id="edit-product-form" action="" novalidate>
                     @csrf
                     @method('PUT')
-                    <input type="hidden" name="product_variant_id" id="edit-modal-product-variant-id">
-                    <input type="hidden" name="flash_product_id" id="edit-modal-flash-product-id">
+                    {{-- Thêm thuộc tính name --}}
+                    <input type="hidden" name="form_type" value="edit">
+                    <input type="hidden" name="product_variant_id" id="edit-modal-product-variant-id"
+                        value="{{ old('product_variant_id') }}">
+                    <input type="hidden" name="flash_product_id" id="edit-modal-flash-product-id"
+                        value="{{ old('flash_product_id') }}">
                     <div class="p-4 border-b flex justify-between items-center">
                         <h3 class="text-lg font-bold">Sửa sản phẩm</h3>
-                        <button type="button" class="modal-close-btn text-gray-400 hover:text-gray-700 text-2xl">×</button>
+                        <button type="button"
+                            class="modal-close-btn text-gray-400 hover:text-gray-700 text-2xl">×</button>
                     </div>
                     <div class="p-6">
                         <div class="flex items-center gap-4 mb-6">
-                            <img id="edit-modal-product-image" src="" alt="Product" class="w-16 h-16 rounded-md object-cover">
+                            <img id="edit-modal-product-image" src="" alt="Product"
+                                class="w-16 h-16 rounded-md object-cover">
                             <div>
                                 <p id="edit-modal-product-name" class="font-bold"></p>
                                 <p id="edit-modal-product-original-price" class="text-sm text-gray-500"></p>
+                                <p id="edit-modal-product-stock" class="text-sm text-gray-500 mt-1"></p>
                             </div>
                         </div>
                         <div class="space-y-4">
                             @if ($flashSale->flashSaleTimeSlots->count())
                                 <div>
                                     <label class="block mb-2 text-sm font-medium">Khung giờ</label>
-                                    <select name="flash_sale_time_slot_id" id="edit-modal-time-slot-id" class="w-full p-2.5 border border-gray-300 rounded-lg">
-                                        <option value="">-- Toàn thời gian --</option>
+                                    <select name="flash_sale_time_slot_id" id="edit-modal-time-slot-id"
+                                        class="w-full p-2.5 border border-gray-300 rounded-lg">
                                         @foreach ($flashSale->flashSaleTimeSlots as $slot)
                                             <option value="{{ $slot->id }}">
                                                 {{ $slot->label ?? $slot->start_time . ' - ' . $slot->end_time }}
@@ -302,11 +327,21 @@
                             @endif
                             <div>
                                 <label class="block mb-2 text-sm font-medium">Giá Flash (VNĐ)</label>
-                                <input type="number" name="flash_price" id="edit-modal-flash-price" class="w-full p-2.5 border border-gray-300 rounded-lg" required>
+                                <input type="number" name="flash_price" id="edit-modal-flash-price"
+                                    class="w-full p-2.5 border border-gray-300 rounded-lg"
+                                    value="{{ old('flash_price') }}" required>
+                                @error('flash_price')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                             <div>
                                 <label class="block mb-2 text-sm font-medium">Số lượng giới hạn</label>
-                                <input type="number" name="quantity_limit" id="edit-modal-quantity-limit" class="w-full p-2.5 border border-gray-300 rounded-lg" required>
+                                <input type="number" name="quantity_limit" id="edit-modal-quantity-limit"
+                                    class="w-full p-2.5 border border-gray-300 rounded-lg"
+                                    value="{{ old('quantity_limit') }}" required>
+                                @error('quantity_limit')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
                             </div>
                         </div>
                     </div>
@@ -317,9 +352,6 @@
                 </form>
             </div>
         </div>
-
-
-
     </div>
 
     <style>
@@ -481,7 +513,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const addProductModal = document.getElementById('add-product-modal');
-            const editProductModal = document.getElementById('edit-product-modal'); // Thêm biến cho modal chỉnh sửa
+            const editProductModal = document.getElementById('edit-product-modal');
 
             const openModal = (modal) => modal.classList.add('show');
             const closeModal = (modal) => modal.classList.remove('show');
@@ -493,12 +525,20 @@
                     const productName = btn.dataset.name;
                     const productImage = btn.dataset.image;
                     const productPrice = btn.dataset.price;
+                    const availableStock = btn.dataset.availableStock;
 
                     document.getElementById('modal-product-variant-id').value = variantId;
                     document.getElementById('modal-product-name').innerText = productName;
                     document.getElementById('modal-product-image').src = productImage;
                     document.getElementById('modal-product-original-price').innerText =
                         'Giá gốc: ' + productPrice + '₫';
+                    document.getElementById('modal-product-stock').innerText = 'Tồn kho: ' +
+                        availableStock + ' sản phẩm';
+
+                    // Reset form và ẩn các lỗi cũ
+                    addProductModal.querySelector('form').reset();
+                    document.querySelectorAll('#add-product-modal .text-red-600').forEach(el => el
+                        .remove());
 
                     openModal(addProductModal);
                 });
@@ -515,19 +555,31 @@
                     const productName = btn.dataset.name;
                     const productImage = btn.dataset.image;
                     const originalPrice = btn.dataset.originalPrice;
-                    // Set lại action động cho form
+                    const availableStock = btn.dataset.availableStock;
+
                     const form = document.getElementById('edit-product-form');
-                    form.action = `/admin/flash-sales/{{ $flashSale->id }}/update-product/${flashProductId}`;
-                    // Điền dữ liệu vào modal
+                    form.action =
+                        `/admin/flash-sales/{{ $flashSale->id }}/update-product/${flashProductId}`;
+
                     document.getElementById('edit-modal-product-variant-id').value = variantId;
                     document.getElementById('edit-modal-flash-product-id').value = flashProductId;
-                    document.getElementById('edit-modal-product-name').innerText = productName || '';
+                    document.getElementById('edit-modal-product-name').innerText = productName ||
+                    '';
                     document.getElementById('edit-modal-product-image').src = productImage || '';
-                    document.getElementById('edit-modal-product-original-price').innerText = 'Giá gốc: ' + (originalPrice || '') + '₫';
+                    document.getElementById('edit-modal-product-original-price').innerText =
+                        'Giá gốc: ' + (originalPrice || '') + '₫';
+                    document.getElementById('edit-modal-product-stock').innerText = 'Tồn kho: ' + (
+                        availableStock || '') + ' sản phẩm';
                     document.getElementById('edit-modal-flash-price').value = flashPrice || '';
-                    document.getElementById('edit-modal-quantity-limit').value = quantityLimit || '';
+                    document.getElementById('edit-modal-quantity-limit').value = quantityLimit ||
+                    '';
                     document.getElementById('edit-modal-time-slot-id').value = timeSlotId || '';
-                    openModal(editProductModal); // Mở modal chỉnh sửa
+
+                    // Xóa các thông báo lỗi cũ
+                    document.querySelectorAll('#edit-product-modal .text-red-600').forEach(el => el
+                        .remove());
+
+                    openModal(editProductModal);
                 });
             });
 
@@ -541,8 +593,10 @@
 
             // Đóng modal khi click bên ngoài
             window.addEventListener('click', (e) => {
-                if (e.target.classList.contains('custom-modal')) {
+                if (e.target === addProductModal) {
                     closeModal(addProductModal);
+                }
+                if (e.target === editProductModal) {
                     closeModal(editProductModal);
                 }
             });
@@ -554,6 +608,65 @@
                     closeModal(editProductModal);
                 }
             });
+
+            // Khắc phục lỗi hiển thị modal sau khi validation thất bại
+            @if ($errors->any())
+                const oldFormType = "{{ old('form_type') }}";
+
+                // Mở lại modal thêm sản phẩm nếu lỗi đến từ form thêm
+                if (oldFormType === 'add') {
+                    const oldVariantId = "{{ old('product_variant_id') }}";
+                    const oldPrice = "{{ old('flash_price') }}";
+                    const oldQuantity = "{{ old('quantity_limit') }}";
+                    const oldTimeSlotId = "{{ old('flash_sale_time_slot_id') }}";
+
+                    const btn = document.querySelector(`.add-product-btn[data-variant-id="${oldVariantId}"]`);
+                    if (btn) {
+                        document.getElementById('modal-product-variant-id').value = oldVariantId;
+                        document.getElementById('modal-product-name').innerText = btn.dataset.name;
+                        document.getElementById('modal-product-image').src = btn.dataset.image;
+                        document.getElementById('modal-product-original-price').innerText = 'Giá gốc: ' + btn
+                            .dataset.price + '₫';
+                        document.getElementById('modal-product-stock').innerText = 'Tồn kho: ' + btn.dataset
+                            .availableStock + ' sản phẩm';
+                        document.querySelector('#add-product-modal [name="flash_price"]').value = oldPrice;
+                        document.querySelector('#add-product-modal [name="quantity_limit"]').value = oldQuantity;
+                        if (oldTimeSlotId) {
+                            document.querySelector('#add-product-modal [name="flash_sale_time_slot_id"]').value =
+                                oldTimeSlotId;
+                        }
+                        openModal(addProductModal);
+                    }
+                }
+
+                // Mở lại modal sửa sản phẩm nếu lỗi đến từ form sửa
+                else if (oldFormType === 'edit') {
+                    const oldFlashProductId = "{{ old('flash_product_id') }}";
+                    const oldPrice = "{{ old('flash_price') }}";
+                    const oldQuantity = "{{ old('quantity_limit') }}";
+                    const oldTimeSlotId = "{{ old('flash_sale_time_slot_id') }}";
+
+                    const editBtn = document.querySelector(`.edit-product-btn[data-id="${oldFlashProductId}"]`);
+                    if (editBtn) {
+                        const form = document.getElementById('edit-product-form');
+                        form.action =
+                        `/admin/flash-sales/{{ $flashSale->id }}/update-product/${oldFlashProductId}`;
+                        document.getElementById('edit-modal-product-variant-id').value = editBtn.dataset.variant;
+                        document.getElementById('edit-modal-flash-product-id').value = oldFlashProductId;
+                        document.getElementById('edit-modal-product-name').innerText = editBtn.dataset.name || '';
+                        document.getElementById('edit-modal-product-image').src = editBtn.dataset.image || '';
+                        document.getElementById('edit-modal-product-original-price').innerText = 'Giá gốc: ' + (
+                            editBtn.dataset.originalPrice || '') + '₫';
+                        document.getElementById('edit-modal-product-stock').innerText = 'Tồn kho: ' + (editBtn
+                            .dataset.availableStock || '') + ' sản phẩm';
+                        document.getElementById('edit-modal-flash-price').value = oldPrice;
+                        document.getElementById('edit-modal-quantity-limit').value = oldQuantity;
+                        document.getElementById('edit-modal-time-slot-id').value = oldTimeSlotId;
+                        openModal(editProductModal);
+                    }
+                }
+            @endif
+
 
             const toasts = document.querySelectorAll('.toast');
 
@@ -582,53 +695,6 @@
                 }
             });
 
-            window.openModal = function(modalId) {
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    modal.classList.add('show');
-                    document.body.style.overflow = 'hidden';
-                }
-            }
-
-            window.closeModal = function(modalId) {
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    modal.classList.remove('show');
-                    document.body.style.overflow = 'auto';
-                }
-            }
-
-            window.addEventListener('click', function(event) {
-                document.querySelectorAll('.modal.show').forEach(modal => {
-                    if (event.target.closest('.modal-content') === null && event.target.classList
-                        .contains('modal')) {
-                        closeModal(modal.id);
-                    }
-                });
-            });
-
-            window.addEventListener('keydown', function(event) {
-                if (event.key === 'Escape') {
-                    document.querySelectorAll('.modal.show').forEach(modal => closeModal(modal.id));
-                }
-            });
-
-            // Tìm kiếm sản phẩm theo tên hoặc SKU
-            const searchInput = document.getElementById('search-variant');
-            const variantItems = document.querySelectorAll('#variant-list .variant-item');
-            searchInput.addEventListener('input', function() {
-                const keyword = this.value.trim().toLowerCase();
-                variantItems.forEach(item => {
-                    const name = item.getAttribute('data-name').toLowerCase();
-                    const sku = item.getAttribute('data-sku').toLowerCase();
-                    if (name.includes(keyword) || sku.includes(keyword)) {
-                        item.style.display = '';
-                    } else {
-                        item.style.display = 'none';
-                    }
-                });
-            });
         });
     </script>
-
 @endsection

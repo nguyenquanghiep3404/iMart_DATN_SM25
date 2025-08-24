@@ -188,14 +188,20 @@ class ProductVariant extends Model
 
     // Trong model ProductVariant.php
     public function getSlugAttribute()
-{
-    $product = $this->product;
-    $baseSlug = Str::slug($product->name);
-    $attributes = $this->attributeValues
-        ->pluck('value')
-        ->map(fn($value) => Str::slug($value, '-'))
-        ->filter() // Loại bỏ giá trị rỗng
-        ->join('-');
-    return $attributes ? "{$baseSlug}-{$attributes}" : $baseSlug;
-}
+    {
+        $product = $this->product;
+        $baseSlug = Str::slug($product->name);
+        $attributes = $this->attributeValues
+            ->pluck('value')
+            ->map(fn($value) => Str::slug($value, '-'))
+            ->filter() // Loại bỏ giá trị rỗng
+            ->join('-');
+        return $attributes ? "{$baseSlug}-{$attributes}" : $baseSlug;
+    }
+    public function coverImage()
+    {
+        return $this->morphOne(UploadedFile::class, 'attachable')
+            ->where('type', 'cover')
+            ->latest();
+    }
 }

@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('flash_sale_time_slots', function (Blueprint $table) {
             $table->id();
             $table->foreignId('flash_sale_id')->constrained()->onDelete('cascade');
-            $table->date('date');
             $table->time('start_time');
             $table->time('end_time');
             $table->string('label')->nullable(); // "Khung giờ 12h-14h"

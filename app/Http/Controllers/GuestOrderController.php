@@ -63,12 +63,22 @@ class GuestOrderController extends Controller
             'payment_status' => $order->payment_status,
             'items' => $order->items->map(function ($item) {
                 $variant = $item->variant;
+                $product = $variant?->product;
+
+                // Lấy ảnh
+                if ($variant && $variant->primaryImage && Storage::disk('public')->exists($variant->primaryImage->path)) {
+                    $imageUrl = Storage::url($variant->primaryImage->path);
+                } elseif ($product && $product->coverImage && Storage::disk('public')->exists($product->coverImage->path)) {
+                    $imageUrl = Storage::url($product->coverImage->path);
+                } else {
+                    $imageUrl = asset('images/placeholder.png');
+                }
 
                 return [
                     'product_name' => $variant?->product?->name ?? 'Không rõ',
-                    'quantity' => $item->quantity,
-                    'price' => $item->price,
-                    'image_url' => $variant?->image_url ?? asset('images/placeholder.png'),
+                    'quantity'     => $item->quantity,
+                    'price'        => $item->price,
+                    'image_url'    => $imageUrl,
                 ];
             }),
 

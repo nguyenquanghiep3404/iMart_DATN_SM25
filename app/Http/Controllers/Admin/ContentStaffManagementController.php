@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon; // Thêm Facade Carbon để lấy thời gian hiện tại
 
 class ContentStaffManagementController extends Controller
 {
@@ -58,13 +60,37 @@ class ContentStaffManagementController extends Controller
 
     public function store(Request $request)
     {
+        $messages = [
+            'name.required' => 'Vui lòng nhập tên nhân viên.',
+            'name.string' => 'Tên nhân viên phải ở dạng chuỗi ký tự.',
+            'name.max' => 'Tên nhân viên không được dài quá 255 ký tự.',
+
+            'email.required' => 'Vui lòng nhập email.',
+            'email.string' => 'Email phải ở dạng chuỗi ký tự.',
+            'email.email' => 'Vui lòng nhập đúng định dạng email.',
+            'email.max' => 'Email không được dài quá 255 ký tự.',
+            'email.unique' => 'Email này đã tồn tại trong hệ thống.',
+
+            'phone_number.required' => 'Vui lòng nhập số điện thoại.',
+            'phone_number.string' => 'Số điện thoại phải ở dạng chuỗi ký tự.',
+            'phone_number.max' => 'Số điện thoại không được dài quá 15 ký tự.',
+            'phone_number.unique' => 'Số điện thoại này đã tồn tại trong hệ thống.',
+
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.confirmed' => 'Xác nhận mật khẩu không trùng khớp.',
+
+            'status.required' => 'Vui lòng chọn trạng thái.',
+            'status.in' => 'Trạng thái được chọn không hợp lệ.',
+        ];
+
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'phone_number' => ['required', 'string', 'max:15', 'unique:users,phone_number'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'status' => ['required', 'in:active,inactive,banned'],
-        ]);
+        ], $messages);
 
         $user = User::create([
             'name' => $request->name,
@@ -72,6 +98,7 @@ class ContentStaffManagementController extends Controller
             'phone_number' => $request->phone_number,
             'password' => Hash::make($request->password),
             'status' => $request->status,
+            'email_verified_at' => Carbon::now(), // Tự động điền thời gian xác minh email
         ]);
 
         $contentRole = Role::where('name', 'content_manager')->first();
@@ -82,9 +109,9 @@ class ContentStaffManagementController extends Controller
         return redirect()->route('admin.content-staffs.index')->with('success', 'Thêm nhân viên content thành công.');
     }
 
-
     public function edit(User $contentStaff)
     {
+        // Giữ kiểm tra này để đảm bảo chỉ sửa nhân viên content (không phải admin hay vai trò khác)
         if (!$contentStaff->hasRole('content_manager')) {
             abort(404);
         }
@@ -93,13 +120,41 @@ class ContentStaffManagementController extends Controller
 
     public function update(Request $request, User $contentStaff)
     {
+        // Giữ kiểm tra này để đảm bảo chỉ sửa nhân viên content
+        if (!$contentStaff->hasRole('content_manager')) {
+            abort(404);
+        }
+
+        $messages = [
+            'name.required' => 'Vui lòng nhập tên nhân viên.',
+            'name.string' => 'Tên nhân viên phải là chuỗi ký tự hợp lệ.',
+            'name.max' => 'Tên nhân viên không được vượt quá 255 ký tự.',
+
+            'email.required' => 'Vui lòng nhập email.',
+            'email.string' => 'Email phải là chuỗi ký tự hợp lệ.',
+            'email.email' => 'Vui lòng nhập đúng định dạng email.',
+            'email.max' => 'Email không được vượt quá 255 ký tự.',
+            'email.unique' => 'Email này đã được đăng ký.',
+
+            'phone_number.required' => 'Vui lòng nhập số điện thoại.',
+            'phone_number.string' => 'Số điện thoại phải là chuỗi ký tự hợp lệ.',
+            'phone_number.max' => 'Số điện thoại không được vượt quá 15 ký tự.',
+            'phone_number.unique' => 'Số điện thoại này đã được đăng ký.',
+
+            'password.confirmed' => 'Xác nhận mật khẩu không trùng khớp.',
+
+            'status.required' => 'Vui lòng chọn trạng thái.',
+            'status.in' => 'Trạng thái bạn chọn không hợp lệ.',
+        ];
+
+
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $contentStaff->id],
             'phone_number' => ['required', 'string', 'max:15', 'unique:users,phone_number,' . $contentStaff->id],
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'status' => ['required', 'in:active,inactive,banned'],
-        ]);
+        ], $messages);
 
         $contentStaff->update([
             'name' => $request->name,
@@ -118,6 +173,7 @@ class ContentStaffManagementController extends Controller
 
     public function show(User $contentStaff)
     {
+        // Giữ kiểm tra này để đảm bảo chỉ xem chi tiết nhân viên content
         if (!$contentStaff->hasRole('content_manager')) {
             abort(404);
         }
@@ -136,9 +192,9 @@ class ContentStaffManagementController extends Controller
         return view('admin.content_staffs.show', compact('contentStaff', 'posts', 'postsCount', 'viewsCount', 'averageViews'));
     }
 
-
     public function destroy(User $contentStaff)
     {
+        // Giữ kiểm tra này để đảm bảo chỉ xóa nhân viên content
         if (!$contentStaff->hasRole('content_manager')) {
             abort(404);
         }
@@ -159,6 +215,10 @@ class ContentStaffManagementController extends Controller
     public function restore($id)
     {
         $contentStaff = User::onlyTrashed()->findOrFail($id);
+        // Có thể thêm kiểm tra vai trò tại đây nếu muốn chắc chắn rằng chỉ nhân viên content đã xóa mới được khôi phục
+        if (!$contentStaff->hasRole('content_manager')) { // Mở rộng kiểm tra nếu cần
+            abort(404);
+        }
         $contentStaff->restore();
         return redirect()->route('admin.content_staffs.trash')->with('success', "Đã khôi phục nhân viên '{$contentStaff->name}' thành công!");
     }
@@ -166,6 +226,10 @@ class ContentStaffManagementController extends Controller
     public function forceDelete($id)
     {
         $contentStaff = User::onlyTrashed()->findOrFail($id);
+        // Có thể thêm kiểm tra vai trò tại đây nếu muốn chắc chắn rằng chỉ nhân viên content đã xóa mới được xóa vĩnh viễn
+        if (!$contentStaff->hasRole('content_manager')) { // Mở rộng kiểm tra nếu cần
+            abort(404);
+        }
         $contentStaff->roles()->detach();
         $contentStaff->forceDelete();
         return redirect()->route('admin.content_staffs.trash')->with('success', "Đã xóa vĩnh viễn nhân viên '{$contentStaff->name}'.");

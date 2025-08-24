@@ -138,6 +138,7 @@ Route::get('/api/filter-stores', [HomeController::class, 'filterStoreLocations']
 // Route để lấy danh sách tỉnh/thành phố theo biến thể sản phẩm
 Route::get('/api/provinces-by-variant', [HomeController::class, 'getProvincesByVariant'])->name('api.provinces.by.variant');
 Route::get('/bundle-suggested-products/{variantId}', [HomeController::class, 'getSuggestedProducts'])->name('bundle.suggested-products');
+Route::post('/cart/add-bundle', [CartController::class, 'addBundle'])->name('cart.addBundle');
 // lấy api số lượng sản phẩm
 Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariantStock']);
 
@@ -148,6 +149,8 @@ Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariant
 Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestions'])->name('products.compare_suggestions');
 Route::post('/compare-suggestions', [TradeInPublicController::class, 'compareSuggestions']);
 Route::post('/api/compare-suggestions', [HomeController::class, 'compareSuggestions']);
+// Thêm route mới cho tìm kiếm sản phẩm
+Route::get('/search-products', [HomeController::class, 'searchProducts'])->name('search-products');
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
@@ -460,7 +463,7 @@ Route::prefix('admin')
         Route::get('/orders/shippers/list', [OrderController::class, 'getShippers'])->name('orders.shippers');
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
         Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
-        
+
         // Routes Shipper Assignment
         Route::prefix('shipper-assignment')->name('shipper-assignment.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'index'])->name('index');
@@ -471,27 +474,14 @@ Route::prefix('admin')
             Route::post('/assign', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'assignShipper'])->name('assign');
             Route::get('/statistics', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getStatistics'])->name('statistics');
         });
-        
+
         // Routes Order Fulfillment
         Route::prefix('orders/fulfillment')->name('orders.fulfillment.')->group(function () {
             Route::get('/awaiting-stock', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'getOrdersAwaitingStock'])->name('awaiting-stock');
             Route::get('/{order}/status', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'checkFulfillmentStatus'])->name('status');
             Route::post('/{order}/auto-transfer', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'createAutoTransfer'])->name('auto-transfer');
-        });
-
-        // Routes Package Management - REMOVED: Package functionality replaced by OrderFulfillment
-        // Route::prefix('packages')->name('packages.')->group(function () {
-        //     Route::get('/', [\App\Http\Controllers\Admin\PackageController::class, 'index'])->name('index');
-        //     Route::post('/', [\App\Http\Controllers\Admin\PackageController::class, 'store'])->name('store');
-        //     Route::get('/{package}', [\App\Http\Controllers\Admin\PackageController::class, 'show'])->name('show');
-        //     Route::put('/{package}', [\App\Http\Controllers\Admin\PackageController::class, 'update'])->name('update');
-        //     Route::delete('/{package}', [\App\Http\Controllers\Admin\PackageController::class, 'destroy'])->name('destroy');
-        //     Route::post('/{package}/assign-items', [\App\Http\Controllers\Admin\PackageController::class, 'assignItems'])->name('assign-items');
-        //     Route::post('/{package}/split', [\App\Http\Controllers\Admin\PackageController::class, 'split'])->name('split');
-        // });
-        
+        });     
         Route::post('/buy-now/clear-session', [PaymentController::class, 'handleClearBuyNowSession'])->name('buy_now.clear_session');
-
         // quản lý giỏ hàng lãng quên
         Route::get('/abandoned-carts', [AbandonedCartController::class, 'index'])->name('abandoned-carts.index');
         Route::get('/admin/abandoned-carts/{id}', [AbandonedCartController::class, 'show'])
@@ -610,7 +600,7 @@ Route::prefix('admin')
 
         // Route khác nếu cần
         Route::get('/staff', [OrderManagerController::class, 'staffIndex'])->name('staff.index');
-        
+
         // Routes cho Trạm Đóng Gói
         Route::prefix('packing-station')->name('packing-station.')->group(function () {
             Route::get('/', [PackingStationController::class, 'index'])->name('index');
@@ -669,6 +659,8 @@ Route::prefix('admin')
 
         // Route Quản lí Flash Sale
         Route::resource('flash-sales', \App\Http\Controllers\Admin\FlashSaleController::class);
+        Route::get('flash-sales/{flashSale}/statistics', [\App\Http\Controllers\Admin\FlashSaleController::class, 'statistics'])
+            ->name('flash-sales.statistics');
         Route::post('flash-sales/{flash_sale}/attach-product', [FlashSaleController::class, 'attachProduct'])
             ->name('flash-sales.attachProduct');
         Route::delete('flash-sales/{flash_sale}/detach-product/{product}', [FlashSaleController::class, 'detachProduct'])
@@ -687,7 +679,7 @@ Route::prefix('admin')
         Route::patch('bundle-products/restore-bulk', [BundleProductController::class, 'restoreBulk'])->name('bundle-products.restore.bulk');
         Route::delete('bundle-products/force-delete-bulk', [BundleProductController::class, 'forceDeleteBulk'])->name('bundle-products.forceDelete.bulk');
         Route::get('bundle-products/products', [BundleProductController::class, 'getProductsByCategory'])->name('bundle-products.products');
-        
+
         // Routes cho tra cứu số serial
         Route::get('/serials/lookup', [SerialLookupController::class, 'showForm'])->name('serial.lookup.form');
         Route::post('/serials/lookup', [SerialLookupController::class, 'lookup'])->name('serial.lookup');
@@ -820,7 +812,7 @@ Route::prefix('admin')
             // ==== API routes for the packing station interface ====
             // Route để lấy danh sách đơn hàng chờ đóng gói
             Route::get('/pending-orders', [PackingStationController::class, 'getPendingOrders'])->name('pending-orders');
-            
+
             // Route để tìm kiếm gói hàng theo mã vận đơn
             Route::get('/packages/{trackingCode}', [PackingStationController::class, 'getPackageByTrackingCode'])->name('get-package');
 

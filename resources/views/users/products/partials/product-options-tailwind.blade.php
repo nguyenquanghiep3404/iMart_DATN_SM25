@@ -197,40 +197,75 @@
 
     @php
         use Carbon\Carbon;
+
+        // Lấy biến thể sản phẩm mặc định
         $variant = $defaultVariant ?? $product->variants->first();
         $now = now();
-        $salePrice = (int) $variant->sale_price;
-        $originalPrice = (int) $variant->price;
 
-        // Kiểm tra đủ điều kiện Flash Sale
-        $hasFlashTime =
-            $variant->sale_price_starts_at instanceof Carbon && $variant->sale_price_ends_at instanceof Carbon;
-        $isFlashSale = false;
-        if ($salePrice && $hasFlashTime) {
-            $isFlashSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+        // Lấy giá gốc và giá khuyến mãi thông thường từ biến thể
+        $originalPrice = (int) $variant->price;
+        $salePrice = (int) $variant->sale_price;
+
+        // Lấy thông tin flash sale của biến thể hiện tại từ mảng flashSaleProducts
+        $flashPrice = isset($flashSaleProducts[$variant->id])
+            ? (int) $flashSaleProducts[$variant->id]['flash_price']
+            : null;
+
+        // flashSaleEndTime đã được chuẩn hóa và truyền từ controller
+        $parsedFlashSaleEndTime =
+            isset($flashSaleEndTime) && $flashSaleEndTime
+                ? Carbon::parse($flashSaleEndTime)->timezone(config('app.timezone'))
+                : null;
+
+        // Kiểm tra flash sale và trạng thái hết hàng
+        $isFlashSale = $flashPrice && $parsedFlashSaleEndTime && $now->lte($parsedFlashSaleEndTime);
+        $remaining = isset($flashSaleProducts[$variant->id])
+            ? $flashSaleProducts[$variant->id]['quantity_limit'] - $flashSaleProducts[$variant->id]['quantity_sold']
+            : 0;
+        $isSoldOut = $isFlashSale && $remaining <= 0;
+
+        // Kiểm tra khuyến mãi thường
+        $isSale = $salePrice && $salePrice < $originalPrice;
+
+        // Tính giá hiển thị
+        $displayPrice = $isFlashSale && !$isSoldOut ? $flashPrice : ($isSale ? $salePrice : $originalPrice);
+
+        // Tính % giảm
+        $discountPercent = 0;
+        if ($originalPrice > 0) {
+            if ($isFlashSale && !$isSoldOut) {
+                $discountPercent = round(100 - ($flashPrice / $originalPrice) * 100);
+            } elseif ($isSale) {
+                $discountPercent = round(100 - ($salePrice / $originalPrice) * 100);
+            }
         }
 
-        // Nếu không phải Flash Sale mà vẫn có sale_price < original => là Sale thường
-        $isSale = !$isFlashSale && $salePrice && $salePrice < $originalPrice;
-
-        $discountPercent = $isFlashSale || $isSale ? round(100 - ($salePrice / $originalPrice) * 100) : 0;
+        // Tính phần trăm và số lượng còn lại cho flash sale
+        $percent =
+            isset($flashSaleProducts[$variant->id]) && $flashSaleProducts[$variant->id]['quantity_limit'] > 0
+                ? round(
+                    (($flashSaleProducts[$variant->id]['quantity_limit'] -
+                        $flashSaleProducts[$variant->id]['quantity_sold']) /
+                        $flashSaleProducts[$variant->id]['quantity_limit']) *
+                        100,
+                )
+                : 0;
+        $total = isset($flashSaleProducts[$variant->id]) ? $flashSaleProducts[$variant->id]['quantity_limit'] : 0;
     @endphp
 
-
-
     <div id="price-section" class="mt-4">
-        @if ($isFlashSale)
-            <!-- 🔥 Flash Sale Block -->
+        @if ($isFlashSale && !$isSoldOut)
             <div id="flash-sale-block" class="bg-orange-500 text-white p-4 rounded-lg">
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center position-relative">
                     <div>
-                        <p class="text-sm font-semibold">⚡ Online Giá Rẻ Quá</p>
+                        <p class="text-lg font-semibold">Online Giá Rẻ Quá</p>
                         <p id="product-price" class="text-3xl font-bold">
-                            {{ number_format($salePrice) }}₫
+                            {{ number_format($displayPrice) }}₫
                         </p>
                         <p class="text-sm opacity-80">
-                            <span id="original-price"
-                                class="line-through">{{ number_format($originalPrice) }}₫</span>
+                            <span id="original-price" class="line-through">
+                                {{ number_format($originalPrice) }}₫
+                            </span>
                             <span id="discount-percent">
                                 ({{ $discountPercent > 0 ? "-$discountPercent%" : '' }})
                             </span>
@@ -238,24 +273,33 @@
                     </div>
                     <div class="text-center">
                         <p class="text-sm font-semibold">Kết thúc sau</p>
-                        <div id="countdown-timer" data-end-time="{{ $variant->sale_price_ends_at }}"
+                        <div id="countdown-timer"
+                            data-end-time="{{ $parsedFlashSaleEndTime?->format('Y-m-d H:i:s') }}"
                             class="flex gap-1 mt-1 text-lg">
                             <span id="hours" class="timer-box">00</span>:
                             <span id="minutes" class="timer-box">00</span>:
                             <span id="seconds" class="timer-box">00</span>
                         </div>
+                        <!-- Thanh tiến trình flash sale -->
+                        @if (isset($flashSaleProducts[$variant->id]))
+                            <div class="js-flash-sale-progress mt-2">
+                                <div class="progress-wrapper">
+                                    <div class="progress-bar-inner" style="width: {{ $percent }}%">
+                                        <span class="progress-text">
+                                            🔥 Còn {{ $remaining }}/{{ $total }} suất
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
-
-            <!-- 💡 Normal Price Block (ẩn đi ban đầu) -->
             <div id="normal-price-block" class="price-block bg-gray-100 p-4 rounded-lg hidden">
-
                 <div class="flex items-baseline gap-3">
                     <span id="product-price" class="text-3xl font-bold text-red-600">
                         {{ number_format($isSale ? $salePrice : $originalPrice) }}₫
                     </span>
-
                     @if ($isSale)
                         <span id="original-price" class="text-lg text-gray-500 line-through">
                             {{ number_format($originalPrice) }}₫
@@ -264,21 +308,62 @@
                             class="bg-red-200 text-red-800 text-sm font-semibold px-2 py-0.5 rounded-md">
                             -{{ $discountPercent }}%
                         </span>
-                    @else
-                        <span id="original-price" class="text-lg text-gray-500 line-through hidden"></span>
-                        <span id="discount-percent" class="hidden"></span>
                     @endif
                 </div>
             </div>
         @else
-            <!-- ✅ Normal Price Block (hiển thị khi không phải Flash Sale) -->
+            <div id="flash-sale-block"
+                class="bg-orange-500 text-white p-4 rounded-lg mb-4 {{ $isSoldOut ? 'sold-out' : 'hidden' }}">
+                <div class="flex justify-between items-center position-relative">
+                    <div>
+                        <p class="text-lg font-semibold">Online Giá Rẻ Quá</p>
+                        <p id="product-price" class="text-3xl font-bold">
+                            {{ number_format($flashPrice) }}₫
+                        </p>
+                        <p class="text-sm opacity-80">
+                            <span id="original-price" class="line-through">
+                                {{ number_format($originalPrice) }}₫
+                            </span>
+                            <span id="discount-percent">
+                                ({{ $discountPercent > 0 ? "-$discountPercent%" : '' }})
+                            </span>
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm font-semibold">Kết thúc sau</p>
+                        <div id="countdown-timer"
+                            data-end-time="{{ $parsedFlashSaleEndTime?->format('Y-m-d H:i:s') }}"
+                            class="flex gap-1 mt-1 text-lg">
+                            <span id="hours" class="timer-box">00</span>:
+                            <span id="minutes" class="timer-box">00</span>:
+                            <span id="seconds" class="timer-box">00</span>
+                        </div>
+                        <!-- Thanh tiến trình flash sale -->
+                        @if (isset($flashSaleProducts[$variant->id]))
+                            <div class="js-flash-sale-progress mt-2">
+                                <div class="progress-wrapper">
+                                    <div class="progress-bar-inner" style="width: {{ $percent }}%">
+                                        <span class="progress-text">
+                                            🔥 Còn {{ $remaining }}/{{ $total }} suất
+                                        </span>
+                                    </div>
+                                </div>
+                                @if ($isSoldOut)
+                                    <img src="{{ asset('assets/users/logo/out-of-deal.png') }}" alt="Sold Out"
+                                        class="sold-out-overlay"
+                                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 50%;廊
+                                     max-height: 50%; object-fit: contain;">
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
             <div id="normal-price-block" class="price-block bg-gray-100 p-4 rounded-lg">
-
                 <div class="flex items-baseline gap-3">
                     <span id="product-price" class="text-3xl font-bold text-red-600">
                         {{ number_format($isSale ? $salePrice : $originalPrice) }}₫
                     </span>
-
                     @if ($isSale)
                         <span id="original-price" class="text-lg text-gray-500 line-through">
                             {{ number_format($originalPrice) }}₫
@@ -287,9 +372,6 @@
                             class="bg-red-200 text-red-800 text-sm font-semibold px-2 py-0.5 rounded-md">
                             -{{ $discountPercent }}%
                         </span>
-                    @else
-                        <span id="original-price" class="text-lg text-gray-500 line-through hidden"></span>
-                        <span id="discount-percent" class="hidden"></span>
                     @endif
                 </div>
             </div>
@@ -298,12 +380,13 @@
 
 
 
+
     <!-- Thay đổi hiển thị chi nhánh -->
     <section class="mt-6 p-4 sm:p-5 bg-gray-50 rounded-xl border border-gray-200">
         <div>
             <h3 class="font-semibold text-gray-900">Xem chi nhánh có hàng</h3>
             <p id="store-message" class="text-sm text-gray-600 mt-1">
-                @if ($storeLocations->count() > 0)
+                @if ($storeLocations->count() >= 0)
                     Có <span id="store-count" class="font-bold text-blue-600">
                         {{ $storeLocations->count() }}
                     </span> cửa hàng có sản phẩm
@@ -315,23 +398,21 @@
             </p>
         </div>
 
-        <div id="filter-container" class="@if ($storeLocations->count() == 0) hidden @endif">
-            @if ($storeLocations->count() > 0)
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                    <select id="province-select"
-                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">Tất cả tỉnh/thành phố</option>
-                        @foreach ($provinces as $province)
-                            <option value="{{ $province->code }}">{{ $province->name }}</option>
-                        @endforeach
-                    </select>
-                    <select id="district-select"
-                        class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                        disabled>
-                        <option value="">Tất cả Quận/Huyện</option>
-                    </select>
-                </div>
-            @endif
+        <div id="filter-container">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <select id="province-select"
+                    class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Tất cả tỉnh/thành phố</option>
+                    @foreach ($provinces as $province)
+                        <option value="{{ $province->code }}">{{ $province->name }}</option>
+                    @endforeach
+                </select>
+                <select id="district-select"
+                    class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    disabled>
+                    <option value="">Tất cả Quận/Huyện</option>
+                </select>
+            </div>
         </div>
 
         <div class="relative mt-4">
@@ -375,14 +456,7 @@
                             </div>
                         </div>
                     @empty
-                        <div class="swiper-slide w-full text-center py-4 text-gray-500">
-                            @if (isset($hasWarehouseInventory) && $hasWarehouseInventory)
-                                Sản phẩm này hiện <strong>không có sẵn tại hệ thống cửa hàng</strong>. Nhưng vẫn sẵn
-                                sàng để mua online.
-                            @else
-                                Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!
-                            @endif
-                        </div>
+                        <div class="swiper-slide w-full"></div>
                     @endforelse
                 </div>
             </div>
@@ -645,127 +719,99 @@
 
 <script>
     // Script xử lý cập nhật danh sách cửa hàng tồn kho theo biến thể sản phẩm
-   document.addEventListener('DOMContentLoaded', function() {
-    // Khởi tạo Swiper cho danh sách cửa hàng
-    let swiper = new Swiper('#store-swiper', {
-        slidesPerView: 'auto',
-        spaceBetween: 12,
-        freeMode: true,
-        navigation: {
-            nextEl: '#store-prev-btn',
-            prevEl: '#store-next-btn',
-        },
-        on: {
-            init: function() {
-                const container = this.el.parentElement;
-                container.classList.toggle('navigation-hidden', this.isLocked);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Khởi tạo Swiper cho danh sách cửa hàng
+        let swiper = new Swiper('#store-swiper', {
+            slidesPerView: 'auto',
+            spaceBetween: 12,
+            freeMode: true,
+            navigation: {
+                nextEl: '#store-next-btn',
+                prevEl: '#store-prev-btn',
             },
-            resize: function() {
-                const container = this.el.parentElement;
-                container.classList.toggle('navigation-hidden', this.isLocked);
+            on: {
+                init: function() {
+                    const container = this.el.parentElement;
+                    container.classList.toggle('navigation-hidden', this.isLocked);
+                },
+                resize: function() {
+                    const container = this.el.parentElement;
+                    container.classList.toggle('navigation-hidden', this.isLocked);
+                }
             }
-        }
-    });
+        });
 
-    window.storeSwiper = swiper;
-    let isUpdatingStores = false;
+        window.storeSwiper = swiper;
+        let isUpdatingStores = false;
 
-    // Hàm lọc và hiển thị danh sách cửa hàng
-    async function filterStores(variantId, provinceCode, districtCode) {
-        const provinceSelect = document.getElementById('province-select');
-        const districtSelect = document.getElementById('district-select');
-        const storeWrapper = document.getElementById('store-swiper')?.querySelector('.swiper-wrapper');
-        const storeMessage = document.getElementById('store-message');
-        const filterContainer = document.getElementById('filter-container');
+        // Hàm lọc và hiển thị danh sách cửa hàng
+        async function filterStores(variantId, provinceCode, districtCode) {
+            const provinceSelect = document.getElementById('province-select');
+            const districtSelect = document.getElementById('district-select');
+            const storeWrapper = document.getElementById('store-swiper')?.querySelector('.swiper-wrapper');
+            const storeMessage = document.getElementById('store-message');
 
-        let storeCount = document.getElementById('store-count');
-        if (!storeCount) {
-            storeMessage.innerHTML = `
-                Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-            `;
-            storeCount = document.getElementById('store-count');
-        }
+            if (!storeWrapper || !storeMessage) {
+                console.error('Missing required DOM elements.');
+                return;
+            }
 
-        if (!storeWrapper || !storeCount || !storeMessage || !filterContainer) {
-            console.error('Missing DOM elements:', {
-                storeWrapper,
-                storeCount,
-                storeMessage,
-                filterContainer
-            });
-            return;
-        }
+            try {
+                const query = new URLSearchParams();
+                if (provinceCode) query.append('province_code', provinceCode);
+                if (districtCode) query.append('district_code', districtCode);
+                query.append('product_variant_id', variantId);
 
-        try {
-            const query = new URLSearchParams();
-            if (provinceCode) query.append('province_code', provinceCode);
-            if (districtCode) query.append('district_code', districtCode);
-            query.append('product_variant_id', variantId);
-
-            storeWrapper.innerHTML = `
+                // Hiển thị trạng thái tải
+                storeWrapper.innerHTML = `
                 <div class="swiper-slide w-full text-center py-4 text-gray-500">
                     Đang tải danh sách cửa hàng...
                 </div>
             `;
-            if (window.storeSwiper) window.storeSwiper.update();
+                if (window.storeSwiper) window.storeSwiper.update();
 
-            console.log('Calling filterStores with variantId:', variantId, 'province:', provinceCode, 'district:', districtCode);
-            const response = await fetch(`/api/filter-stores?${query.toString()}`);
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const response = await fetch(`/api/filter-stores?${query.toString()}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-            const { stores, count, hasWarehouseInventory } = await response.json();
-            console.log('filterStores response:', { stores, count, hasWarehouseInventory });
+                const {
+                    stores,
+                    count,
+                    hasWarehouseInventory
+                } = await response.json();
 
-            storeCount.textContent = count;
-
-            if (count > 0) {
-                storeMessage.innerHTML = `
-                    Có <span id="store-count" class="font-bold text-blue-600">${count}</span> cửa hàng có sản phẩm
-                `;
-                filterContainer.classList.remove('hidden');
-            } else if (hasWarehouseInventory) {
-                storeMessage.innerHTML = `
-                     Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.
-                `;
-                filterContainer.classList.remove('hidden');
-                if (!document.getElementById('store-count')) {
-                    storeMessage.innerHTML = `
-                        Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-                    `;
-                    storeCount = document.getElementById('store-count');
-                    storeCount.textContent = '0';
+                // Cập nhật thông báo tồn kho chính (chỉ ở đây)
+                if (count >= 0) {
+                    storeMessage.innerHTML =
+                        `Có <span id="store-count" class="font-bold text-blue-600">${count}</span> cửa hàng có sản phẩm`;
+                } else if (hasWarehouseInventory) {
+                    storeMessage.innerHTML =
+                        `Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.`;
+                } else {
+                    storeMessage.innerHTML =
+                        `Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!`;
                 }
-            } else {
-                storeMessage.innerHTML = `
-                    Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!
-                `;
-                filterContainer.classList.add('hidden');
-                if (!document.getElementById('store-count')) {
-                    storeMessage.innerHTML = `
-                        Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-                    `;
-                    storeCount = document.getElementById('store-count');
-                    storeCount.textContent = '0';
-                }
-            }
 
-            storeWrapper.innerHTML = '';
-            if (stores.length === 0) {
-                storeWrapper.innerHTML = `
+                // Render danh sách cửa hàng
+                storeWrapper.innerHTML = '';
+                if (stores.length === 0) {
+                    storeWrapper.innerHTML = `
                     <div class="swiper-slide w-full text-center py-4 text-gray-500">
                         ${hasWarehouseInventory ? 
-                            'Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.' : 
+                            'Sản phẩm này hiện <strong>không có sẵn tại hệ thống cửa hàng</strong>. Nhưng vẫn sẵn sàng để mua online.' : 
                             'Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!'}
                     </div>
                 `;
-            } else {
-                stores.forEach(store => {
-                    const slide = document.createElement('div');
-                    slide.className = 'swiper-slide w-64 sm:w-72';
-                    slide.innerHTML = `
+                } else {
+                    stores.forEach(store => {
+                        const slide = document.createElement('div');
+                        slide.className = 'swiper-slide w-64 sm:w-72';
+                        const fullAddress =
+                            `${store.address}${store.ward ? `, ${store.ward.name}` : ''}${store.district ? `, ${store.district.name}` : ''}${store.province ? `, ${store.province.name}` : ''}`;
+
+                        slide.innerHTML = `
                         <div class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
                             <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
-                                ${store.address}${store.ward ? `, ${store.ward.name}` : ''}${store.district ? `, ${store.district.name}` : ''}${store.province ? `, ${store.province.name}` : ''}
+                                ${fullAddress}
                             </p>
                             <div class="flex gap-2 mt-3 text-center">
                                 ${store.phone ? `
@@ -774,7 +820,7 @@
                                         <span>${store.phone}</span>
                                     </a>
                                 ` : ''}
-                                <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address + (store.ward ? `, ${store.ward.name}` : '') + (store.district ? `, ${store.district.name}` : '') + (store.province ? `, ${store.province.name}` : ''))}" target="_blank" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                <a href="https://www.google.com/maps/search/?api=1&query={encodeURIComponent(fullAddress)}" target="_blank" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
                                     <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                                         <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
                                     </svg>
@@ -783,231 +829,201 @@
                             </div>
                         </div>
                     `;
-                    storeWrapper.appendChild(slide);
-                });
-            }
+                        storeWrapper.appendChild(slide);
+                    });
+                }
 
-            if (window.storeSwiper) {
-                window.storeSwiper.update();
-                const container = window.storeSwiper.el.parentElement;
-                container.classList.toggle('navigation-hidden', window.storeSwiper.isLocked);
-                console.log('Swiper updated:', window.storeSwiper.isLocked);
-            }
-        } catch (error) {
-            console.error('Error fetching stores:', error);
-            storeWrapper.innerHTML = `
+                if (window.storeSwiper) {
+                    window.storeSwiper.update();
+                    const container = window.storeSwiper.el.parentElement;
+                    container.classList.toggle('navigation-hidden', window.storeSwiper.isLocked);
+                }
+            } catch (error) {
+                console.error('Error fetching stores:', error);
+                storeWrapper.innerHTML = `
                 <div class="swiper-slide w-full text-center py-4 text-gray-500">
                     Đã xảy ra lỗi khi tải danh sách cửa hàng.
                 </div>
             `;
-            storeCount.textContent = '0';
-            storeMessage.innerHTML = `
-                Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-            `;
-            filterContainer.classList.add('hidden');
-            if (window.storeSwiper) window.storeSwiper.update();
-        }
-    }
-
-    // Hàm chính để cập nhật danh sách cửa hàng dựa trên biến thể
-    function updateStoreLocations(variantId) {
-        if (isUpdatingStores) return;
-
-        const provinceSelect = document.getElementById('province-select');
-        const districtSelect = document.getElementById('district-select');
-        const storeWrapper = document.getElementById('store-swiper')?.querySelector('.swiper-wrapper');
-        const storeMessage = document.getElementById('store-message');
-        const filterContainer = document.getElementById('filter-container');
-
-        let storeCount = document.getElementById('store-count');
-        if (!storeCount) {
-            storeMessage.innerHTML = `
-                Có <span id="store-count" class="font-bold text-blue-600">0</span> cửa hàng có sản phẩm
-            `;
-            storeCount = document.getElementById('store-count');
+                storeMessage.innerHTML =
+                    `Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!`;
+                if (window.storeSwiper) window.storeSwiper.update();
+            }
         }
 
-        if (!storeWrapper || !storeCount || !storeMessage || !filterContainer) {
-            console.error('Missing DOM elements:', {
-                storeWrapper,
-                storeCount,
-                storeMessage,
-                filterContainer
-            });
-            return;
-        }
+        // Hàm chính để cập nhật danh sách cửa hàng dựa trên biến thể
+        function updateStoreLocations(variantId) {
+            if (isUpdatingStores) return;
+            isUpdatingStores = true;
 
-        async function updateProvincesForVariant() {
-            try {
-                const response = await fetch(`/api/provinces-by-variant?product_variant_id=${variantId}`);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const provinceSelect = document.getElementById('province-select');
+            const districtSelect = document.getElementById('district-select');
 
-                const provinces = await response.json();
-                console.log('Provinces response:', provinces);
+            // Cập nhật danh sách tỉnh/thành phố có hàng cho biến thể này
+            async function updateProvincesForVariant() {
+                try {
+                    const response = await fetch(
+                        `/api/provinces-by-variant?product_variant_id=${variantId}`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const provinces = await response.json();
 
-                if (provinceSelect) {
-                    const currentProvince = provinceSelect.value;
-                    provinceSelect.innerHTML = '<option value="">Tất cả tỉnh/thành phố</option>';
-                    provinces.forEach(province => {
-                        const option = document.createElement('option');
-                        option.value = province.code;
-                        option.textContent = province.name;
-                        provinceSelect.appendChild(option);
-                    });
+                    if (provinceSelect) {
+                        const currentProvince = provinceSelect.value;
+                        provinceSelect.innerHTML = '<option value="">Tất cả tỉnh/thành phố</option>';
+                        provinces.forEach(province => {
+                            const option = document.createElement('option');
+                            option.value = province.code;
+                            option.textContent = province.name;
+                            provinceSelect.appendChild(option);
+                        });
 
-                    if (currentProvince && provinces.some(p => p.code === currentProvince)) {
-                        provinceSelect.value = currentProvince;
-                    } else {
-                        provinceSelect.value = '';
+                        if (currentProvince && provinces.some(p => p.code === currentProvince)) {
+                            provinceSelect.value = currentProvince;
+                        } else {
+                            provinceSelect.value = '';
+                        }
+
+                        if (districtSelect) {
+                            districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
+                            districtSelect.disabled = true;
+                        }
                     }
+                } catch (error) {
+                    console.error('Error fetching provinces:', error);
+                }
+            }
+
+            updateProvincesForVariant().then(() => {
+                const currentProvince = provinceSelect ? provinceSelect.value : '';
+                const currentDistrict = districtSelect ? districtSelect.value : '';
+                filterStores(variantId, currentProvince, currentDistrict).finally(() => {
+                    isUpdatingStores = false;
+                });
+            });
+        }
+
+        function listenForVariantChanges() {
+            const radioButtons = document.querySelectorAll('.variants input[type="radio"][data-attr-name]');
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    setTimeout(() => {
+                        const variantIdInput = document.querySelector(
+                            '[name="product_variant_id"]');
+                        if (variantIdInput && variantIdInput.value) {
+                            updateStoreLocations(variantIdInput.value);
+                        }
+                    }, 100);
+                });
+            });
+
+            const optionLabels = document.querySelectorAll('.option-container');
+            optionLabels.forEach(label => {
+                label.addEventListener('click', function() {
+                    setTimeout(() => {
+                        const variantIdInput = document.querySelector(
+                            '[name="product_variant_id"]');
+                        if (variantIdInput && variantIdInput.value) {
+                            updateStoreLocations(variantIdInput.value);
+                        }
+                    }, 200);
+                });
+            });
+        }
+
+        function createProvinceSelectListener() {
+            document.addEventListener('change', async function(event) {
+                if (event.target.id === 'province-select') {
+                    const provinceCode = event.target.value;
+                    const districtSelect = document.getElementById('district-select');
+                    const variantIdInput = document.querySelector('[name="product_variant_id"]');
+                    const productVariantId = variantIdInput ? variantIdInput.value : '';
 
                     if (districtSelect) {
                         districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
                         districtSelect.disabled = true;
                     }
-                }
-            } catch (error) {
-                console.error('Error fetching provinces:', error);
-            }
-        }
 
-        isUpdatingStores = true;
-        updateProvincesForVariant().then(() => {
-            const currentProvince = provinceSelect ? provinceSelect.value : '';
-            const currentDistrict = districtSelect ? districtSelect.value : '';
-            filterStores(variantId, currentProvince, currentDistrict).finally(() => {
-                isUpdatingStores = false;
-            });
-        });
-    }
+                    if (provinceCode && productVariantId) {
+                        try {
+                            const response = await fetch(
+                                `/api/districts-by-province?province_code=${encodeURIComponent(provinceCode)}&product_variant_id=${encodeURIComponent(productVariantId)}`
+                            );
+                            if (!response.ok) throw new Error(
+                                `HTTP error! status: ${response.status}`);
 
-    function listenForVariantChanges() {
-        const radioButtons = document.querySelectorAll('.variants input[type="radio"][data-attr-name]');
-        radioButtons.forEach(radio => {
-            radio.addEventListener('change', function() {
-                setTimeout(() => {
-                    const variantIdInput = document.querySelector('[name="product_variant_id"]');
-                    if (variantIdInput && variantIdInput.value) {
-                        console.log('Variant changed to:', variantIdInput.value);
-                        updateStoreLocations(variantIdInput.value);
-                    }
-                }, 100);
-            });
-        });
+                            const districts = await response.json();
 
-        const optionLabels = document.querySelectorAll('.option-container');
-        optionLabels.forEach(label => {
-            label.addEventListener('click', function() {
-                setTimeout(() => {
-                    const variantIdInput = document.querySelector('[name="product_variant_id"]');
-                    if (variantIdInput && variantIdInput.value) {
-                        console.log('Variant clicked, changed to:', variantIdInput.value);
-                        updateStoreLocations(variantIdInput.value);
-                    }
-                }, 200);
-            });
-        });
-    }
-
-    function createProvinceSelectListener() {
-        document.addEventListener('change', async function(event) {
-            if (event.target.id === 'province-select') {
-                const provinceCode = event.target.value;
-                const districtSelect = document.getElementById('district-select');
-                const variantIdInput = document.querySelector('[name="product_variant_id"]');
-                const productVariantId = variantIdInput ? variantIdInput.value : '';
-
-                if (districtSelect) {
-                    districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
-                    districtSelect.disabled = true;
-                }
-
-                if (provinceCode && productVariantId) {
-                    try {
-                        const response = await fetch(
-                            `/api/districts-by-province?province_code=${encodeURIComponent(provinceCode)}&product_variant_id=${encodeURIComponent(productVariantId)}`
-                        );
-                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-                        const districts = await response.json();
-                        console.log('Districts response:', districts);
-
-                        if (districtSelect) {
-                            if (districts.length === 0) {
-                                districtSelect.innerHTML = '<option value="">Không có quận/huyện</option>';
-                            } else {
-                                districts.forEach(district => {
-                                    const option = document.createElement('option');
-                                    option.value = district.code;
-                                    option.textContent = district.name;
-                                    districtSelect.appendChild(option);
-                                });
-                                districtSelect.disabled = false;
+                            if (districtSelect) {
+                                if (districts.length === 0) {
+                                    districtSelect.innerHTML =
+                                        '<option value="">Không có quận/huyện</option>';
+                                } else {
+                                    districts.forEach(district => {
+                                        const option = document.createElement('option');
+                                        option.value = district.code;
+                                        option.textContent = district.name;
+                                        districtSelect.appendChild(option);
+                                    });
+                                    districtSelect.disabled = false;
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error fetching districts:', error);
+                            if (districtSelect) {
+                                districtSelect.innerHTML =
+                                    '<option value="">Không có quận/huyện</option>';
                             }
                         }
-                    } catch (error) {
-                        console.error('Error fetching districts:', error);
-                        if (districtSelect) {
-                            districtSelect.innerHTML = '<option value="">Không có quận/huyện</option>';
-                        }
                     }
-                }
-
-                // Sửa: Gọi filterStores với productVariantId
-                filterStores(productVariantId, provinceCode, '');
-            }
-        });
-    }
-
-    listenForVariantChanges();
-
-    const variantIdInput = document.querySelector('[name="product_variant_id"]');
-    if (variantIdInput) {
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
-                    const newValue = variantIdInput.value;
-                    if (newValue) {
-                        console.log('Variant ID input changed to:', newValue);
-                        updateStoreLocations(newValue);
-                    }
+                    filterStores(productVariantId, provinceCode, '');
                 }
             });
-        });
-        observer.observe(variantIdInput, {
-            attributes: true,
-            attributeFilter: ['value']
-        });
-        variantIdInput.addEventListener('input', function() {
-            if (this.value) {
-                console.log('Variant ID input updated to:', this.value);
-                updateStoreLocations(this.value);
-            }
-        });
-    }
-
-    const districtSelect = document.getElementById('district-select');
-    if (districtSelect) {
-        districtSelect.addEventListener('change', async function() {
-            const provinceSelect = document.getElementById('province-select');
-            const provinceCode = provinceSelect ? provinceSelect.value : '';
-            const districtCode = this.value;
-            const variantIdInput = document.querySelector('[name="product_variant_id"]');
-            const productVariantId = variantIdInput ? variantIdInput.value : '';
-            console.log('District changed:', { provinceCode, districtCode, productVariantId });
-            // Sửa: Gọi filterStores với productVariantId
-            filterStores(productVariantId, provinceCode, districtCode);
-        });
-    }
-
-    setTimeout(() => {
-        const variantIdInput = document.querySelector('[name="product_variant_id"]');
-        if (variantIdInput && variantIdInput.value) {
-            console.log('Initial variant ID:', variantIdInput.value);
-            window.lastVariantId = variantIdInput.value;
-            updateStoreLocations(variantIdInput.value);
         }
-        createProvinceSelectListener();
-    }, 200);
-});
+
+        listenForVariantChanges();
+
+        const variantIdInput = document.querySelector('[name="product_variant_id"]');
+        if (variantIdInput) {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                        const newValue = variantIdInput.value;
+                        if (newValue) {
+                            updateStoreLocations(newValue);
+                        }
+                    }
+                });
+            });
+            observer.observe(variantIdInput, {
+                attributes: true,
+                attributeFilter: ['value']
+            });
+            variantIdInput.addEventListener('input', function() {
+                if (this.value) {
+                    updateStoreLocations(this.value);
+                }
+            });
+        }
+
+        const districtSelect = document.getElementById('district-select');
+        if (districtSelect) {
+            districtSelect.addEventListener('change', async function() {
+                const provinceSelect = document.getElementById('province-select');
+                const provinceCode = provinceSelect ? provinceSelect.value : '';
+                const districtCode = this.value;
+                const variantIdInput = document.querySelector('[name="product_variant_id"]');
+                const productVariantId = variantIdInput ? variantIdInput.value : '';
+                filterStores(productVariantId, provinceCode, districtCode);
+            });
+        }
+
+        setTimeout(() => {
+            const variantIdInput = document.querySelector('[name="product_variant_id"]');
+            if (variantIdInput && variantIdInput.value) {
+                window.lastVariantId = variantIdInput.value;
+                updateStoreLocations(variantIdInput.value);
+            }
+            createProvinceSelectListener();
+        }, 200);
+    });
 </script>

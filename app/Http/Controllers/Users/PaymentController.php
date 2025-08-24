@@ -355,7 +355,8 @@ class PaymentController extends Controller
             'payment_method' => $request->payment_method,
             'payment_status' => Order::PAYMENT_PENDING,
             'status' => Order::STATUS_PENDING_CONFIRMATION,
-            'shipping_method' => $request->delivery_method === 'delivery' ? 'Giao hàng tận nơi' : 'Nhận tại cửa hàng',
+            'delivery_method' => $request->delivery_method,
+            'shipping_method' => null,
             'notes_from_customer' => $request->notes,
             'desired_delivery_date' => $deliveryInfo['date'],
             'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
@@ -858,12 +859,9 @@ class PaymentController extends Controller
                 $order->payment_status = Order::PAYMENT_PAID;
                 $order->save();
                 
-                // Lấy store_location_id từ order
+                // Chỉ gán store_location_id tự động nếu là đơn pickup và thiếu store
                 $storeLocationId = $order->store_location_id;
-                
-                // Nếu không có store_location_id (giao hàng), tự động tìm kho có hàng
-                if (!$storeLocationId) {
-                    // Tìm kho có hàng cho item đầu tiên để xác định store_location_id
+                if ($order->delivery_method === 'pickup' && !$storeLocationId) {
                     $firstItem = $order->items->first();
                     if ($firstItem && $firstItem->product_variant_id) {
                         $firstVariant = ProductVariant::find($firstItem->product_variant_id);
@@ -941,12 +939,9 @@ class PaymentController extends Controller
                 $order->status = Order::STATUS_PROCESSING;
                 $order->save();
                 
-                // Lấy store_location_id từ order
+                // Chỉ gán store_location_id tự động nếu là đơn pickup và thiếu store
                 $storeLocationId = $order->store_location_id;
-                
-                // Nếu không có store_location_id (giao hàng), tự động tìm kho có hàng
-                if (!$storeLocationId) {
-                    // Tìm kho có hàng cho item đầu tiên để xác định store_location_id
+                if ($order->delivery_method === 'pickup' && !$storeLocationId) {
                     $firstItem = $order->items->first();
                     if ($firstItem && $firstItem->product_variant_id) {
                         $firstVariant = ProductVariant::find($firstItem->product_variant_id);
@@ -1023,14 +1018,61 @@ class PaymentController extends Controller
             }
         }
         $totalPointsEarned = 0;
+        $relatedProducts = collect();
         if ($order) {
             // Tính tổng điểm thưởng từ tất cả các sản phẩm trong đơn hàng
             $totalPointsEarned = $order->items->sum(function ($item) {
                 // Lấy điểm từ productVariant và nhân với số lượng
                 return ($item->productVariant->points_awarded_on_purchase ?? 0) * $item->quantity;
             });
+        // Lấy sản phẩm liên quan dựa trên đơn hàng vừa đặt
+            $categoryIds = $order->items->pluck('productVariant.product.category_id')->unique()->filter();
+            $purchasedProductIds = $order->items->pluck('productVariant.product.id')->unique();
+            if ($categoryIds->isNotEmpty()) {
+                $relatedProducts = Product::with([
+                    'coverImage',
+                    'variants' => function ($query) {
+                        $query->where('is_default', true)->orWhere('status', 'active');
+                    },
+                    'variants.primaryImage'
+                ])
+                    ->withCount(['reviews as reviews_count' => function ($query) {
+                        $query->where('reviews.status', 'approved');
+                    }])
+                    ->withAvg(['reviews as average_rating' => function ($query) {
+                        $query->where('reviews.status', 'approved');
+                    }], 'rating')
+                    ->whereIn('category_id', $categoryIds)
+                    ->whereNotIn('id', $purchasedProductIds)
+                    ->where('products.status', 'published')
+                    ->inRandomOrder()
+                    ->limit(4)
+                    ->get()
+                    ->map(function ($product) {
+                        // Lấy biến thể mặc định hoặc biến thể đầu tiên
+                        $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+                        if ($variant) {
+                            // Tính phần trăm giảm giá
+                            $discountPercent = 0;
+                            if ($variant->sale_price && $variant->price > $variant->sale_price) {
+                                $discountPercent = round(100 - ($variant->sale_price / $variant->price) * 100);
+                            }
+                            // Thêm thông tin vào product
+                            $product->default_variant = $variant;
+                            $product->discount_percent = $discountPercent;
+                            $product->display_price = $variant->sale_price ?: $variant->price;
+                            $product->original_price = $variant->price;
+                            $product->image_url = $variant->primaryImage ?
+                                asset('storage/' . $variant->primaryImage->path) : ($product->coverImage ? asset('storage/' . $product->coverImage->path) : null);
+                        }
+                        return $product;
+                    })
+                    ->filter(function ($product) {
+                        return $product->default_variant !== null;
+                    });
+            }
         }
-        return view('users.payments.success', compact('order', 'totalPointsEarned'));
+        return view('users.payments.success', compact('order', 'totalPointsEarned', 'relatedProducts'));
     }
     /**
      * Lấy dữ liệu giỏ hàng
@@ -1366,7 +1408,11 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+                // Tính tổng phí ship từ mảng shipments (Buy Now)
+                $shippingFee = 0;
+                if ($request->delivery_method === 'delivery') {
+                    $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
+                }
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1392,7 +1438,8 @@ class PaymentController extends Controller
                     'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'],
                     'payment_method' => 'vnpay',
                     'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_method' => $request->shipping_method,
+                    'delivery_method' => $request->delivery_method,
+                    'shipping_method' => null,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
                     'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
@@ -1449,7 +1496,11 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+                // Tính tổng phí ship từ mảng shipments (Buy Now)
+                $shippingFee = 0;
+                if ($request->delivery_method === 'delivery') {
+                    $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
+                }
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1475,7 +1526,8 @@ class PaymentController extends Controller
                     'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'],
                     'payment_method' => 'momo',
                     'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_method' => $request->shipping_method,
+                    'delivery_method' => $request->delivery_method,
+                    'shipping_method' => null,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
                     'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
@@ -1530,7 +1582,11 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+                // Tính tổng phí ship từ mảng shipments (Buy Now)
+                $shippingFee = 0;
+                if ($request->delivery_method === 'delivery') {
+                    $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
+                }
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1556,7 +1612,8 @@ class PaymentController extends Controller
                     'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'], // SỬA: Dùng buyNowData
                     'payment_method' => 'bank_transfer_qr',
                     'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_method' => $request->shipping_method,
+                    'delivery_method' => $request->delivery_method,
+                    'shipping_method' => null,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
                     'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
@@ -1635,7 +1692,11 @@ class PaymentController extends Controller
             }
 
             // --- TÍNH TOÁN LẠI GIÁ TRỊ CUỐI CÙNG ---
-            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+            // LẤY PHÍ SHIP TỪ MẢNG SHIPMENTS
+            $shippingFee = 0;
+            if ($request->delivery_method === 'delivery') {
+                $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
+            }
             $totalDiscount = $buyNowData['discount'] + $discountFromPoints;
             $grandTotal = $buyNowData['subtotal'] + $shippingFee - $totalDiscount;
 
@@ -1685,7 +1746,8 @@ class PaymentController extends Controller
                 'grand_total' => $grandTotal,
                 'payment_method' => $request->payment_method,
                 'payment_status' => $request->payment_method === 'cod' ? Order::PAYMENT_PENDING : Order::PAYMENT_PENDING,
-                'shipping_method' => $request->shipping_method,
+                'delivery_method' => $request->delivery_method,
+                'shipping_method' => null,
                 'status' => Order::STATUS_PENDING_CONFIRMATION,
                 'notes_from_customer' => $request->notes,
                 'admin_note' => $adminNote,
@@ -1700,16 +1762,14 @@ class PaymentController extends Controller
             $variant = $item->productVariant;
             $storeLocationId = $order->store_location_id;
             
-            // Nếu không có store_location_id (giao hàng), tự động tìm kho có hàng
+            // Nếu không có store_location_id (đơn giao tận nơi), KHÔNG gán vào order để tránh hiểu nhầm là pickup
             if (!$storeLocationId) {
+                // Tìm kho có hàng để commit inventory tạm thời, nhưng không cập nhật vào order
                 $storeLocationId = $this->findAvailableStore($variant, $item->quantity);
                 if (!$storeLocationId) {
                     $totalStock = $this->getSellableStock($variant);
                     throw new \Exception("Sản phẩm {$variant->product->name} không đủ hàng. Hiện chỉ còn {$totalStock} sản phẩm trong tất cả các kho.");
                 }
-                // Cập nhật store_location_id cho order
-                $order->store_location_id = $storeLocationId;
-                $order->save();
             } else {
                 // Nếu có store_location_id (nhận tại cửa hàng), kiểm tra kho đó
                 if (!$this->checkStockAvailability($variant, $item->quantity, $storeLocationId)) {

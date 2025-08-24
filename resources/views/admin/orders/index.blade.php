@@ -539,7 +539,7 @@
                 <div class="flex items-center space-x-4">
                     <label class="flex items-center">
                         <input type="checkbox" id="new-orders-only" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2">
-                        <span class="ml-2 text-sm font-medium text-gray-700">Chỉ xem đơn hàng mới (24h)</span>
+                        <span class="ml-2 text-sm font-medium text-gray-700">Chỉ xem đơn hàng trong 24h</span>
                         <span id="new-orders-count" class="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full hidden">0</span>
                     </label>
                 </div>
@@ -1061,15 +1061,12 @@
     // Theo dõi đơn hàng đã xem (đơn đã cập nhật trạng thái)
     let viewedOrders = new Set(JSON.parse(localStorage.getItem('viewedOrders') || '[]'));
 
-    // Kiểm tra đơn hàng mới (tạo trong 24h qua và chưa xem)
+    // Kiểm tra đơn hàng mới: chỉ dựa vào việc đã 'được xử lý/xem' hay chưa
     const isNewOrder = (createdAt, orderId) => {
-        if (viewedOrders.has(orderId)) {
-            return false; // Đơn hàng đã được xem/cập nhật
-        }
-        const orderDate = new Date(createdAt);
-        const now = new Date();
-        const diffInHours = (now - orderDate) / (1000 * 60 * 60);
-        return diffInHours <= 24;
+        // Force JavaScript tính toán viewedOrders để tránh tối ưu hóa
+        const viewedOrdersArray = Array.from(viewedOrders);
+        const isNew = !viewedOrders.has(orderId);
+        return isNew;
     };
 
     // Đánh dấu đơn hàng đã xem
@@ -1171,10 +1168,15 @@
             return;
         }
         
-        // Áp dụng lọc phía client chỉ cho đơn hàng mới
+        // Áp dụng lọc phía client cho đơn hàng trong 24h
         let filteredOrders = orders;
         if (newOrdersOnlyFilter.checked) {
-            filteredOrders = orders.filter(order => isNewOrder(order.created_at, order.id));
+            filteredOrders = orders.filter(order => {
+                const orderDate = new Date(order.created_at);
+                const now = new Date();
+                const diffInHours = (now - orderDate) / (1000 * 60 * 60);
+                return diffInHours <= 24;
+            });
         }
         
         if (filteredOrders.length === 0) {
@@ -1305,7 +1307,13 @@
                 const order = result.data;
                 populateModal(order);
                 modal.classList.add('is-open');
-                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.remove('scale-95');        
+                // Đánh dấu đơn hàng đã xem khi mở modal (chỉ với đơn đã hủy)
+                if (order.status === 'cancelled') {
+                    markOrderAsViewed(orderId);
+                    // Làm mới bảng để cập nhật hiển thị highlight
+                    refreshCurrentPage();
+                }
             }
         } catch (error) {
             console.error('Error fetching order details:', error);
