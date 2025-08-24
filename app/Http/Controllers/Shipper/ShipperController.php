@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use Carbon\Carbon;
 
 class ShipperController extends Controller
@@ -19,7 +20,7 @@ class ShipperController extends Controller
 
         // Lấy các đơn hàng được gán cho shipper này để xử lý trong ngày
         $ordersToPickup = Order::where('shipped_by', $shipper->id)
-            ->where('status', 'awaiting_shipment_assigned')
+            ->where('status', 'processing')
             ->orderBy('created_at', 'desc')->get();
 
         $ordersInTransit = Order::where('shipped_by', $shipper->id)
@@ -131,10 +132,10 @@ class ShipperController extends Controller
             return back()->with('error', 'Bạn không có quyền thực hiện hành động này.');
         }
 
-        // Xử lý quét barcode để chuyển từ awaiting_shipment_assigned sang out_for_delivery
+        // Xử lý quét barcode để chuyển từ processing sang out_for_delivery
         if ($request->has('barcode') && $request->input('status') === 'shipped') {
-            // Kiểm tra trạng thái đơn hàng phải là awaiting_shipment_assigned
-            if ($order->status !== 'awaiting_shipment_assigned') {
+            // Kiểm tra trạng thái đơn hàng phải là processing
+            if ($order->status !== 'processing') {
                 if ($request->expectsJson()) {
                     return response()->json(['success' => false, 'message' => 'Đơn hàng không ở trạng thái chờ lấy hàng.'], 400);
                 }
@@ -253,50 +254,61 @@ class ShipperController extends Controller
     }
     
     /**
-     * Cập nhật trạng thái packages dựa trên trạng thái đơn hàng
+     * Cập nhật trạng thái order_fulfillments dựa trên trạng thái đơn hàng
      */
     private function updatePackageStatusBasedOnOrderStatus(Order $order)
     {
         try {
-            // Lấy tất cả packages của đơn hàng thông qua fulfillments
-            $packages = \App\Models\Package::whereHas('fulfillment', function($query) use ($order) {
-                $query->where('order_id', $order->id);
-            })->get();
+            // Lấy tất cả order_fulfillments của đơn hàng
+            $fulfillments = $order->fulfillments;
             
-            // Mapping trạng thái order sang package status
+            if ($fulfillments->isEmpty()) {
+                \Log::info('Không có order_fulfillments nào để cập nhật cho đơn hàng', [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code
+                ]);
+                return;
+            }
+            
+            // Mapping trạng thái order sang fulfillment status
             $statusMapping = [
-                'pending_confirmation' => \App\Models\Package::STATUS_PENDING_CONFIRMATION,
-                'processing' => \App\Models\Package::STATUS_PROCESSING,
-                'out_for_delivery' => \App\Models\Package::STATUS_OUT_FOR_DELIVERY,
-                'delivered' => \App\Models\Package::STATUS_DELIVERED,
-                'cancelled' => \App\Models\Package::STATUS_CANCELLED,
-                'failed_delivery' => \App\Models\Package::STATUS_FAILED_DELIVERY,
-                'returned' => \App\Models\Package::STATUS_RETURNED,
+                'pending_confirmation' => OrderFulfillment::STATUS_PENDING,
+                'processing' => OrderFulfillment::STATUS_PROCESSING,
+                'out_for_delivery' => OrderFulfillment::STATUS_SHIPPED,
+                'external_shipping' => OrderFulfillment::STATUS_EXTERNAL_SHIPPING,
+                'delivered' => OrderFulfillment::STATUS_DELIVERED,
+                'cancelled' => OrderFulfillment::STATUS_CANCELLED,
+                'failed_delivery' => OrderFulfillment::STATUS_FAILED,
+                'returned' => OrderFulfillment::STATUS_RETURNED,
             ];
             
-            $newPackageStatus = $statusMapping[$order->status] ?? null;
+            $newFulfillmentStatus = $statusMapping[$order->status] ?? null;
             
-            if ($newPackageStatus) {
-                foreach ($packages as $package) {
-                    $package->updateStatus(
-                        $newPackageStatus,
-                        "Cập nhật từ shipper khi đơn hàng chuyển sang {$order->status}",
-                        Auth::id()
-                    );
-                }
+            if ($newFulfillmentStatus) {
+                $updatedCount = $order->fulfillments()->update([
+                    'status' => $newFulfillmentStatus
+                ]);
                 
-                \Log::info('Package statuses updated successfully', [
+                \Log::info('Đã cập nhật trạng thái order_fulfillments theo đơn hàng', [
                     'order_id' => $order->id,
+                    'order_code' => $order->order_code,
                     'order_status' => $order->status,
-                    'package_status' => $newPackageStatus,
-                    'packages_count' => $packages->count()
+                    'fulfillment_status' => $newFulfillmentStatus,
+                    'fulfillments_count' => $fulfillments->count(),
+                    'updated_count' => $updatedCount,
+                    'updated_by' => auth()->id()
                 ]);
             }
+            
         } catch (\Exception $e) {
-            \Log::error('Error updating package statuses from shipper', [
+            \Log::error('Lỗi khi cập nhật trạng thái order_fulfillments', [
                 'order_id' => $order->id,
-                'error' => $e->getMessage()
+                'order_code' => $order->order_code,
+                'order_status' => $order->status,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id()
             ]);
         }
+    }
     }
 }

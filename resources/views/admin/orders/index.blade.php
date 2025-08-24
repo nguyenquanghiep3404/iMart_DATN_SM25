@@ -24,8 +24,6 @@
         }
         .status-pending_confirmation { background-color: #e0e7ff; color: #4338ca; }
         .status-processing { background-color: #cffafe; color: #0891b2; }
-        .status-awaiting_shipment_packed { background-color: #fef3c7; color: #d97706; }
-        .status-awaiting_shipment_assigned { background-color: #ddd6fe; color: #7c3aed; }
         .status-shipped { background-color: #d1fae5; color: #059669; }
         .status-delivered { background-color: #dcfce7; color: #16a34a; }
         .status-cancelled { background-color: #fee2e2; color: #dc2626; }
@@ -242,18 +240,6 @@
                 width: 48px;
                 height: 48px;
             }
-        }
-
-        /* Đánh dấu đơn hàng mới */
-        .new-order-row {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border-left: 4px solid #0ea5e9;
-            font-weight: 600;
-            position: relative;
-        }
-
-        .new-order-row:hover {
-            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
         }
 
         .new-order-badge {
@@ -972,10 +958,10 @@
                     <div class="space-y-3">
                         ${fulfillments.map((fulfillment, index) => {
                             const statusMap = {
+                                'pending': { text: 'Chờ xử lý', class: 'bg-orange-100 text-orange-800 border-orange-200' },
                                 'pending_confirmation': { text: 'Chờ xác nhận', class: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
                                 'processing': { text: 'Đang xử lý', class: 'bg-blue-100 text-blue-800 border-blue-200' },
-                                'packed': { text: 'Chờ vận chuyển: đã đóng gói xong', class: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-                                'awaiting_shipment_assigned': { text: 'Đã gán shipper: chờ vận chuyển', class: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
+                                'packed': { text: 'Đóng gói thành công', class: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
                                 'out_for_delivery': { text: 'Đang giao hàng', class: 'bg-purple-100 text-purple-800 border-purple-200' },
                                 'delivered': { text: 'Giao hàng thành công', class: 'bg-green-100 text-green-800 border-green-200' },
                                 'cancelled': { text: 'Hủy', class: 'bg-red-100 text-red-800 border-red-200' },
@@ -983,11 +969,8 @@
                                 'returned': { text: 'Trả hàng', class: 'bg-gray-100 text-gray-800 border-gray-200' }
                             };
                             
-                            // Nếu đơn hàng đang ở trạng thái 'processing', tất cả gói hàng sẽ hiển thị trạng thái 'Đang xử lý'
+                            // Hiển thị trạng thái thực tế của gói hàng
                             let displayStatus = fulfillment.status;
-                            if (currentStatus === 'processing') {
-                                displayStatus = 'processing';
-                            }
                             
                             const status = statusMap[displayStatus] || { text: displayStatus, class: 'bg-gray-100 text-gray-800 border-gray-200' };
                             const store = fulfillment.store_location;
@@ -1119,8 +1102,6 @@
         pending_confirmation: { text: "Chờ xác nhận", class: "status-pending_confirmation" },
         processing: { text: "Đang xử lý", class: "status-processing" },
         awaiting_shipment: { text: "Chờ giao hàng", class: "status-processing" },
-        awaiting_shipment_packed: { text: "Chờ vận chuyển: đã đóng gói xong", class: "status-awaiting_shipment_packed" },
-        awaiting_shipment_assigned: { text: "Chờ vận chuyển: Đã gán shipper", class: "status-awaiting_shipment_assigned" },
         shipped: { text: "Đã xuất kho", class: "status-shipped" },
         out_for_delivery: { text: "Đang giao hàng", class: "status-shipped" },
         delivered: { text: "Giao thành công", class: "status-delivered" },
@@ -1146,12 +1127,12 @@
         const isNew = isNewOrder(order.created_at, order.id);
         
 
-        
+
         // Huy hiệu đơn hàng mới
         const newOrderBadge = isNew ? '<span class="new-order-badge">Mới</span>' : '';
         
         // Lớp dòng
-        const rowClass = isNew ? 'new-order-row border-b hover:bg-blue-50' : 'bg-white border-b hover:bg-gray-50';
+        const rowClass = isNew ? 'new-order-row border-b hover:bg-gray-50' : 'bg-white border-b hover:bg-gray-50';
         
         return `
             <tr class="${rowClass}" style="position: relative;">
@@ -1575,22 +1556,19 @@
                 }
                 
                 const statusMap = {
+                    'pending': { text: 'Chờ xử lý', class: 'bg-orange-100 text-orange-800' },
                     'pending_confirmation': { text: 'Chờ xác nhận', class: 'bg-indigo-100 text-indigo-800' },
                     'processing': { text: 'Đang xử lý', class: 'bg-blue-100 text-blue-800' },
-                    'packed': { text: 'Chờ vận chuyển: đã đóng gói xong', class: 'bg-yellow-100 text-yellow-800' },
-                    'awaiting_shipment_assigned': { text: 'Chờ vận chuyển: đã gán shipper', class: 'bg-cyan-100 text-cyan-800' },
+                    'packed': { text: 'Đóng gói thành công', class: 'bg-yellow-100 text-yellow-800' },
                     'out_for_delivery': { text: 'Đang giao hàng', class: 'bg-purple-100 text-purple-800' },
                     'delivered': { text: 'Giao hàng thành công', class: 'bg-green-100 text-green-800' },
-                    'cancelled': { text: 'Hủy', class: 'bg-red-100 text-red-800' },
+                    'cancelled': { text: 'Đã hủy', class: 'bg-red-100 text-red-800' },
                     'failed_delivery': { text: 'Giao thất bại', class: 'bg-red-100 text-red-800' },
                     'returned': { text: 'Trả hàng', class: 'bg-gray-100 text-gray-800' }
                 };
                 
-                // Nếu đơn hàng đang ở trạng thái 'processing', tất cả gói hàng sẽ hiển thị trạng thái 'Đang xử lý'
+                // Hiển thị trạng thái thực tế của gói hàng
                 let displayStatus = fulfillment.status;
-                if (order.status === 'processing') {
-                    displayStatus = 'processing';
-                }
                 
                 const status = statusMap[displayStatus] || { text: displayStatus, class: 'bg-gray-100 text-gray-800' };
                 

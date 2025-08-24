@@ -13,8 +13,8 @@ class Order extends Model
     // Status constants - Rút gọn theo yêu cầu
     public const STATUS_PENDING_CONFIRMATION = 'pending_confirmation';
     public const STATUS_PROCESSING = 'processing';
-    public const STATUS_AWAITING_SHIPMENT_PACKED = 'awaiting_shipment_packed';
     public const STATUS_OUT_FOR_DELIVERY = 'out_for_delivery';
+    public const STATUS_EXTERNAL_SHIPPING = 'external_shipping';
     public const STATUS_DELIVERED = 'delivered';
     public const STATUS_CANCELLED = 'cancelled';
     public const STATUS_FAILED_DELIVERY = 'failed_delivery';
@@ -72,6 +72,7 @@ class Order extends Model
         'user_agent',
         'store_location_id',
         'confirmed_at',
+        'external_shipping_assigned_at',
     ];
 
     protected $casts = [
@@ -91,6 +92,7 @@ class Order extends Model
             self::STATUS_PENDING_CONFIRMATION => 'Chờ xác nhận',
             self::STATUS_PROCESSING => 'Đang xử lý',
             self::STATUS_OUT_FOR_DELIVERY => 'Đang giao hàng',
+            self::STATUS_EXTERNAL_SHIPPING => 'Giao bởi đơn vị thứ 3',
             self::STATUS_DELIVERED => 'Giao hàng thành công',
             self::STATUS_CANCELLED => 'Hủy',
             self::STATUS_FAILED_DELIVERY => 'Giao hàng thất bại',
@@ -151,6 +153,16 @@ class Order extends Model
     public function storeLocation()
     {
         return $this->belongsTo(StoreLocation::class);
+    }
+
+    public function orderFulfillments()
+    {
+        return $this->hasMany(OrderFulfillment::class);
+    }
+
+    public function fulfillments()
+    {
+        return $this->hasMany(OrderFulfillment::class);
     }
 
     // Địa chỉ mới - Shipping
@@ -366,10 +378,6 @@ class Order extends Model
     public function getCode()
     {
         return $this->order_code;
-    }
-    public function fulfillments()
-    {
-        return $this->hasMany(OrderFulfillment::class);
     }
     
     public function packages()
