@@ -1421,8 +1421,19 @@ class PaymentController extends Controller
                 ]);
 
                 if (Auth::check() && $request->save_address && !$request->address_id) {
-                    $this->saveNewAddress($request);
-                }
+            Log::info('Saving new address for user: ' . Auth::id(), [
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id,
+                'full_name' => $request->full_name
+            ]);
+            $this->saveNewAddress($request);
+        } else {
+            Log::info('Not saving address', [
+                'is_logged_in' => Auth::check(),
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id
+            ]);
+        }
 
                 DB::commit();
                 return $this->createVnpayPayment($order, $request);
@@ -1493,10 +1504,21 @@ class PaymentController extends Controller
                 ]);
 
                 if (Auth::check() && $request->save_address && !$request->address_id) {
-                    $this->saveNewAddress($request);
-                }
+            Log::info('Saving new address for user (COD): ' . Auth::id(), [
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id,
+                'full_name' => $request->full_name
+            ]);
+            $this->saveNewAddress($request);
+        } else {
+            Log::info('Not saving address (COD)', [
+                'is_logged_in' => Auth::check(),
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id
+            ]);
+        }
 
-                DB::commit();
+        DB::commit();
                 return $this->createMomoPayment($order);
             } catch (Exception $e) {
                 DB::rollBack();
@@ -1565,10 +1587,21 @@ class PaymentController extends Controller
 
 
                 if (Auth::check() && $request->save_address && !$request->address_id) {
-                    $this->saveNewAddress($request);
-                }
+            Log::info('Saving new address for user (Buy Now): ' . Auth::id(), [
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id,
+                'full_name' => $request->full_name
+            ]);
+            $this->saveNewAddress($request);
+        } else {
+            Log::info('Not saving address (Buy Now)', [
+                'is_logged_in' => Auth::check(),
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id
+            ]);
+        }
 
-                // Xóa session "Mua Ngay"
+        // Xóa session "Mua Ngay"
                 $this->clearBuyNowSession();
                 DB::commit();
 
@@ -1737,9 +1770,30 @@ class PaymentController extends Controller
                     'usage_date' => now(),
                 ]);
             }
+            // Tạo fulfillment cho đơn hàng Buy Now
+            $fulfillmentService = new FulfillmentService();
+            try {
+                $fulfillmentService->createFulfillmentsForOrder($order);
+                Log::info("Đã tạo fulfillment cho đơn hàng Buy Now: {$order->order_code}");
+            } catch (\Exception $e) {
+                Log::error("Lỗi khi tạo fulfillment cho đơn hàng Buy Now {$order->order_code}: {$e->getMessage()}");
+                // Không throw exception để không làm fail toàn bộ đơn hàng
+            }
+
             // Lưu địa chỉ mới vào sổ địa chỉ nếu người dùng chọn
             if (Auth::check() && $request->save_address && !$request->address_id) {
+                Log::info('Saving new address for user (Buy Now COD): ' . Auth::id(), [
+                    'save_address' => $request->save_address,
+                    'address_id' => $request->address_id,
+                    'full_name' => $request->full_name
+                ]);
                 $this->saveNewAddress($request);
+            } else {
+                Log::info('Not saving address (Buy Now COD)', [
+                    'is_logged_in' => Auth::check(),
+                    'save_address' => $request->save_address,
+                    'address_id' => $request->address_id
+                ]);
             }
 
             // Xóa session Buy Now

@@ -27,6 +27,8 @@ use App\Policies\CategoryPolicy;
 use Illuminate\Support\Facades\View;
 use App\Models\Order;
 use App\Observers\OrderObserver;
+use App\Models\OrderFulfillment;
+use App\Observers\OrderFulfillmentObserver;
 use App\Models\ProductVariant;
 use App\Observers\ProductVariantObserver;
 use Illuminate\Support\Facades\Request;
@@ -61,6 +63,7 @@ class AppServiceProvider extends ServiceProvider
     {
         ProductVariant::observe(ProductVariantObserver::class);
         Order::observe(OrderObserver::class);
+        OrderFulfillment::observe(OrderFulfillmentObserver::class);
         Paginator::useTailwind();
         // Xác định layout tự động cho mọi view (kể cả lỗi)
         View::composer('*', function ($view) {

@@ -60,11 +60,6 @@
         color: #d97706;
     }
 
-    .status-awaiting_shipment_assigned {
-        background-color: #e0f2fe;
-        color: #0277bd;
-    }
-
     .status-out_for_delivery {
         background-color: #f3e8ff;
         color: #7c3aed;
@@ -78,16 +73,6 @@
     .status-returned {
         background-color: #f3f4f6;
         color: #6b7280;
-    }
-
-    .status-awaiting_shipment_packed {
-        background-color: #fef3c7;
-        color: #d97706;
-    }
-
-    .status-awaiting_shipment_assigned {
-        background-color: #ddd6fe;
-        color: #7c3aed;
     }
 
     .status-cancelled {
@@ -282,13 +267,13 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b">
         <div>
             <h1 class="text-3xl font-bold text-gray-800">Chi tiết đơn hàng</h1>
-            <p class="text-lg text-indigo-600 font-semibold mt-1">#{{ $order->order_code }}</p>
+            <p class="text-lg text-gray-600 font-semibold mt-1">#{{ $order->order_code }}</p>
         </div>
         <div class="mt-4 sm:mt-0 flex space-x-3">
             <a href="{{ route('admin.orders.index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
                 <i class="fas fa-arrow-left mr-2"></i>Quay lại
             </a>
-            <button onclick="window.print()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center space-x-2">
+            <button onclick="window.print()" class="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold flex items-center space-x-2">
                 <i class="fas fa-print"></i><span>In hóa đơn</span>
             </button>
         </div>
@@ -363,7 +348,7 @@
                                 </td>
                                 <td class="p-3 text-center font-medium">{{ $item->quantity ?? 0 }}</td>
                                 <td class="p-3 text-right font-medium">{{ number_format($item->price ?? 0, 0, ',', '.') }} ₫</td>
-                                <td class="p-3 text-right font-semibold text-indigo-600">{{ number_format($item->total_price ?? 0, 0, ',', '.') }} ₫</td>
+                                <td class="p-3 text-right font-semibold text-gray-600">{{ number_format($item->total_price ?? 0, 0, ',', '.') }} ₫</td>
                             </tr>
                             @empty
                             <tr>
@@ -406,12 +391,55 @@
                                 <h4 class="font-semibold text-md text-gray-700 mb-3">Kho: {{ $fulfillment->storeLocation->name ?? 'N/A' }}</h4>
                                 @foreach($fulfillment->packages as $package)
                                     <div class="bg-white border rounded-lg p-4 mb-3">
+                                        <!-- DEBUG: Hiển thị trạng thái thực tế -->
+                                        <div class="bg-yellow-100 p-2 mb-2 text-xs">
+                                            <strong>DEBUG:</strong> Trạng thái thực tế: "{{ $package->status }}" | 
+                                            Kiểm tra cancelled: {{ $package->status == 'cancelled' ? 'TRUE' : 'FALSE' }}
+                                        </div>
                                         <div class="flex justify-between items-start mb-3">
                                             <div>
                                                 <p class="font-semibold text-gray-800">Mã gói: {{ $package->package_code }}</p>
                                                 <p class="text-sm text-gray-600">{{ $package->description ?? 'Không có mô tả' }}</p>
                                             </div>
-                                            <span class="status-badge status-{{ $package->status }}" data-status="{{ $package->status }}"></span>
+                                            <span class="status-badge" style="
+                                                @if($package->status == 'cancelled')
+                                                    background-color: #fee2e2 !important; color: #dc2626 !important;
+                                                @elseif($package->status == 'pending_confirmation')
+                                                    background-color: #e0e7ff !important; color: #4338ca !important;
+                                                @elseif($package->status == 'processing')
+                                                    background-color: #cffafe !important; color: #0891b2 !important;
+                                                @elseif($package->status == 'packed')
+                                                    background-color: #fef3c7 !important; color: #d97706 !important;
+                                                @elseif($package->status == 'out_for_delivery')
+                                                    background-color: #f3e8ff !important; color: #7c3aed !important;
+                                                @elseif($package->status == 'delivered')
+                                                    background-color: #dcfce7 !important; color: #16a34a !important;
+                                                @elseif($package->status == 'failed_delivery')
+                                                    background-color: #fecaca !important; color: #b91c1c !important;
+                                                @elseif($package->status == 'returned')
+                                                    background-color: #f3f4f6 !important; color: #6b7280 !important;
+                                                @endif
+                                                ">
+                                                @if($package->status == 'cancelled')
+                                                    Đã hủy
+                                                @elseif($package->status == 'pending_confirmation')
+                                                    Chờ xác nhận
+                                                @elseif($package->status == 'processing')
+                                                    Đang xử lý
+                                                @elseif($package->status == 'packed')
+                                                    Đóng gói thành công
+                                                @elseif($package->status == 'out_for_delivery')
+                                                    Đang giao hàng
+                                                @elseif($package->status == 'delivered')
+                                                    Giao hàng thành công
+                                                @elseif($package->status == 'failed_delivery')
+                                                    Giao thất bại
+                                                @elseif($package->status == 'returned')
+                                                    Trả hàng
+                                                @else
+                                                    {{ $package->status }}
+                                                @endif
+                                            </span>
                                         </div>
                                         
                                         @if($package->shipping_carrier || $package->tracking_code)
@@ -471,7 +499,27 @@
                                                 @foreach($package->statusHistory->sortByDesc('timestamp') as $history)
                                                     <div class="flex justify-between items-center text-xs">
                                                         <div>
-                                                            <span class="font-medium" data-status="{{ $history->status }}"></span>
+                                                            <span class="font-medium" data-status="{{ $history->status }}">
+                                                                @if($history->status == 'cancelled')
+                                                                    Đã hủy
+                                                                @elseif($history->status == 'pending_confirmation')
+                                                                    Chờ xác nhận
+                                                                @elseif($history->status == 'processing')
+                                                                    Đang xử lý
+                                                                @elseif($history->status == 'packed')
+                                                                    Đóng gói thành công
+                                                                @elseif($history->status == 'out_for_delivery')
+                                                                    Đang giao hàng
+                                                                @elseif($history->status == 'delivered')
+                                                                    Giao hàng thành công
+                                                                @elseif($history->status == 'failed_delivery')
+                                                                    Giao thất bại
+                                                                @elseif($history->status == 'returned')
+                                                                    Trả hàng
+                                                                @else
+                                                                    {{ $history->status }}
+                                                                @endif
+                                                            </span>
                                                             @if($history->notes)
                                                                 <span class="text-gray-600">- {{ $history->notes }}</span>
                                                             @endif
@@ -506,9 +554,7 @@
         csrfToken: '{{ csrf_token() }}'
     };
 
-    // Global pagination state
-    let currentPage = 1;
-    let totalPages = 1;
+    // --- GLOBAL VARIABLES REMOVED FOR DETAIL PAGE ---
 
     // --- UTILITY FUNCTIONS ---
     const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', {
@@ -539,12 +585,8 @@
             class: "status-processing"
         },
         packed: {
-            text: "Chờ vận chuyển: đã đóng gói xong",
+            text: "Đóng gói thành công",
             class: "status-packed"
-        },
-        awaiting_shipment_assigned: {
-            text: "Chờ vận chuyển: đã gán shipper",
-            class: "status-awaiting_shipment_assigned"
         },
         out_for_delivery: {
             text: "Đang giao hàng",
@@ -555,7 +597,7 @@
             class: "status-delivered"
         },
         cancelled: {
-            text: "Hủy",
+            text: "Đã hủy",
             class: "status-cancelled"
         },
         failed_delivery: {
@@ -591,174 +633,9 @@
         }
     };
 
-    // --- RENDER FUNCTIONS ---
-    function renderOrderRow(order) {
-        const orderStatus = statusMap[order.status] || {
-            text: 'N/A',
-            class: ''
-        };
-        const paymentStatus = paymentStatusMap[order.payment_status] || {
-            text: 'N/A',
-            class: ''
-        };
+    // --- RENDER FUNCTIONS REMOVED FOR DETAIL PAGE ---
 
-        // Determine shipper display
-        let shipperDisplay = '<span class="text-gray-400 italic">Chưa gán</span>';
-        if (order.shipper && order.shipper.name) {
-            shipperDisplay = `<span class="text-gray-700 font-medium">${order.shipper.name}</span>`;
-        }
-
-        // Show assign shipper button only for "awaiting_shipment_packed" status
-        let assignShipperButton = '';
-        if (order.status === 'awaiting_shipment_packed') {
-            assignShipperButton = `
-                <button onclick='showAssignShipperModal(${order.id}, "${order.order_code}")' 
-                        class="text-blue-600 hover:text-blue-900 font-medium text-lg ml-4" 
-                        title="Gán Shipper">
-                    <i class="fas fa-user-plus"></i>
-                </button>
-            `;
-        }
-
-        return `
-            <tr class="bg-white border-b hover:bg-gray-50">
-                <td class="p-6 font-bold text-indigo-600">${order.order_code}</td>
-                <td class="p-6">
-                    <div class="font-semibold">${order.customer_name}</div>
-                    <div class="text-gray-500">${order.customer_email}</div>
-                </td>
-                <td class="p-6 font-semibold">${formatCurrency(order.grand_total)}</td>
-                <td class="p-6"><span class="status-badge ${orderStatus.class}">${orderStatus.text}</span></td>
-                <td class="p-6"><span class="status-badge ${paymentStatus.class}">${paymentStatus.text}</span></td>
-                <td class="p-6">${formatDate(order.created_at)}</td>
-                <td class="p-6">${shipperDisplay}</td>
-                <td class="p-6 text-center">
-                    <button onclick='viewOrder(${order.id})' class="text-indigo-600 hover:text-indigo-900 font-medium text-lg" title="Xem chi tiết">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button onclick='showUpdateStatusModal(${order.id}, "${order.status}")' class="text-green-600 hover:text-green-900 font-medium text-lg ml-4" title="Cập nhật trạng thái">
-                         <i class="fas fa-edit"></i>
-                    </button>
-                    ${assignShipperButton}
-                </td>
-            </tr>
-        `;
-    }
-
-    const tbody = document.getElementById('orders-tbody');
-
-    function renderTable(orders) {
-        if (orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào.</td></tr>`;
-            return;
-        }
-        tbody.innerHTML = orders.map(renderOrderRow).join('');
-    }
-
-    // --- PAGINATION FUNCTIONS ---
-    function renderPagination(paginationData) {
-        const paginationInfo = document.getElementById('pagination-info');
-        const paginationControls = document.getElementById('pagination-controls');
-
-        // Update pagination info
-        if (paginationData.total > 0) {
-            paginationInfo.innerHTML = `
-                Hiển thị ${paginationData.from} đến ${paginationData.to} trong tổng số ${paginationData.total} kết quả
-            `;
-        } else {
-            paginationInfo.innerHTML = 'Không có dữ liệu';
-        }
-
-        // Update global state
-        currentPage = paginationData.current_page;
-        totalPages = paginationData.last_page;
-
-        // Generate pagination controls
-        let paginationHtml = '';
-
-        // Previous button
-        if (currentPage > 1) {
-            paginationHtml += `
-                <button onclick="goToPage(${currentPage - 1})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            `;
-        } else {
-            paginationHtml += `
-                <button disabled class="px-3 py-2 text-sm leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-l-lg cursor-not-allowed">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            `;
-        }
-
-        // Page numbers
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, currentPage + 2);
-
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === currentPage) {
-                paginationHtml += `
-                    <button class="px-3 py-2 text-sm leading-tight text-blue-600 bg-blue-50 border border-gray-300 hover:bg-blue-100 hover:text-blue-700">
-                        ${i}
-                    </button>
-                `;
-            } else {
-                paginationHtml += `
-                    <button onclick="goToPage(${i})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700">
-                        ${i}
-                    </button>
-                `;
-            }
-        }
-
-        // Next button
-        if (currentPage < totalPages) {
-            paginationHtml += `
-                <button onclick="goToPage(${currentPage + 1})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            `;
-        } else {
-            paginationHtml += `
-                <button disabled class="px-3 py-2 text-sm leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-r-lg cursor-not-allowed">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            `;
-        }
-
-        paginationControls.innerHTML = paginationHtml;
-    }
-
-    async function goToPage(page) {
-        if (page < 1 || page > totalPages || page === currentPage) return;
-
-        const formData = new FormData();
-        formData.append('page', page);
-
-        // Add current filters
-        if (searchInput.value) formData.append('search', searchInput.value);
-        if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
-        if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
-        if (dateFilter.value) formData.append('date_range', dateFilter.value);
-
-        try {
-            const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': CONFIG.csrfToken
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                renderTable(result.data);
-                renderPagination(result.pagination);
-            }
-        } catch (error) {
-            console.error('Error loading page:', error);
-            showToast('Không thể tải trang này. Vui lòng thử lại hoặc về trang trước.', 'warning', 'Tải trang thất bại');
-        }
-    }
+    // --- TABLE AND PAGINATION FUNCTIONS REMOVED FOR DETAIL PAGE ---
 
     // --- MODAL LOGIC ---
     const modal = document.getElementById('order-detail-modal');
@@ -858,7 +735,7 @@
                             ${productLink !== '#' ? 
                                 `<a href="${productLink}" 
                                     target="_blank" 
-                                    class="font-medium text-indigo-600 hover:text-indigo-900 hover:underline line-clamp-2"
+                                    class="font-medium text-gray-600 hover:text-gray-900 hover:underline line-clamp-2"
                                     title="Chỉnh sửa sản phẩm (mở tab mới)"
                                     onclick="event.stopPropagation();">
                                     ${item.product_name || 'N/A'}
@@ -869,7 +746,7 @@
                 </td>
                 <td class="p-3 text-center font-medium">${item.quantity || 0}</td>
                 <td class="p-3 text-right font-medium">${formatCurrency(item.price || 0)}</td>
-                <td class="p-3 text-right font-semibold text-indigo-600">${formatCurrency(item.total_price || 0)}</td>
+                <td class="p-3 text-right font-semibold text-gray-600">${formatCurrency(item.total_price || 0)}</td>
             </tr>
             `;
             }).join('');
@@ -897,104 +774,7 @@
         }
     });
 
-    // --- FILTERING LOGIC ---
-    const searchInput = document.getElementById('search');
-    const orderStatusFilter = document.getElementById('order-status');
-    const paymentStatusFilter = document.getElementById('payment-status');
-    const dateFilter = document.getElementById('date-range');
-
-    async function refreshCurrentPage() {
-        // Keep current page and filters when refreshing
-        const formData = new FormData();
-        formData.append('page', currentPage);
-
-        if (searchInput.value) formData.append('search', searchInput.value);
-        if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
-        if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
-        if (dateFilter.value) formData.append('date_range', dateFilter.value);
-
-        try {
-            const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': CONFIG.csrfToken
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                renderTable(result.data);
-                renderPagination(result.pagination);
-            }
-        } catch (error) {
-            console.error('Error refreshing page:', error);
-            showToast('Không thể làm mới dữ liệu. Vui lòng tải lại trang.', 'warning', 'Cảnh báo');
-        }
-    }
-
-    async function applyFilters() {
-        const formData = new FormData();
-
-        // Reset to page 1 when applying filters
-        formData.append('page', 1);
-
-        if (searchInput.value) formData.append('search', searchInput.value);
-        if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
-        if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
-        if (dateFilter.value) formData.append('date_range', dateFilter.value);
-
-        try {
-            const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': CONFIG.csrfToken
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                renderTable(result.data);
-                renderPagination(result.pagination);
-            }
-        } catch (error) {
-            console.error('Error applying filters:', error);
-            showToast('Không thể áp dụng bộ lọc. Vui lòng thử lại hoặc làm mới trang.', 'warning', 'Lọc dữ liệu thất bại');
-        }
-    }
-
-    document.getElementById('apply-filters').addEventListener('click', applyFilters);
-    document.getElementById('clear-filters').addEventListener('click', () => {
-        searchInput.value = '';
-        orderStatusFilter.value = '';
-        paymentStatusFilter.value = '';
-        dateFilter.value = '';
-        loadOrders();
-    });
-
-    // --- INITIAL LOAD ---
-    async function loadOrders() {
-        try {
-            const response = await fetch(CONFIG.routes.index, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': CONFIG.csrfToken
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                renderTable(result.data);
-                renderPagination(result.pagination);
-            }
-        } catch (error) {
-            console.error('Error loading orders:', error);
-            showToast('Không thể tải danh sách đơn hàng từ server. Hiển thị dữ liệu cache.', 'warning', 'Tải dữ liệu thất bại');
-            // Fallback to show initial data from server
-            @if(isset($orders))
-            renderTable(@json($orders->items()));
-            @endif
-        }
-    }
+    // --- DETAIL PAGE SPECIFIC LOGIC ---
 
     // --- TOAST NOTIFICATION SYSTEM ---
     function showToast(message, type = 'success', title = null) {
@@ -1187,8 +967,8 @@
                 // Close modal
                 closeUpdateStatusModal();
 
-                // Refresh current page instead of going to page 1
-                refreshCurrentPage();
+                // Reload the page to show updated order status
+                window.location.reload();
             } else {
                 // Handle different types of errors
                 if (response.status === 422) {
@@ -1359,8 +1139,8 @@
                 // Close modal
                 closeAssignShipperModal();
 
-                // Refresh current page
-                refreshCurrentPage();
+                // Reload the page to show updated package statuses
+                window.location.reload();
             } else {
                 if (response.status === 422) {
                     showToast(result.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.', 'error', 'Dữ liệu không hợp lệ');
@@ -1384,35 +1164,18 @@
     
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Translate package status to Vietnamese
-        setTimeout(() => {
-            const packageStatusElements = document.querySelectorAll('[data-status]');
-            packageStatusElements.forEach(element => {
-                const status = element.getAttribute('data-status');
-                if (statusMap[status]) {
-                    element.textContent = statusMap[status].text;
-                }
-            });
-        }, 100);
+        // Xử lý hiển thị trạng thái gói hàng
+        document.querySelectorAll('[data-status]').forEach(element => {
+            const status = element.getAttribute('data-status');
+            // Chỉ áp dụng cho status-badge trong gói hàng, không áp dụng cho lịch sử trạng thái
+            if (status && statusMap[status] && element.classList.contains('status-badge') && !element.closest('.space-y-1')) {
+                element.textContent = statusMap[status].text;
+                element.className = `status-badge ${statusMap[status].class}`;
+            }
+        });
         
-        @if(isset($orders))
-        renderTable(@json($orders->items()));
-       renderPagination({
-                current_page: {{ $orders->currentPage() }},
-                last_page: {{ $orders->lastPage() }},
-                per_page: {{ $orders->perPage() }},
-                total: {{ $orders->total() }},
-                from: {{ $orders->firstItem() ?? 0 }},
-                to: {{ $orders->lastItem() ?? 0 }}
-            });
-        @else
-        loadOrders();
-        @endif
-        
-        // Auto-refresh orders every 30 seconds to catch status updates from packing station
-        setInterval(() => {
-            loadOrders();
-        }, 30000);
+        // Detail page initialization complete
+        console.log('Detail page loaded successfully');
     });
 </script>
 @endsection

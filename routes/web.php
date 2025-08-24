@@ -464,7 +464,7 @@ Route::prefix('admin')
         // Routes Shipper Assignment
         Route::prefix('shipper-assignment')->name('shipper-assignment.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'index'])->name('index');
-            Route::get('/packages', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getPackages'])->name('packages');
+            // Route::get('/packages', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getPackages'])->name('packages'); // REMOVED: Package functionality
             Route::get('/shippers', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getShippers'])->name('shippers');
             Route::get('/provinces', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getProvinces'])->name('provinces');
             Route::get('/districts/{province}', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getDistricts'])->name('districts');
@@ -479,16 +479,16 @@ Route::prefix('admin')
             Route::post('/{order}/auto-transfer', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'createAutoTransfer'])->name('auto-transfer');
         });
 
-        // Routes Package Management
-        Route::prefix('packages')->name('packages.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\PackageController::class, 'index'])->name('index');
-            Route::post('/', [\App\Http\Controllers\Admin\PackageController::class, 'store'])->name('store');
-            Route::get('/{package}', [\App\Http\Controllers\Admin\PackageController::class, 'show'])->name('show');
-            Route::put('/{package}', [\App\Http\Controllers\Admin\PackageController::class, 'update'])->name('update');
-            Route::delete('/{package}', [\App\Http\Controllers\Admin\PackageController::class, 'destroy'])->name('destroy');
-            Route::post('/{package}/assign-items', [\App\Http\Controllers\Admin\PackageController::class, 'assignItems'])->name('assign-items');
-            Route::post('/{package}/split', [\App\Http\Controllers\Admin\PackageController::class, 'split'])->name('split');
-        });
+        // Routes Package Management - REMOVED: Package functionality replaced by OrderFulfillment
+        // Route::prefix('packages')->name('packages.')->group(function () {
+        //     Route::get('/', [\App\Http\Controllers\Admin\PackageController::class, 'index'])->name('index');
+        //     Route::post('/', [\App\Http\Controllers\Admin\PackageController::class, 'store'])->name('store');
+        //     Route::get('/{package}', [\App\Http\Controllers\Admin\PackageController::class, 'show'])->name('show');
+        //     Route::put('/{package}', [\App\Http\Controllers\Admin\PackageController::class, 'update'])->name('update');
+        //     Route::delete('/{package}', [\App\Http\Controllers\Admin\PackageController::class, 'destroy'])->name('destroy');
+        //     Route::post('/{package}/assign-items', [\App\Http\Controllers\Admin\PackageController::class, 'assignItems'])->name('assign-items');
+        //     Route::post('/{package}/split', [\App\Http\Controllers\Admin\PackageController::class, 'split'])->name('split');
+        // });
         
         Route::post('/buy-now/clear-session', [PaymentController::class, 'handleClearBuyNowSession'])->name('buy_now.clear_session');
 
@@ -874,6 +874,14 @@ Route::prefix('admin')
         Route::get('/product-variants/{id}/adjust-form', [InventoryAdjustmentController::class, 'showAdjustForm'])->name('product-variants.adjust-form');
         Route::post('/product-variants/{id}/adjust-stock', [InventoryAdjustmentController::class, 'adjustStock'])->name('product-variants.adjust-stock')->middleware('auth');
         Route::post('/ajax/calculate-shipping-options', [PaymentController::class, 'ajaxCalculateShippingOptions']);
+        
+        // Routes cho External Shipping (Giao hàng cho đơn vị thứ 3)
+        Route::prefix('external-shipping')->name('external-shipping.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\ExternalShippingController::class, 'index'])->name('index');
+            Route::get('/{fulfillment}', [App\Http\Controllers\Admin\ExternalShippingController::class, 'show'])->name('show');
+            Route::post('/{fulfillment}/assign', [App\Http\Controllers\Admin\ExternalShippingController::class, 'assignToShippingUnit'])->name('assign');
+            Route::post('/{fulfillment}/delivered', [App\Http\Controllers\Admin\ExternalShippingController::class, 'markAsDelivered'])->name('delivered');
+        });
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')

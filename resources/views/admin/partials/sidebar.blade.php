@@ -41,6 +41,7 @@
             'children' => [
                 ['label' => 'Đơn hàng', 'route' => 'admin.orders.index', 'active_check' => ['admin.orders.']],
                 ['label' => 'Gán shipper', 'route' => 'admin.shipper-assignment.index', 'active_check' => ['admin.shipper-assignment.']],
+                ['label' => 'Giao hàng ngoài', 'route' => 'admin.external-shipping.index', 'active_check' => ['admin.external-shipping.']],
                 ['label' => 'Hoàn tiền', 'route' => 'admin.refunds.index', 'active_check' => ['admin.refunds.']],
                 [
                     'label' => 'Giỏ hàng bỏ lỡ',
@@ -96,11 +97,7 @@
                     'route' => 'admin.auto-stock-transfers.manage',
                     'active_check' => ['admin.auto-stock-transfers.'],
                 ],
-                [
-                    'label' => 'Trạm đóng gói',
-                    'route' => 'admin.packing-station.index',
-                    'active_check' => ['admin.packing-station.'],
-                ],
+                // REMOVED: Trạm đóng gói - không còn sử dụng packages
                 // MỚI: Thêm route tra cứu serial
                 [
                     'label' => 'Tra cứu Serial',
@@ -112,6 +109,11 @@
                     'label' => 'Sổ kho (Báo cáo)',
                     'route' => 'admin.inventory-ledger.index',
                     'active_check' => ['admin.inventory-ledger.'],
+                ],
+                [
+                    'label' => 'Trạm đóng gói',
+                    'route' => 'admin.packing-station.index',
+                    'active_check' => ['admin.packing-station.'],
                 ],
             ],
         ],
@@ -129,11 +131,7 @@
                     'route' => 'admin.products.index',
                     'active_check' => ['admin.products.'],
                 ],
-                [
-                    'label' => 'Gói sản phẩm',
-                    'route' => 'admin.bundle-products.index',
-                    'active_check' => ['admin.bundle-products.'],
-                ],
+                // REMOVED: Gói sản phẩm - không còn sử dụng packages
                 [
                     'label' => 'Thu cũ & Mở hộp',
                     'route' => 'admin.trade-in-items.index',

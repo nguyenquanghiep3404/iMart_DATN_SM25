@@ -12,11 +12,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Thêm 'packed' vào ENUM status của bảng order_fulfillments
-        DB::statement("ALTER TABLE order_fulfillments MODIFY COLUMN status ENUM(
+        // Thêm 'packed' và 'awaiting_shipment' vào enum status
+        DB::statement("ALTER TABLE order_fulfillments MODIFY status ENUM(
             'pending',
-            'processing', 
+            'processing',
             'packed',
+            'awaiting_shipment',
             'shipped',
             'delivered',
             'cancelled'
@@ -28,13 +29,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Trước khi xóa 'packed', cập nhật các bản ghi có status 'packed' thành 'processing'
-        DB::table('order_fulfillments')
-            ->where('status', 'packed')
-            ->update(['status' => 'processing']);
-            
-        // Khôi phục ENUM status ban đầu
-        DB::statement("ALTER TABLE order_fulfillments MODIFY COLUMN status ENUM(
+        // Xóa 'packed' và 'awaiting_shipment' khỏi enum status
+        DB::statement("ALTER TABLE order_fulfillments MODIFY status ENUM(
             'pending',
             'processing',
             'shipped',

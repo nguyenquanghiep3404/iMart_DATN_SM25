@@ -33,17 +33,28 @@ class OrderFulfillmentCheckService
      */
     public function canAssignShipper(Order $order): array
     {
-        // Chỉ kiểm tra đơn hàng ở trạng thái awaiting_shipment_packed
-        if ($order->status !== Order::STATUS_AWAITING_SHIPMENT_PACKED) {
+        // Chỉ kiểm tra đơn hàng ở trạng thái processing
+        if ($order->status !== Order::STATUS_PROCESSING) {
             return [
                 'can_assign' => false,
-                'reason' => 'Chỉ có thể gán shipper cho đơn hàng đang ở trạng thái "Chờ vận chuyển: đã đóng gói xong".',
-                'requires_transfer' => false
+                'reason' => 'Chỉ có thể gán shipper cho đơn hàng đang ở trạng thái "Đang xử lý".',
+                'requires_transfer' => false,
+                'requires_external_shipping' => false
             ];
         }
         
         // Kiểm tra xem có cần chuyển kho không
         $transferCheck = $this->checkStockTransferRequirement($order);
+        
+        // Nếu là trường hợp đặc biệt (không có kho tại tỉnh đích), không gán shipper
+        if (isset($transferCheck['is_special_case']) && $transferCheck['is_special_case']) {
+            return [
+                'can_assign' => false,
+                'reason' => $transferCheck['shipping_type'],
+                'shipping_fee' => $transferCheck['shipping_fee'],
+                'requires_external_shipping' => true
+            ];
+        }
         
         if ($transferCheck['requires_transfer']) {
             // Kiểm tra xem phiếu chuyển kho đã hoàn thành chưa
@@ -55,7 +66,8 @@ class OrderFulfillmentCheckService
                     'reason' => $transferStatus['reason'],
                     'requires_transfer' => true,
                     'transfer_info' => $transferStatus['transfer_info'] ?? null,
-                    'estimated_arrival' => $transferStatus['estimated_arrival'] ?? null
+                    'estimated_arrival' => $transferStatus['estimated_arrival'] ?? null,
+                    'requires_external_shipping' => false
                 ];
             }
         }
@@ -67,7 +79,8 @@ class OrderFulfillmentCheckService
             return [
                 'can_assign' => false,
                 'reason' => $stockCheck['reason'],
-                'requires_transfer' => true
+                'requires_transfer' => true,
+                'requires_external_shipping' => false
             ];
         }
         
@@ -75,6 +88,7 @@ class OrderFulfillmentCheckService
             'can_assign' => true,
             'reason' => 'Đơn hàng sẵn sàng gán shipper',
             'requires_transfer' => false,
+            'requires_external_shipping' => false,
             'fulfillment_location' => $stockCheck['location']
         ];
     }
@@ -100,10 +114,16 @@ class OrderFulfillmentCheckService
             ->first();
             
         if (!$warehouseInProvince) {
+            // Không có warehouse trong tỉnh đích - kiểm tra 2 trường hợp đặc biệt
+            $specialCase = $this->checkSpecialShippingCase($order);
+            
             return [
                 'requires_transfer' => true,
                 'reason' => 'Không có warehouse trong tỉnh đích',
-                'target_province' => $destinationProvince->code
+                'target_province' => $destinationProvince->code,
+                'is_special_case' => $specialCase['is_special'],
+                'shipping_fee' => $specialCase['shipping_fee'],
+                'shipping_type' => $specialCase['shipping_type']
             ];
         }
         
@@ -115,11 +135,16 @@ class OrderFulfillmentCheckService
                 'requires_transfer' => true,
                 'reason' => 'Warehouse trong tỉnh không có đủ hàng',
                 'target_warehouse' => $warehouseInProvince->id,
-                'target_province' => $destinationProvince->code
+                'target_province' => $destinationProvince->code,
+                'is_special_case' => false
             ];
         }
         
-        return ['requires_transfer' => false, 'reason' => 'Đã có đủ hàng trong tỉnh đích'];
+        return [
+            'requires_transfer' => false, 
+            'reason' => 'Đã có đủ hàng trong tỉnh đích',
+            'is_special_case' => false
+        ];
     }
     
     /**
@@ -276,6 +301,69 @@ class OrderFulfillmentCheckService
     }
     
     /**
+     * Kiểm tra 2 trường hợp đặc biệt về phí giao hàng
+     * 
+     * @param Order $order
+     * @return array
+     */
+    private function checkSpecialShippingCase(Order $order): array
+    {
+        try {
+            $destinationProvinceCode = $order->shipping_old_province_code;
+            $destinationProvince = ProvinceOld::where('code', $destinationProvinceCode)->first();
+            
+            if (!$destinationProvince) {
+                return [
+                    'is_special' => false,
+                    'shipping_fee' => 0,
+                    'shipping_type' => 'Không xác định'
+                ];
+            }
+            
+            // Tìm warehouse gần nhất để xác định vùng miền gốc
+            $nearestWarehouse = StoreLocation::join('provinces_old', 'store_locations.province_code', '=', 'provinces_old.code')
+                ->where('store_locations.is_active', true)
+                ->where('store_locations.type', 'warehouse')
+                ->orderByRaw("CASE WHEN provinces_old.region = ? THEN 0 ELSE 1 END", [$destinationProvince->region])
+                ->select('store_locations.*', 'provinces_old.region as origin_region')
+                ->first();
+            
+            if (!$nearestWarehouse) {
+                return [
+                    'is_special' => false,
+                    'shipping_fee' => 0,
+                    'shipping_type' => 'Không tìm thấy warehouse'
+                ];
+            }
+            
+            // Kiểm tra 2 trường hợp đặc biệt
+            if ($nearestWarehouse->origin_region === $destinationProvince->region) {
+                // Trường hợp 1: Cùng vùng miền - Phí 25,000 VNĐ
+                return [
+                    'is_special' => true,
+                    'shipping_fee' => 25000,
+                    'shipping_type' => 'Cùng vùng miền - Không có kho tại tỉnh đích'
+                ];
+            } else {
+                // Trường hợp 2: Khác vùng miền - Phí 40,000 VNĐ
+                return [
+                    'is_special' => true,
+                    'shipping_fee' => 40000,
+                    'shipping_type' => 'Khác vùng miền - Không có kho tại tỉnh đích'
+                ];
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Error checking special shipping case: ' . $e->getMessage());
+            return [
+                'is_special' => false,
+                'shipping_fee' => 0,
+                'shipping_type' => 'Lỗi kiểm tra'
+            ];
+        }
+    }
+    
+    /**
      * Tự động tạo phiếu chuyển kho nếu cần thiết
      * 
      * @param Order $order
@@ -289,6 +377,19 @@ class OrderFulfillmentCheckService
             return [
                 'created' => false,
                 'reason' => 'Không cần chuyển kho'
+            ];
+        }
+        
+        // Không tạo phiếu chuyển kho cho 2 trường hợp đặc biệt
+        if (isset($transferCheck['is_special_case']) && $transferCheck['is_special_case']) {
+            Log::info("Đơn hàng {$order->order_code} thuộc trường hợp đặc biệt, không tạo phiếu chuyển kho");
+            return [
+                'created' => false,
+                'reason' => 'Trường hợp đặc biệt - không cần chuyển kho',
+                'special_shipping' => [
+                    'fee' => $transferCheck['shipping_fee'],
+                    'type' => $transferCheck['shipping_type']
+                ]
             ];
         }
         
