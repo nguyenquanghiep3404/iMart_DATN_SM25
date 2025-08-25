@@ -506,7 +506,7 @@
                         <option value="">Tất cả</option>
                         <option value="pending_confirmation">Chờ xác nhận</option>
                         <option value="processing">Đang xử lý</option>
-                        <option value="awaiting_shipment">Chờ giao hàng</option>
+
                         <option value="shipped">Đã xuất kho</option>
                         <option value="out_for_delivery">Đang giao hàng</option>
                         <option value="delivered">Giao thành công</option>
@@ -1101,7 +1101,7 @@
     const statusMap = {
         pending_confirmation: { text: "Chờ xác nhận", class: "status-pending_confirmation" },
         processing: { text: "Đang xử lý", class: "status-processing" },
-        awaiting_shipment: { text: "Chờ giao hàng", class: "status-processing" },
+
         shipped: { text: "Đã xuất kho", class: "status-shipped" },
         out_for_delivery: { text: "Đang giao hàng", class: "status-shipped" },
         delivered: { text: "Giao thành công", class: "status-delivered" },

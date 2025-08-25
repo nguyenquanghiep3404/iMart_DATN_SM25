@@ -129,7 +129,7 @@ class OrderFactory extends Factory
         
         // Chọn trạng thái ngẫu nhiên
         $status = $this->faker->randomElement([
-            'pending_confirmation', 'processing', 'awaiting_shipment', 'shipped',
+            'pending_confirmation', 'processing', 'shipped',
             'out_for_delivery', 'delivered', 'cancelled', 'returned'
         ]);
         
