@@ -381,159 +381,122 @@
                     </div>
                 </div>
 
-                <!-- Thông tin Packages -->
+                <!-- Thông tin fulfillments -->
                 @if($order->fulfillments && $order->fulfillments->count() > 0)
                 <div class="mt-8">
                     <h3 class="font-bold text-lg text-gray-800 mb-4">Thông tin gói hàng</h3>
                     @foreach($order->fulfillments as $fulfillment)
-                        @if($fulfillment->packages && $fulfillment->packages->count() > 0)
+
                             <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                                <h4 class="font-semibold text-md text-gray-700 mb-3">Kho: {{ $fulfillment->storeLocation->name ?? 'N/A' }}</h4>
-                                @foreach($fulfillment->packages as $package)
-                                    <div class="bg-white border rounded-lg p-4 mb-3">
-                                        <!-- DEBUG: Hiển thị trạng thái thực tế -->
-                                        <div class="bg-yellow-100 p-2 mb-2 text-xs">
-                                            <strong>DEBUG:</strong> Trạng thái thực tế: "{{ $package->status }}" | 
-                                            Kiểm tra cancelled: {{ $package->status == 'cancelled' ? 'TRUE' : 'FALSE' }}
+                                <div class="flex justify-between items-center mb-3">
+                                    <h4 class="font-semibold text-md text-gray-700">Kho: {{ $fulfillment->storeLocation->name ?? 'N/A' }}</h4>
+                                    @if($fulfillment->estimated_delivery_date)
+                                    <div class="text-sm text-blue-600">
+                                        <span class="font-medium">Dự kiến giao: {{ \Carbon\Carbon::parse($fulfillment->estimated_delivery_date)->format('d/m/Y') }}</span>
+                                    </div>
+                                    @endif
+                                </div>
+                                
+                                <div class="bg-white border rounded-lg p-4 mb-3">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div>
+                                            <p class="font-semibold text-gray-800">Fulfillment #{{ $fulfillment->id }}</p>
+                                            <p class="text-sm text-gray-600">Trạng thái: 
+                                                <span class="status-badge" style="
+                                                    @if($fulfillment->status == 'cancelled')
+                                                        background-color: #fee2e2 !important; color: #dc2626 !important;
+                                                    @elseif($fulfillment->status == 'pending')
+                                                        background-color: #e0e7ff !important; color: #4338ca !important;
+                                                    @elseif($fulfillment->status == 'processing')
+                                                        background-color: #cffafe !important; color: #0891b2 !important;
+                                                    @elseif($fulfillment->status == 'shipped')
+                                                        background-color: #f3e8ff !important; color: #7c3aed !important;
+                                                    @elseif($fulfillment->status == 'delivered')
+                                                        background-color: #dcfce7 !important; color: #16a34a !important;
+                                                    @else
+                                                        background-color: #f3f4f6 !important; color: #6b7280 !important;
+                                                    @endif
+                                                    ">
+                                                    @if($fulfillment->status == 'cancelled')
+                                                        Đã hủy
+                                                    @elseif($fulfillment->status == 'pending')
+                                                        Chờ xử lý
+                                                    @elseif($fulfillment->status == 'processing')
+                                                        Đang xử lý
+                                                    @elseif($fulfillment->status == 'shipped')
+                                                        Đã giao hàng
+                                                    @elseif($fulfillment->status == 'delivered')
+                                                        Giao hàng thành công
+                                                    @else
+                                                        {{ $fulfillment->status }}
+                                                    @endif
+                                                </span>
+                                            </p>
                                         </div>
-                                        <div class="flex justify-between items-start mb-3">
-                                            <div>
-                                                <p class="font-semibold text-gray-800">Mã gói: {{ $package->package_code }}</p>
-                                                <p class="text-sm text-gray-600">{{ $package->description ?? 'Không có mô tả' }}</p>
-                                            </div>
-                                            <span class="status-badge" style="
-                                                @if($package->status == 'cancelled')
-                                                    background-color: #fee2e2 !important; color: #dc2626 !important;
-                                                @elseif($package->status == 'pending_confirmation')
-                                                    background-color: #e0e7ff !important; color: #4338ca !important;
-                                                @elseif($package->status == 'processing')
-                                                    background-color: #cffafe !important; color: #0891b2 !important;
-                                                @elseif($package->status == 'packed')
-                                                    background-color: #fef3c7 !important; color: #d97706 !important;
-                                                @elseif($package->status == 'out_for_delivery')
-                                                    background-color: #f3e8ff !important; color: #7c3aed !important;
-                                                @elseif($package->status == 'delivered')
-                                                    background-color: #dcfce7 !important; color: #16a34a !important;
-                                                @elseif($package->status == 'failed_delivery')
-                                                    background-color: #fecaca !important; color: #b91c1c !important;
-                                                @elseif($package->status == 'returned')
-                                                    background-color: #f3f4f6 !important; color: #6b7280 !important;
-                                                @endif
-                                                ">
-                                                @if($package->status == 'cancelled')
-                                                    Đã hủy
-                                                @elseif($package->status == 'pending_confirmation')
-                                                    Chờ xác nhận
-                                                @elseif($package->status == 'processing')
-                                                    Đang xử lý
-                                                @elseif($package->status == 'packed')
-                                                    Đóng gói thành công
-                                                @elseif($package->status == 'out_for_delivery')
-                                                    Đang giao hàng
-                                                @elseif($package->status == 'delivered')
-                                                    Giao hàng thành công
-                                                @elseif($package->status == 'failed_delivery')
-                                                    Giao thất bại
-                                                @elseif($package->status == 'returned')
-                                                    Trả hàng
-                                                @else
-                                                    {{ $package->status }}
-                                                @endif
-                                            </span>
-                                        </div>
-                                        
-                                        @if($package->shipping_carrier || $package->tracking_code)
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                                            @if($package->shipping_carrier)
-                                            <div>
-                                                <p class="text-sm text-gray-500">Đơn vị vận chuyển</p>
-                                                <p class="font-medium">{{ $package->shipping_carrier }}</p>
-                                            </div>
-                                            @endif
-                                            @if($package->tracking_code)
-                                            <div>
-                                                <p class="text-sm text-gray-500">Mã vận đơn</p>
-                                                <p class="font-medium">{{ $package->tracking_code }}</p>
-                                            </div>
-                                            @endif
+                                    </div>
+                                    
+                                    @if($fulfillment->shipping_carrier || $fulfillment->tracking_code)
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                        @if($fulfillment->shipping_carrier)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Đơn vị vận chuyển</p>
+                                            <p class="font-medium">{{ $fulfillment->shipping_carrier }}</p>
                                         </div>
                                         @endif
-
-                                        @if($package->shipped_at || $package->delivered_at)
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                                            @if($package->shipped_at)
-                                            <div>
-                                                <p class="text-sm text-gray-500">Ngày xuất kho</p>
-                                                <p class="font-medium">{{ $package->shipped_at->format('d/m/Y H:i') }}</p>
-                                            </div>
-                                            @endif
-                                            @if($package->delivered_at)
-                                            <div>
-                                                <p class="text-sm text-gray-500">Ngày giao hàng</p>
-                                                <p class="font-medium">{{ $package->delivered_at->format('d/m/Y H:i') }}</p>
-                                            </div>
-                                            @endif
-                                        </div>
-                                        @endif
-
-                                        <!-- Sản phẩm trong gói -->
-                                        @if($package->fulfillmentItems && $package->fulfillmentItems->count() > 0)
-                                        <div class="border-t pt-3">
-                                            <p class="text-sm font-medium text-gray-700 mb-2">Sản phẩm trong gói:</p>
-                                            <div class="space-y-2">
-                                                @foreach($package->fulfillmentItems as $item)
-                                                    <div class="flex justify-between items-center text-sm">
-                                                        <span class="text-gray-600">{{ $item->orderItem->product_name ?? 'N/A' }}</span>
-                                                        <span class="font-medium">x{{ $item->quantity }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                        @endif
-
-                                        <!-- Lịch sử trạng thái -->
-                                        @if($package->statusHistory && $package->statusHistory->count() > 0)
-                                        <div class="border-t pt-3 mt-3">
-                                            <p class="text-sm font-medium text-gray-700 mb-2">Lịch sử trạng thái:</p>
-                                            <div class="space-y-1">
-                                                @foreach($package->statusHistory->sortByDesc('timestamp') as $history)
-                                                    <div class="flex justify-between items-center text-xs">
-                                                        <div>
-                                                            <span class="font-medium" data-status="{{ $history->status }}">
-                                                                @if($history->status == 'cancelled')
-                                                                    Đã hủy
-                                                                @elseif($history->status == 'pending_confirmation')
-                                                                    Chờ xác nhận
-                                                                @elseif($history->status == 'processing')
-                                                                    Đang xử lý
-                                                                @elseif($history->status == 'packed')
-                                                                    Đóng gói thành công
-                                                                @elseif($history->status == 'out_for_delivery')
-                                                                    Đang giao hàng
-                                                                @elseif($history->status == 'delivered')
-                                                                    Giao hàng thành công
-                                                                @elseif($history->status == 'failed_delivery')
-                                                                    Giao thất bại
-                                                                @elseif($history->status == 'returned')
-                                                                    Trả hàng
-                                                                @else
-                                                                    {{ $history->status }}
-                                                                @endif
-                                                            </span>
-                                                            @if($history->notes)
-                                                                <span class="text-gray-600">- {{ $history->notes }}</span>
-                                                            @endif
-                                                        </div>
-                                                        <span class="text-gray-500">{{ $history->timestamp->format('d/m/Y H:i') }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
+                                        @if($fulfillment->tracking_code)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Mã vận đơn</p>
+                                            <p class="font-medium">{{ $fulfillment->tracking_code }}</p>
                                         </div>
                                         @endif
                                     </div>
-                                @endforeach
+                                    @endif
+
+                                    @if($fulfillment->shipped_at || $fulfillment->delivered_at || $fulfillment->estimated_delivery_date || $fulfillment->shipping_fee)
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                                        @if($fulfillment->estimated_delivery_date)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Ngày dự kiến giao</p>
+                                            <p class="font-medium">{{ \Carbon\Carbon::parse($fulfillment->estimated_delivery_date)->format('d/m/Y') }}</p>
+                                        </div>
+                                        @endif
+                                        @if($fulfillment->shipping_fee)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Phí vận chuyển</p>
+                                            <p class="font-medium">{{ number_format($fulfillment->shipping_fee, 0, ',', '.') }} ₫</p>
+                                        </div>
+                                        @endif
+                                        @if($fulfillment->shipped_at)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Ngày xuất kho</p>
+                                            <p class="font-medium">{{ $fulfillment->shipped_at->format('d/m/Y H:i') }}</p>
+                                        </div>
+                                        @endif
+                                        @if($fulfillment->delivered_at)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Ngày giao hàng</p>
+                                            <p class="font-medium">{{ $fulfillment->delivered_at->format('d/m/Y H:i') }}</p>
+                                        </div>
+                                        @endif
+                                    </div>
+                                    @endif
+
+                                    <!-- Sản phẩm trong fulfillment -->
+                                    @if($fulfillment->fulfillmentItems && $fulfillment->fulfillmentItems->count() > 0)
+                                    <div class="border-t pt-3">
+                                        <p class="text-sm font-medium text-gray-700 mb-2">Sản phẩm trong đơn hàng:</p>
+                                        <div class="space-y-2">
+                                            @foreach($fulfillment->fulfillmentItems as $item)
+                                                <div class="flex justify-between items-center text-sm">
+                                                    <span class="text-gray-600">{{ $item->orderItem->product_name ?? 'N/A' }}</span>
+                                                    <span class="font-medium">x{{ $item->quantity }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
                             </div>
-                        @endif
                     @endforeach
                 </div>
                 @endif
@@ -1139,7 +1102,7 @@
                 // Close modal
                 closeAssignShipperModal();
 
-                // Reload the page to show updated package statuses
+                // Reload the page to show updated statuses
                 window.location.reload();
             } else {
                 if (response.status === 422) {
