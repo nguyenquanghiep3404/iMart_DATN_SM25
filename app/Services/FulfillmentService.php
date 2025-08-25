@@ -200,10 +200,21 @@ if (empty($itemsByLocation)) {
 }
 
 foreach ($itemsByLocation as $locationId => $items) {
+ // Tính toán ngày dự kiến giao hàng
+ $storeLocation = StoreLocation::find($locationId);
+ $transitTime = ShippingTransitTime::getTransitTime(
+     'store_shipper',
+     $storeLocation->province_code,
+     $order->shipping_old_province_code
+ );
+ $transitDays = $transitTime ? $transitTime->transit_days_max : 7;
+ $estimatedDeliveryDate = Carbon::now()->addDays($transitDays)->format('Y-m-d');
+
  // Tạo một bản ghi fulfillment cho mỗi kho hàng
  $fulfillment = $order->fulfillments()->create([
  'store_location_id' => $locationId,
  'status' => 'pending',
+ 'estimated_delivery_date' => $estimatedDeliveryDate,
  ]);
  
  // Chuẩn bị dữ liệu items để chèn hàng loạt
@@ -263,6 +274,7 @@ public function createOrderFulfillments($order, $cartItems, $shipments, $orderIt
             'shipping_fee' => $shipmentData['shipping_fee'],
             'desired_delivery_date' => $shipmentData['delivery_date'] ?? null,
             'desired_delivery_time_slot' => $shipmentData['delivery_time_slot'] ?? null,
+            'estimated_delivery_date' => $shipmentData['estimated_delivery_date'] ?? null,
         ]);
 
         // Tìm các sản phẩm thuộc kho này và tạo fulfillment items

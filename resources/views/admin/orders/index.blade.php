@@ -1729,6 +1729,13 @@
                                     <p>${formatDate(fulfillment.delivered_at)}</p>
                                 </div>
                             ` : ''}
+                            
+                            ${fulfillment.estimated_delivery_date ? `
+                                <div>
+                                    <p class="text-gray-600 mb-1"><strong>Dự kiến giao hàng:</strong></p>
+                                    <p>${formatDate(fulfillment.estimated_delivery_date)}</p>
+                                </div>
+                            ` : ''}
                         </div>
                         
                         ${productsHtml}
@@ -2093,6 +2100,12 @@
         // Kiểm tra shipper cho đơn hàng giao tận nơi khi chuyển sang 'out_for_delivery'
         if (!isPickup && newStatus === 'out_for_delivery' && !hasShipper) {
             showToast('Vui lòng gán shipper trước khi chuyển sang trạng thái "Đang giao hàng"', 'error');
+            return false;
+        }
+        
+        // Chỉ cho phép hủy đơn hàng khi đơn hàng đang ở trạng thái "pending_confirmation"
+        if (newStatus === 'cancelled' && currentStatus !== 'pending_confirmation') {
+            showToast('Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xác nhận"', 'error');
             return false;
         }
         
