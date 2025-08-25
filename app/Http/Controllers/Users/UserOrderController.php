@@ -129,7 +129,7 @@ class UserOrderController extends Controller
             'cancelled_at' => now(),
             'cancellation_reason' => $request->reason
         ]);
-        
+
         // Cập nhật trạng thái packages khi user hủy đơn hàng
         $this->updatePackageStatusBasedOnOrderStatus($order);
 
@@ -138,7 +138,7 @@ class UserOrderController extends Controller
         return redirect()->route('orders.show', $order->id)
             ->with('success', 'Đơn hàng đã được hủy thành công.');
     }
-    
+
     /**
      * Cập nhật trạng thái packages dựa trên trạng thái đơn hàng
      */
@@ -146,10 +146,10 @@ class UserOrderController extends Controller
     {
         try {
             // Lấy tất cả packages của đơn hàng thông qua fulfillments
-            $packages = \App\Models\Package::whereHas('fulfillment', function($query) use ($order) {
+            $packages = \App\Models\Package::whereHas('fulfillment', function ($query) use ($order) {
                 $query->where('order_id', $order->id);
             })->get();
-            
+
             // Mapping trạng thái order sang package status
             $statusMapping = [
                 'pending_confirmation' => \App\Models\Package::STATUS_PENDING_CONFIRMATION,
@@ -160,9 +160,9 @@ class UserOrderController extends Controller
                 'failed_delivery' => \App\Models\Package::STATUS_FAILED_DELIVERY,
                 'returned' => \App\Models\Package::STATUS_RETURNED,
             ];
-            
+
             $newPackageStatus = $statusMapping[$order->status] ?? null;
-            
+
             if ($newPackageStatus) {
                 foreach ($packages as $package) {
                     $package->updateStatus(
@@ -171,7 +171,7 @@ class UserOrderController extends Controller
                         Auth::id()
                     );
                 }
-                
+
                 \Log::info('Package statuses updated successfully from user action', [
                     'order_id' => $order->id,
                     'order_status' => $order->status,
@@ -185,5 +185,17 @@ class UserOrderController extends Controller
                 'error' => $e->getMessage()
             ]);
         }
+    }
+    public function confirmReceipt(Order $order)
+    {
+        if (Auth::id() !== $order->user_id) {
+            abort(403);
+        }
+        // Chỉ xác nhận khi đơn đã giao và chưa có xác nhận trước đó
+        if ($order->status === 'delivered' && is_null($order->confirmed_at)) {
+            $order->update(['confirmed_at' => now()]);
+            return redirect()->back()->with('success', 'Cảm ơn bạn đã xác nhận lại đơn hàng!');
+        }
+        return redirect()->back()->with('error', 'Không thể thực hiện hành động này.');
     }
 }
