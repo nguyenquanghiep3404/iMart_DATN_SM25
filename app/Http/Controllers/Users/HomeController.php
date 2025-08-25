@@ -34,264 +34,259 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class HomeController extends Controller
 {
     public function index()
-    {
-        // Lấy danh sách banner
-        $banners = Banner::with('desktopImage')
-            ->where('status', 'active')
-            ->orderBy('order')
-            ->get();
+{
+    // Lấy danh sách banner
+    $banners = Banner::with('desktopImage')
+        ->where('status', 'active')
+        ->orderBy('order')
+        ->get();
 
-        // Lấy danh sách các khối sản phẩm trên trang chủ
-        $blocks = HomepageProductBlock::where('is_visible', true)
-            ->orderBy('order')
-            ->with(['productVariants' => function ($query) {
-                $query->whereHas('product', function ($q) {
-                    $q->where('status', 'published');
-                })
-                    ->with([
-                        'product.category',
-                        'product.coverImage',
-                        'product.galleryImages',
-                        'primaryImage',
-                        'images',
-                        'attributeValues.attribute'
-                    ]);
-            }])
-            ->get();
-
-        // Hàm xử lý đánh giá và phần trăm giảm giá
-        $calculateAverageRating = function ($products) {
-            foreach ($products as $product) {
-                $now = now();
-                $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
-
-                if ($variant) {
-                    $isOnSale = false;
-
-                    if ($variant->sale_price && $variant->price > 0) {
-                        $isOnSale = true;
-                    }
-
-                    $variant->discount_percent = $isOnSale
-                        ? round(100 - ($variant->sale_price / $variant->price) * 100)
-                        : 0;
-                }
-            }
-        };
-
-        // === Danh sách sản phẩm nổi bật ===
-        $featuredProducts = Product::with([
-            'category',
-            'coverImage',
-            'galleryImages',
-            'variants.primaryImage',
-            'variants.images',
-            'reviews' => function ($query) {
-                $query->where('reviews.status', 'approved');
-            }
-        ])
-            ->withCount([
-                'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved');
-                }
-            ])
-            ->where('is_featured', 1)
-            ->where('status', 'published')
-            ->where(function ($query) {
-                $query->where('type', 'simple')
-                    ->orWhereHas('variants', function ($q) {
-                        $q->whereNull('deleted_at');
-                    });
+    // Lấy danh sách các khối sản phẩm trên trang chủ
+    $blocks = HomepageProductBlock::where('is_visible', true)
+        ->orderBy('order')
+        ->with(['productVariants' => function ($query) {
+            $query->whereHas('product', function ($q) {
+                $q->where('status', 'published');
             })
-            ->latest()
-            ->take(8)
-            ->get();
-
-        // Áp dụng tính toán
-        $calculateAverageRating($featuredProducts);
-
-        // === Danh sách sản phẩm mới nhất ===
-        $latestProducts = Product::with([
-            'category',
-            'coverImage',
-            'galleryImages',
-            'variants.primaryImage',
-            'variants.images',
-            'reviews' => function ($query) {
-                $query->where('reviews.status', 'approved');
-            }
-        ])
-            ->withCount([
-                'reviews as approved_reviews_count' => function ($query) {
-                    $query->where('reviews.status', 'approved');
-                }
-            ])
-            ->where('status', 'published')
-            ->where(function ($query) {
-                $query->where('type', 'simple')
-                    ->orWhereHas('variants', function ($q) {
-                        $q->whereNull('deleted_at');
-                    });
-            })
-            ->latest()
-            ->take(8)
-            ->get();
-
-        $suggestedProducts = Product::with('coverImage')
-            ->where('status', 'published')
-            ->inRandomOrder()
-            ->take(5)
-            ->get();
-
-        // Tính rating & discount
-        $calculateAverageRating($latestProducts);
-
-        // Lấy danh sách sản phẩm nổi bật từ cache hoặc database
-        if (auth()->check()) {
-            $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
-
-            $recentNotifications = auth()->user()->notifications()
-                ->latest()
-                ->take(10)
-                ->get()
-                ->map(function ($notification) {
-                    return [
-                        'title' => $notification->data['title'] ?? 'Thông báo',
-                        'message' => $notification->data['message'] ?? '',
-                        'icon' => $notification->data['icon'] ?? 'default',
-                        'color' => $notification->data['color'] ?? 'gray',
-                        'time' => $notification->created_at->diffForHumans(),
-                    ];
-                });
-        } else {
-            $unreadNotificationsCount = 0;
-            $recentNotifications = collect();
-        }
-
-        $featuredPosts = Post::with('coverImage')
-            ->where('status', 'published')
-            ->where('is_featured', true)
-            ->latest('published_at')
-            ->take(4)
-            ->get();
-
-        // === Lấy danh sách Flash Sale ===
-        $flashSales = FlashSale::with([
-            'flashSaleTimeSlots' => function ($q) {
-                $q->orderBy('start_time');
-            },
-            'flashSaleTimeSlots.products.productVariant.attributeValues.attribute',
-            'flashSaleTimeSlots.products.productVariant.product.coverImage',
-        ])
-            ->where('status', 'active')
-            ->where('start_time', '<=', now())
-            ->where('end_time', '>=', now())
-            ->orderBy('start_time')
-            ->get();
-
-        // Xử lý format thời gian + tên biến thể đầy đủ và xác định slot đang active
-        $now = now();
-        $flashSales->each(function ($sale) use ($now) {
-            $activeSlotId = null;
-            $upcomingSlotId = null;
-            $minUpcomingTime = null;
-            foreach ($sale->flashSaleTimeSlots as $slot) {
-                $slot->start_time = \Carbon\Carbon::parse($slot->start_time)->toIso8601String();
-                $slot->end_time = \Carbon\Carbon::parse($slot->end_time)->toIso8601String();
-
-                $start = \Carbon\Carbon::parse($slot->start_time);
-                $end = \Carbon\Carbon::parse($slot->end_time);
-                $isActive = $now->between($start, $end);
-                $isUpcoming = $now->lt($start);
-                $isPast = $now->gt($end);
-
-                \Log::info('DEBUG_FLASH_SLOT', [
-                    'slot_id' => $slot->id,
-                    'start_time' => $slot->start_time,
-                    'end_time' => $slot->end_time,
-                    'now' => $now->toIso8601String(),
-                    'isActive' => $isActive,
-                    'isUpcoming' => $isUpcoming,
-                    'isPast' => $isPast,
-                    'activeSlotId' => $activeSlotId,
+                ->with([
+                    'product.category',
+                    'product.coverImage',
+                    'product.galleryImages',
+                    'primaryImage',
+                    'images',
+                    'attributeValues.attribute'
                 ]);
+        }])
+        ->get();
 
-                if ($isActive && $activeSlotId === null) {
-                    $activeSlotId = $slot->id;
+    // Hàm xử lý đánh giá và phần trăm giảm giá
+    $calculateAverageRating = function ($products) {
+        foreach ($products as $product) {
+            $now = now();
+            $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+
+            if ($variant) {
+                $isOnSale = false;
+
+                if ($variant->sale_price && $variant->price > 0) {
+                    $isOnSale = true;
                 }
-                if ($isUpcoming && ($minUpcomingTime === null || $start->lt($minUpcomingTime))) {
-                    $minUpcomingTime = $start;
-                    $upcomingSlotId = $slot->id;
-                }
 
-                $slot->products->each(function ($product) {
-                    $variant = $product->productVariant;
-                    $productName = $variant->product->name ?? '';
+                $variant->discount_percent = $isOnSale
+                    ? round(100 - ($variant->sale_price / $variant->price) * 100)
+                    : 0;
+            }
+        }
+    };
 
-                    $attributes = $variant->attributeValues ?? collect();
-
-                    $nonColor = $attributes
-                        ->filter(fn($v) => $v->attribute->name !== 'Màu sắc')
-                        ->pluck('value')
-                        ->join(' ');
-
-                    $color = $attributes
-                        ->firstWhere(fn($v) => $v->attribute->name === 'Màu sắc')?->value;
-
-                    $variantName = trim($productName . ' ' . $nonColor . ' ' . $color);
-
-                    $product->variant_name = $variantName;
+    // === Danh sách sản phẩm nổi bật ===
+    $featuredProducts = Product::with([
+        'category',
+        'coverImage',
+        'galleryImages',
+        'variants.primaryImage',
+        'variants.images',
+        'reviews' => function ($query) {
+            $query->where('reviews.status', 'approved');
+        }
+    ])
+        ->withCount([
+            'reviews as approved_reviews_count' => function ($query) {
+                $query->where('reviews.status', 'approved');
+            }
+        ])
+        ->where('is_featured', 1)
+        ->where('status', 'published')
+        ->where(function ($query) {
+            $query->where('type', 'simple')
+                ->orWhereHas('variants', function ($q) {
+                    $q->whereNull('deleted_at');
                 });
+        })
+        ->latest()
+        ->take(8)
+        ->get();
+
+    // Áp dụng tính toán
+    $calculateAverageRating($featuredProducts);
+
+    // === Danh sách sản phẩm mới nhất ===
+    $latestProducts = Product::with([
+        'category',
+        'coverImage',
+        'galleryImages',
+        'variants.primaryImage',
+        'variants.images',
+        'reviews' => function ($query) {
+            $query->where('reviews.status', 'approved');
+        }
+    ])
+        ->withCount([
+            'reviews as approved_reviews_count' => function ($query) {
+                $query->where('reviews.status', 'approved');
             }
-            if ($activeSlotId) {
-                $sale->active_slot_id = $activeSlotId;
-            } elseif ($upcomingSlotId) {
-                $sale->active_slot_id = $upcomingSlotId;
-            } else {
-                $sale->active_slot_id = $sale->flashSaleTimeSlots->last()->id ?? null;
-            }
-            \Log::info('DEBUG_FLASH_SALE_ACTIVE_SLOT', [
-                'sale_id' => $sale->id,
-                'active_slot_id' => $sale->active_slot_id,
-            ]);
+        ])
+        ->where('status', 'published')
+        ->where(function ($query) {
+            $query->where('type', 'simple')
+                ->orWhereHas('variants', function ($q) {
+                    $q->whereNull('deleted_at');
+                });
+        })
+        ->latest()
+        ->take(8)
+        ->get();
+
+    $suggestedProducts = Product::with('coverImage')
+        ->where('status', 'published')
+        ->inRandomOrder()
+        ->take(5)
+        ->get();
+
+    // Tính rating & discount
+    $calculateAverageRating($latestProducts);
+
+    // Lấy danh sách sản phẩm nổi bật từ cache hoặc database
+    if (auth()->check()) {
+        $unreadNotificationsCount = auth()->user()->unreadNotifications()->count();
+
+        $recentNotifications = auth()->user()->notifications()
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(function ($notification) {
+                return [
+                    'title' => $notification->data['title'] ?? 'Thông báo',
+                    'message' => $notification->data['message'] ?? '',
+                    'icon' => $notification->data['icon'] ?? 'default',
+                    'color' => $notification->data['color'] ?? 'gray',
+                    'time' => $notification->created_at->diffForHumans(),
+                ];
+            });
+    } else {
+        $unreadNotificationsCount = 0;
+        $recentNotifications = collect();
+    }
+
+    $featuredPosts = Post::with('coverImage')
+        ->where('status', 'published')
+        ->where('is_featured', true)
+        ->latest('published_at')
+        ->take(4)
+        ->get();
+
+    // === Lấy danh sách Flash Sale ===
+    $now = now();
+    $flashSales = FlashSale::with([
+        'flashSaleTimeSlots' => function ($q) use ($now) {
+            $q->where('end_time', '>=', $now)
+              ->orderBy('start_time');
+        },
+        'flashSaleTimeSlots.products.productVariant.attributeValues.attribute',
+        'flashSaleTimeSlots.products.productVariant.product.coverImage',
+    ])
+        ->where('status', 'active')
+        ->where('start_time', '<=', $now)
+        ->where('end_time', '>=', $now)
+        ->orderBy('start_time')
+        ->get()
+        ->filter(function ($sale) {
+            return $sale->flashSaleTimeSlots->isNotEmpty();
         });
 
-        // Gán flash_price cho các productVariants trong blocks
-        foreach ($blocks as $block) {
-            foreach ($block->productVariants as $variant) {
-                $variant->flash_price = null; // Khởi tạo mặc định
-                $variant->is_flash_sale = false;
+    // Xử lý format thời gian + tên biến thể đầy đủ và xác định slot đang active
+    $flashSales->each(function ($sale) use ($now) {
+        $activeSlotId = null;
+        $upcomingSlotId = null;
+        $minUpcomingTime = null;
+        foreach ($sale->flashSaleTimeSlots as $slot) {
+            $slot->start_time = \Carbon\Carbon::parse($slot->start_time)->toIso8601String();
+            $slot->end_time = \Carbon\Carbon::parse($slot->end_time)->toIso8601String();
 
-                foreach ($flashSales as $sale) {
-                    foreach ($sale->flashSaleTimeSlots as $slot) {
-                        $start = \Carbon\Carbon::parse($slot->start_time);
-                        $end = \Carbon\Carbon::parse($slot->end_time);
-                        if ($now->between($start, $end)) { // Slot đang active
-                            $flashProduct = $slot->products->firstWhere('product_variant_id', $variant->id);
-                            if ($flashProduct) {
-                                $variant->flash_price = $flashProduct->flash_price;
-                                $variant->is_flash_sale = true;
-                                $variant->discount_percent = round(100 - ($flashProduct->flash_price / $variant->price) * 100);
-                                break 2; // Thoát cả hai vòng lặp nếu tìm thấy
-                            }
+            $start = \Carbon\Carbon::parse($slot->start_time);
+            $end = \Carbon\Carbon::parse($slot->end_time);
+            $isActive = $now->between($start, $end);
+            $isUpcoming = $now->lt($start);
+
+            \Log::info('DEBUG_FLASH_SLOT', [
+                'slot_id' => $slot->id,
+                'start_time' => $slot->start_time,
+                'end_time' => $slot->end_time,
+                'now' => $now->toIso8601String(),
+                'isActive' => $isActive,
+                'isUpcoming' => $isUpcoming,
+                'isPast' => $now->gt($end),
+                'activeSlotId' => $activeSlotId,
+            ]);
+
+            if ($isActive && $activeSlotId === null) {
+                $activeSlotId = $slot->id;
+            }
+            if ($isUpcoming && ($minUpcomingTime === null || $start->lt($minUpcomingTime))) {
+                $minUpcomingTime = $start;
+                $upcomingSlotId = $slot->id;
+            }
+
+            $slot->products->each(function ($product) {
+                $variant = $product->productVariant;
+                $productName = $variant->product->name ?? '';
+
+                $attributes = $variant->attributeValues ?? collect();
+                $nonColor = $attributes
+                    ->filter(fn($v) => $v->attribute->name !== 'Màu sắc')
+                    ->pluck('value')
+                    ->join(' ');
+                $color = $attributes
+                    ->firstWhere(fn($v) => $v->attribute->name === 'Màu sắc')?->value;
+                $product->variant_name = trim($productName . ' ' . $nonColor . ' ' . $color);
+            });
+        }
+
+        // Chỉ gán active_slot_id nếu có khung giờ hợp lệ
+        $sale->active_slot_id = $activeSlotId ?? $upcomingSlotId ?? null;
+
+        \Log::info('DEBUG_FLASH_SALE_ACTIVE_SLOT', [
+            'sale_id' => $sale->id,
+            'active_slot_id' => $sale->active_slot_id,
+        ]);
+    });
+
+    // Gán flash_price cho các productVariants trong blocks
+    foreach ($blocks as $block) {
+        foreach ($block->productVariants as $variant) {
+            $variant->flash_price = null;
+            $variant->is_flash_sale = false;
+
+            foreach ($flashSales as $sale) {
+                foreach ($sale->flashSaleTimeSlots as $slot) {
+                    $start = \Carbon\Carbon::parse($slot->start_time);
+                    $end = \Carbon\Carbon::parse($slot->end_time);
+                    if ($now->between($start, $end)) {
+                        $flashProduct = $slot->products->firstWhere('product_variant_id', $variant->id);
+                        if ($flashProduct) {
+                            $variant->flash_price = $flashProduct->flash_price;
+                            $variant->is_flash_sale = true;
+                            $variant->discount_percent = round(100 - ($flashProduct->flash_price / $variant->price) * 100);
+                            break 2;
                         }
                     }
                 }
             }
         }
-
-        return view('users.home', compact(
-            'featuredProducts',
-            'blocks',
-            'latestProducts',
-            'banners',
-            'featuredPosts',
-            'unreadNotificationsCount',
-            'recentNotifications',
-            'flashSales',
-            'suggestedProducts'
-        ));
     }
+
+    return view('users.home', compact(
+        'featuredProducts',
+        'blocks',
+        'latestProducts',
+        'banners',
+        'featuredPosts',
+        'unreadNotificationsCount',
+        'recentNotifications',
+        'flashSales',
+        'suggestedProducts'
+    ));
+}
 
     public function show(Request $request, $slug)
     {

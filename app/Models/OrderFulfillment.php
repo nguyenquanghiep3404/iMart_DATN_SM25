@@ -20,7 +20,8 @@ class OrderFulfillment extends Model
 
     protected $fillable = [
         'order_id', 'store_location_id', 'shipper_id', 'tracking_code',
-        'shipping_carrier', 'status', 'shipped_at', 'delivered_at'
+        'shipping_carrier', 'status', 'shipped_at', 'delivered_at',
+        'estimated_delivery_date', 'desired_delivery_date', 'desired_delivery_time_slot', 'shipping_fee'
     ];
 
 public function order()

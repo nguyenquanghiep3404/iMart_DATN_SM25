@@ -143,6 +143,8 @@ Route::get('/bundle-suggested-products/{variantId}', [HomeController::class, 'ge
 Route::post('/cart/add-bundle', [CartController::class, 'addBundle'])->name('cart.addBundle');
 // lấy api số lượng sản phẩm
 Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariantStock']);
+Route::get('/variant-flash-sale/{variantId}', [CartController::class, 'getVariantFlashSale'])->name('variant.flash.sale');
+
 
 
 
