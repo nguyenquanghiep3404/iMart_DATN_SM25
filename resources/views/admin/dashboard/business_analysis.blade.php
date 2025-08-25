@@ -267,13 +267,10 @@
                 const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
                 document.getElementById('from-date').value = formatDate(startDate);
                 document.getElementById('to-date').value = formatDate(endDate);
-
                 // Đặt lại vị trí cửa hàng thành "tất cả"
                 document.getElementById('store-location').value = 'all';
-
                 // Đặt lại danh mục thành "tất cả"
                 document.getElementById('product-category').value = 'all';
-                
                 // Submit the form to refresh data
                 document.getElementById('filters').submit();
             });
