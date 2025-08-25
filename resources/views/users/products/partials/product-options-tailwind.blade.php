@@ -538,7 +538,7 @@
         }
     }
 
-    if (quantityInput) {
+     if (quantityInput) {
         quantityInput.addEventListener('input', function() {
             let enteredQuantity = parseInt(this.value);
             if (isNaN(enteredQuantity) || enteredQuantity < 1) {
