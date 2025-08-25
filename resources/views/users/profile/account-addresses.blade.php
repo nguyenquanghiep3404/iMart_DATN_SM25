@@ -103,6 +103,13 @@
   .form-control, .form-select {
     border-radius: 10px !important;
   }
+  /* Tối giản */
+  #addressModal .form-check-input {
+    -webkit-appearance: auto !important;
+    -moz-appearance: auto !important;
+    appearance: auto !important;
+    accent-color: blue;
+  }
 </style>
 <div class="col-lg-9">
   <div class="ps-lg-3 ps-xl-0">
