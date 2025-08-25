@@ -530,7 +530,7 @@ class CartController extends Controller
             ], 500);
         }
     }
-    
+
     public function updateQuantity(Request $request)
     {
         $request->validate([

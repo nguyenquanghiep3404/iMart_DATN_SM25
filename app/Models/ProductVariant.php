@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 
 class ProductVariant extends Model
@@ -188,14 +189,23 @@ class ProductVariant extends Model
 
     // Trong model ProductVariant.php
     public function getSlugAttribute()
-{
-    $product = $this->product;
-    $baseSlug = Str::slug($product->name);
-    $attributes = $this->attributeValues
-        ->pluck('value')
-        ->map(fn($value) => Str::slug($value, '-'))
-        ->filter() // Loại bỏ giá trị rỗng
-        ->join('-');
-    return $attributes ? "{$baseSlug}-{$attributes}" : $baseSlug;
-}
+    {
+        $product = $this->product;
+        $baseSlug = Str::slug($product->name);
+        $attributes = $this->attributeValues
+            ->pluck('value')
+            ->map(fn($value) => Str::slug($value, '-'))
+            ->filter() // Loại bỏ giá trị rỗng
+            ->join('-');
+        return $attributes ? "{$baseSlug}-{$attributes}" : $baseSlug;
+    }
+     public function getAvailableQuantityAttribute()
+    {
+        // Tính tổng (tồn kho - đã tạm giữ cho đơn khác) từ bảng product_inventories
+        return $this->inventories()->sum(DB::raw('quantity - quantity_committed'));
+    }
+    public function getIsActiveAttribute()
+    {
+        return $this->status === 'active';
+    }
 }
