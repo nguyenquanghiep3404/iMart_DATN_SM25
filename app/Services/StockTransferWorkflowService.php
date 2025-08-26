@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\StockTransfer;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\StoreLocation;
 use App\Models\User;
 use App\Models\ProductInventory;
@@ -305,8 +306,113 @@ class StockTransferWorkflowService
         ]);
         
         Log::info("Stock transfer {$stockTransfer->id} received successfully with serial tracking");
+        
+        // Cập nhật fulfillment thành 'packed' nếu có đơn hàng liên quan
+        $this->updateRelatedFulfillmentStatus($stockTransfer);
     }
     
+    /**
+     * Cập nhật trạng thái fulfillment thành 'packed' khi phiếu chuyển kho được nhận
+     *
+     * @param StockTransfer $stockTransfer
+     * @return void
+     */
+    private function updateRelatedFulfillmentStatus(StockTransfer $stockTransfer): void
+    {
+        // Tìm đơn hàng liên quan
+        $relatedOrder = $this->findRelatedOrder($stockTransfer);
+        if (!$relatedOrder) {
+            return;
+        }
+        
+        $destinationLocation = StoreLocation::find($stockTransfer->to_location_id);
+        
+        // Kiểm tra xem kho đích có cùng tỉnh với địa chỉ giao hàng không
+        if ($destinationLocation && $destinationLocation->province_code === $relatedOrder->shipping_old_province_code) {
+            // Tìm fulfillment ID từ ghi chú của phiếu chuyển kho
+            $fulfillmentId = $this->extractFulfillmentIdFromNotes($stockTransfer->notes);
+            
+            if ($fulfillmentId) {
+                $fulfillment = OrderFulfillment::find($fulfillmentId);
+                
+                if ($fulfillment && $fulfillment->status === 'processing') {
+                    // Kiểm tra xem kho đích có đủ hàng cho fulfillment này không
+                    $hasStock = $this->checkFulfillmentStock($fulfillment, $destinationLocation->id);
+                    
+                    if ($hasStock) {
+                        // Cập nhật cả vị trí kho và trạng thái fulfillment
+                        $fulfillment->update([
+                            'store_location_id' => $destinationLocation->id,
+                            'status' => 'packed'
+                        ]);
+                        
+                        Log::info("Updated fulfillment location and status after stock transfer", [
+                            'fulfillment_id' => $fulfillment->id,
+                            'tracking_code' => $fulfillment->tracking_code,
+                            'order_id' => $relatedOrder->id,
+                            'old_store_location_id' => $stockTransfer->from_location_id,
+                            'new_store_location_id' => $destinationLocation->id,
+                            'new_status' => 'packed',
+                            'stock_transfer_id' => $stockTransfer->id
+                        ]);
+                    }
+                }
+            } else {
+                // Fallback: Tìm các fulfillment của đơn hàng này tại kho NGUỒN với trạng thái 'processing'
+                $fulfillments = $relatedOrder->fulfillments()
+                    ->where('store_location_id', $stockTransfer->from_location_id)
+                    ->where('status', 'processing')
+                    ->get();
+                
+                foreach ($fulfillments as $fulfillment) {
+                    // Kiểm tra xem kho đích có đủ hàng cho fulfillment này không
+                    $hasStock = $this->checkFulfillmentStock($fulfillment, $destinationLocation->id);
+                    
+                    if ($hasStock) {
+                        // Cập nhật cả vị trí kho và trạng thái fulfillment
+                        $fulfillment->update([
+                            'store_location_id' => $destinationLocation->id,
+                            'status' => 'packed'
+                        ]);
+                        
+                        Log::info("Updated fulfillment location and status after stock transfer (fallback)", [
+                            'fulfillment_id' => $fulfillment->id,
+                            'tracking_code' => $fulfillment->tracking_code,
+                            'order_id' => $relatedOrder->id,
+                            'old_store_location_id' => $stockTransfer->from_location_id,
+                            'new_store_location_id' => $destinationLocation->id,
+                            'new_status' => 'packed',
+                            'stock_transfer_id' => $stockTransfer->id
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Kiểm tra xem kho có đủ hàng cho fulfillment không
+     *
+     * @param OrderFulfillment $fulfillment
+     * @param int $warehouseId
+     * @return bool
+     */
+    private function checkFulfillmentStock($fulfillment, int $warehouseId): bool
+    {
+        foreach ($fulfillment->items as $item) {
+            $inventory = ProductInventory::where('product_variant_id', $item->orderItem->product_variant_id)
+                ->where('store_location_id', $warehouseId)
+                ->where('inventory_type', 'new')
+                ->first();
+                
+            if (!$inventory || $inventory->quantity < $item->quantity) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
     /**
      * Gán shipper nếu kho đích cùng tỉnh với đơn hàng
      *
@@ -354,8 +460,37 @@ class StockTransferWorkflowService
     {
         // Tìm đơn hàng dựa trên ghi chú hoặc metadata
         if ($stockTransfer->notes && str_contains($stockTransfer->notes, 'Order:')) {
-            $orderCode = trim(str_replace('Order:', '', $stockTransfer->notes));
-            return Order::where('order_code', $orderCode)->first();
+            // Tách mã đơn hàng từ ghi chú
+            $parts = explode('Order:', $stockTransfer->notes);
+            if (count($parts) > 1) {
+                $orderPart = trim($parts[1]);
+                // Lấy phần trước dấu cách hoặc dấu ngoặc
+                $orderCode = explode(' ', $orderPart)[0];
+                $orderCode = explode('(', $orderCode)[0];
+                $orderCode = trim($orderCode);
+                
+                return Order::where('order_code', $orderCode)->first();
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Trích xuất fulfillment ID từ ghi chú
+     *
+     * @param string|null $notes
+     * @return int|null
+     */
+    private function extractFulfillmentIdFromNotes(?string $notes): ?int
+    {
+        if (!$notes) {
+            return null;
+        }
+        
+        // Tìm pattern "fulfillment #123" trong ghi chú
+        if (preg_match('/fulfillment #(\d+)/', $notes, $matches)) {
+            return (int) $matches[1];
         }
         
         return null;

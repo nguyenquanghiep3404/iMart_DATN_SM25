@@ -193,41 +193,8 @@ class OrderController extends Controller
                             'confirmed_by' => auth()->id()
                         ]);
                         
-                        // Tự động tạo phiếu chuyển kho cho đơn hàng khác tỉnh
-                        \Log::info('Bắt đầu kiểm tra tạo phiếu chuyển kho tự động', [
-                            'order_id' => $order->id,
-                            'order_code' => $order->order_code,
-                            'shipping_province' => $order->shipping_old_province_code,
-                            'items_count' => $order->items->count(),
-                            'confirmed_by' => auth()->id()
-                        ]);
-                        
-                        $autoTransferService = new AutoStockTransferService();
-                        $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-                        
-                        \Log::info('Kết quả kiểm tra tạo phiếu chuyển kho tự động', [
-                            'order_id' => $order->id,
-                            'order_code' => $order->order_code,
-                            'result' => $transferResult
-                        ]);
-                        
-                        if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                            $updateData['admin_note'] = ($updateData['admin_note'] ?? '') . 
-                                " Đã tạo tự động " . count($transferResult['transfers_created']) . " phiếu chuyển kho.";
-                            
-                            \Log::info('Đã tạo phiếu chuyển kho tự động thành công', [
-                                'order_id' => $order->id,
-                                'order_code' => $order->order_code,
-                                'transfers_count' => count($transferResult['transfers_created']),
-                                'transfers' => $transferResult['transfers_created']
-                            ]);
-                        } else {
-                            \Log::info('Không tạo phiếu chuyển kho tự động', [
-                                'order_id' => $order->id,
-                                'order_code' => $order->order_code,
-                                'reason' => $transferResult['message'] ?? 'Không rõ lý do'
-                            ]);
-                        }
+                        // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+                        // để sử dụng FulfillmentStockTransferService thay vì AutoStockTransferService
                     }
                     break;
                     

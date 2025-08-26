@@ -409,6 +409,8 @@
                                                         background-color: #e0e7ff !important; color: #4338ca !important;
                                                     @elseif($fulfillment->status == 'processing')
                                                         background-color: #cffafe !important; color: #0891b2 !important;
+                                                    @elseif($fulfillment->status == 'awaiting_shipment')
+                                                        background-color: #cffafe !important; color: #0891b2 !important;
                                                     @elseif($fulfillment->status == 'shipped')
                                                         background-color: #f3e8ff !important; color: #7c3aed !important;
                                                     @elseif($fulfillment->status == 'delivered')
@@ -423,8 +425,10 @@
                                                         Chờ xử lý
                                                     @elseif($fulfillment->status == 'processing')
                                                         Đang xử lý
+                                                    @elseif($fulfillment->status == 'awaiting_shipment')
+                                                        Chờ giao hàng
                                                     @elseif($fulfillment->status == 'shipped')
-                                                        Đã giao hàng
+                                                        đang giao hàng
                                                     @elseif($fulfillment->status == 'delivered')
                                                         Giao hàng thành công
                                                     @else
@@ -547,9 +551,17 @@
             text: "Đang xử lý",
             class: "status-processing"
         },
+        awaiting_shipment: {
+            text: "Chờ giao hàng",
+            class: "status-processing"
+        },
         packed: {
             text: "Đóng gói thành công",
             class: "status-packed"
+        },
+        shipped: {
+            text: "đang giao hàng",
+            class: "status-shipped"
         },
         out_for_delivery: {
             text: "Đang giao hàng",
