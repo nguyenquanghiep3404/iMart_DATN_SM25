@@ -198,5 +198,9 @@
         color: #fff;
         border-color: #0d6efd;
     }
+
+     #blogSidebar {
+            z-index: 0;
+        }
 </style>
 @endpush
