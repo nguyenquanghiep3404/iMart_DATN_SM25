@@ -231,7 +231,7 @@
 
     // LOGIC MỚI: KIỂM TRA ĐƠN HÀNG CÓ BỊ QUÁ HẠN KHÔNG
     $isOverdue = false;
-    if ($isPickupOrder && $order->status === 'awaiting_shipment' && !empty($order->desired_delivery_date)) {
+    if ($isPickupOrder && $order->status === 'processing' && !empty($order->desired_delivery_date)) {
     try {
     // Lấy ngày hẹn nhận hàng từ database
     $pickupDate = \Carbon\Carbon::parse($order->desired_delivery_date)->startOfDay();

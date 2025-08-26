@@ -35,7 +35,7 @@ class InventoryReportController extends Controller
             ->selectRaw('COALESCE(SUM(oi.quantity), 0)')
             ->whereRaw('oi.product_variant_id = product_inventories.product_variant_id')
             ->whereRaw('o.store_location_id = product_inventories.store_location_id')
-            ->whereIn('o.status', ['processing', 'awaiting_shipment']);
+            ->whereIn('o.status', ['processing']);
 
         $query->selectSub($heldSubquery, 'held_quantity');
 

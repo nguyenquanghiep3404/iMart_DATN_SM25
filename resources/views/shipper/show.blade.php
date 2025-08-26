@@ -128,9 +128,9 @@
     </div>
 
     {{-- Footer chứa các nút hành động --}}
-    @if(in_array($order->status, ['awaiting_shipment', 'shipped', 'out_for_delivery']))
+    @if(in_array($order->status, ['processing', 'shipped', 'out_for_delivery']))
         <footer class="sticky bottom-0 p-4 bg-white border-t z-20">
-            @if($order->status === 'awaiting_shipment')
+            @if($order->status === 'processing')
                 {{-- Nút mới để mở modal quét mã --}}
                 <button type="button" @click="openBarcodeScanner()" class="w-full flex items-center justify-center bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="fas fa-barcode mr-2"></i>
