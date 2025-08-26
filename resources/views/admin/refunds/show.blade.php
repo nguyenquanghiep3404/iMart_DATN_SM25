@@ -78,14 +78,22 @@
                         </div>
                     </div>
                     @endforeach
-
+                    @php
+                    $reasonLabels = [
+                    'defective' => 'Sản phẩm bị lỗi do nhà sản xuất',
+                    'wrong_item' => 'Giao sai sản phẩm',
+                    'not_as_described' => 'Không đúng như mô tả',
+                    'changed_mind' => 'Thay đổi ý định (có thể áp dụng phí)',
+                    'other' => 'Lý do khác',
+                    ];
+                    @endphp
 
                     <div class="mt-4 border-t pt-4 space-y-2">
-                        <p><strong class="font-semibold">Lý do từ khách hàng:</strong> {{ $returnRequest->reason ?? 'Không có lý do' }}</p>
+                        <p><strong class="font-semibold">Lý do từ khách hàng:</strong> {{ $reasonLabels[$returnRequest->reason] ?? $returnRequest->reason }}</p>
                         <p><strong class="font-semibold">Mô tả: </strong>{{ $returnRequest->reason_details }}.</p>
                     </div>
                     <div class="mt-4">
-                        <h3 class="font-semibold mb-2">Hình ảnh/Video bằng chứng:</h3>
+                        <h3 class="font-semibold mb-2">Hình ảnh bằng chứng:</h3>
                         <div class="flex space-x-2">
                             @foreach ($returnRequest->files as $file)
                             <img src="{{ Storage::url($file->path) }}" alt="{{ $file->original_name }}" class="w-24 h-24 rounded-md cursor-pointer hover:opacity-80 transition">

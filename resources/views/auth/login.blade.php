@@ -77,12 +77,6 @@
                 </div>
             </div>
 
-            <!-- Remember Me -->
-            <div class="form-check mb-4">
-                <input type="checkbox" class="form-check-input" id="save-pass" name="remember">
-                <label for="save-pass" class="form-check-label">Nhớ mật khẩu</label>
-            </div>
-
             <!-- Nút Đăng nhập đã được cập nhật màu sắc và bỏ icon -->
             <button type="submit" class="btn btn-lg btn-dark w-100">
                 Đăng nhập

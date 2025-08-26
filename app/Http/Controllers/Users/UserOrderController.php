@@ -132,14 +132,32 @@ class UserOrderController extends Controller
             'cancelled_at' => now(),
             'cancellation_reason' => $request->reason
         ]);
-        
-        // REMOVED: Package status update - now using order_fulfillments directly
+
+        // Cập nhật trạng thái packages khi user hủy đơn hàng
+        $this->updatePackageStatusBasedOnOrderStatus($order);
+
 
         // Gửi email thông báo hủy đơn (có thể triển khai sau)
 
         return redirect()->route('orders.show', $order->id)
             ->with('success', 'Đơn hàng đã được hủy thành công.');
     }
-    
+
+    /**
+     * Cập nhật trạng thái packages dựa trên trạng thái đơn hàng
+     */
+       public function confirmReceipt(Order $order)
+    {
+        if (Auth::id() !== $order->user_id) {
+            abort(403);
+        }
+        // Chỉ xác nhận khi đơn đã giao và chưa có xác nhận trước đó
+        if ($order->status === 'delivered' && is_null($order->confirmed_at)) {
+            $order->update(['confirmed_at' => now()]);
+            return redirect()->back()->with('success', 'Cảm ơn bạn đã xác nhận lại đơn hàng!');
+        }
+        return redirect()->back()->with('error', 'Không thể thực hiện hành động này.');
+    }
+
     // REMOVED: updatePackageStatusBasedOnOrderStatus method - now using order_fulfillments directly
 }
