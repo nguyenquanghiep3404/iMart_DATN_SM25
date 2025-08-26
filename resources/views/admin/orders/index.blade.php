@@ -256,6 +256,18 @@
             letter-spacing: 0.5px;
             box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
         }
+        /* Highlight xanh dương nhạt cho đơn hàng mới */
+        .new-order-row {
+            background-color: #eff6ff !important; /* blue-50 */
+            box-shadow: inset 0 0 0 1px #ffffff, /* viền trắng mảnh */
+                        inset 0 0 0 3px #93c5fd !important; /* viền xanh nhạt (blue-300) */
+        }
+        /* Giữ nền khi hover cho đơn mới */
+        .new-order-row:hover {
+            background-color: #eff6ff !important;
+            box-shadow: inset 0 0 0 1px #ffffff !important,
+                        inset 0 0 0 3px #93c5fd !important;
+        }
         /* Làm chữ đơn hàng mới đậm hơn */
         .new-order-row .font-bold {
             font-weight: 800;
@@ -1058,26 +1070,36 @@
         });
     };
 
-    // Theo dõi đơn hàng đã xem (đơn đã cập nhật trạng thái)
-    let viewedOrders = new Set(JSON.parse(localStorage.getItem('viewedOrders') || '[]'));
-
-    // Kiểm tra đơn hàng mới: chỉ dựa vào việc đã 'được xử lý/xem' hay chưa
+    // Theo dõi đơn hàng đã xem
+    const VIEWED_KEY = 'viewedOrdersV2';
+    let viewedOrders = new Set(JSON.parse(localStorage.getItem(VIEWED_KEY) || '[]'));
+    // Đơn hàng mới: tạo trong 24h gần nhất
+    const isNewOrderWithin24h = (createdAt) => {
+        const createdDate = new Date(createdAt);
+        const now = new Date();
+        const diffInHours = (now - createdDate) / (1000 * 60 * 60);
+        return diffInHours <= 24;
+    };
+    // Giữ cho logic 24h, không quyết định highlight
     const isNewOrder = (createdAt, orderId) => {
-        // Force JavaScript tính toán viewedOrders để tránh tối ưu hóa
-        const viewedOrdersArray = Array.from(viewedOrders);
-        const isNew = !viewedOrders.has(orderId);
-        return isNew;
+        return isNewOrderWithin24h(createdAt);
+    };
+    // Quy tắc highlight: đơn chưa được xem (hiện highlight đến khi mở chi tiết hoặc đổi trạng thái)
+    const shouldHighlightOrder = (order) => {
+        if (!order) return false;
+        const isViewed = viewedOrders.has(order.id);
+        return !isViewed;
     };
 
     // Đánh dấu đơn hàng đã xem
     const markOrderAsViewed = (orderId) => {
         viewedOrders.add(orderId);
-        localStorage.setItem('viewedOrders', JSON.stringify([...viewedOrders]));
+        localStorage.setItem(VIEWED_KEY, JSON.stringify([...viewedOrders]));
     };
 
     // Cập nhật số lượng đơn hàng mới
     const updateNewOrdersCount = (orders) => {
-        const newOrdersCount = orders.filter(order => isNewOrder(order.created_at, order.id)).length;
+        const newOrdersCount = orders.filter(order => isNewOrderWithin24h(order.created_at)).length;
         const countElement = document.getElementById('new-orders-count');
         
         if (newOrdersCount > 0) {
@@ -1123,12 +1145,9 @@
         const orderStatus = statusMap[order.status] || { text: 'N/A', class: '' };
         const paymentStatus = paymentStatusMap[order.payment_status] || { text: 'N/A', class: '' };
         
-        // Kiểm tra đơn hàng mới
-        const isNew = isNewOrder(order.created_at, order.id);
-        
-
-
-        // Huy hiệu đơn hàng mới
+        // Kiểm tra highlight cho đơn mới tạo
+        const isNew = shouldHighlightOrder(order);
+        // Huy hiệu đơn hàng mới (đồng bộ với highlight)
         const newOrderBadge = isNew ? '<span class="new-order-badge">Mới</span>' : '';
         
         // Lớp dòng
@@ -1308,12 +1327,10 @@
                 populateModal(order);
                 modal.classList.add('is-open');
                 modal.querySelector('div').classList.remove('scale-95');        
-                // Đánh dấu đơn hàng đã xem khi mở modal (chỉ với đơn đã hủy)
-                if (order.status === 'cancelled') {
-                    markOrderAsViewed(orderId);
-                    // Làm mới bảng để cập nhật hiển thị highlight
-                    refreshCurrentPage();
-                }
+                // Đánh dấu đơn hàng đã xem khi mở modal (mọi trạng thái)
+                markOrderAsViewed(orderId);
+                // Làm mới bảng để cập nhật hiển thị highlight
+                refreshCurrentPage();
             }
         } catch (error) {
             console.error('Error fetching order details:', error);

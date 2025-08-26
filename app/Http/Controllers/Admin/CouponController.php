@@ -191,9 +191,14 @@ class CouponController extends Controller
             $query->orderBy('created_at', 'desc');
         }
         $usages = $query->paginate(15);
-        // Tính tổng số tiền tiết kiệm tổng số tiền giảm giá từ các đơn hàng
+        // Tính tổng số tiền tiết kiệm từ các đơn hàng (loại trừ đơn hàng không thành công)
         $totalSavings = $coupon->usages()
             ->join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+            ->whereNotIn('orders.status', [
+                'cancelled',      // Đã hủy
+                'returned',       // Trả hàng
+                'failed_delivery' // Giao hàng thất bại
+            ])
             ->sum('orders.discount_amount');
         return view('admin.coupons.usage-history', compact('coupon', 'usages', 'totalSavings'));
     }

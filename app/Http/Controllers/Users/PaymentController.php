@@ -100,6 +100,7 @@ class PaymentController extends Controller
         $user = auth()->user();
 
         $availableCoupons = Coupon::where('status', 'active')
+            ->where('is_public', 1)
             ->where(function ($query) {
                 $query->whereNull('start_date')
                     ->orWhere('start_date', '<=', now());
@@ -191,7 +192,7 @@ class PaymentController extends Controller
             return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
         });
 
-        $availableCoupons = Coupon::where('status', 'active')->get();
+        $availableCoupons = Coupon::where('status', 'active')->where('is_public', 1)->get();
 
         // 4. Trả về view với toàn bộ dữ liệu chính xác
         return view('users.payments.information', [
@@ -1325,6 +1326,7 @@ class PaymentController extends Controller
         $user = auth()->user();
 
         $availableCoupons = Coupon::where('status', 'active')
+            ->where('is_public', 1)
             ->where(function ($query) {
                 $query->whereNull('start_date')
                     ->orWhere('start_date', '<=', now());
@@ -1945,7 +1947,7 @@ class PaymentController extends Controller
             'baseLength' => $maxLength > 0 ? $maxLength : 20,
             'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
             'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
-            'availableCoupons' => Coupon::where('status', 'active')->get(), // Buy Now VẪN áp dụng coupon
+            'availableCoupons' => Coupon::where('status', 'active')->where('is_public', 1)->get(),
         ];
     }
     /**
