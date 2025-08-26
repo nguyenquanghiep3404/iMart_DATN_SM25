@@ -135,7 +135,8 @@
                         $statusMap = [
                             'pending_confirmation' => 'Chờ xác nhận',
                             'processing' => 'Đang xử lý',
-                            'shipped' => 'Đã gửi',
+                            'awaiting_shipment' => 'Chờ giao hàng',
+                            'shipped' => 'đang giao hàng',
                             'out_for_delivery' => 'Đang giao',
                             'delivered' => 'Đã giao',
                             'cancelled' => 'Đã hủy',

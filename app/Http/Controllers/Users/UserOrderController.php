@@ -102,8 +102,10 @@ class UserOrderController extends Controller
         $statusMap = [
             'pending_confirmation' => 'pending_confirmation',
             'processing' => 'processing',
+            'partially_shipped' => 'partially_shipped',
             'out_for_delivery' => 'out_for_delivery',
             'external_shipping' => 'external_shipping',
+            'partially_delivered' => 'partially_delivered',
             'delivered' => 'delivered',
             'cancelled' => 'cancelled',
             'failed_delivery' => 'failed_delivery'

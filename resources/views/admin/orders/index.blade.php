@@ -25,7 +25,9 @@
         .status-pending_confirmation { background-color: #e0e7ff; color: #4338ca; }
         .status-processing { background-color: #cffafe; color: #0891b2; }
         .status-shipped { background-color: #d1fae5; color: #059669; }
+        .status-partially_shipped { background-color: #f3e8ff; color: #7c3aed; }
         .status-delivered { background-color: #dcfce7; color: #16a34a; }
+        .status-partially_delivered { background-color: #ecfdf5; color: #10b981; }
         .status-cancelled { background-color: #fee2e2; color: #dc2626; }
         .payment-pending { background-color: #fef3c7; color: #d97706; }
         .payment-paid { background-color: #dcfce7; color: #16a34a; }
@@ -506,10 +508,12 @@
                         <option value="">Tất cả</option>
                         <option value="pending_confirmation">Chờ xác nhận</option>
                         <option value="processing">Đang xử lý</option>
-
-                        <option value="shipped">Đã xuất kho</option>
+                        <option value="awaiting_shipment">Chờ giao hàng</option>
+                        <option value="shipped">đang giao hàng</option>
+                        <option value="partially_shipped">Giao hàng một phần</option>
                         <option value="out_for_delivery">Đang giao hàng</option>
                         <option value="delivered">Giao thành công</option>
+                        <option value="partially_delivered">Giao thành công một phần</option>
                         <option value="cancelled">Đã hủy</option>
                         <option value="returned">Đã trả hàng</option>
                         <option value="failed_delivery">Giao hàng thất bại</option>
@@ -779,7 +783,9 @@
                             <option value="pending_confirmation">Chờ xác nhận</option>
                             <option value="processing">Đang xử lý</option>
                             <option value="out_for_delivery" class="delivery-only">Đang giao hàng</option>
+                            <option value="partially_shipped" class="delivery-only" disabled style="color: #9ca3af;">Giao hàng một phần (Tự động)</option>
                             <option value="delivered">Giao hàng thành công</option>
+                            <option value="partially_delivered" class="delivery-only" disabled style="color: #9ca3af;">Giao thành công một phần (Tự động)</option>
                             <option value="cancelled">Hủy</option>
                             <option value="failed_delivery" class="delivery-only">Giao hàng thất bại</option>
                             <option value="returned">Trả hàng</option>
@@ -961,9 +967,13 @@
                                 'pending': { text: 'Chờ xử lý', class: 'bg-orange-100 text-orange-800 border-orange-200' },
                                 'pending_confirmation': { text: 'Chờ xác nhận', class: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
                                 'processing': { text: 'Đang xử lý', class: 'bg-blue-100 text-blue-800 border-blue-200' },
+                                'awaiting_shipment': { text: 'Chờ giao hàng', class: 'bg-cyan-100 text-cyan-800 border-cyan-200' },
                                 'packed': { text: 'Đóng gói thành công', class: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+                                'shipped': { text: 'đang giao hàng', class: 'bg-purple-100 text-purple-800 border-purple-200' },
+                                'partially_shipped': { text: 'Giao hàng một phần', class: 'bg-purple-50 text-purple-700 border-purple-300' },
                                 'out_for_delivery': { text: 'Đang giao hàng', class: 'bg-purple-100 text-purple-800 border-purple-200' },
                                 'delivered': { text: 'Giao hàng thành công', class: 'bg-green-100 text-green-800 border-green-200' },
+                                'partially_delivered': { text: 'Giao thành công một phần', class: 'bg-green-50 text-green-700 border-green-300' },
                                 'cancelled': { text: 'Hủy', class: 'bg-red-100 text-red-800 border-red-200' },
                                 'failed_delivery': { text: 'Giao thất bại', class: 'bg-red-100 text-red-800 border-red-200' },
                                 'returned': { text: 'Trả hàng', class: 'bg-gray-100 text-gray-800 border-gray-200' }
@@ -1101,10 +1111,12 @@
     const statusMap = {
         pending_confirmation: { text: "Chờ xác nhận", class: "status-pending_confirmation" },
         processing: { text: "Đang xử lý", class: "status-processing" },
-
-        shipped: { text: "Đã xuất kho", class: "status-shipped" },
+        awaiting_shipment: { text: "Chờ giao hàng", class: "status-processing" },
+        shipped: { text: "đang giao hàng", class: "status-shipped" },
+        partially_shipped: { text: "Giao hàng một phần", class: "status-partially_shipped" },
         out_for_delivery: { text: "Đang giao hàng", class: "status-shipped" },
         delivered: { text: "Giao thành công", class: "status-delivered" },
+        partially_delivered: { text: "Giao thành công một phần", class: "status-partially_delivered" },
         cancelled: { text: "Đã hủy", class: "status-cancelled" },
         returned: { text: "Đã trả hàng", class: "status-cancelled" },
         failed_delivery: { text: "Giao hàng thất bại", class: "status-cancelled" }
@@ -1559,6 +1571,7 @@
                     'pending': { text: 'Chờ xử lý', class: 'bg-orange-100 text-orange-800' },
                     'pending_confirmation': { text: 'Chờ xác nhận', class: 'bg-indigo-100 text-indigo-800' },
                     'processing': { text: 'Đang xử lý', class: 'bg-blue-100 text-blue-800' },
+                    'awaiting_shipment': { text: 'Chờ giao hàng', class: 'bg-cyan-100 text-cyan-800' },
                     'packed': { text: 'Đóng gói thành công', class: 'bg-yellow-100 text-yellow-800' },
                     'out_for_delivery': { text: 'Đang giao hàng', class: 'bg-purple-100 text-purple-800' },
                     'delivered': { text: 'Giao hàng thành công', class: 'bg-green-100 text-green-800' },
@@ -2094,6 +2107,17 @@
         
         if (!newStatus) {
             showToast('Vui lòng chọn trạng thái hợp lệ', 'error');
+            return false;
+        }
+        
+        // Chặn việc chuyển trạng thái thủ công sang partially_shipped và partially_delivered
+        if (newStatus === 'partially_shipped') {
+            showToast('Trạng thái "Giao hàng một phần" được cập nhật tự động khi có fulfillment được giao. Không thể chuyển thủ công.', 'error');
+            return false;
+        }
+        
+        if (newStatus === 'partially_delivered') {
+            showToast('Trạng thái "Giao thành công một phần" được cập nhật tự động khi có fulfillment được giao thành công. Không thể chuyển thủ công.', 'error');
             return false;
         }
         

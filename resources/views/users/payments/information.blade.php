@@ -112,7 +112,7 @@
                             <div class="mb-4">
                                 <h3 class="h6 mb-3">Phương thức nhận hàng</h3>
                                 <div class="row g-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-12">
                                         <div class="option-card rounded p-3 selected" id="delivery-method-delivery">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="radio" name="delivery_method"
@@ -122,7 +122,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    {{-- <div class="col-md-6">
                                         <div class="option-card rounded p-3" id="delivery-method-pickup">
                                             <div class="form-check">
                                                 <input class="form-check-input" type="radio" name="delivery_method"
@@ -131,7 +131,7 @@
                                                     for="delivery_method_radio_pickup">Nhận tại cửa hàng</label>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> --}}
                                 </div>
                                 {{-- Error message for delivery method --}}
                                 <div id="delivery_method_error" class="error-message" style="display: none;">
