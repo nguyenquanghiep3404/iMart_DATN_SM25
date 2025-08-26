@@ -290,12 +290,12 @@
                 </div>
             </div>
             <div class="order-card-footer">
-                @if($order->status == 'delivered' || $order->status == 'cancelled')
+                <!-- @if($order->status == 'delivered' || $order->status == 'cancelled')
                 <form action="{{ route('orders.buy_again', $order->id) }}" method="POST" class="d-inline-block">
                     @csrf
                     <button type="submit" class="btn-secondary">Mua lại</button>
                 </form>
-                @endif
+                @endif -->
                 {{-- Hiển thị nút khi đơn hàng đã giao VÀ chưa được xác nhận --}}
                 @if($order->status == 'delivered' && is_null($order->confirmed_at))
                     <form action="{{ route('orders.confirm_receipt', $order->id) }}" method="POST" class="d-inline-block">
