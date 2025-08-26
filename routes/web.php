@@ -789,15 +789,16 @@ Route::prefix('admin')
             Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
             Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
         });
+            // --- ROUTES QUẢN LÝ ĐIỂM THƯỞNG ---
+            Route::get('/loyalty-points', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'index'])->name('loyalty.index');
+            Route::post('/loyalty-points/adjust', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'adjust'])->name('loyalty.adjust');
         Route::prefix('refunds')->name('refunds.')->group(function () {
             Route::get('/', [OrderRefundController::class, 'index'])->name('index');
             Route::get('/{id}', [OrderRefundController::class, 'show'])->name('show');
             Route::put('/{id}/note', [OrderRefundController::class, 'updateNote'])->name('note');
             Route::put('/{id}/status', [OrderRefundController::class, 'updateStatus'])->name('update_status');
         });
-                    // --- ROUTES QUẢN LÝ ĐIỂM THƯỞNG ---
-            Route::get('/loyalty-points', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'index'])->name('loyalty.index');
-            Route::post('/loyalty-points/adjust', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'adjust'])->name('loyalty.adjust');
+
         // QUẢN LÝ NHẬP KHO (PURCHASE ORDERS)
         Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
             // Route để tìm kiếm sản phẩm (dùng cho AJAX khi thêm sản phẩm vào phiếu)
@@ -885,14 +886,14 @@ Route::prefix('admin')
 
         // Quản lý tồn kho
         Route::get('/inventory-dashboard', [InventoryDashboardController::class, 'index'])
-            ->name('admin.inventory.dashboard');  
+            ->name('admin.inventory.dashboard');
         // báo cáo tồn kho chi tiết
         Route::get('/reports/inventory', [InventoryReportController::class, 'index'])->name('reports.inventory.index'); // giao diện
         Route::get('/reports/inventory/data', [InventoryReportController::class, 'generate']); // API dữ liệu
         Route::get('/reports/inventory/provinces', [InventoryReportController::class, 'getAvailableProvinces']);
         Route::get('/reports/inventory/districts', [InventoryReportController::class, 'getAvailableDistricts']);
         Route::get('reports/inventory/export', [InventoryReportController::class, 'export'])->name('admin.reports.inventory.export');
-        
+
         // Phân tích kinh doanh
         Route::get('/business-analysis', [InventoryDashboardController::class, 'businessAnalysis'])->name('business-analysis.index');
         // Báo cáo chi tiết: Lợi nhuận theo sản phẩm

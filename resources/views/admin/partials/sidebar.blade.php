@@ -207,7 +207,7 @@
                 [
                     'label' => 'Điểm thưởng',
                     'route' => 'admin.loyalty.index',
-                    'active_check' => ['admin.loyalty.'],
+                    'active_check' => ['admin.loyalty.index'],
                 ],
             ],
         ],
