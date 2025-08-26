@@ -53,7 +53,7 @@
                     <h1 class="text-3xl font-bold text-gray-800">Quản lý Nhân viên Giao hàng</h1>
                     <p class="text-gray-500 mt-1">Kho: {{ $warehouse->name }} -
                         {{ $warehouse->province->name_with_type ?? '' }}</p>
-                    <a href="{{ route('admin.shippers.index') }}" 
+                    <a href="{{ route('admin.shippers.index') }}"
                         class="inline-flex items-center mt-2 px-3 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>
                         Quay lại
@@ -103,7 +103,7 @@
                 </div>
             </div>
             <div class="bg-white p-6 rounded-xl shadow-sm flex items-center space-x-4">
-                <div class="bg-indigo-100 text-indigo-600 p-4 rounded-full"><i class="fas fa-truck-ramp-box fa-xl"></i>
+                <div class="bg-indigo-100 text-indigo-600 p-4 rounded-full"><i class="fas fa-truck fa-xl"></i>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Tổng đơn đã giao</p>

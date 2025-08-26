@@ -11,13 +11,17 @@
                 <h1 class="text-3xl font-bold text-gray-800">Quản lý Banner</h1>
                 <p class="text-gray-500 mt-1">Thêm mới và quản lý các banner quảng cáo trên trang web.</p>
             </div>
-            <button onclick="openModal()" class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2">
-                <i class="fas fa-plus"></i>
-                <span>Thêm banner mới</span>
-            </button>
-            <a href="{{ route('admin.banners.trash') }}" class="ml-4 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium border border-gray-300">
-                🗑 Thùng rác
-            </a>
+           <div class="flex items-center gap-3">
+        <a href="{{ route('admin.banners.trash') }}" 
+           class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium border border-gray-300">
+            🗑 Thùng rác
+        </a>
+        <button onclick="openModal()" 
+            class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-semibold flex items-center space-x-2">
+            <i class="fas fa-plus"></i>
+            <span>Thêm banner mới</span>
+        </button>
+    </div>
         </div>
 
         @if(session('success'))

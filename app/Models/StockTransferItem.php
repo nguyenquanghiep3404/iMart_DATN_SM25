@@ -25,6 +25,7 @@ class StockTransferItem extends Model
         'stock_transfer_id',
         'product_variant_id',
         'quantity',
+        'imei_serials',
     ];
 
     /**

@@ -40,6 +40,8 @@
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M21.08,7a2,2,0,0,0-1.7-1H6.58L6,3.74A1,1,0,0,0,5,3H3A1,1,0,0,0,3,5H4.24L7,15.26A1,1,0,0,0,8,16H18a1,1,0,0,0,.93-.66L21.23,9.34A2,2,0,0,0,21.08,7Zm-2.39,7H8.74L7.22,7H19.38Z" /><circle cx="8.5" cy="19.5" r="1.5" /><circle cx="17.5" cy="19.5" r="1.5" /></svg>',
             'children' => [
                 ['label' => 'Đơn hàng', 'route' => 'admin.orders.index', 'active_check' => ['admin.orders.']],
+                ['label' => 'Gán shipper', 'route' => 'admin.shipper-assignment.index', 'active_check' => ['admin.shipper-assignment.']],
+                ['label' => 'Giao hàng ngoài', 'route' => 'admin.external-shipping.index', 'active_check' => ['admin.external-shipping.']],
                 ['label' => 'Hoàn tiền', 'route' => 'admin.refunds.index', 'active_check' => ['admin.refunds.']],
                 [
                     'label' => 'Giỏ hàng bỏ lỡ',
@@ -79,6 +81,21 @@
             'icon' =>
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.54,5.23l-1.39-1.39A3,3,0,0,0,17,3H7A3,3,0,0,0,4.85,3.84L3.46,5.23A3,3,0,0,0,3,7.35V19a3,3,0,0,0,3,3H18a3,3,0,0,0,3-3V7.35A3,3,0,0,0,20.54,5.23ZM5.41,5H18.59l.6,0.6V7H5V5.6ZM19,19a1,1,0,0,1-1,1H6a1,1,0,0,1-1-1V9H19Z" /><path d="M10.5,13.5h3a1,1,0,0,0,0-2h-3a1,1,0,0,0,0,2Z" /></svg>',
             'children' => [
+                [
+                    'label' => 'Thống kê tồn kho',
+                    'route' => 'admin.admin.inventory.dashboard',
+                    'active_check' => ['admin.admin.inventory.'],
+                ],
+                [
+                    'label' => 'Báo cáo tồn kho chi tiết',
+                    'route' => 'admin.reports.inventory.index',
+                    'active_check' => ['admin.reports.inventory.'],
+                ],
+                [
+                    'label' => 'Báo cáo kinh doanh',
+                    'route' => 'admin.business-analysis.index',
+                    'active_check' => ['admin.business-analysis.'],
+                ],
                 ['label' => 'Nhà cung cấp', 'route' => 'admin.suppliers.index', 'active_check' => ['admin.suppliers.']],
                 [
                     'label' => 'Nhập kho (PO)',
@@ -95,11 +112,7 @@
                     'route' => 'admin.auto-stock-transfers.manage',
                     'active_check' => ['admin.auto-stock-transfers.'],
                 ],
-                [
-                    'label' => 'Trạm đóng gói',
-                    'route' => 'admin.packing-station.index',
-                    'active_check' => ['admin.packing-station.'],
-                ],
+                // REMOVED: Trạm đóng gói - không còn sử dụng packages
                 // MỚI: Thêm route tra cứu serial
                 [
                     'label' => 'Tra cứu Serial',
@@ -111,6 +124,11 @@
                     'label' => 'Sổ kho (Báo cáo)',
                     'route' => 'admin.inventory-ledger.index',
                     'active_check' => ['admin.inventory-ledger.'],
+                ],
+                [
+                    'label' => 'Trạm đóng gói',
+                    'route' => 'admin.packing-station.index',
+                    'active_check' => ['admin.packing-station.'],
                 ],
             ],
         ],
@@ -128,11 +146,7 @@
                     'route' => 'admin.products.index',
                     'active_check' => ['admin.products.'],
                 ],
-                [
-                    'label' => 'Gói sản phẩm',
-                    'route' => 'admin.bundle-products.index',
-                    'active_check' => ['admin.bundle-products.'],
-                ],
+                // REMOVED: Gói sản phẩm - không còn sử dụng packages
                 [
                     'label' => 'Thu cũ & Mở hộp',
                     'route' => 'admin.trade-in-items.index',
@@ -192,8 +206,8 @@
                 ],
                 [
                     'label' => 'Điểm thưởng',
-                    'route' => 'admin.purchase-orders.loyalty.index',
-                    'active_check' => ['admin.purchase-orders.loyalty.'],
+                    'route' => 'admin.loyalty.index',
+                    'active_check' => ['admin.loyalty.'],
                 ],
             ],
         ],

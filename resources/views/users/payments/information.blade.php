@@ -367,82 +367,53 @@
                             <div id="payment_method_error" class="error-message mb-3"><i
                                     class="fas fa-exclamation-circle"></i><span>Vui lòng chọn phương thức thanh toán</span>
                             </div>
-                            <div class="row g-3">
+                            <div class="d-flex flex-column gap-3">
                                 {{-- Content from payment_methods.blade.php --}}
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <div class="form-check">
-                                            <input id="cod" name="payment_method" type="radio" value="cod"
-                                                class="form-check-input">
-                                            <label for="cod" class="form-check-label w-100 cursor-pointer">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fas fa-truck fs-4 text-muted me-3"></i>
-                                                    <div>
-                                                        <div class="fw-medium">Thanh toán khi nhận hàng (COD)</div>
-                                                        <small class="text-muted">Thanh toán bằng tiền mặt</small>
-                                                    </div>
+                                <div class="border rounded p-3">
+                                    <div class="form-check">
+                                        <input id="cod" name="payment_method" type="radio" value="cod"
+                                            class="form-check-input">
+                                        <label for="cod" class="form-check-label w-100 cursor-pointer">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <div class="fw-medium">Thanh toán khi nhận hàng (COD)</div>
+                                                    <small class="text-muted">Thanh toán bằng tiền mặt</small>
                                                 </div>
-                                            </label>
-                                        </div>
+                                                <i class="fas fa-money-bill-wave fs-4 text-success"></i>
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <div class="form-check">
-                                            <input id="qrcode" name="payment_method" type="radio"
-                                                value="bank_transfer_qr" class="form-check-input">
-                                            <label for="qrcode" class="form-check-label w-100 cursor-pointer">
-                                                <div class="d-flex align-items-center">
-                                                    <i class="fas fa-qrcode fs-4 text-muted me-3"></i>
-                                                    <div>
-                                                        <div class="fw-medium">Thanh toán bằng mã QR</div>
-                                                        <small class="text-muted">Quét mã QR để chuyển khoản</small>
-                                                    </div>
+                                <div class="border rounded p-3">
+                                    <div class="form-check">
+                                        <input id="vnpay" name="payment_method" type="radio" value="vnpay"
+                                            class="form-check-input">
+                                        <label for="vnpay" class="form-check-label w-100 cursor-pointer">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <div class="fw-medium">Thanh toán qua VNPay</div>
+                                                    <small class="text-muted">Hỗ trợ thẻ ATM & Ví điện tử</small>
                                                 </div>
-                                            </label>
-                                        </div>
+                                                <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Icon-VNPAY-QR.png"
+                                                    alt="VNPay" style="height: 24px;">
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <div class="form-check">
-                                            <input id="vnpay" name="payment_method" type="radio" value="vnpay"
-                                                class="form-check-input">
-                                            <label for="vnpay" class="form-check-label w-100 cursor-pointer">
-                                                <div class="d-flex align-items-center justify-content-between">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-credit-card fs-4 text-muted me-3"></i>
-                                                        <div>
-                                                            <div class="fw-medium">Thanh toán qua VNPay</div>
-                                                            <small class="text-muted">Hỗ trợ thẻ ATM & Ví điện tử</small>
-                                                        </div>
-                                                    </div>
-                                                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Icon-VNPAY-QR.png"
-                                                        alt="VNPay" style="height: 24px;">
+                                <div class="border rounded p-3">
+                                    <div class="form-check">
+                                        <input id="momo" name="payment_method" type="radio" value="momo"
+                                            class="form-check-input">
+                                        <label for="momo" class="form-check-label w-100 cursor-pointer">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <div class="fw-medium">Thanh toán qua Ví MoMo</div>
+                                                    <small class="text-muted">Ví điện tử MoMo</small>
                                                 </div>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="border rounded p-3 h-100">
-                                        <div class="form-check">
-                                            <input id="momo" name="payment_method" type="radio" value="momo"
-                                                class="form-check-input">
-                                            <label for="momo" class="form-check-label w-100 cursor-pointer">
-                                                <div class="d-flex align-items-center justify-content-between">
-                                                    <div class="d-flex align-items-center">
-                                                        <i class="fas fa-wallet fs-4 text-muted me-3"></i>
-                                                        <div>
-                                                            <div class="fw-medium">Thanh toán qua Ví MoMo</div>
-                                                            <small class="text-muted">Ví điện tử MoMo</small>
-                                                        </div>
-                                                    </div>
-                                                    <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png"
-                                                        alt="MoMo" style="height: 24px;">
-                                                </div>
-                                            </label>
-                                        </div>
+                                                <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png"
+                                                    alt="MoMo" style="height: 24px;">
+                                            </div>
+                                        </label>
                                     </div>
                                 </div>
                                 {{-- End of payment_methods.blade.php content --}}
@@ -794,6 +765,17 @@
                 ->map(function ($item) {
                     $productVariant = $item->productVariant ?? ($item->cartable ?? null);
                     if ($productVariant && $productVariant->product) {
+                        // Chọn URL ảnh: ưu tiên ảnh từ session -> primaryImage -> coverImage -> placeholder
+                        $image = collect([
+                            $item->image ?? null,
+                            ($productVariant->primaryImage && file_exists(storage_path('app/public/' . $productVariant->primaryImage->path)))
+                                ? \Illuminate\Support\Facades\Storage::url($productVariant->primaryImage->path)
+                                : null,
+                            ($productVariant->product && $productVariant->product->coverImage && file_exists(storage_path('app/public/' . $productVariant->product->coverImage->path)))
+                                ? \Illuminate\Support\Facades\Storage::url($productVariant->product->coverImage->path)
+                                : null,
+                        ])->first(fn($u) => !empty($u)) ?? asset('images/placeholder.jpg');
+
                         return [
                             'id' => $item->id,
                             'product_variant_id' => $productVariant->id,
@@ -801,7 +783,7 @@
                             'variant' => $productVariant->attributeValues->pluck('value')->implode(', '),
                             'quantity' => $item->quantity,
                             'price' => $item->price,
-                            'image' => $productVariant->image_url ?? asset('assets/users/img/no-image.png'),
+                            'image' => $image,
                             'store_location_name' => $item->store_location_name ?? 'Kho tổng',
                             'store_location_id' => $item->store_location_id ?? null,
                             'weight' => $productVariant->weight ?? 1000,
@@ -1912,12 +1894,51 @@
                 if (orderData.delivery_method === 'delivery') {
                     if (this.state.selectedAddressId) {
                         orderData.address_id = this.state.selectedAddressId;
+                        
+                        // Log thông tin debug cho địa chỉ có sẵn
+                        const debugInfo = {
+                            timestamp: new Date().toISOString(),
+                            saveAddressCheckbox: 'not_applicable',
+                            checked: false,
+                            isLoggedIn: this.state.isLoggedIn,
+                            hasAddresses: this.state.hasAddresses,
+                            addressId: orderData.address_id,
+                            addressMode: 'existing',
+                            selectedAddressId: this.state.selectedAddressId
+                        };
+                        
+                        console.log('Address selection debug info:', debugInfo);
+                        
+                        // Lưu vào sessionStorage
+                        const existingLogs = JSON.parse(sessionStorage.getItem('payment_debug_logs') || '[]');
+                        existingLogs.push(debugInfo);
+                        sessionStorage.setItem('payment_debug_logs', JSON.stringify(existingLogs));
                     } else {
                         const formFields = new FormData(this.elements.addressForm);
                         for (let [key, value] of formFields.entries()) {
                             orderData[key] = value;
                         }
-                        orderData.save_address = document.getElementById('save-address-check')?.checked || false;
+                        const saveAddressCheckbox = document.getElementById('save-address-check');
+                        orderData.save_address = saveAddressCheckbox?.checked || false;
+                        
+                        // Log thông tin để debug và lưu vào sessionStorage
+                        const debugInfo = {
+                            timestamp: new Date().toISOString(),
+                            saveAddressCheckbox: saveAddressCheckbox ? 'found' : 'not found',
+                            checked: orderData.save_address,
+                            isLoggedIn: this.state.isLoggedIn,
+                            hasAddresses: this.state.hasAddresses,
+                            addressId: orderData.address_id || 'new_address',
+                            addressMode: this.state.selectedAddressId ? 'existing' : 'new',
+                            selectedAddressId: this.state.selectedAddressId || 'none'
+                        };
+                        
+                        console.log('Save address debug info:', debugInfo);
+                        
+                        // Lưu vào sessionStorage để có thể xem lại sau khi chuyển trang
+                        const existingLogs = JSON.parse(sessionStorage.getItem('payment_debug_logs') || '[]');
+                        existingLogs.push(debugInfo);
+                        sessionStorage.setItem('payment_debug_logs', JSON.stringify(existingLogs));
                     }
 
                     orderData.shipments = [];
@@ -2579,4 +2600,7 @@
             }
         });
     </script>
+    
+    <!-- Payment Debug Helper -->
+    <script src="{{ asset('js/payment-debug-helper.js') }}"></script>
 @endpush

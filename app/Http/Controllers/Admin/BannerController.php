@@ -7,9 +7,17 @@ use App\Models\Banner;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\UploadedFile;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class BannerController extends Controller
 {
+    use AuthorizesRequests;
+
+    public function __construct()
+    {
+        // Tự động áp dụng BannerPolicy cho tất cả các phương thức CRUD
+        $this->authorizeResource(Banner::class, 'banner');
+    }
     public function index()
     {
         $banners = Banner::with(['desktopImage', 'mobileImage'])

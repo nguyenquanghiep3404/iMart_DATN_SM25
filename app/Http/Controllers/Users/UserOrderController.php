@@ -9,7 +9,11 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ReturnRequest;
 use App\Models\ProductVariant;
-use Cart;
+use Illuminate\Support\Facades\Log;
+use App\Models\CancellationRequest;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use App\Models\ProductInventory;
 
 class UserOrderController extends Controller
 {
@@ -76,11 +80,6 @@ class UserOrderController extends Controller
         foreach ($order->items as $item) {
             $item->has_reviewed = $item->review()->exists(); // true/false
         }
-    //     dd(
-    //     'Item ID đang kiểm tra:', $item->id,
-    //     'Kết quả của ->exists():', $item->review()->exists(),
-    //     'Câu lệnh SQL đang chạy:', $item->review()->toSql()
-    // );
 
         return view('users.orders.show', compact('order'));
     }
@@ -109,10 +108,11 @@ class UserOrderController extends Controller
         $statusMap = [
             'pending_confirmation' => 'pending_confirmation',
             'processing' => 'processing',
-            'shipped' => 'shipped',
+            'out_for_delivery' => 'out_for_delivery',
+            'external_shipping' => 'external_shipping',
             'delivered' => 'delivered',
             'cancelled' => 'cancelled',
-            'returned' => 'returned'
+            'failed_delivery' => 'failed_delivery'
         ];
 
         return $statusMap[$status] ?? $status;
@@ -124,23 +124,101 @@ class UserOrderController extends Controller
     {
         $user = Auth::user();
         $order = Order::where('user_id', $user->id)
-            ->whereIn('status', ['pending_confirmation', 'processing', 'awaiting_shipment'])
+
+            ->whereIn('status', ['pending_confirmation', 'processing', 'cancellation_requested'])
             ->findOrFail($id);
 
-        $request->validate([
-            'reason' => 'required|string|max:1000'
-        ]);
+        $request->validate(['reason' => 'required|string|max:255']);
+        $cancellationReason = $request->reason === 'Lý do khác'
+            ? $request->input('reason_other', $request->reason)
+            : $request->reason;
 
-        $order->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-            'cancellation_reason' => $request->reason
-        ]);
+        $isCOD = strtolower($order->payment_method) === 'cod';
 
-        // Gửi email thông báo hủy đơn (có thể triển khai sau)
+        // =================================================================
+        // **TRƯỜNG HỢP 1: ĐƠN HÀNG COD**
+        // Hủy trực tiếp và hoàn trả sản phẩm về kho ngay lập tức.
+        // =================================================================
+        if ($isCOD && $order->payment_status === 'pending') {
+            DB::beginTransaction();
+            try {
+                // Cập nhật trạng thái đơn hàng
+                $order->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => $cancellationReason,
+                ]);
 
-        return redirect()->route('orders.show', $order->id)
-            ->with('success', 'Đơn hàng đã được hủy thành công.');
+                // Hoàn kho
+                $order->load('items.productVariant');
+        $storeLocationId = $order->store_location_id; // Lấy kho xử lý của đơn hàng
+
+        if ($storeLocationId) {
+            foreach ($order->items as $item) {
+                if ($item->productVariant) {
+                    // Cập nhật bảng product_inventories
+                    ProductInventory::where('product_variant_id', $item->product_variant_id)
+                                    ->where('store_location_id', $storeLocationId)
+                                    ->where('inventory_type', 'new') // Giả định hoàn trả hàng mới
+                                    ->increment('quantity', $item->quantity);
+                }
+            }
+        } else {
+            Log::warning("Không thể hoàn kho cho đơn COD #{$order->order_code} vì không có store_location_id.");
+        }
+                DB::commit();
+                return redirect()->route('orders.show', $order->id)
+                    ->with('success', 'Đơn hàng đã được hủy và sản phẩm đã được hoàn về kho thành công.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error("Lỗi khi hủy đơn hàng COD #{$order->order_code}: " . $e->getMessage());
+                return redirect()->back()->with('error', 'Lỗi khi hủy đơn hàng. Vui lòng thử lại.');
+            }
+        }
+
+        // =================================================================
+        // **TRƯỜNG HỢP 2: ĐƠN ĐÃ THANH TOÁN ONLINE**
+        // Tạo một "Yêu cầu hủy" để Admin xem xét và duyệt.
+        // =================================================================
+        if (!$isCOD && $order->payment_status === 'paid') {
+            $request->validate([
+                'bank_name' => 'required|string|max:255',
+                'bank_account_number' => 'required|string|max:50',
+                'bank_account_name' => 'required|string|max:255',
+            ]);
+
+            DB::beginTransaction();
+            try {
+                // Tạo một bản ghi mới trong bảng cancellation_requests
+                CancellationRequest::create([
+                    'order_id' => $order->id,
+                    'user_id' => $user->id,
+                    'cancellation_code' => 'CR-' . strtoupper(Str::random(10)),
+                    'reason' => $cancellationReason,
+                    'status' => 'pending_review',
+                    'refund_method' => 'bank',
+                    'refund_amount' => $order->grand_total,
+                    'bank_name' => $request->bank_name,
+                    'bank_account_name' => $request->bank_account_name,
+                    'bank_account_number' => $request->bank_account_number,
+                ]);
+
+                // Cập nhật trạng thái đơn hàng thành "đang chờ xử lý hủy"
+                $order->update(['status' => 'cancellation_requested']);
+
+                DB::commit();
+
+                return redirect()->route('orders.show', $order->id)
+                    ->with('success', 'Yêu cầu hủy đơn hàng của bạn đã được gửi. Chúng tôi sẽ xem xét và xử lý hoàn tiền trong thời gian sớm nhất.');
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error("Lỗi khi tạo yêu cầu hủy cho đơn #{$order->order_code}: " . $e->getMessage());
+                return redirect()->back()->with('error', 'Lỗi khi gửi yêu cầu. Vui lòng thử lại.');
+            }
+        }
+
+        return redirect()->back()->with('error', 'Không thể thực hiện hành động này.');
     }
     public function confirmReceipt(Order $order)
     {
@@ -154,49 +232,51 @@ class UserOrderController extends Controller
         }
         return redirect()->back()->with('error', 'Không thể thực hiện hành động này.');
     }
-    public function buyAgain(Order $order)
+public function buyAgain(Order $order)
 {
-    // 1. Kiểm tra quyền sở hữu đơn hàng
     if (auth()->id() !== $order->user_id) {
         abort(403);
     }
 
-    // Tải trước các mối quan hệ để tối ưu
+    // Load sản phẩm trong đơn hàng
     $order->load('items.productVariant');
 
-    $unavailableProducts = [];
+    // Lấy giỏ hàng hiện tại (nếu có) để cộng dồn, hoặc khởi tạo mảng rỗng
+    $cart = session()->get('cart', []);
 
-    // 2. Lặp qua từng sản phẩm trong đơn hàng cũ (ĐÃ MỞ COMMENT)
     foreach ($order->items as $item) {
         $variant = $item->productVariant;
 
-        // 3. KIỂM TRA QUAN TRỌNG: Sản phẩm có còn tồn tại và còn hàng không?
-        if ($variant && $variant->is_active && $variant->quantity > 0) {
+        if ($variant) {
+            $quantityToBuy = $item->quantity;
 
-            // 4. Thêm sản phẩm vào giỏ hàng
-            // LƯU Ý: Thay thế 'Cart::add(...)' bằng logic giỏ hàng thực tế của bạn
-            Cart::add([
-                'id' => $variant->id,
-                'name' => $item->product_name,
-                'price' => $variant->price, // Lấy giá mới nhất
-                'quantity' => $item->quantity,
-                'attributes' => $item->variant_attributes ?? [],
-                'associatedModel' => $variant
-            ]);
-
-        } else {
-            // Ghi nhận lại các sản phẩm không có sẵn
-            $unavailableProducts[] = $item->product_name;
+            // Kiểm tra nếu sản phẩm đã có trong giỏ thì cộng dồn số lượng
+            if (isset($cart[$variant->id])) {
+                $cart[$variant->id]['quantity'] += $quantityToBuy;
+            } else {
+                // Nếu chưa có thì thêm mới
+                $cart[$variant->id] = [
+                    'id' => $variant->id,
+                    'name' => $item->product_name,
+                    'price' => $variant->price,
+                    'quantity' => $quantityToBuy,
+                    'attributes' => $item->variant_attributes ?? [],
+                    // Có thể thêm các trường khác như ảnh nếu cần
+                    // 'image' => $variant->image_url,
+                ];
+            }
         }
     }
 
-    // 5. Chuyển hướng người dùng đến trang giỏ hàng
-    $redirect = redirect()->route('cart.index'); // Thay 'cart.index' bằng route giỏ hàng của bạn
+    // Lưu giỏ hàng mới vào session
+    session()->put('cart', $cart);
+    $debugSession = session('cart');
+    \Log::debug('Debug Session Cart in buyAgain:', [$debugSession]);
 
-    if (empty($unavailableProducts)) {
-        return $redirect->with('success', 'Đã thêm tất cả sản phẩm vào giỏ hàng!');
-    } else {
-        return $redirect->with('warning', 'Một vài sản phẩm không còn bán hoặc đã hết hàng: ' . implode(', ', $unavailableProducts));
-    }
+    // BỎ DÒNG NÀY ĐI
+    // dd(session('cart'));
+
+    // Chuyển hướng đến trang giỏ hàng với thông báo thành công
+    return redirect()->route('cart.index')->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
 }
 }

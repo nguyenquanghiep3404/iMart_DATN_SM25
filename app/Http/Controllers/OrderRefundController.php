@@ -41,18 +41,15 @@ class OrderRefundController extends Controller
 
         $refunds = ReturnRequest::with([
             'order',
-            'returnItems.orderItem.variant.product.coverImage'
+            'returnItems.orderItem.variant.coverImage'
         ])
             ->where('user_id', $user->id)
-            ->when($status, function ($query) use ($status) {
-                $query->where('status', $status);
-            })
-            ->when($search, function ($query) use ($search) {
-                $query->where('return_code', 'like', "%$search%")
-                    ->orWhereHas('order', function ($q) use ($search) {
-                        $q->where('order_code', 'like', "%$search%");
-                    });
-            })
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->when(
+                $search,
+                fn($q) => $q->where('return_code', 'like', "%$search%")
+                    ->orWhereHas('order', fn($q) => $q->where('order_code', 'like', "%$search%"))
+            )
             ->orderByDesc('created_at')
             ->paginate(10)
             ->withQueryString();
@@ -62,13 +59,15 @@ class OrderRefundController extends Controller
 
     public function show($id)
     {
+        
         $returnRequest = ReturnRequest::with([
             'returnItems.orderItem.variant.product',
             'files',
             'order.user',
-            'refundProcessor'
+            'refundProcessor',
+            'returnItems.orderItem.variant.coverImage'
         ])->findOrFail($id);
-
+        
         return view('admin.refunds.show', compact('returnRequest'));
     }
     public function showuser($code)

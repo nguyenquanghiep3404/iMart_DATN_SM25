@@ -32,10 +32,40 @@ class AutoStockTransferService
             $transfersCreated = [];
             $destinationProvince = ProvinceOld::find($order->shipping_old_province_code);
             $destinationRegion = $destinationProvince->region ?? null;
+            
+            Log::info('AutoStockTransferService: Bắt đầu kiểm tra đơn hàng', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'shipping_province_code' => $order->shipping_old_province_code,
+                'destination_province' => $destinationProvince ? $destinationProvince->name : 'Không tìm thấy',
+                'destination_region' => $destinationRegion,
+                'items_count' => $order->items->count()
+            ]);
+            
+            // Lấy tracking code từ order fulfillments
+            $orderTrackingCode = $order->fulfillments()->whereNotNull('tracking_code')->first()?->tracking_code;
 
             foreach ($order->items as $item) {
+                Log::info('AutoStockTransferService: Xử lý item', [
+                    'order_id' => $order->id,
+                    'item_id' => $item->id,
+                    'product_variant_id' => $item->product_variant_id,
+                    'sku' => $item->sku,
+                    'quantity' => $item->quantity
+                ]);
+                
                 // Kiểm tra xem tỉnh đích có warehouse không
                 $destinationWarehouse = $this->findDestinationWarehouse($destinationProvince->code ?? null);
+                
+                Log::info('AutoStockTransferService: Kết quả tìm warehouse đích', [
+                    'order_id' => $order->id,
+                    'item_id' => $item->id,
+                    'destination_warehouse' => $destinationWarehouse ? [
+                        'id' => $destinationWarehouse->id,
+                        'name' => $destinationWarehouse->name,
+                        'province_code' => $destinationWarehouse->province_code
+                    ] : null
+                ]);
                 
                 if ($destinationWarehouse) {
                     // Nếu tỉnh đích có warehouse, kiểm tra warehouse đó có đủ hàng không
@@ -45,18 +75,64 @@ class AutoStockTransferService
                         $destinationWarehouse->id
                     );
                     
+                    Log::info('AutoStockTransferService: Kiểm tra stock tại warehouse đích', [
+                        'order_id' => $order->id,
+                        'item_id' => $item->id,
+                        'warehouse_id' => $destinationWarehouse->id,
+                        'warehouse_name' => $destinationWarehouse->name,
+                        'product_variant_id' => $item->product_variant_id,
+                        'required_quantity' => $item->quantity,
+                        'has_sufficient_stock' => $destinationInventory ? true : false,
+                        'available_stock' => $destinationInventory ? $destinationInventory->quantity : 0,
+                        'need_transfer' => !$destinationInventory
+                    ]);
+                    
                     if (!$destinationInventory) {
                         // Warehouse tỉnh đích không có hàng, tìm nguồn hàng để chuyển về
+                        Log::info('AutoStockTransferService: Tìm nguồn hàng để chuyển', [
+                            'order_id' => $order->id,
+                            'item_id' => $item->id,
+                            'product_variant_id' => $item->product_variant_id,
+                            'required_quantity' => $item->quantity,
+                            'destination_region' => $destinationRegion,
+                            'destination_province_code' => $destinationProvince->code
+                        ]);
+                        
                         $sourceWithStock = $this->findSourceWithStock($item->product_variant_id, $item->quantity, $destinationRegion, $destinationProvince->code);
                         
+                        Log::info('AutoStockTransferService: Kết quả tìm nguồn hàng', [
+                            'order_id' => $order->id,
+                            'item_id' => $item->id,
+                            'source_found' => $sourceWithStock ? true : false,
+                            'source_details' => $sourceWithStock
+                        ]);
+                        
                         if ($sourceWithStock) {
+                            Log::info('AutoStockTransferService: Tạo stock transfer', [
+                                'order_id' => $order->id,
+                                'item_id' => $item->id,
+                                'source_location_id' => $sourceWithStock['store_location_id'],
+                                'destination_warehouse_id' => $destinationWarehouse->id,
+                                'product_variant_id' => $item->product_variant_id,
+                                'quantity' => $item->quantity,
+                                'tracking_code' => $orderTrackingCode
+                            ]);
+                            
                             $transfer = $this->createStockTransfer(
                                 $sourceWithStock['store_location_id'],
                                 $destinationWarehouse->id,
                                 $item->product_variant_id,
                                 $item->quantity,
-                                "Chuyển hàng tự động cho đơn hàng #{$order->order_code}. Order:{$order->order_code}"
+                                "Chuyển hàng tự động cho đơn hàng #{$order->order_code}. Order:{$order->order_code}",
+                                $orderTrackingCode
                             );
+                            
+                            Log::info('AutoStockTransferService: Kết quả tạo stock transfer', [
+                                'order_id' => $order->id,
+                                'item_id' => $item->id,
+                                'transfer_created' => $transfer ? true : false,
+                                'transfer_id' => $transfer ? $transfer->id : null
+                            ]);
                             
                             if ($transfer) {
                                 $transfersCreated[] = [
@@ -97,7 +173,8 @@ class AutoStockTransferService
                                     $targetWarehouse->id,
                                     $item->product_variant_id,
                                     $item->quantity,
-                                    "Chuyển hàng tự động cho đơn hàng #{$order->order_code}. Order:{$order->order_code}"
+                                    "Chuyển hàng tự động cho đơn hàng #{$order->order_code}. Order:{$order->order_code}",
+                                    $orderTrackingCode
                                 );
                                 
                                 if ($transfer) {
@@ -116,13 +193,22 @@ class AutoStockTransferService
                 }
             }
 
-            return [
+            $result = [
                 'success' => true,
                 'transfers_created' => $transfersCreated,
                 'message' => count($transfersCreated) > 0 
                     ? 'Đã tạo ' . count($transfersCreated) . ' phiếu chuyển kho tự động'
                     : 'Không cần tạo phiếu chuyển kho'
             ];
+            
+            Log::info('AutoStockTransferService: Kết thúc xử lý đơn hàng', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'total_transfers_created' => count($transfersCreated),
+                'result' => $result
+            ]);
+            
+            return $result;
 
         } catch (Exception $e) {
             Log::error('Lỗi khi tạo phiếu chuyển kho tự động: ' . $e->getMessage());
@@ -302,19 +388,22 @@ class AutoStockTransferService
     }
 
     /**
-     * Tạo phiếu chuyển kho
+     * Tạo phiếu chuyển kho với tracking code từ order fulfillment
      */
     private function createStockTransfer(
         int $fromLocationId,
         int $toLocationId,
         int $productVariantId,
         int $quantity,
-        string $notes
+        string $notes,
+        ?string $orderTrackingCode = null
     ): ?StockTransfer {
         try {
-            return DB::transaction(function () use ($fromLocationId, $toLocationId, $productVariantId, $quantity, $notes) {
-                // Tạo mã chuyển kho
-                $transferCode = 'AUTO-' . strtoupper(uniqid());
+            return DB::transaction(function () use ($fromLocationId, $toLocationId, $productVariantId, $quantity, $notes, $orderTrackingCode) {
+                // Tạo mã chuyển kho với tracking code từ order nếu có
+                $transferCode = $orderTrackingCode ? 
+                    'AUTO-' . $orderTrackingCode . '-' . strtoupper(substr(uniqid(), -4)) : 
+                    'AUTO-' . strtoupper(uniqid());
 
                 // Tạo phiếu chuyển kho
                 $stockTransfer = StockTransfer::create([
@@ -323,7 +412,7 @@ class AutoStockTransferService
                     'to_location_id' => $toLocationId,
                     'status' => 'pending',
                     'created_by' => auth()->id() ?? 1, // Hệ thống tự động
-                    'notes' => $notes
+                    'notes' => $notes . ($orderTrackingCode ? " (Tracking: {$orderTrackingCode})" : '')
                 ]);
 
                 // Tạo chi tiết phiếu chuyển kho
@@ -333,7 +422,8 @@ class AutoStockTransferService
                     'quantity' => $quantity
                 ]);
 
-                Log::info("Đã tạo phiếu chuyển kho tự động: {$transferCode}");
+                Log::info("Đã tạo phiếu chuyển kho tự động: {$transferCode}" . 
+                    ($orderTrackingCode ? " với tracking code: {$orderTrackingCode}" : ''));
 
                 return $stockTransfer;
             });
