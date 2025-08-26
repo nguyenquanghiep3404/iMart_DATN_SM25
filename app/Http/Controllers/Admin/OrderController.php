@@ -29,6 +29,7 @@ class OrderController extends Controller
         // Tự động áp dụng OrderPolicy cho tất cả các phương thức
         $this->authorizeResource(Order::class, 'order');
     }
+
     public function index(Request $request)
     {
         $query = Order::with([
@@ -124,55 +125,50 @@ class OrderController extends Controller
         ]);
     }
     public function view(Order $order)
-{
-    // Force refresh từ database để đảm bảo dữ liệu mới nhất
-    $order->refresh();
+    {
+        // Force refresh từ database để đảm bảo dữ liệu mới nhất
+        $order->refresh();
 
-    // Tải tất cả các mối quan hệ cần thiết cho trang chi tiết
-    $order->load([
-        'user:id,name,email,phone_number',
-        'items.productVariant.product:id,name,slug',
-        'items.productVariant.product.coverImage',
-        'items.productVariant.primaryImage',
-        'processor:id,name',
-        'shipper:id,name',
-        'couponUsages.coupon:id,code,type,value,description',
+        $order->load([
+            'user:id,name,email,phone_number',
+            'items.productVariant.product:id,name,slug',
+            'items.productVariant.product.coverImage',
+            'items.productVariant.primaryImage',
+            'processor:id,name',
+            'cancellationRequest',
+            'shipper:id,name',
+            'couponUsages.coupon:id,code,type,value,description',
+            // Load thông tin fulfillments cho mô hình đa kho
+            'fulfillments:id,order_id,store_location_id,shipper_id,tracking_code,shipping_carrier,status,shipped_at,delivered_at,estimated_delivery_date,shipping_fee',
+            'fulfillments.storeLocation:id,name,address,phone,province_code,district_code,ward_code,type',
+            'fulfillments.storeLocation.province:code,name,name_with_type',
+            'fulfillments.storeLocation.district:code,name,name_with_type',
+            'fulfillments.storeLocation.ward:code,name,name_with_type',
+            'fulfillments.items',
+            'fulfillments.items.orderItem:id,product_variant_id,product_name,variant_attributes,sku,quantity,price,total_price',
+            'fulfillments.items.orderItem.productVariant:id,sku,product_id,primary_image_id',
+            'fulfillments.items.orderItem.productVariant.product:id,name',
+            'fulfillments.items.orderItem.productVariant.primaryImage',
+            'fulfillments.items.orderItem.productVariant.product.coverImage',
+            // Load thông tin packages cho mô hình quản lý gói hàng - Force fresh từ DB
+            'fulfillments.packages:id,order_fulfillment_id,package_code,description,shipping_carrier,tracking_code,status,shipped_at,delivered_at',
+            'fulfillments.packages.fulfillmentItems:id,package_id,order_fulfillment_id,order_item_id,quantity',
+            'fulfillments.packages.fulfillmentItems.orderItem:id,product_variant_id,product_name,variant_attributes,sku,quantity,price,total_price',
+            'fulfillments.packages.statusHistory:id,package_id,status,timestamp,notes,created_by',
+            'fulfillments.packages.statusHistory.createdBy:id,name',
+        ]);
 
-        // ==========================================================
-        // ===== DÒNG QUAN TRỌNG NHẤT ĐÃ ĐƯỢC THÊM VÀO ĐÂY ==========
-        'cancellationRequest',
-        // ==========================================================
-
-        // Load thông tin fulfillments cho mô hình đa kho
-        'fulfillments:id,order_id,store_location_id,shipper_id,tracking_code,shipping_carrier,status,shipped_at,delivered_at,estimated_delivery_date,shipping_fee',
-        'fulfillments.storeLocation:id,name,address,phone,province_code,district_code,ward_code,type',
-        'fulfillments.storeLocation.province:code,name,name_with_type',
-        'fulfillments.storeLocation.district:code,name,name_with_type',
-        'fulfillments.storeLocation.ward:code,name,name_with_type',
-        'fulfillments.items',
-        'fulfillments.items.orderItem:id,product_variant_id,product_name,variant_attributes,sku,quantity,price,total_price',
-        'fulfillments.items.orderItem.productVariant:id,sku,product_id,primary_image_id',
-        'fulfillments.items.orderItem.productVariant.product:id,name',
-        'fulfillments.items.orderItem.productVariant.primaryImage',
-        'fulfillments.items.orderItem.productVariant.product.coverImage',
-        'fulfillments.packages:id,order_fulfillment_id,package_code,description,shipping_carrier,tracking_code,status,shipped_at,delivered_at',
-        'fulfillments.packages.fulfillmentItems:id,package_id,order_fulfillment_id,order_item_id,quantity',
-        'fulfillments.packages.fulfillmentItems.orderItem:id,product_variant_id,product_name,variant_attributes,sku,quantity,price,total_price',
-        'fulfillments.packages.statusHistory:id,package_id,status,timestamp,notes,created_by',
-        'fulfillments.packages.statusHistory.createdBy:id,name',
-    ]);
-
-    // Force refresh packages để đảm bảo trạng thái mới nhất
-    foreach ($order->fulfillments as $fulfillment) {
-        foreach ($fulfillment->packages as $package) {
-            $package->refresh();
+        // Force refresh packages để đảm bảo trạng thái mới nhất
+        foreach ($order->fulfillments as $fulfillment) {
+            foreach ($fulfillment->packages as $package) {
+                $package->refresh();
+            }
         }
-    }
-    $order->load('cancellationRequest');
-    // dd($order->toArray());
+        $order->load('cancellationRequest');
+        // dd($order->toArray());
 
     return view('admin.orders.show', compact('order'));
-}
+    }
 
     public function updateStatus(OrderRequest $request, Order $order)
     {
@@ -215,41 +211,8 @@ class OrderController extends Controller
                             'confirmed_by' => auth()->id()
                         ]);
 
-                        // Tự động tạo phiếu chuyển kho cho đơn hàng khác tỉnh
-                        \Log::info('Bắt đầu kiểm tra tạo phiếu chuyển kho tự động', [
-                            'order_id' => $order->id,
-                            'order_code' => $order->order_code,
-                            'shipping_province' => $order->shipping_old_province_code,
-                            'items_count' => $order->items->count(),
-                            'confirmed_by' => auth()->id()
-                        ]);
-
-                        $autoTransferService = new AutoStockTransferService();
-                        $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-
-                        \Log::info('Kết quả kiểm tra tạo phiếu chuyển kho tự động', [
-                            'order_id' => $order->id,
-                            'order_code' => $order->order_code,
-                            'result' => $transferResult
-                        ]);
-
-                        if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                            $updateData['admin_note'] = ($updateData['admin_note'] ?? '') .
-                                " Đã tạo tự động " . count($transferResult['transfers_created']) . " phiếu chuyển kho.";
-
-                            \Log::info('Đã tạo phiếu chuyển kho tự động thành công', [
-                                'order_id' => $order->id,
-                                'order_code' => $order->order_code,
-                                'transfers_count' => count($transferResult['transfers_created']),
-                                'transfers' => $transferResult['transfers_created']
-                            ]);
-                        } else {
-                            \Log::info('Không tạo phiếu chuyển kho tự động', [
-                                'order_id' => $order->id,
-                                'order_code' => $order->order_code,
-                                'reason' => $transferResult['message'] ?? 'Không rõ lý do'
-                            ]);
-                        }
+                        // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+                        // để sử dụng FulfillmentStockTransferService thay vì AutoStockTransferService
                     }
                     break;
 
@@ -730,39 +693,5 @@ class OrderController extends Controller
         }
     }
 
-    // /**
-    //  * Từ chối yêu cầu hủy đơn.
-    //  */
-    // public function rejectCancellationRequest(Request $request, CancellationRequest $cancellationRequest)
-    // {
-    //     if ($cancellationRequest->status !== 'pending_review') {
-    //         return redirect()->back()->with('error', 'Yêu cầu này đã được xử lý trước đó.');
-    //     }
 
-    //     $request->validate(['rejection_reason' => 'required|string|max:1000']);
-
-    //     DB::beginTransaction();
-    //     try {
-    //         $cancellationRequest->update([
-    //             'status'           => 'rejected',
-    //             'rejection_reason' => $request->rejection_reason,
-    //             'approved_by'      => Auth::id(),
-    //         ]);
-
-    //         $order = $cancellationRequest->order;
-    //         if ($order) {
-    //             $order->update(['status' => 'processing']);
-    //         }
-
-    //         DB::commit();
-
-    //         return redirect()->route('admin.orders.view', $order->id)
-    //             ->with('success', "Đã từ chối yêu cầu hủy cho đơn hàng #{$order->order_code}.");
-
-    //     } catch (\Exception $e) {
-    //         DB::rollBack();
-    //         Log::error("Lỗi khi từ chối yêu cầu hủy ID #{$cancellationRequest->id}: " . $e->getMessage());
-    //         return redirect()->back()->with('error', 'Đã có lỗi xảy ra.');
-    //     }
-    // }
 }

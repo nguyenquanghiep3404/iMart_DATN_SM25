@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\ProductVariant;
 use App\Models\ReturnItem;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderItem extends Model
 {
@@ -96,4 +97,9 @@ class OrderItem extends Model
         // Nếu không có ảnh nào, trả về ảnh mặc định
         return asset('images/placeholder.jpg');
     }
+
+    public function warrantyClaims()
+{
+    return $this->hasMany(WarrantyClaim::class);
+}
 }

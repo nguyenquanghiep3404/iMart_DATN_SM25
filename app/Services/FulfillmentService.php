@@ -60,19 +60,9 @@ if ($inventory) {
  }
  $itemsByLocation[$locationId][] = $item;
 } else {
- // Không tìm thấy hàng ở warehouse, thử tự động chuyển hàng từ store
- $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
- 
- if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
- // Đã tạo phiếu chuyển kho, thông báo cho người dùng
- throw new Exception(
- 'Đã tạo phiếu chuyển kho tự động cho SKU: ' . $item->sku . 
- '. Vui lòng đợi xử lý phiếu chuyển kho trước khi đặt hàng.'
- );
- } else {
- // Không thể tạo phiếu chuyển kho hoặc không có hàng ở store
+ // Không tìm thấy hàng ở warehouse, đánh dấu là không thể xử lý
+ // Logic tạo phiếu chuyển kho sẽ được xử lý trong OrderObserver khi đơn hàng chuyển sang 'đang xử lý'
  $unfulfillableItems[] = $item->sku;
- }
 }
 }
 
@@ -98,18 +88,12 @@ try {
  $transferCheck = $deliveryOptimizationService->needsStockTransfer($order);
  
  if ($transferCheck['needs_transfer']) {
- // Nếu cần chuyển kho, thử tạo phiếu chuyển kho tự động
- $autoTransferService = new AutoStockTransferService();
- $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
- 
- if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
- return [
- 'success' => false,
- 'message' => 'Đã tạo phiếu chuyển kho tự động. Vui lòng đợi xử lý phiếu chuyển kho trước khi đặt hàng.',
- 'transfer_info' => $transferResult['transfers_created'],
+ // Logic tạo phiếu chuyển kho sẽ được xử lý trong OrderObserver khi đơn hàng chuyển sang 'đang xử lý'
+ // Ở đây chỉ thông báo rằng cần chuyển kho
+ \Log::info('Đơn hàng cần chuyển kho', [
+ 'order_id' => $order->id,
  'reason' => $transferCheck['reason']
- ];
- }
+ ]);
  }
  
  // Lấy tất cả tùy chọn giao hàng có thể

@@ -56,7 +56,7 @@ public function shipper()
             self::STATUS_PROCESSING => 'Đang xử lý',
             self::STATUS_PACKED => 'Đã đóng gói',
             self::STATUS_AWAITING_SHIPMENT => 'Chờ vận chuyển',
-            self::STATUS_SHIPPED => 'Đã vận chuyển',
+            self::STATUS_SHIPPED => 'đang giao hàng',
             self::STATUS_EXTERNAL_SHIPPING => 'Giao bởi đơn vị thứ 3',
             self::STATUS_DELIVERED => 'Đã giao hàng',
             self::STATUS_CANCELLED => 'Đã hủy',

@@ -6,6 +6,8 @@
             document.querySelectorAll('tr[data-item-id]').forEach(function(row) {
                 const itemId = row.dataset.itemId;
                 const stock = parseInt(row.dataset.stock);
+                const isFlash = parseInt(row.dataset.isFlash || '0') === 1;
+                const flashLimit = parseInt(row.dataset.flashLimit || '0');
                 const btnIncrement = row.querySelector('.btn-increment');
                 const btnDecrement = row.querySelector('.btn-decrement');
                 const input = row.querySelector('.quantity-input');
@@ -192,8 +194,13 @@
                 btnIncrement?.addEventListener('click', function() {
                     let quantity = parseInt(input.value);
                     if (!isNaN(quantity)) {
-                        if (quantity >= stock) {
-                            toastr.error('Chỉ còn ' + stock + ' sản phẩm trong kho.');
+                        const maxQty = isFlash ? Math.min(stock, flashLimit) : stock;
+                        if (quantity >= maxQty) {
+                            if (isFlash) {
+                                toastr.error('Số lượng giới hạn là ' + maxQty + ' sản phẩm.');
+                            } else {
+                                toastr.error('Chỉ còn ' + stock + ' sản phẩm trong kho.');
+                            }
                             return;
                         }
                         const newQuantity = quantity + 1;

@@ -760,141 +760,110 @@ class FlashSaleController extends Controller
     }
 
     // Thống kê Flash Sale
-    public function statistics(FlashSale $flashSale)
-    {
-        // Tải dữ liệu Flash Sale cùng với các sản phẩm, biến thể và thuộc tính liên quan
-        $flashSale->load([
-            'products.variant.product',
-            'products.variant.attributeValues',
-        ]);
+   // app/Http/Controllers/Admin/FlashSaleController.php
 
-        // Tạo mảng để lưu trữ dữ liệu thống kê
-        $statistics = $flashSale->products->map(function ($flashSaleProduct) {
-            $variant = $flashSaleProduct->variant;
-            $product = $variant->product;
+public function statistics(FlashSale $flashSale)
+{
+    // Tải dữ liệu Flash Sale cùng với các sản phẩm, biến thể và thuộc tính liên quan
+    $flashSale->load([
+        'products.variant.product',
+        'products.variant.attributeValues',
+    ]);
 
-            // Lấy tên biến thể từ attributeValues
-            $variantName = $variant->attributeValues->pluck('value')->filter()->join(', ');
-            $productName = $variantName ? $product->name . ' (' . $variantName . ')' : $product->name;
+    // Tạo mảng để lưu trữ dữ liệu thống kê ban đầu
+    $statistics = $flashSale->products->map(function ($flashSaleProduct) {
+        $variant = $flashSaleProduct->variant;
+        $product = $variant->product;
 
-            // Tính giá vốn trung bình từ các lô hàng còn tồn kho trong bảng inventory_lots
-            $lots = \App\Models\InventoryLot::where('product_variant_id', $variant->id)
-                ->where('quantity_on_hand', '>', 0)
-                ->select('cost_price', 'quantity_on_hand')
-                ->get();
-            $totalQuantity = $lots->sum('quantity_on_hand');
-            $totalCost = $lots->sum(function ($lot) {
-                return $lot->cost_price * $lot->quantity_on_hand;
-            });
-            $costPrice = $totalQuantity > 0 ? $totalCost / $totalQuantity : ($variant->cost_price ?? 0); // Giá vốn trung bình
+        $variantName = $variant->attributeValues->pluck('value')->filter()->join(', ');
+        $productName = $variantName ? $product->name . ' (' . $variantName . ')' : $product->name;
 
-            // Tính toán các giá trị cần thiết
-            $originalPrice = $variant->price; // Giá gốc
-            $flashPrice = $flashSaleProduct->flash_price; // Giá sale
-            $quantityLimit = $flashSaleProduct->quantity_limit; // Số lượng giới hạn FS
-            $quantitySold = $flashSaleProduct->quantity_sold; // Đã bán (FS)
-            $remainingStockFS = max(0, $quantityLimit - $quantitySold); // Tồn kho FS
-            $totalStock = $variant->available_stock + $quantitySold; // Tổng tồn kho
-            $totalStockAfterFS = $totalStock - $quantitySold; // Tổng tồn kho sau FS
-            $revenue = $quantitySold * $flashPrice; // Doanh thu
-            $grossProfitPerUnit = $flashPrice - $costPrice; // Lợi nhuận gộp trên mỗi sản phẩm
-
-            return [
-                'product_name' => $productName, // Tên sản phẩm kèm biến thể
-                'original_price' => number_format($originalPrice) . 'đ', // Giá gốc
-                'cost_price' => number_format($costPrice) . 'đ', // Giá nhập
-                'flash_price' => number_format($flashPrice) . 'đ', // Giá sale
-                'quantity_limit' => $quantityLimit, // SL giới hạn FS
-                'quantity_sold' => $quantitySold, // Đã bán (FS)
-                'remaining_stock_fs' => $remainingStockFS, // Tồn kho FS
-                'total_stock' => $totalStock, // Tổng tồn kho
-                'total_stock_after_fs' => $totalStockAfterFS, // Tổng tồn kho sau FS
-                'revenue' => number_format($revenue) . 'đ', // Doanh thu (định dạng)
-                'gross_profit_per_unit' => number_format($grossProfitPerUnit) . 'đ/sp', // Lợi nhuận gộp
-                'revenue_value' => $revenue, // Giá trị doanh thu để sắp xếp và biểu đồ
-                'gross_profit_total' => $grossProfitPerUnit * $quantitySold, // Tổng lợi nhuận gộp cho sản phẩm
-                'chart_label' => $productName, // Nhãn cho biểu đồ
-                'chart_revenue' => $revenue, // Doanh thu cho biểu đồ
-            ];
+        $lots = \App\Models\InventoryLot::where('product_variant_id', $variant->id)
+            ->where('quantity_on_hand', '>', 0)
+            ->select('cost_price', 'quantity_on_hand')
+            ->get();
+        $totalQuantity = $lots->sum('quantity_on_hand');
+        $totalCost = $lots->sum(function ($lot) {
+            return $lot->cost_price * $lot->quantity_on_hand;
         });
+        $costPrice = $totalQuantity > 0 ? $totalCost / $totalQuantity : ($variant->cost_price ?? 0);
 
-        // Tính toán các giá trị tổng
-        $totalRevenue = $statistics->sum('revenue_value');
-        $totalQuantitySold = $statistics->sum('quantity_sold');
-        $totalGrossProfit = $statistics->sum('gross_profit_total');
-        $totalQuantityLimit = $flashSale->products->sum('quantity_limit');
+        $originalPrice = $variant->price;
+        $flashPrice = $flashSaleProduct->flash_price;
+        $quantityLimit = $flashSaleProduct->quantity_limit;
+        $quantitySold = $flashSaleProduct->quantity_sold;
+        $remainingStockFS = max(0, $quantityLimit - $quantitySold);
+        $totalStock = $variant->available_stock + $quantitySold;
+        $totalStockAfterFS = $totalStock - $quantitySold;
+        $revenue = $quantitySold * $flashPrice;
+        $grossProfitPerUnit = $flashPrice - $costPrice;
 
-        // Tính tỷ lệ đã bán hết sản phẩm
-        $soldPercentage = $totalQuantityLimit > 0 ? round(($totalQuantitySold / $totalQuantityLimit) * 100) : 0;
+        return [
+            'product_name' => $productName,
+            'original_price' => number_format($originalPrice) . 'đ',
+            'cost_price' => number_format($costPrice) . 'đ',
+            'flash_price' => number_format($flashPrice) . 'đ',
+            'quantity_limit' => $quantityLimit,
+            'quantity_sold' => $quantitySold,
+            'remaining_stock_fs' => $remainingStockFS,
+            'total_stock' => $totalStock,
+            'total_stock_after_fs' => $totalStockAfterFS,
+            'revenue' => number_format($revenue) . 'đ',
+            'gross_profit_per_unit' => number_format($grossProfitPerUnit) . 'đ/sp',
+            'revenue_value' => $revenue,
+            'gross_profit_total' => $grossProfitPerUnit * $quantitySold,
+        ];
+    });
 
-        // Tính tỷ suất lợi nhuận gộp
-        $grossProfitMargin = $totalRevenue > 0 ? round(($totalGrossProfit / $totalRevenue) * 100) : 0;
+    // Tổng hợp doanh thu và lợi nhuận gộp theo tên sản phẩm
+    $aggregatedStatistics = $statistics->groupBy('product_name')->map(function ($group) {
+        return [
+            'chart_label' => $group->first()['product_name'],
+            'chart_revenue' => $group->sum('revenue_value'),
+        ];
+    })->values();
 
-        // Tìm chiến dịch Flash Sale trước đó
-        $previousFlashSale = \App\Models\FlashSale::where('id', '<', $flashSale->id)
-            ->orderBy('id', 'desc')
-            ->first();
+    // Tính toán các giá trị tổng
+    $totalRevenue = $statistics->sum('revenue_value');
+    $totalQuantitySold = $statistics->sum('quantity_sold');
+    $totalGrossProfit = $statistics->sum('gross_profit_total');
+    $totalQuantityLimit = $flashSale->products->sum('quantity_limit');
 
-        // Tính tỷ lệ tăng/giảm so với chiến dịch trước đó (nếu có)
-        $revenueChange = null;
-        $quantitySoldChange = null;
-        $grossProfitChange = null;
+    $soldPercentage = $totalQuantityLimit > 0 ? round(($totalQuantitySold / $totalQuantityLimit) * 100) : 0;
+    $grossProfitMargin = $totalRevenue > 0 ? round(($totalGrossProfit / $totalRevenue) * 100) : 0;
 
-        if ($previousFlashSale) {
-            $previousFlashSale->load(['products']);
-            $previousStatistics = $previousFlashSale->products->map(function ($flashSaleProduct) {
-                $variant = $flashSaleProduct->variant;
-                $lots = \App\Models\InventoryLot::where('product_variant_id', $variant->id)
-                    ->where('quantity_on_hand', '>', 0)
-                    ->select('cost_price', 'quantity_on_hand')
-                    ->get();
-                $totalQuantity = $lots->sum('quantity_on_hand');
-                $totalCost = $lots->sum(function ($lot) {
-                    return $lot->cost_price * $lot->quantity_on_hand;
-                });
-                $costPrice = $totalQuantity > 0 ? $totalCost / $totalQuantity : ($variant->cost_price ?? 0);
-                $flashPrice = $flashSaleProduct->flash_price;
-                $quantitySold = $flashSaleProduct->quantity_sold;
-                $revenue = $quantitySold * $flashPrice;
-                $grossProfitPerUnit = $flashPrice - $costPrice;
+    // Tính tỷ lệ thay đổi so với chiến dịch trước đó
+    $revenueChange = null;
+    $previousFlashSale = \App\Models\FlashSale::where('id', '<', $flashSale->id)
+        ->orderBy('id', 'desc')
+        ->first();
 
-                return [
-                    'revenue_value' => $revenue,
-                    'quantity_sold' => $quantitySold,
-                    'gross_profit_total' => $grossProfitPerUnit * $quantitySold,
-                ];
-            });
-
-            $previousTotalRevenue = $previousStatistics->sum('revenue_value');
-            $previousTotalQuantitySold = $previousStatistics->sum('quantity_sold');
-            $previousTotalGrossProfit = $previousStatistics->sum('gross_profit_total');
-
-            // Tính tỷ lệ thay đổi (%)
-            $revenueChange = $previousTotalRevenue > 0 ? round((($totalRevenue - $previousTotalRevenue) / $previousTotalRevenue) * 100) : 0;
-            $quantitySoldChange = $previousTotalQuantitySold > 0 ? round((($totalQuantitySold - $previousTotalQuantitySold) / $previousTotalQuantitySold) * 100) : 0;
-            $grossProfitChange = $previousTotalGrossProfit > 0 ? round((($totalGrossProfit - $previousTotalGrossProfit) / $previousTotalGrossProfit) * 100) : 0;
-        }
-
-        // Sắp xếp theo doanh thu giảm dần và lấy top 5
-        $topFive = $statistics->sortByDesc('revenue_value')->take(5)->values();
-
-        // Lấy các sản phẩm còn lại (loại bỏ top 5)
-        $remaining = $statistics->sortByDesc('revenue_value')->slice(5)->values();
-
-        return view('admin.flash_sales.statistics', compact(
-            'flashSale',
-            'topFive',
-            'remaining',
-            'totalRevenue',
-            'totalQuantitySold',
-            'totalGrossProfit',
-            'totalQuantityLimit',
-            'soldPercentage',
-            'grossProfitMargin',
-            'revenueChange',
-            'quantitySoldChange',
-            'grossProfitChange',
-            'statistics'
-        ));
+    if ($previousFlashSale) {
+        $previousFlashSale->load(['products']);
+        $previousTotalRevenue = $previousFlashSale->products->sum(function ($p) {
+            return $p->quantity_sold * $p->flash_price;
+        });
+        $revenueChange = $previousTotalRevenue > 0 ? round((($totalRevenue - $previousTotalRevenue) / $previousTotalRevenue) * 100) : 0;
     }
+
+    // Sắp xếp theo doanh thu giảm dần và lấy top 5
+    $topFive = $statistics->sortByDesc('revenue_value')->take(5)->values();
+
+    // Lấy các sản phẩm còn lại
+    $remaining = $statistics->sortByDesc('revenue_value')->slice(5)->values();
+
+    return view('admin.flash_sales.statistics', compact(
+        'flashSale',
+        'topFive',
+        'remaining',
+        'totalRevenue',
+        'totalQuantitySold',
+        'totalGrossProfit',
+        'totalQuantityLimit',
+        'soldPercentage',
+        'grossProfitMargin',
+        'revenueChange',
+        'aggregatedStatistics' // Truyền biến đã được tổng hợp
+    ));
+}
 }

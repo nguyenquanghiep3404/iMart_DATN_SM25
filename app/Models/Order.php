@@ -14,8 +14,11 @@ class Order extends Model
     // Status constants - Rút gọn theo yêu cầu
     public const STATUS_PENDING_CONFIRMATION = 'pending_confirmation';
     public const STATUS_PROCESSING = 'processing';
+    public const STATUS_PARTIALLY_SHIPPED = 'partially_shipped';
+    public const STATUS_SHIPPED = 'shipped';
     public const STATUS_OUT_FOR_DELIVERY = 'out_for_delivery';
     public const STATUS_EXTERNAL_SHIPPING = 'external_shipping';
+    public const STATUS_PARTIALLY_DELIVERED = 'partially_delivered';
     public const STATUS_DELIVERED = 'delivered';
     public const STATUS_CANCELLED = 'cancelled';
     public const STATUS_FAILED_DELIVERY = 'failed_delivery';
@@ -75,6 +78,8 @@ class Order extends Model
         'store_location_id',
         'confirmed_at',
         'external_shipping_assigned_at',
+         'register_id',           // Thêm dòng này
+            'pos_session_id',
     ];
 
     protected $casts = [
@@ -93,8 +98,11 @@ class Order extends Model
         return [
             self::STATUS_PENDING_CONFIRMATION => 'Chờ xác nhận',
             self::STATUS_PROCESSING => 'Đang xử lý',
+            self::STATUS_PARTIALLY_SHIPPED => 'Đã giao một phần',
+            self::STATUS_SHIPPED => 'Đã vận chuyển',
             self::STATUS_OUT_FOR_DELIVERY => 'Đang giao hàng',
             self::STATUS_EXTERNAL_SHIPPING => 'Giao bởi đơn vị thứ 3',
+            self::STATUS_PARTIALLY_DELIVERED => 'Đã nhận hàng một phần',
             self::STATUS_DELIVERED => 'Giao hàng thành công',
             self::STATUS_CANCELLED => 'Hủy',
             self::STATUS_FAILED_DELIVERY => 'Giao hàng thất bại',
@@ -123,8 +131,87 @@ class Order extends Model
         return in_array($this->status, [
             self::STATUS_PENDING_CONFIRMATION,
             self::STATUS_PROCESSING,
-            self::STATUS_OUT_FOR_DELIVERY
+            self::STATUS_PARTIALLY_SHIPPED,
+            self::STATUS_SHIPPED,
+            self::STATUS_OUT_FOR_DELIVERY,
+            self::STATUS_PARTIALLY_DELIVERED
         ]);
+    }
+
+    /**
+     * Cập nhật trạng thái đơn hàng dựa trên trạng thái của các fulfillments
+     */
+    public function updateStatusBasedOnFulfillments()
+    {
+        $fulfillments = $this->fulfillments;
+
+        if ($fulfillments->isEmpty()) {
+            return;
+        }
+
+        $totalFulfillments = $fulfillments->count();
+        $cancelledCount = $fulfillments->where('status', OrderFulfillment::STATUS_CANCELLED)->count();
+        $deliveredCount = $fulfillments->where('status', OrderFulfillment::STATUS_DELIVERED)->count();
+        $failedCount = $fulfillments->where('status', OrderFulfillment::STATUS_FAILED)->count();
+        $shippedCount = $fulfillments->whereIn('status', [
+            OrderFulfillment::STATUS_SHIPPED,
+            OrderFulfillment::STATUS_EXTERNAL_SHIPPING
+        ])->count();
+        $packedCount = $fulfillments->where('status', OrderFulfillment::STATUS_PACKED)->count();
+        $awaitingShipmentCount = $fulfillments->where('status', OrderFulfillment::STATUS_AWAITING_SHIPMENT)->count();
+
+        $newStatus = null;
+
+        // Tất cả fulfillments bị hủy
+        if ($cancelledCount === $totalFulfillments) {
+            $newStatus = self::STATUS_CANCELLED;
+        }
+        // Tất cả fulfillments đã giao thành công (không có failed)
+        elseif ($deliveredCount === $totalFulfillments && $failedCount === 0) {
+            $newStatus = self::STATUS_DELIVERED;
+            // Cập nhật thời gian giao hàng nếu chưa có
+            if (!$this->delivered_at) {
+                $this->delivered_at = now();
+            }
+        }
+        // Có ít nhất 1 fulfillment đã giao và không phải tất cả đều giao thành công
+        elseif ($deliveredCount > 0 && ($deliveredCount < $totalFulfillments || $failedCount > 0)) {
+            $newStatus = self::STATUS_PARTIALLY_DELIVERED;
+        }
+        // Tất cả fulfillments đã được vận chuyển (shipped hoặc delivered)
+        elseif (($shippedCount + $deliveredCount) === $totalFulfillments && $failedCount === 0) {
+            // Nếu tất cả đều shipped (chưa có delivered nào)
+            if ($deliveredCount === 0) {
+                $newStatus = self::STATUS_SHIPPED; // Đã vận chuyển
+            }
+        }
+        // Có ít nhất 1 fulfillment đã shipped nhưng chưa phải tất cả
+        elseif ($shippedCount > 0 && ($shippedCount + $deliveredCount) < $totalFulfillments) {
+            $newStatus = self::STATUS_PARTIALLY_SHIPPED;
+        }
+        // Tất cả fulfillments đã đóng gói và chờ vận chuyển
+        elseif (($packedCount + $awaitingShipmentCount) === $totalFulfillments) {
+            $newStatus = self::STATUS_PROCESSING;
+        }
+
+        // Cập nhật trạng thái nếu có thay đổi
+        if ($newStatus && $this->status !== $newStatus) {
+            $oldStatus = $this->status;
+            $this->status = $newStatus;
+            $this->save();
+
+            \Log::info('Đã cập nhật trạng thái đơn hàng dựa trên fulfillments', [
+                'order_id' => $this->id,
+                'order_code' => $this->order_code,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'total_fulfillments' => $totalFulfillments,
+                'delivered_count' => $deliveredCount,
+                'shipped_count' => $shippedCount,
+                'failed_count' => $failedCount,
+                'cancelled_count' => $cancelledCount
+            ]);
+        }
     }
 
     // Relationships
@@ -383,15 +470,9 @@ class Order extends Model
         return $this->order_code;
     }
 
-    public function packages()
-    {
-        return $this->hasManyThrough(Package::class, OrderFulfillment::class, 'order_id', 'order_fulfillment_id');
-    }
     public function cancellationRequest()
     {
         // Một đơn hàng chỉ có một yêu cầu hủy mới nhất
         return $this->hasOne(CancellationRequest::class)->latestOfMany();
     }
-    
-
 }

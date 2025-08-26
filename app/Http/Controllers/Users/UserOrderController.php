@@ -108,8 +108,10 @@ class UserOrderController extends Controller
         $statusMap = [
             'pending_confirmation' => 'pending_confirmation',
             'processing' => 'processing',
+            'partially_shipped' => 'partially_shipped',
             'out_for_delivery' => 'out_for_delivery',
             'external_shipping' => 'external_shipping',
+            'partially_delivered' => 'partially_delivered',
             'delivered' => 'delivered',
             'cancelled' => 'cancelled',
             'failed_delivery' => 'failed_delivery'
@@ -133,7 +135,19 @@ class UserOrderController extends Controller
             ? $request->input('reason_other', $request->reason)
             : $request->reason;
 
+
         $isCOD = strtolower($order->payment_method) === 'cod';
+
+        $order->update([
+            'status' => 'cancelled',
+            'cancelled_at' => now(),
+            'cancellation_reason' => $request->reason
+        ]);
+
+        // Cập nhật trạng thái packages khi user hủy đơn hàng
+        // $this->updatePackageStatusBasedOnOrderStatus($order);
+
+
 
         // =================================================================
         // **TRƯỜNG HỢP 1: ĐƠN HÀNG COD**
@@ -220,7 +234,13 @@ class UserOrderController extends Controller
 
         return redirect()->back()->with('error', 'Không thể thực hiện hành động này.');
     }
-    public function confirmReceipt(Order $order)
+
+
+    /**
+     * Cập nhật trạng thái packages dựa trên trạng thái đơn hàng
+     */
+       public function confirmReceipt(Order $order)
+
     {
         if (Auth::id() !== $order->user_id) {
             abort(403);
@@ -232,51 +252,5 @@ class UserOrderController extends Controller
         }
         return redirect()->back()->with('error', 'Không thể thực hiện hành động này.');
     }
-public function buyAgain(Order $order)
-{
-    if (auth()->id() !== $order->user_id) {
-        abort(403);
-    }
 
-    // Load sản phẩm trong đơn hàng
-    $order->load('items.productVariant');
-
-    // Lấy giỏ hàng hiện tại (nếu có) để cộng dồn, hoặc khởi tạo mảng rỗng
-    $cart = session()->get('cart', []);
-
-    foreach ($order->items as $item) {
-        $variant = $item->productVariant;
-
-        if ($variant) {
-            $quantityToBuy = $item->quantity;
-
-            // Kiểm tra nếu sản phẩm đã có trong giỏ thì cộng dồn số lượng
-            if (isset($cart[$variant->id])) {
-                $cart[$variant->id]['quantity'] += $quantityToBuy;
-            } else {
-                // Nếu chưa có thì thêm mới
-                $cart[$variant->id] = [
-                    'id' => $variant->id,
-                    'name' => $item->product_name,
-                    'price' => $variant->price,
-                    'quantity' => $quantityToBuy,
-                    'attributes' => $item->variant_attributes ?? [],
-                    // Có thể thêm các trường khác như ảnh nếu cần
-                    // 'image' => $variant->image_url,
-                ];
-            }
-        }
-    }
-
-    // Lưu giỏ hàng mới vào session
-    session()->put('cart', $cart);
-    $debugSession = session('cart');
-    \Log::debug('Debug Session Cart in buyAgain:', [$debugSession]);
-
-    // BỎ DÒNG NÀY ĐI
-    // dd(session('cart'));
-
-    // Chuyển hướng đến trang giỏ hàng với thông báo thành công
-    return redirect()->route('cart.index')->with('success', 'Đã thêm sản phẩm vào giỏ hàng!');
-}
 }

@@ -257,14 +257,17 @@
     ];
     $currentStep = $statusSteps[$order->status] ?? 0;
     $statusInfo = match ($order->status) {
-        'delivered' => ['text' => 'Hoàn tất', 'class' => 'status-completed'],
-        'processing' => ['text' => 'Đang xử lý', 'class' => 'status-processing'],
-        'cancellation_requested' => ['text' => 'Yêu cầu hủy', 'class' => 'cancellation_requested'],
-        'shipped', 'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
-        'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
-        'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-awaiting-pickup'],
-        'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],
-        default => ['text' => ucfirst($order->status), 'class' => 'status-returned'],
+
+    'delivered' => ['text' => 'Hoàn tất', 'class' => 'status-completed'],
+    'processing' => ['text' => 'Đang xử lý', 'class' => 'status-processing'],
+    'shipped' => ['text' => 'đang giao hàng', 'class' => 'status-shipping'],
+    'cancellation_requested' => ['text' => 'Yêu cầu hủy', 'class' => 'cancellation_requested'],
+    'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
+    'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
+    'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-pending_confirmation'],
+    'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],
+    default => ['text' => ucfirst($order->status), 'class' => 'status-returned'],
+
     };
     $isPickupOrder = !empty($order->store_location_id);
 
@@ -454,11 +457,32 @@
             </button>
             @endif
 
-            @if($order->status == 'delivered' && is_null($order->confirmed_at) && $order->delivered_at && $order->delivered_at->diffInDays(now()) < 7)
-            <a href="{{-- route('returns.create', $order->id) --}}" class="btn-action btn-action-secondary">
-                Yêu cầu trả hàng
-            </a>
-            @endif
+
+            {{-- NÚT YÊU CẦU TRẢ HÀNG --}}
+            {{-- Chỉ hiện khi: Đơn đã giao, CHƯA xác nhận, và còn trong hạn 7 ngày --}}
+            @php
+            $firstItem = $order->items->first();
+            $canReview = $firstItem && !$firstItem->has_reviewed && $firstItem->product_variant_id;
+
+            $deliveredAt = $order->desired_delivery_date ?? $order->updated_at;
+            $daysSinceDelivered = $deliveredAt ? \Carbon\Carbon::parse($deliveredAt)->diffInDays(now()) : null;
+            $canRefund = $daysSinceDelivered !== null && $daysSinceDelivered <= 15;
+                @endphp
+
+                @if($order->status == 'delivered' && !is_null($order->confirmed_at) && $order->delivered_at && $order->delivered_at->diffInDays(now()) < 15)
+                    <a href="{{ route('refunds.create', ['orderItem' => $firstItem->id]) }}" class="btn-action btn-action-secondary">
+                    Yêu cầu trả hàng
+                    </a>
+                    @endif
+
+                    {{-- NÚT VIẾT ĐÁNH GIÁ CHO CẢ ĐƠN HÀNG --}}
+                    {{-- Chỉ hiện khi đơn hàng đã được xác nhận đã nhận --}}
+                    @if(!is_null($order->confirmed_at))
+                    <a href="{{ route('orders.review', $order->id) }}" class="btn-action">
+                        Viết đánh giá
+                    </a>
+                    @endif
+
 
             @if(!is_null($order->confirmed_at))
             <a href="{{ route('orders.review', $order->id) }}" class="btn-action">

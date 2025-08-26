@@ -14,6 +14,7 @@ use App\Notifications\NewOrderAssignedToShipper;
 use App\Notifications\OrderCancelledNotification;
 use App\Notifications\OrderNoteForShipperUpdated;
 use App\Notifications\GuestOrderConfirmation;
+use App\Services\FulfillmentStockTransferService;
 
 
 class OrderObserver
@@ -66,6 +67,11 @@ class OrderObserver
         // Cập nhật trạng thái order_fulfillments khi trạng thái đơn hàng thay đổi
         if ($order->wasChanged('status')) {
             $this->updateFulfillmentStatus($order);
+            
+            // Tạo phiếu chuyển kho fulfillment khi đơn hàng chuyển sang 'đang xử lý'
+            if ($order->status === Order::STATUS_PROCESSING) {
+                $this->createFulfillmentTransfers($order);
+            }
         }
         
         // Xử lý đặc biệt cho trạng thái hủy đơn
@@ -206,6 +212,30 @@ class OrderObserver
                 'order_id' => $order->id,
                 'order_code' => $order->order_code,
                 'order_status' => $order->status,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Tạo phiếu chuyển kho fulfillment khi đơn hàng chuyển sang trạng thái 'đang xử lý'
+     */
+    private function createFulfillmentTransfers(Order $order): void
+    {
+        try {
+            $fulfillmentTransferService = new FulfillmentStockTransferService();
+            $result = $fulfillmentTransferService->checkAndCreateFulfillmentTransfers($order);
+            
+            \Log::info('Kết quả tạo phiếu chuyển kho fulfillment trong Observer', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'result' => $result
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi tạo phiếu chuyển kho fulfillment trong Observer', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
                 'error' => $e->getMessage()
             ]);
         }
