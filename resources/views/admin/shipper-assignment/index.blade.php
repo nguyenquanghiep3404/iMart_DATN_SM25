@@ -3,7 +3,6 @@
 @section('title', 'Gán Shipper')
 
 @section('content')
-    <!-- Header -->
     <div class="bg-white rounded-lg shadow-sm mb-6">
         <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex justify-between items-center">
@@ -21,12 +20,9 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left Column: Order List -->
         <div class="lg:col-span-2">
             <div class="bg-white rounded-lg shadow-sm">
-                <!-- Filters -->
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-lg font-medium text-gray-900 mb-4">Bộ lọc</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -62,7 +58,6 @@
                     </div>
                 </div>
 
-                <!-- Order List Header -->
                 <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                     <div class="flex justify-between items-center">
                         <div class="flex items-center space-x-4">
@@ -83,9 +78,7 @@
                     </div>
                 </div>
 
-                <!-- Order List -->
                 <div class="relative">
-                    <!-- Loading State -->
                     <div id="loading-orders" class="hidden p-8 text-center">
                         <div
                             class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-sm shadow rounded-md text-blue-500 bg-blue-100">
@@ -101,7 +94,6 @@
                         </div>
                     </div>
 
-                    <!-- Empty State -->
                     <div id="empty-orders" class="hidden p-8 text-center">
                         <div class="text-gray-400 mb-4">
                             <i class="fas fa-box-open text-4xl"></i>
@@ -110,15 +102,12 @@
                         <p class="text-gray-500">Hiện tại không có đơn hàng nào cần gán shipper.</p>
                     </div>
 
-                    <!-- Order List Container -->
                     <div id="order-list" class="divide-y divide-gray-200">
-                        <!-- Orders will be loaded here -->
-                    </div>
+                        </div>
                 </div>
             </div>
         </div>
 
-        <!-- Right Column: Shipper Assignment -->
         <div class="lg:col-span-1">
             <div class="bg-white rounded-lg shadow-sm">
                 <div class="px-6 py-4 border-b border-gray-200">
@@ -126,14 +115,12 @@
                 </div>
 
                 <div class="p-6">
-                    <!-- Selected Summary -->
                     <div id="selected-summary" class="mb-6 p-4 bg-blue-50 rounded-lg hidden">
                         <h4 class="text-sm font-medium text-blue-900 mb-2">Đã chọn</h4>
                         <p class="text-sm text-blue-700">Bạn đã chọn <span id="selected-count">0</span> đơn hàng để gán
                             shipper.</p>
                     </div>
 
-                    <!-- Shipper Selection -->
                     <div class="mb-6">
                         <label class="block text-base font-medium text-gray-700 mb-3">Chọn Shipper</label>
                         <div class="relative">
@@ -154,7 +141,6 @@
                         </div>
                     </div>
 
-                    <!-- Shipper Info -->
                     <div id="shipper-info" class="mb-6 p-4 bg-gray-50 rounded-lg hidden">
                         <h4 class="text-sm font-medium text-gray-900 mb-2">Thông tin Shipper</h4>
                         <div class="space-y-2 text-sm text-gray-600">
@@ -164,7 +150,6 @@
                         </div>
                     </div>
 
-                    <!-- Assign Button -->
                     <button id="assign-btn" disabled
                         class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
                         <i class="fas fa-truck mr-2"></i>
@@ -175,10 +160,10 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="fixed top-4 right-4 z-50 hidden">
         <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-sm">
-            <div class="flex items-start">
+            {{-- Thay đổi ở đây: items-start -> items-center --}}
+            <div class="flex items-center">
                 <div class="flex-shrink-0">
                     <div id="toast-icon" class="h-5 w-5"></div>
                 </div>
@@ -211,7 +196,6 @@
         const CONFIG = {
             routes: {
                 getOrders: '{{ route('admin.shipper-assignment.orders') }}',
-                // Cập nhật route để nhận tham số tỉnh
                 getShippers: '{{ route('admin.shipper-assignment.shippers', ['province' => ':province']) }}',
                 assignShipper: '{{ route('admin.shipper-assignment.assign') }}',
                 getProvinces: '{{ route('admin.shipper-assignment.provinces') }}',
@@ -220,7 +204,6 @@
             csrfToken: '{{ csrf_token() }}'
         };
 
-        // Đổi tên 'orders' thành 'fulfillments' để phản ánh đúng logic
         let allFulfillments = [];
         let filteredFulfillments = [];
         let selectedFulfillments = new Set();
@@ -266,8 +249,8 @@
         async function initializePage() {
             showLoading();
             await loadProvinces();
-            await loadAllFulfillments(); // Tải tất cả gói hàng một lần khi vào trang
-            applyFilters(); // Áp dụng bộ lọc ban đầu (có thể không có gì được chọn)
+            await loadAllFulfillments();
+            applyFilters();
             hideLoading();
         }
 
@@ -321,8 +304,6 @@
         async function loadShippers(provinceId) {
             shipperLoading.classList.remove('hidden');
             shipperSelect.innerHTML = '<option value="">Đang tải...</option>';
-
-            // Nếu không chọn tỉnh, không tải shipper
             if (!provinceId) {
                 shipperSelect.innerHTML = '<option value="">-- Chọn tỉnh để xem shipper --</option>';
                 shipperLoading.classList.add('hidden');
@@ -330,12 +311,10 @@
                 updateAssignButton();
                 return;
             }
-
             try {
                 const url = CONFIG.routes.getShippers.replace(':province', provinceId);
                 const response = await fetch(url);
                 const result = await response.json();
-
                 shipperSelect.innerHTML = '<option value="">-- Chọn shipper --</option>';
                 if (result.success) {
                     shippers = result.data;
@@ -381,7 +360,7 @@
         function handleProvinceChange() {
             const provinceId = provinceFilter.value;
             loadDistricts(provinceId);
-            loadShippers(provinceId); // Tải shipper tương ứng với tỉnh
+            loadShippers(provinceId);
             applyFilters();
         }
 
@@ -407,9 +386,7 @@
             const searchTerm = searchInput.value.toLowerCase();
 
             filteredFulfillments = allFulfillments.filter(ff => {
-                // Luôn lọc theo tỉnh/thành phố đã chọn
                 if (provinceId && ff.province_id != provinceId) return false;
-
                 if (districtId && ff.district_id != districtId) return false;
                 if (searchTerm &&
                     !ff.order_code.toLowerCase().includes(searchTerm) &&
@@ -417,8 +394,6 @@
                 ) {
                     return false;
                 }
-
-
                 if (deadline) {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);
@@ -426,7 +401,6 @@
                     ffDeadline.setHours(0, 0, 0, 0);
                     const tomorrow = new Date(today);
                     tomorrow.setDate(today.getDate() + 1);
-
                     switch (deadline) {
                         case 'today':
                             if (ffDeadline.getTime() !== today.getTime()) return false;
@@ -447,53 +421,46 @@
         }
 
         function renderFulfillments() {
-            if (!provinceFilter.value) { // Nếu chưa chọn tỉnh thì không hiển thị gì
-                emptyOrders.querySelector('p').textContent = 'Vui lòng chọn Tỉnh/Thành phố để xem các gói hàng cần gán.';
+            if (!provinceFilter.value) {
+                emptyOrders.querySelector('p').textContent =
+                    'Vui lòng chọn Tỉnh/Thành phố để xem các gói hàng cần gán.';
                 showEmpty();
                 return;
             }
-
             if (filteredFulfillments.length === 0) {
                 emptyOrders.querySelector('p').textContent = 'Không có gói hàng nào phù hợp với bộ lọc.';
                 showEmpty();
                 return;
             }
-
             hideEmpty();
 
             const html = filteredFulfillments.map(ff => {
-                // --- THAY ĐỔI BẮT ĐẦU TỪ ĐÂY ---
-                // Ưu tiên hiển thị Mã Vận Đơn (tracking_code).
-                // Nếu không có, sẽ hiển thị Mã Đơn Hàng (order_code) làm phương án dự phòng.
                 const displayCode = ff.tracking_code ?
                     `<span class="font-semibold text-blue-600">Mã VĐ: ${ff.tracking_code}</span>` :
                     `<span class="font-medium text-gray-900">Đơn hàng: ${ff.order_code}</span>`;
-                // --- KẾT THÚC THAY ĐỔI ---
-
                 return `
-  <div class="order-item p-4 hover:bg-gray-50 cursor-pointer" data-fulfillment-id="${ff.id}">
-   <div class="flex items-center justify-between">
-    <div class="flex items-center space-x-3">
-     <input type="checkbox" class="order-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-      data-fulfillment-id="${ff.id}" ${selectedFulfillments.has(ff.id) ? 'checked' : ''}>
-     <div>
-                        ${displayCode} 
-      <div class="text-sm text-gray-500">${ff.customer_name} - ${ff.customer_phone}</div>
-      <div class="text-sm text-gray-500">${ff.address}</div>
-     </div>
-    </div>
-    <div class="text-right">
-     <div class="text-sm font-medium text-gray-900">${formatCurrency(ff.total_amount)}</div>
-     <div class="text-sm text-gray-500">Hạn: ${formatDate(ff.deadline)}</div>
-     <div class="text-xs ${getDeadlineClass(ff.deadline)}">${getDeadlineText(ff.deadline)}</div>
-    </div>
-   </div>
-  </div>
- `
+                <div class="order-item p-4 hover:bg-gray-50 cursor-pointer" data-fulfillment-id="${ff.id}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <input type="checkbox" class="order-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                                data-fulfillment-id="${ff.id}" ${selectedFulfillments.has(ff.id) ? 'checked' : ''}>
+                            <div>
+                                ${displayCode} 
+                                <div class="text-sm text-gray-500">${ff.customer_name} - ${ff.customer_phone}</div>
+                                <div class="text-sm text-gray-500">${ff.address}</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm font-medium text-gray-900">${formatCurrency(ff.total_amount)}</div>
+                            <div class="text-sm text-gray-500">Hạn: ${formatDate(ff.deadline)}</div>
+                            <div class="text-xs ${getDeadlineClass(ff.deadline)}">${getDeadlineText(ff.deadline)}</div>
+                        </div>
+                    </div>
+                </div>
+                `
             }).join('');
 
             orderList.innerHTML = html;
-
             orderList.querySelectorAll('.order-checkbox').forEach(cb => cb.addEventListener('change', handleSelection));
             orderList.querySelectorAll('.order-item').forEach(item => item.addEventListener('click', e => {
                 if (e.target.type !== 'checkbox') {
@@ -537,13 +504,10 @@
                 showToast('Vui lòng chọn gói hàng và shipper.', 'error');
                 return;
             }
-
             const fulfillmentIds = Array.from(selectedFulfillments);
             const shipperId = shipperSelect.value;
-
             assignBtn.disabled = true;
             assignBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang gán...';
-
             try {
                 const response = await fetch(CONFIG.routes.assignShipper, {
                     method: 'POST',
@@ -558,11 +522,9 @@
                     })
                 });
                 const result = await response.json();
-
                 if (response.ok && result.success) {
                     showToast(result.message, 'success');
                     clearSelection();
-                    // Tải lại dữ liệu từ đầu để cập nhật
                     await loadAllFulfillments();
                     applyFilters();
                 } else {
@@ -665,12 +627,14 @@
             const toast = document.getElementById('toast');
             document.getElementById('toast-message').textContent = message;
             const icon = document.getElementById('toast-icon');
+
+            // Thay đổi ở đây: h-5 w-5 -> w-full h-full
             if (type === 'success') icon.innerHTML =
-                '<svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>';
+                '<svg class="w-full h-full text-green-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>';
             else if (type === 'error') icon.innerHTML =
-                '<svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>';
+                '<svg class="w-full h-full text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>';
             else icon.innerHTML =
-                '<svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>';
+                '<svg class="w-full h-full text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>';
             toast.classList.remove('hidden');
             toastTimeout = setTimeout(() => hideToast(), 5000);
         }

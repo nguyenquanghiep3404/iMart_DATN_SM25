@@ -1588,6 +1588,15 @@ class CartController extends Controller
             $isLoggedIn = auth()->check();
             \Log::info("Người dùng " . ($isLoggedIn ? 'ID ' . auth()->id() : 'guest') . " áp dụng voucher: {$voucherCode}");
 
+            // Bắt buộc đăng nhập trước khi áp dụng mã giảm giá
+            if (!$isLoggedIn) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Vui lòng đăng nhập để sử dụng mã giảm giá.',
+                    'require_login' => true,
+                ]);
+            }
+
             // Lấy mã giảm giá
             $coupon = Coupon::where('code', $voucherCode)->first();
             if (!$coupon || $coupon->status !== 'active') {

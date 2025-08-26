@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\PaymentRequest;
+use App\Models\FlashSaleProduct;
+
 
 use App\Models\OrderFulfillment;
 // use App\Services\AutoStockTransferService; // Đã chuyển logic sang OrderObserver
@@ -100,6 +102,7 @@ class PaymentController extends Controller
         $user = auth()->user();
 
         $availableCoupons = Coupon::where('status', 'active')
+            ->where('is_public', 1)
             ->where(function ($query) {
                 $query->whereNull('start_date')
                     ->orWhere('start_date', '<=', now());
@@ -191,7 +194,7 @@ class PaymentController extends Controller
             return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
         });
 
-        $availableCoupons = Coupon::where('status', 'active')->get();
+        $availableCoupons = Coupon::where('status', 'active')->where('is_public', 1)->get();
 
         // 4. Trả về view với toàn bộ dữ liệu chính xác
         return view('users.payments.information', [
@@ -304,7 +307,8 @@ class PaymentController extends Controller
                     }
                 // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService.commitInventoryForOrder()
                 // để tránh trừ kho 2 lần. COD orders sẽ có inventory được commit ngay khi tạo đơn hàng.
-
+                // Tăng quantity_sold cho các sản phẩm Flash Sale
+                $this->incrementFlashSaleQuantitySold($order);
                 return $order;
             });
 
@@ -435,29 +439,10 @@ class PaymentController extends Controller
             throw new \Exception('Không đủ tồn kho: ' . $e->getMessage());
         }
 
-
         // ... (xử lý trừ điểm, ghi log coupon, lưu địa chỉ)
         // Phần này giữ nguyên
 
         return $order;
-        try {
-    // THÊM DÒNG LOG NÀY VÀO
-    Log::info("Chuẩn bị commit tồn kho cho đơn hàng {$order->order_code}, phương thức: {$order->payment_method}");
-
-    $inventoryService = new InventoryCommitmentService();
-    $inventoryService->commitInventoryForOrder($order);
-
-    // THÊM DÒNG LOG NÀY VÀO
-    Log::info(">>>>> ĐÃ COMMIT XONG tồn kho cho đơn hàng {$order->order_code}");
-
-} catch (\Exception $e) {
-    // THÊM DÒNG LOG NÀY VÀO
-    Log::error("LỖI KHI COMMIT TỒN KHO cho đơn hàng {$order->order_code}: " . $e->getMessage());
-
-    // Nếu không đủ tồn kho, xóa đơn hàng và báo lỗi
-    $order->delete();
-    throw new \Exception('Không đủ tồn kho: ' . $e->getMessage());
-}
     }
 
     /**
@@ -666,9 +651,9 @@ class PaymentController extends Controller
                         $order->paid_at = now();
                         $order->save();
 
-                        // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
-                        // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
-                        // thông qua InventoryCommitmentService.fulfillInventoryForOrder()
+                        // REMOVED: commitInventoryForOrder đã được gọi trong createOrderAndItems
+                        // Không cần gọi lại để tránh tạm giữ hàng tồn kho 2 lần
+                        Log::info("Đơn hàng {$order->order_code} đã thanh toán VNPay thành công");
                     });
 
                     // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
@@ -886,8 +871,14 @@ class PaymentController extends Controller
 
         if ($request->resultCode == 0) { // Thành công
             if ($order->payment_status == Order::PAYMENT_PENDING) {
-                $order->payment_status = Order::PAYMENT_PAID;
-                $order->save();
+                DB::transaction(function() use ($order) {
+                    $order->payment_status = Order::PAYMENT_PAID;
+                    $order->save();
+
+                    // REMOVED: commitInventoryForOrder đã được gọi trong createOrderAndItems
+                    // Không cần gọi lại để tránh tạm giữ hàng tồn kho 2 lần
+                    Log::info("Đơn hàng {$order->order_code} đã thanh toán MoMo thành công");
+                });
 
                 // Chỉ gán store_location_id tự động nếu là đơn pickup và thiếu store
                 $storeLocationId = $order->store_location_id;
@@ -904,9 +895,6 @@ class PaymentController extends Controller
                         }
                     }
                 }
-
-                // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
-                // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
 
                 // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
                 // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
@@ -1350,6 +1338,7 @@ class PaymentController extends Controller
         $user = auth()->user();
 
         $availableCoupons = Coupon::where('status', 'active')
+            ->where('is_public', 1)
             ->where(function ($query) {
                 $query->whereNull('start_date')
                     ->orWhere('start_date', '<=', now());
@@ -1492,6 +1481,21 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
+                // Tạm giữ hàng tồn kho
+                $storeLocationId = $customerInfo['store_location_id'] ?? $this->findAvailableStore($variant, $item->quantity);
+                if ($storeLocationId) {
+                    try {
+                        $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
+
+                        // Tạo fulfillment cho đơn hàng
+                        $fulfillmentService = app(FulfillmentService::class);
+                        $fulfillmentService->createFulfillmentsForOrder($order);
+                        Log::info("Đã tạo fulfillment cho đơn hàng mua ngay VNPay {$order->order_code}");
+                    } catch (\Exception $e) {
+                        Log::error("Lỗi khi tạo fulfillment cho đơn hàng mua ngay VNPay {$order->order_code}: " . $e->getMessage());
+                    }
+                }
+
                 if (Auth::check() && $request->save_address && !$request->address_id) {
             Log::info('Saving new address for user: ' . Auth::id(), [
                 'save_address' => $request->save_address,
@@ -1580,6 +1584,31 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
+                // Tạm giữ hàng thay vì trừ thẳng tồn kho
+                $storeLocationId = $customerInfo['store_location_id'] ?? $this->findAvailableStore($variant, $item->quantity);
+                if ($storeLocationId) {
+                    try {
+                        $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
+
+                        // Tạo fulfillment cho đơn hàng
+                        $fulfillmentService = app(FulfillmentService::class);
+                        $fulfillmentService->createFulfillmentsForOrder($order);
+                        Log::info("Đã tạo fulfillment cho đơn hàng mua ngay MoMo {$order->order_code}");
+                    } catch (\Exception $e) {
+                        Log::error("Lỗi khi tạo fulfillment cho đơn hàng mua ngay MoMo {$order->order_code}: " . $e->getMessage());
+                    }
+                }
+
+                // Tạo fulfillment cho đơn hàng Buy Now
+                $fulfillmentService = new FulfillmentService();
+                try {
+                    $fulfillmentService->createFulfillmentsForOrder($order);
+                    Log::info("Đã tạo fulfillment cho đơn hàng Buy Now (MoMo): {$order->order_code}");
+                } catch (\Exception $e) {
+                    Log::error("Lỗi khi tạo fulfillment cho đơn hàng Buy Now (MoMo) {$order->order_code}: {$e->getMessage()}");
+                    // Không throw exception để không làm fail toàn bộ đơn hàng
+                }
+
                 if (Auth::check() && $request->save_address && !$request->address_id) {
             Log::info('Saving new address for user (COD): ' . Auth::id(), [
                 'save_address' => $request->save_address,
@@ -1666,7 +1695,19 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
+                // Tạm giữ hàng thay vì trừ thẳng tồn kho
+                $storeLocationId = $request->delivery_method === 'pickup' ? $request->store_location_id : null;
+                $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
 
+                // Tạo fulfillment cho đơn hàng Buy Now
+                $fulfillmentService = new FulfillmentService();
+                try {
+                    $fulfillmentService->createFulfillmentsForOrder($order);
+                    Log::info("Đã tạo fulfillment cho đơn hàng Buy Now (bank_transfer_qr): {$order->order_code}");
+                } catch (\Exception $e) {
+                    Log::error("Lỗi khi tạo fulfillment cho đơn hàng Buy Now (bank_transfer_qr) {$order->order_code}: {$e->getMessage()}");
+                    // Không throw exception để không làm fail toàn bộ đơn hàng
+                }
 
                 if (Auth::check() && $request->save_address && !$request->address_id) {
             Log::info('Saving new address for user (Buy Now): ' . Auth::id(), [
@@ -1962,7 +2003,7 @@ class PaymentController extends Controller
             'baseLength' => $maxLength > 0 ? $maxLength : 20,
             'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
             'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
-            'availableCoupons' => Coupon::where('status', 'active')->get(), // Buy Now VẪN áp dụng coupon
+            'availableCoupons' => Coupon::where('status', 'active')->where('is_public', 1)->get(),
         ];
     }
     /**
@@ -2563,4 +2604,32 @@ class PaymentController extends Controller
             return response('<h1>Đã có lỗi xảy ra!</h1><p>Vui lòng thử lại hoặc liên hệ quản trị viên.</p>', 500);
         }
     }
+
+    private function incrementFlashSaleQuantitySold(Order $order): void
+{
+    try {
+        // Lấy tất cả OrderItem trong đơn hàng
+        $orderItems = $order->items()->with('productVariant')->get();
+
+        foreach ($orderItems as $orderItem) {
+            // Kiểm tra xem product_variant_id có trong bảng flash_sale_products không
+            $flashSaleProduct = FlashSaleProduct::where('product_variant_id', $orderItem->product_variant_id)
+                ->whereHas('flashSale', function ($query) {
+                    $query->where('status', 'active')
+                          ->where('start_time', '<=', now())
+                          ->where('end_time', '>=', now());
+                })
+                ->first();
+
+            if ($flashSaleProduct) {
+                // Tăng quantity_sold tương ứng với số lượng trong OrderItem
+                $flashSaleProduct->increment('quantity_sold', $orderItem->quantity);
+                Log::info("Đã tăng quantity_sold cho FlashSaleProduct ID {$flashSaleProduct->id}: +{$orderItem->quantity}");
+            }
+        }
+    } catch (\Exception $e) {
+        Log::error("Lỗi khi tăng quantity_sold cho Flash Sale: " . $e->getMessage());
+        throw $e; // Ném lại ngoại lệ để rollback giao dịch nếu cần
+    }
+}
 }
