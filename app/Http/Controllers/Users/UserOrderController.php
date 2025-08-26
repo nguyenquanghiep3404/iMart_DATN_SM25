@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\CancellationRequest;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use App\Models\ProductInventory;
 
 class UserOrderController extends Controller
 {
@@ -123,7 +124,8 @@ class UserOrderController extends Controller
     {
         $user = Auth::user();
         $order = Order::where('user_id', $user->id)
-            ->whereIn('status', ['pending_confirmation', 'processing', 'awaiting_shipment', 'cancellation_requested'])
+
+            ->whereIn('status', ['pending_confirmation', 'processing', 'cancellation_requested'])
             ->findOrFail($id);
 
         $request->validate(['reason' => 'required|string|max:255']);
@@ -149,11 +151,21 @@ class UserOrderController extends Controller
 
                 // Hoàn kho
                 $order->load('items.productVariant');
-                foreach ($order->items as $item) {
-                    if ($item->productVariant) {
-                        $item->productVariant->increment('stock', $item->quantity);
-                    }
+        $storeLocationId = $order->store_location_id; // Lấy kho xử lý của đơn hàng
+
+        if ($storeLocationId) {
+            foreach ($order->items as $item) {
+                if ($item->productVariant) {
+                    // Cập nhật bảng product_inventories
+                    ProductInventory::where('product_variant_id', $item->product_variant_id)
+                                    ->where('store_location_id', $storeLocationId)
+                                    ->where('inventory_type', 'new') // Giả định hoàn trả hàng mới
+                                    ->increment('quantity', $item->quantity);
                 }
+            }
+        } else {
+            Log::warning("Không thể hoàn kho cho đơn COD #{$order->order_code} vì không có store_location_id.");
+        }
                 DB::commit();
                 return redirect()->route('orders.show', $order->id)
                     ->with('success', 'Đơn hàng đã được hủy và sản phẩm đã được hoàn về kho thành công.');

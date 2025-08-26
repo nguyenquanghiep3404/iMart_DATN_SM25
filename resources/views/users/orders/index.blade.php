@@ -260,7 +260,7 @@
                     $statusClass = 'status-shipping'; $statusText = 'Đang giao'; break;
                     case 'cancelled': case 'failed_delivery':
                     $statusClass = 'status-cancelled'; $statusText = 'Đã hủy'; break;
-                    case 'awaiting_shipment': case 'awaiting_pickup':
+                    case 'awaiting_pickup':
                     $statusClass = 'status-awaiting-pickup'; $statusText = 'Chờ lấy hàng'; break;
                     case 'returned':
                     $statusClass = 'status-returned'; $statusText = 'Trả hàng'; break;

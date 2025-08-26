@@ -392,5 +392,6 @@ class Order extends Model
         // Một đơn hàng chỉ có một yêu cầu hủy mới nhất
         return $this->hasOne(CancellationRequest::class)->latestOfMany();
     }
+    
 
 }

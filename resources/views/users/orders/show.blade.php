@@ -269,17 +269,23 @@
     $isPickupOrder = !empty($order->store_location_id);
 
     $isOverdue = false;
-    if ($isPickupOrder && $order->status === 'awaiting_shipment' && !empty($order->desired_delivery_date)) {
-        try {
-            $pickupDate = \Carbon\Carbon::parse($order->desired_delivery_date)->startOfDay();
-            $today = \Carbon\Carbon::now()->startOfDay();
-            if ($today->gt($pickupDate)) {
-                $isOverdue = true;
-            }
-        } catch (\Exception $e) {
-            $isOverdue = false;
-        }
+
+    if ($isPickupOrder && $order->status === 'processing' && !empty($order->desired_delivery_date)) {
+    try {
+    // Lấy ngày hẹn nhận hàng từ database
+    $pickupDate = \Carbon\Carbon::parse($order->desired_delivery_date)->startOfDay();
+    $today = \Carbon\Carbon::now()->startOfDay();
+
+    // So sánh ngày hôm nay với ngày hẹn
+    if ($today->gt($pickupDate)) {
+    $isOverdue = true;
     }
+    } catch (\Exception $e) {
+    // Nếu `desired_delivery_date` không phải ngày tháng hợp lệ, bỏ qua
+    $isOverdue = false;
+    }
+}
+
 
     function renderDeliveryDate($dateString) {
         if (empty($dateString)) return 'Chưa xác định';

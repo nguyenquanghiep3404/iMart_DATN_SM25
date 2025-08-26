@@ -32,6 +32,8 @@
                                     <span class="badge bg-success bg-opacity-10 text-success">Tích điểm</span>
                                 @elseif($log->type == 'spend')
                                     <span class="badge bg-danger bg-opacity-10 text-danger">Sử dụng</span>
+                                @elseif($log->type == 'manual_adjustment')
+                                    <span class="badge bg-secondary">Điều chỉnh thủ công</span>
                                 @else
                                     <span class="badge bg-secondary">{{ ucfirst($log->type) }}</span>
                                 @endif
