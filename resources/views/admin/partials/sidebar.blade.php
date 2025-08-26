@@ -81,6 +81,21 @@
             'icon' =>
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.54,5.23l-1.39-1.39A3,3,0,0,0,17,3H7A3,3,0,0,0,4.85,3.84L3.46,5.23A3,3,0,0,0,3,7.35V19a3,3,0,0,0,3,3H18a3,3,0,0,0,3-3V7.35A3,3,0,0,0,20.54,5.23ZM5.41,5H18.59l.6,0.6V7H5V5.6ZM19,19a1,1,0,0,1-1,1H6a1,1,0,0,1-1-1V9H19Z" /><path d="M10.5,13.5h3a1,1,0,0,0,0-2h-3a1,1,0,0,0,0,2Z" /></svg>',
             'children' => [
+                [
+                    'label' => 'Thống kê tồn kho',
+                    'route' => 'admin.admin.inventory.dashboard',
+                    'active_check' => ['admin.admin.inventory.'],
+                ],
+                [
+                    'label' => 'Báo cáo tồn kho chi tiết',
+                    'route' => 'admin.reports.inventory.index',
+                    'active_check' => ['admin.reports.inventory.'],
+                ],
+                [
+                    'label' => 'Báo cáo kinh doanh',
+                    'route' => 'admin.business-analysis.index',
+                    'active_check' => ['admin.business-analysis.'],
+                ],
                 ['label' => 'Nhà cung cấp', 'route' => 'admin.suppliers.index', 'active_check' => ['admin.suppliers.']],
                 [
                     'label' => 'Nhập kho (PO)',

@@ -102,8 +102,10 @@ class UserOrderController extends Controller
         $statusMap = [
             'pending_confirmation' => 'pending_confirmation',
             'processing' => 'processing',
+            'partially_shipped' => 'partially_shipped',
             'out_for_delivery' => 'out_for_delivery',
             'external_shipping' => 'external_shipping',
+            'partially_delivered' => 'partially_delivered',
             'delivered' => 'delivered',
             'cancelled' => 'cancelled',
             'failed_delivery' => 'failed_delivery'
@@ -118,7 +120,7 @@ class UserOrderController extends Controller
     {
         $user = Auth::user();
         $order = Order::where('user_id', $user->id)
-            ->whereIn('status', ['pending_confirmation', 'processing', 'awaiting_shipment'])
+            ->whereIn('status', ['pending_confirmation', 'processing'])
             ->findOrFail($id);
 
         $request->validate([

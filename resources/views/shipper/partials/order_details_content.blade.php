@@ -49,9 +49,9 @@
 </main>
 
 {{-- Footer chứa các nút hành động (nếu có) --}}
-@if(in_array($order->status, ['awaiting_shipment', 'shipped', 'out_for_delivery']))
+@if(in_array($order->status, ['processing', 'shipped', 'out_for_delivery']))
     <footer class="page-header p-4 bg-white border-t">
-        @if($order->status === 'awaiting_shipment')
+        @if($order->status === 'processing')
             <form action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST">
                 @csrf @method('PATCH')
                 <input type="hidden" name="status" value="shipped">

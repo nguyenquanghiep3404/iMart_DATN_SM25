@@ -46,3 +46,4 @@ class DatabaseSeeder extends Seeder
         $this->command->info('All seeders ran successfully!');
     }
 }
+
