@@ -94,8 +94,127 @@
     @else
     @endif
 
+    <script>
+        // Hàm xử lý sự kiện "Thêm tất cả vào giỏ hàng"
 
+        // Các hàm và logic hiện có (giữ nguyên)
+        function getVariantKey() {
+            if (window.productType !== 'variable') {
+                console.log('Sản phẩm không có biến thể, getVariantKey trả về chuỗi rỗng');
+                return '';
+            }
+            const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
+            console.log('Sinh ra variant key:', key);
+            return key;
+        }
 
+        function addBundleToCart(bundleId) {
+            console.log(`[DEBUG] Bắt đầu thêm tất cả sản phẩm của bundle ${bundleId} vào giỏ hàng`);
+
+            // Tìm container của bundle
+            const bundleContainer = document.getElementById(`bundle-deal-container-${bundleId}`);
+            if (!bundleContainer) {
+                console.error(`[ERROR] Không tìm thấy container cho bundle ${bundleId}`);
+                toastr.error('Lỗi: Không tìm thấy gói sản phẩm.');
+                return;
+            }
+
+            // Lấy thông tin sản phẩm chính
+            const mainProductEl = bundleContainer.querySelector('.bundle-main-product');
+            if (!mainProductEl) {
+                console.error(`[ERROR] Không tìm thấy sản phẩm chính cho bundle ${bundleId}`);
+                toastr.error('Lỗi: Không tìm thấy sản phẩm chính.');
+                return;
+            }
+
+            const mainProduct = {
+                product_variant_id: mainProductEl.dataset.variantId,
+                quantity: 1, // Mặc định số lượng là 1
+                variant_key: window.productType === 'variable' ? getVariantKey() : 'default',
+                image: mainProductEl.querySelector('img')?.src || '',
+                product_id: window.currentProductId
+            };
+
+            // Lấy danh sách sản phẩm kèm theo được chọn
+            const checkboxes = bundleContainer.querySelectorAll('.bundle-checkbox:checked');
+            const suggestedProducts = Array.from(checkboxes).map(checkbox => ({
+                product_variant_id: checkbox.dataset.variantId,
+                quantity: 1, // Mặc định số lượng là 1
+                variant_key: checkbox.dataset.variantKey || 'default', // Lấy từ data attribute nếu có
+                image: checkbox.closest('.bundle-item')?.querySelector('img')?.src || '',
+                product_id: checkbox.dataset.productId || window.currentProductId // Cần thêm product_id nếu có
+            }));
+
+            // Tạo danh sách sản phẩm để gửi
+            const products = [mainProduct, ...suggestedProducts];
+
+            if (products.length === 0) {
+                console.error('[ERROR] Không có sản phẩm nào được chọn trong bundle');
+                toastr.error('Vui lòng chọn ít nhất một sản phẩm trong gói.');
+                return;
+            }
+
+            console.log('[DEBUG] Danh sách sản phẩm gửi đi:', products);
+
+            // Gửi yêu cầu AJAX
+            fetch('/cart/add-bundle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        products,
+                        _token: document.querySelector('meta[name="csrf-token"]').content
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('[DEBUG] Phản hồi từ server:', data);
+                    if (data.success) {
+                        // Sửa đoạn code này để bao gồm HTML cho nút "Xem giỏ hàng"
+                        const message =
+                            `${data.message || 'Đã thêm tất cả sản phẩm vào giỏ hàng!'} <br><a href="/cart" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>`;
+
+                        toastr.options = {
+                            closeButton: true,
+                            progressBar: true,
+                            timeOut: 3000,
+                            extendedTimeOut: 1000,
+                            positionClass: 'toast-bottom-right',
+                            // Bắt buộc phải thêm tùy chọn này để HTML được render
+                            escapeHtml: false
+                        };
+
+                        toastr.success(message);
+
+                        // Cập nhật badge giỏ hàng
+                        const cartBadge = document.querySelector('.cart-badge');
+                        if (cartBadge && data.cartItemCount) {
+                            cartBadge.textContent = data.cartItemCount;
+                            cartBadge.classList.remove('hidden');
+                        }
+                    } else {
+                        toastr.error(data.error || 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.', 'Lỗi');
+                    }
+                })
+                .catch(error => {
+                    console.error('[ERROR] Lỗi khi gửi yêu cầu thêm bundle:', error);
+                    toastr.error('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.', 'Lỗi');
+                });
+        }
+
+        // Gắn sự kiện cho các nút "Thêm tất cả vào giỏ hàng"
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const bundleId = this.dataset.bundleId;
+                    addBundleToCart(bundleId);
+                });
+            });
+        });
+    </script>
 
 
     <!-- PHẦN 2 & 3: TABS - BÀI VIẾT & THÔNG SỐ -->
@@ -103,8 +222,8 @@
         <!-- Tab Buttons -->
         <div class="flex justify-center border-2 border-gray-200 rounded-xl p-1 mb-6 max-w-md mx-auto">
             <button id="tab-desc-btn"
-                class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-600">Bài viết đánh
-                giá</button>
+                class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-600">Mô tả
+                </button>
             <button id="tab-specs-btn"
                 class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold tab-active">Thông số kỹ
                 thuật</button>
@@ -995,7 +1114,6 @@
         let selectedFiles = [];
 
         if (!modal || !closeBtn || !starsContainer) return;
-
         // ⭐ Render stars
         starsContainer.innerHTML = '';
         for (let i = 1; i <= 5; i++) {

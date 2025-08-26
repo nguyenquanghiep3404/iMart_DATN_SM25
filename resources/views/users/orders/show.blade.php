@@ -36,7 +36,7 @@
     }
 
     .details-footer {
-        padding: 1rem;
+        padding: 1.5rem;
         border-top: 1px solid #e5e7eb;
         background-color: #f9fafb;
         text-align: right;
@@ -59,6 +59,10 @@
     .status-processing {
         background-color: #feefc7;
         color: #92400e;
+    }
+    .cancellation_requested{
+        background-color: #fef9c3;
+        color: #854d0e;
     }
 
     .status-shipping {
@@ -133,12 +137,17 @@
     }
 
     .tracker-label.active {
-        color: #dc2626;
-        font-weight: bold;
+        color: #111827;
+        font-weight: 600;
     }
 
     .status-dot-cancelled {
-        background-color: #dc2626 !important;
+        background-color: #ef4444 !important;
+    }
+
+    .tracker-label.cancelled {
+        color: #ef4444;
+        font-weight: 600;
     }
 
     .info-box {
@@ -181,6 +190,7 @@
         transition: background-color 0.2s;
         display: inline-block;
         border: none;
+        cursor: pointer;
     }
 
     .btn-action:hover {
@@ -197,11 +207,40 @@
     .btn-action-secondary:hover {
         background-color: #f3f4f6;
     }
+
+    /* Modal styles */
+    .hidden {
+        display: none;
+    }
 </style>
 @endsection
 
 @section('content')
 <div class="main-content">
+    {{-- BẮT ĐẦU: KHỐI HIỂN THỊ LỖI --}}
+    @if ($errors->any())
+        <div class="alert alert-danger mb-4">
+            <h4 class="alert-heading">Có lỗi xảy ra!</h4>
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if (session('success'))
+        <div class="alert alert-success mb-4">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="alert alert-danger mb-4">
+            {{ session('error') }}
+        </div>
+    @endif
+    {{-- KẾT THÚC: KHỐI HIỂN THỊ LỖI --}}
     <div class="mb-4">
         <a href="{{ route('orders.index') }}" class="text-secondary fw-medium text-decoration-none d-flex align-items-center">
             <i class="fas fa-arrow-left me-2"></i>
@@ -210,46 +249,41 @@
     </div>
 
     @php
-    //============= LOGIC TRUNG TÂM =============//
     $statusSteps = [
-    'pending_confirmation' => 1, 'processing' => 2,
-    'awaiting_shipment' => 2, 'shipped' => 3, 'out_for_delivery' => 3,
-    'delivered' => 4, 'cancelled' => -1, 'failed_delivery' => -1,
-    'returned' => -1
+        'pending_confirmation' => 1, 'processing' => 2,
+        'awaiting_shipment' => 2, 'shipped' => 3, 'out_for_delivery' => 3,
+        'delivered' => 4, 'cancelled' => -1, 'failed_delivery' => -1,
+        'returned' => -1
     ];
     $currentStep = $statusSteps[$order->status] ?? 0;
     $statusInfo = match ($order->status) {
-    'delivered' => ['text' => 'Hoàn tất', 'class' => 'status-completed'],
-    'processing' => ['text' => 'Đang xử lý', 'class' => 'status-processing'],
-    'shipped', 'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
-    'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
-    'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-pending_confirmation'],
-    'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],
-    default => ['text' => ucfirst($order->status), 'class' => 'status-returned'],
+        'delivered' => ['text' => 'Hoàn tất', 'class' => 'status-completed'],
+        'processing' => ['text' => 'Đang xử lý', 'class' => 'status-processing'],
+        'cancellation_requested' => ['text' => 'Yêu cầu hủy', 'class' => 'cancellation_requested'],
+        'shipped', 'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
+        'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
+        'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-awaiting-pickup'],
+        'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],
+        default => ['text' => ucfirst($order->status), 'class' => 'status-returned'],
     };
     $isPickupOrder = !empty($order->store_location_id);
 
-    // LOGIC MỚI: KIỂM TRA ĐƠN HÀNG CÓ BỊ QUÁ HẠN KHÔNG
     $isOverdue = false;
     if ($isPickupOrder && $order->status === 'awaiting_shipment' && !empty($order->desired_delivery_date)) {
-    try {
-    // Lấy ngày hẹn nhận hàng từ database
-    $pickupDate = \Carbon\Carbon::parse($order->desired_delivery_date)->startOfDay();
-    $today = \Carbon\Carbon::now()->startOfDay();
-
-    // So sánh ngày hôm nay với ngày hẹn
-    if ($today->gt($pickupDate)) {
-    $isOverdue = true;
-    }
-    } catch (\Exception $e) {
-    // Nếu `desired_delivery_date` không phải ngày tháng hợp lệ, bỏ qua
-    $isOverdue = false;
-    }
+        try {
+            $pickupDate = \Carbon\Carbon::parse($order->desired_delivery_date)->startOfDay();
+            $today = \Carbon\Carbon::now()->startOfDay();
+            if ($today->gt($pickupDate)) {
+                $isOverdue = true;
+            }
+        } catch (\Exception $e) {
+            $isOverdue = false;
+        }
     }
 
     function renderDeliveryDate($dateString) {
-    if (empty($dateString)) return 'Chưa xác định';
-    try { return \Carbon\Carbon::parse($dateString)->format('d/m/Y'); } catch (\Exception $e) { return e($dateString); }
+        if (empty($dateString)) return 'Chưa xác định';
+        try { return \Carbon\Carbon::parse($dateString)->format('d/m/Y'); } catch (\Exception $e) { return e($dateString); }
     }
     @endphp
 
@@ -260,9 +294,9 @@
                 <p class="text-muted small mb-0">Đặt hàng ngày {{ $order->created_at->format('d/m/Y') }}</p>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('orders.invoice', $order->id) }}" class="btn btn-sm btn-outline-primary">
+                <!-- <a href="{{ route('orders.invoice', $order->id) }}" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-file-invoice me-1"></i> Xem hóa đơn
-                </a>
+                </a> -->
                 <span class="status-badge {{ $statusInfo['class'] }}">{{ $statusInfo['text'] }}</span>
             </div>
         </header>
@@ -271,60 +305,37 @@
             <div class="mb-5">
                 <h5 class="fw-bold mb-4">Trạng thái đơn hàng</h5>
                 @if($order->status == 'cancelled')
-                {{-- Giao diện đặc biệt cho đơn hàng BỊ HỦY --}}
                 <div class="tracker-container">
                     <div class="tracker-item">
                         <div class="tracker-dot active status-dot-cancelled">
                             <i class="fas fa-times"></i>
                         </div>
-                        <p class="tracker-label active">Đã hủy</p>
+                        <p class="tracker-label cancelled">Đã hủy</p>
                     </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line"></div>
-                    </div>
-                    <div class="tracker-item">
-                        <div class="tracker-dot"></div>
-                        <p class="tracker-label text-muted">Đang xử lý</p>
-                    </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line"></div>
-                    </div>
-                    <div class="tracker-item">
-                        <div class="tracker-dot"></div>
-                        <p class="tracker-label text-muted">Đang giao</p>
-                    </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line"></div>
-                    </div>
-                    <div class="tracker-item">
-                        <div class="tracker-dot"></div>
-                        <p class="tracker-label text-muted">Hoàn tất</p>
-                    </div>
+                    <div class="tracker-line-container"><div class="tracker-line"></div></div>
+                    <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang xử lý</p></div>
+                    <div class="tracker-line-container"><div class="tracker-line"></div></div>
+                    <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang giao</p></div>
+                    <div class="tracker-line-container"><div class="tracker-line"></div></div>
+                    <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Hoàn tất</p></div>
                 </div>
                 @elseif($currentStep > 0)
-                {{-- Giao diện cho các trạng thái khác --}}
                 <div class="tracker-container">
                     <div class="tracker-item">
                         <div class="tracker-dot {{ $currentStep >= 1 ? 'active' : '' }}">✓</div>
                         <p class="tracker-label {{ $currentStep == 1 ? 'active' : '' }}">Chờ xác nhận</p>
                     </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line {{ $currentStep >= 2 ? 'tracker-line-filled' : '' }}"></div>
-                    </div>
+                    <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 2 ? 'tracker-line-filled' : '' }}"></div></div>
                     <div class="tracker-item">
                         <div class="tracker-dot {{ $currentStep >= 2 ? 'active' : '' }}">@if($currentStep >= 2) ✓ @else 2 @endif</div>
                         <p class="tracker-label {{ $currentStep == 2 ? 'active' : '' }}">Đang xử lý</p>
                     </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line {{ $currentStep >= 3 ? 'tracker-line-filled' : '' }}"></div>
-                    </div>
+                    <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 3 ? 'tracker-line-filled' : '' }}"></div></div>
                     <div class="tracker-item">
                         <div class="tracker-dot {{ $currentStep >= 3 ? 'active' : '' }}">@if($currentStep >= 3) ✓ @else 3 @endif</div>
                         <p class="tracker-label {{ $currentStep == 3 ? 'active' : '' }}">Đang giao</p>
                     </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line {{ $currentStep >= 4 ? 'tracker-line-filled' : '' }}"></div>
-                    </div>
+                    <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 4 ? 'tracker-line-filled' : '' }}"></div></div>
                     <div class="tracker-item">
                         <div class="tracker-dot {{ $currentStep >= 4 ? 'active' : '' }}">@if($currentStep >= 4) ✓ @else 4 @endif</div>
                         <p class="tracker-label {{ $currentStep == 4 ? 'active' : '' }}">Hoàn tất</p>
@@ -332,6 +343,7 @@
                 </div>
                 @endif
             </div>
+
             @if($isOverdue)
             <div class="alert alert-danger d-flex align-items-start mb-4" role="alert">
                 <i class="fas fa-exclamation-circle me-3 mt-1 fs-5"></i>
@@ -351,9 +363,9 @@
                             <div class="flex-grow-1">
                                 <p class="fw-bold text-dark mb-1">{{ $item->product_name }}</p>
                                 @if(!empty($item->variant_attributes) && is_iterable($item->variant_attributes))
-                                @foreach($item->variant_attributes as $key => $value)
-                                <p class="text-muted small mb-0">{{ $key }}: {{ $value }}</p>
-                                @endforeach
+                                    @foreach($item->variant_attributes as $key => $value)
+                                    <p class="text-muted small mb-0">{{ $key }}: {{ $value }}</p>
+                                    @endforeach
                                 @endif
                                 <p class="text-muted small mt-1 mb-1">SL: {{ $item->quantity }}</p>
                             </div>
@@ -367,7 +379,6 @@
 
                 <div class="col-lg-5">
                     <div class="d-flex flex-column" style="gap: 1rem;">
-                        {{-- Box 1: Thời gian nhận hàng / Thông tin vận chuyển --}}
                         @if($isPickupOrder)
                         <div class="info-box">
                             <h6 class="fw-bold mb-3">Thời gian nhận hàng</h6>
@@ -383,7 +394,6 @@
                         </div>
                         @endif
 
-                        {{-- Box 2: Địa chỉ giao hàng --}}
                         <div class="info-box">
                             <h6 class="fw-bold mb-3">Địa chỉ giao hàng</h6>
                             <div class="small text-secondary">
@@ -396,7 +406,6 @@
                             </div>
                         </div>
 
-                        {{-- Box 3: Thông tin thanh toán --}}
                         <div class="info-box">
                             <h6 class="fw-bold mb-3">Thông tin thanh toán</h6>
                             <div class="small text-secondary">
@@ -405,13 +414,13 @@
                                     @if($order->payment_status == 'paid') <span class="badge bg-success">Đã thanh toán</span>
                                     @elseif($order->payment_status == 'pending') <span class="badge bg-warning text-dark">Chờ thanh toán</span>
                                     @elseif($order->payment_status == 'failed') <span class="badge bg-danger">Thất bại</span>
+                                    @elseif($order->payment_status == 'refunded') <span class="badge bg-info">Đã hoàn tiền</span>
                                     @else <span class="badge bg-secondary">{{ ucfirst($order->payment_status) }}</span>
                                     @endif
                                 </p>
                             </div>
                         </div>
 
-                        {{-- Box 4: Tổng cộng --}}
                         <div class="info-box">
                             <h6 class="fw-bold mb-3">Tổng cộng</h6>
                             <div class="d-flex flex-column small" style="gap: 0.5rem;">
@@ -433,38 +442,27 @@
         </main>
 
         <footer class="details-footer">
-
-            {{-- NÚT HỦY ĐƠN --}}
             @if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
-                <button class="btn-action" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn hàng</button>
+            <button id="open-cancel-modal-button" class="btn-action">
+                Hủy đơn hàng
+            </button>
             @endif
 
-            {{-- NÚT YÊU CẦU TRẢ HÀNG --}}
-            {{-- Chỉ hiện khi: Đơn đã giao, CHƯA xác nhận, và còn trong hạn 7 ngày --}}
             @if($order->status == 'delivered' && is_null($order->confirmed_at) && $order->delivered_at && $order->delivered_at->diffInDays(now()) < 7)
-                <a href="{{-- route('returns.create', $order->id) --}}" class="btn-action btn-action-secondary">
-                    Yêu cầu trả hàng
-                </a>
+            <a href="{{-- route('returns.create', $order->id) --}}" class="btn-action btn-action-secondary">
+                Yêu cầu trả hàng
+            </a>
             @endif
 
-            {{-- NÚT VIẾT ĐÁNH GIÁ CHO CẢ ĐƠN HÀNG --}}
-    {{-- Chỉ hiện khi đơn hàng đã được xác nhận đã nhận --}}
-    @if(!is_null($order->confirmed_at))
-        <a href="{{ route('orders.review', $order->id) }}" class="btn-action">
-            Viết đánh giá
-        </a>
-    @endif
-
+            @if(!is_null($order->confirmed_at))
+            <a href="{{ route('orders.review', $order->id) }}" class="btn-action">
+                Viết đánh giá
+            </a>
+            @endif
         </footer>
     </div>
 </div>
-@if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
-    <button id="open-cancel-modal-button" class="btn-action">
-        Hủy đơn hàng
-    </button>
-@endif
 
-{{-- MODAL HỦY ĐƠN HÀNG MỚI --}}
 <div id="cancel-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden"
      data-payment-method="{{ strtolower($order->payment_method) }}"
      data-grand-total="{{ number_format($order->grand_total, 0, ',', '.') }} VNĐ">
@@ -703,11 +701,9 @@
 
     const modal = document.getElementById('cancel-modal');
     const modalBackdrop = document.getElementById('modal-backdrop');
-    const modalContent = document.getElementById('modal-content');
     const modalTitle = document.getElementById('modal-title');
     const modalSubtitle = document.getElementById('modal-subtitle');
     const stepIndicator = document.getElementById('step-indicator');
-    const cancelForm = document.getElementById('cancel-form');
 
     const step1 = document.getElementById('step-1-reason');
     const step2 = document.getElementById('step-2-refund');
@@ -728,8 +724,8 @@
 
     const updateUIForStep = () => {
         if (currentStep === 1) {
-            step1.classList.remove('hidden');
-            step2.classList.add('hidden');
+            step1.style.display = 'block';
+            step2.style.display = 'none';
 
             modalTitle.textContent = 'Xác nhận Hủy Đơn Hàng';
             modalSubtitle.textContent = 'Vui lòng cho chúng tôi biết lý do bạn muốn hủy.';
@@ -748,8 +744,8 @@
             }
             checkReasonSelection();
         } else if (currentStep === 2 && !isCOD) {
-            step1.classList.add('hidden');
-            step2.classList.remove('hidden');
+            step1.style.display = 'none';
+            step2.style.display = 'block';
 
             modalTitle.textContent = 'Chọn Phương Thức Hoàn Tiền';
             modalSubtitle.textContent = `Số tiền ${grandTotal} sẽ được hoàn lại cho bạn.`;
@@ -815,6 +811,7 @@
     reasonOtherTextarea.addEventListener('input', checkReasonSelection);
     bankInfoForm.addEventListener('input', checkBankInfo);
 });
+
 </script>
 
 @endsection

@@ -5,9 +5,17 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Review;
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ReviewController extends Controller
 {
+    use AuthorizesRequests;
+
+    public function __construct()
+    {
+        // Tự động áp dụng ReviewPolicy
+        $this->authorizeResource(Review::class, 'review');
+    }
     public function index(Request $request)
     {
         $query = Review::query()->with(['user', 'variant.product']);

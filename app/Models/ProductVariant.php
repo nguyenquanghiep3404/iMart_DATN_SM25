@@ -199,6 +199,7 @@ class ProductVariant extends Model
             ->join('-');
         return $attributes ? "{$baseSlug}-{$attributes}" : $baseSlug;
     }
+
      public function getAvailableQuantityAttribute()
     {
         // Tính tổng (tồn kho - đã tạm giữ cho đơn khác) từ bảng product_inventories
@@ -207,5 +208,12 @@ class ProductVariant extends Model
     public function getIsActiveAttribute()
     {
         return $this->status === 'active';
+    }
+    public function coverImage()
+    {
+        return $this->morphOne(UploadedFile::class, 'attachable')
+            ->where('type', 'cover')
+            ->latest();
+
     }
 }

@@ -262,6 +262,25 @@
         <strong class="font-bold">Lỗi!</strong>
         <span class="block sm:inline" id="error-text"></span>
     </div>
+    {{-- Hiển thị thông báo --}}
+    @if (session('success'))
+    <div class="mb-4 p-4 rounded-md bg-green-100 text-green-700">
+        {{ session('success') }}
+    </div>
+    @endif
+
+    @if (session('warning'))
+    <div class="mb-4 p-4 rounded-md bg-yellow-100 text-yellow-700">
+        {{ session('warning') }}
+    </div>
+    @endif
+
+    @if (session('error'))
+    <div class="mb-4 p-4 rounded-md bg-red-100 text-red-700">
+        {{ session('error') }}
+    </div>
+    @endif
+
 </div>
 <script>
     // --- MOCK DATA ---
@@ -402,13 +421,23 @@
         if (orderData.payment_status === 'paid') {
             paymentStatusEl.textContent = 'Đã thanh toán';
             paymentStatusEl.className = 'inline-block text-sm font-semibold px-3 py-1 rounded-full bg-green-100 text-green-800';
-        } else if (orderData.payment_status === 'unpaid') {
+        } else if (orderData.payment_status === 'pending') {
             paymentStatusEl.textContent = 'Chưa thanh toán';
             paymentStatusEl.className = 'inline-block text-sm font-semibold px-3 py-1 rounded-full bg-yellow-100 text-yellow-800';
+        } else if (orderData.payment_status === 'failed') {
+            paymentStatusEl.textContent = 'Thanh toán thất bại';
+            paymentStatusEl.className = 'inline-block text-sm font-semibold px-3 py-1 rounded-full bg-red-100 text-red-800';
+        } else if (orderData.payment_status === 'refunded') {
+            paymentStatusEl.textContent = 'Đã hoàn tiền';
+            paymentStatusEl.className = 'inline-block text-sm font-semibold px-3 py-1 rounded-full bg-blue-100 text-blue-800';
+        } else if (orderData.payment_status === 'partially_refunded') {
+            paymentStatusEl.textContent = 'Hoàn tiền một phần';
+            paymentStatusEl.className = 'inline-block text-sm font-semibold px-3 py-1 rounded-full bg-purple-100 text-purple-800';
         } else {
             paymentStatusEl.textContent = '---';
             paymentStatusEl.className = 'inline-block text-sm font-semibold px-3 py-1 rounded-full bg-gray-100 text-gray-800';
         }
+
 
         renderOrderTimeline(orderData.status, orderData.timestamps, orderData.shipping_method);
 

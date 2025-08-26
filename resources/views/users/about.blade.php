@@ -412,9 +412,7 @@
                 <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="YouTube">
                   <i class="ci-youtube fs-base"></i>
                 </a>
-                <a class="btn btn-icon btn-secondary rounded-circle" href="#!" aria-label="Telegram">
-                  <i class="ci-telegram fs-base"></i>
-                </a>
+
               </div>
             </div>
             <div class="col-md-6 col-lg-5 col-xl-4 offset-lg-1 offset-xl-2">

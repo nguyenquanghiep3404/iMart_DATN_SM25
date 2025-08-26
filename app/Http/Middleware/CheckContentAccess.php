@@ -13,7 +13,7 @@ class CheckContentAccess
 
         if ($user && $user->hasRole('content') || $user->hasRole('content_manager')) {
             $allowedPrefixes = [
-                'admin.posts', 'admin.post-tags'
+                'admin.posts', 'admin.post-tags', 'admin.categories', 'admin.banner', 'admin.media'
             ];
 
             $currentRoute = Route::currentRouteName();

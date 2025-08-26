@@ -25,6 +25,17 @@ class Review extends Model
         'is_verified_purchase' => 'boolean',
     ];
 
+    public function getStatusLabelAttribute()
+{
+    return match ($this->status) {
+        'approved' => 'Đã duyệt',
+        'pending'  => 'Chờ duyệt',
+        'rejected' => 'Bị từ chối',
+        default    => ucfirst($this->status),
+    };
+}
+
+
     public function productVariant()
     {
         return $this->belongsTo(ProductVariant::class);

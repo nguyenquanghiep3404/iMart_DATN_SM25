@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\ReviewController;
-use Telegram\Bot\Laravel\Facades\Telegram;
+
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\AiController;
 use App\Http\Controllers\LocationController;
@@ -138,8 +138,11 @@ Route::get('/api/filter-stores', [HomeController::class, 'filterStoreLocations']
 // Route để lấy danh sách tỉnh/thành phố theo biến thể sản phẩm
 Route::get('/api/provinces-by-variant', [HomeController::class, 'getProvincesByVariant'])->name('api.provinces.by.variant');
 Route::get('/bundle-suggested-products/{variantId}', [HomeController::class, 'getSuggestedProducts'])->name('bundle.suggested-products');
+Route::post('/cart/add-bundle', [CartController::class, 'addBundle'])->name('cart.addBundle');
 // lấy api số lượng sản phẩm
 Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariantStock']);
+Route::get('/variant-flash-sale/{variantId}', [CartController::class, 'getVariantFlashSale'])->name('variant.flash.sale');
+
 
 
 
@@ -148,6 +151,8 @@ Route::get('/api/variant-stock/{variantId}', [HomeController::class, 'getVariant
 Route::post('/compare-suggestions', [ProductController::class, 'compareSuggestions'])->name('products.compare_suggestions');
 Route::post('/compare-suggestions', [TradeInPublicController::class, 'compareSuggestions']);
 Route::post('/api/compare-suggestions', [HomeController::class, 'compareSuggestions']);
+// Thêm route mới cho tìm kiếm sản phẩm
+Route::get('/search-products', [HomeController::class, 'searchProducts'])->name('search-products');
 Route::get('/auth/google', [GoogleController::class, 'redirectToGoogle'])->name('auth.google');
 Route::get('/auth/google/callback', [GoogleController::class, 'handleGoogleCallback']);
 Route::post('/gemini-chat', [AiController::class, 'generateContent']);
@@ -460,16 +465,31 @@ Route::prefix('admin')
         Route::get('/orders/shippers/list', [OrderController::class, 'getShippers'])->name('orders.shippers');
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
         Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
-        
+        Route::get('/orders/cancellation/{cancellationRequest}', [OrderController::class, 'showCancellationRequest'])->name('orders.cancellation.show');
+        // Route để duyệt yêu cầu
+        Route::post('/orders/cancellation/{cancellationRequest}/approve', [OrderController::class, 'approveCancellationRequest'])->name('orders.cancellation.approve');
+
+        // Route để từ chối yêu cầu
+        Route::post('/orders/cancellation/{cancellationRequest}/reject', [OrderController::class, 'rejectCancellationRequest'])->name('orders.cancellation.reject');
+
+        // Routes Shipper Assignment
+        Route::prefix('shipper-assignment')->name('shipper-assignment.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'index'])->name('index');
+            // Route::get('/packages', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getPackages'])->name('packages'); // REMOVED: Package functionality
+            Route::get('/shippers', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getShippers'])->name('shippers');
+            Route::get('/provinces', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getProvinces'])->name('provinces');
+            Route::get('/districts/{province}', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getDistricts'])->name('districts');
+            Route::post('/assign', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'assignShipper'])->name('assign');
+            Route::get('/statistics', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'getStatistics'])->name('statistics');
+        });
+
         // Routes Order Fulfillment
         Route::prefix('orders/fulfillment')->name('orders.fulfillment.')->group(function () {
             Route::get('/awaiting-stock', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'getOrdersAwaitingStock'])->name('awaiting-stock');
             Route::get('/{order}/status', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'checkFulfillmentStatus'])->name('status');
             Route::post('/{order}/auto-transfer', [\App\Http\Controllers\Admin\OrderFulfillmentController::class, 'createAutoTransfer'])->name('auto-transfer');
         });
-        
         Route::post('/buy-now/clear-session', [PaymentController::class, 'handleClearBuyNowSession'])->name('buy_now.clear_session');
-
         // quản lý giỏ hàng lãng quên
         Route::get('/abandoned-carts', [AbandonedCartController::class, 'index'])->name('abandoned-carts.index');
         Route::get('/admin/abandoned-carts/{id}', [AbandonedCartController::class, 'show'])
@@ -589,6 +609,15 @@ Route::prefix('admin')
         // Route khác nếu cần
         Route::get('/staff', [OrderManagerController::class, 'staffIndex'])->name('staff.index');
 
+        // Routes cho Trạm Đóng Gói
+        Route::prefix('packing-station')->name('packing-station.')->group(function () {
+            Route::get('/', [PackingStationController::class, 'index'])->name('index');
+            Route::get('/packages/{trackingCode}', [PackingStationController::class, 'getPackageByTrackingCode'])->name('getPackage');
+            Route::get('/pending-orders', [PackingStationController::class, 'getPendingOrders'])->name('getPendingOrders');
+            Route::post('/packages/{trackingCode}/confirm-packaging', [PackingStationController::class, 'confirmPackaging'])->name('confirmPackaging');
+            Route::post('/validate-imei', [PackingStationController::class, 'validateImei'])->name('validate-imei');
+        });
+
 
         // Quản lý comment
         Route::get('comments/product/{product}', [AdminCommentController::class, 'byProduct'])->name('comments.byProduct');
@@ -638,6 +667,8 @@ Route::prefix('admin')
 
         // Route Quản lí Flash Sale
         Route::resource('flash-sales', \App\Http\Controllers\Admin\FlashSaleController::class);
+        Route::get('flash-sales/{flashSale}/statistics', [\App\Http\Controllers\Admin\FlashSaleController::class, 'statistics'])
+            ->name('flash-sales.statistics');
         Route::post('flash-sales/{flash_sale}/attach-product', [FlashSaleController::class, 'attachProduct'])
             ->name('flash-sales.attachProduct');
         Route::delete('flash-sales/{flash_sale}/detach-product/{product}', [FlashSaleController::class, 'detachProduct'])
@@ -656,7 +687,7 @@ Route::prefix('admin')
         Route::patch('bundle-products/restore-bulk', [BundleProductController::class, 'restoreBulk'])->name('bundle-products.restore.bulk');
         Route::delete('bundle-products/force-delete-bulk', [BundleProductController::class, 'forceDeleteBulk'])->name('bundle-products.forceDelete.bulk');
         Route::get('bundle-products/products', [BundleProductController::class, 'getProductsByCategory'])->name('bundle-products.products');
-        
+
         // Routes cho tra cứu số serial
         Route::get('/serials/lookup', [SerialLookupController::class, 'showForm'])->name('serial.lookup.form');
         Route::post('/serials/lookup', [SerialLookupController::class, 'lookup'])->name('serial.lookup');
@@ -762,6 +793,9 @@ Route::prefix('admin')
             Route::put('/{id}/note', [OrderRefundController::class, 'updateNote'])->name('note');
             Route::put('/{id}/status', [OrderRefundController::class, 'updateStatus'])->name('update_status');
         });
+                    // --- ROUTES QUẢN LÝ ĐIỂM THƯỞNG ---
+            Route::get('/loyalty-points', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'index'])->name('loyalty.index');
+            Route::post('/loyalty-points/adjust', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'adjust'])->name('loyalty.adjust');
         // QUẢN LÝ NHẬP KHO (PURCHASE ORDERS)
         Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
             // Route để tìm kiếm sản phẩm (dùng cho AJAX khi thêm sản phẩm vào phiếu)
@@ -769,11 +803,6 @@ Route::prefix('admin')
 
             // Route để nhận hàng vào kho
             Route::post('/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receiveItems'])->name('receive');
-
-
-            // --- ROUTES QUẢN LÝ ĐIỂM THƯỞNG ---
-            Route::get('/loyalty-points', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'index'])->name('loyalty.index');
-            Route::post('/loyalty-points/adjust', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'adjust'])->name('loyalty.adjust');
 
             // Route để hiển thị trang tiếp nhận hàng
             Route::get('/receiving', [PurchaseOrderController::class, 'showReceivingPage'])->name('receiving.index');
@@ -788,16 +817,16 @@ Route::prefix('admin')
 
             // ==== API routes for the packing station interface ====
             // Route để lấy danh sách đơn hàng chờ đóng gói
-            Route::get('/orders', [PackingStationController::class, 'getOrdersForPacking'])->name('get-orders');
+            Route::get('/pending-orders', [PackingStationController::class, 'getPendingOrders'])->name('pending-orders');
 
-            // Route để lấy chi tiết một đơn hàng
-            Route::get('/orders/{id}', [PackingStationController::class, 'getOrderDetails'])->name('get-order-details');
+            // Route để tìm kiếm gói hàng theo mã vận đơn
+            Route::get('/packages/{trackingCode}', [PackingStationController::class, 'getPackageByTrackingCode'])->name('get-package');
 
             // Route để xác thực IMEI/Serial
             Route::post('/validate-imei', [PackingStationController::class, 'validateImei'])->name('validate-imei');
 
-            // Route để xác nhận hoàn tất đóng gói
-            Route::post('/orders/{orderId}/confirm-packing', [PackingStationController::class, 'confirmPacking'])->name('confirm-packing');
+            // Route để xác nhận hoàn tất đóng gói theo mã vận đơn
+            Route::post('/packages/{trackingCode}/confirm-packaging', [PackingStationController::class, 'confirmPackaging'])->name('confirm-packaging');
         });
         Route::prefix('stock-transfers')->name('stock-transfers.')->group(function () {
 
@@ -836,12 +865,21 @@ Route::prefix('admin')
             Route::post('/{id}/auto-process', [AutoStockTransferController::class, 'autoProcess'])->name('auto-process');
             Route::post('/{id}/receive', [AutoStockTransferController::class, 'receive'])->name('receive');
             Route::post('/{id}/cancel', [AutoStockTransferController::class, 'cancel'])->name('cancel');
+            Route::post('/{id}/save-imei', [AutoStockTransferController::class, 'saveImei'])->name('save-imei');
             Route::post('/check-and-create', [AutoStockTransferController::class, 'checkAndCreateForOrder'])->name('check-and-create');
         });
 
         Route::get('/product-variants/{id}/adjust-form', [InventoryAdjustmentController::class, 'showAdjustForm'])->name('product-variants.adjust-form');
         Route::post('/product-variants/{id}/adjust-stock', [InventoryAdjustmentController::class, 'adjustStock'])->name('product-variants.adjust-stock')->middleware('auth');
         Route::post('/ajax/calculate-shipping-options', [PaymentController::class, 'ajaxCalculateShippingOptions']);
+
+        // Routes cho External Shipping (Giao hàng cho đơn vị thứ 3)
+        Route::prefix('external-shipping')->name('external-shipping.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\ExternalShippingController::class, 'index'])->name('index');
+            Route::get('/{fulfillment}', [App\Http\Controllers\Admin\ExternalShippingController::class, 'show'])->name('show');
+            Route::post('/{fulfillment}/assign', [App\Http\Controllers\Admin\ExternalShippingController::class, 'assignToShippingUnit'])->name('assign');
+            Route::post('/{fulfillment}/delivered', [App\Http\Controllers\Admin\ExternalShippingController::class, 'markAsDelivered'])->name('delivered');
+        });
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')
@@ -886,9 +924,5 @@ require __DIR__ . '/auth.php';
 // Route::get('api/old-provinces', [AddressesController::class, 'getOldProvinces']);
 // Route::get('api/old-districts/{province_code}', [AddressesController::class, 'getOldDistricts']);
 // Route::get('api/old-wards/{district_code}', [AddressesController::class, 'getOldWards']);
-// Route::get('/bot/register-webhook', function () {
-//     $url = config('app.url') . '/api/bot/webhook';
-//     $response = Telegram::setWebhook(['url' => $url]);
-//     return 'Webhook setup: ' . $response->getDescription();
-// });
+
 Route::get('/payments/confirm/{token}', [PaymentController::class, 'confirmPaymentByToken'])->name('payments.confirm');

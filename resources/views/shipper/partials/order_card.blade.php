@@ -1,14 +1,20 @@
 <div class="relative block bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
-    @if($order->status === 'awaiting_shipment_assigned')
+    @if($order->status === 'processing')
         <button @click.stop="openBarcodeScanner('{{ $order->id }}')" 
                 class="absolute top-2 right-2 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-colors z-10"
                 title="Quét mã để xác nhận lấy hàng">
             <i class="fas fa-qrcode text-sm"></i>
         </button>
+    @elseif($order->status === 'out_for_delivery')
+        <button @click.stop="openQRScanner('{{ $order->id }}')" 
+                class="absolute top-2 right-2 bg-green-500 hover:bg-green-600 text-white p-2 rounded-full shadow-lg transition-colors z-10"
+                title="Quét QR code để xác nhận giao hàng">
+            <i class="fas fa-qrcode text-sm"></i>
+        </button>
     @endif
     
     <a href="{{ route('shipper.orders.show', $order) }}" class="block">
-        <div class="flex justify-between items-center mb-2 {{ $order->status === 'awaiting_shipment_assigned' ? 'pr-12' : '' }}">
+        <div class="flex justify-between items-center mb-2 {{ $order->status === 'processing' || $order->status === 'out_for_delivery' ? 'pr-12' : '' }}">
             <span class="font-bold text-gray-800">{{ $order->order_code }}</span>
             <span class="font-bold text-indigo-600 text-lg">{{ number_format($order->grand_total, 0, ',', '.') }}đ</span>
         </div>

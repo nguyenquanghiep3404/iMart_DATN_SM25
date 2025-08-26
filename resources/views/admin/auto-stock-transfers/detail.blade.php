@@ -160,6 +160,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IMEI/Serial</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thành tiền</th>
                                 </tr>
@@ -255,6 +256,60 @@
                 </button>
                 <button id="cancel-auto-process" class="mt-3 px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
                     Hủy bỏ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal quét IMEI/Serial -->
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden" id="imei-scan-modal">
+    <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Quét IMEI/Serial</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeImeiModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="mb-4 p-4 bg-blue-50 rounded-lg">
+                <div class="flex items-center">
+                    <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                    <div>
+                        <p class="text-sm font-medium text-blue-800">Sản phẩm: <span id="scan-product-name"></span></p>
+                        <p class="text-sm text-blue-600">SKU: <span id="scan-product-sku"></span></p>
+                        <p class="text-sm text-blue-600">Cần quét: <span id="scan-required-quantity"></span> IMEI/Serial</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Quét hoặc nhập IMEI/Serial</label>
+                <div class="flex space-x-2">
+                    <input type="text" id="imei-input" class="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Quét hoặc nhập IMEI/Serial..." autocomplete="off">
+                    <button type="button" onclick="addImeiSerial()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Danh sách IMEI/Serial đã quét</label>
+                <div class="border border-gray-200 rounded-md max-h-40 overflow-y-auto">
+                    <ul id="scanned-imei-list" class="divide-y divide-gray-200">
+                        <!-- Danh sách IMEI/Serial sẽ được thêm vào đây -->
+                    </ul>
+                </div>
+                <p class="text-sm text-gray-500 mt-1">Đã quét: <span id="scanned-count">0</span> / <span id="required-count">0</span></p>
+            </div>
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeImeiModal()" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                    Hủy
+                </button>
+                <button type="button" onclick="saveScannedImei()" id="save-imei-btn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
+                    Lưu
                 </button>
             </div>
         </div>
@@ -413,6 +468,14 @@ function displayProductItems(items) {
                 <td class="px-6 py-4 text-sm text-gray-900">${item.product_variant?.sku || '-'}</td>
                 <td class="px-6 py-4 text-sm text-gray-900">${item.quantity}</td>
                 <td class="px-6 py-4 text-sm text-gray-900">${serialDisplay}</td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                    ${hasSerialTracking ? `
+                        <button type="button" onclick="openImeiModal(${item.id}, '${product?.name || 'Sản phẩm'}', '${item.product_variant?.sku || ''}', ${item.quantity})" class="inline-flex items-center px-3 py-1 border border-transparent text-xs leading-4 font-medium rounded text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-qrcode mr-1"></i>
+                            Quét IMEI
+                        </button>
+                    ` : '-'}
+                </td>
                 <td class="px-6 py-4 text-sm text-gray-900">${formatCurrency(price)}</td>
                 <td class="px-6 py-4 text-sm font-medium text-gray-900">${formatCurrency(total)}</td>
             </tr>
@@ -664,7 +727,150 @@ document.addEventListener('DOMContentLoaded', function() {
             this.classList.add('hidden');
         }
     });
+    
+    // Close IMEI modal when clicking outside
+    document.getElementById('imei-scan-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeImeiModal();
+        }
+    });
+    
+    // Handle Enter key in IMEI input
+    document.getElementById('imei-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addImeiSerial();
+        }
+    });
 });
+
+// Variables for IMEI scanning
+let currentItemId = null;
+let scannedImeiList = [];
+let requiredQuantity = 0;
+
+// Open IMEI scanning modal
+function openImeiModal(itemId, productName, sku, quantity) {
+    currentItemId = itemId;
+    requiredQuantity = quantity;
+    scannedImeiList = [];
+    
+    document.getElementById('scan-product-name').textContent = productName;
+    document.getElementById('scan-product-sku').textContent = sku;
+    document.getElementById('scan-required-quantity').textContent = quantity;
+    document.getElementById('required-count').textContent = quantity;
+    
+    updateScannedList();
+    document.getElementById('imei-scan-modal').classList.remove('hidden');
+    document.getElementById('imei-input').focus();
+}
+
+// Close IMEI scanning modal
+function closeImeiModal() {
+    document.getElementById('imei-scan-modal').classList.add('hidden');
+    document.getElementById('imei-input').value = '';
+    currentItemId = null;
+    scannedImeiList = [];
+    requiredQuantity = 0;
+}
+
+// Add IMEI/Serial to list
+function addImeiSerial() {
+    const input = document.getElementById('imei-input');
+    const imei = input.value.trim();
+    
+    if (!imei) {
+        showNotification('Vui lòng nhập IMEI/Serial', 'error');
+        return;
+    }
+    
+    // Check if IMEI already exists
+    if (scannedImeiList.includes(imei)) {
+        showNotification('IMEI/Serial này đã được quét', 'error');
+        input.value = '';
+        input.focus();
+        return;
+    }
+    
+    // Check if we've reached the required quantity
+    if (scannedImeiList.length >= requiredQuantity) {
+        showNotification('Đã đủ số lượng IMEI/Serial cần thiết', 'error');
+        return;
+    }
+    
+    // Add to list
+    scannedImeiList.push(imei);
+    input.value = '';
+    input.focus();
+    
+    updateScannedList();
+    showNotification('Đã thêm IMEI/Serial thành công', 'success');
+}
+
+// Remove IMEI/Serial from list
+function removeImeiSerial(index) {
+    scannedImeiList.splice(index, 1);
+    updateScannedList();
+}
+
+// Update scanned IMEI list display
+function updateScannedList() {
+    const listElement = document.getElementById('scanned-imei-list');
+    const scannedCountElement = document.getElementById('scanned-count');
+    const saveButton = document.getElementById('save-imei-btn');
+    
+    scannedCountElement.textContent = scannedImeiList.length;
+    
+    if (scannedImeiList.length === 0) {
+        listElement.innerHTML = '<li class="px-4 py-3 text-sm text-gray-500 text-center">Chưa có IMEI/Serial nào</li>';
+        saveButton.disabled = true;
+    } else {
+        listElement.innerHTML = scannedImeiList.map((imei, index) => `
+            <li class="px-4 py-3 flex items-center justify-between">
+                <span class="text-sm font-mono text-gray-900">${imei}</span>
+                <button type="button" onclick="removeImeiSerial(${index})" class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-times"></i>
+                </button>
+            </li>
+        `).join('');
+        saveButton.disabled = scannedImeiList.length !== requiredQuantity;
+    }
+}
+
+// Save scanned IMEI/Serial
+function saveScannedImei() {
+    if (!currentItemId || scannedImeiList.length !== requiredQuantity) {
+        showNotification('Vui lòng quét đủ số lượng IMEI/Serial cần thiết', 'error');
+        return;
+    }
+    
+    // Send AJAX request to save IMEI/Serial
+    fetch(`/admin/auto-stock-transfers/${transferId}/save-imei`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            product_variant_id: currentItemId,
+            imei_serials: scannedImeiList
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Đã lưu IMEI/Serial thành công', 'success');
+            closeImeiModal();
+            loadTransferDetail(); // Reload để cập nhật hiển thị
+        } else {
+            showNotification(data.message || 'Lỗi khi lưu IMEI/Serial', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Lỗi khi lưu IMEI/Serial', 'error');
+    });
+}
 </script>
 @endpush
 

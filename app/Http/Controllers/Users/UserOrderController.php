@@ -10,6 +10,9 @@ use App\Models\OrderItem;
 use App\Models\ReturnRequest;
 use App\Models\ProductVariant;
 use Illuminate\Support\Facades\Log;
+use App\Models\CancellationRequest;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class UserOrderController extends Controller
 {
@@ -76,11 +79,6 @@ class UserOrderController extends Controller
         foreach ($order->items as $item) {
             $item->has_reviewed = $item->review()->exists(); // true/false
         }
-    //     dd(
-    //     'Item ID đang kiểm tra:', $item->id,
-    //     'Kết quả của ->exists():', $item->review()->exists(),
-    //     'Câu lệnh SQL đang chạy:', $item->review()->toSql()
-    // );
 
         return view('users.orders.show', compact('order'));
     }
@@ -109,10 +107,11 @@ class UserOrderController extends Controller
         $statusMap = [
             'pending_confirmation' => 'pending_confirmation',
             'processing' => 'processing',
-            'shipped' => 'shipped',
+            'out_for_delivery' => 'out_for_delivery',
+            'external_shipping' => 'external_shipping',
             'delivered' => 'delivered',
             'cancelled' => 'cancelled',
-            'returned' => 'returned'
+            'failed_delivery' => 'failed_delivery'
         ];
 
         return $statusMap[$status] ?? $status;
@@ -121,76 +120,94 @@ class UserOrderController extends Controller
      * Hủy đơn hàng
      */
     public function cancel(Request $request, $id)
-{
-    $user = Auth::user();
-    $order = Order::where('user_id', $user->id)
-        ->whereIn('status', ['pending_confirmation', 'processing', 'awaiting_shipment'])
-        ->findOrFail($id);
+    {
+        $user = Auth::user();
+        $order = Order::where('user_id', $user->id)
+            ->whereIn('status', ['pending_confirmation', 'processing', 'awaiting_shipment', 'cancellation_requested'])
+            ->findOrFail($id);
 
-    // Validate lý do cơ bản
-    $request->validate([
-        'reason' => 'required|string|max:255'
-    ]);
+        $request->validate(['reason' => 'required|string|max:255']);
+        $cancellationReason = $request->reason === 'Lý do khác'
+            ? $request->input('reason_other', $request->reason)
+            : $request->reason;
 
-    $cancellationReason = $request->reason;
-    if ($cancellationReason === 'Lý do khác') {
-        $request->validate(['reason_other' => 'required|string|max:1000']);
-        $cancellationReason = $request->reason_other;
+        $isCOD = strtolower($order->payment_method) === 'cod';
+
+        // =================================================================
+        // **TRƯỜNG HỢP 1: ĐƠN HÀNG COD**
+        // Hủy trực tiếp và hoàn trả sản phẩm về kho ngay lập tức.
+        // =================================================================
+        if ($isCOD && $order->payment_status === 'pending') {
+            DB::beginTransaction();
+            try {
+                // Cập nhật trạng thái đơn hàng
+                $order->update([
+                    'status' => 'cancelled',
+                    'cancelled_at' => now(),
+                    'cancellation_reason' => $cancellationReason,
+                ]);
+
+                // Hoàn kho
+                $order->load('items.productVariant');
+                foreach ($order->items as $item) {
+                    if ($item->productVariant) {
+                        $item->productVariant->increment('stock', $item->quantity);
+                    }
+                }
+                DB::commit();
+                return redirect()->route('orders.show', $order->id)
+                    ->with('success', 'Đơn hàng đã được hủy và sản phẩm đã được hoàn về kho thành công.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error("Lỗi khi hủy đơn hàng COD #{$order->order_code}: " . $e->getMessage());
+                return redirect()->back()->with('error', 'Lỗi khi hủy đơn hàng. Vui lòng thử lại.');
+            }
+        }
+
+        // =================================================================
+        // **TRƯỜNG HỢP 2: ĐƠN ĐÃ THANH TOÁN ONLINE**
+        // Tạo một "Yêu cầu hủy" để Admin xem xét và duyệt.
+        // =================================================================
+        if (!$isCOD && $order->payment_status === 'paid') {
+            $request->validate([
+                'bank_name' => 'required|string|max:255',
+                'bank_account_number' => 'required|string|max:50',
+                'bank_account_name' => 'required|string|max:255',
+            ]);
+
+            DB::beginTransaction();
+            try {
+                // Tạo một bản ghi mới trong bảng cancellation_requests
+                CancellationRequest::create([
+                    'order_id' => $order->id,
+                    'user_id' => $user->id,
+                    'cancellation_code' => 'CR-' . strtoupper(Str::random(10)),
+                    'reason' => $cancellationReason,
+                    'status' => 'pending_review',
+                    'refund_method' => 'bank',
+                    'refund_amount' => $order->grand_total,
+                    'bank_name' => $request->bank_name,
+                    'bank_account_name' => $request->bank_account_name,
+                    'bank_account_number' => $request->bank_account_number,
+                ]);
+
+                // Cập nhật trạng thái đơn hàng thành "đang chờ xử lý hủy"
+                $order->update(['status' => 'cancellation_requested']);
+
+                DB::commit();
+
+                return redirect()->route('orders.show', $order->id)
+                    ->with('success', 'Yêu cầu hủy đơn hàng của bạn đã được gửi. Chúng tôi sẽ xem xét và xử lý hoàn tiền trong thời gian sớm nhất.');
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error("Lỗi khi tạo yêu cầu hủy cho đơn #{$order->order_code}: " . $e->getMessage());
+                return redirect()->back()->with('error', 'Lỗi khi gửi yêu cầu. Vui lòng thử lại.');
+            }
+        }
+
+        return redirect()->back()->with('error', 'Không thể thực hiện hành động này.');
     }
-
-    $isCOD = strtolower($order->payment_method) === 'cod';
-
-    // Trường hợp 1: Đơn hàng COD, chưa thanh toán
-    if ($isCOD && $order->payment_status === 'pending') {
-        $order->update([
-            'status' => 'cancelled',
-            'cancelled_at' => now(),
-            'cancellation_reason' => $cancellationReason
-        ]);
-
-        // Có thể thêm Log hoặc gửi email thông báo
-        Log::info("Đơn hàng COD #{$order->order_code} đã được hủy bởi người dùng.");
-
-        return redirect()->route('orders.show', $order->id)
-            ->with('success', 'Đơn hàng của bạn đã được hủy thành công.');
-    }
-
-    // Trường hợp 2: Đơn hàng đã thanh toán, cần admin duyệt hoàn tiền
-    if (!$isCOD && $order->payment_status === 'paid') {
-        $request->validate([
-            'refund_method' => 'required|in:bank',
-            'bank_name' => 'required|string|max:255',
-            'bank_account_number' => 'required|string|max:50',
-            'bank_account_name' => 'required|string|max:255',
-        ]);
-
-        // Thay vì hủy ngay, chúng ta chuyển sang trạng thái "chờ hủy"
-        // và lưu thông tin hoàn tiền để admin xử lý.
-        $refundDetails = [
-            'method' => $request->refund_method,
-            'bank_name' => $request->bank_name,
-            'bank_account_number' => $request->bank_account_number,
-            'bank_account_name' => $request->bank_account_name,
-        ];
-
-        // Giả sử bạn có một cột `cancellation_details` kiểu JSON trong bảng `orders`
-        // Nếu không có, bạn cần tạo migration để thêm cột này:
-        // php artisan make:migration add_cancellation_details_to_orders_table
-        $order->update([
-            'status' => 'returned', // Hoặc một trạng thái tùy chỉnh như 'cancellation_requested'
-            'cancellation_reason' => $cancellationReason,
-            'admin_note' => json_encode(['refund_details' => $refundDetails]) // Lưu thông tin hoàn tiền
-        ]);
-
-        Log::info("Người dùng yêu cầu hủy và hoàn tiền cho đơn hàng #{$order->order_code}.");
-
-        return redirect()->route('orders.show', $order->id)
-            ->with('success', 'Yêu cầu hủy đơn hàng đã được gửi. Chúng tôi sẽ xử lý hoàn tiền cho bạn trong thời gian sớm nhất.');
-    }
-
-    // Trường hợp mặc định nếu có lỗi logic
-    return redirect()->back()->with('error', 'Không thể hủy đơn hàng này.');
-}
     public function confirmReceipt(Order $order)
     {
         if (Auth::id() !== $order->user_id) {

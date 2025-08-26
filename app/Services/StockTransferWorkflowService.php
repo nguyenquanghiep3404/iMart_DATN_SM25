@@ -98,31 +98,57 @@ class StockTransferWorkflowService
             
             // Xử lý IMEI/Serial tracking nếu sản phẩm có theo dõi serial
             if ($productVariant->has_serial_tracking) {
-                // Tự động lấy serial có sẵn tại kho nguồn
-                $availableSerials = InventorySerial::where('product_variant_id', $productVariant->id)
-                    ->where('store_location_id', $fromLocationId)
-                    ->where('status', 'available')
-                    ->limit($quantity)
-                    ->get();
+                $serialsToProcess = [];
+                
+                // Kiểm tra xem có IMEI/Serial đã được quét thủ công không
+                if (!empty($stItem->imei_serials)) {
+                    $scannedSerials = json_decode($stItem->imei_serials, true);
                     
-                if ($availableSerials->count() < $quantity) {
-                    throw new Exception("Không đủ serial có sẵn cho sản phẩm {$productVariant->sku}. Cần {$quantity}, chỉ có {$availableSerials->count()}");
+                    if (is_array($scannedSerials) && count($scannedSerials) === $quantity) {
+                        // Sử dụng IMEI/Serial đã được quét thủ công
+                        $serialsToProcess = InventorySerial::where('product_variant_id', $productVariant->id)
+                            ->where('store_location_id', $fromLocationId)
+                            ->where('status', 'available')
+                            ->whereIn('serial_number', $scannedSerials)
+                            ->get();
+                            
+                        if ($serialsToProcess->count() !== $quantity) {
+                            throw new Exception("Một số IMEI/Serial đã quét cho sản phẩm {$productVariant->sku} không hợp lệ hoặc không khả dụng");
+                        }
+                        
+                        Log::info("Using manually scanned serials for product {$productVariant->sku} in transfer {$stockTransfer->id}");
+                    } else {
+                        throw new Exception("Dữ liệu IMEI/Serial đã quét cho sản phẩm {$productVariant->sku} không hợp lệ");
+                    }
+                } else {
+                    // Tự động lấy serial có sẵn tại kho nguồn (logic cũ)
+                    $serialsToProcess = InventorySerial::where('product_variant_id', $productVariant->id)
+                        ->where('store_location_id', $fromLocationId)
+                        ->where('status', 'available')
+                        ->limit($quantity)
+                        ->get();
+                        
+                    if ($serialsToProcess->count() < $quantity) {
+                        throw new Exception("Không đủ serial có sẵn cho sản phẩm {$productVariant->sku}. Cần {$quantity}, chỉ có {$serialsToProcess->count()}");
+                    }
+                    
+                    Log::info("Auto-assigned serials for product {$productVariant->sku} in transfer {$stockTransfer->id}");
                 }
                 
                 // Cập nhật trạng thái serial thành 'transferred'
-                $serialIds = $availableSerials->pluck('id');
+                $serialIds = $serialsToProcess->pluck('id');
                 InventorySerial::whereIn('id', $serialIds)
                     ->update(['status' => 'transferred']);
                 
                 // Lưu thông tin serial vào bảng trung gian
-                foreach ($availableSerials as $serial) {
+                foreach ($serialsToProcess as $serial) {
                     $stItem->serials()->create([
                         'inventory_serial_id' => $serial->id,
                         'status' => 'in_transit'
                     ]);
                 }
                 
-                Log::info("Assigned {$availableSerials->count()} serials for product {$productVariant->sku} in transfer {$stockTransfer->id}");
+                Log::info("Processed {$serialsToProcess->count()} serials for product {$productVariant->sku} in transfer {$stockTransfer->id}");
             }
             
             // Trừ tồn kho tại kho nguồn
@@ -237,15 +263,25 @@ class StockTransferWorkflowService
             }
             
             // Tăng tồn kho tại kho nhận cho TẤT CẢ sản phẩm
+            // Thêm đồng thời quantity và quantity_committed vào kho nhận
             $inventory = ProductInventory::firstOrCreate(
                 [
                     'product_variant_id' => $productVariant->id,
                     'store_location_id' => $toLocationId,
                     'inventory_type' => 'new',
                 ],
-                ['quantity' => 0]
+                ['quantity' => 0, 'quantity_committed' => 0]
             );
             $inventory->increment('quantity', $quantity);
+            $inventory->increment('quantity_committed', $quantity);
+            
+            Log::info("Increased inventory at destination warehouse", [
+                'product_variant_id' => $productVariant->id,
+                'store_location_id' => $toLocationId,
+                'quantity_added' => $quantity,
+                'new_quantity' => $inventory->quantity,
+                'new_quantity_committed' => $inventory->quantity_committed
+            ]);
             
             // Ghi lại lịch sử nhập kho
             InventoryMovement::create([

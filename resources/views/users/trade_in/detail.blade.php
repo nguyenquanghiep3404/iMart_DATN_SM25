@@ -297,60 +297,6 @@
         </main>
         <div class="mt-10 md:mt-12 space-y-10 md:space-y-12">
             <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Mua Kèm Deal Sốc</h2>
-                <div class="flex flex-col lg:flex-row items-center justify-center gap-4" id="bundle-deal-container">
-
-                    <div
-                        class="w-full flex items-center gap-4 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 lg:w-auto carousel">
-                        <div
-                            class="flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg flex-shrink-0 w-44 sm:w-48">
-                            <img src="https://placehold.co/150x150/f0f0f0/333?text=iPhone+15"
-                                class="w-32 h-32 object-contain mb-2">
-                            <p class="font-semibold text-sm">iPhone 15 Pro Max (Cũ)</p>
-                            <p class="font-bold text-red-600">25.170.000₫</p>
-                        </div>
-
-                        <div class="text-3xl font-light text-gray-400">+</div>
-
-                        <div
-                            class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
-                            <input type="checkbox" data-price="4490000"
-                                class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
-                                checked>
-                            <img src="https://placehold.co/150x150/e0e0e0/333?text=AirPods"
-                                class="w-32 h-32 object-contain mb-2">
-                            <p class="font-semibold text-sm">AirPods Pro 2</p>
-                            <p class="font-bold text-red-600">4.490.000₫ <span
-                                    class="text-gray-500 line-through text-xs">5.990.000₫</span></p>
-                        </div>
-
-                        <div class="text-3xl font-light text-gray-400">+</div>
-
-                        <div
-                            class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
-                            <input type="checkbox" data-price="890000"
-                                class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500">
-                            <img src="https://placehold.co/150x150/d0d0d0/333?text=Sạc"
-                                class="w-32 h-32 object-contain mb-2">
-                            <p class="font-semibold text-sm">Sạc nhanh 20W</p>
-                            <p class="font-bold text-red-600">890.000₫ <span
-                                    class="text-gray-500 line-through text-xs">1.200.000₫</span></p>
-                        </div>
-                    </div>
-
-                    <div class="text-3xl font-light text-gray-400 hidden lg:block">=</div>
-
-                    <div
-                        class="w-full max-w-xs sm:w-auto lg:w-auto lg:max-w-none mt-4 lg:mt-0 lg:ml-4 p-4 border-2 border-red-500 rounded-lg text-center">
-                        <p class="font-semibold">Tổng giá trị:</p>
-                        <p id="bundle-total-price" class="text-2xl font-bold text-red-600 my-2">30.550.000₫</p>
-                        <button class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700">Thêm
-                            tất cả vào giỏ</button>
-                    </div>
-                </div>
-            </section>
-
-            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
                 <div class="flex justify-center border-2 border-gray-200 rounded-xl p-1 mb-6 max-w-md mx-auto">
                     <button id="tab-desc-btn"
                         class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-600">Bài viết đánh

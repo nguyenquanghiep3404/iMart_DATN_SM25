@@ -24,15 +24,13 @@
         }
         .status-pending_confirmation { background-color: #e0e7ff; color: #4338ca; }
         .status-processing { background-color: #cffafe; color: #0891b2; }
-        .status-awaiting_shipment_packed { background-color: #fef3c7; color: #d97706; }
-        .status-awaiting_shipment_assigned { background-color: #ddd6fe; color: #7c3aed; }
         .status-shipped { background-color: #d1fae5; color: #059669; }
         .status-delivered { background-color: #dcfce7; color: #16a34a; }
         .status-cancelled { background-color: #fee2e2; color: #dc2626; }
         .payment-pending { background-color: #fef3c7; color: #d97706; }
         .payment-paid { background-color: #dcfce7; color: #16a34a; }
-        .payment-failed { background-color: #fee2e2; color: #dc2626; }
-        
+        .payment-failed { background-color: #5fdaf2e5; color: #2a38d8ff; }
+        .status-cancellation-requested {background-color: #fef9c3;color: #854d0e; }
         /* Thanh cuộn tùy chỉnh cho modal */
         .modal-content::-webkit-scrollbar {
             width: 8px;
@@ -78,7 +76,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .toast::after {
             content: '';
             position: absolute;
@@ -88,24 +86,24 @@
             height: 2px;
             background: rgba(0, 0, 0, 0.1);
         }
-        
+
         .toast.show {
             transform: translateX(0);
             opacity: 1;
         }
-        
+
         .toast.success {
             background: #10b981;
         }
-        
+
         .toast.error {
             background: #ef4444;
         }
-        
+
         .toast.warning {
             background: #f59e0b;
         }
-        
+
         .toast-icon {
             width: 32px;
             height: 32px;
@@ -120,34 +118,34 @@
             flex-shrink: 0;
             background: white;
         }
-        
+
         .toast.success .toast-icon {
             color: #10b981;
             background: white;
         }
-        
+
         .toast.error .toast-icon {
             color: #ef4444;
             background: white;
         }
-        
+
         .toast.warning .toast-icon {
             color: #f59e0b;
             background: white;
         }
-        
+
         .toast-content {
             flex: 1;
             min-width: 0;
         }
-        
+
         .toast-message {
             font-size: 15px;
             color: white;
             line-height: 1.4;
             font-weight: 500;
         }
-        
+
         .toast-close {
             margin-left: 16px;
             background: none;
@@ -164,12 +162,12 @@
             height: 24px;
             flex-shrink: 0;
         }
-        
+
         .toast-close:hover {
             color: white;
             background: rgba(255, 255, 255, 0.1);
         }
-        
+
         /* Animation cho toast */
         @keyframes toastSlideIn {
             from {
@@ -181,7 +179,7 @@
                 opacity: 1;
             }
         }
-        
+
         @keyframes toastSlideOut {
             from {
                 transform: translateX(0);
@@ -192,11 +190,11 @@
                 opacity: 0;
             }
         }
-        
+
         .toast.show {
             animation: toastSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
-        
+
         .toast.hide {
             animation: toastSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
@@ -209,7 +207,7 @@
             overflow: hidden;
             line-height: 1.4;
         }
-        
+
         .product-image-placeholder {
             background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
             display: flex;
@@ -218,42 +216,30 @@
             font-size: 12px;
             color: #9ca3af;
         }
-        
+
         /* Kiểu bảng trong modal nâng cao */
         #modal-order-items tr:hover {
             background-color: #f9fafb;
         }
-        
+
         #modal-order-items img {
             transition: transform 0.2s ease;
         }
-        
+
         #modal-order-items img:hover {
             transform: scale(1.05);
         }
-        
+
         /* Bảng trong modal đáp ứng trên thiết bị nhỏ */
         @media (max-width: 768px) {
             .modal-content table {
                 font-size: 14px;
             }
-            
+
             .modal-content .w-16.h-16 {
                 width: 48px;
                 height: 48px;
             }
-        }
-
-        /* Đánh dấu đơn hàng mới */
-        .new-order-row {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border-left: 4px solid #0ea5e9;
-            font-weight: 600;
-            position: relative;
-        }
-
-        .new-order-row:hover {
-            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
         }
 
         .new-order-badge {
@@ -409,7 +395,7 @@
                 gap: 16px;
                 padding: 0;
             }
-            
+
             .progress-line {
                 display: none;
             }
@@ -466,18 +452,18 @@
             .order-progress-section {
                 padding: 20px 12px;
             }
-            
+
             .progress-step {
                 padding: 12px;
             }
-            
+
             .progress-icon {
                 width: 40px;
                 height: 40px;
                 font-size: 14px;
                 margin-right: 12px;
             }
-            
+
             .progress-label {
                 font-size: 13px;
             }
@@ -526,6 +512,7 @@
                         <option value="delivered">Giao thành công</option>
                         <option value="cancelled">Đã hủy</option>
                         <option value="returned">Đã trả hàng</option>
+                        <option value="cancellation_requested">Yêu cầu hủy</option>
                         <option value="failed_delivery">Giao hàng thất bại</option>
                     </select>
                 </div>
@@ -553,7 +540,7 @@
                 <div class="flex items-center space-x-4">
                     <label class="flex items-center">
                         <input type="checkbox" id="new-orders-only" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2">
-                        <span class="ml-2 text-sm font-medium text-gray-700">Chỉ xem đơn hàng mới (24h)</span>
+                        <span class="ml-2 text-sm font-medium text-gray-700">Chỉ xem đơn hàng trong 24h</span>
                         <span id="new-orders-count" class="ml-2 px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full hidden">0</span>
                     </label>
                 </div>
@@ -582,7 +569,6 @@
                         <th scope="col" class="p-6">Trạng thái ĐH</th>
                         <th scope="col" class="p-6">TT Thanh toán</th>
                         <th scope="col" class="p-6">Ngày tạo</th>
-                        <th scope="col" class="p-6">Shipper</th>
                         <th scope="col" class="p-6 text-center">Hành động</th>
                     </tr>
                 </thead>
@@ -600,7 +586,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Order Detail Modal -->
     <div id="order-detail-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-6xl h-full max-h-[95vh] flex flex-col transform transition-transform duration-300 scale-95">
@@ -631,7 +617,7 @@
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Địa chỉ giao hàng</h3>
                             <address class="not-italic text-gray-700 leading-relaxed" id="modal-shipping-address"></address>
                         </div>
-                        
+
                         <!-- Thông tin cửa hàng nhận hàng -->
                         <div id="modal-store-info" class="hidden">
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Cửa hàng nhận hàng</h3>
@@ -647,22 +633,25 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Thông tin shipper -->
                         <div id="modal-shipper-info" class="hidden">
                             <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Thông tin shipper</h3>
-                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                <div class="flex items-center space-x-2 mb-2">
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div class="flex items-center space-x-2 mb-3">
                                     <i class="fas fa-shipping-fast text-blue-600"></i>
                                     <span class="font-medium text-blue-800">Shipper được gán:</span>
                                 </div>
-                                <div class="space-y-1 text-sm">
+                                <div class="space-y-2 text-sm">
                                     <p><strong>Tên:</strong> <span id="modal-shipper-name"></span></p>
                                     <p><strong>Email:</strong> <span id="modal-shipper-email"></span></p>
                                     <p><strong>SĐT:</strong> <span id="modal-shipper-phone"></span></p>
                                 </div>
                             </div>
                         </div>
+
                          <div>
-                            <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Ghi chú</h3>    
+                            <h3 class="font-bold text-lg text-gray-800 mb-3 border-b pb-2">Ghi chú</h3>
                             <!-- Ghi chú từ khách hàng -->
                             <div id="customer-notes-section" class="mb-4 hidden">
                                 <h4 class="font-medium text-gray-700 mb-2">Ghi chú từ khách hàng:</h4>
@@ -743,47 +732,26 @@
                             </div>
                         </div>
 
-                        <h3 class="font-bold text-lg text-gray-800 mb-3">Sản phẩm trong đơn</h3>
-                        <div class="border rounded-lg overflow-hidden">
-                           <table class="w-full">
-                               <thead class="bg-gray-50 text-left text-sm text-gray-600">
-                                   <tr>
-                                       <th class="p-3">Sản phẩm</th>
-                                       <th class="p-3 text-center">Số lượng</th>
-                                       <th class="p-3 text-right">Đơn giá</th>
-                                       <th class="p-3 text-right">Thành tiền</th>
-                                   </tr>
-                               </thead>
-                               <tbody id="modal-order-items"></tbody>
-                           </table>
-                        </div>
-
-                        <div class="mt-6 flex justify-end">
-                            <div class="w-full md:w-1/2">
-                                <dl class="space-y-2 text-gray-700">
-                                    <div class="flex justify-between">
-                                        <dt>Tổng tiền hàng:</dt>
-                                        <dd class="font-medium" id="modal-sub-total"></dd>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <dt>Phí vận chuyển:</dt>
-                                        <dd class="font-medium" id="modal-shipping-fee"></dd>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <dt>Giảm giá:</dt>
-                                        <dd class="font-medium text-red-500" id="modal-discount"></dd>
-                                    </div>
-                                    <div class="flex justify-between text-xl font-bold text-gray-900 border-t pt-2 mt-2">
-                                        <dt>Tổng cộng:</dt>
-                                        <dd id="modal-grand-total"></dd>
-                                    </div>
-                                </dl>
+                        <!-- Thông tin các gói hàng (Fulfillments) -->
+                        <div id="modal-fulfillments-section" class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6" style="display: none;">
+                            <h3 class="font-bold text-lg text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-boxes text-blue-600 mr-2"></i>
+                                Thông tin các gói hàng
+                            </h3>
+                            <div id="modal-fulfillments-list" class="space-y-4">
+                                <!-- Danh sách fulfillments sẽ được chèn vào đây -->
                             </div>
                         </div>
+
+
+
+
                     </div>
                 </div>
             </div>
              <div class="p-4 bg-gray-50 border-t flex justify-end space-x-3">
+                <div id="modal-action-buttons">
+        </div>
                 <button onclick="closeModal()" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">Đóng</button>
                 <button class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center space-x-2">
                      <i class="fas fa-print"></i>
@@ -796,40 +764,7 @@
     <!-- Toast Container -->
     <div id="toast-container"></div>
 
-    <!-- Assign Shipper Modal -->
-    <div id="assign-shipper-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md transform transition-transform duration-300 scale-95">
-            <div class="p-6 border-b border-gray-200">
-                <h2 class="text-xl font-bold text-gray-800">Gán Shipper</h2>
-                <p class="text-sm text-gray-600 mt-1">Mã đơn hàng: <span id="assign-shipper-order-code" class="font-medium text-indigo-600"></span></p>
-            </div>
-            <form id="assign-shipper-form" class="p-6">
-                <div class="space-y-4">
-                    <div>
-                        <label for="shipper-select" class="block text-sm font-medium text-gray-700 mb-2">Chọn Shipper <span class="text-red-500">*</span></label>
-                        <select id="shipper-select" name="shipper_id" class="w-full py-2 px-3 border border-gray-300 bg-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
-                            <option value="">-- Chọn Shipper --</option>
-                        </select>
-                        <div id="shipper-loading" class="text-sm text-gray-500 mt-1" style="display: none;">
-                            <i class="fas fa-spinner fa-spin mr-1"></i>
-                            Đang tải danh sách shipper...
-                        </div>
-                    </div>
-                </div>
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeAssignShipperModal()" 
-                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
-                        Hủy
-                    </button>
-                    <button type="submit" 
-                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center space-x-2">
-                        <i class="fas fa-user-check"></i>
-                        <span>Gán Shipper</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+
 
     <!-- Update Status Modal -->
     <div id="update-status-modal" class="modal fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
@@ -846,36 +781,33 @@
                             <option value="">-- Chọn trạng thái --</option>
                             <option value="pending_confirmation">Chờ xác nhận</option>
                             <option value="processing">Đang xử lý</option>
-                            <option value="awaiting_shipment" class="delivery-only">Chờ giao hàng</option>
-                            <option value="awaiting_shipment_packed" class="delivery-only">Chờ vận chuyển: đã đóng gói xong</option>
-                            <option value="awaiting_shipment_assigned" class="delivery-only">Chờ vận chuyển: Đã gán shipper</option>
-                            <option value="shipped" class="delivery-only">Đã xuất kho</option>
                             <option value="out_for_delivery" class="delivery-only">Đang giao hàng</option>
-                            <option value="delivered">Giao thành công</option>
-                            <option value="cancelled">Đã hủy</option>
-                            <option value="returned">Đã trả hàng</option>
+                            <option value="delivered">Giao hàng thành công</option>
+                            <option value="cancellation_requested">Yêu cầu hủy</option>
+                            <option value="cancelled">Hủy</option>
                             <option value="failed_delivery" class="delivery-only">Giao hàng thất bại</option>
+                            <option value="returned">Trả hàng</option>
                         </select>
                     </div>
                     <div>
                         <label for="admin-note" class="block text-sm font-medium text-gray-700 mb-2">Ghi chú (tùy chọn)</label>
-                        <textarea id="admin-note" name="admin_note" rows="3" 
+                        <textarea id="admin-note" name="admin_note" rows="3"
                                   class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="Thêm ghi chú về việc thay đổi trạng thái..."></textarea>
                     </div>
                     <div id="cancellation-reason-field" style="display: none;">
                         <label for="cancellation-reason" class="block text-sm font-medium text-gray-700 mb-2">Lý do hủy đơn <span class="text-red-500">*</span></label>
-                        <textarea id="cancellation-reason" name="cancellation_reason" rows="3" 
+                        <textarea id="cancellation-reason" name="cancellation_reason" rows="3"
                                   class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
                                   placeholder="Nhập lý do hủy đơn hàng..."></textarea>
                     </div>
                 </div>
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" onclick="closeUpdateStatusModal()" 
+                    <button type="button" onclick="closeUpdateStatusModal()"
                             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium">
                         Hủy
                     </button>
-                    <button type="submit" 
+                    <button type="submit"
                             class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center space-x-2">
                         <i class="fas fa-save"></i>
                         <span>Cập nhật</span>
@@ -907,19 +839,15 @@
         const formatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
         return formatted.replace('₫', 'VNĐ');
     };
-    
+
     // --- HÀM TẠO PROGRESS BAR ---
-    function createOrderProgressBar(currentStatus) {
+    function createOrderProgressBar(currentStatus, fulfillments = null) {
         // Định nghĩa các bước tiến trình chính
         const progressSteps = [
             { status: 'pending_confirmation', label: 'Chờ xác nhận', icon: '<i class="fas fa-clipboard-check"></i>' },
             { status: 'processing', label: 'Đang xử lý', icon: '<i class="fas fa-cogs"></i>' },
-            { status: 'awaiting_shipment', label: 'Chờ giao hàng', icon: '<i class="fas fa-box"></i>' },
-            { status: 'awaiting_shipment_packed', label: 'Đã đóng gói', icon: '<i class="fas fa-box-open"></i>' },
-            { status: 'awaiting_shipment_assigned', label: 'Đã gán shipper', icon: '<i class="fas fa-user-check"></i>' },
-            { status: 'shipped', label: 'Đã xuất kho', icon: '<i class="fas fa-shipping-fast"></i>' },
-            { status: 'out_for_delivery', label: 'Đang giao', icon: '<i class="fas fa-truck"></i>' },
-            { status: 'delivered', label: 'Giao thành công', icon: '<i class="fas fa-check-circle"></i>' }
+            { status: 'out_for_delivery', label: 'Đang giao hàng', icon: '<i class="fas fa-truck"></i>' },
+            { status: 'delivered', label: 'Giao hàng thành công', icon: '<i class="fas fa-check-circle"></i>' }
         ];
         // Xác định vị trí của trạng thái hiện tại trong mảng
         const currentStepIndex = progressSteps.findIndex(step => step.status === currentStatus);
@@ -936,14 +864,14 @@
             progressPercentage = (cancelledStepIndex / (stepsToShow.length - 1)) * 100;
         } else if (currentStatus === 'failed_delivery') {
             // Trạng thái giao hàng thất bại - thay thế bước "Giao thành công" bằng "Giao hàng thất bại"
-            stepsToShow[5] = { status: 'failed_delivery', label: 'Giao hàng thất bại', icon: '<i class="fas fa-exclamation-triangle"></i>' };
+            stepsToShow[3] = { status: 'failed_delivery', label: 'Giao hàng thất bại', icon: '<i class="fas fa-exclamation-triangle"></i>' };
             progressTitle = 'Giao hàng thất bại';
-            progressPercentage = (5 / (stepsToShow.length - 1)) * 100;
+            progressPercentage = (3 / (stepsToShow.length - 1)) * 100;
         } else if (currentStatus === 'returned') {
             // Trạng thái trả hàng - thay thế bước "Giao thành công" bằng "Đã trả hàng"
-            stepsToShow[5] = { status: 'returned', label: 'Đã trả hàng', icon: '<i class="fas fa-undo-alt"></i>' };
+            stepsToShow[3] = { status: 'returned', label: 'Đã trả hàng', icon: '<i class="fas fa-undo-alt"></i>' };
             progressTitle = 'Đơn hàng đã được trả lại';
-            progressPercentage = (5 / (stepsToShow.length - 1)) * 100;
+            progressPercentage = (3 / (stepsToShow.length - 1)) * 100;
         } else {
             // Trạng thái bình thường - tính toán phần trăm tiến trình
             if (currentStepIndex >= 0) {
@@ -954,14 +882,10 @@
                 progressTitle = 'Đơn hàng đã được giao thành công';
             } else if (currentStatus === 'out_for_delivery') {
                 progressTitle = 'Đơn hàng đang được giao';
-            } else if (currentStatus === 'shipped') {
-                progressTitle = 'Đơn hàng đã xuất kho';
-            } else if (currentStatus === 'awaiting_shipment_assigned') {
-                progressTitle = 'Đơn hàng đã gán shipper';
-            } else if (currentStatus === 'awaiting_shipment_packed') {
-                progressTitle = 'Đơn hàng đã đóng gói xong';
-            } else if (currentStatus === 'awaiting_shipment') {
-                progressTitle = 'Đơn hàng đang chờ giao';
+            } else if (currentStatus === 'processing') {
+                progressTitle = 'Đơn hàng đang được xử lý';
+            } else if (currentStatus === 'pending_confirmation') {
+                progressTitle = 'Đơn hàng đang chờ xác nhận';
             }
         }
                 // Tạo HTML cho progress bar
@@ -997,16 +921,16 @@
                     } else {
                         // Kiểm tra xem bước này đã hoàn thành chưa
                         const stepIndex = progressSteps.findIndex(s => s.status === step.status);
-                        
+
                         // Đối với trạng thái bình thường
                         if (currentStepIndex >= 0 && stepIndex >= 0 && stepIndex < currentStepIndex) {
                             stepClass += ' completed';
                         }
-                        
+
                         // Đối với trạng thái đặc biệt (cancelled, failed_delivery, returned)
                         if (currentStatus === 'cancelled' || currentStatus === 'failed_delivery' || currentStatus === 'returned') {
                             const currentSpecialIndex = stepsToShow.findIndex(s => s.status === currentStatus);
-                            
+
                             // Nếu bước này xuất hiện trước bước hiện tại trong danh sách hiển thị
                             if (index < currentSpecialIndex) {
                                 stepClass += ' completed';
@@ -1026,9 +950,76 @@
                 }).join('')}
             </div>
         `;
+
+        // Thêm thông tin fulfillments nếu có
+        if (fulfillments && fulfillments.length > 0) {
+            const fulfillmentsInfo = `
+                <div class="fulfillments-progress mt-6">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-shipping-fast text-blue-600 mr-2"></i>
+                        Trạng thái các gói hàng (${fulfillments.length} gói)
+                    </h4>
+                    <div class="space-y-3">
+                        ${fulfillments.map((fulfillment, index) => {
+                            const statusMap = {
+                                'pending': { text: 'Chờ xử lý', class: 'bg-orange-100 text-orange-800 border-orange-200' },
+                                'pending_confirmation': { text: 'Chờ xác nhận', class: 'bg-indigo-100 text-indigo-800 border-indigo-200' },
+                                'processing': { text: 'Đang xử lý', class: 'bg-blue-100 text-blue-800 border-blue-200' },
+                                'packed': { text: 'Đóng gói thành công', class: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
+                                'out_for_delivery': { text: 'Đang giao hàng', class: 'bg-purple-100 text-purple-800 border-purple-200' },
+                                'cancellation_requested': { text: 'Yêu cầu hủy', class: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+                                'delivered': { text: 'Giao hàng thành công', class: 'bg-green-100 text-green-800 border-green-200' },
+                                'cancelled': { text: 'Hủy', class: 'bg-red-100 text-red-800 border-red-200' },
+                                'failed_delivery': { text: 'Giao thất bại', class: 'bg-red-100 text-red-800 border-red-200' },
+                                'returned': { text: 'Trả hàng', class: 'bg-gray-100 text-gray-800 border-gray-200' }
+                            };
+
+                            // Hiển thị trạng thái thực tế của gói hàng
+                            let displayStatus = fulfillment.status;
+
+                            const status = statusMap[displayStatus] || { text: displayStatus, class: 'bg-gray-100 text-gray-800 border-gray-200' };
+                            const store = fulfillment.store_location;
+
+                            return `
+                                <div class="flex items-center justify-between p-3 border rounded-lg ${status.class}">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-box text-sm"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-medium text-sm">
+                                                Gói #${index + 1} - ${store ? store.name : 'Kho không xác định'}
+                                            </div>
+                                            ${fulfillment.tracking_code ?
+                                                `<div class="text-xs font-mono text-blue-600 mt-1">${fulfillment.tracking_code}</div>` :
+                                                '<div class="text-xs text-gray-500 mt-1">Chưa có mã vận đơn</div>'
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium">
+                                            ${status.text}
+                                        </span>
+                                        ${fulfillment.shipped_at ?
+                                            `<div class="text-xs text-gray-600 mt-1">Gửi: ${formatDate(fulfillment.shipped_at)}</div>` : ''
+                                        }
+                                        ${fulfillment.delivered_at ?
+                                            `<div class="text-xs text-gray-600 mt-1">Giao: ${formatDate(fulfillment.delivered_at)}</div>` : ''
+                                        }
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+
+            return progressBarHTML + fulfillmentsInfo;
+        }
+
         return progressBarHTML;
 	}
-    
+
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('vi-VN', {
@@ -1053,18 +1044,18 @@
     const formatDeliveryDate = (dateString) => {
         // Xử lý trường hợp ngày có thể là string hoặc date
         if (!dateString) return 'N/A';
-        
+
         // Nếu đã là định dạng dd/mm/yyyy thì trả về luôn
         if (typeof dateString === 'string' && dateString.includes('/')) {
             return dateString;
         }
-        
+
         // Nếu là ISO date hoặc timestamp thì format lại
         const date = new Date(dateString);
         if (isNaN(date.getTime())) {
             return dateString; // Trả về nguyên bản nếu không parse được
         }
-        
+
         return date.toLocaleDateString('vi-VN', {
             day: '2-digit',
             month: '2-digit',
@@ -1075,15 +1066,12 @@
     // Theo dõi đơn hàng đã xem (đơn đã cập nhật trạng thái)
     let viewedOrders = new Set(JSON.parse(localStorage.getItem('viewedOrders') || '[]'));
 
-    // Kiểm tra đơn hàng mới (tạo trong 24h qua và chưa xem)
+    // Kiểm tra đơn hàng mới: chỉ dựa vào việc đã 'được xử lý/xem' hay chưa
     const isNewOrder = (createdAt, orderId) => {
-        if (viewedOrders.has(orderId)) {
-            return false; // Đơn hàng đã được xem/cập nhật
-        }
-        const orderDate = new Date(createdAt);
-        const now = new Date();
-        const diffInHours = (now - orderDate) / (1000 * 60 * 60);
-        return diffInHours <= 24;
+        // Force JavaScript tính toán viewedOrders để tránh tối ưu hóa
+        const viewedOrdersArray = Array.from(viewedOrders);
+        const isNew = !viewedOrders.has(orderId);
+        return isNew;
     };
 
     // Đánh dấu đơn hàng đã xem
@@ -1096,11 +1084,11 @@
     const updateNewOrdersCount = (orders) => {
         const newOrdersCount = orders.filter(order => isNewOrder(order.created_at, order.id)).length;
         const countElement = document.getElementById('new-orders-count');
-        
+
         if (newOrdersCount > 0) {
             countElement.textContent = newOrdersCount;
             countElement.classList.remove('hidden');
-            
+
             // Thay đổi màu dựa trên số lượng
             countElement.classList.remove('bg-red-100', 'text-red-800', 'bg-orange-500', 'text-white', 'bg-red-500');
             if (newOrdersCount >= 10) {
@@ -1119,12 +1107,11 @@
         pending_confirmation: { text: "Chờ xác nhận", class: "status-pending_confirmation" },
         processing: { text: "Đang xử lý", class: "status-processing" },
         awaiting_shipment: { text: "Chờ giao hàng", class: "status-processing" },
-        awaiting_shipment_packed: { text: "Chờ vận chuyển: đã đóng gói xong", class: "status-awaiting_shipment_packed" },
-        awaiting_shipment_assigned: { text: "Chờ vận chuyển: Đã gán shipper", class: "status-awaiting_shipment_assigned" },
         shipped: { text: "Đã xuất kho", class: "status-shipped" },
         out_for_delivery: { text: "Đang giao hàng", class: "status-shipped" },
         delivered: { text: "Giao thành công", class: "status-delivered" },
         cancelled: { text: "Đã hủy", class: "status-cancelled" },
+        cancellation_requested: { text: "Yêu cầu hủy", class: "status-cancellation-requested"},
         returned: { text: "Đã trả hàng", class: "status-cancelled" },
         failed_delivery: { text: "Giao hàng thất bại", class: "status-cancelled" }
     };
@@ -1141,35 +1128,18 @@
     function renderOrderRow(order) {
         const orderStatus = statusMap[order.status] || { text: 'N/A', class: '' };
         const paymentStatus = paymentStatusMap[order.payment_status] || { text: 'N/A', class: '' };
-        
+
         // Kiểm tra đơn hàng mới
         const isNew = isNewOrder(order.created_at, order.id);
-        
-        // Xác định hiển thị shipper
-        let shipperDisplay = '<span class="text-gray-400 italic">Chưa gán</span>';
-        if (order.shipper && order.shipper.name) {
-            shipperDisplay = `<span class="text-gray-700 font-medium">${order.shipper.name}</span>`;
-        }
-        
-        // Chỉ hiển thị nút gán shipper cho đơn hàng giao tận nơi (không phải nhận tại cửa hàng)
-        let assignShipperButton = '';
-        if (order.status === 'awaiting_shipment_packed' && 
-            isDeliveryOrderNeedShipper(order)) {
-            assignShipperButton = `
-                <button onclick='showAssignShipperModal(${order.id}, "${order.order_code}")' 
-                        class="text-blue-600 hover:text-blue-900 font-medium text-lg ml-4" 
-                        title="Gán Shipper">
-                    <i class="fas fa-user-plus"></i>
-                </button>
-            `;
-        }
-        
+
+
+
         // Huy hiệu đơn hàng mới
         const newOrderBadge = isNew ? '<span class="new-order-badge">Mới</span>' : '';
-        
+
         // Lớp dòng
-        const rowClass = isNew ? 'new-order-row border-b hover:bg-blue-50' : 'bg-white border-b hover:bg-gray-50';
-        
+        const rowClass = isNew ? 'new-order-row border-b hover:bg-gray-50' : 'bg-white border-b hover:bg-gray-50';
+
         return `
             <tr class="${rowClass}" style="position: relative;">
                 ${newOrderBadge}
@@ -1182,7 +1152,6 @@
                 <td class="p-6"><span class="status-badge ${orderStatus.class}">${orderStatus.text}</span></td>
                 <td class="p-6"><span class="status-badge ${paymentStatus.class}">${paymentStatus.text}</span></td>
                 <td class="p-6 ${isNew ? 'font-bold' : ''}"><strong>${formatDateTime(order.created_at)}</strong></td>
-                <td class="p-6">${shipperDisplay}</td>
                 <td class="p-6 text-center">
                     <button onclick='viewOrder(${order.id})' class="text-indigo-600 hover:text-indigo-900 font-medium text-lg" title="Xem chi tiết">
                         <i class="fas fa-eye"></i>
@@ -1190,7 +1159,6 @@
                     <button onclick='showUpdateStatusModal(${order.id}, "${order.status}")' class="text-green-600 hover:text-green-900 font-medium text-lg ml-4" title="Cập nhật trạng thái">
                          <i class="fas fa-edit"></i>
                     </button>
-                    ${assignShipperButton}
                 </td>
             </tr>
         `;
@@ -1200,23 +1168,28 @@
     function renderTable(orders) {
         // Cập nhật số lượng đơn hàng mới
         updateNewOrdersCount(orders);
-        
+
         if (orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào.</td></tr>`;
             return;
         }
-        
-        // Áp dụng lọc phía client chỉ cho đơn hàng mới
+
+        // Áp dụng lọc phía client cho đơn hàng trong 24h
         let filteredOrders = orders;
         if (newOrdersOnlyFilter.checked) {
-            filteredOrders = orders.filter(order => isNewOrder(order.created_at, order.id));
+            filteredOrders = orders.filter(order => {
+                const orderDate = new Date(order.created_at);
+                const now = new Date();
+                const diffInHours = (now - orderDate) / (1000 * 60 * 60);
+                return diffInHours <= 24;
+            });
         }
-        
+
         if (filteredOrders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào phù hợp với bộ lọc.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào phù hợp với bộ lọc.</td></tr>`;
             return;
         }
-        
+
         tbody.innerHTML = filteredOrders.map(renderOrderRow).join('');
     }
 
@@ -1224,7 +1197,7 @@
     function renderPagination(paginationData) {
         const paginationInfo = document.getElementById('pagination-info');
         const paginationControls = document.getElementById('pagination-controls');
-        
+
         // Cập nhật thông tin phân trang
         if (paginationData.total > 0) {
             paginationInfo.innerHTML = `
@@ -1233,14 +1206,14 @@
         } else {
             paginationInfo.innerHTML = 'Không có dữ liệu';
         }
-        
+
         // Cập nhật trạng thái toàn cục
         currentPage = paginationData.current_page;
         totalPages = paginationData.last_page;
-        
+
         // Tạo nút điều khiển phân trang
         let paginationHtml = '';
-        
+
         // Nút trước
         if (currentPage > 1) {
             paginationHtml += `
@@ -1255,11 +1228,11 @@
                 </button>
             `;
         }
-        
+
         // Số trang
         const startPage = Math.max(1, currentPage - 2);
         const endPage = Math.min(totalPages, currentPage + 2);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             if (i === currentPage) {
                 paginationHtml += `
@@ -1275,7 +1248,7 @@
                 `;
             }
         }
-        
+
         // Nút tiếp
         if (currentPage < totalPages) {
             paginationHtml += `
@@ -1290,16 +1263,16 @@
                 </button>
             `;
         }
-        
+
         paginationControls.innerHTML = paginationHtml;
     }
 
     async function goToPage(page) {
         if (page < 1 || page > totalPages || page === currentPage) return;
-        
+
         const formData = new FormData();
         formData.append('page', page);
-        
+
         // Thêm bộ lọc hiện tại
         if (searchInput.value) formData.append('search', searchInput.value);
         if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
@@ -1314,7 +1287,7 @@
                     'X-CSRF-TOKEN': CONFIG.csrfToken
                 }
             });
-            
+
             const result = await response.json();
             if (result.success) {
                 // Lưu dữ liệu hiện tại để lọc phía client
@@ -1335,12 +1308,18 @@
         try {
             const response = await fetch(CONFIG.routes.show.replace(':id', orderId));
             const result = await response.json();
-            
+
             if (result.success) {
                 const order = result.data;
                 populateModal(order);
                 modal.classList.add('is-open');
                 modal.querySelector('div').classList.remove('scale-95');
+                // Đánh dấu đơn hàng đã xem khi mở modal (chỉ với đơn đã hủy)
+                if (order.status === 'cancelled') {
+                    markOrderAsViewed(orderId);
+                    // Làm mới bảng để cập nhật hiển thị highlight
+                    refreshCurrentPage();
+                }
             }
         } catch (error) {
             console.error('Error fetching order details:', error);
@@ -1353,6 +1332,12 @@
     }
 
     function populateModal(order) {
+        console.log('DEBUG: Order data received:', order);
+        console.log('DEBUG: Order fulfillments:', order.fulfillments);
+        if (order.fulfillments && order.fulfillments.length > 0) {
+            console.log('DEBUG: First fulfillment items:', order.fulfillments[0].items);
+        }
+
         document.getElementById('modal-order-code').textContent = order.order_code || 'N/A';
         document.getElementById('modal-customer-name').textContent = order.customer_name || 'N/A';
         document.getElementById('modal-customer-email').textContent = order.customer_email || 'N/A';
@@ -1376,7 +1361,7 @@
         //     }
         // }
 
-        // Hiển thị riêng 
+        // Hiển thị riêng
         if (order.shipping_province && order.shipping_province.name_with_type) {
             addressParts.push(`<strong>Tỉnh/Thành phố:</strong> ${order.shipping_province.name_with_type}`);
         }
@@ -1389,10 +1374,10 @@
         if (order.shipping_address_line2) {
             addressParts.push(`<strong>Địa chỉ 2:</strong> ${order.shipping_address_line2}`);
         }
-        
 
-        
-        document.getElementById('modal-shipping-address').innerHTML = 
+
+
+        document.getElementById('modal-shipping-address').innerHTML =
             addressParts.length > 0 ? addressParts.join('<br>') : 'Không có thông tin địa chỉ';
 
         // Hiển thị thông tin cửa hàng nếu là đơn hàng nhận tại cửa hàng
@@ -1401,7 +1386,7 @@
             const store = order.store_location;
             document.getElementById('modal-store-name').textContent = store.name || 'N/A';
             document.getElementById('modal-store-phone').textContent = store.phone || 'N/A';
-            
+
             // Tạo địa chỉ đầy đủ của cửa hàng
             let storeAddressParts = [];
             if (store.address) {
@@ -1416,10 +1401,10 @@
             if (store.province && store.province.name_with_type) {
                 storeAddressParts.push(store.province.name_with_type);
             }
-            
-            document.getElementById('modal-store-address').textContent = 
+
+            document.getElementById('modal-store-address').textContent =
                 storeAddressParts.length > 0 ? storeAddressParts.join(', ') : 'N/A';
-            
+
             storeInfo.classList.remove('hidden');
         } else {
             storeInfo.classList.add('hidden');
@@ -1467,7 +1452,7 @@
             shipperNotesSection.classList.add('hidden');
         }
         document.getElementById('modal-order-date').textContent = order.created_at ? formatDate(order.created_at) : 'N/A';
-        
+
         const orderStatus = statusMap[order.status] || { text: 'N/A', class: '' };
         const modalOrderStatusEl = document.getElementById('modal-order-status');
         modalOrderStatusEl.textContent = orderStatus.text;
@@ -1483,14 +1468,14 @@
         // Hiển thị thông tin thời gian giao hàng nếu có
         const deliveryTimeInfo = document.getElementById('modal-delivery-time-info');
         const deliverySlotInfo = document.getElementById('modal-delivery-slot-info');
-        
+
         if (order.desired_delivery_date) {
             document.getElementById('modal-desired-date').textContent = formatDeliveryDate(order.desired_delivery_date);
             deliveryTimeInfo.classList.remove('hidden');
         } else {
             deliveryTimeInfo.classList.add('hidden');
         }
-        
+
         if (order.desired_delivery_time_slot) {
             document.getElementById('modal-desired-time-slot').textContent = order.desired_delivery_time_slot;
             deliverySlotInfo.classList.remove('hidden');
@@ -1525,8 +1510,8 @@
         const cancellationTitle = document.getElementById('modal-cancellation-title');
         const cancellationReason = document.getElementById('modal-cancellation-reason');
         const cancellationDate = document.getElementById('modal-cancellation-date');
-        if ((order.status === 'cancelled' || order.status === 'failed_delivery' || order.status === 'returned') && 
-            (order.cancellation_reason || order.failed_delivery_reason)) { 
+        if ((order.status === 'cancelled' || order.status === 'failed_delivery' || order.status === 'returned') &&
+            (order.cancellation_reason || order.failed_delivery_reason)) {
             // Xác định tiêu đề và lý do phù hợp
             let title = 'Lý do hủy đơn hàng:';
             let reason = order.cancellation_reason || 'Không có thông tin.';
@@ -1552,145 +1537,253 @@
 
         // Hiển thị progress bar trạng thái đơn hàng
         const progressBarContainer = document.getElementById('order-progress-bar');
-        progressBarContainer.innerHTML = createOrderProgressBar(order.status);
+        progressBarContainer.innerHTML = createOrderProgressBar(order.status, order.fulfillments);
 
-        // Hiển thị sản phẩm
-        const itemsTbody = document.getElementById('modal-order-items');
-        if (order.items && Array.isArray(order.items)) {
+        // Thông tin sản phẩm đã được tích hợp vào phần fulfillments
 
-        itemsTbody.innerHTML = order.items.map(item => {
-            // Chuẩn bị ảnh sản phẩm - kiểm tra nhiều nguồn
-            let productImage = null;
-            if (item.product_variant?.primary_image?.path) {
-                productImage = `/storage/${item.product_variant.primary_image.path}`;
-            } else if (item.product_variant?.product?.cover_image?.path) {
-                productImage = `/storage/${item.product_variant.product.cover_image.path}`;
-            } else if (item.image_url) {
-                productImage = item.image_url;
-            } else if (item.product_image) {
-                productImage = item.product_image;
-            }
-            
-            // Chuẩn bị link sản phẩm cho admin - liên kết đến trang chỉnh sửa sản phẩm
-            let productLink = '#';
-            if (item.product_variant?.product?.id) {
-                productLink = '/admin/products/' + item.product_variant.product.id + '/edit';
-            } else if (item.product_id) {
-                productLink = '/admin/products/' + item.product_id + '/edit';
-            }
 
-            // Chuẩn bị thông tin biến thể từ variant_attributes
-            let variantInfo = '';
-            if (item.variant_attributes && item.variant_attributes !== null) {
-                let variantAttrs = null;
-                
-                                 // Parse JSON string if needed
-                 if (typeof item.variant_attributes === 'string') {
-                     try {
-                         // Thử phân tích JSON đầu tiên
-                         variantAttrs = JSON.parse(item.variant_attributes);
-                     } catch (e) {
-                         // Nếu phân tích JSON thất bại, thử giải mã ký tự HTML trước
-                         try {
-                             const decodedString = item.variant_attributes.replace(/\\u([0-9a-fA-F]{4})/g, (match, grp) => 
-                                 String.fromCharCode(parseInt(grp, 16))
-                             );
-                             variantAttrs = JSON.parse(decodedString);
-                         } catch (e2) {
-                             console.log('Failed to parse variant_attributes:', item.variant_attributes);
-                             variantAttrs = null;
-                         }
-                     }
-                 } else if (typeof item.variant_attributes === 'object') {
-                     variantAttrs = item.variant_attributes;
-                 }
-                
-                if (variantAttrs && Object.keys(variantAttrs).length > 0) {
-                    const variants = Object.entries(variantAttrs)
-                        .filter(([key, value]) => value !== null && value !== '' && value !== undefined)
-                        .map(([key, value]) => {
-                            // Dịch tiếng Việt cho các loại biến thể phổ biến
-                            const translations = {
-                                'color': 'Màu sắc',
-                                'size': 'Kích cỡ', 
-                                'material': 'Chất liệu',
-                                'style': 'Kiểu dáng',
-                                'weight': 'Trọng lượng',
-                                'capacity': 'Dung tích',
-                                'ram': 'RAM',
-                                'storage': 'Bộ nhớ',
-                                'screen_size': 'Màn hình',
-                                'processor': 'Bộ xử lý',
-                                'brand': 'Thương hiệu',
-                                'dung lượng lưu trữ': 'Dung lượng',
-                                'kích thước màn hình': 'Màn hình'
-                            };
-                            const translatedKey = translations[key.toLowerCase()] || key;
-                            return `${translatedKey}: <span class="font-medium">${value}</span>`;
-                        })
-                        .join(' • ');
-                    if (variants) {
-                        variantInfo = `<div class="text-xs text-gray-500 mt-1">${variants}</div>`;
-                    }
+        // Code hiển thị sản phẩm đã được loại bỏ - thông tin sản phẩm hiện được hiển thị trong phần fulfillments
+
+        // Hiển thị thông tin fulfillments (gói hàng)
+        const fulfillmentsSection = document.getElementById('modal-fulfillments-section');
+        const fulfillmentsList = document.getElementById('modal-fulfillments-list');
+
+        if (order.fulfillments && order.fulfillments.length > 0) {
+            fulfillmentsList.innerHTML = order.fulfillments.map((fulfillment, index) => {
+                const store = fulfillment.store_location;
+                let storeAddress = 'N/A';
+                if (store) {
+                    const addressParts = [];
+                    if (store.address) addressParts.push(store.address);
+                    if (store.ward && store.ward.name_with_type) addressParts.push(store.ward.name_with_type);
+                    if (store.district && store.district.name_with_type) addressParts.push(store.district.name_with_type);
+                    if (store.province && store.province.name_with_type) addressParts.push(store.province.name_with_type);
+                    storeAddress = addressParts.join(', ');
                 }
-            }
-            
-            // Lấy SKU từ biến thể nếu có
-            const productSku = item.product_variant?.sku || item.sku || item.product_sku || null;
-            
-            return `
-                <tr class="border-b last:border-none hover:bg-gray-50">
-                    <td class="p-3">
-                                                 <div class="flex items-center space-x-3">
-                             <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                 ${productImage ? 
-                                     `<img src="${productImage}" 
-                                           alt="${item.product_name || 'Sản phẩm'}" 
-                                           class="w-full h-full object-cover"
-                                           onerror="this.parentElement.innerHTML='<div class=\\'product-image-placeholder\\' style=\\'width:100%;height:100%\\'><i class=\\'fas fa-image text-2xl\\'></i></div>'">` :
-                                     `<div class="product-image-placeholder" style="width:100%;height:100%">
-                                         <i class="fas fa-box text-2xl"></i>
-                                      </div>`
-                                 }
-                             </div>
-                                                         <div class="flex-1 min-w-0">
-                                 ${productLink !== '#' ? 
-                                     `<a href="${productLink}" 
-                                        target="_blank" 
-                                        class="font-medium text-indigo-600 hover:text-indigo-900 hover:underline line-clamp-2"
-                                        title="Chỉnh sửa sản phẩm (mở tab mới)"
-                                        onclick="event.stopPropagation();">
-                                         ${item.product_name || 'N/A'}
-                                      </a>` :
-                                     `<span class="font-medium text-gray-800 line-clamp-2">${item.product_name || 'N/A'}</span>`
-                                 }
-                                 ${variantInfo}
-                                 ${productSku ? `<div class="text-xs text-gray-400 mt-1">SKU: ${productSku}</div>` : ''}
-                             </div>
-                        </div>
-                    </td>
-                    <td class="p-3 text-center font-medium">${item.quantity || 0}</td>
-                    <td class="p-3 text-right font-medium">${formatCurrency(item.price || 0)}</td>
-                    <td class="p-3 text-right font-semibold text-indigo-600">${formatCurrency(item.total_price || 0)}</td>
-                </tr>
-            `;
-        }).join('');
-        } else {
-            itemsTbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-gray-500">Không có sản phẩm</td></tr>';
-        }
 
-        // Hiển thị tổng tiền
-        document.getElementById('modal-sub-total').textContent = formatCurrency(order.sub_total || 0);
-        document.getElementById('modal-shipping-fee').textContent = formatCurrency(order.shipping_fee || 0);
-        document.getElementById('modal-discount').textContent = `- ${formatCurrency(order.discount_amount || 0)}`;
-        document.getElementById('modal-grand-total').textContent = formatCurrency(order.grand_total || 0);
+                const statusMap = {
+                    'pending': { text: 'Chờ xử lý', class: 'bg-orange-100 text-orange-800' },
+                    'pending_confirmation': { text: 'Chờ xác nhận', class: 'bg-indigo-100 text-indigo-800' },
+                    'processing': { text: 'Đang xử lý', class: 'bg-blue-100 text-blue-800' },
+                    'packed': { text: 'Đóng gói thành công', class: 'bg-yellow-100 text-yellow-800' },
+                    'out_for_delivery': { text: 'Đang giao hàng', class: 'bg-purple-100 text-purple-800' },
+                    'delivered': { text: 'Giao hàng thành công', class: 'bg-green-100 text-green-800' },
+                    'cancellation_requested': { text: 'Yêu cầu hủy', class: 'bg-yellow-100 text-yellow-800' },
+                    'cancelled': { text: 'Đã hủy', class: 'bg-red-100 text-red-800' },
+                    'failed_delivery': { text: 'Giao thất bại', class: 'bg-red-100 text-red-800' },
+                    'returned': { text: 'Trả hàng', class: 'bg-gray-100 text-gray-800' }
+                };
+
+                // Hiển thị trạng thái thực tế của gói hàng
+                let displayStatus = fulfillment.status;
+
+                const status = statusMap[displayStatus] || { text: displayStatus, class: 'bg-gray-100 text-gray-800' };
+
+                // Lấy danh sách sản phẩm trong fulfillment này
+                console.log('DEBUG: Fulfillment data:', fulfillment);
+                console.log('DEBUG: Fulfillment items:', fulfillment.items);
+                const fulfillmentItems = fulfillment.items || [];
+
+                let productsHtml = '';
+                if (fulfillmentItems.length > 0) {
+                    const itemsHtml = fulfillmentItems.map(fulfillmentItem => {
+                        // Thử cả hai cách truy cập: snake_case và camelCase
+                        const orderItem = fulfillmentItem.order_item || fulfillmentItem.orderItem;
+                        if (!orderItem) {
+                            console.log('No order item found in fulfillment item');
+                            return '';
+                        }
+
+                        // Chuẩn bị ảnh sản phẩm
+                        let productImage = null;
+                        const productVariant = orderItem.product_variant || orderItem.productVariant;
+                        if (productVariant?.primary_image?.path || productVariant?.primaryImage?.path) {
+                            const primaryImage = productVariant.primary_image || productVariant.primaryImage;
+                            productImage = `/storage/${primaryImage.path}`;
+                        } else if (productVariant?.product?.cover_image?.path || productVariant?.product?.coverImage?.path) {
+                            const coverImage = productVariant.product.cover_image || productVariant.product.coverImage;
+                            productImage = `/storage/${coverImage.path}`;
+                        }
+
+                        // Chuẩn bị thông tin biến thể
+                        let variantInfo = '';
+                        if (orderItem.variant_attributes && orderItem.variant_attributes !== null) {
+                            let variantAttrs = null;
+                            if (typeof orderItem.variant_attributes === 'string') {
+                                try {
+                                    variantAttrs = JSON.parse(orderItem.variant_attributes);
+                                } catch (e) {
+                                    console.log('Failed to parse variant_attributes:', orderItem.variant_attributes);
+                                }
+                            } else if (typeof orderItem.variant_attributes === 'object') {
+                                variantAttrs = orderItem.variant_attributes;
+                            }
+
+                            if (variantAttrs && Object.keys(variantAttrs).length > 0) {
+                                const variants = Object.entries(variantAttrs)
+                                    .filter(([key, value]) => value !== null && value !== '' && value !== undefined)
+                                    .map(([key, value]) => `${key}: ${value}`)
+                                    .join(' • ');
+                                if (variants) {
+                                    variantInfo = `<div class="text-xs text-gray-500 mt-1">${variants}</div>`;
+                                }
+                            }
+                        }
+
+                        return `
+                            <tr class="border-b last:border-none hover:bg-gray-50">
+                                <td class="p-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                            ${productImage ?
+                                                `<img src="${productImage}"
+                                                      alt="${orderItem.product_name || 'Sản phẩm'}"
+                                                      class="w-full h-full object-cover"
+                                                      onerror="this.parentElement.innerHTML='<div class=\'product-image-placeholder\' style=\'width:100%;height:100%\'><i class=\'fas fa-image text-lg\'></i></div>'">` :
+                                                `<div class="product-image-placeholder" style="width:100%;height:100%">
+                                                    <i class="fas fa-box text-lg"></i>
+                                                 </div>`
+                                            }
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <span class="font-medium text-gray-800 line-clamp-2">${orderItem.product_name || 'N/A'}</span>
+                                            ${variantInfo}
+                                            ${orderItem.product_variant?.sku ? `<div class="text-xs text-gray-400 mt-1">SKU: ${orderItem.product_variant.sku}</div>` : ''}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="p-3 text-center font-medium">${fulfillmentItem.quantity || 0}</td>
+                                <td class="p-3 text-right font-medium">${formatCurrency(orderItem.price || 0)}</td>
+                                <td class="p-3 text-right font-semibold text-indigo-600">${formatCurrency((orderItem.price || 0) * (fulfillmentItem.quantity || 0))}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    productsHtml = `
+                        <div class="mt-4">
+                            <h5 class="font-medium text-gray-800 mb-3 flex items-center">
+                                <i class="fas fa-box text-blue-600 mr-2"></i>
+                                Sản phẩm trong gói hàng
+                            </h5>
+                            <div class="border rounded-lg overflow-hidden">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
+                                            <th class="p-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng</th>
+                                            <th class="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn giá</th>
+                                            <th class="p-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Thành tiền</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${itemsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    productsHtml = `
+                        <div class="mt-4">
+                            <p class="text-gray-500 text-sm italic">Không có sản phẩm trong gói hàng này</p>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="bg-white border border-gray-200 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-3">
+                            <h4 class="font-semibold text-gray-800">Gói hàng #${index + 1}</h4>
+                            <span class="px-2 py-1 rounded-full text-xs font-medium ${status.class}">
+                                ${status.text}
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                            <div>
+                                <p class="text-gray-600 mb-1"><strong>Mã vận đơn:</strong></p>
+                                <p class="font-mono text-blue-600 font-semibold">${fulfillment.tracking_code || 'Chưa có'}</p>
+                            </div>
+
+                            <div>
+                                <p class="text-gray-600 mb-1"><strong>Đơn vị vận chuyển:</strong></p>
+                                <p>${fulfillment.shipping_carrier || 'N/A'}</p>
+                            </div>
+
+                            <div>
+                                <p class="text-gray-600 mb-1"><strong>Người vận chuyển:</strong></p>
+                                <p>${order.shipper ? order.shipper.name : 'Chưa phân công'}</p>
+                                ${order.shipper && order.shipper.phone_number ? `<p class="text-xs text-gray-500">SĐT: ${order.shipper.phone_number}</p>` : ''}
+                                ${order.shipper && order.shipper.email ? `<p class="text-xs text-gray-500">Email: ${order.shipper.email}</p>` : ''}
+                            </div>
+
+                            <div>
+                                <p class="text-gray-600 mb-1"><strong>Kho xuất hàng:</strong></p>
+                                <p class="font-medium">${store ? store.name : 'N/A'}</p>
+                                <p class="text-gray-500 text-xs">${storeAddress}</p>
+                            </div>
+
+                            ${fulfillment.shipped_at ? `
+                                <div>
+                                    <p class="text-gray-600 mb-1"><strong>Ngày gửi hàng:</strong></p>
+                                    <p>${formatDate(fulfillment.shipped_at)}</p>
+                                </div>
+                            ` : ''}
+
+                            ${fulfillment.delivered_at ? `
+                                <div>
+                                    <p class="text-gray-600 mb-1"><strong>Ngày giao hàng:</strong></p>
+                                    <p>${formatDate(fulfillment.delivered_at)}</p>
+                                </div>
+                            ` : ''}
+
+                            ${fulfillment.estimated_delivery_date ? `
+                                <div>
+                                    <p class="text-gray-600 mb-1"><strong>Dự kiến giao hàng:</strong></p>
+                                    <p>${formatDate(fulfillment.estimated_delivery_date)}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        ${productsHtml}
+                    </div>
+                `;
+            }).join('');
+
+            fulfillmentsSection.style.display = 'block';
+        } else {
+            fulfillmentsSection.style.display = 'none';
+        }
+        const actionButtonContainer = document.getElementById('modal-action-buttons');
+    actionButtonContainer.innerHTML = ''; // Xóa các nút cũ trước khi thêm mới
+
+    // Kiểm tra điều kiện ngay tại JavaScript
+    if (order.status === 'cancellation_requested' && order.cancellation_request) {
+        // Tạo một thẻ <a> mới
+        const processButton = document.createElement('a');
+
+        // Thiết lập đường dẫn và các class
+        // Lưu ý: chúng ta đang tự tạo URL vì route() của Laravel không dùng được ở đây
+        processButton.href = `/admin/orders/cancellation/${order.cancellation_request.id}`;
+        processButton.className = 'px-5 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-semibold flex items-center space-x-2';
+
+        // Thêm nội dung cho nút
+        processButton.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span>Xử lý Yêu cầu Hủy</span>`;
+
+        // Chèn nút vào vị trí đã tạo
+        actionButtonContainer.appendChild(processButton);
     }
+
+        // Thông tin tổng tiền đã được tích hợp vào phần fulfillments
+    }
+
+
 
     function closeModal() {
         modal.classList.remove('is-open');
         modal.querySelector('div').classList.add('scale-95');
     }
-    
+
     // Đóng modal khi nhấn phím Escape
     window.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
@@ -1705,12 +1798,12 @@
     const fromDateFilter = document.getElementById('from-date');
     const toDateFilter = document.getElementById('to-date');
     const newOrdersOnlyFilter = document.getElementById('new-orders-only');
-    
+
     async function refreshCurrentPage() {
         // Giữ nguyên trang và bộ lọc khi làm mới
         const formData = new FormData();
         formData.append('page', currentPage);
-        
+
         if (searchInput.value) formData.append('search', searchInput.value);
         if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
         if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
@@ -1724,7 +1817,7 @@
                     'X-CSRF-TOKEN': CONFIG.csrfToken
                 }
             });
-            
+
             const result = await response.json();
             if (result.success) {
                 // Lưu dữ liệu hiện tại để lọc phía client
@@ -1737,13 +1830,13 @@
             showToast('Không thể làm mới dữ liệu. Vui lòng tải lại trang.', 'warning', 'Cảnh báo');
         }
     }
-    
+
     async function applyFilters() {
         const formData = new FormData();
-        
+
         // Đặt lại về trang 1 khi áp dụng bộ lọc
         formData.append('page', 1);
-        
+
         if (searchInput.value) formData.append('search', searchInput.value);
         if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
         if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
@@ -1757,7 +1850,7 @@
                     'X-CSRF-TOKEN': CONFIG.csrfToken
                 }
             });
-            
+
             const result = await response.json();
             if (result.success) {
                 // Lưu dữ liệu hiện tại để lọc phía client
@@ -1770,7 +1863,7 @@
             showToast('Không thể áp dụng bộ lọc. Vui lòng thử lại hoặc làm mới trang.', 'warning', 'Lọc dữ liệu thất bại');
         }
     }
-    
+
     document.getElementById('apply-filters').addEventListener('click', applyFilters);
     document.getElementById('clear-filters').addEventListener('click', () => {
         searchInput.value = '';
@@ -1786,14 +1879,14 @@
     document.getElementById('refresh-orders').addEventListener('click', () => {
         const refreshButton = document.getElementById('refresh-orders');
         const icon = refreshButton.querySelector('i');
-        
+
         // Thêm hiệu ứng quay
         icon.classList.add('fa-spin');
         refreshButton.disabled = true;
-        
+
         // Làm mới dữ liệu
         refreshCurrentPage();
-        
+
         // Gỡ hiệu ứng quay sau 1 giây
         setTimeout(() => {
             icon.classList.remove('fa-spin');
@@ -1817,7 +1910,7 @@
                     'X-CSRF-TOKEN': CONFIG.csrfToken
                 }
             });
-            
+
             const result = await response.json();
             if (result.success) {
                 // Lưu dữ liệu hiện tại để lọc phía client
@@ -1838,11 +1931,11 @@
     // --- HỆ THỐNG THÔNG BÁO TOAST ---
     function showToast(message, type = 'success', title = null) {
         const toastContainer = document.getElementById('toast-container');
-        
+
         // Xác định tiêu đề và biểu tượng dựa trên loại
         let toastTitle = title;
         let icon = '';
-        
+
         if (!toastTitle) {
             switch(type) {
                 case 'success':
@@ -1862,7 +1955,7 @@
                     icon = 'ℹ';
             }
         }
-        
+
         // Tạo phần tử toast
         const toast = document.createElement('div');
         toast.className = `toast ${type}`;
@@ -1879,21 +1972,21 @@
                 </svg>
             </button>
         `;
-        
+
         // Thêm vào vùng chứa
         toastContainer.appendChild(toast);
-        
+
         // Kích hoạt hiệu ứng
         setTimeout(() => {
             toast.classList.add('show');
         }, 100);
-        
+
         // Tự động xóa sau 5 giây
         setTimeout(() => {
             removeToast(toast);
         }, 5000);
     }
-    
+
     function removeToast(toast) {
         if (toast && toast.parentElement) {
             toast.classList.add('hide');
@@ -1911,15 +2004,15 @@
 
     function showUpdateStatusModal(orderId, currentStatus) {
         currentOrderId = orderId;
-        
+
         // Tìm dữ liệu đơn hàng từ sessionStorage
         const currentData = JSON.parse(sessionStorage.getItem('currentOrdersData') || '[]');
         const orderData = currentData.find(order => order.id == orderId);
-        
+
         let orderCode = '';
         let isPickup = false;
         let hasShipper = false;
-        
+
         if (orderData) {
             orderCode = orderData.order_code;
             isPickup = isPickupOrder(orderData);
@@ -1940,17 +2033,17 @@
         document.getElementById('new-status').setAttribute('data-current-status', currentStatus);
         document.getElementById('admin-note').value = '';
         document.getElementById('cancellation-reason').value = '';
-        
+
         // Điều chỉnh dropdown dựa trên loại đơn hàng
         adjustStatusDropdownByOrderType(isPickup);
-        
+
         // Lưu thông tin để validation
         updateStatusModal.dataset.isPickup = isPickup;
         updateStatusModal.dataset.hasShipper = hasShipper;
-        
+
         // Hiện/ẩn trường lý do hủy
         toggleCancellationField(currentStatus);
-        
+
         updateStatusModal.classList.add('is-open');
         updateStatusModal.querySelector('div').classList.remove('scale-95');
     }
@@ -1978,7 +2071,7 @@
     function adjustStatusDropdownByOrderType(isPickup) {
         const statusSelect = document.getElementById('new-status');
         const deliveryOnlyOptions = statusSelect.querySelectorAll('.delivery-only');
-        
+
         if (isPickup) {
             // Ẩn các trạng thái chỉ dành cho giao hàng
             deliveryOnlyOptions.forEach(option => {
@@ -1996,7 +2089,7 @@
         const cancellationField = document.getElementById('cancellation-reason-field');
         const cancellationTextarea = document.getElementById('cancellation-reason');
         const fieldLabel = cancellationField.querySelector('label');
-        
+
         if (status === 'cancelled') {
             cancellationField.style.display = 'block';
             cancellationTextarea.setAttribute('required', 'required');
@@ -2024,30 +2117,24 @@
         const currentStatus = document.getElementById('new-status').getAttribute('data-current-status');
         const isPickup = updateStatusModal.dataset.isPickup === 'true';
         const hasShipper = updateStatusModal.dataset.hasShipper === 'true';
-        
+
         if (!newStatus) {
             showToast('Vui lòng chọn trạng thái hợp lệ', 'error');
             return false;
         }
-        
-        // Ngăn chuyển từ 'processing' sang trạng thái khác mà không qua trạm đóng gói
-        if (currentStatus === 'processing' && newStatus !== 'processing' && newStatus !== 'cancelled') {
-            showToast('Đơn hàng đang xử lý phải được xác nhận tại Trạm Đóng Gói trước khi chuyển sang trạng thái khác', 'error');
+
+        // Kiểm tra shipper cho đơn hàng giao tận nơi khi chuyển sang 'out_for_delivery'
+        if (!isPickup && newStatus === 'out_for_delivery' && !hasShipper) {
+            showToast('Vui lòng gán shipper trước khi chuyển sang trạng thái "Đang giao hàng"', 'error');
             return false;
         }
-        
-        // Kiểm tra shipper cho đơn hàng giao tận nơi (không phải pickup)
-        if (!isPickup && newStatus === 'shipped' && !hasShipper) {
-            showToast('Vui lòng gán shipper trước khi chuyển sang trạng thái "Đã xuất kho"', 'error');
+
+        // Chỉ cho phép hủy đơn hàng khi đơn hàng đang ở trạng thái "pending_confirmation"
+        if (newStatus === 'cancelled' && currentStatus !== 'pending_confirmation') {
+            showToast('Chỉ có thể hủy đơn hàng ở trạng thái "Chờ xác nhận"', 'error');
             return false;
         }
-        
-        // Kiểm tra logic chuyển trạng thái cho trường hợp cùng tỉnh
-        if (!isPickup && newStatus === 'awaiting_shipment_assigned' && !hasShipper) {
-            showToast('Vui lòng gán shipper trước khi chuyển sang trạng thái "Đã gán shipper"', 'error');
-            return false;
-        }
-        
+
         if (newStatus === 'cancelled') {
             const cancellationReason = document.getElementById('cancellation-reason').value;
             if (!cancellationReason.trim()) {
@@ -2055,7 +2142,7 @@
                 return false;
             }
         }
-        
+
         if (newStatus === 'failed_delivery') {
             const reasonField = document.getElementById('cancellation-reason').value;
             if (!reasonField.trim()) {
@@ -2063,7 +2150,7 @@
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -2075,7 +2162,7 @@
     // Xử lý gửi form cập nhật trạng thái
     document.getElementById('update-status-form').addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         if (!currentOrderId) {
             showToast('Không xác định được đơn hàng cần cập nhật.', 'error', 'Lỗi hệ thống');
             return;
@@ -2099,7 +2186,7 @@
         } else if (status === 'failed_delivery') {
             requestData.failed_delivery_reason = formData.get('failed_delivery_reason') || formData.get('cancellation_reason');
         }
-        
+
         try {
             const response = await fetch(CONFIG.routes.updateStatus.replace(':id', currentOrderId), {
                 method: 'PATCH',
@@ -2112,17 +2199,17 @@
             });
 
             const result = await response.json();
-            
+
             if (response.ok && result.success) {
                 // Hiển thị thông báo ngắn gọn
                 showToast('Cập nhật trạng thái thành công', 'success');
-                
+
                 // Đánh dấu đơn hàng này đã xem (bỏ đánh dấu "mới")
                 markOrderAsViewed(currentOrderId);
-                
+
                 // Đóng modal
                 closeUpdateStatusModal();
-                
+
                 // Làm mới trang hiện tại thay vì về trang 1
                 refreshCurrentPage();
             } else {
@@ -2160,161 +2247,7 @@
         }
     });
 
-    // --- XỬ LÝ MODAL GÁN SHIPPER ---
-    const assignShipperModal = document.getElementById('assign-shipper-modal');
-    let currentAssignOrderId = null;
-    let shippersCache = null; // Bộ nhớ tạm cho danh sách shipper
 
-    async function showAssignShipperModal(orderId, orderCode) {
-        currentAssignOrderId = orderId;
-        
-        // Đặt mã đơn hàng
-        document.getElementById('assign-shipper-order-code').textContent = orderCode;
-        
-        // Đặt lại form
-        document.getElementById('shipper-select').value = '';
-        
-        // Hiện modal
-        assignShipperModal.classList.add('is-open');
-        assignShipperModal.querySelector('div').classList.remove('scale-95');
-        
-        // Tải danh sách shipper theo warehouse của đơn hàng
-        await loadShippers(orderId);
-    }
-
-    function closeAssignShipperModal() {
-        assignShipperModal.classList.remove('is-open');
-        assignShipperModal.querySelector('div').classList.add('scale-95');
-        currentAssignOrderId = null;
-    }
-
-    async function loadShippers(orderId = null) {
-        const shipperSelect = document.getElementById('shipper-select');
-        const loadingDiv = document.getElementById('shipper-loading');
-        
-        // Hiện loading
-        loadingDiv.style.display = 'block';
-        shipperSelect.disabled = true;
-        
-        try {
-            // Tạo URL với order_id nếu có
-            let url = CONFIG.routes.getShippers;
-            if (orderId) {
-                url += `?order_id=${orderId}`;
-                // Reset cache khi có order_id để lấy shipper theo warehouse
-                shippersCache = null;
-            }
-            
-            // Dùng cache nếu có và không có order_id
-            if (shippersCache && !orderId) {
-                populateShipperSelect(shippersCache);
-                return;
-            }
-            
-            const response = await fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': CONFIG.csrfToken
-                }
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                if (!orderId) {
-                    shippersCache = result.data; // Chỉ cache khi không có order_id
-                }
-                populateShipperSelect(result.data);
-            } else {
-                showToast('Không thể tải danh sách shipper.', 'error', 'Lỗi tải dữ liệu');
-            }
-        } catch (error) {
-            console.error('Error loading shippers:', error);
-            showToast('Lỗi kết nối khi tải danh sách shipper.', 'error', 'Lỗi kết nối');
-        } finally {
-            loadingDiv.style.display = 'none';
-            shipperSelect.disabled = false;
-        }
-    }
-
-    function populateShipperSelect(shippers) {
-        const shipperSelect = document.getElementById('shipper-select');
-        
-        // Xóa các lựa chọn cũ trừ lựa chọn đầu tiên
-        shipperSelect.innerHTML = '<option value="">-- Chọn Shipper --</option>';
-        
-        // Thêm lựa chọn shipper
-        shippers.forEach(shipper => {
-            const option = document.createElement('option');
-            option.value = shipper.id;
-            option.textContent = `${shipper.name} - ${shipper.email}`;
-            shipperSelect.appendChild(option);
-        });
-    }
-
-    // Xử lý gửi form gán shipper
-    document.getElementById('assign-shipper-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        if (!currentAssignOrderId) {
-            showToast('Không xác định được đơn hàng cần gán shipper.', 'error', 'Lỗi hệ thống');
-            return;
-        }
-
-        const formData = new FormData(e.target);
-        const shipperId = formData.get('shipper_id');
-        
-        if (!shipperId) {
-            showToast('Vui lòng chọn shipper để gán.', 'warning', 'Thiếu thông tin');
-            return;
-        }
-        
-        try {
-            const response = await fetch(CONFIG.routes.assignShipper.replace(':id', currentAssignOrderId), {
-                method: 'PATCH',
-                headers: {
-                    'X-CSRF-TOKEN': CONFIG.csrfToken,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    shipper_id: shipperId
-                })
-            });
-
-            const result = await response.json();
-            
-            if (response.ok && result.success) {
-                showToast('Gán shipper thành công', 'success');
-                
-                // Đánh dấu đơn hàng này đã xem (bỏ đánh dấu "mới")
-                markOrderAsViewed(currentAssignOrderId);
-                
-                // Đóng modal
-                closeAssignShipperModal();
-                
-                // Làm mới trang hiện tại
-                refreshCurrentPage();
-            } else {
-                if (response.status === 422) {
-                    showToast(result.message || 'Dữ liệu không hợp lệ', 'error');
-                } else if (response.status === 403) {
-                    showToast('Bạn không có quyền thực hiện hành động này.', 'error');
-                } else if (response.status === 404) {
-                    showToast('Không tìm thấy đơn hàng hoặc shipper.', 'error');
-                } else {
-                    showToast(result.message || 'Có lỗi xảy ra khi gán shipper', 'error');
-                }
-            }
-        } catch (error) {
-            console.error('Error assigning shipper:', error);
-            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                showToast('Mất kết nối mạng. Vui lòng kiểm tra internet và thử lại.', 'error', 'Lỗi kết nối');
-            } else {
-                showToast('Lỗi hệ thống không xác định. Vui lòng thử lại sau.', 'error', 'Lỗi hệ thống');
-            }
-        }
-    });
 
     document.addEventListener('DOMContentLoaded', () => {
         @if(isset($orders))
