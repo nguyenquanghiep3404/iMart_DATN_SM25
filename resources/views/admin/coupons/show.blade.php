@@ -209,7 +209,7 @@
                                                                             {{ $usage->created_at->format('d/m/Y H:i') }}
                         </td>
                         <td class="px-6 py-4 font-medium text-gray-900">
-                            <a href="{{ route('admin.orders.view', $usage->order_id) }}" class="text-indigo-600 hover:text-indigo-900">#{{ $usage->order_id }}</a>
+                            <a href="{{ route('admin.orders.view', $usage->order_id) }}" class="text-indigo-600 hover:text-indigo-900">{{ $usage->order->order_code ?? '#' . $usage->order_id }}</a>
                         </td>
                         <td class="px-6 py-4">
                             @if($usage->user)

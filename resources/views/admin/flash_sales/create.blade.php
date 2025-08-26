@@ -76,58 +76,43 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                             <div id="time-slots-wrapper" class="space-y-4">
-                                @if (old('time_slots'))
-                                    @foreach (old('time_slots') as $index => $slot)
-                                        <div class="space-y-2 time-slot">
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                <div>
-                                                    <label class="block mb-1 text-xs font-medium text-gray-700">Giờ bắt đầu</label>
-                                                    <input type="time" name="time_slots[{{ $index }}][start_time]"
-                                                        value="{{ $slot['start_time'] }}"
-                                                        class="time-slot-start w-full p-2.5 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error("time_slots.$index.start_time") border-red-500 @enderror" step="60">
-                                                    @error("time_slots.$index.start_time")
-                                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                                    @enderror
-                                                </div>
-                                                <div>
-                                                    <label class="block mb-1 text-xs font-medium text-gray-700">Giờ kết thúc</label>
-                                                    <input type="time" name="time_slots[{{ $index }}][end_time]"
-                                                        value="{{ $slot['end_time'] }}"
-                                                        class="time-slot-end w-full p-2.5 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error("time_slots.$index.end_time") border-red-500 @enderror" step="60">
-                                                    @error("time_slots.$index.end_time")
-                                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                                                    @enderror
-                                                </div>
-                                            </div>
-                                            <div class="text-left mt-2">
-                                                <button type="button" class="remove-time-slot btn btn-danger text-xs px-3 py-1">Xóa khung giờ</button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                @else
-                                    {{-- Khung giờ mặc định ban đầu --}}
+                                @php
+                                    $timeSlots = old('time_slots', [[]]); // Ensure at least one default time slot
+                                @endphp
+                                @foreach ($timeSlots as $index => $slot)
                                     <div class="space-y-2 time-slot">
                                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <label class="block mb-1 text-xs font-medium text-gray-700">Giờ bắt đầu</label>
-                                                <input type="time" name="time_slots[0][start_time]"
-                                                    class="time-slot-start w-full p-2.5 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" step="60">
+                                                <input type="time" name="time_slots[{{ $index }}][start_time]"
+                                                    value="{{ $slot['start_time'] ?? '' }}"
+                                                    class="time-slot-start w-full p-2.5 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error("time_slots.$index.start_time") border-red-500 @enderror" step="60">
+                                                @error("time_slots.$index.start_time")
+                                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                                @enderror
                                             </div>
                                             <div>
                                                 <label class="block mb-1 text-xs font-medium text-gray-700">Giờ kết thúc</label>
-                                                <input type="time" name="time_slots[0][end_time]"
-                                                    class="time-slot-end w-full p-2.5 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500" step="60">
+                                                <input type="time" name="time_slots[{{ $index }}][end_time]"
+                                                    value="{{ $slot['end_time'] ?? '' }}"
+                                                    class="time-slot-end w-full p-2.5 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 @error("time_slots.$index.end_time") border-red-500 @enderror" step="60">
+                                                @error("time_slots.$index.end_time")
+                                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                                @enderror
                                             </div>
                                         </div>
+                                        {{-- Display overlap or other time slot-specific errors --}}
+                                        @error("time_slots.$index")
+                                            <p class="mt-1 text-sm text-red-600">{{ str_replace(':index', $index + 1, $message) }}</p>
+                                        @enderror
                                         <div class="text-left mt-2">
                                             <button type="button" class="remove-time-slot btn btn-danger text-xs px-3 py-1">Xóa khung giờ</button>
                                         </div>
                                     </div>
-                                @endif
+                                @endforeach
                             </div>
                             <button type="button" id="add-time-slot" class="mt-3 btn btn-secondary">+ Thêm khung giờ</button>
                         </div>
-
                     </div>
 
                     <div class="mt-6 flex justify-end space-x-2">
@@ -244,7 +229,6 @@
             wrapper.addEventListener('click', function(e) {
                 if (e.target.classList.contains('remove-time-slot')) {
                     const slot = e.target.closest('.time-slot');
-                    // Không cho phép xóa nếu chỉ còn 1 khung giờ
                     if (wrapper.querySelectorAll('.time-slot').length > 1) {
                         slot.remove();
                     } else {

@@ -13,7 +13,7 @@ use App\Models\InventoryMovement;
 use App\Services\AutoStockTransferService;
 use App\Services\DeliveryOptimizationService;
 use App\Services\TrackingCodeService;
-use App\Services\PackageService;
+// REMOVED: PackageService - now using order_fulfillments directly
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
@@ -200,10 +200,21 @@ if (empty($itemsByLocation)) {
 }
 
 foreach ($itemsByLocation as $locationId => $items) {
+ // Tính toán ngày dự kiến giao hàng
+ $storeLocation = StoreLocation::find($locationId);
+ $transitTime = ShippingTransitTime::getTransitTime(
+     'store_shipper',
+     $storeLocation->province_code,
+     $order->shipping_old_province_code
+ );
+ $transitDays = $transitTime ? $transitTime->transit_days_max : 7;
+ $estimatedDeliveryDate = Carbon::now()->addDays($transitDays)->format('Y-m-d');
+
  // Tạo một bản ghi fulfillment cho mỗi kho hàng
  $fulfillment = $order->fulfillments()->create([
  'store_location_id' => $locationId,
  'status' => 'pending',
+ 'estimated_delivery_date' => $estimatedDeliveryDate,
  ]);
  
  // Chuẩn bị dữ liệu items để chèn hàng loạt
@@ -224,9 +235,7 @@ foreach ($itemsByLocation as $locationId => $items) {
  // để tránh trừ kho 2 lần. Fulfillment chỉ tạo cấu trúc fulfillment,
  // việc trừ kho sẽ được xử lý bởi InventoryCommitmentService.commitInventoryForOrder()
 
- // MỚI: Tạo package mặc định cho fulfillment này
- $packageService = new PackageService();
- $packageService->createDefaultPackageForFulfillment($fulfillment);
+ // REMOVED: Package creation - now using order_fulfillments directly
 }
 
 // Tạo tracking codes cho tất cả fulfillments
@@ -265,6 +274,7 @@ public function createOrderFulfillments($order, $cartItems, $shipments, $orderIt
             'shipping_fee' => $shipmentData['shipping_fee'],
             'desired_delivery_date' => $shipmentData['delivery_date'] ?? null,
             'desired_delivery_time_slot' => $shipmentData['delivery_time_slot'] ?? null,
+            'estimated_delivery_date' => $shipmentData['estimated_delivery_date'] ?? null,
         ]);
 
         // Tìm các sản phẩm thuộc kho này và tạo fulfillment items
@@ -278,9 +288,7 @@ public function createOrderFulfillments($order, $cartItems, $shipments, $orderIt
             $createdItems[] = $item->product_variant_id;
         }
 
-        // MỚI: Tạo package mặc định cho fulfillment này
-        $packageService = new PackageService();
-        $packageService->createDefaultPackageForFulfillment($fulfillment);
+        // REMOVED: Package creation - now using order_fulfillments directly
     }
     
     // Kiểm tra xem có order items nào chưa được tạo fulfillment items không
@@ -305,9 +313,7 @@ public function createOrderFulfillments($order, $cartItems, $shipments, $orderIt
             ]);
         }
 
-        // MỚI: Tạo package mặc định cho fulfillment mặc định này
-        $packageService = new PackageService();
-        $packageService->createDefaultPackageForFulfillment($defaultFulfillment);
+        // REMOVED: Package creation - now using order_fulfillments directly
     }
     
     // Tạo tracking codes cho tất cả fulfillments

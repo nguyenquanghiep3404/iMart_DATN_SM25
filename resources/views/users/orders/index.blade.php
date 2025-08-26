@@ -1,4 +1,3 @@
-{{-- resources/views/users/orders/index.blade.php --}}
 @extends('users.layouts.profile')
 
 @section('styles')

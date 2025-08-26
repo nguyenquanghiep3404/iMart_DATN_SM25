@@ -78,8 +78,9 @@ class OrderRequest extends FormRequest
     {
         $validTransitions = [
             Order::STATUS_PENDING_CONFIRMATION => [Order::STATUS_PROCESSING, Order::STATUS_CANCELLED],
-            Order::STATUS_PROCESSING => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_CANCELLED],
+            Order::STATUS_PROCESSING => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_EXTERNAL_SHIPPING, Order::STATUS_CANCELLED],
             Order::STATUS_OUT_FOR_DELIVERY => [Order::STATUS_DELIVERED, Order::STATUS_FAILED_DELIVERY, Order::STATUS_CANCELLED],
+            Order::STATUS_EXTERNAL_SHIPPING => [Order::STATUS_DELIVERED, Order::STATUS_FAILED_DELIVERY, Order::STATUS_CANCELLED],
             Order::STATUS_DELIVERED => [], // Trạng thái cuối
             Order::STATUS_CANCELLED => [], // Trạng thái cuối
             Order::STATUS_FAILED_DELIVERY => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_CANCELLED] 

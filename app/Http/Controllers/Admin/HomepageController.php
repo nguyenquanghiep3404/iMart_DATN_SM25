@@ -342,7 +342,7 @@ class HomepageController extends Controller
                     'stock_quantity' => $variant->getSellableStockAttribute() ?? 0,
                     'is_featured' => $product->is_featured,
                     'release_date' => $product->created_at->toDateString(),
-                    'sold_quantity' => $totalSold,
+                    'quantity_sold' => $totalSold,
                 ];
             });
 
@@ -426,7 +426,7 @@ class HomepageController extends Controller
                     'stock_quantity' => $variant?->getSellableStockAttribute() ?? 0,
                     'is_featured' => $product->is_featured,
                     'release_date' => $product->created_at->toDateString(),
-                    'sold_quantity' => $totalSold,
+                    'quantity_sold' => $totalSold,
                 ];
             });
 

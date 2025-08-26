@@ -450,7 +450,7 @@
             $canRefund = $daysSinceDelivered !== null && $daysSinceDelivered <= 15;
                 @endphp
 
-                @if($order->status == 'delivered' && is_null($order->confirmed_at) && $order->delivered_at && $order->delivered_at->diffInDays(now()) < 7)
+                @if($order->status == 'delivered' && !is_null($order->confirmed_at) && $order->delivered_at && $order->delivered_at->diffInDays(now()) < 15)
                     <a href="{{ route('refunds.create', ['orderItem' => $firstItem->id]) }}" class="btn-action btn-action-secondary">
                     Yêu cầu trả hàng
                     </a>
