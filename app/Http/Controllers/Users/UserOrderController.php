@@ -120,7 +120,7 @@ class UserOrderController extends Controller
     {
         $user = Auth::user();
         $order = Order::where('user_id', $user->id)
-            ->whereIn('status', ['pending_confirmation', 'processing', 'awaiting_shipment'])
+            ->whereIn('status', ['pending_confirmation', 'processing'])
             ->findOrFail($id);
 
         $request->validate([

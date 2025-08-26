@@ -71,6 +71,7 @@ use App\Http\Controllers\ReorderController;
 use App\Http\Controllers\Admin\InventoryDashboardController;
 use App\Http\Controllers\Admin\InventoryAdjustmentController;
 use App\Http\Controllers\Admin\AutoStockTransferController;
+use App\Http\Controllers\Admin\InventoryReportController;
 use App\Http\Controllers\Pos\SelectionController;
 use App\Http\Controllers\Pos\DashboardController;
 use App\Http\Controllers\Pos\SessionController;
@@ -855,6 +856,22 @@ Route::prefix('admin')
             Route::post('/{fulfillment}/assign', [App\Http\Controllers\Admin\ExternalShippingController::class, 'assignToShippingUnit'])->name('assign');
             Route::post('/{fulfillment}/delivered', [App\Http\Controllers\Admin\ExternalShippingController::class, 'markAsDelivered'])->name('delivered');
         });
+
+        // Quản lý tồn kho
+        Route::get('/inventory-dashboard', [InventoryDashboardController::class, 'index'])
+            ->name('admin.inventory.dashboard');  
+        // báo cáo tồn kho chi tiết
+        Route::get('/reports/inventory', [InventoryReportController::class, 'index'])->name('reports.inventory.index'); // giao diện
+        Route::get('/reports/inventory/data', [InventoryReportController::class, 'generate']); // API dữ liệu
+        Route::get('/reports/inventory/provinces', [InventoryReportController::class, 'getAvailableProvinces']);
+        Route::get('/reports/inventory/districts', [InventoryReportController::class, 'getAvailableDistricts']);
+        Route::get('reports/inventory/export', [InventoryReportController::class, 'export'])->name('admin.reports.inventory.export');
+        
+        // Phân tích kinh doanh
+        Route::get('/business-analysis', [InventoryDashboardController::class, 'businessAnalysis'])->name('business-analysis.index');
+        // Báo cáo chi tiết: Lợi nhuận theo sản phẩm
+        Route::get('/reports/product-profit', [InventoryDashboardController::class, 'productProfitReport'])->name('reports.product-profit.index');
+        Route::get('/reports/product-profit/export', [InventoryDashboardController::class, 'exportProductProfit'])->name('reports.product-profit.export');
     });
 // Group các route dành cho shipper và bảo vệ chúng
 Route::prefix('shipper')
