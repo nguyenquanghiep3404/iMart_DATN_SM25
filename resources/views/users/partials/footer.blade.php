@@ -65,7 +65,7 @@
                                 toán online</a></li>
                         <li><a class="nav-link text-body-secondary p-0 small" href="#!">Đại lý ủy quyền và TTBH ủy
                                 quyền của Apple</a></li>
-                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Tra cứu bảo hành</a>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="{{ route('guest.orders.form') }}">Tra cứu đơn hàng</a>
                         </li>
                         <li><a class="nav-link text-body-secondary p-0 small" href="#!">Câu hỏi thường gặp</a></li>
                         <li><a class="nav-link text-body-secondary p-0 small" href="#!">Đánh giá chất lượng khiếu nại</a></li>
