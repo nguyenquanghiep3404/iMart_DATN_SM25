@@ -26,4 +26,15 @@ class LoyaltyPointLog extends Model
     {
         return $this->belongsTo(Order::class);
     }
+    public function getVietnameseTypeAttribute(): string
+    {
+        return match ($this->type) {
+            'earn' => 'Tích điểm',
+            'spend' => 'Sử dụng',
+            'refund' => 'Hoàn điểm',
+            'manual_adjustment' => 'Điều chỉnh thủ công',
+            'expire' => 'Hết hạn',
+            default => ucfirst(str_replace('_', ' ', $this->type)),
+        };
+    }
 }

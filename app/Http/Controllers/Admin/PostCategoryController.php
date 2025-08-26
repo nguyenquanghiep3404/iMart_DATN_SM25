@@ -8,9 +8,17 @@ use Illuminate\Http\Request;
 use App\Rules\NotDescendantOf;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class PostCategoryController extends Controller
 {
+    use AuthorizesRequests;
+
+    public function __construct()
+    {
+        // Tự động áp dụng PostCategoryPolicy cho tất cả các phương thức CRUD
+        $this->authorizeResource(PostCategory::class, 'post_category');
+    }
     // Hiển thị danh sách danh mục
     public function index(Request $request)
     {
@@ -24,7 +32,7 @@ class PostCategoryController extends Controller
                   ->orWhere('description', 'like', "%$keyword%");
             });
         } else {
-            $query->whereNull('parent_id'); 
+            $query->whereNull('parent_id');
         }
 
         $categories_post = $query->orderBy('name')->paginate(10)->appends($request->all());

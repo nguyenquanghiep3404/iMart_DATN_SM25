@@ -9,9 +9,17 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CouponRequest;
 use App\Http\Requests\ValidateCouponRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CouponController extends Controller
 {
+    use AuthorizesRequests;
+
+    public function __construct()
+    {
+        // Tự động áp dụng CouponPolicy cho tất cả các phương thức CRUD
+        $this->authorizeResource(Coupon::class, 'coupon');
+    }
     //
     public function index(Request $request)
     {
