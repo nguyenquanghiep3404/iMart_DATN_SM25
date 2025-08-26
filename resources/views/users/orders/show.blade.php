@@ -84,6 +84,14 @@
         background-color: #e5e7eb;
         color: #4b5563;
     }
+    .partially_delivered {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    .partially_shipped{
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
 
     /* Status Tracker Styles */
     .tracker-container {
@@ -264,7 +272,9 @@
     'cancellation_requested' => ['text' => 'Yêu cầu hủy', 'class' => 'cancellation_requested'],
     'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
     'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
-    'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-pending_confirmation'],
+    'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-awaiting-pickup'],
+    'partially_delivered' => ['text' => 'Giao thành công 1 phần', 'class' => 'partially_delivered'],
+    'partially_shipped' => ['text' => 'Giao hàng 1 phần', 'class' => 'partially_shipped'],
     'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],
     default => ['text' => ucfirst($order->status), 'class' => 'status-returned'],
 
