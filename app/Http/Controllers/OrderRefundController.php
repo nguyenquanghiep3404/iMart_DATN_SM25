@@ -59,7 +59,7 @@ class OrderRefundController extends Controller
 
     public function show($id)
     {
-        
+
         $returnRequest = ReturnRequest::with([
             'returnItems.orderItem.variant.product',
             'files',
@@ -67,7 +67,7 @@ class OrderRefundController extends Controller
             'refundProcessor',
             'returnItems.orderItem.variant.coverImage'
         ])->findOrFail($id);
-        
+
         return view('admin.refunds.show', compact('returnRequest'));
     }
     public function showuser($code)
@@ -156,6 +156,14 @@ class OrderRefundController extends Controller
             $orderId = null;
             $userId = auth()->id();
 
+            $refundAmount = 0;
+            $orderId = null;
+            $userId = auth()->id();
+
+            $subtotal = 0;
+            $selectedItems = [];
+
+            // Tính tổng tiền hàng của các item được chọn
             foreach ($orderItemIds as $itemId) {
                 $item = OrderItem::findOrFail($itemId);
                 $qty = $quantities[$itemId] ?? 1;
@@ -164,7 +172,38 @@ class OrderRefundController extends Controller
                     $orderId = $item->order_id;
                 }
 
-                $refundAmount += $item->price * $qty;
+                // Bảo vệ: không cho trả quá số lượng đã mua
+                if ($qty > $item->quantity) {
+                    throw new \Exception("Số lượng trả vượt quá số lượng đã mua cho sản phẩm {$item->id}");
+                }
+
+                $lineSubtotal = $item->price * $qty;
+                $subtotal += $lineSubtotal;
+
+                $selectedItems[] = [
+                    'item' => $item,
+                    'qty' => $qty,
+                    'subtotal' => $lineSubtotal,
+                ];
+            }
+
+            // Lấy tổng đơn và discount từ bảng orders
+            $order = Order::findOrFail($orderId);
+            $discountAmount = $order->discount_amount ?? 0;
+            $orderSubtotal = $order->sub_total; // tổng trước giảm
+
+            // Tính hoàn tiền có phân bổ giảm giá
+            foreach ($selectedItems as $sel) {
+                $item = $sel['item'];
+                $qty = $sel['qty'];
+                $lineSubtotal = $sel['subtotal'];
+
+                $discountShare = 0;
+                if ($orderSubtotal > 0 && $discountAmount > 0) {
+                    $discountShare = ($lineSubtotal / $orderSubtotal) * $discountAmount;
+                }
+
+                $refundAmount += $lineSubtotal - $discountShare;
             }
 
 

@@ -117,6 +117,10 @@
         background-color: #feefc7;
         color: #92400e;
     }
+    .cancellation_requested{
+        background-color: #fef9c3;
+        color: #854d0e;
+    }
 
     /* Đang xử lý */
     .status-shipping {
@@ -218,6 +222,7 @@
             <a href="{{ route('orders.index', ['status' => 'out_for_delivery']) }}" class="tab-link {{ $status == 'out_for_delivery' ? 'active' : '' }}">Đang giao hàng</a>
             <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Giao hàng thành công</a>
             <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Hủy</a>
+            <a href="{{ route('orders.index', ['status' => 'cancellation_requested']) }}" class="tab-link {{ $status == 'cancellation_requested' ? 'active' : '' }}">Yêu cầu hủy</a>
             <a href="{{ route('orders.index', ['status' => 'failed_delivery']) }}" class="tab-link {{ $status == 'failed_delivery' ? 'active' : '' }}">Giao hàng thất bại</a>
             <a href="{{ route('orders.returns') }}" class="tab-link {{ request()->routeIs('orders.returns') ? 'active' : '' }}">Trả hàng</a>
         </nav>
@@ -247,8 +252,10 @@
                     $statusClass = 'status-completed'; $statusText = 'Hoàn tất'; break;
                     case 'processing':
                     $statusClass = 'status-processing'; $statusText = 'Đang xử lý'; break;
-                    case 'pending_confirmation':
-                    $statusClass = 'pending_confirmation'; $statusText = 'Chờ xác nhận'; break;
+                    case 'cancellation_requested':
+                    $statusClass = 'cancellation_requested'; $statusText = 'Yêu cầu hủy'; break;
+                    case 'pending_confirmation': case 'awaiting_pickup' :
+                    $statusClass = 'status-awaiting-pickup'; $statusText = 'Chờ xác nhận'; break;
                     case 'shipped': case 'out_for_delivery':
                     $statusClass = 'status-shipping'; $statusText = 'Đang giao'; break;
                     case 'cancelled': case 'failed_delivery':
@@ -283,12 +290,12 @@
                 </div>
             </div>
             <div class="order-card-footer">
-                @if($order->status == 'delivered' || $order->status == 'cancelled')
+                <!-- @if($order->status == 'delivered' || $order->status == 'cancelled')
                 <form action="{{ route('orders.buy_again', $order->id) }}" method="POST" class="d-inline-block">
                     @csrf
                     <button type="submit" class="btn-secondary">Mua lại</button>
                 </form>
-                @endif
+                @endif -->
                 {{-- Hiển thị nút khi đơn hàng đã giao VÀ chưa được xác nhận --}}
                 @if($order->status == 'delivered' && is_null($order->confirmed_at))
                     <form action="{{ route('orders.confirm_receipt', $order->id) }}" method="POST" class="d-inline-block">

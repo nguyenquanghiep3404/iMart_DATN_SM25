@@ -74,8 +74,8 @@
                         <select id="transaction-type-filter" name="transaction_type"
                             class="xl:col-span-2 py-2 px-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                             <option value="">Tất cả giao dịch</option>
-                            <option value="sale"
-                                {{ old('transaction_type', request('transaction_type')) == 'sale' ? 'selected' : '' }}>
+                            <option value="Packed for Package"
+                                {{ old('transaction_type', request('transaction_type')) == 'Packed for Package' ? 'selected' : '' }}>
                                 Bán hàng
                             </option>
                             <option value="Nhập hàng từ NCC"
@@ -183,7 +183,7 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     @switch($movement->reason)
-                                        @case('sale')
+                                        @case('Packed for Package')
                                             <span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
                                                 {{ $movement->reason_label }}
                                             </span>

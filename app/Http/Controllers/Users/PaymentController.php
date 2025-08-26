@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\PaymentRequest;
 
 use App\Models\OrderFulfillment;
-use App\Services\AutoStockTransferService;
+// use App\Services\AutoStockTransferService; // Đã chuyển logic sang OrderObserver
 use App\Models\OrderFulfillmentItem;
 use App\Services\FulfillmentService;
 use App\Services\InventoryCommitmentService;
@@ -234,7 +234,30 @@ class PaymentController extends Controller
     {
         try {
             $order = DB::transaction(function () use ($request, $cartData) {
-                return $this->createOrderAndItems($request, $cartData);
+                // Tạo đơn hàng và các mục liên quan
+                $order = $this->createOrderAndItems($request, $cartData);
+                
+                // Xử lý trừ điểm thưởng cho thanh toán online
+                $user = Auth::user();
+                $pointsApplied = session('points_applied');
+                if ($user && $pointsApplied) {
+                    $pointsUsed = $pointsApplied['points'] ?? 0;
+                    if ($pointsUsed > 0) {
+                        if ($pointsUsed > $user->loyalty_points_balance) {
+                            throw new \Exception('Số dư điểm không đủ để thực hiện giao dịch này.');
+                        }
+                        $user->decrement('loyalty_points_balance', $pointsUsed);
+                        LoyaltyPointLog::create([
+                            'user_id' => $user->id,
+                            'order_id' => $order->id,
+                            'points' => -$pointsUsed,
+                            'type' => 'spend',
+                            'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
+                        ]);
+                    }
+                }
+                
+                return $order;
             });
 
             // Sau khi tạo đơn hàng thành công, gọi phương thức thanh toán tương ứng
@@ -245,8 +268,6 @@ class PaymentController extends Controller
                 return $this->createMomoPayment($order);
             }
             if ($request->payment_method === 'bank_transfer_qr') {
-
-
                 return response()->json([
                     'success' => true,
                     'redirect_url' => route('payments.bank_transfer_qr', ['order' => $order->id])
@@ -290,13 +311,8 @@ class PaymentController extends Controller
 
 
 
-            // Kích hoạt chuyển kho tự động
-            $autoTransferService = new AutoStockTransferService();
-            $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-            
-            if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng: ' . $order->order_code, $transferResult['transfers_created']);
-            }
+            // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+            // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
 
             // Xóa giỏ hàng sau khi đặt hàng thành công
             $this->clearPurchaseSession();
@@ -637,13 +653,8 @@ class PaymentController extends Controller
                         // thông qua InventoryCommitmentService.fulfillInventoryForOrder()
                     });
                     
-                    // Kích hoạt chuyển kho tự động
-                    $autoTransferService = new AutoStockTransferService();
-                    $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-                    
-                    if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                        Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng VNPay: ' . $order->order_code, $transferResult['transfers_created']);
-                    }
+                    // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+                    // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
                     
                     $this->clearPurchaseSession();
                 }
@@ -879,13 +890,8 @@ class PaymentController extends Controller
                 // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
                 // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
                 
-                // Kích hoạt chuyển kho tự động
-                $autoTransferService = new AutoStockTransferService();
-                $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-                
-                if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                    Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng MoMo: ' . $order->order_code, $transferResult['transfers_created']);
-                }
+                // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+                // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
                 
                 $this->clearPurchaseSession();
             }
@@ -1800,16 +1806,8 @@ class PaymentController extends Controller
             // Tạm giữ hàng thay vì trừ thẳng tồn kho
             $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
             
-            // Kích hoạt chuyển kho tự động nếu cần
-            $autoTransferService = new AutoStockTransferService();
-            $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-            
-            if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng Buy Now: ' . $order->order_code, $transferResult['transfers_created']);
-                
-                // Tự động xử lý phiếu chuyển kho nếu có thể (cùng tỉnh/thành)
-                $this->processAutoTransfersIfPossible($transferResult['transfers_created']);
-            }
+            // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+            // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
             
             // --- XỬ LÝ TRỪ ĐIỂM ---
             if ($user && $pointsUsed > 0) {
@@ -2533,13 +2531,8 @@ class PaymentController extends Controller
             // Inventory deduction is now handled by InventoryCommitmentService to prevent double deductions
             // The commitInventoryForOrder method handles both inventory commitment and fulfillment creation
             
-            // Kích hoạt chuyển kho tự động
-            $autoTransferService = new AutoStockTransferService();
-            $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-            
-            if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng QR: ' . $order->order_code, $transferResult['transfers_created']);
-            }
+            // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+            // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
 
             // Kích hoạt gửi email sản phẩm cho khách (sẽ làm ở bước sau)
             // \Mail::to($order->customer_email)->send(new \App\Mail\ProductLinkMail($order));

@@ -223,7 +223,7 @@
         <div class="flex justify-center border-2 border-gray-200 rounded-xl p-1 mb-6 max-w-md mx-auto">
             <button id="tab-desc-btn"
                 class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-600">Mô tả
-                </button>
+            </button>
             <button id="tab-specs-btn"
                 class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold tab-active">Thông số kỹ
                 thuật</button>
@@ -242,6 +242,74 @@
                     </button>
                 </div>
             </div>
+
+            <style>
+                /* Khung mô tả */
+                #description-wrapper {
+                    font-size: 18px;
+                    /* chữ to hơn */
+                    line-height: 1.8;
+                    /* giãn dòng thoáng hơn */
+                    color: #333;
+                }
+
+                /* Đoạn văn */
+                #description-wrapper p {
+                    margin-bottom: 1rem;
+                }
+
+                /* Tiêu đề trong mô tả */
+                #description-wrapper h2,
+                #description-wrapper h3 {
+                    font-weight: 600;
+                    margin: 1.5rem 0 1rem;
+                    font-size: 20px;
+                    color: #111;
+                }
+
+                /* Danh sách */
+                #description-wrapper ul,
+                #description-wrapper ol {
+                    margin: 1rem 0 1rem 1.5rem;
+                    padding-left: 1rem;
+                }
+
+                #description-wrapper li {
+                    margin-bottom: 0.5rem;
+                }
+
+                /* Ảnh trong mô tả - căn giữa */
+                #description-wrapper img {
+                    display: block;
+                    margin: 1.5rem auto;
+                    /* căn giữa ngang */
+                    max-width: 90%;
+                    /* không bị tràn */
+                    height: auto;
+                    border-radius: 8px;
+                }
+
+                /* Quote */
+                #description-wrapper blockquote {
+                    border-left: 4px solid #ddd;
+                    padding-left: 1rem;
+                    color: #555;
+                    font-style: italic;
+                    margin: 1.5rem 0;
+                }
+
+                /* Nút xem thêm */
+                #read-more-btn {
+                    background: #f5f5f5;
+                    border-radius: 6px;
+                    padding: 10px 18px;
+                    transition: 0.2s;
+                }
+
+                #read-more-btn:hover {
+                    background: #e2e2e2;
+                }
+            </style>
 
             <!-- Content for Specs Tab -->
             <div id="tab-specs-content" class="tab-content">
@@ -548,44 +616,229 @@
     </section>
 
     <!-- PHẦN 6: SẢN PHẨM TƯƠNG TỰ -->
-    <section>
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Sản phẩm tương tự</h2>
-        @if ($relatedProducts->isNotEmpty())
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                @foreach ($relatedProducts as $relatedProduct)
-                    <div
-                        class="product-card bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
-                        <a href="{{ route('products.show', $relatedProduct->slug) }}" class="block">
-                            <img src="{{ $relatedProduct->coverImage ? Storage::url($relatedProduct->coverImage->path) : 'https://placehold.co/300x300/e2e8f0/e2e8f0' }}"
-                                alt="{{ $relatedProduct->name }}" class="w-full h-40 object-cover">
-                            <div class="p-3">
-                                <h4 class="font-semibold text-sm text-gray-800 truncate">{{ $relatedProduct->name }}
-                                </h4>
-                                @if ($relatedProduct->defaultVariant)
-                                    <p class="font-bold text-red-600 mt-1">
-                                        {{ number_format($relatedProduct->defaultVariant->display_price) }}₫
-                                    </p>
-                                @endif
-                                <div class="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                                    <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                        <path
-                                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                        </path>
-                                    </svg>
-                                    <span>{{ round($relatedProduct->average_rating, 1) }}</span>
-                                    <span class="ml-1">({{ $relatedProduct->reviews_count }} đánh giá)</span>
-                                </div>
+
+    <section class="container px-4 pt-5 mt-2 mt-sm-3 mt-lg-4">
+        <div class="d-flex align-items-center justify-content-between pb-3 pb-md-4">
+            <h2 class="h3 mb-0">Sản phẩm đã xem gần đây</h2>
+            <div class="nav ms-3">
+            </div>
+        </div>
+
+        <!-- Swiper container -->
+        <div class="swiper recent-products-swiper pt-2">
+            <div id="recent-products-container" class="swiper-wrapper">
+                <!-- Danh sách sản phẩm đã xem sẽ được render bằng JavaScript -->
+            </div>
+        </div>
+    </section>
+    <div class="padding-bottom-5">
+
+    </div>
+
+    <!-- Thêm JS của Swiper từ CDN -->
+    <!-- Thêm JS của Swiper từ CDN -->
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+        <script>
+            function renderRecentProducts() {
+                const recentProductsContainer = document.getElementById('recent-products-container');
+                if (!recentProductsContainer) {
+                    console.error('Không tìm thấy #recent-products-container');
+                    return;
+                }
+
+                const recentProducts = JSON.parse(localStorage.getItem('recent_product_ids') || '[]');
+                recentProductsContainer.innerHTML = '';
+
+                if (recentProducts.length === 0) {
+                    recentProductsContainer.innerHTML =
+                        '<div class="swiper-slide"><div class="col-12 text-center py-5"><p class="text-muted">Không tìm thấy sản phẩm nào.</p></div></div>';
+                    return;
+                }
+
+                recentProducts.forEach(product => {
+                    const rawPrice = parseInt(product.price) || 0;
+                    const rawSalePrice = product.sale_price !== null ? parseInt(product.sale_price) : null;
+                    const hasSale = rawSalePrice !== null && rawSalePrice < rawPrice;
+                    const discountPercent = hasSale ? Math.round((1 - rawSalePrice / rawPrice) * 100) : 0;
+                    const displayPrice = hasSale ? rawSalePrice : rawPrice;
+                    const isFlashSale = product.is_flash_sale || false;
+                    const productName = product.variant_name ? `${product.name} ${product.variant_name}` : product.name;
+                    const mainImage = product.image || '/images/placeholder.jpg';
+
+                    // Tạo productUrl sử dụng product.slug và variant_key
+                    let productSlug = product.slug;
+                    if (!productSlug) {
+                        console.warn(`Slug không tồn tại cho sản phẩm ID ${product.id}, sử dụng ID làm fallback`);
+                        productSlug = product.id;
+                    }
+                    console.log(`[DEBUG] Base slug: ${productSlug}, Variant key: ${product.variant_key}`);
+                    if (product.variant_key && product.variant_key !== 'default') {
+                        const variantAttributes = product.variant_key.split('_');
+                        const slugParts = variantAttributes.map(attr => {
+                            if (!attr) return '';
+                            const normalizedAttr = attr
+                                .normalize('NFD') // Chuẩn hóa Unicode
+                                .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu
+                                .replace(/[đĐ]/g, 'd') // Thay cả 'đ' và 'Đ' bằng 'd'
+                                .toLowerCase()
+                                .replace(/\s+/g, '-') // Thay khoảng trắng bằng dấu gạch ngang
+                                .replace(/[^a-z0-9-]/g, ''); // Loại bỏ ký tự không hợp lệ
+                            console.log(`[DEBUG] Normalized attribute: ${attr} -> ${normalizedAttr}`);
+                            return normalizedAttr;
+                        }).filter(Boolean);
+                        if (slugParts.length > 0) {
+                            productSlug = `${productSlug}-${slugParts.join('-')}`;
+                        }
+                    }
+                    const productUrl = `/san-pham/${productSlug}`;
+                    console.log(`[DEBUG] Generated productUrl: ${productUrl}`);
+
+                    const productHtml = `
+            <div class="swiper-slide">
+                <div class="product-card animate-underline hover-effect-opacity bg-body rounded-4 shadow-lg border-0">
+                    <div class="position-relative">
+                        ${hasSale ? `
+                                    <div class="discount-badge" style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px;">
+                                        ${discountPercent === 100 ? 'Miễn phí' : `Giảm ${discountPercent}%`}
+                                    </div>
+                                ` : ''}
+                        ${isFlashSale ? `
+                                    <div class="flash-sale-badge" style="position: absolute; top: 10px; left: 10px; background: #da272a; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px;">
+                                        Flash Sale
+                                    </div>
+                                ` : ''}
+                        <a class="d-block rounded-top overflow-hidden bg-white bg-opacity-75 position-relative"
+                           style="backdrop-filter: blur(4px); padding-bottom: 0px;"
+                           href="${productUrl}">
+                            <div class="ratio" style="--cz-aspect-ratio: calc(250 / 220 * 100%)">
+                                <img src="${mainImage}" alt="${product.name}" loading="lazy"
+                                     class="img-fluid rounded-3 shadow-sm"
+                                     style="object-fit: contain; width: 100%; height: 100%; background: #fff;">
                             </div>
                         </a>
                     </div>
-                    </a>
+                    <div class="w-100 min-w-0 px-2 pb-3 pt-2 px-sm-3 pb-sm-3 d-flex flex-column justify-content-between"
+                         style="min-height: 100px;">
+                        <h3 class="pb-2 mb-3 text-center">
+                            <a class="d-block fs-base fw-semibold text-truncate mb-2 no-underline-link"
+                               href="${productUrl}" style="margin-top: 10px;">
+                                ${productName}
+                            </a>
+                        </h3>
+                        <div class="lh-1 mb-0" style="line-height: 1.2; text-align: center;">
+                            ${displayPrice > 0 ? `
+                                        ${hasSale ? `
+                                    <span class="text-primary fw-semibold fs-base" style="color: #0d6efd !important;">
+                                        ${formatPrice(displayPrice)}
+                                    </span>
+                                    <del class="text-muted fs-sm ms-2">
+                                        ${formatPrice(rawPrice)}
+                                    </del>
+                                ` : `
+                                    <span class="fw-semibold fs-base">${formatPrice(displayPrice)}</span>
+                                `}
+                                    ` : `
+                                        <span class="text-primary fw-semibold fs-base" style="color: #0d6efd !important;">0đ</span>
+                                    `}
+                        </div>
+                    </div>
+                </div>
             </div>
-        @endforeach
-</div>
-@else
-<p class="text-center text-gray-500">Không có sản phẩm tương tự.</p>
-@endif
-</section>
+        `;
+                    recentProductsContainer.insertAdjacentHTML('beforeend', productHtml);
+                });
+
+                // Khởi tạo Swiper sau khi render sản phẩm
+                new Swiper('.recent-products-swiper', {
+                    slidesPerView: 2,
+                    spaceBetween: 16,
+                    navigation: {
+                        nextEl: '.swiper-button-prev',
+                        prevEl: '.swiper-button-next',
+                    },
+                    breakpoints: {
+                        576: {
+                            slidesPerView: 3
+                        },
+                        992: {
+                            slidesPerView: 5
+                        }
+                    }
+                });
+            }
+
+            function formatPrice(price) {
+                return price.toLocaleString('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND'
+                }).replace('₫', 'đ');
+            }
+
+            function saveRecentProduct() {
+                const productId = window.currentProductId;
+                const productName = @json($product->name);
+                const attributeOrder = window.attributeOrder || [];
+                const currentSelections = window.currentSelections || {};
+                const variantKey = window.productType === 'variable' ? attributeOrder.map(attr => currentSelections[attr] || '')
+                    .join('_') : 'default';
+                const variant = window.variantData[variantKey] || window.variantData['default'];
+                const variantName = attributeOrder.map(attr => currentSelections[attr]).filter(Boolean).join(' ');
+                let image = variant?.image;
+                if (!image || typeof image !== 'string') {
+                    image = @json($product->coverImage ? Storage::url($product->coverImage->path) : '/images/placeholder.jpg');
+                }
+                const price = variant?.price ? parseInt(variant.price) : parseInt(@json($product->price));
+                const salePrice = variant?.sale_price ? parseInt(variant.sale_price) : null;
+                const isFlashSale = variant?.is_flash_sale || false;
+                const slug = window.baseSlug || productId;
+
+                // Kiểm tra và log window.baseSlug
+                if (!window.baseSlug) {
+                    console.warn(`window.baseSlug không tồn tại, sử dụng productId (${productId}) làm slug`);
+                } else {
+                    console.log(`[DEBUG] window.baseSlug: ${window.baseSlug}`);
+                }
+
+                const key = 'recent_product_ids';
+                const maxItems = 10;
+                let recentProducts = JSON.parse(localStorage.getItem(key)) || [];
+
+                recentProducts = recentProducts.filter(item => window.productType === 'variable' ?
+                    `${item.id}_${item.variant_key || ''}` !== `${productId}_${variantKey}` : item.id !== productId);
+
+                recentProducts.unshift({
+                    id: productId,
+                    name: productName,
+                    variant_key: variantKey,
+                    variant_name: variantName,
+                    image: image,
+                    price: price,
+                    sale_price: salePrice,
+                    is_flash_sale: isFlashSale,
+                    slug: slug,
+                    variant_id: variant?.variant_id || 'default'
+                });
+
+                recentProducts = recentProducts.slice(0, maxItems);
+                localStorage.setItem(key, JSON.stringify(recentProducts));
+
+                console.log('✅ Đã lưu sản phẩm vào danh sách đã xem:', {
+                    id: productId,
+                    image: image,
+                    variantKey: variantKey,
+                    slug: slug,
+                    recentProducts: recentProducts
+                });
+
+                renderRecentProducts();
+            }
+
+            window.addEventListener('load', () => {
+                renderRecentProducts();
+            });
+        </script>
+    @endpush
 </div>
 
 <!-- MODAL ĐÁNH GIÁ -->

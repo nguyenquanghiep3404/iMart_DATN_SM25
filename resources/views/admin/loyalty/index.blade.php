@@ -67,7 +67,7 @@
                                 @elseif($log->type == 'spend') bg-red-100 text-red-700
                                 @elseif($log->type == 'refund') bg-blue-100 text-blue-700
                                 @else bg-slate-200 text-slate-700 @endif">
-                                {{ ucfirst(str_replace('_', ' ', $log->type)) }}
+                               {{ $log->vietnamese_type }}
                             </span>
                         </td>
                         <td class="px-5 py-4 text-sm text-right font-bold {{ $log->points > 0 ? 'text-green-600' : 'text-red-600' }}">

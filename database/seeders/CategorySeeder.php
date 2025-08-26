@@ -26,34 +26,21 @@ class CategorySeeder extends Seeder
             'iPad' => [
                 'iPad Pro',
                 'iPad Air',
-                'iPad mini',
                 'iPad',
             ],
             'Mac' => [
                 'MacBook Air',
                 'MacBook Pro',
-                'iMac',
-                'Mac mini',
-                'Mac Studio',
-            ],
-            'Watch' => [
-                'Apple Watch Ultra',
-                'Apple Watch Series 9',
-                'Apple Watch SE',
             ],
             'Tai Nghe' => [
                 'AirPods Pro',
                 'AirPods',
-                'AirPods Max',
-                'HomePod',
             ],
             'Phụ kiện' => [
                 'Phụ kiện iPhone',
                 'Phụ kiện iPad',
                 'Phụ kiện Mac',
-                'Phụ kiện Apple Watch',
                 'AirTag',
-                'Apple Pencil',
             ],
         ];
 

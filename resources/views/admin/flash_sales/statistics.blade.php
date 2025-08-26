@@ -160,10 +160,12 @@
         new Chart(pieCtx, {
             type: 'pie',
             data: {
-                labels: [@foreach ($statistics as $stat)'{{ addslashes($stat['chart_label']) }}', @endforeach],
+                // Lấy nhãn từ mảng đã được tổng hợp
+                labels: [@foreach ($aggregatedStatistics as $stat)'{{ addslashes($stat['chart_label']) }}', @endforeach],
                 datasets: [{
                     label: 'Tỷ lệ Doanh thu',
-                    data: [@foreach ($statistics as $stat){{ $stat['chart_revenue'] }}, @endforeach],
+                    // Lấy dữ liệu từ mảng đã được tổng hợp
+                    data: [@foreach ($aggregatedStatistics as $stat){{ $stat['chart_revenue'] }}, @endforeach],
                     backgroundColor: [
                         'rgba(255, 99, 132, 0.8)',
                         'rgba(54, 162, 235, 0.8)',

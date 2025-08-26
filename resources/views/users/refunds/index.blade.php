@@ -15,18 +15,18 @@
             </div>
         </div>
 
-       <div class="border-bottom mb-4">
-        <nav class="d-flex flex-wrap" style="gap: 1.5rem;">
-            <a href="{{ route('orders.index') }}" class="tab-link {{ empty($status) ? 'active' : '' }}">Tất cả</a>
-            <a href="{{ route('orders.index', ['status' => 'pending_confirmation']) }}" class="tab-link {{ $status == 'pending_confirmation' ? 'active' : '' }}">Chờ xác nhận</a>
-            <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="tab-link {{ $status == 'processing' ? 'active' : '' }}">Đang xử lý</a>
-            <a href="{{ route('orders.index', ['status' => 'out_for_delivery']) }}" class="tab-link {{ $status == 'out_for_delivery' ? 'active' : '' }}">Đang giao hàng</a>
-            <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Giao hàng thành công</a>
-            <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Hủy</a>
-            <a href="{{ route('orders.index', ['status' => 'failed_delivery']) }}" class="tab-link {{ $status == 'failed_delivery' ? 'active' : '' }}">Giao hàng thất bại</a>
-            <a href="{{ route('orders.returns') }}" class="tab-link {{ request()->routeIs('orders.returns') ? 'active' : '' }}">Trả hàng</a>
-        </nav>
-    </div>
+        <div class="border-bottom mb-4">
+            <nav class="d-flex flex-wrap" style="gap: 1.5rem;">
+                <a href="{{ route('orders.index') }}" class="tab-link {{ request()->routeIs('orders.index') && empty($status) ? 'active' : '' }}">Tất cả</a>
+                <a href="{{ route('orders.index', ['status' => 'pending_confirmation']) }}" class="tab-link {{ $status == 'pending_confirmation' ? 'active' : '' }}">Chờ xác nhận</a>
+                <a href="{{ route('orders.index', ['status' => 'processing']) }}" class="tab-link {{ $status == 'processing' ? 'active' : '' }}">Đang xử lý</a>
+                <a href="{{ route('orders.index', ['status' => 'out_for_delivery']) }}" class="tab-link {{ $status == 'out_for_delivery' ? 'active' : '' }}">Đang giao hàng</a>
+                <a href="{{ route('orders.index', ['status' => 'delivered']) }}" class="tab-link {{ $status == 'delivered' ? 'active' : '' }}">Giao hàng thành công</a>
+                <a href="{{ route('orders.index', ['status' => 'cancelled']) }}" class="tab-link {{ $status == 'cancelled' ? 'active' : '' }}">Hủy</a>
+                <a href="{{ route('orders.index', ['status' => 'failed_delivery']) }}" class="tab-link {{ $status == 'failed_delivery' ? 'active' : '' }}">Giao hàng thất bại</a>
+                <a href="{{ route('orders.returns') }}" class="tab-link {{ request()->routeIs('orders.returns') ? 'active' : '' }}">Trả hàng</a>
+            </nav>
+        </div>
 
         @forelse ($refunds as $refund)
         <div class="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
@@ -59,10 +59,10 @@
                     } elseif ($product && $product->coverImage && Storage::disk('public')->exists($product->coverImage->path)) {
                     $imageUrl = Storage::url($product->coverImage->path);
                     } else {
-                    $imageUrl = asset('images/placeholder.jpg'); 
+                    $imageUrl = asset('images/placeholder.jpg');
                     }
                     @endphp
-                    
+
                     <img src="{{ $imageUrl }}" alt="{{ $variant?->name ?? $product?->name ?? 'Sản phẩm' }}" class="w-24 h-24 rounded-md">
 
                     <div class="flex-1">
