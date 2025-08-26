@@ -64,6 +64,7 @@
             quantityInput.value = quantity; // cập nhật lại input số lượng nếu vượt giới hạn
 
             const token = this.querySelector('input[name="_token"]').value;
+            const isFlashSale = document.getElementById('is-flash-sale')?.value || '0';
 
             const postData = {
                 product_variant_id: inputVariantId.value,
@@ -71,6 +72,7 @@
                 image: inputImage.value,
                 product_id: this.querySelector('input[name="product_id"]').value,
                 quantity: quantity,
+                is_flash_sale: isFlashSale,
                 _token: token,
             };
 

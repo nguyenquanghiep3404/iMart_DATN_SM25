@@ -41,7 +41,7 @@ class InventoryMovement extends Model
     public function getReasonLabelAttribute()
     {
         return match ($this->reason) {
-            'sale' => 'Bán hàng',
+            'Packed for Package' => 'Bán hàng',
             'Nhập hàng từ NCC' => 'Nhập hàng',
             'Xuất kho chuyển đi' => 'Chuyển kho',
             'Nhận kho chuyển đến' => 'Nhận kho',

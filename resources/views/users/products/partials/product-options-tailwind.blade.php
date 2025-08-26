@@ -115,8 +115,6 @@
             <span><span class="font-semibold">{{ number_format($totalReviews) }}</span> đánh giá</span>
         </div>
 
-
-        <div class="h-4 w-px bg-gray-300"></div><span><span class="font-semibold">4.6k</span> đã bán</span>
     </div>
     <div class="variants mt-6 space-y-4" tabindex="-1">
         {{-- Thuộc tính KHÔNG phải "Màu sắc" --}}
@@ -488,6 +486,8 @@
         <input type="hidden" name="image" id="wishlist-variant-image">
         <input type="hidden" name="product_id" value="{{ $product->id }}">
         <input type="hidden" name="variant_key" id="wishlist-variant-key">
+        <input type="hidden" name="is_flash_sale" id="is-flash-sale">
+
 
 
         <div class="mt-6">
@@ -525,51 +525,140 @@
 
     const quantityInput = document.getElementById('quantity_input');
 
+    // LOGIC CỦA TIẾP
+    // function updateQuantityInputMax() {
+    //     if (!quantityInput) return;
+
+    //     quantityInput.max = realAvailableStock;
+
+    //     let currentVal = parseInt(quantityInput.value) || 1;
+    //     if (currentVal > realAvailableStock) {
+    //         quantityInput.value = realAvailableStock > 0 ? realAvailableStock : 1;
+    //     } else if (currentVal < 1) {
+    //         quantityInput.value = 1;
+    //     }
+    // }
+
     function updateQuantityInputMax() {
         if (!quantityInput) return;
 
-        quantityInput.max = realAvailableStock;
+        // Kiểm tra xem có phải flash sale không
+        const isFlashSaleInput = document.getElementById('is-flash-sale');
+        const isFlashSale = isFlashSaleInput && isFlashSaleInput.value == '1';
+
+        if (isFlashSale) {
+            // Với flash sale, luôn đặt max > 0 để tránh lỗi validation
+            // Việc kiểm tra hết hàng sẽ được xử lý ở backend
+            quantityInput.max = Math.max(realAvailableStock, 1);
+        } else {
+            // Với sản phẩm thường, đặt max theo tồn kho thực tế
+            quantityInput.max = realAvailableStock;
+        }
 
         let currentVal = parseInt(quantityInput.value) || 1;
-        if (currentVal > realAvailableStock) {
-            quantityInput.value = realAvailableStock > 0 ? realAvailableStock : 1;
+        if (currentVal > quantityInput.max) {
+            quantityInput.value = quantityInput.max > 0 ? quantityInput.max : 1;
         } else if (currentVal < 1) {
             quantityInput.value = 1;
         }
     }
 
-     if (quantityInput) {
+    if (quantityInput) {
         quantityInput.addEventListener('input', function() {
             let enteredQuantity = parseInt(this.value);
             if (isNaN(enteredQuantity) || enteredQuantity < 1) {
                 this.value = 1;
                 return;
             }
+
+            const isFlashSaleInput = document.getElementById('is-flash-sale');
+            const isFlashSale = isFlashSaleInput && isFlashSaleInput.value == '1';
+
             if (enteredQuantity > realAvailableStock) {
-                toastr.error(
-                    `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Hệ thống chỉ còn ${realAvailableStock} sản phẩm nữa.`
-                );
-                this.value = realAvailableStock;
+                if (isFlashSale) {
+                    // Với flash sale, sử dụng số lượng còn lại thực tế
+                    this.value = realAvailableStock > 0 ? realAvailableStock : 1;
+                } else {
+                    // Với sản phẩm thường, giữ nguyên
+                    toastr.error(
+                        `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Hệ thống chỉ còn ${realAvailableStock} sản phẩm nữa.`
+                    );
+                    this.value = realAvailableStock;
+                }
             }
         });
     }
 
     function fetchVariantStock(variantId) {
         fetch(`/api/variant-stock/${variantId}`)
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`Lỗi HTTP: ${res.status}`);
+                }
+                return res.json();
+            })
             .then(data => {
                 alreadyInCarts = data.alreadyInCarts ?? 0;
                 realAvailableStock = data.remaining ?? 0;
 
-                // Cập nhật tồn kho trên giao diện
-                const stockEl = document.getElementById('variant-stock');
-                if (stockEl) {
-                    stockEl.textContent =
-                        `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Còn lại: ${realAvailableStock} sản phẩm`;
-                }
+                // Lấy thông tin flash sale
+                fetch(`/variant-flash-sale/${variantId}`)
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error(`Lỗi HTTP: ${res.status}`);
+                        }
+                        return res.json();
+                    })
+                    .then(flashData => {
+                        const isFlashSaleInput = document.getElementById('is-flash-sale');
+                        if (!isFlashSaleInput) {
+                            console.error('Không tìm thấy phần tử #is-flash-sale');
+                            return;
+                        }
 
-                updateQuantityInputMax();
-                updateCTAButtons(realAvailableStock);
+                        // Cập nhật realAvailableStock và is_flash_sale
+                        if (flashData.is_flash_sale && flashData.remaining > 0) {
+                            isFlashSaleInput.value = 1;
+                            // Với flash sale, trừ số lượng đã có trong giỏ
+                            realAvailableStock = Math.min(realAvailableStock, flashData.remaining) -
+                                alreadyInCarts;
+                        } else {
+                            isFlashSaleInput.value = 0;
+                            // Với sản phẩm thường, giữ nguyên
+                            realAvailableStock = data.remaining ?? 0;
+                        }
+
+                        // Cập nhật tồn kho trên giao diện
+                        const stockEl = document.getElementById('variant-stock');
+                        if (stockEl) {
+                            if (flashData.is_flash_sale && flashData.remaining > 0) {
+                                const availableAfterCart = realAvailableStock;
+                                if (availableAfterCart > 0) {
+                                    stockEl.textContent =
+                                        `Flash Sale! Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Còn lại: ${availableAfterCart} sản phẩm`;
+                                } else {
+                                    stockEl.textContent =
+                                        `Bạn đã có ${alreadyInCarts} sản phẩm Flash Sale trong giỏ hàng. Đây là số lượng tối đa, không thể thêm nữa.`;
+                                }
+                            } else {
+                                stockEl.textContent =
+                                    `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Còn lại: ${realAvailableStock} sản phẩm`;
+                            }
+                        }
+
+                        updateQuantityInputMax();
+
+                        // Với flash sale, truyền số lượng còn lại thực tế
+                        if (flashData.is_flash_sale && flashData.remaining > 0) {
+                            updateCTAButtons(realAvailableStock);
+                        } else {
+                            updateCTAButtons(realAvailableStock);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Lỗi lấy thông tin flash sale:', err);
+                        toastr.error('Không thể lấy thông tin flash sale.');
+                    });
             })
             .catch(err => {
                 console.error('Lỗi lấy tồn kho:', err);
@@ -581,8 +670,33 @@
         const ctaContainer = document.getElementById('main-cta-buttons');
         if (!ctaContainer) return;
 
-        if (quantity > 0) {
+        const isFlashSaleInput = document.getElementById('is-flash-sale');
+        const isFlashSale = isFlashSaleInput && isFlashSaleInput.value == '1';
+
+        if (isFlashSale) {
+            // Với flash sale, LUÔN hiển thị 2 nút bình thường
+            // Việc kiểm tra hết hàng được xử lý ở backend
             ctaContainer.innerHTML = `
+            <button type="submit"
+                class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
+                </svg>
+                THÊM VÀO GIỎ HÀNG
+            </button>
+
+            <button type="button" id="buy-now-btn"
+                class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+                MUA NGAY
+            </button>
+        `;
+            attachBuyNowListener();
+        } else {
+            // Logic cho sản phẩm thường
+            if (quantity > 0) {
+                ctaContainer.innerHTML = `
                 <button type="submit"
                     class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -598,17 +712,90 @@
                     MUA NGAY
                 </button>
             `;
-
-            attachBuyNowListener();
-        } else {
-            ctaContainer.innerHTML = `
+                attachBuyNowListener();
+            } else {
+                ctaContainer.innerHTML = `
                 <button type="button" disabled
                     class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-gray-400 text-gray-400 font-bold rounded-lg cursor-not-allowed">
                     HẾT HÀNG
                 </button>
             `;
+            }
         }
     }
+
+    // LOGIC CỦA TIẾP
+    //  if (quantityInput) {
+    //     quantityInput.addEventListener('input', function() {
+    //         let enteredQuantity = parseInt(this.value);
+    //         if (isNaN(enteredQuantity) || enteredQuantity < 1) {
+    //             this.value = 1;
+    //             return;
+    //         }
+    //         if (enteredQuantity > realAvailableStock) {
+    //             toastr.error(
+    //                 `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Hệ thống chỉ còn ${realAvailableStock} sản phẩm nữa.`
+    //             );
+    //             this.value = realAvailableStock;
+    //         }
+    //     });
+    // }
+
+    // function fetchVariantStock(variantId) {
+    //     fetch(`/api/variant-stock/${variantId}`)
+    //         .then(res => res.json())
+    //         .then(data => {
+    //             alreadyInCarts = data.alreadyInCarts ?? 0;
+    //             realAvailableStock = data.remaining ?? 0;
+
+    //             // Cập nhật tồn kho trên giao diện
+    //             const stockEl = document.getElementById('variant-stock');
+    //             if (stockEl) {
+    //                 stockEl.textContent =
+    //                     `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Còn lại: ${realAvailableStock} sản phẩm`;
+    //             }
+
+    //             updateQuantityInputMax();
+    //             updateCTAButtons(realAvailableStock);
+    //         })
+    //         .catch(err => {
+    //             console.error('Lỗi lấy tồn kho:', err);
+    //             toastr.error('Không thể lấy thông tin tồn kho.');
+    //         });
+    // }
+
+    // function updateCTAButtons(quantity) {
+    //     const ctaContainer = document.getElementById('main-cta-buttons');
+    //     if (!ctaContainer) return;
+
+    //     if (quantity > 0) {
+    //         ctaContainer.innerHTML = `
+    //             <button type="submit"
+    //                 class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
+    //                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+    //                     stroke="currentColor" class="w-6 h-6">
+    //                     <path stroke-linecap="round" stroke-linejoin="round"
+    //                         d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
+    //                 </svg>
+    //                 THÊM VÀO GIỎ HÀNG
+    //             </button>
+
+    //             <button type="button" id="buy-now-btn"
+    //                 class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+    //                 MUA NGAY
+    //             </button>
+    //         `;
+
+    //         attachBuyNowListener();
+    //     } else {
+    //         ctaContainer.innerHTML = `
+    //             <button type="button" disabled
+    //                 class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-gray-400 text-gray-400 font-bold rounded-lg cursor-not-allowed">
+    //                 HẾT HÀNG
+    //             </button>
+    //         `;
+    //     }
+    // }
 
     function attachBuyNowListener() {
         const buyNowBtn = document.getElementById('buy-now-btn');

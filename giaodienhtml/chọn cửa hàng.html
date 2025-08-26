@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn Cửa Hàng & Máy POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        /* Thay đổi #1: Bỏ bo góc và đổ bóng để giao diện liền mạch toàn màn hình */
+        .main-container {
+            background-color: white;
+            /* Các thuộc tính dưới đây đã được lược bỏ để hiển thị toàn màn hình */
+            /* border-radius: 1rem; */
+            /* box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.1); */
+        }
+        .selection-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            background-color: #f9fafb;
+        }
+        .selection-card:hover {
+            transform: translateY(-5px);
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .selection-card .icon {
+            font-size: 2.5rem;
+            color: #3b82f6;
+            margin-bottom: 1rem;
+        }
+        .back-button {
+            background: none;
+            border: none;
+            color: #4b5563;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .back-button:hover {
+            color: #1d4ed8;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div class="main-container min-h-screen p-6 sm:p-8">
+        <div class="flex justify-between items-start mb-8 border-b pb-4">
+            <div id="header-content">
+                </div>
+            <div class="text-right flex-shrink-0">
+                <div class="flex items-center justify-end">
+                    <span class="font-semibold text-gray-700 mr-3" id="user-name"></span>
+                    <img src="https://placehold.co/40x40/E2E8F0/4A5568?text=A" alt="Avatar" class="w-10 h-10 rounded-full">
+                </div>
+                <a href="#" class="text-sm text-red-500 hover:text-red-700 font-medium mt-1 inline-block">Đăng xuất</a>
+            </div>
+        </div>
+
+        <div id="select-store-screen">
+            <div id="store-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                </div>
+            <div id="loading-stores" class="text-center text-gray-500 py-10">
+                <i class="fas fa-spinner fa-spin text-2xl"></i>
+                <p class="mt-2">Đang tải danh sách cửa hàng...</p>
+            </div>
+        </div>
+
+        <div id="select-register-screen" class="hidden">
+            <div id="register-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                </div>
+            <div id="loading-registers" class="hidden text-center text-gray-500 py-10">
+                <i class="fas fa-spinner fa-spin text-2xl"></i>
+                <p class="mt-2">Đang tải danh sách máy POS...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- MOCK DATA ---
+        const user = { id: 1, name: "Nguyễn Văn A" };
+
+        const availableStores = [
+            { id: 101, name: 'iMart Royal City', address: '72A Nguyễn Trãi, Thanh Xuân, Hà Nội' },
+            { id: 102, name: 'iMart Times City', address: '458 Minh Khai, Hai Bà Trưng, Hà Nội' },
+            { id: 103, name: 'iMart Landmark 81', address: '208 Nguyễn Hữu Cảnh, Q. Bình Thạnh, TP.HCM' },
+            { id: 104, name: 'iMart Đà Nẵng', address: '910A Ngô Quyền, Sơn Trà, Đà Nẵng' },
+            { id: 105, name: 'iMart Cần Thơ', address: '2 Hùng Vương, Ninh Kiều, Cần Thơ' }
+        ];
+
+        const registersByStore = {
+            101: [
+                { id: 201, name: 'Quầy Thu Ngân 1' },
+                { id: 202, name: 'Quầy Thu Ngân 2' },
+                { id: 203, name: 'Quầy Hỗ Trợ Kỹ Thuật' }
+            ],
+            102: [
+                { id: 204, name: 'Quầy Chính' }
+            ],
+            103: [
+                { id: 205, name: 'Register A' },
+                { id: 206, name: 'Register B' }
+            ],
+            104: [{ id: 207, name: 'Máy POS Đà Nẵng' }],
+            105: [] // Cửa hàng không có máy POS nào
+        };
+
+        // --- DOM Elements ---
+        const headerContentEl = document.getElementById('header-content');
+        const selectStoreScreen = document.getElementById('select-store-screen');
+        const selectRegisterScreen = document.getElementById('select-register-screen');
+        const storeListContainer = document.getElementById('store-list');
+        const registerListContainer = document.getElementById('register-list');
+        const loadingStores = document.getElementById('loading-stores');
+        const loadingRegisters = document.getElementById('loading-registers');
+        const userNameEl = document.getElementById('user-name');
+        
+        // --- Functions ---
+        
+        function showScreen(screen) {
+            selectStoreScreen.classList.add('hidden');
+            selectRegisterScreen.classList.add('hidden');
+            
+            if (screen === 'store') {
+                selectStoreScreen.classList.remove('hidden');
+                updateHeader('store');
+            } else if (screen === 'register') {
+                selectRegisterScreen.classList.remove('hidden');
+            }
+        }
+        
+        function updateHeader(screen, context = {}) {
+            if (screen === 'store') {
+                headerContentEl.innerHTML = `
+                    <h1 class="text-3xl font-extrabold text-gray-800">Chọn Cửa Hàng</h1>
+                    <p class="text-gray-500 mt-1">Vui lòng chọn cửa hàng bạn đang làm việc.</p>
+                `;
+            } else if (screen === 'register') {
+                headerContentEl.innerHTML = `
+                    <div>
+                        <button onclick="showScreen('store')" class="back-button mb-2">
+                            <i class="fas fa-arrow-left mr-2"></i>Quay lại Chọn Cửa Hàng
+                        </button>
+                        <h1 class="text-3xl font-extrabold text-gray-800">Chọn Máy POS</h1>
+                        <p class="text-gray-500 mt-1">Bạn đang chọn máy cho cửa hàng: <span class="font-bold">${context.storeName}</span></p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderStores(stores) {
+            storeListContainer.innerHTML = '';
+            loadingStores.classList.add('hidden');
+
+            if (!stores || stores.length === 0) {
+                storeListContainer.innerHTML = `<p class="text-center col-span-full text-gray-600">Bạn chưa được phân quyền cho bất kỳ cửa hàng nào.</p>`;
+                return;
+            }
+
+            stores.forEach(store => {
+                const storeCard = document.createElement('div');
+                storeCard.className = 'selection-card';
+                storeCard.innerHTML = `
+                    <div class="icon"><i class="fas fa-store-alt"></i></div>
+                    <h2 class="text-lg font-bold text-gray-800">${store.name}</h2>
+                    <p class="text-sm text-gray-500 mt-1">${store.address}</p>
+                `;
+                storeCard.addEventListener('click', () => handleStoreSelection(store.id, store.name));
+                storeListContainer.appendChild(storeCard);
+            });
+        }
+        
+        function renderRegisters(registers, storeName) {
+            registerListContainer.innerHTML = '';
+            loadingRegisters.classList.add('hidden');
+            
+            updateHeader('register', { storeName: storeName });
+
+            if (!registers || registers.length === 0) {
+                registerListContainer.innerHTML = `<p class="text-center col-span-full text-gray-600">Cửa hàng này chưa có máy POS nào được thiết lập.</p>`;
+                return;
+            }
+
+            registers.forEach(register => {
+                const registerCard = document.createElement('div');
+                registerCard.className = 'selection-card';
+                registerCard.innerHTML = `
+                    <div class="icon"><i class="fas fa-cash-register"></i></div>
+                    <h2 class="text-lg font-bold text-gray-800">${register.name}</h2>
+                `;
+                registerCard.addEventListener('click', () => handleRegisterSelection(register.id, register.name));
+                registerListContainer.appendChild(registerCard);
+            });
+        }
+
+        function handleStoreSelection(storeId, storeName) {
+            console.log(`Store selected: ID=${storeId}, Name=${storeName}`);
+            showScreen('register');
+            loadingRegisters.classList.remove('hidden');
+            registerListContainer.innerHTML = '';
+
+            // Simulate API call to get registers for the selected store
+            setTimeout(() => {
+                const registers = registersByStore[storeId] || [];
+                renderRegisters(registers, storeName);
+            }, 1000);
+        }
+
+        function handleRegisterSelection(registerId, registerName) {
+            console.log(`Register selected: ID=${registerId}, Name=${registerName}`);
+            alert(`Bạn đã chọn máy POS: ${registerName}.\nSẵn sàng để mở ca!`);
+            // Example of redirecting to the final step (open session)
+            // window.location.href = `/pos/open-session?register_id=${registerId}`;
+        }
+        
+        function initialize() {
+            userNameEl.textContent = user.name;
+            loadingStores.classList.remove('hidden');
+            showScreen('store');
+            
+            // Simulate API call to get stores
+            setTimeout(() => {
+                renderStores(availableStores);
+            }, 1500);
+        }
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>

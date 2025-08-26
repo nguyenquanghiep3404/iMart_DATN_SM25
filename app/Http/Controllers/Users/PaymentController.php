@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\PaymentRequest;
+use App\Models\FlashSaleProduct;
+
 
 use App\Models\OrderFulfillment;
 // use App\Services\AutoStockTransferService; // Đã chuyển logic sang OrderObserver
@@ -100,6 +102,7 @@ class PaymentController extends Controller
         $user = auth()->user();
 
         $availableCoupons = Coupon::where('status', 'active')
+            ->where('is_public', 1)
             ->where(function ($query) {
                 $query->whereNull('start_date')
                     ->orWhere('start_date', '<=', now());
@@ -191,7 +194,7 @@ class PaymentController extends Controller
             return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
         });
 
-        $availableCoupons = Coupon::where('status', 'active')->get();
+        $availableCoupons = Coupon::where('status', 'active')->where('is_public', 1)->get();
 
         // 4. Trả về view với toàn bộ dữ liệu chính xác
         return view('users.payments.information', [
@@ -304,7 +307,8 @@ class PaymentController extends Controller
                     }
                 // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService.commitInventoryForOrder()
                 // để tránh trừ kho 2 lần. COD orders sẽ có inventory được commit ngay khi tạo đơn hàng.
-
+                // Tăng quantity_sold cho các sản phẩm Flash Sale
+                $this->incrementFlashSaleQuantitySold($order);
                 return $order;
             });
 
@@ -1331,6 +1335,7 @@ class PaymentController extends Controller
         $user = auth()->user();
 
         $availableCoupons = Coupon::where('status', 'active')
+            ->where('is_public', 1)
             ->where(function ($query) {
                 $query->whereNull('start_date')
                     ->orWhere('start_date', '<=', now());
@@ -1943,7 +1948,7 @@ class PaymentController extends Controller
             'baseLength' => $maxLength > 0 ? $maxLength : 20,
             'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
             'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
-            'availableCoupons' => Coupon::where('status', 'active')->get(), // Buy Now VẪN áp dụng coupon
+            'availableCoupons' => Coupon::where('status', 'active')->where('is_public', 1)->get(),
         ];
     }
     /**
@@ -2544,4 +2549,32 @@ class PaymentController extends Controller
             return response('<h1>Đã có lỗi xảy ra!</h1><p>Vui lòng thử lại hoặc liên hệ quản trị viên.</p>', 500);
         }
     }
+
+    private function incrementFlashSaleQuantitySold(Order $order): void
+{
+    try {
+        // Lấy tất cả OrderItem trong đơn hàng
+        $orderItems = $order->items()->with('productVariant')->get();
+
+        foreach ($orderItems as $orderItem) {
+            // Kiểm tra xem product_variant_id có trong bảng flash_sale_products không
+            $flashSaleProduct = FlashSaleProduct::where('product_variant_id', $orderItem->product_variant_id)
+                ->whereHas('flashSale', function ($query) {
+                    $query->where('status', 'active')
+                          ->where('start_time', '<=', now())
+                          ->where('end_time', '>=', now());
+                })
+                ->first();
+
+            if ($flashSaleProduct) {
+                // Tăng quantity_sold tương ứng với số lượng trong OrderItem
+                $flashSaleProduct->increment('quantity_sold', $orderItem->quantity);
+                Log::info("Đã tăng quantity_sold cho FlashSaleProduct ID {$flashSaleProduct->id}: +{$orderItem->quantity}");
+            }
+        }
+    } catch (\Exception $e) {
+        Log::error("Lỗi khi tăng quantity_sold cho Flash Sale: " . $e->getMessage());
+        throw $e; // Ném lại ngoại lệ để rollback giao dịch nếu cần
+    }
+}
 }

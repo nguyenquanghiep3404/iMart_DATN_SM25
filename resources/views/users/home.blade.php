@@ -716,379 +716,379 @@
             </div>
     </section>
 
-   @if ($flashSales->count() && $flashSales->pluck('active_slot_id')->filter()->count())
-    <section class="container px-4 pt-5 mt-2 mt-sm-3 mt-lg-4 bg-body-tertiary">
-        <div class="flash-sale-header d-flex align-items-center justify-content-between px-4">
-            <div class="d-flex align-items-center">
-                <span class="flash-sale-icon me-2"><i class="ci-bolt"></i></span>
-                <img src="{{ asset('assets/users/logo/icon-fs.png') }}" alt="Flash Sale" class="flash-sale-title-img"
-                    id="flash-sale-campaign-title">
-                <span class="flash-sale-timer ms-3 d-none d-md-inline">
-                    <img src="{{ asset('assets/users/logo/—Pngtree—50 parcent off sale offer_5949710.png') }}"
-                        alt="Flash Sale" class="img-fluid" style="height:67px; margin-left: 45px;">
-                </span>
+    @if ($flashSales->count() && $flashSales->pluck('active_slot_id')->filter()->count())
+        <section class="container px-4 pt-5 mt-2 mt-sm-3 mt-lg-4 bg-body-tertiary">
+            <div class="flash-sale-header d-flex align-items-center justify-content-between px-4">
+                <div class="d-flex align-items-center">
+                    <span class="flash-sale-icon me-2"><i class="ci-bolt"></i></span>
+                    <img src="{{ asset('assets/users/logo/icon-fs.png') }}" alt="Flash Sale" class="flash-sale-title-img"
+                        id="flash-sale-campaign-title">
+                    <span class="flash-sale-timer ms-3 d-none d-md-inline">
+                        <img src="{{ asset('assets/users/logo/—Pngtree—50 parcent off sale offer_5949710.png') }}"
+                            alt="Flash Sale" class="img-fluid" style="height:67px; margin-left: 45px;">
+                    </span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-link p-0 m-0" id="flash-sale-prev-campaign"
+                        style="font-size: 2rem; color: #fff;">
+                        <i class="ci-arrow-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-link p-0 m-0" id="flash-sale-next-campaign"
+                        style="font-size: 2rem; color: #fff;">
+                        <i class="ci-arrow-right"></i>
+                    </button>
+                </div>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-link p-0 m-0" id="flash-sale-prev-campaign"
-                    style="font-size: 2rem; color: #fff;">
-                    <i class="ci-arrow-left"></i>
-                </button>
-                <button type="button" class="btn btn-link p-0 m-0" id="flash-sale-next-campaign"
-                    style="font-size: 2rem; color: #fff;">
-                    <i class="ci-arrow-right"></i>
-                </button>
-            </div>
-        </div>
-        <div class="flash-sale-main-card p-4 rounded-4 shadow-lg mb-5">
-            <div class="flash-sale-campaign-content">
-                @foreach ($flashSales as $idx => $sale)
-                    <div class="flash-sale-campaign-block @if ($idx !== 0) d-none @endif"
-                        data-campaign-idx="{{ $idx }}">
-                        <div
-                            class="d-flex gap-3 align-items-center flash-sale-slot-row justify-content-center flex-wrap">
+            <div class="flash-sale-main-card p-4 rounded-4 shadow-lg mb-5">
+                <div class="flash-sale-campaign-content">
+                    @foreach ($flashSales as $idx => $sale)
+                        <div class="flash-sale-campaign-block @if ($idx !== 0) d-none @endif"
+                            data-campaign-idx="{{ $idx }}">
+                            <div
+                                class="d-flex gap-3 align-items-center flash-sale-slot-row justify-content-center flex-wrap">
+                                @foreach ($sale->flashSaleTimeSlots as $slotIdx => $slot)
+                                    @php
+                                        $start = \Carbon\Carbon::parse($slot->start_time);
+                                        $end = \Carbon\Carbon::parse($slot->end_time);
+                                        $now = now();
+                                        $isActive = $now->between($start, $end);
+                                        $isUpcoming = $now->lt($start);
+                                        $isPast = $now->gt($end);
+                                    @endphp
+                                    @if ($isPast)
+                                        @continue
+                                    @endif
+                                    <div class="flash-sale-slot-box d-flex flex-column align-items-center justify-content-center {{ $isActive ? 'slot-active' : '' }}"
+                                        data-slot-id="{{ $slot->id }}" data-slot-idx="{{ $slotIdx }}"
+                                        data-start="{{ \Carbon\Carbon::parse($slot->start_time)->toIso8601String() }}"
+                                        data-end="{{ \Carbon\Carbon::parse($slot->end_time)->toIso8601String() }}"
+                                        style="min-width: 180px; min-height: 90px; border-radius: 16px; margin-right: 12px;">
+                                        <div class="slot-label mb-2">
+                                            {{ $isActive ? 'Còn lại' : 'Sắp diễn ra' }}
+                                        </div>
+                                        @if ($isActive)
+                                            <div class="slot-countdown-box d-flex align-items-center gap-1 mb-1">
+                                                <div class="countdown-box countdown-flat"
+                                                    id="countdown-hour-{{ $sale->id }}-{{ $slot->id }}">00</div>
+                                                <span class="countdown-sep">:</span>
+                                                <div class="countdown-box countdown-flat"
+                                                    id="countdown-min-{{ $sale->id }}-{{ $slot->id }}">00</div>
+                                                <span class="countdown-sep">:</span>
+                                                <div class="countdown-box countdown-flat"
+                                                    id="countdown-sec-{{ $sale->id }}-{{ $slot->id }}">00</div>
+                                            </div>
+                                            <script>
+                                                document.addEventListener('DOMContentLoaded', function() {
+                                                    let endTime = new Date(@json($slot->end_time));
+
+                                                    function updateCountdown_{{ $sale->id }}_{{ $slot->id }}() {
+                                                        let now = new Date();
+                                                        let diff = Math.max(0, Math.floor((endTime - now) / 1000));
+                                                        let h = Math.floor(diff / 3600).toString().padStart(2, '0');
+                                                        let m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+                                                        let s = (diff % 60).toString().padStart(2, '0');
+                                                        document.getElementById('countdown-hour-{{ $sale->id }}-{{ $slot->id }}').textContent = h;
+                                                        document.getElementById('countdown-min-{{ $sale->id }}-{{ $slot->id }}').textContent = m;
+                                                        document.getElementById('countdown-sec-{{ $sale->id }}-{{ $slot->id }}').textContent = s;
+                                                    }
+                                                    updateCountdown_{{ $sale->id }}_{{ $slot->id }}();
+                                                    setInterval(updateCountdown_{{ $sale->id }}_{{ $slot->id }}, 1000);
+                                                });
+                                            </script>
+                                        @else
+                                            <div class="slot-time fw-bold">{{ $start->format('H:i') }}</div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            </div>
                             @foreach ($sale->flashSaleTimeSlots as $slotIdx => $slot)
                                 @php
                                     $start = \Carbon\Carbon::parse($slot->start_time);
                                     $end = \Carbon\Carbon::parse($slot->end_time);
                                     $now = now();
-                                    $isActive = $now->between($start, $end);
-                                    $isUpcoming = $now->lt($start);
+                                    $isActiveSlot = $slot->id == $sale->active_slot_id;
                                     $isPast = $now->gt($end);
                                 @endphp
                                 @if ($isPast)
                                     @continue
                                 @endif
-                                <div class="flash-sale-slot-box d-flex flex-column align-items-center justify-content-center {{ $isActive ? 'slot-active' : '' }}"
-                                    data-slot-id="{{ $slot->id }}" data-slot-idx="{{ $slotIdx }}"
+                                <div class="flash-sale-slot-products @if (!$isActiveSlot) d-none @endif"
+                                    data-slot-idx="{{ $slotIdx }}"
                                     data-start="{{ \Carbon\Carbon::parse($slot->start_time)->toIso8601String() }}"
-                                    data-end="{{ \Carbon\Carbon::parse($slot->end_time)->toIso8601String() }}"
-                                    style="min-width: 180px; min-height: 90px; border-radius: 16px; margin-right: 12px;">
-                                    <div class="slot-label mb-2">
-                                        {{ $isActive ? 'Còn lại' : 'Sắp diễn ra' }}
-                                    </div>
-                                    @if ($isActive)
-                                        <div class="slot-countdown-box d-flex align-items-center gap-1 mb-1">
-                                            <div class="countdown-box countdown-flat"
-                                                id="countdown-hour-{{ $sale->id }}-{{ $slot->id }}">00</div>
-                                            <span class="countdown-sep">:</span>
-                                            <div class="countdown-box countdown-flat"
-                                                id="countdown-min-{{ $sale->id }}-{{ $slot->id }}">00</div>
-                                            <span class="countdown-sep">:</span>
-                                            <div class="countdown-box countdown-flat"
-                                                id="countdown-sec-{{ $sale->id }}-{{ $slot->id }}">00</div>
-                                        </div>
-                                        <script>
-                                            document.addEventListener('DOMContentLoaded', function() {
-                                                let endTime = new Date(@json($slot->end_time));
-
-                                                function updateCountdown_{{ $sale->id }}_{{ $slot->id }}() {
-                                                    let now = new Date();
-                                                    let diff = Math.max(0, Math.floor((endTime - now) / 1000));
-                                                    let h = Math.floor(diff / 3600).toString().padStart(2, '0');
-                                                    let m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
-                                                    let s = (diff % 60).toString().padStart(2, '0');
-                                                    document.getElementById('countdown-hour-{{ $sale->id }}-{{ $slot->id }}').textContent = h;
-                                                    document.getElementById('countdown-min-{{ $sale->id }}-{{ $slot->id }}').textContent = m;
-                                                    document.getElementById('countdown-sec-{{ $sale->id }}-{{ $slot->id }}').textContent = s;
-                                                }
-                                                updateCountdown_{{ $sale->id }}_{{ $slot->id }}();
-                                                setInterval(updateCountdown_{{ $sale->id }}_{{ $slot->id }}, 1000);
-                                            });
-                                        </script>
-                                    @else
-                                        <div class="slot-time fw-bold">{{ $start->format('H:i') }}</div>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
-                        @foreach ($sale->flashSaleTimeSlots as $slotIdx => $slot)
-                            @php
-                                $start = \Carbon\Carbon::parse($slot->start_time);
-                                $end = \Carbon\Carbon::parse($slot->end_time);
-                                $now = now();
-                                $isActiveSlot = $slot->id == $sale->active_slot_id;
-                                $isPast = $now->gt($end);
-                            @endphp
-                            @if ($isPast)
-                                @continue
-                            @endif
-                            <div class="flash-sale-slot-products @if (!$isActiveSlot) d-none @endif"
-                                data-slot-idx="{{ $slotIdx }}"
-                                data-start="{{ \Carbon\Carbon::parse($slot->start_time)->toIso8601String() }}"
-                                data-end="{{ \Carbon\Carbon::parse($slot->end_time)->toIso8601String() }}">
-                                <div class="swiper flash-sale-swiper-{{ $sale->id }}-{{ $slot->id }}">
-                                    <div class="swiper-wrapper">
-                                        @forelse ($slot->products as $fsProduct)
-                                            @php
-                                                $variant = $fsProduct->productVariant;
-                                                $product = $variant->product ?? null;
-                                                $mainImage =
-                                                    $variant?->primaryImage?->url ??
-                                                    ($product?->thumbnail_url ?? asset('images/placeholder.jpg'));
-                                                $attributes = $variant->attributeValues ?? collect();
-                                                $nonColor = $attributes
-                                                    ->filter(fn($v) => $v->attribute->name !== 'Màu sắc')
-                                                    ->pluck('value')
-                                                    ->join(' ');
-                                                $color = $attributes->firstWhere(
-                                                    fn($v) => $v->attribute->name === 'Màu sắc',
-                                                )?->value;
-                                                $variantName = trim($nonColor . ' ' . $color);
-                                                $quantityLeft = max(
-                                                    0,
-                                                    $fsProduct->quantity_limit - $fsProduct->quantity_sold,
-                                                );
-                                                $total = $fsProduct->quantity_limit;
-                                                $sold = $fsProduct->quantity_sold ?? 0;
-                                                $remaining = $total - $sold;
-                                                $percent = $total > 0 ? ($remaining / $total) * 100 : 0;
-                                                $isSoldOut = $quantityLeft === 0;
-                                            @endphp
-                                            <div class="swiper-slide">
-                                                <div
-                                                    class="product-card bg-body shadow-lg border-1 {{ $isSoldOut ? 'sold-out' : '' }}">
-                                                    <div class="position-relative">
-                                                        <a href="{{ route('users.products.show', $variant->slug) }}">
-                                                            <div class="ratio"
-                                                                style="--cz-aspect-ratio: calc(250 / 220 * 100%)">
-                                                                <img src="{{ $mainImage }}"
-                                                                    alt="{{ $product?->name }}"
-                                                                    class="img-fluid rounded-3 shadow-sm"
-                                                                    style="object-fit:contain; width:100%; height:100%; {{ $isSoldOut ? 'opacity: 0.5; filter: grayscale(100%);' : '' }}">
-                                                                @if ($isSoldOut)
-                                                                    <img src="{{ asset('assets/users/logo/out-of-deal.png') }}"
-                                                                        alt="Sold Out" class="sold-out-overlay"
-                                                                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 50%; max-height: 50%; object-fit: contain;">
+                                    data-end="{{ \Carbon\Carbon::parse($slot->end_time)->toIso8601String() }}">
+                                    <div class="swiper flash-sale-swiper-{{ $sale->id }}-{{ $slot->id }}">
+                                        <div class="swiper-wrapper">
+                                            @forelse ($slot->products as $fsProduct)
+                                                @php
+                                                    $variant = $fsProduct->productVariant;
+                                                    $product = $variant->product ?? null;
+                                                    $mainImage =
+                                                        $variant?->primaryImage?->url ??
+                                                        ($product?->thumbnail_url ?? asset('images/placeholder.jpg'));
+                                                    $attributes = $variant->attributeValues ?? collect();
+                                                    $nonColor = $attributes
+                                                        ->filter(fn($v) => $v->attribute->name !== 'Màu sắc')
+                                                        ->pluck('value')
+                                                        ->join(' ');
+                                                    $color = $attributes->firstWhere(
+                                                        fn($v) => $v->attribute->name === 'Màu sắc',
+                                                    )?->value;
+                                                    $variantName = trim($nonColor . ' ' . $color);
+                                                    $quantityLeft = max(
+                                                        0,
+                                                        $fsProduct->quantity_limit - $fsProduct->quantity_sold,
+                                                    );
+                                                    $total = $fsProduct->quantity_limit;
+                                                    $sold = $fsProduct->quantity_sold ?? 0;
+                                                    $remaining = $total - $sold;
+                                                    $percent = $total > 0 ? ($remaining / $total) * 100 : 0;
+                                                    $isSoldOut = $quantityLeft === 0;
+                                                    $discountPercent = $variant->discount_percent ?? 0; // Lấy phần trăm giảm giá
+                                                @endphp
+                                                <div class="swiper-slide">
+                                                    <div
+                                                        class="product-card bg-body shadow-lg border-1 {{ $isSoldOut ? 'sold-out' : '' }}">
+                                                        @if ($discountPercent > 0 && !$isUpcoming)
+                                                            <!-- Chỉ hiển thị badge nếu slot đang active -->
+                                                            <div class="discount-badge"
+                                                                style="position: absolute; background: red; color: white; padding: 5px 10px;">
+                                                                Giảm {{ $discountPercent }}%
+                                                            </div>
+                                                        @endif
+                                                        <div class="position-relative">
+                                                            <a href="{{ route('users.products.show', $variant->slug) }}">
+                                                                <div class="ratio"
+                                                                    style="--cz-aspect-ratio: calc(250 / 220 * 100%)">
+                                                                    <img src="{{ $mainImage }}"
+                                                                        alt="{{ $product?->name }}"
+                                                                        class="img-fluid rounded-3 shadow-sm"
+                                                                        style="object-fit:contain; width:100%; height:100%; {{ $isSoldOut ? 'opacity: 0.5; filter: grayscale(100%);' : '' }}">
+                                                                    @if ($isSoldOut)
+                                                                        <img src="{{ asset('assets/users/logo/out-of-deal.png') }}"
+                                                                            alt="Sold Out" class="sold-out-overlay"
+                                                                            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 50%; max-height: 50%; object-fit: contain;">
+                                                                    @endif
+                                                                </div>
+                                                            </a>
+                                                        </div>
+                                                        <div class="px-3 pb-3 pt-2 text-center">
+                                                            <h2 class="fw-bold"
+                                                                style="line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em;">
+                                                                <a href="{{ route('users.products.show', $product?->slug) }}"
+                                                                    class="text-dark text-decoration-none {{ $isSoldOut ? 'text-muted' : '' }}"
+                                                                    style="{{ $isSoldOut ? 'pointer-events: none;' : '' }}">
+                                                                    {{ $product?->name }} {{ $variantName }}
+                                                                </a>
+                                                            </h2>
+                                                            <div class="fw-bold js-flash-sale-price"
+                                                                data-flash-price="{{ $fsProduct->flash_price }}"
+                                                                style="color:#da272a; font-size: 20px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                                                @if ($isUpcoming)
+                                                                    @php
+                                                                        $price = (int) $fsProduct->flash_price;
+                                                                        if ($price < 1000000) {
+                                                                            $shortPrice = 'xxx.000đ';
+                                                                        } elseif ($price < 10000000) {
+                                                                            $millions = floor($price / 1000000);
+                                                                            $shortPrice = $millions . '.xxx.000đ';
+                                                                        } else {
+                                                                            $tens = floor($price / 10000000);
+                                                                            $shortPrice = $tens . 'x.xxx.000đ';
+                                                                        }
+                                                                    @endphp
+                                                                    {{ $shortPrice }}
+                                                                @else
+                                                                    {{ number_format($fsProduct->flash_price, 0, ',', '.') }}₫
                                                                 @endif
                                                             </div>
-                                                        </a>
-                                                    </div>
-                                                    <div class="px-3 pb-3 pt-2 text-center">
-                                                        <h2 class="fw-bold"
-                                                            style="line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em;">
-                                                            <a href="{{ route('users.products.show', $product?->slug) }}"
-                                                                class="text-dark text-decoration-none {{ $isSoldOut ? 'text-muted' : '' }}"
-                                                                style="{{ $isSoldOut ? 'pointer-events: none;' : '' }}">
-                                                                {{ $product?->name }} {{ $variantName }}
-                                                            </a>
-                                                        </h2>
-                                                        <div class="fw-bold js-flash-sale-price"
-                                                            data-flash-price="{{ $fsProduct->flash_price }}"
-                                                            style="color:#da272a; font-size: 20px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                                            @if ($isUpcoming)
-                                                                @php
-                                                                    $price = (int) $fsProduct->flash_price;
-                                                                    if ($price < 1000000) {
-                                                                        $shortPrice = 'xxx.000đ';
-                                                                    } elseif ($price < 10000000) {
-                                                                        $millions = floor($price / 1000000);
-                                                                        $shortPrice = $millions . '.xxx.000đ';
-                                                                    } else {
-                                                                        $tens = floor($price / 10000000);
-                                                                        $shortPrice = $tens . 'x.xxx.000đ';
-                                                                    }
-                                                                @endphp
-                                                                {{ $shortPrice }}
-                                                            @else
-                                                                {{ number_format($fsProduct->flash_price, 0, ',', '.') }}₫
-                                                            @endif
-                                                        </div>
-                                                        <div class="text-muted"
-                                                            style="font-size: 14px; text-decoration: line-through;">
-                                                            {{ number_format($variant->price) }}₫
-                                                        </div>
-                                                        <div class="js-flash-sale-progress">
-                                                            <div class="progress-wrapper">
-                                                                <div class="progress-bar-inner"
-                                                                    style="width: {{ $percent }}%">
-                                                                    <span class="progress-text">
-                                                                        🔥 Còn {{ $remaining }}/{{ $total }}
-                                                                        suất
-                                                                    </span>
+                                                            <div class="text-muted"
+                                                                style="font-size: 14px; text-decoration: line-through;">
+                                                                {{ number_format($variant->price) }}₫
+                                                            </div>
+                                                            <div class="js-flash-sale-progress">
+                                                                <div class="progress-wrapper">
+                                                                    <div class="progress-bar-inner"
+                                                                        style="width: {{ $percent }}%">
+                                                                        <span class="progress-text">
+                                                                            🔥 Còn {{ $remaining }}/{{ $total }}
+                                                                            suất
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        @empty
-                                            <div class="swiper-slide">
-                                                <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
-                                            </div>
-                                        @endforelse
+                                            @empty
+                                                <div class="swiper-slide">
+                                                    <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
+                                                </div>
+                                            @endforelse
+                                        </div>
                                     </div>
-                                    <style>
-                                        .sold-out {
-                                            opacity: 0.7;
-                                        }
-                                        .sold-out-overlay {
-                                            z-index: 10;
-                                        }
-                                    </style>
                                 </div>
-                            </div>
-                        @endforeach
-                    </div>
-                @endforeach
+                            @endforeach
+                        </div>
+                    @endforeach
+                </div>
             </div>
-        </div>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
-        <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-        <script>
-            function updateFlashSaleSlotProducts(slotProducts) {
-                if (!slotProducts) return;
-                var start = new Date(slotProducts.getAttribute('data-start'));
-                var end = new Date(slotProducts.getAttribute('data-end'));
-                var now = new Date();
-                var isUpcoming = now < start;
-                var isActive = now >= start && now <= end;
-                slotProducts.querySelectorAll('.js-flash-sale-price').forEach(function(priceEl) {
-                    var flashPrice = parseInt(priceEl.getAttribute('data-flash-price'));
-                    var shortPrice = '';
-                    if (isUpcoming) {
-                        if (flashPrice < 1000000) {
-                            shortPrice = 'xxx.000đ';
-                        } else if (flashPrice < 10000000) {
-                            var millions = Math.floor(flashPrice / 1000000);
-                            shortPrice = millions + '.xxx.000đ';
-                        } else {
-                            var tens = Math.floor(flashPrice / 10000000);
-                            shortPrice = tens + 'x.xxx.000đ';
-                        }
-                        priceEl.textContent = shortPrice;
-                    } else {
-                        priceEl.textContent = flashPrice.toLocaleString('vi-VN') + 'đ';
-                    }
-                });
-                slotProducts.querySelectorAll('.js-flash-sale-progress').forEach(function(progressEl) {
-                    progressEl.style.display = isActive ? '' : 'none';
-                });
-            }
-
-            function bindSlotBoxClick(campaignBlock) {
-                const slotBoxes = campaignBlock.querySelectorAll('.flash-sale-slot-box');
-                slotBoxes.forEach(function(box) {
-                    box.addEventListener('click', function() {
-                        slotBoxes.forEach(function(b) {
-                            b.classList.remove('slot-active');
-                        });
-                        this.classList.add('slot-active');
-                        campaignBlock.querySelectorAll('.flash-sale-slot-products').forEach(function(p) {
-                            p.classList.add('d-none');
-                        });
-                        var idx = this.getAttribute('data-slot-idx');
-                        var slotProducts = campaignBlock.querySelector(
-                            '.flash-sale-slot-products[data-slot-idx="' + idx + '"]');
-                        if (slotProducts) {
-                            slotProducts.classList.remove('d-none');
-                            updateFlashSaleSlotProducts(slotProducts);
-                        }
-                    });
-                });
-            }
-
-            document.addEventListener('DOMContentLoaded', function() {
-                const flashSales = @json($flashSales->pluck('name'));
-                const campaignBlocks = document.querySelectorAll('.flash-sale-campaign-block');
-                let currentIdx = 0;
-                const titleEl = document.getElementById('flash-sale-campaign-title');
-                const prevBtn = document.getElementById('flash-sale-prev-campaign');
-                const nextBtn = document.getElementById('flash-sale-next-campaign');
-
-                // Initialize Swiper for each flash sale slot
-                document.querySelectorAll('.flash-sale-slot-products').forEach(function(slot) {
-                    new Swiper(slot.querySelector('.swiper'), {
-                        slidesPerView: 2,
-                        breakpoints: {
-                            576: {
-                                slidesPerView: 3
-                            },
-                            768: {
-                                slidesPerView: 4
-                            },
-                            992: {
-                                slidesPerView: 6
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+            <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+            <script>
+                function updateFlashSaleSlotProducts(slotProducts) {
+                    if (!slotProducts) return;
+                    var start = new Date(slotProducts.getAttribute('data-start'));
+                    var end = new Date(slotProducts.getAttribute('data-end'));
+                    var now = new Date();
+                    var isUpcoming = now < start;
+                    var isActive = now >= start && now <= end;
+                    slotProducts.querySelectorAll('.js-flash-sale-price').forEach(function(priceEl) {
+                        var flashPrice = parseInt(priceEl.getAttribute('data-flash-price'));
+                        var shortPrice = '';
+                        if (isUpcoming) {
+                            if (flashPrice < 1000000) {
+                                shortPrice = 'xxx.000đ';
+                            } else if (flashPrice < 10000000) {
+                                var millions = Math.floor(flashPrice / 1000000);
+                                shortPrice = millions + '.xxx.000đ';
+                            } else {
+                                var tens = Math.floor(flashPrice / 10000000);
+                                shortPrice = tens + 'x.xxx.000đ';
                             }
-                        },
-                        navigation: false,
-                        pagination: false,
-                        mousewheel: false,
-                        touchRatio: 1.5,
-                        freeMode: true
-                    });
-                });
-
-                function showCampaign(idx) {
-                    campaignBlocks.forEach((block, i) => {
-                        block.classList.toggle('d-none', i !== idx);
-                    });
-                    if (flashSales[idx]) {
-                        titleEl.src = "{{ asset('assets/users/logo/icon-fs.png') }}";
-                        titleEl.alt = flashSales[idx];
-                    }
-                    bindSlotBoxClick(campaignBlocks[idx]);
-                    const now = new Date();
-                    const activeSlot = campaignBlocks[idx].querySelector('.flash-sale-slot-box.slot-active') ||
-                        campaignBlocks[idx].querySelector('.flash-sale-slot-box');
-                    if (activeSlot) {
-                        const end = new Date(activeSlot.getAttribute('data-end'));
-                        if (now <= end) {
-                            activeSlot.click();
+                            priceEl.textContent = shortPrice;
                         } else {
-                            const nextSlot = Array.from(campaignBlocks[idx].querySelectorAll('.flash-sale-slot-box'))
+                            priceEl.textContent = flashPrice.toLocaleString('vi-VN') + 'đ';
+                        }
+                    });
+                    slotProducts.querySelectorAll('.js-flash-sale-progress').forEach(function(progressEl) {
+                        progressEl.style.display = isActive ? '' : 'none';
+                    });
+                }
+
+                function bindSlotBoxClick(campaignBlock) {
+                    const slotBoxes = campaignBlock.querySelectorAll('.flash-sale-slot-box');
+                    slotBoxes.forEach(function(box) {
+                        box.addEventListener('click', function() {
+                            slotBoxes.forEach(function(b) {
+                                b.classList.remove('slot-active');
+                            });
+                            this.classList.add('slot-active');
+                            campaignBlock.querySelectorAll('.flash-sale-slot-products').forEach(function(p) {
+                                p.classList.add('d-none');
+                            });
+                            var idx = this.getAttribute('data-slot-idx');
+                            var slotProducts = campaignBlock.querySelector(
+                                '.flash-sale-slot-products[data-slot-idx="' + idx + '"]');
+                            if (slotProducts) {
+                                slotProducts.classList.remove('d-none');
+                                updateFlashSaleSlotProducts(slotProducts);
+                            }
+                        });
+                    });
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const flashSales = @json($flashSales->pluck('name'));
+                    const campaignBlocks = document.querySelectorAll('.flash-sale-campaign-block');
+                    let currentIdx = 0;
+                    const titleEl = document.getElementById('flash-sale-campaign-title');
+                    const prevBtn = document.getElementById('flash-sale-prev-campaign');
+                    const nextBtn = document.getElementById('flash-sale-next-campaign');
+
+                    // Initialize Swiper for each flash sale slot
+                    document.querySelectorAll('.flash-sale-slot-products').forEach(function(slot) {
+                        new Swiper(slot.querySelector('.swiper'), {
+                            slidesPerView: 2,
+                            breakpoints: {
+                                576: {
+                                    slidesPerView: 3
+                                },
+                                768: {
+                                    slidesPerView: 4
+                                },
+                                992: {
+                                    slidesPerView: 6
+                                }
+                            },
+                            navigation: false,
+                            pagination: false,
+                            mousewheel: false,
+                            touchRatio: 1.5,
+                            freeMode: true
+                        });
+                    });
+
+                    function showCampaign(idx) {
+                        campaignBlocks.forEach((block, i) => {
+                            block.classList.toggle('d-none', i !== idx);
+                        });
+                        if (flashSales[idx]) {
+                            titleEl.src = "{{ asset('assets/users/logo/icon-fs.png') }}";
+                            titleEl.alt = flashSales[idx];
+                        }
+                        bindSlotBoxClick(campaignBlocks[idx]);
+                        const now = new Date();
+                        const activeSlot = campaignBlocks[idx].querySelector('.flash-sale-slot-box.slot-active') ||
+                            campaignBlocks[idx].querySelector('.flash-sale-slot-box');
+                        if (activeSlot) {
+                            const end = new Date(activeSlot.getAttribute('data-end'));
+                            if (now <= end) {
+                                activeSlot.click();
+                            } else {
+                                const nextSlot = Array.from(campaignBlocks[idx].querySelectorAll('.flash-sale-slot-box'))
+                                    .find(slot => new Date(slot.getAttribute('data-end')) > now);
+                                if (nextSlot) {
+                                    nextSlot.click();
+                                } else {
+                                    campaignBlocks[idx].classList.add('d-none');
+                                }
+                            }
+                        }
+                    }
+
+                    prevBtn.addEventListener('click', function() {
+                        currentIdx = (currentIdx - 1 + flashSales.length) % flashSales.length;
+                        showCampaign(currentIdx);
+                    });
+                    nextBtn.addEventListener('click', function() {
+                        currentIdx = (currentIdx + 1) % flashSales.length;
+                        showCampaign(currentIdx);
+                    });
+
+                    bindSlotBoxClick(campaignBlocks[0]);
+                    const firstActiveSlot = campaignBlocks[0].querySelector('.flash-sale-slot-box.slot-active') ||
+                        campaignBlocks[0].querySelector('.flash-sale-slot-box');
+                    if (firstActiveSlot) {
+                        const now = new Date();
+                        const end = new Date(firstActiveSlot.getAttribute('data-end'));
+                        if (now <= end) {
+                            firstActiveSlot.click();
+                        } else {
+                            const nextSlot = Array.from(campaignBlocks[0].querySelectorAll('.flash-sale-slot-box'))
                                 .find(slot => new Date(slot.getAttribute('data-end')) > now);
                             if (nextSlot) {
                                 nextSlot.click();
                             } else {
-                                campaignBlocks[idx].classList.add('d-none');
+                                campaignBlocks[0].classList.add('d-none');
                             }
                         }
                     }
-                }
-
-                prevBtn.addEventListener('click', function() {
-                    currentIdx = (currentIdx - 1 + flashSales.length) % flashSales.length;
-                    showCampaign(currentIdx);
                 });
-                nextBtn.addEventListener('click', function() {
-                    currentIdx = (currentIdx + 1) % flashSales.length;
-                    showCampaign(currentIdx);
-                });
-
-                bindSlotBoxClick(campaignBlocks[0]);
-                const firstActiveSlot = campaignBlocks[0].querySelector('.flash-sale-slot-box.slot-active') ||
-                    campaignBlocks[0].querySelector('.flash-sale-slot-box');
-                if (firstActiveSlot) {
-                    const now = new Date();
-                    const end = new Date(firstActiveSlot.getAttribute('data-end'));
-                    if (now <= end) {
-                        firstActiveSlot.click();
-                    } else {
-                        const nextSlot = Array.from(campaignBlocks[0].querySelectorAll('.flash-sale-slot-box'))
-                            .find(slot => new Date(slot.getAttribute('data-end')) > now);
-                        if (nextSlot) {
-                            nextSlot.click();
-                        } else {
-                            campaignBlocks[0].classList.add('d-none');
-                        }
-                    }
-                }
-            });
-        </script>
-    </section>
-@endif
+            </script>
+        </section>
+    @endif
 
     @foreach ($blocks as $block)
-    <section class="container px-4 pt-4 mt-2 mt-sm-3 mt-lg-4 position-relative">
-        <div class="d-flex justify-content-center mb-4">
-            <h1 class="h1 pb-2 d-inline-block text-center">
-                <i class="fab fa-apple fa-lg me-2"></i>
-                {{ $block->title }}
-            </h1>
-        </div>
-        <div class="position-relative">
-            <div class="swiper product-slider"
-                data-swiper='{
+        <section class="container px-4 pt-4 mt-2 mt-sm-3 mt-lg-4 position-relative">
+            <div class="d-flex justify-content-center mb-4">
+                <h1 class="h1 pb-2 d-inline-block text-center">
+                    <i class="fab fa-apple fa-lg me-2"></i>
+                    {{ $block->title }}
+                </h1>
+            </div>
+            <div class="position-relative">
+                <div class="swiper product-slider"
+                    data-swiper='{
                 "slidesPerView": 2,
                 "spaceBetween": 16,
                 "loop": false,
@@ -1102,65 +1102,67 @@
                     "992": { "slidesPerView": 5 } 
                 }
             }'>
-                <div class="swiper-wrapper">
-                    @forelse ($block->productVariants as $variant)
-                        @php
-                            $product = $variant->product;
-                            $imageToShow = $variant->primaryImage ?? $product->coverImage;
-                            $mainImage = $imageToShow
-                                ? Storage::url($imageToShow->path)
-                                : asset('images/placeholder.jpg');
-                            $isOnSale = $variant->is_flash_sale || ($variant->sale_price && $variant->price > 0);
-                            $displayPrice = $variant->is_flash_sale ? $variant->flash_price : ($variant->sale_price ?? $variant->price);
-                            $discountPercent = $variant->discount_percent ?? 0;
-                            $capacityAttr = $variant->attributeValues->firstWhere('attribute.name', 'Dung lượng');
-                            $capacityValue = $capacityAttr ? $capacityAttr->value : '';
-                        @endphp
-                        <div class="swiper-slide p-2 h-100">
-                            <div class="product-card bg-body rounded-7 border-0 h-100 py-4 position-relative">
-                                @if ($isOnSale && $discountPercent > 0)
-                                    <div class="discount-badge">Giảm {{ $discountPercent }}%</div>
-                                @endif
+                    <div class="swiper-wrapper">
+                        @forelse ($block->productVariants as $variant)
+                            @php
+                                $product = $variant->product;
+                                $imageToShow = $variant->primaryImage ?? $product->coverImage;
+                                $mainImage = $imageToShow
+                                    ? Storage::url($imageToShow->path)
+                                    : asset('images/placeholder.jpg');
+                                $isOnSale = $variant->is_flash_sale || ($variant->sale_price && $variant->price > 0);
+                                $displayPrice = $variant->is_flash_sale
+                                    ? $variant->flash_price
+                                    : $variant->sale_price ?? $variant->price;
+                                $discountPercent = $variant->discount_percent ?? 0;
+                                $capacityAttr = $variant->attributeValues->firstWhere('attribute.name', 'Dung lượng');
+                                $capacityValue = $capacityAttr ? $capacityAttr->value : '';
+                            @endphp
+                            <div class="swiper-slide p-2 h-100">
+                                <div class="product-card bg-body rounded-7 border-0 h-100 py-4 position-relative">
+                                    @if ($isOnSale && $discountPercent > 0)
+                                        <div class="discount-badge">Giảm {{ $discountPercent }}%</div>
+                                    @endif
 
-                                {{-- Ảnh sản phẩm --}}
-                                <div class="position-relative">
-                                    <a href="{{ route('users.products.show', $variant->slug) }}">
-                                        <div class="ratio" style="--cz-aspect-ratio: calc(200 / 180 * 100%)">
-                                            <img src="{{ $mainImage }}"
-                                                alt="{{ $product->name }} {{ $capacityValue }}"
-                                                class="img-fluid rounded-3 shadow-sm"
-                                                style="object-fit:contain; width:100%; height:100%;">
-                                        </div>
-                                    </a>
-                                </div>
-
-                                {{-- Thông tin sản phẩm --}}
-                                <div class="px-3 pb-3 pt-2 text-center">
-                                    <h3 class="fs-6 fw-bold text-truncate">
-                                        <a href="{{ route('users.products.show', $variant->slug) }}"
-                                            class="text-dark text-decoration-none">
-                                            {{ $product->name }} {{ $capacityValue }}
+                                    {{-- Ảnh sản phẩm --}}
+                                    <div class="position-relative">
+                                        <a href="{{ route('users.products.show', $variant->slug) }}">
+                                            <div class="ratio" style="--cz-aspect-ratio: calc(200 / 180 * 100%)">
+                                                <img src="{{ $mainImage }}"
+                                                    alt="{{ $product->name }} {{ $capacityValue }}"
+                                                    class="img-fluid rounded-3 shadow-sm"
+                                                    style="object-fit:contain; width:100%; height:100%;">
+                                            </div>
                                         </a>
-                                    </h3>
-                                    <div class="text-primary fw-bold">
-                                        {{ number_format($displayPrice) }}đ
-                                        @if ($isOnSale)
-                                            <del class="text-muted ms-1">{{ number_format($variant->price) }}đ</del>
-                                        @endif
+                                    </div>
+
+                                    {{-- Thông tin sản phẩm --}}
+                                    <div class="px-3 pb-3 pt-2 text-center">
+                                        <h3 class="fs-6 fw-bold text-truncate">
+                                            <a href="{{ route('users.products.show', $variant->slug) }}"
+                                                class="text-dark text-decoration-none">
+                                                {{ $product->name }} {{ $capacityValue }}
+                                            </a>
+                                        </h3>
+                                        <div class="text-primary fw-bold">
+                                            {{ number_format($displayPrice) }}đ
+                                            @if ($isOnSale)
+                                                <del class="text-muted ms-1">{{ number_format($variant->price) }}đ</del>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="swiper-slide">
-                            <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
-                        </div>
-                    @endforelse
+                        @empty
+                            <div class="swiper-slide">
+                                <div class="col-12 text-center text-muted py-4">Chưa có sản phẩm</div>
+                            </div>
+                        @endforelse
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-@endforeach
+        </section>
+    @endforeach
 
     <section class="container py-5 bg-body-tertiary">
         <div class="d-flex justify-content-center mb-5">

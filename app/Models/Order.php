@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
+use App\Models\CancellationRequest;
 
 class Order extends Model
 {
@@ -22,6 +23,7 @@ class Order extends Model
     public const STATUS_CANCELLED = 'cancelled';
     public const STATUS_FAILED_DELIVERY = 'failed_delivery';
     public const STATUS_RETURNED = 'returned';
+    public const STATUS_CANCELLATION_REQUESTED = 'cancellation_requested';
 
     // Payment status constants
     public const PAYMENT_PENDING = 'pending';
@@ -77,7 +79,7 @@ class Order extends Model
         'confirmed_at',
         'external_shipping_assigned_at',
          'register_id',           // Thêm dòng này
-            'pos_session_id', 
+            'pos_session_id',
     ];
 
     protected $casts = [
@@ -104,7 +106,8 @@ class Order extends Model
             self::STATUS_DELIVERED => 'Giao hàng thành công',
             self::STATUS_CANCELLED => 'Hủy',
             self::STATUS_FAILED_DELIVERY => 'Giao hàng thất bại',
-            self::STATUS_RETURNED => 'Trả hàng'
+            self::STATUS_RETURNED => 'Trả hàng',
+            self::STATUS_CANCELLATION_REQUESTED => 'Yêu cầu hủy'
         ];
     }
 
@@ -141,7 +144,7 @@ class Order extends Model
     public function updateStatusBasedOnFulfillments()
     {
         $fulfillments = $this->fulfillments;
-        
+
         if ($fulfillments->isEmpty()) {
             return;
         }
@@ -465,5 +468,11 @@ class Order extends Model
     public function getCode()
     {
         return $this->order_code;
+    }
+
+    public function cancellationRequest()
+    {
+        // Một đơn hàng chỉ có một yêu cầu hủy mới nhất
+        return $this->hasOne(CancellationRequest::class)->latestOfMany();
     }
 }

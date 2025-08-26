@@ -146,7 +146,11 @@
                     'route' => 'admin.products.index',
                     'active_check' => ['admin.products.'],
                 ],
-                // REMOVED: Gói sản phẩm - không còn sử dụng packages
+                [
+                    'label' => 'Gói sản phẩm',
+                    'route' => 'admin.bundle-products.index',
+                    'active_check' => ['admin.bundle-products.'],
+                ],
                 [
                     'label' => 'Thu cũ & Mở hộp',
                     'route' => 'admin.trade-in-items.index',
@@ -206,8 +210,8 @@
                 ],
                 [
                     'label' => 'Điểm thưởng',
-                    'route' => 'admin.purchase-orders.loyalty.index',
-                    'active_check' => ['admin.purchase-orders.loyalty.'],
+                    'route' => 'admin.loyalty.index',
+                    'active_check' => ['admin.loyalty.index'],
                 ],
             ],
         ],

@@ -353,56 +353,13 @@
 
     <section class="container mt-4">
         {{-- Tiêu đề và Breadcrumb (Include partial) --}}
-        <div class="mb-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-2 text-truncate"
-                    style="font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    <li class="breadcrumb-item"><a href="{{ route('users.home') }}">Trang chủ</a></li>
+        @include('users.partials.category_product.breadcrumb', ['categories' => $categories])
 
-                    @if (!empty($searchQuery))
-                        <li class="breadcrumb-item active" aria-current="page">Tìm kiếm: "{{ $searchQuery }}"</li>
-                    @elseif (isset($currentCategory))
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('users.products.all') }}">Danh mục sản phẩm</a>
-                        </li>
-
-                        @php
-                            $ancestors = collect([]);
-                            $cat = $currentCategory;
-                            while ($cat->parent_id) {
-                                $parent = $categories->firstWhere('id', $cat->parent_id);
-                                if ($parent) {
-                                    $ancestors->prepend($parent);
-                                    $cat = $parent;
-                                } else {
-                                    break;
-                                }
-                            }
-                        @endphp
-
-                        @foreach ($ancestors as $ancestor)
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('products.byCategory', ['id' => $ancestor->id, 'slug' => Str::slug($ancestor->name)]) }}"
-                                    title="{{ $ancestor->name }}">{{ $ancestor->name }}</a>
-                            </li>
-                        @endforeach
-
-                        <li class="breadcrumb-item active" aria-current="page" title="{{ $currentCategory->name }}">
-                            {{ $currentCategory->name }}
-                        </li>
-                    @else
-                        <li class="breadcrumb-item"><a href="{{ route('users.products.all') }}">Danh mục sản phẩm</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Tất cả sản phẩm</li>
-                    @endif
-                </ol>
-            </nav>
-
-            {{-- Banner khu vực danh mục --}}
+         {{-- Banner khu vực danh mục --}}
             <div class="category-banner mb-4 text-center mt-4 rounded-lg shadow-lg overflow-hidden">
                 <img src="{{ asset('assets/users/logo/hihi.png') }}" alt="Banner danh mục"
                     class="img-fluid rounded shadow-sm">
             </div>
-        </div>
 
         <div class="row">
             {{-- Sidebar bên trái --}}
