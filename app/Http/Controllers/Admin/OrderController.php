@@ -102,6 +102,7 @@ class OrderController extends Controller
             'storeLocation.district:code,name,name_with_type',
             'storeLocation.ward:code,name,name_with_type',
             'couponUsages.coupon:id,code,type,value,description',
+            'loyaltyPointLogs',
             // Load thông tin fulfillments cho mô hình đa kho
             'fulfillments:id,order_id,store_location_id,shipper_id,tracking_code,shipping_carrier,status,shipped_at,delivered_at,estimated_delivery_date,shipping_fee',
             'fulfillments.storeLocation:id,name,address,phone,province_code,district_code,ward_code,type',

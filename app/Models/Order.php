@@ -475,4 +475,9 @@ class Order extends Model
         // Một đơn hàng chỉ có một yêu cầu hủy mới nhất
         return $this->hasOne(CancellationRequest::class)->latestOfMany();
     }
+    public function loyaltyPointLogs()
+{
+    return $this->hasMany(\App\Models\LoyaltyPointLog::class)->where('type', 'spend');
+}
+
 }

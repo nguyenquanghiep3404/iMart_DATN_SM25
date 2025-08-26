@@ -337,21 +337,23 @@
                                 <p class="text-sm text-gray-500 mb-1">Trạng thái đơn hàng</p>
                                 <span id="modal-order-status" class="status-badge status-{{ $order->status ?? 'na' }}">{{ ($order->status) }}</span>
                             </div>
-                            @if($order->couponUsages && $order->couponUsages->count() > 0)
                             <div>
                                 <p class="text-sm text-gray-500 mb-1">Mã giảm giá đã sử dụng</p>
-                                @foreach($order->couponUsages as $usage)
-                                    <div class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium inline-block mr-2 mb-1">
-                                        {{ $usage->coupon->code ?? 'N/A' }}
-                                        @if($usage->coupon->type == 'percentage')
-                                            ({{ $usage->coupon->value }}%)
-                                        @else
-                                            ({{ number_format($usage->coupon->value, 0, ',', '.') }}₫)
-                                        @endif
-                                    </div>
-                                @endforeach
+                                @if($order->couponUsages && $order->couponUsages->count() > 0)
+                                    @foreach($order->couponUsages as $usage)
+                                        <div class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium inline-block mr-2 mb-1">
+                                            {{ $usage->coupon->code ?? 'N/A' }}
+                                            @if($usage->coupon->type == 'percentage')
+                                                ({{ $usage->coupon->value }}%)
+                                            @else
+                                                ({{ number_format($usage->coupon->value, 0, ',', '.') }}₫)
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <p class="text-gray-600 text-sm">Không sử dụng mã giảm giá</p>
+                                @endif
                             </div>
-                            @endif
                         </div>
                         <div class="space-y-4">
                             <div>
@@ -362,24 +364,20 @@
                                 <p class="text-sm text-gray-500 mb-1">Phương thức thanh toán</p>
                                 <p class="font-semibold text-gray-800">{{ $order->payment_method ?? 'N/A' }}</p>
                             </div>
-                            @if($order->discount_amount > 0)
                             <div>
                                 <p class="text-sm text-gray-500 mb-1">Điểm thưởng đã sử dụng</p>
-                                @php
-                                    // Tính điểm thưởng đã sử dụng (giả sử 1 điểm = 1000 VND)
-                                    $pointsUsed = $order->discount_amount > ($order->couponUsages->sum(function($usage) { return $usage->coupon->calculateDiscount($order->sub_total); }) ?? 0) 
-                                        ? ($order->discount_amount - ($order->couponUsages->sum(function($usage) { return $usage->coupon->calculateDiscount($order->sub_total); }) ?? 0)) / 1000
-                                        : 0;
-                                @endphp
-                                @if($pointsUsed > 0)
-                                    <div class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium inline-block">
-                                        {{ number_format($pointsUsed, 0) }} điểm ({{ number_format($pointsUsed * 1000, 0, ',', '.') }}₫)
-                                    </div>
+                                @if($order->loyaltyPointLogs && $order->loyaltyPointLogs->count() > 0)
+                                    @foreach($order->loyaltyPointLogs as $log)
+                                        <div class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium inline-block">
+                                            {{-- Điểm trong CSDL là số âm, nên ta dùng abs() để lấy giá trị tuyệt đối --}}
+                                            {{ number_format(abs($log->points)) }} điểm
+                                            ({{ number_format(abs($log->points) * 1000, 0, ',', '.') }}₫)
+                                        </div>
+                                    @endforeach
                                 @else
                                     <p class="text-gray-600 text-sm">Không sử dụng điểm thưởng</p>
                                 @endif
                             </div>
-                            @endif
                         </div>
                     </div>
                 </div>
