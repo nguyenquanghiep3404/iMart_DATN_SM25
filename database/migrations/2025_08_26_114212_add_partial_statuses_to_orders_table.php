@@ -25,7 +25,8 @@ return new class extends Migration
             'partially_delivered',
             'cancelled',
             'returned',
-            'failed_delivery'
+            'failed_delivery', 
+            'cancellation_requests'
         ) DEFAULT 'pending_confirmation'");
     }
 
@@ -45,7 +46,8 @@ return new class extends Migration
             'delivered',
             'cancelled',
             'returned',
-            'failed_delivery'
+            'failed_delivery',
+            'cancellation_requests'
         ) DEFAULT 'pending_confirmation'");
     }
 };
