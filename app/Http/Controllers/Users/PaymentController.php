@@ -651,9 +651,9 @@ class PaymentController extends Controller
                         $order->paid_at = now();
                         $order->save();
                         
-                        // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
-                        // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
-                        // thông qua InventoryCommitmentService.fulfillInventoryForOrder()
+                        // REMOVED: commitInventoryForOrder đã được gọi trong createOrderAndItems
+                        // Không cần gọi lại để tránh tạm giữ hàng tồn kho 2 lần
+                        Log::info("Đơn hàng {$order->order_code} đã thanh toán VNPay thành công");
                     });
                     
                     // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
@@ -871,8 +871,14 @@ class PaymentController extends Controller
 
         if ($request->resultCode == 0) { // Thành công
             if ($order->payment_status == Order::PAYMENT_PENDING) {
-                $order->payment_status = Order::PAYMENT_PAID;
-                $order->save();
+                DB::transaction(function() use ($order) {
+                    $order->payment_status = Order::PAYMENT_PAID;
+                    $order->save();
+                    
+                    // REMOVED: commitInventoryForOrder đã được gọi trong createOrderAndItems
+                    // Không cần gọi lại để tránh tạm giữ hàng tồn kho 2 lần
+                    Log::info("Đơn hàng {$order->order_code} đã thanh toán MoMo thành công");
+                });
                 
                 // Chỉ gán store_location_id tự động nếu là đơn pickup và thiếu store
                 $storeLocationId = $order->store_location_id;
@@ -889,9 +895,6 @@ class PaymentController extends Controller
                         }
                     }
                 }
-                
-                // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
-                // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
                 
                 // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
                 // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
@@ -1478,6 +1481,21 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
+                // Tạm giữ hàng tồn kho
+                $storeLocationId = $customerInfo['store_location_id'] ?? $this->findAvailableStore($variant, $item->quantity);
+                if ($storeLocationId) {
+                    try {
+                        $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
+                        
+                        // Tạo fulfillment cho đơn hàng
+                        $fulfillmentService = app(FulfillmentService::class);
+                        $fulfillmentService->createFulfillmentsForOrder($order);
+                        Log::info("Đã tạo fulfillment cho đơn hàng mua ngay VNPay {$order->order_code}");
+                    } catch (\Exception $e) {
+                        Log::error("Lỗi khi tạo fulfillment cho đơn hàng mua ngay VNPay {$order->order_code}: " . $e->getMessage());
+                    }
+                }
+
                 if (Auth::check() && $request->save_address && !$request->address_id) {
             Log::info('Saving new address for user: ' . Auth::id(), [
                 'save_address' => $request->save_address,
@@ -1566,6 +1584,31 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
+                // Tạm giữ hàng thay vì trừ thẳng tồn kho
+                $storeLocationId = $customerInfo['store_location_id'] ?? $this->findAvailableStore($variant, $item->quantity);
+                if ($storeLocationId) {
+                    try {
+                        $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
+                        
+                        // Tạo fulfillment cho đơn hàng
+                        $fulfillmentService = app(FulfillmentService::class);
+                        $fulfillmentService->createFulfillmentsForOrder($order);
+                        Log::info("Đã tạo fulfillment cho đơn hàng mua ngay MoMo {$order->order_code}");
+                    } catch (\Exception $e) {
+                        Log::error("Lỗi khi tạo fulfillment cho đơn hàng mua ngay MoMo {$order->order_code}: " . $e->getMessage());
+                    }
+                }
+
+                // Tạo fulfillment cho đơn hàng Buy Now
+                $fulfillmentService = new FulfillmentService();
+                try {
+                    $fulfillmentService->createFulfillmentsForOrder($order);
+                    Log::info("Đã tạo fulfillment cho đơn hàng Buy Now (MoMo): {$order->order_code}");
+                } catch (\Exception $e) {
+                    Log::error("Lỗi khi tạo fulfillment cho đơn hàng Buy Now (MoMo) {$order->order_code}: {$e->getMessage()}");
+                    // Không throw exception để không làm fail toàn bộ đơn hàng
+                }
+
                 if (Auth::check() && $request->save_address && !$request->address_id) {
             Log::info('Saving new address for user (COD): ' . Auth::id(), [
                 'save_address' => $request->save_address,
@@ -1652,7 +1695,19 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
+                // Tạm giữ hàng thay vì trừ thẳng tồn kho
+                $storeLocationId = $request->delivery_method === 'pickup' ? $request->store_location_id : null;
+                $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
 
+                // Tạo fulfillment cho đơn hàng Buy Now
+                $fulfillmentService = new FulfillmentService();
+                try {
+                    $fulfillmentService->createFulfillmentsForOrder($order);
+                    Log::info("Đã tạo fulfillment cho đơn hàng Buy Now (bank_transfer_qr): {$order->order_code}");
+                } catch (\Exception $e) {
+                    Log::error("Lỗi khi tạo fulfillment cho đơn hàng Buy Now (bank_transfer_qr) {$order->order_code}: {$e->getMessage()}");
+                    // Không throw exception để không làm fail toàn bộ đơn hàng
+                }
 
                 if (Auth::check() && $request->save_address && !$request->address_id) {
             Log::info('Saving new address for user (Buy Now): ' . Auth::id(), [
