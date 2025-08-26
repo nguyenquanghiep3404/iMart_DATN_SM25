@@ -136,7 +136,7 @@
                             'pending_confirmation' => 'Chờ xác nhận',
                             'processing' => 'Đang xử lý',
                             'awaiting_shipment' => 'Chờ giao hàng',
-                            'shipped' => 'Đã gửi',
+                            'shipped' => 'đang giao hàng',
                             'out_for_delivery' => 'Đang giao',
                             'delivered' => 'Đã giao',
                             'cancelled' => 'Đã hủy',

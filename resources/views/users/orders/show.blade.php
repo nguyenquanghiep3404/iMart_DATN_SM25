@@ -221,7 +221,8 @@
     $statusInfo = match ($order->status) {
     'delivered' => ['text' => 'Hoàn tất', 'class' => 'status-completed'],
     'processing' => ['text' => 'Đang xử lý', 'class' => 'status-processing'],
-    'shipped', 'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
+    'shipped' => ['text' => 'đang giao hàng', 'class' => 'status-shipping'],
+    'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
     'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
     'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-pending_confirmation'],
     'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],

@@ -393,34 +393,13 @@ class OrderFulfillmentCheckService
             ];
         }
         
-        try {
-            $result = $this->autoTransferService->checkAndCreateAutoTransfer($order);
-            
-            if ($result['success'] && !empty($result['transfers_created'])) {
-                Log::info("Đã tạo phiếu chuyển kho tự động cho đơn hàng {$order->order_code}", [
-                    'order_id' => $order->id,
-                    'transfers' => $result['transfers_created']
-                ]);
-                
-                return [
-                    'created' => true,
-                    'transfers' => $result['transfers_created'],
-                    'reason' => 'Đã tạo phiếu chuyển kho tự động'
-                ];
-            }
-            
-            return [
-                'created' => false,
-                'reason' => $result['message'] ?? 'Không thể tạo phiếu chuyển kho'
-            ];
-            
-        } catch (\Exception $e) {
-            Log::error("Lỗi khi tạo phiếu chuyển kho tự động cho đơn hàng {$order->order_code}: {$e->getMessage()}");
-            
-            return [
-                'created' => false,
-                'reason' => 'Lỗi khi tạo phiếu chuyển kho: ' . $e->getMessage()
-            ];
-        }
+        // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+        // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
+        Log::info("Phiếu chuyển kho cho đơn hàng {$order->order_code} sẽ được tạo trong OrderObserver");
+        
+        return [
+            'created' => false,
+            'reason' => 'Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver'
+        ];
     }
 }

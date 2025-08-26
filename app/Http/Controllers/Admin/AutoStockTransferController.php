@@ -37,7 +37,10 @@ class AutoStockTransferController extends Controller
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+            $query = StockTransfer::where(function($q) {
+                    $q->where('transfer_code', 'LIKE', 'AUTO-%')
+                      ->orWhere('transfer_code', 'LIKE', 'FULFILL-%');
+                })
                 ->with(['fromLocation', 'toLocation', 'items.productVariant.product'])
                 ->orderBy('created_at', 'desc');
 
@@ -78,7 +81,10 @@ class AutoStockTransferController extends Controller
     public function detail(string $id)
     {
         try {
-            $transfer = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+            $transfer = StockTransfer::where(function($q) {
+                    $q->where('transfer_code', 'LIKE', 'AUTO-%')
+                      ->orWhere('transfer_code', 'LIKE', 'FULFILL-%');
+                })
                 ->with([
                     'fromLocation',
                     'toLocation',
@@ -103,7 +109,10 @@ class AutoStockTransferController extends Controller
     public function show(string $id): JsonResponse
     {
         try {
-            $transfer = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+            $transfer = StockTransfer::where(function($q) {
+                    $q->where('transfer_code', 'LIKE', 'AUTO-%')
+                      ->orWhere('transfer_code', 'LIKE', 'FULFILL-%');
+                })
                 ->with([
                     'fromLocation',
                     'toLocation',
@@ -134,7 +143,10 @@ class AutoStockTransferController extends Controller
     public function autoProcess(string $id): JsonResponse
     {
         try {
-            $transfer = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+            $transfer = StockTransfer::where(function($q) {
+                    $q->where('transfer_code', 'LIKE', 'AUTO-%')
+                      ->orWhere('transfer_code', 'LIKE', 'FULFILL-%');
+                })
                 ->findOrFail($id);
 
             if ($transfer->status !== 'pending') {
@@ -199,20 +211,23 @@ class AutoStockTransferController extends Controller
     public function statistics(): JsonResponse
     {
         try {
+            $baseQuery = function() {
+                return StockTransfer::where(function($q) {
+                    $q->where('transfer_code', 'LIKE', 'AUTO-%')
+                      ->orWhere('transfer_code', 'LIKE', 'FULFILL-%');
+                });
+            };
+            
             $stats = [
-                'total' => StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')->count(),
-                'pending' => StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
-                    ->where('status', 'pending')->count(),
-                'shipped' => StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
-                    ->where('status', 'shipped')->count(),
-                'received' => StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
-                    ->where('status', 'received')->count(),
-                'today' => StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
-                    ->whereDate('created_at', today())->count(),
-                'this_week' => StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+                'total' => $baseQuery()->count(),
+                'pending' => $baseQuery()->where('status', 'pending')->count(),
+                'shipped' => $baseQuery()->where('status', 'shipped')->count(),
+                'received' => $baseQuery()->where('status', 'received')->count(),
+                'today' => $baseQuery()->whereDate('created_at', today())->count(),
+                'this_week' => $baseQuery()
                     ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
                     ->count(),
-                'this_month' => StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+                'this_month' => $baseQuery()
                     ->whereMonth('created_at', now()->month)
                     ->whereYear('created_at', now()->year)
                     ->count()
@@ -239,7 +254,10 @@ class AutoStockTransferController extends Controller
     public function cancel(string $id): JsonResponse
     {
         try {
-            $transfer = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+            $transfer = StockTransfer::where(function($q) {
+                    $q->where('transfer_code', 'LIKE', 'AUTO-%')
+                      ->orWhere('transfer_code', 'LIKE', 'FULFILL-%');
+                })
                 ->findOrFail($id);
 
             if (!in_array($transfer->status, ['pending', 'dispatched', 'received'])) {
@@ -274,18 +292,23 @@ class AutoStockTransferController extends Controller
     }
 
     /**
-     * Nhận hàng ngay lập tức (chỉ khi ở trạng thái in_transit)
+     * Nhận hàng ngay lập tức (chỉ khi ở trạng thái phù hợp)
      */
     public function receive(string $id): JsonResponse
     {
         try {
-            $transfer = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+            $transfer = StockTransfer::where(function($q) {
+                    $q->where('transfer_code', 'LIKE', 'AUTO-%')
+                      ->orWhere('transfer_code', 'LIKE', 'FULFILL-%');
+                })
                 ->findOrFail($id);
 
-            if ($transfer->status !== 'in_transit') {
+            // Kiểm tra trạng thái phù hợp để nhận hàng
+            $allowedStatuses = ['in_transit', 'dispatched', 'shipped'];
+            if (!in_array($transfer->status, $allowedStatuses)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Chỉ có thể nhận hàng khi phiếu đang ở trạng thái vận chuyển'
+                    'message' => "Chỉ có thể nhận hàng khi phiếu ở trạng thái: " . implode(', ', $allowedStatuses) . ". Trạng thái hiện tại: {$transfer->status}"
                 ], 400);
             }
 
@@ -319,7 +342,10 @@ class AutoStockTransferController extends Controller
     public function saveImei(Request $request, $id): JsonResponse
     {
         try {
-            $transfer = StockTransfer::where('transfer_code', 'LIKE', 'AUTO-%')
+            $transfer = StockTransfer::where(function($q) {
+                    $q->where('transfer_code', 'LIKE', 'AUTO-%')
+                      ->orWhere('transfer_code', 'LIKE', 'FULFILL-%');
+                })
                 ->with('items')
                 ->findOrFail($id);
 
