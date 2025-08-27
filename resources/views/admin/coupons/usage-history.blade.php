@@ -49,6 +49,7 @@
                 <div class="ml-4">
                     <h3 class="text-gray-500 text-sm font-medium">Tổng tiết kiệm cho khách hàng</h3>
                     <span class="text-2xl font-semibold text-gray-900 block mt-1">{{ number_format($totalSavings) }} VND</span>
+                    <p class="text-xs text-gray-400 mt-1">(Không bao gồm đơn hàng đã hủy, trả hàng, giao thất bại)</p>
                 </div>
             </div>
         </div>

@@ -9,9 +9,17 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CouponRequest;
 use App\Http\Requests\ValidateCouponRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class CouponController extends Controller
 {
+    use AuthorizesRequests;
+
+    public function __construct()
+    {
+        // Tự động áp dụng CouponPolicy cho tất cả các phương thức CRUD
+        $this->authorizeResource(Coupon::class, 'coupon');
+    }
     //
     public function index(Request $request)
     {
@@ -191,9 +199,14 @@ class CouponController extends Controller
             $query->orderBy('created_at', 'desc');
         }
         $usages = $query->paginate(15);
-        // Tính tổng số tiền tiết kiệm tổng số tiền giảm giá từ các đơn hàng
+        // Tính tổng số tiền tiết kiệm từ các đơn hàng (loại trừ đơn hàng không thành công)
         $totalSavings = $coupon->usages()
             ->join('orders', 'coupon_usages.order_id', '=', 'orders.id')
+            ->whereNotIn('orders.status', [
+                'cancelled',      // Đã hủy
+                'returned',       // Trả hàng
+                'failed_delivery' // Giao hàng thất bại
+            ])
             ->sum('orders.discount_amount');
         return view('admin.coupons.usage-history', compact('coupon', 'usages', 'totalSavings'));
     }

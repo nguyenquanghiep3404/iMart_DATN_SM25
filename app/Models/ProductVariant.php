@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 
 class ProductVariant extends Model
@@ -198,10 +199,21 @@ class ProductVariant extends Model
             ->join('-');
         return $attributes ? "{$baseSlug}-{$attributes}" : $baseSlug;
     }
+
+     public function getAvailableQuantityAttribute()
+    {
+        // Tính tổng (tồn kho - đã tạm giữ cho đơn khác) từ bảng product_inventories
+        return $this->inventories()->sum(DB::raw('quantity - quantity_committed'));
+    }
+    public function getIsActiveAttribute()
+    {
+        return $this->status === 'active';
+    }
     public function coverImage()
     {
         return $this->morphOne(UploadedFile::class, 'attachable')
             ->where('type', 'cover')
             ->latest();
+
     }
 }

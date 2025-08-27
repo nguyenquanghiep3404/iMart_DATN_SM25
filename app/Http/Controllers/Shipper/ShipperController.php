@@ -76,17 +76,27 @@ class ShipperController extends Controller
             return back()->with('error', 'Bạn không có quyền thực hiện hành động này.');
         }
 
-        // Lấy gói hàng đầu tiên mà shipper này được gán (trong trường hợp 1 đơn có nhiều gói)
-        $fulfillment = $order->fulfillments()->where('shipper_id', Auth::id())->first();
-        if (!$fulfillment) {
-            return back()->with('error', 'Không tìm thấy gói hàng được gán cho bạn.');
+        // Lấy fulfillment cụ thể nếu có fulfillment_id, nếu không thì lấy fulfillment đầu tiên
+        $fulfillmentId = $request->input('fulfillment_id');
+        if ($fulfillmentId) {
+            $fulfillment = $order->fulfillments()->where('shipper_id', Auth::id())->where('id', $fulfillmentId)->first();
+            if (!$fulfillment) {
+                return back()->with('error', 'Không tìm thấy gói hàng được chỉ định hoặc bạn không có quyền cập nhật.');
+            }
+        } else {
+            // Fallback: Lấy gói hàng đầu tiên mà shipper này được gán (để tương thích với code cũ)
+            $fulfillment = $order->fulfillments()->where('shipper_id', Auth::id())->first();
+            if (!$fulfillment) {
+                return back()->with('error', 'Không tìm thấy gói hàng được gán cho bạn.');
+            }
         }
 
         $validated = $request->validate([
             'status' => 'required|string|in:shipped,delivered,failed_delivery',
             'barcode' => 'nullable|string',
             'reason' => 'nullable|string|max:255',
-            'notes'  => 'nullable|string|max:500'
+            'notes'  => 'nullable|string|max:500',
+            'fulfillment_id' => 'nullable|integer|exists:order_fulfillments,id'
         ]);
         
         // Logic xác nhận lấy hàng (QUÉT BARCODE)

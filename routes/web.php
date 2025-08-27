@@ -218,7 +218,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/status/{status?}', [UserOrderController::class, 'index'])->name('orders.index');
         Route::get('/{id}/invoice', [UserOrderController::class, 'invoice'])->name('orders.invoice');
-        Route::post('/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
+        Route::post('/my-orders/{id}/cancel', [UserOrderController::class, 'cancel'])->name('orders.cancel');
         Route::post('/my-orders/{order}/confirm-receipt', [UserOrderController::class, 'confirmReceipt'])->name('orders.confirm_receipt');
         Route::post('/orders/{order}/buy-again', [UserOrderController::class, 'buyAgain'])->name('orders.buy_again');
         Route::get('/{id}', [UserOrderController::class, 'show'])->name('orders.show');
@@ -443,6 +443,12 @@ Route::prefix('admin')
         Route::get('/orders/shippers/list', [OrderController::class, 'getShippers'])->name('orders.shippers');
         Route::patch('/orders/{order}/assign-shipper', [OrderController::class, 'assignShipper'])->name('orders.assignShipper');
         Route::get('/orders/view/{order}', [OrderController::class, 'view'])->name('orders.view');
+        Route::get('/orders/cancellation/{cancellationRequest}', [OrderController::class, 'showCancellationRequest'])->name('orders.cancellation.show');
+        // Route để duyệt yêu cầu
+        Route::post('/orders/cancellation/{cancellationRequest}/approve', [OrderController::class, 'approveCancellationRequest'])->name('orders.cancellation.approve');
+
+        // Route để từ chối yêu cầu
+        Route::post('/orders/cancellation/{cancellationRequest}/reject', [OrderController::class, 'rejectCancellationRequest'])->name('orders.cancellation.reject');
 
         Route::prefix('shipper-assignment')->name('shipper-assignment.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admin\ShipperAssignmentController::class, 'index'])->name('index');
@@ -556,7 +562,7 @@ Route::prefix('admin')
 
 
         // Banner routes
-    
+
         Route::get('/banners/trash', [BannerController::class, 'trash'])->name('banners.trash');
         Route::post('/banners/{banner}/restore', [BannerController::class, 'restore'])->name('banners.restore');
         Route::delete('/banners/{banner}/force-delete', [BannerController::class, 'forceDelete'])->name('banners.forceDelete');
@@ -684,7 +690,7 @@ Route::prefix('admin')
         Route::get('bundle-products/{bundle}', [BundleProductController::class, 'show'])->name('bundle-products.show');
         Route::patch('bundle-products/{bundle}/toggle-status', [BundleProductController::class, 'toggleStatus'])->name('bundle-products.toggle-status');
         // Xóa mềm gói sản phẩm
-    
+
         // Post routes
         Route::get('posts/trashed', [PostController::class, 'trashed'])->name('posts.trashed'); // Danh sách bài đã xóa
         Route::get('posts/preview/{id}', [PostController::class, 'preview'])->name('posts.preview');
@@ -761,12 +767,16 @@ Route::prefix('admin')
             Route::post('/{id}/restore', [SupplierController::class, 'restore'])->name('restore');
             Route::delete('/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('forceDelete');
         });
+            // --- ROUTES QUẢN LÝ ĐIỂM THƯỞNG ---
+            Route::get('/loyalty-points', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'index'])->name('loyalty.index');
+            Route::post('/loyalty-points/adjust', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'adjust'])->name('loyalty.adjust');
         Route::prefix('refunds')->name('refunds.')->group(function () {
             Route::get('/', [OrderRefundController::class, 'index'])->name('index');
             Route::get('/{id}', [OrderRefundController::class, 'show'])->name('show');
             Route::put('/{id}/note', [OrderRefundController::class, 'updateNote'])->name('note');
             Route::put('/{id}/status', [OrderRefundController::class, 'updateStatus'])->name('update_status');
         });
+
         // QUẢN LÝ NHẬP KHO (PURCHASE ORDERS)
         Route::prefix('purchase-orders')->name('purchase-orders.')->group(function () {
             // Route để tìm kiếm sản phẩm (dùng cho AJAX khi thêm sản phẩm vào phiếu)
@@ -774,11 +784,6 @@ Route::prefix('admin')
 
             // Route để nhận hàng vào kho
             Route::post('/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receiveItems'])->name('receive');
-
-
-            // --- ROUTES QUẢN LÝ ĐIỂM THƯỞNG ---
-            Route::get('/loyalty-points', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'index'])->name('loyalty.index');
-            Route::post('/loyalty-points/adjust', [App\Http\Controllers\Admin\LoyaltyPointController::class, 'adjust'])->name('loyalty.adjust');
 
             // Route để hiển thị trang tiếp nhận hàng
             Route::get('/receiving', [PurchaseOrderController::class, 'showReceivingPage'])->name('receiving.index');
@@ -815,7 +820,7 @@ Route::prefix('admin')
             Route::put('/{stockTransfer}', [StockTransferController::class, 'update'])->name('update');
             // Giả sử sẽ có chức năng xóa
             // Route::delete('/{stockTransfer}', [StockTransferController::class, 'destroy'])->name('destroy');
-    
+
             // API Routes (đặt gần nhau cho dễ quản lý)
             Route::get('/api/pending', [StockTransferController::class, 'getPendingTransfers'])->name('api.pending');
             Route::get('/api/search-products', [StockTransferController::class, 'searchProducts'])->name('search-products');
@@ -859,14 +864,14 @@ Route::prefix('admin')
 
         // Quản lý tồn kho
         Route::get('/inventory-dashboard', [InventoryDashboardController::class, 'index'])
-            ->name('admin.inventory.dashboard');  
+            ->name('admin.inventory.dashboard');
         // báo cáo tồn kho chi tiết
         Route::get('/reports/inventory', [InventoryReportController::class, 'index'])->name('reports.inventory.index'); // giao diện
         Route::get('/reports/inventory/data', [InventoryReportController::class, 'generate']); // API dữ liệu
         Route::get('/reports/inventory/provinces', [InventoryReportController::class, 'getAvailableProvinces']);
         Route::get('/reports/inventory/districts', [InventoryReportController::class, 'getAvailableDistricts']);
         Route::get('reports/inventory/export', [InventoryReportController::class, 'export'])->name('admin.reports.inventory.export');
-        
+
         // Phân tích kinh doanh
         Route::get('/business-analysis', [InventoryDashboardController::class, 'businessAnalysis'])->name('business-analysis.index');
         // Báo cáo chi tiết: Lợi nhuận theo sản phẩm
@@ -887,7 +892,6 @@ Route::prefix('shipper')
         Route::get('/stats', [ShipperController::class, 'stats'])->name('stats');
         Route::get('/history', [ShipperController::class, 'history'])->name('history');
         Route::get('/profile', [ShipperController::class, 'profile'])->name('profile');
-        Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
         Route::patch('/fulfillments/{fulfillment}/update-status', [ShipperController::class, 'updateFulfillmentStatus'])->name('fulfillments.updateStatus');
         Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus')->middleware('can:access_shipper_dashboard');
     });

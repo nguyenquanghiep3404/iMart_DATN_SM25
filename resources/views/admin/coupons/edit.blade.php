@@ -44,9 +44,6 @@
                         @else
                             <p class="mt-1 text-sm text-gray-500">
                                 Mã duy nhất không trùng lặp. <strong>Tối thiểu 6 ký tự, tối đa 20 ký tự.</strong> Chỉ nên dùng chữ và số.
-                                <button type="button" class="text-indigo-600 hover:text-indigo-500 underline ml-1" onclick="document.getElementById('random-code-btn').click()">
-                                    Tạo ngẫu nhiên
-                                </button>
                             </p>
                         @enderror
                     </div>
@@ -58,7 +55,7 @@
                         @error('description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 text-sm text-gray-500">Mô tả ngắn về chương trình khuyến mãi.</p>
+                            <p class="mt-1 text-sm text-gray-500"></p>
                         @enderror
                     </div>
                     
@@ -74,7 +71,7 @@
                             @error('type')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
-                                <p class="mt-1 text-sm text-gray-500">Giảm theo số tiền hoặc phần trăm.</p>
+                                <p class="mt-1 text-sm text-gray-500"></p>
                             @enderror
                         </div>
                         
@@ -147,7 +144,7 @@
                             @error('max_uses_per_user')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
-                                <p class="mt-1 text-sm text-gray-500">Để trống nếu không giới hạn.</p>
+                                <p class="mt-1 text-sm text-gray-500"></p>
                             @enderror
                         </div>
                     </div>
@@ -165,7 +162,7 @@
                         @error('min_order_amount')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 text-sm text-gray-500">Giá trị đơn hàng tối thiểu để áp dụng mã giảm giá.</p>
+                            <p class="mt-1 text-sm text-gray-500"></p>
                         @enderror
                     </div>
                     
@@ -187,7 +184,7 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
                             <p class="mt-1 text-sm text-gray-500">
-                                <span class="text-amber-600"></span>Thông tin:</span> Ngày bắt đầu không thể chỉnh sửa để đảm bảo tính nhất quán của mã giảm giá.
+                                <span class="text-amber-600"></span>Thông tin:</span> Ngày bắt đầu không thể chỉnh sửa
                             </p>
                         @enderror
                     </div>
@@ -227,7 +224,7 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
                                 <p class="mt-1 text-sm text-gray-500">
-                                    <span class="text-blue-600">Lưu ý:</span> Ngày kết thúc phải sau ngày bắt đầu ({{ $coupon->start_date ? $coupon->start_date->format('d/m/Y H:i') : '' }}).
+                                    {{-- <span class="text-blue-600">Lưu ý:</span> Ngày kết thúc phải sau ngày bắt đầu ({{ $coupon->start_date ? $coupon->start_date->format('d/m/Y H:i') : '' }}). --}}
                                 </p>
                             @enderror
                             <div id="end-date-validation-message" class="mt-1 text-sm text-amber-600 hidden"></div>
@@ -273,7 +270,7 @@
                         @error('is_public')
                             <p class="mt-1 ml-6 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 ml-6 text-sm text-gray-500">Nếu không chọn, mã giảm giá này chỉ dành cho người dùng được chọn.</p>
+                            <p class="mt-1 ml-6 text-sm text-gray-500"></p>
                         @enderror
                     </div>
                 </div>
@@ -472,7 +469,7 @@
         randomCodeBtn.setAttribute('title', 'Tạo mã giảm giá ngẫu nhiên (6-20 ký tự)');
         
         // Hiển thị thông tin ngày bắt đầu không thể chỉnh sửa
-        console.log('Edit mode: Ngày bắt đầu đã bị khóa để đảm bảo tính nhất quán.');
+        // console.log('Edit mode: Ngày bắt đầu đã bị khóa để đảm bảo tính nhất quán.');
 
         // Hiển thị thông tin về trạng thái mã giảm giá
         @if($coupon->end_date && $coupon->end_date->isPast())
@@ -492,7 +489,7 @@
                 form.insertBefore(warningBadge, form.firstChild);
             }
         @else
-            console.log('Edit mode: Mã giảm giá chưa hết hạn - Có thể chỉnh sửa ngày kết thúc.');
+           // console.log('Edit mode: Mã giảm giá chưa hết hạn - Có thể chỉnh sửa ngày kết thúc.');
         @endif
     });
 </script>

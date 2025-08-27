@@ -36,7 +36,7 @@
     }
 
     .details-footer {
-        padding: 1rem;
+        padding: 1.5rem;
         border-top: 1px solid #e5e7eb;
         background-color: #f9fafb;
         text-align: right;
@@ -60,6 +60,10 @@
         background-color: #feefc7;
         color: #92400e;
     }
+    .cancellation_requested{
+        background-color: #fef9c3;
+        color: #854d0e;
+    }
 
     .status-shipping {
         background-color: #dbeafe;
@@ -79,6 +83,14 @@
     .status-returned {
         background-color: #e5e7eb;
         color: #4b5563;
+    }
+    .partially_delivered {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    .partially_shipped{
+        background-color: #dbeafe;
+        color: #1e40af;
     }
 
     /* Status Tracker Styles */
@@ -133,12 +145,17 @@
     }
 
     .tracker-label.active {
-        color: #dc2626;
-        font-weight: bold;
+        color: #111827;
+        font-weight: 600;
     }
 
     .status-dot-cancelled {
-        background-color: #dc2626 !important;
+        background-color: #ef4444 !important;
+    }
+
+    .tracker-label.cancelled {
+        color: #ef4444;
+        font-weight: 600;
     }
 
     .info-box {
@@ -181,6 +198,7 @@
         transition: background-color 0.2s;
         display: inline-block;
         border: none;
+        cursor: pointer;
     }
 
     .btn-action:hover {
@@ -197,11 +215,40 @@
     .btn-action-secondary:hover {
         background-color: #f3f4f6;
     }
+
+    /* Modal styles */
+    .hidden {
+        display: none;
+    }
 </style>
 @endsection
 
 @section('content')
 <div class="main-content">
+    {{-- BẮT ĐẦU: KHỐI HIỂN THỊ LỖI --}}
+    @if ($errors->any())
+        <div class="alert alert-danger mb-4">
+            <h4 class="alert-heading">Có lỗi xảy ra!</h4>
+            <ul>
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if (session('success'))
+        <div class="alert alert-success mb-4">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="alert alert-danger mb-4">
+            {{ session('error') }}
+        </div>
+    @endif
+    {{-- KẾT THÚC: KHỐI HIỂN THỊ LỖI --}}
     <div class="mb-4">
         <a href="{{ route('orders.index') }}" class="text-secondary fw-medium text-decoration-none d-flex align-items-center">
             <i class="fas fa-arrow-left me-2"></i>
@@ -210,28 +257,32 @@
     </div>
 
     @php
-    //============= LOGIC TRUNG TÂM =============//
     $statusSteps = [
-    'pending_confirmation' => 1, 'processing' => 2,
-    'awaiting_shipment' => 2, 'shipped' => 3, 'out_for_delivery' => 3,
-    'delivered' => 4, 'cancelled' => -1, 'failed_delivery' => -1,
-    'returned' => -1
+        'pending_confirmation' => 1, 'processing' => 2,
+        'awaiting_shipment' => 2, 'shipped' => 3, 'out_for_delivery' => 3,
+        'delivered' => 4, 'cancelled' => -1, 'failed_delivery' => -1,
+        'returned' => -1
     ];
     $currentStep = $statusSteps[$order->status] ?? 0;
     $statusInfo = match ($order->status) {
+
     'delivered' => ['text' => 'Hoàn tất', 'class' => 'status-completed'],
     'processing' => ['text' => 'Đang xử lý', 'class' => 'status-processing'],
     'shipped' => ['text' => 'đang giao hàng', 'class' => 'status-shipping'],
+    'cancellation_requested' => ['text' => 'Yêu cầu hủy', 'class' => 'cancellation_requested'],
     'out_for_delivery' => ['text' => 'Đang giao', 'class' => 'status-shipping'],
     'cancelled', 'failed_delivery' => ['text' => 'Đã hủy', 'class' => 'status-cancelled'],
-    'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-pending_confirmation'],
+    'pending_confirmation' => ['text' => 'Chờ xác nhận', 'class' => 'status-awaiting-pickup'],
+    'partially_delivered' => ['text' => 'Giao thành công 1 phần', 'class' => 'partially_delivered'],
+    'partially_shipped' => ['text' => 'Giao hàng 1 phần', 'class' => 'partially_shipped'],
     'returned' => ['text' => 'Trả hàng', 'class' => 'status-returned'],
     default => ['text' => ucfirst($order->status), 'class' => 'status-returned'],
+
     };
     $isPickupOrder = !empty($order->store_location_id);
 
-    // LOGIC MỚI: KIỂM TRA ĐƠN HÀNG CÓ BỊ QUÁ HẠN KHÔNG
     $isOverdue = false;
+
     if ($isPickupOrder && $order->status === 'processing' && !empty($order->desired_delivery_date)) {
     try {
     // Lấy ngày hẹn nhận hàng từ database
@@ -246,11 +297,12 @@
     // Nếu `desired_delivery_date` không phải ngày tháng hợp lệ, bỏ qua
     $isOverdue = false;
     }
-    }
+}
+
 
     function renderDeliveryDate($dateString) {
-    if (empty($dateString)) return 'Chưa xác định';
-    try { return \Carbon\Carbon::parse($dateString)->format('d/m/Y'); } catch (\Exception $e) { return e($dateString); }
+        if (empty($dateString)) return 'Chưa xác định';
+        try { return \Carbon\Carbon::parse($dateString)->format('d/m/Y'); } catch (\Exception $e) { return e($dateString); }
     }
     @endphp
 
@@ -261,9 +313,9 @@
                 <p class="text-muted small mb-0">Đặt hàng ngày {{ $order->created_at->format('d/m/Y') }}</p>
             </div>
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('orders.invoice', $order->id) }}" class="btn btn-sm btn-outline-primary">
+                <!-- <a href="{{ route('orders.invoice', $order->id) }}" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-file-invoice me-1"></i> Xem hóa đơn
-                </a>
+                </a> -->
                 <span class="status-badge {{ $statusInfo['class'] }}">{{ $statusInfo['text'] }}</span>
             </div>
         </header>
@@ -272,60 +324,37 @@
             <div class="mb-5">
                 <h5 class="fw-bold mb-4">Trạng thái đơn hàng</h5>
                 @if($order->status == 'cancelled')
-                {{-- Giao diện đặc biệt cho đơn hàng BỊ HỦY --}}
                 <div class="tracker-container">
                     <div class="tracker-item">
                         <div class="tracker-dot active status-dot-cancelled">
                             <i class="fas fa-times"></i>
                         </div>
-                        <p class="tracker-label active">Đã hủy</p>
+                        <p class="tracker-label cancelled">Đã hủy</p>
                     </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line"></div>
-                    </div>
-                    <div class="tracker-item">
-                        <div class="tracker-dot"></div>
-                        <p class="tracker-label text-muted">Đang xử lý</p>
-                    </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line"></div>
-                    </div>
-                    <div class="tracker-item">
-                        <div class="tracker-dot"></div>
-                        <p class="tracker-label text-muted">Đang giao</p>
-                    </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line"></div>
-                    </div>
-                    <div class="tracker-item">
-                        <div class="tracker-dot"></div>
-                        <p class="tracker-label text-muted">Hoàn tất</p>
-                    </div>
+                    <div class="tracker-line-container"><div class="tracker-line"></div></div>
+                    <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang xử lý</p></div>
+                    <div class="tracker-line-container"><div class="tracker-line"></div></div>
+                    <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Đang giao</p></div>
+                    <div class="tracker-line-container"><div class="tracker-line"></div></div>
+                    <div class="tracker-item"><div class="tracker-dot"></div><p class="tracker-label text-muted">Hoàn tất</p></div>
                 </div>
                 @elseif($currentStep > 0)
-                {{-- Giao diện cho các trạng thái khác --}}
                 <div class="tracker-container">
                     <div class="tracker-item">
                         <div class="tracker-dot {{ $currentStep >= 1 ? 'active' : '' }}">✓</div>
                         <p class="tracker-label {{ $currentStep == 1 ? 'active' : '' }}">Chờ xác nhận</p>
                     </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line {{ $currentStep >= 2 ? 'tracker-line-filled' : '' }}"></div>
-                    </div>
+                    <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 2 ? 'tracker-line-filled' : '' }}"></div></div>
                     <div class="tracker-item">
                         <div class="tracker-dot {{ $currentStep >= 2 ? 'active' : '' }}">@if($currentStep >= 2) ✓ @else 2 @endif</div>
                         <p class="tracker-label {{ $currentStep == 2 ? 'active' : '' }}">Đang xử lý</p>
                     </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line {{ $currentStep >= 3 ? 'tracker-line-filled' : '' }}"></div>
-                    </div>
+                    <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 3 ? 'tracker-line-filled' : '' }}"></div></div>
                     <div class="tracker-item">
                         <div class="tracker-dot {{ $currentStep >= 3 ? 'active' : '' }}">@if($currentStep >= 3) ✓ @else 3 @endif</div>
                         <p class="tracker-label {{ $currentStep == 3 ? 'active' : '' }}">Đang giao</p>
                     </div>
-                    <div class="tracker-line-container">
-                        <div class="tracker-line {{ $currentStep >= 4 ? 'tracker-line-filled' : '' }}"></div>
-                    </div>
+                    <div class="tracker-line-container"><div class="tracker-line {{ $currentStep >= 4 ? 'tracker-line-filled' : '' }}"></div></div>
                     <div class="tracker-item">
                         <div class="tracker-dot {{ $currentStep >= 4 ? 'active' : '' }}">@if($currentStep >= 4) ✓ @else 4 @endif</div>
                         <p class="tracker-label {{ $currentStep == 4 ? 'active' : '' }}">Hoàn tất</p>
@@ -333,6 +362,7 @@
                 </div>
                 @endif
             </div>
+
             @if($isOverdue)
             <div class="alert alert-danger d-flex align-items-start mb-4" role="alert">
                 <i class="fas fa-exclamation-circle me-3 mt-1 fs-5"></i>
@@ -352,9 +382,9 @@
                             <div class="flex-grow-1">
                                 <p class="fw-bold text-dark mb-1">{{ $item->product_name }}</p>
                                 @if(!empty($item->variant_attributes) && is_iterable($item->variant_attributes))
-                                @foreach($item->variant_attributes as $key => $value)
-                                <p class="text-muted small mb-0">{{ $key }}: {{ $value }}</p>
-                                @endforeach
+                                    @foreach($item->variant_attributes as $key => $value)
+                                    <p class="text-muted small mb-0">{{ $key }}: {{ $value }}</p>
+                                    @endforeach
                                 @endif
                                 <p class="text-muted small mt-1 mb-1">SL: {{ $item->quantity }}</p>
                             </div>
@@ -368,7 +398,6 @@
 
                 <div class="col-lg-5">
                     <div class="d-flex flex-column" style="gap: 1rem;">
-                        {{-- Box 1: Thời gian nhận hàng / Thông tin vận chuyển --}}
                         @if($isPickupOrder)
                         <div class="info-box">
                             <h6 class="fw-bold mb-3">Thời gian nhận hàng</h6>
@@ -384,7 +413,6 @@
                         </div>
                         @endif
 
-                        {{-- Box 2: Địa chỉ giao hàng --}}
                         <div class="info-box">
                             <h6 class="fw-bold mb-3">Địa chỉ giao hàng</h6>
                             <div class="small text-secondary">
@@ -397,7 +425,6 @@
                             </div>
                         </div>
 
-                        {{-- Box 3: Thông tin thanh toán --}}
                         <div class="info-box">
                             <h6 class="fw-bold mb-3">Thông tin thanh toán</h6>
                             <div class="small text-secondary">
@@ -406,13 +433,13 @@
                                     @if($order->payment_status == 'paid') <span class="badge bg-success">Đã thanh toán</span>
                                     @elseif($order->payment_status == 'pending') <span class="badge bg-warning text-dark">Chờ thanh toán</span>
                                     @elseif($order->payment_status == 'failed') <span class="badge bg-danger">Thất bại</span>
+                                    @elseif($order->payment_status == 'refunded') <span class="badge bg-info">Đã hoàn tiền</span>
                                     @else <span class="badge bg-secondary">{{ ucfirst($order->payment_status) }}</span>
                                     @endif
                                 </p>
                             </div>
                         </div>
 
-                        {{-- Box 4: Tổng cộng --}}
                         <div class="info-box">
                             <h6 class="fw-bold mb-3">Tổng cộng</h6>
                             <div class="d-flex flex-column small" style="gap: 0.5rem;">
@@ -434,11 +461,12 @@
         </main>
 
         <footer class="details-footer">
-
-            {{-- NÚT HỦY ĐƠN --}}
             @if(in_array($order->status, ['pending_confirmation', 'processing', 'awaiting_shipment']))
-            <button class="btn-action" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">Hủy đơn hàng</button>
+            <button id="open-cancel-modal-button" class="btn-action">
+                Hủy đơn hàng
+            </button>
             @endif
+
 
             {{-- NÚT YÊU CẦU TRẢ HÀNG --}}
             {{-- Chỉ hiện khi: Đơn đã giao, CHƯA xác nhận, và còn trong hạn 7 ngày --}}
@@ -465,31 +493,92 @@
                     </a>
                     @endif
 
+
+            @if(!is_null($order->confirmed_at))
+            <a href="{{ route('orders.review', $order->id) }}" class="btn-action">
+                Viết đánh giá
+            </a>
+            @endif
         </footer>
     </div>
 </div>
-<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="cancelOrderModalLabel">Xác nhận hủy đơn hàng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+<div id="cancel-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden"
+     data-payment-method="{{ strtolower($order->payment_method) }}"
+     data-grand-total="{{ number_format($order->grand_total, 0, ',', '.') }} VNĐ">
+
+    <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-50"></div>
+
+    <div id="modal-content" class="relative w-full max-w-lg bg-white rounded-2xl shadow-xl z-10">
+        <form action="{{ route('orders.cancel', $order->id) }}" method="POST" id="cancel-form">
+            @csrf
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                    <h2 id="modal-title" class="text-xl font-bold text-gray-800">Xác nhận Hủy Đơn Hàng</h2>
+                    <p id="modal-subtitle" class="text-sm text-gray-500 mt-1">Vui lòng cho chúng tôi biết lý do.</p>
+                </div>
+                <div id="step-indicator" class="text-sm font-semibold text-gray-500"></div>
             </div>
-            <form action="{{ route('orders.cancel', $order->id) }}" method="POST">
-                @csrf
-                <div class="modal-body">
-                    <p>Bạn có chắc chắn muốn hủy đơn hàng <strong>#{{ $order->order_code }}</strong>?</p>
-                    <div class="mb-3">
-                        <label for="reason" class="form-label">Lý do hủy (bắt buộc)</label>
-                        <textarea class="form-control" id="reason" name="reason" rows="3" required></textarea>
+
+            <div class="p-6">
+                <div id="step-1-reason" class="space-y-6">
+                    <div>
+                        <label class="block text-md font-semibold text-gray-700 mb-3">Lý do hủy đơn <span class="text-red-500">*</span></label>
+                        <div id="reason-group" class="space-y-3">
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500">
+                                <input type="radio" name="reason" value="Thay đổi ý định" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                <span class="ml-3 text-gray-700">Tôi thay đổi ý định</span>
+                            </label>
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500">
+                                <input type="radio" name="reason" value="Đặt trùng đơn hàng" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                <span class="ml-3 text-gray-700">Đặt trùng đơn hàng</span>
+                            </label>
+                            <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500">
+                                <input type="radio" name="reason" value="Đặt nhầm sản phẩm" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                <span class="ml-3 text-gray-700">Đặt nhầm sản phẩm</span>
+                            </label>
+                             <label class="flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500">
+                                <input type="radio" name="reason" value="Lý do khác" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                <span class="ml-3 text-gray-700">Lý do khác...</span>
+                            </label>
+                        </div>
+                        <textarea name="reason_other" id="reason_other_textarea" class="hidden w-full mt-3 px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="Vui lòng ghi rõ lý do của bạn"></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Không</button>
-                    <button type="submit" class="btn btn-danger">Xác nhận hủy</button>
+
+                <div id="step-2-refund" class="hidden space-y-6">
+                     <div>
+                        <label class="block text-md font-semibold text-gray-700 mb-3">Phương thức hoàn tiền <span class="text-red-500">*</span></label>
+                        <div id="refund-method-group" class="space-y-3">
+                            <label class="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-gray-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500">
+                                <input type="radio" name="refund_method" value="bank" class="mt-1 h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" checked>
+                                <span class="ml-3 text-gray-700">
+                                    <span class="font-semibold block">Hoàn về tài khoản ngân hàng</span>
+                                    <span id="refund-amount-text" class="text-sm text-gray-500">Nhận lại tiền qua chuyển khoản.</span>
+                                </span>
+                            </label>
+                        </div>
+                        <div id="bank-info-form" class="mt-4 p-4 bg-gray-50 rounded-lg border space-y-3">
+                             <input type="text" name="bank_name" placeholder="Tên ngân hàng (VD: Vietcombank)" class="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                             <input type="text" name="bank_account_number" placeholder="Số tài khoản" class="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                             <input type="text" name="bank_account_name" placeholder="Tên chủ tài khoản" class="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col-reverse sm:flex-row justify-end gap-3">
+                <button type="button" id="back-button" class="w-full sm:w-auto px-6 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 font-semibold">
+                    Quay lại
+                </button>
+                <button type="button" id="next-button" class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-semibold disabled:bg-blue-300">
+                    Tiếp tục
+                </button>
+                <button type="submit" id="confirm-cancel-button" class="w-full sm:w-auto px-6 py-2.5 bg-red-600 text-white rounded-md hover:bg-red-700 font-semibold hidden disabled:bg-red-300">
+                    Xác nhận Hủy
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -646,184 +735,123 @@
     }
 
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const modal = document.getElementById('return-request-modal');
-        const closeBtn = document.getElementById('close-return-modal');
-        const openBtns = document.querySelectorAll('.open-return-modal');
+    document.addEventListener('DOMContentLoaded', function () {
+    const openButton = document.getElementById('open-cancel-modal-button');
+    if (!openButton) return;
 
-        // Các phần cần thay đổi
-        const nameEl = modal.querySelector('.product-name'); // thêm class này vào thẻ tên
-        const skuEl = modal.querySelector('.product-sku'); // thêm class này vào thẻ sku
-        const priceEl = modal.querySelector('.product-price'); // thêm class này vào thẻ giá
-        const imageEl = modal.querySelector('.product-image');
-        openBtns.forEach(button => {
-            button.addEventListener('click', () => {
-                // Lấy dữ liệu từ data attribute
-                const name = button.dataset.name;
-                const sku = button.dataset.sku;
-                const price = button.dataset.price;
-                const priceFormatted = button.dataset.priceFormatted;
-                const image = button.dataset.image;
-                const maxQty = parseInt(button.dataset.max || '1');
-                unitPrice = parseInt(price);
-                quantityInput = document.getElementById('quantity')
+    const modal = document.getElementById('cancel-modal');
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const modalTitle = document.getElementById('modal-title');
+    const modalSubtitle = document.getElementById('modal-subtitle');
+    const stepIndicator = document.getElementById('step-indicator');
 
-                quantityInput.value = 1;
-                quantityInput.max = maxQty;
-                quantityInput.min = 1;
-                updateRefundDisplay(); // Gọi tính toán lần đầu
-                quantityInput.addEventListener('input', updateRefundDisplay);
+    const step1 = document.getElementById('step-1-reason');
+    const step2 = document.getElementById('step-2-refund');
 
-                selectedOrderItemId = button.dataset.orderItemId
-                // Gán vào modal
-                nameEl.textContent = name;
-                skuEl.textContent = sku;
-                document.querySelectorAll('.product-price').forEach(el => {
-                    el.textContent = priceFormatted;
-                });
-                imageEl.src = image;
+    const backButton = document.getElementById('back-button');
+    const nextButton = document.getElementById('next-button');
+    const confirmButton = document.getElementById('confirm-cancel-button');
 
-                const refundAmount = parseInt(price.replace(/[^\d]/g, '') || '0');
-                const expectedPoints = Math.floor(refundAmount / 1000);
-                document.getElementById('expected-refund-points').textContent = expectedPoints.toLocaleString('vi-VN') + ' điểm';
-                const input = document.getElementById('return-file-upload');
-                const preview = document.getElementById('file-list-preview');
+    const reasonGroup = document.getElementById('reason-group');
+    const reasonOtherTextarea = document.getElementById('reason_other_textarea');
+    const bankInfoForm = document.getElementById('bank-info-form');
 
-                if (input) {
-                    input.addEventListener('change', function(e) {
-                        console.log('File selected:', e.target.files);
-                        preview.innerHTML = '';
-                        const files = e.target.files;
+    const paymentMethod = modal.dataset.paymentMethod;
+    const grandTotal = modal.dataset.grandTotal;
+    const isCOD = paymentMethod === 'cod';
 
-                        Array.from(files).forEach(file => {
-                            const reader = new FileReader();
-                            reader.onload = function(event) {
-                                const src = event.target.result;
-                                let element;
+    let currentStep = 1;
 
-                                if (file.type.startsWith('image/')) {
-                                    element = document.createElement('img');
-                                    element.src = src;
-                                    element.className = "w-full h-32 object-cover rounded border";
-                                } else if (file.type.startsWith('video/')) {
-                                    element = document.createElement('video');
-                                    element.src = src;
-                                    element.controls = true;
-                                    element.className = "w-full h-32 object-cover rounded border";
-                                }
+    const updateUIForStep = () => {
+        if (currentStep === 1) {
+            step1.style.display = 'block';
+            step2.style.display = 'none';
 
-                                preview.appendChild(element);
-                            };
-                            reader.readAsDataURL(file);
-                        });
-                    });
-                }
+            modalTitle.textContent = 'Xác nhận Hủy Đơn Hàng';
+            modalSubtitle.textContent = 'Vui lòng cho chúng tôi biết lý do bạn muốn hủy.';
+            stepIndicator.textContent = isCOD ? '' : 'Bước 1/2';
 
-                // Hiện modal
-                modal.classList.remove('hidden');
-            });
-        });
+            backButton.textContent = 'Đóng';
+            confirmButton.classList.add('hidden');
 
-        closeBtn.addEventListener('click', () => {
-            modal.classList.add('hidden');
-        });
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.add('hidden');
+            if (isCOD) {
+                nextButton.classList.add('hidden');
+                confirmButton.classList.remove('hidden');
+                confirmButton.textContent = 'Xác nhận Hủy';
+            } else {
+                nextButton.classList.remove('hidden');
+                confirmButton.classList.add('hidden');
             }
-        });
+            checkReasonSelection();
+        } else if (currentStep === 2 && !isCOD) {
+            step1.style.display = 'none';
+            step2.style.display = 'block';
+
+            modalTitle.textContent = 'Chọn Phương Thức Hoàn Tiền';
+            modalSubtitle.textContent = `Số tiền ${grandTotal} sẽ được hoàn lại cho bạn.`;
+            stepIndicator.textContent = 'Bước 2/2';
+
+            backButton.textContent = 'Trở lại';
+            nextButton.classList.add('hidden');
+            confirmButton.classList.remove('hidden');
+            confirmButton.textContent = 'Gửi Yêu Cầu Hủy';
+            checkBankInfo();
+        }
+    };
+
+    const openModal = () => {
+        currentStep = 1;
+        updateUIForStep();
+        modal.classList.remove('hidden');
+    };
+
+    const closeModal = () => modal.classList.add('hidden');
+
+    const checkReasonSelection = () => {
+        const selectedReason = document.querySelector('input[name="reason"]:checked');
+        const isOther = selectedReason?.value === 'Lý do khác';
+        reasonOtherTextarea.classList.toggle('hidden', !isOther);
+
+        let reasonFilled = false;
+        if (isOther) {
+            reasonFilled = reasonOtherTextarea.value.trim() !== '';
+        } else {
+            reasonFilled = !!selectedReason;
+        }
+
+        const buttonToToggle = isCOD ? confirmButton : nextButton;
+        buttonToToggle.disabled = !reasonFilled;
+    };
+
+    const checkBankInfo = () => {
+        const inputs = bankInfoForm.querySelectorAll('input');
+        const allFilled = Array.from(inputs).every(input => input.value.trim() !== '');
+        confirmButton.disabled = !allFilled;
+    };
+
+    openButton.addEventListener('click', openModal);
+    modalBackdrop.addEventListener('click', closeModal);
+
+    backButton.addEventListener('click', () => {
+        if (currentStep === 1) closeModal();
+        else {
+            currentStep = 1;
+            updateUIForStep();
+        }
     });
-    document.addEventListener('DOMContentLoaded', function() {
-        const refundOptions = document.querySelectorAll('input[name="refund_method"]');
-        const bankDetails = document.getElementById('bank-details');
-        const submitButton = document.getElementById('submit-button');
-        const fileUploadInput = document.getElementById('return-file-upload');
-        const termsCheckbox = document.getElementById('terms');
 
-        // Toggle hiển thị thông tin ngân hàng
-        refundOptions.forEach(option => {
-            option.addEventListener('change', function() {
-                if (this.value === 'bank') {
-                    bankDetails.classList.remove('hidden');
-                } else {
-                    bankDetails.classList.add('hidden');
-                }
-            });
-        });
-
-        // Submit form
-        submitButton.addEventListener('click', () => {
-            const refundMethod = document.querySelector('input[name="refund_method"]:checked')?.value;
-            const quantity = document.getElementById('quantity').value;
-            const reason = document.getElementById('return_reason').value;
-            const reasonDetails = document.getElementById('reason_details').value;
-            const bankName = document.getElementById('bank_name')?.value;
-            const bankAccountName = document.getElementById('bank_account_name')?.value;
-            const bankAccountNumber = document.getElementById('bank_account_number')?.value;
-            const files = fileUploadInput.files;
-
-            if (!refundMethod) {
-                return toastr.warning('Vui lòng chọn phương thức hoàn tiền');
-            }
-
-            if (!termsCheckbox.checked) {
-                return toastr.warning('Vui lòng đồng ý với chính sách hoàn tiền');
-            }
-
-            const formData = new FormData();
-            formData.append('refund_method', refundMethod);
-            formData.append('quantity', quantity);
-            formData.append('reason', reason);
-            formData.append('reason_details', reasonDetails);
-            formData.append('order_item_id', selectedOrderItemId);
-
-
-            if (refundMethod === 'bank') {
-                if (!bankName || !bankAccountName || !bankAccountNumber) {
-                    return toastr.warning('Vui lòng nhập đầy đủ thông tin ngân hàng');
-                }
-                formData.append('bank_name', bankName);
-                formData.append('bank_account_name', bankAccountName);
-                formData.append('bank_account_number', bankAccountNumber);
-            }
-
-            for (let i = 0; i < files.length && i < 5; i++) {
-                formData.append('media[]', files[i]);
-            }
-            console.log([...formData.entries()]);
-
-            fetch('/orders/refund-request', {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json', // ✅ BẮT BUỘC
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: formData
-                })
-                .then(async res => {
-                    if (!res.ok) {
-                        const error = await res.text();
-                        console.error('❌ Lỗi phản hồi:', error);
-                        throw new Error('Phản hồi không hợp lệ');
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    setTimeout(() => {
-                        location.reload(); // 👉 Reload lại trang sau khi toastr hiển thị
-                    }, 50);
-                    console.log('✅ Thành công:', data);
-                    // toastr.success(data.message);
-                })
-                .catch(error => {
-                    console.error('❌ Lỗi:', error);
-                    // toastr.error(error.message);
-                });
-
-
-        });
+    nextButton.addEventListener('click', () => {
+        if (currentStep === 1 && !isCOD) {
+            currentStep = 2;
+            updateUIForStep();
+        }
     });
+
+    reasonGroup.addEventListener('change', checkReasonSelection);
+    reasonOtherTextarea.addEventListener('input', checkReasonSelection);
+    bankInfoForm.addEventListener('input', checkBankInfo);
+});
+
 </script>
 
 @endsection

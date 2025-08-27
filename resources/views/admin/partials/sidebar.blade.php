@@ -210,8 +210,8 @@
                 ],
                 [
                     'label' => 'Điểm thưởng',
-                    'route' => 'admin.purchase-orders.loyalty.index',
-                    'active_check' => ['admin.purchase-orders.loyalty.'],
+                    'route' => 'admin.loyalty.index',
+                    'active_check' => ['admin.loyalty.index'],
                 ],
             ],
         ],

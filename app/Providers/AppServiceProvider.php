@@ -24,8 +24,22 @@ use App\Models\Product;
 use App\Policies\ProductPolicy;
 use App\Models\Category;
 use App\Policies\CategoryPolicy;
-use Illuminate\Support\Facades\View;
+use App\Models\AttributeValue;
+use App\Policies\AttributeValuePolicy;
 use App\Models\Order;
+use App\Policies\OrderPolicy;
+use App\Models\Banner;
+use App\Policies\BannerPolicy;
+use App\Models\PostCategory;
+use App\Policies\PostCategoryPolicy;
+use App\Models\Review;
+use App\Policies\ReviewPolicy;
+use App\Models\PostTag;
+use App\Policies\PostTagPolicy;
+use App\Models\Coupon;
+use App\Policies\CouponPolicy;
+use Illuminate\Support\Facades\View;
+// use App\Models\Order;
 use App\Observers\OrderObserver;
 use App\Models\OrderFulfillment;
 use App\Observers\OrderFulfillmentObserver;
@@ -53,7 +67,13 @@ class AppServiceProvider extends ServiceProvider
         Attribute::class => AttributePolicy::class,
         Product::class => ProductPolicy::class,
         Category::class => CategoryPolicy::class,
-
+        AttributeValue::class => AttributeValuePolicy::class,
+        Order::class => OrderPolicy::class,
+        Banner::class => BannerPolicy::class,
+        PostCategory::class => PostCategoryPolicy::class,
+        Review::class => ReviewPolicy::class,
+        PostTag::class => PostTagPolicy::class,
+        Coupon::class => CouponPolicy::class,
     ];
 
     /**
@@ -170,18 +190,18 @@ class AppServiceProvider extends ServiceProvider
                 'buy-now/*',
                 'thanh-toan/*',
             ];
-        
+
             $cartRoutes = [
                 'cart',
                 'cart/*',
                 'checkout/*',
             ];
-        
+
             $currentRoute = request()->path();
-        
+
             $isBuyNowRoute = collect($buyNowRoutes)->contains(fn($pattern) => request()->is($pattern));
             $isCartRoute = collect($cartRoutes)->contains(fn($pattern) => request()->is($pattern));
-        
+
             // Nếu không phải trang mua ngay, xóa session mua ngay
             if (!$isBuyNowRoute && session()->has('buy_now_session')) {
                 session()->forget(['buy_now_session', 'buy_now_coupon']);

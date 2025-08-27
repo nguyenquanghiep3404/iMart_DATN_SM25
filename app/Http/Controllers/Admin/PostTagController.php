@@ -6,9 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Models\PostTag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class PostTagController extends Controller
 {
+    use AuthorizesRequests;
+
+    public function __construct()
+    {
+        // Tự động áp dụng PostTagPolicy cho tất cả các phương thức CRUD
+        $this->authorizeResource(PostTag::class, 'post_tag');
+    }
     /**
      * Hiển thị danh sách các thẻ bài viết với tìm kiếm và phân trang.
      */

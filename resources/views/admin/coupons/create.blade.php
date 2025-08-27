@@ -65,7 +65,7 @@
                         @error('description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 text-sm text-gray-500">Mô tả ngắn về chương trình khuyến mãi.</p>
+                            <p class="mt-1 text-sm text-gray-500"></p>
                         @enderror
                     </div>
                     
@@ -81,7 +81,7 @@
                             @error('type')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
-                                <p class="mt-1 text-sm text-gray-500">Giảm theo số tiền hoặc phần trăm.</p>
+                                <p class="mt-1 text-sm text-gray-500"></p>
                             @enderror
                         </div>
                         
@@ -96,7 +96,7 @@
                             @error('value')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
-                                <p class="mt-1 text-sm text-gray-500" id="value-help">Số tiền giảm (VND).</p>
+                                <p class="mt-1 text-sm text-gray-500" id="value-help"></p>
                             @enderror
                         </div>
 
@@ -132,7 +132,7 @@
                             @error('max_uses')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
-                                <p class="mt-1 text-sm text-gray-500">Để trống nếu không giới hạn.</p>
+                                <p class="mt-1 text-sm text-gray-500"></p>
                             @enderror
                         </div>
                         
@@ -144,7 +144,7 @@
                             @error('max_uses_per_user')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
-                                <p class="mt-1 text-sm text-gray-500">Để trống nếu không giới hạn.</p>
+                                <p class="mt-1 text-sm text-gray-500"></p>
                             @enderror
                         </div>
                     </div>
@@ -162,7 +162,7 @@
                         @error('min_order_amount')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 text-sm text-gray-500">Giá trị đơn hàng tối thiểu để áp dụng mã giảm giá.</p>
+                            <p class="mt-1 text-sm text-gray-500"></p>
                         @enderror
                     </div>
                     
@@ -181,7 +181,7 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
                             <p class="mt-1 text-sm text-gray-500">
-                                <span class="text-blue-600">Lưu ý:</span> Ngày bắt đầu là bắt buộc và không được là quá khứ.
+                                <span class="text-blue-600"></span>
                             </p>
                         @enderror
                     </div>
@@ -201,7 +201,7 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
                             <p class="mt-1 text-sm text-gray-500">
-                                <span class="text-blue-600">Lưu ý:</span> Ngày kết thúc là bắt buộc, phải sau thời điểm hiện tại.
+                                <span class="text-blue-600"></span>
                             </p>
                         @enderror
                         <div id="date-validation-message" class="mt-1 text-sm text-amber-600 hidden"></div>
@@ -231,7 +231,7 @@
                         @error('is_public')
                             <p class="mt-1 ml-6 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 ml-6 text-sm text-gray-500">Nếu không chọn, mã giảm giá này chỉ dành cho người dùng được chọn.</p>
+                            <p class="mt-1 ml-6 text-sm text-gray-500"></p>
                         @enderror
                     </div>
                 </div>

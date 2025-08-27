@@ -250,7 +250,10 @@
     #modal-order-items img:hover {
         transform: scale(1.05);
     }
-
+    .status-cancellation-requested {
+    background-color: #fef9c3; /* Màu vàng nhạt */
+    color: #854d0e;
+    }
     /* Responsive table for modal */
     @media (max-width: 768px) {
         .modal-content table {
@@ -270,9 +273,28 @@
             <p class="text-lg text-gray-600 font-semibold mt-1">#{{ $order->order_code }}</p>
         </div>
         <div class="mt-4 sm:mt-0 flex space-x-3">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong class="font-bold">THÔNG TIN GỠ LỖI:</strong>
+                <ul class="mt-2 list-disc list-inside text-sm">
+                    <li>
+                        <strong>Giá trị của <code>$order->status</code>:</strong>
+                        <code class="bg-red-200 p-1 rounded">{{ $order->status }}</code>
+                    </li>
+                    <li>
+                        <strong>Kết quả của <code>$order->cancellationRequest</code>:</strong>
+                        <pre class="bg-red-200 p-2 rounded mt-1"><code>@php(var_dump($order->cancellationRequest))</code></pre>
+                    </li>
+                </ul>
+            </div>
             <a href="{{ route('admin.orders.index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
                 <i class="fas fa-arrow-left mr-2"></i>Quay lại
             </a>
+            @if($order->status == 'cancellation_requested' && $order->cancellationRequest)
+                {{-- Thay thế `href` bên trong nó --}}
+            <a href="{{ route('admin.orders.cancellation.show', $order->cancellationRequest->id) }}" class="px-5 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-semibold flex items-center space-x-2">
+                <i class="fas fa-exclamation-triangle"></i><span>Xử lý Yêu cầu Hủy</span>
+            </a>
+            @endif
             <button onclick="window.print()" class="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold flex items-center space-x-2">
                 <i class="fas fa-print"></i><span>In hóa đơn</span>
             </button>
@@ -315,6 +337,23 @@
                                 <p class="text-sm text-gray-500 mb-1">Trạng thái đơn hàng</p>
                                 <span id="modal-order-status" class="status-badge status-{{ $order->status ?? 'na' }}">{{ ($order->status) }}</span>
                             </div>
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Mã giảm giá đã sử dụng</p>
+                                @if($order->couponUsages && $order->couponUsages->count() > 0)
+                                    @foreach($order->couponUsages as $usage)
+                                        <div class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium inline-block mr-2 mb-1">
+                                            {{ $usage->coupon->code ?? 'N/A' }}
+                                            @if($usage->coupon->type == 'percentage')
+                                                ({{ $usage->coupon->value }}%)
+                                            @else
+                                                ({{ number_format($usage->coupon->value, 0, ',', '.') }}₫)
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <p class="text-gray-600 text-sm">Không sử dụng mã giảm giá</p>
+                                @endif
+                            </div>
                         </div>
                         <div class="space-y-4">
                             <div>
@@ -324,6 +363,20 @@
                             <div>
                                 <p class="text-sm text-gray-500 mb-1">Phương thức thanh toán</p>
                                 <p class="font-semibold text-gray-800">{{ $order->payment_method ?? 'N/A' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Điểm thưởng đã sử dụng</p>
+                                @if($order->loyaltyPointLogs && $order->loyaltyPointLogs->count() > 0)
+                                    @foreach($order->loyaltyPointLogs as $log)
+                                        <div class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium inline-block">
+                                            {{-- Điểm trong CSDL là số âm, nên ta dùng abs() để lấy giá trị tuyệt đối --}}
+                                            {{ number_format(abs($log->points)) }} điểm
+                                            ({{ number_format(abs($log->points) * 1000, 0, ',', '.') }}₫)
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <p class="text-gray-600 text-sm">Không sử dụng điểm thưởng</p>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -396,12 +449,12 @@
                                     </div>
                                     @endif
                                 </div>
-                                
+
                                 <div class="bg-white border rounded-lg p-4 mb-3">
                                     <div class="flex justify-between items-start mb-3">
                                         <div>
                                             <p class="font-semibold text-gray-800">Fulfillment #{{ $fulfillment->id }}</p>
-                                            <p class="text-sm text-gray-600">Trạng thái: 
+                                            <p class="text-sm text-gray-600">Trạng thái:
                                                 <span class="status-badge" style="
                                                     @if($fulfillment->status == 'cancelled')
                                                         background-color: #fee2e2 !important; color: #dc2626 !important;
@@ -438,7 +491,7 @@
                                             </p>
                                         </div>
                                     </div>
-                                    
+
                                     @if($fulfillment->shipping_carrier || $fulfillment->tracking_code)
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                                         @if($fulfillment->shipping_carrier)
@@ -488,12 +541,50 @@
                                     <!-- Sản phẩm trong fulfillment -->
                                     @if($fulfillment->fulfillmentItems && $fulfillment->fulfillmentItems->count() > 0)
                                     <div class="border-t pt-3">
-                                        <p class="text-sm font-medium text-gray-700 mb-2">Sản phẩm trong đơn hàng:</p>
-                                        <div class="space-y-2">
+                                        <p class="text-sm font-medium text-gray-700 mb-2">Sản phẩm trong gói hàng:</p>
+                                        <div class="space-y-3">
                                             @foreach($fulfillment->fulfillmentItems as $item)
-                                                <div class="flex justify-between items-center text-sm">
-                                                    <span class="text-gray-600">{{ $item->orderItem->product_name ?? 'N/A' }}</span>
-                                                    <span class="font-medium">x{{ $item->quantity }}</span>
+                                                @php
+                                                    // Tính giá đã áp dụng giảm giá cho từng sản phẩm
+                                                    $originalPrice = $item->orderItem->price ?? 0;
+                                                    $quantity = $item->quantity;
+                                                    $originalTotal = $originalPrice * $quantity;
+                                                    
+                                                    // Tính tỷ lệ giảm giá của toàn đơn hàng
+                                                    $discountRatio = $order->sub_total > 0 ? $order->discount_amount / $order->sub_total : 0;
+                                                    
+                                                    // Áp dụng tỷ lệ giảm giá cho sản phẩm này
+                                                    $itemDiscount = $originalTotal * $discountRatio;
+                                                    $finalPrice = $originalPrice - ($itemDiscount / $quantity);
+                                                    $finalTotal = $originalTotal - $itemDiscount;
+                                                @endphp
+                                                <div class="bg-white border rounded p-3">
+                                                    <div class="flex justify-between items-start">
+                                                        <div class="flex-1">
+                                                            <p class="font-medium text-gray-800">{{ $item->orderItem->product_name ?? 'N/A' }}</p>
+                                                            <div class="text-sm text-gray-600 mt-1">
+                                                                <span>Số lượng: {{ $quantity }}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            @if($discountRatio > 0)
+                                                                <div class="text-sm">
+                                                                    <span class="text-gray-400 line-through">{{ number_format($originalPrice, 0, ',', '.') }}₫</span>
+                                                                    <span class="text-green-600 font-medium ml-1">{{ number_format($finalPrice, 0, ',', '.') }}₫</span>
+                                                                </div>
+                                                                <div class="text-sm font-semibold text-gray-800">
+                                                                    Tổng: <span class="text-green-600">{{ number_format($finalTotal, 0, ',', '.') }}₫</span>
+                                                                </div>
+                                                            @else
+                                                                <div class="text-sm font-medium text-gray-800">
+                                                                    {{ number_format($originalPrice, 0, ',', '.') }}₫
+                                                                </div>
+                                                                <div class="text-sm font-semibold text-gray-800">
+                                                                    Tổng: {{ number_format($originalTotal, 0, ',', '.') }}₫
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             @endforeach
                                         </div>
@@ -575,6 +666,10 @@
             text: "Đã hủy",
             class: "status-cancelled"
         },
+        cancellation_requested: {
+            text: "Yêu cầu hủy",
+            class: "status-cancellation-requested"
+        },
         failed_delivery: {
             text: "Giao thất bại",
             class: "status-failed_delivery"
@@ -623,6 +718,8 @@
             if (result.success) {
                 const order = result.data;
                 populateModal(order);
+                console.log("Đang kiểm tra Order Status:", order.status);
+    console.log("Đang kiểm tra Cancellation Request:", order.cancellationRequest);
                 modal.classList.add('is-open');
                 modal.querySelector('div').classList.remove('scale-95');
             }
@@ -698,7 +795,7 @@
                 <td class="p-3">
                     <div class="flex items-center space-x-3">
                         <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                            ${productImage ? 
+                            ${productImage ?
                                 `<img src="${productImage}" alt="${item.product_name || 'Sản phẩm'}"
                                     class="w-full h-full object-cover"
                                     onerror="this.parentElement.innerHTML='<div class=\\'product-image-placeholder\\' style=\\'width:100%;height:100%\\'><i class=\\'fas fa-image text-2xl\\'></i></div>'">`
@@ -707,9 +804,9 @@
                                   </div>`}
                         </div>
                         <div class="flex-1 min-w-0">
-                            ${productLink !== '#' ? 
-                                `<a href="${productLink}" 
-                                    target="_blank" 
+                            ${productLink !== '#' ?
+                                `<a href="${productLink}"
+                                    target="_blank"
                                     class="font-medium text-gray-600 hover:text-gray-900 hover:underline line-clamp-2"
                                     title="Chỉnh sửa sản phẩm (mở tab mới)"
                                     onclick="event.stopPropagation();">
@@ -878,7 +975,7 @@
             showToast('Vui lòng chọn trạng thái mới cho đơn hàng.', 'warning', 'Thiếu thông tin');
             return false;
         }
-        
+
         // Ngăn chuyển từ 'processing' sang trạng thái khác mà không qua trạm đóng gói
         if (currentStatus === 'processing' && newStatus !== 'processing' && newStatus !== 'cancelled') {
             showToast('Đơn hàng đang xử lý phải được xác nhận tại Trạm Đóng Gói trước khi chuyển sang trạng thái khác', 'error');
@@ -1028,7 +1125,7 @@
                 // Reset cache khi có order_id để lấy shipper theo warehouse
                 shippersCache = null;
             }
-            
+
             // Use cache if available và không có order_id
             if (shippersCache && !orderId) {
                 populateShipperSelect(shippersCache);
@@ -1136,7 +1233,7 @@
             }
         }
     });
-    
+
 
     document.addEventListener('DOMContentLoaded', () => {
         // Xử lý hiển thị trạng thái gói hàng
@@ -1148,7 +1245,7 @@
                 element.className = `status-badge ${statusMap[status].class}`;
             }
         });
-        
+
         // Detail page initialization complete
         console.log('Detail page loaded successfully');
     });
