@@ -17,7 +17,7 @@
 
 
     <div class="bg-white rounded-xl shadow-sm p-6">
-        <form action="{{ route('admin.coupons.update', $coupon->id) }}" method="POST">
+        <form action="{{ route('admin.coupons.update', $coupon->id) }}" method="POST" novalidate>
             @csrf
             @method('PUT')
             
@@ -44,9 +44,6 @@
                         @else
                             <p class="mt-1 text-sm text-gray-500">
                                 Mã duy nhất không trùng lặp. <strong>Tối thiểu 6 ký tự, tối đa 20 ký tự.</strong> Chỉ nên dùng chữ và số.
-                                <button type="button" class="text-indigo-600 hover:text-indigo-500 underline ml-1" onclick="document.getElementById('random-code-btn').click()">
-                                    Tạo ngẫu nhiên
-                                </button>
                             </p>
                         @enderror
                     </div>
@@ -58,7 +55,7 @@
                         @error('description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 text-sm text-gray-500">Mô tả ngắn về chương trình khuyến mãi.</p>
+                            <p class="mt-1 text-sm text-gray-500"></p>
                         @enderror
                     </div>
                     
@@ -74,7 +71,7 @@
                             @error('type')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
-                                <p class="mt-1 text-sm text-gray-500">Giảm theo số tiền hoặc phần trăm.</p>
+                                <p class="mt-1 text-sm text-gray-500"></p>
                             @enderror
                         </div>
                         
@@ -147,7 +144,7 @@
                             @error('max_uses_per_user')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
-                                <p class="mt-1 text-sm text-gray-500">Để trống nếu không giới hạn.</p>
+                                <p class="mt-1 text-sm text-gray-500"></p>
                             @enderror
                         </div>
                     </div>
@@ -165,7 +162,7 @@
                         @error('min_order_amount')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 text-sm text-gray-500">Giá trị đơn hàng tối thiểu để áp dụng mã giảm giá.</p>
+                            <p class="mt-1 text-sm text-gray-500"></p>
                         @enderror
                     </div>
                     
@@ -187,7 +184,7 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @else
                             <p class="mt-1 text-sm text-gray-500">
-                                <span class="text-amber-600"></span>Thông tin:</span> Ngày bắt đầu không thể chỉnh sửa để đảm bảo tính nhất quán của mã giảm giá.
+                                <span class="text-amber-600"></span>Thông tin:</span> Ngày bắt đầu không thể chỉnh sửa
                             </p>
                         @enderror
                     </div>
@@ -227,7 +224,7 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @else
                                 <p class="mt-1 text-sm text-gray-500">
-                                    <span class="text-blue-600">Lưu ý:</span> Ngày kết thúc phải sau ngày bắt đầu ({{ $coupon->start_date ? $coupon->start_date->format('d/m/Y H:i') : '' }}).
+                                    {{-- <span class="text-blue-600">Lưu ý:</span> Ngày kết thúc phải sau ngày bắt đầu ({{ $coupon->start_date ? $coupon->start_date->format('d/m/Y H:i') : '' }}). --}}
                                 </p>
                             @enderror
                             <div id="end-date-validation-message" class="mt-1 text-sm text-amber-600 hidden"></div>
@@ -237,28 +234,43 @@
                     <div class="mb-5">
                         <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái <span class="text-red-500">*</span></label>
                         <select id="status" name="status" 
-                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('status') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror">
+                            class="block w-full rounded-md border py-2.5 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 @error('status') border-red-300 focus:border-red-500 focus:ring-red-500 @else border-gray-300 @enderror"
+                            @if($coupon->expired()) disabled @endif>
                             <option value="">Chọn trạng thái</option>
                             <option value="active" {{ old('status', $coupon->status) == 'active' ? 'selected' : '' }}>Hoạt động</option>
                             <option value="inactive" {{ old('status', $coupon->status) == 'inactive' ? 'selected' : '' }}>Vô hiệu</option>
                             <option value="expired" {{ old('status', $coupon->status) == 'expired' ? 'selected' : '' }}>Hết hạn</option>
                         </select>
+                        @if($coupon->expired())
+                            <!-- Hidden input để duy trì giá trị khi disabled -->
+                            <input type="hidden" name="status" value="{{ $coupon->status }}">
+                        @endif
                         @error('status')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @else
+                            @if($coupon->expired())
+                                <p class="mt-1 text-sm text-red-600 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                    Mã giảm giá đã hết hạn, không thể thay đổi trạng thái.
+                                </p>
+                            @endif
                         @enderror
                     </div>
                     
                     <div class="mb-5">
+                        <input type="hidden" name="is_public" value="0">
                         <label class="flex items-center">
                             <input type="checkbox" name="is_public" value="1" 
-                                class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 @error('is_public') border-red-300 focus:ring-red-500 @enderror" 
+                                class="h-5 w-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 @error('is_public') border-red-300 focus:ring-red-500 @enderror" 
                                 {{ old('is_public', $coupon->is_public) ? 'checked' : '' }}>
                             <span class="ml-2 text-sm text-gray-700">Mã giảm giá công khai</span>
                         </label>
                         @error('is_public')
                             <p class="mt-1 ml-6 text-sm text-red-600">{{ $message }}</p>
                         @else
-                            <p class="mt-1 ml-6 text-sm text-gray-500">Nếu không chọn, mã giảm giá này chỉ dành cho người dùng được chọn.</p>
+                            <p class="mt-1 ml-6 text-sm text-gray-500"></p>
                         @enderror
                     </div>
                 </div>
@@ -457,7 +469,7 @@
         randomCodeBtn.setAttribute('title', 'Tạo mã giảm giá ngẫu nhiên (6-20 ký tự)');
         
         // Hiển thị thông tin ngày bắt đầu không thể chỉnh sửa
-        console.log('Edit mode: Ngày bắt đầu đã bị khóa để đảm bảo tính nhất quán.');
+        // console.log('Edit mode: Ngày bắt đầu đã bị khóa để đảm bảo tính nhất quán.');
 
         // Hiển thị thông tin về trạng thái mã giảm giá
         @if($coupon->end_date && $coupon->end_date->isPast())
@@ -477,7 +489,7 @@
                 form.insertBefore(warningBadge, form.firstChild);
             }
         @else
-            console.log('Edit mode: Mã giảm giá chưa hết hạn - Có thể chỉnh sửa ngày kết thúc.');
+           // console.log('Edit mode: Mã giảm giá chưa hết hạn - Có thể chỉnh sửa ngày kết thúc.');
         @endif
     });
 </script>

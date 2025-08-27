@@ -57,7 +57,14 @@
                     <h2 class="text-xl font-semibold text-gray-800 mb-4">Chi tiết sản phẩm trả</h2>
                     @foreach ($returnRequest->returnItems as $item)
                     <div class="flex items-start space-x-4">
-                        <img src="{{ $item->orderItem->variant->product->thumbnail_url ?? 'https://placehold.co/100x100' }}" class="w-24 h-24 rounded-md">
+                        @php
+                        $variant = $item->orderItem?->variant;
+                        $product = $variant?->product;
+                        $cover = $variant?->coverImage;
+                        $imageUrl = $cover ? $cover->url : 'https://placehold.co/80x80';
+                        @endphp
+
+                        <img src="{{ $variant?->image_url ?? $imageUrl }}" alt="{{ $product?->name }}" class="w-24 h-24 rounded-md">
                         <div class="flex-grow">
                             <p class="font-bold">{{ $item->orderItem->variant->product->name ?? 'Sản phẩm đã xóa' }}</p>
                             <p class="text-sm text-gray-500">SKU: {{ $item->orderItem->variant->sku ?? 'N/A' }}</p>
@@ -71,14 +78,22 @@
                         </div>
                     </div>
                     @endforeach
-
+                    @php
+                    $reasonLabels = [
+                    'defective' => 'Sản phẩm bị lỗi do nhà sản xuất',
+                    'wrong_item' => 'Giao sai sản phẩm',
+                    'not_as_described' => 'Không đúng như mô tả',
+                    'changed_mind' => 'Thay đổi ý định (có thể áp dụng phí)',
+                    'other' => 'Lý do khác',
+                    ];
+                    @endphp
 
                     <div class="mt-4 border-t pt-4 space-y-2">
-                        <p><strong class="font-semibold">Lý do từ khách hàng:</strong> {{ $returnRequest->reason ?? 'Không có lý do' }}</p>
+                        <p><strong class="font-semibold">Lý do từ khách hàng:</strong> {{ $reasonLabels[$returnRequest->reason] ?? $returnRequest->reason }}</p>
                         <p><strong class="font-semibold">Mô tả: </strong>{{ $returnRequest->reason_details }}.</p>
                     </div>
                     <div class="mt-4">
-                        <h3 class="font-semibold mb-2">Hình ảnh/Video bằng chứng:</h3>
+                        <h3 class="font-semibold mb-2">Hình ảnh bằng chứng:</h3>
                         <div class="flex space-x-2">
                             @foreach ($returnRequest->files as $file)
                             <img src="{{ Storage::url($file->path) }}" alt="{{ $file->original_name }}" class="w-24 h-24 rounded-md cursor-pointer hover:opacity-80 transition">

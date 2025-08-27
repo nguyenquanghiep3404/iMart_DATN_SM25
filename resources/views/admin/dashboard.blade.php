@@ -90,7 +90,23 @@
                     <tbody>
                         @forelse($topSellingProducts as $product)
                             <tr class="border-b hover:bg-slate-50">
-                                <td class="p-3">{{ $product->name }}</td>
+                                <td class="p-3">
+                                    <div class="flex items-center space-x-3">
+                                        {{-- SAO CHÉP LOGIC LẤY ẢNH TỪ TRANG ADMIN --}}
+                                        @php
+                                            $image = $product->coverImage ?? $product->variants->first()?->primaryImage;
+                                            $imageUrl = $image ? Illuminate\Support\Facades\Storage::url($image->path) : asset('assets/admin/img/placeholder-image.png');
+                                        @endphp
+                                        <img src="{{ $imageUrl }}" alt="{{ $product->name }}" class="w-12 h-12 object-cover rounded">
+
+                                        <div>
+                                            {{-- Dùng slug từ bảng products đã có sẵn --}}
+                                            <a href="{{ route('products.show', $product->slug) }}" target="_blank" class="hover:text-blue-600 font-medium">
+                                                {{ $product->name }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
                                 <td class="p-3 text-right font-semibold">{{ $product->total_quantity }}</td>
                             </tr>
                         @empty
@@ -120,7 +136,7 @@
                             'pending_confirmation' => 'Chờ xác nhận',
                             'processing' => 'Đang xử lý',
                             'awaiting_shipment' => 'Chờ giao hàng',
-                            'shipped' => 'Đã gửi',
+                            'shipped' => 'đang giao hàng',
                             'out_for_delivery' => 'Đang giao',
                             'delivered' => 'Đã giao',
                             'cancelled' => 'Đã hủy',

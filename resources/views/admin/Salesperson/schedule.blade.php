@@ -74,21 +74,7 @@
                                 @endphp
                                 <div class="schedule-cell border-b p-2 cursor-pointer hover:bg-indigo-50 min-h-[60px]"
                                     data-staff-id="{{ $employee->id }}" data-date="{{ $dateString }}">
-                                    @if ($schedule)
-                                        @php
-                                            $shiftColors = [
-                                                'Ca Sáng' => 'bg-blue-100 text-blue-800',
-                                                'Ca Chiều' => 'bg-amber-100 text-amber-800',
-                                                'Ca Tối' => 'bg-indigo-100 text-indigo-800',
-                                            ];
-                                            $colorClass =
-                                                $shiftColors[$schedule->workShift->name ?? ''] ??
-                                                'bg-gray-100 text-gray-800';
-                                        @endphp
-                                        <div class="font-semibold rounded-md p-2 text-xs {{ $colorClass }}">
-                                            {{ $schedule->workShift->name ?? 'N/A' }}
-                                        </div>
-                                    @endif
+
                                 </div>
                             @endfor
                         @endforeach
@@ -126,45 +112,95 @@
 
 @push('scripts')
     <script>
+        // Cấu hình toastr
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "3000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             const prevWeekBtn = document.getElementById('prev-week-btn');
             const nextWeekBtn = document.getElementById('next-week-btn');
             const currentWeekDisplay = document.getElementById('current-week-display');
-            const scheduleGridContainer = document.getElementById('schedule-grid-container');
+            let scheduleGridContainer = document.getElementById('schedule-grid-container');
             const scheduleModal = document.getElementById('schedule-modal');
             const cancelScheduleModalBtn = document.getElementById('cancel-schedule-modal-btn');
             const scheduleForm = document.getElementById('schedule-form');
             let currentWeekStartDate = new Date('{{ $weekStartDate }}');
+            // Function để tính màu text tương phản
+            function getContrastColor(hexColor) {
+                // Chuyển hex sang RGB
+                const r = parseInt(hexColor.substr(1, 2), 16);
+                const g = parseInt(hexColor.substr(3, 2), 16);
+                const b = parseInt(hexColor.substr(5, 2), 16);
+
+                // Tính độ sáng (luminance)
+                const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+                // Trả về màu trắng cho nền tối, màu đen cho nền sáng
+                return luminance > 0.5 ? '#000000' : '#FFFFFF';
+            }
             // Các nút điều hướng
             prevWeekBtn.addEventListener('click', function() {
                 currentWeekStartDate.setDate(currentWeekStartDate.getDate() - 7);
+                sessionStorage.setItem('currentWeekStart', currentWeekStartDate.toISOString());
                 loadSchedule();
             });
             nextWeekBtn.addEventListener('click', function() {
                 currentWeekStartDate.setDate(currentWeekStartDate.getDate() + 7);
+                sessionStorage.setItem('currentWeekStart', currentWeekStartDate.toISOString());
                 loadSchedule();
             });
 
             function loadSchedule() {
-                const weekStart = currentWeekStartDate.toISOString().split('T')[0];
+                const weekStartYear = currentWeekStartDate.getFullYear();
+                const weekStartMonth = String(currentWeekStartDate.getMonth() + 1).padStart(2, '0');
+                const weekStartDay = String(currentWeekStartDate.getDate()).padStart(2, '0');
+                const weekStart = `${weekStartYear}-${weekStartMonth}-${weekStartDay}`;
                 const weekEnd = new Date(currentWeekStartDate);
                 weekEnd.setDate(currentWeekStartDate.getDate() + 6);
                 const weekEndStr = weekEnd.toISOString().split('T')[0];
+
                 // Cập nhật hiển thị
                 currentWeekDisplay.textContent =
                     `${currentWeekStartDate.toLocaleDateString('vi-VN')} - ${weekEnd.toLocaleDateString('vi-VN')}`;
                 // Hiển thị loading
                 scheduleGridContainer.innerHTML = '<div class="p-8 text-center">Đang tải...</div>';
-                // Lấy dữ liệu lịch trình
-                fetch(`{{ route('admin.sales-staff.api.schedule.weekly', $store->id) }}?week_start=${weekStart}`)
+                // Lấy dữ liệu lịch trình với cache busting
+                fetch(`{{ route('admin.sales-staff.api.schedule.weekly', $store->id) }}?week_start=${weekStart}&_t=${Date.now()}`, {
+                        method: 'GET',
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    })
                     .then(response => response.json())
                     .then(data => {
                         renderScheduleGrid(data.schedules);
+                    })
+                    .catch(error => {
+                        scheduleGridContainer.innerHTML =
+                            '<div class="p-8 text-center text-red-500">Có lỗi xảy ra khi tải lịch</div>';
                     });
             }
 
             function renderScheduleGrid(schedules) {
                 const employees = @json($employees);
+                const workShifts = @json($workShifts);
                 const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
 
                 if (employees.length === 0) {
@@ -198,22 +234,24 @@
                     for (let i = 0; i < 7; i++) {
                         const date = new Date(currentWeekStartDate);
                         date.setDate(currentWeekStartDate.getDate() + i);
-                        const dateString = date.toISOString().split('T')[0];
+                        // Fix timezone issue: use local date instead of UTC
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const dateString = `${year}-${month}-${day}`;
 
                         const schedule = schedules.find(s => s.user_id === employee.id && s.date ===
                             dateString);
                         let shiftTag = '';
 
                         if (schedule) {
-                            const shiftColors = {
-                                "Ca Sáng": "bg-blue-100 text-blue-800",
-                                "Ca Chiều": "bg-amber-100 text-amber-800",
-                                "Ca Tối": "bg-indigo-100 text-indigo-800",
-                            };
-                            const colorClass = shiftColors[schedule.work_shift_name] ||
-                                'bg-gray-100 text-gray-800';
-                            shiftTag =
-                                `<div class="font-semibold rounded-md p-2 text-xs ${colorClass}">${schedule.work_shift_name}</div>`;
+                            // Sử dụng màu sắc từ database (color_code)
+                            const backgroundColor = schedule.work_shift_color || '#6B7280'; // Default gray
+                            const textColor = getContrastColor(backgroundColor);
+                            shiftTag = `<div class="font-semibold rounded-md p-2 text-xs" 
+                                           style="background-color: ${backgroundColor}; color: ${textColor};">
+                                           ${schedule.work_shift_name}
+                                       </div>`;
                         }
                         gridHTML += `
                     <div class="schedule-cell border-b p-2 cursor-pointer hover:bg-indigo-50 min-h-[60px]" 
@@ -226,53 +264,97 @@
                 });
                 gridHTML += '</div>';
                 scheduleGridContainer.innerHTML = gridHTML;
+                // Thêm lại event listeners sau khi render
+                attachScheduleClickEvents();
             }
-            // Lên lịch nhấp chuột vào ô
-            scheduleGridContainer.addEventListener('click', function(e) {
-                const cell = e.target.closest('.schedule-cell');
-                if (cell) {
-                    const staffId = cell.dataset.staffId;
-                    const date = cell.dataset.date;
-                    openScheduleModal(staffId, date);
-                }
-            });
+
+            function attachScheduleClickEvents() {
+                const newContainer = scheduleGridContainer.cloneNode(true);
+                scheduleGridContainer.parentNode.replaceChild(newContainer, scheduleGridContainer);
+                scheduleGridContainer = document.getElementById('schedule-grid-container');
+                scheduleGridContainer.addEventListener('click', function(e) {
+                    const cell = e.target.closest('.schedule-cell');
+                    if (cell) {
+                        const staffId = cell.dataset.staffId;
+                        const date = cell.dataset.date;
+                        openScheduleModal(staffId, date);
+                    }
+                });
+            }
+            attachScheduleClickEvents();
+            const savedWeek = sessionStorage.getItem('currentWeekStart');
+            if (savedWeek) {
+                currentWeekStartDate = new Date(savedWeek);
+            }
+            loadSchedule();
+
             function openScheduleModal(staffId, dateString) {
                 const employee = @json($employees).find(e => e.id == staffId);
-                if (!employee) return;
-
+                if (!employee) {
+                    return;
+                }
                 document.getElementById('scheduling-staff-id').value = staffId;
                 document.getElementById('scheduling-date').value = dateString;
-
                 const dateObj = new Date(dateString);
                 document.getElementById('schedule-modal-info').innerHTML = `
             <p class="font-semibold text-gray-800">${employee.name}</p>
             <p class="text-sm text-gray-500">${dateObj.toLocaleDateString('vi-VN')}</p>
         `;
                 // Kiểm tra lịch trình hiện tại
+                // Fix timezone: use local date string
+                const weekStartYear = currentWeekStartDate.getFullYear();
+                const weekStartMonth = String(currentWeekStartDate.getMonth() + 1).padStart(2, '0');
+                const weekStartDay = String(currentWeekStartDate.getDate()).padStart(2, '0');
+                const weekStartString = `${weekStartYear}-${weekStartMonth}-${weekStartDay}`;
+
                 fetch(
-                        `{{ route('admin.sales-staff.api.schedule.weekly', $store->id) }}?week_start=${currentWeekStartDate.toISOString().split('T')[0]}`)
+                        `{{ route('admin.sales-staff.api.schedule.weekly', $store->id) }}?week_start=${weekStartString}`
+                    )
                     .then(response => response.json())
                     .then(data => {
                         const existingSchedule = data.schedules.find(s => s.user_id == staffId && s.date ===
                             dateString);
-                       // Đặt lại tất cả các nút radio
-                        document.querySelectorAll('input[name="work-shift"]').forEach(radio => {
+                        // Đặt lại tất cả các nút radio
+                        document.querySelectorAll('input[name="work_shift_name"]').forEach(radio => {
                             radio.checked = false;
                         });
                         if (existingSchedule) {
                             const radio = document.querySelector(
-                                `input[name="work-shift"][value="${existingSchedule.work_shift_name}"]`);
+                                `input[name="work_shift_name"][value="${existingSchedule.work_shift_name}"]`
+                            );
                             if (radio) radio.checked = true;
                         } else {
                             document.getElementById('shift-off').checked = true;
                         }
                         scheduleModal.classList.remove('hidden');
+                        // Thêm animation cho modal
+                        setTimeout(() => {
+                            const modalContent = scheduleModal.querySelector('#schedule-modal-content');
+                            if (modalContent) {
+                                modalContent.classList.remove('scale-95', 'opacity-0');
+                                modalContent.classList.add('scale-100', 'opacity-100');
+                            }
+                        }, 10);
                     });
             }
+
             function closeScheduleModal() {
-                scheduleModal.classList.add('hidden');
+                const modalContent = scheduleModal.querySelector('#schedule-modal-content');
+                if (modalContent) {
+                    modalContent.classList.remove('scale-100', 'opacity-100');
+                    modalContent.classList.add('scale-95', 'opacity-0');
+                }
+                setTimeout(() => {
+                    scheduleModal.classList.add('hidden');
+                }, 300);
             }
             cancelScheduleModalBtn.addEventListener('click', closeScheduleModal);
+            // Thêm event listener cho nút close mới
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', closeScheduleModal);
+            }
+
             scheduleModal.addEventListener('click', function(e) {
                 if (e.target === scheduleModal) {
                     closeScheduleModal();
@@ -293,18 +375,15 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.message) {
-                            alert(data.message);
+                            toastr.success(data.message, 'Thành công!');
                             closeScheduleModal();
-                            loadSchedule(); 
+                            loadSchedule();
                         } else if (data.errors) {
-                            Object.keys(data.errors).forEach(field => {
-                                console.error(`${field}: ${data.errors[field][0]}`);
-                            });
+                            toastr.error('Có lỗi xảy ra: ' + Object.values(data.errors)[0][0], 'Lỗi!');
                         }
                     })
                     .catch(error => {
-                        console.error('Error:', error);
-                        alert('Có lỗi xảy ra khi cập nhật lịch làm việc');
+                        toastr.error('Có lỗi xảy ra khi cập nhật lịch làm việc', 'Lỗi!');
                     });
             });
         });

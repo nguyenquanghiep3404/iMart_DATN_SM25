@@ -17,6 +17,10 @@ class AttributeSeeder extends Seeder
         // AttributeValue::truncate(); // Cẩn thận
 
         $attributesData = [
+             ['name' => 'Dung lượng', 'slug' => 'dung-luong', 'display_type' => 'select', 'values' => [
+                ['value' => '64GB'], ['value' => '128GB'], ['value' => '256GB'],
+                ['value' => '512GB'], ['value' => '1TB'], ['value' => '2TB']
+            ]],
             ['name' => 'Màu sắc', 'slug' => 'mau-sac', 'display_type' => 'color_swatch', 'values' => [
                 ['value' => 'Đen', 'meta' => '#000000'], ['value' => 'Trắng', 'meta' => '#FFFFFF'],
                 ['value' => 'Bạc', 'meta' => '#C0C0C0'], ['value' => 'Vàng Gold', 'meta' => '#FFD700'],
@@ -24,10 +28,7 @@ class AttributeSeeder extends Seeder
                 ['value' => 'Hồng', 'meta' => '#FFC0CB'], ['value' => 'Xanh Lá', 'meta' => '#28A745'],
                 ['value' => 'Titan Tự Nhiên', 'meta' => '#8A8A8D'], ['value' => 'Titan Xanh', 'meta' => '#2C3E50'],
             ]],
-            ['name' => 'Dung lượng lưu trữ', 'slug' => 'dung-luong-luu-tru', 'display_type' => 'select', 'values' => [
-                ['value' => '64GB'], ['value' => '128GB'], ['value' => '256GB'],
-                ['value' => '512GB'], ['value' => '1TB'], ['value' => '2TB']
-            ]],
+           
             ['name' => 'RAM', 'slug' => 'ram', 'display_type' => 'select', 'values' => [
                 ['value' => '4GB'], ['value' => '6GB'], ['value' => '8GB'],
                 ['value' => '12GB'], ['value' => '16GB'], ['value' => '32GB']

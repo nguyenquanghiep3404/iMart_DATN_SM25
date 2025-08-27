@@ -51,7 +51,7 @@
     @if (session('success'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                showNotification("{{ session('success') }}", "success");
+                showNotification({!! json_encode(session('success')) !!}, "success");
             });
         </script>
     @endif
@@ -59,7 +59,7 @@
     @if (session('error'))
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                showNotification("{{ session('error') }}", "error");
+                showNotification({!! json_encode(session('error')) !!}, "error");
             });
         </script>
     @endif
@@ -169,7 +169,7 @@
                             </td>
                             <td class="px-6 py-4">
                                 @if ($coupon->end_date)
-                                    @if($coupon->end_date->isPast())
+                                    @if($coupon->expired())
                                         <span class="text-red-600 font-medium">
                                             {{ $coupon->end_date->format('d/m/Y') }}
                                             <span class="inline-flex items-center ml-1 px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">
@@ -242,20 +242,32 @@
                                             </svg>
                                         </button>
                                         <div class="dropdown-menu hidden absolute right-0 mt-2 w-48 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-10" role="menu">
-                                            <div class="py-1" role="none">
-                                                <a href="{{ route('admin.coupons.changeStatus', ['coupon' => $coupon->id, 'status' => 'active']) }}" 
-                                                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                                                   <span class="h-2 w-2 rounded-full bg-green-600 mr-2"></span> Hoạt động
-                                                </a>
-                                                <a href="{{ route('admin.coupons.changeStatus', ['coupon' => $coupon->id, 'status' => 'inactive']) }}" 
-                                                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                                                   <span class="h-2 w-2 rounded-full bg-yellow-600 mr-2"></span> Vô hiệu
-                                                </a>
-                                                <a href="{{ route('admin.coupons.changeStatus', ['coupon' => $coupon->id, 'status' => 'expired']) }}" 
-                                                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
-                                                   <span class="h-2 w-2 rounded-full bg-red-600 mr-2"></span> Hết hạn
-                                                </a>
-                                            </div>
+                                            @if($coupon->expired())
+                                                <div class="py-2 px-4 text-sm text-red-600 bg-red-50">
+                                                    <div class="flex items-center">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                                        </svg>
+                                                        Mã đã hết hạn
+                                                    </div>
+                                                    <p class="text-xs mt-1">Không thể thay đổi trạng thái</p>
+                                                </div>
+                                            @else
+                                                <div class="py-1" role="none">
+                                                    <a href="{{ route('admin.coupons.changeStatus', ['coupon' => $coupon->id, 'status' => 'active']) }}" 
+                                                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                                       <span class="h-2 w-2 rounded-full bg-green-600 mr-2"></span> Hoạt động
+                                                    </a>
+                                                    <a href="{{ route('admin.coupons.changeStatus', ['coupon' => $coupon->id, 'status' => 'inactive']) }}" 
+                                                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                                       <span class="h-2 w-2 rounded-full bg-yellow-600 mr-2"></span> Vô hiệu
+                                                    </a>
+                                                    <a href="{{ route('admin.coupons.changeStatus', ['coupon' => $coupon->id, 'status' => 'expired']) }}" 
+                                                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" role="menuitem">
+                                                       <span class="h-2 w-2 rounded-full bg-red-600 mr-2"></span> Hết hạn
+                                                    </a>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>

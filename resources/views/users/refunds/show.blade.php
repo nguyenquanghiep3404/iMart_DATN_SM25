@@ -130,11 +130,21 @@
                             @foreach ($returnRequest->returnItems as $item)
                             @php
                             $variant = $item->orderItem->variant;
-                            $product = $variant->product;
-                            $image = $product->coverImage->url ?? 'https://placehold.co/80x80';
+                            $product = $variant?->product;
+
+                            if ($variant && $variant->primaryImage && Storage::disk('public')->exists($variant->primaryImage->path)) {
+                            $imageUrl = Storage::url($variant->primaryImage->path);
+                            } elseif ($product && $product->coverImage && Storage::disk('public')->exists($product->coverImage->path)) {
+                            $imageUrl = Storage::url($product->coverImage->path);
+                            } else {
+                            $imageUrl = asset('images/placeholder.jpg'); // hoặc 'https://placehold.co/80x80'
+                            }
                             @endphp
+
                             <div class="flex items-center space-x-4 p-4">
-                                <img src="{{ asset('storage/' . $image) }}" class="w-20 h-20 rounded-md object-cover">
+                                <img src="{{ $imageUrl }}" alt="{{ $variant?->name ?? $product?->name ?? 'Sản phẩm' }}"
+                                    class="w-20 h-20 rounded-md object-cover">
+
                                 <div class="flex-1">
                                     <p class="font-semibold text-gray-800">{{ $product->name }}</p>
                                     <p class="text-sm text-gray-500">Phân loại: {{ $variant->name }}</p>

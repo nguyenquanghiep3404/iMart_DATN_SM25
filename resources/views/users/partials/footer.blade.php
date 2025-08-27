@@ -1,120 +1,146 @@
 <footer class="footer position-relative bg-dark">
-      <span class="position-absolute top-0 start-0 w-100 h-100 bg-body d-none d-block-dark"></span>
-      <div class="container position-relative z-1 pt-sm-2 pt-md-3 pt-lg-4" data-bs-theme="dark">
+    <span class="position-absolute top-0 start-0 w-100 h-100 bg-body d-none d-block-dark"></span>
+    <div class="container position-relative z-1 pt-sm-2 pt-md-3 pt-lg-4" data-bs-theme="dark">
 
-        <!-- Columns with links that are turned into accordion on screens < 500px wide (sm breakpoint) -->
-        <div class="accordion py-5" id="footerLinks">
-          <div class="row">
-            <div class="col-md-4 d-sm-flex flex-md-column align-items-center align-items-md-start pb-3 mb-sm-4">
-              <h4 class="mb-sm-0 mb-md-4 me-4">
-                <a class="text-dark-emphasis text-decoration-none" href="index.html">Cartzilla</a>
-              </h4>
-              <p class="text-body fs-sm text-sm-end text-md-start mb-sm-0 mb-md-3 ms-0 ms-sm-auto ms-md-0 me-4">Got questions? Contact us 24/7</p>
-              <div class="dropdown" style="max-width: 250px">
-                <button type="button" class="btn btn-secondary dropdown-toggle justify-content-between w-100" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                  Hỗ trợ và tư vấn
-                </button>
-                <ul class="dropdown-menu">
-                  <li><a class="dropdown-item" href="{{ route('users.about') }}">Về chúng tôi</a></li>
-                  <li><a class="dropdown-item" href="{{ route('users.help') }}">Trung tâm trợ giúp &amp; FAQ</a></li>
-                  <li><a class="dropdown-item" href="{{ route('users.terms') }}">Điều khoản &amp; điều kiện</a></li>
-                  <li><a class="dropdown-item" href="#!">Liên hệ hỗ trợ</a></li>
-                </ul>
-              </div>
+        <!-- Vietnamese Footer Sections -->
+        <div class="py-5">
+            <div class="row">
+                <!-- Left Column: Logo & Social Media & Hotline -->
+                <div class="col-lg-3 col-md-4 mb-4">
+                    <!-- Social Media Section -->
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <a href="/" class="flex-shrink-0">
+                                <img class="h-12 sm:h-14 w-auto" src="{{ asset('assets/users/logo/logo-full.svg') }}"
+                                    alt="Logo">
+                            </a>
+                            <div class="bg-secondary mx-2" style="width: 1px; height: 40px;"></div>
+                            <a href="/" class="flex-shrink-0">
+                                <img class="h-12 sm:h-14 w-auto" src="{{ asset('assets/users/logo/Apple.png') }}"
+                                    alt="Logo">
+                            </a>
+                        </div>
+                        <h6 class="text-white fw-bold mb-3">KẾT NỐI VỚI IMART SHOP</h6>
+                        <div class="d-flex gap-2 mb-4">
+                            <a href="/" class="flex-shrink-0">
+                                <img class="w-8 h-8 rounded-full object-cover"
+                                    src="{{ asset('assets/users/logo/Facebook.webp') }}" alt="Logo">
+                            </a>
+                            <a href="/" class="flex-shrink-0">
+                                <img class="w-8 h-8 rounded-full object-cover"
+                                    src="{{ asset('assets/users/logo/Zalo.webp') }}" alt="Logo">
+                            </a>
+                            <a href="/" class="flex-shrink-0">
+                                <img class="w-8 h-8 rounded-full object-cover"
+                                    src="{{ asset('assets/users/logo/Youtube.jpg') }}" alt="Logo">
+                            </a>
+                            <a href="/" class="flex-shrink-0">
+                                <img class="w-8 h-8 rounded-full object-cover"
+                                    src="{{ asset('assets/users/logo/Tiktok.jpg') }}" alt="Logo">
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- About iMart Section -->
+                    <div>
+                        <p class="text-body-secondary small">
+                            Năm 2025, iMart trở thành đại lý ủy quyền của Apple.
+                            Chúng tôi phát triển chuỗi cửa hàng tiêu chuẩn và Apple Mono Store
+                            nhằm mang đến trải nghiệm tốt nhất về sản phẩm và dịch vụ của Apple
+                            cho người dùng Việt Nam.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- About Us Section -->
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <h6 class="text-white fw-bold mb-3">VỀ CHÚNG TÔI</h6>
+                    <ul class="nav flex-column gap-2">
+                        <li><a class="nav-link text-body-secondary p-0 small" href="{{ route('users.about') }}">Giới
+                                thiệu</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Tin tức khuyến mại</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Giới thiệu máy đổi trả</a>
+                        </li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Hướng dẫn mua hàng & thanh
+                                toán online</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Đại lý ủy quyền và TTBH ủy
+                                quyền của Apple</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="{{ route('guest.orders.form') }}">Tra cứu đơn hàng</a>
+                        </li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Câu hỏi thường gặp</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Đánh giá chất lượng khiếu nại</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Tin tức</a></li>
+                    </ul>
+                </div>
+
+                <!-- Policies Section -->
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <h6 class="text-white fw-bold mb-3">CHÍNH SÁCH</h6>
+                    <ul class="nav flex-column gap-2">
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Chính sách bảo hành</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Chính sách đổi trả</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Chính sách bảo mật</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Chính sách hủy giao dịch</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Chính sách giao hàng</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Chính sách dịch vụ</a></li>
+                        <li><a class="nav-link text-body-secondary p-0 small" href="#!">Chính sách chương trình khách hàng thân thiết</a></li>
+                    </ul>
+                </div>
+
+                <!-- Hotline Section moved here -->
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <h6 class="text-white fw-bold mb-3">TỔNG ĐÀI MIỄN PHÍ</h6>
+                    <div class="text-body-secondary small">
+                        <div class="mb-2">
+                            <span class="fw-medium">Tư vấn mua hàng (Miễn phí)</span><br>
+                            <span class="fw-bold text-white">1800.6601</span> <span>(Nhánh 1)</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-medium">Hỗ trợ kỹ thuật</span><br>
+                            <span class="fw-bold text-white">1800.6601</span> <span>(Nhánh 2)</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-medium">Góp ý, khiếu nại và tiếp nhận cảnh báo vi phạm</span><br>
+                            <span class="fw-bold text-white">1800.6616</span> <span>(8h00 - 22h00)</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Temporarily hidden Payment Support Section --}}
+                {{-- <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <h6 class="text-white fw-bold mb-3">HỖ TRỢ THANH TOÁN</h6>
+                    <div class="row g-2">
+                        <div class="col-4">
+                            <img src="{{ asset('assets/users/img/payment-methods/visa-dark-mode.svg') }}"
+                                alt="Visa" class="img-fluid">
+                        </div>
+                        <div class="col-4">
+                            <img src="{{ asset('assets/users/img/payment-methods/mastercard.svg') }}" alt="Mastercard"
+                                class="img-fluid">
+                        </div>
+                        <div class="col-4">
+                            <img src="{{ asset('assets/users/img/payment-methods/amex.svg') }}" alt="American Express"
+                                class="img-fluid">
+                        </div>
+                        <div class="col-4">
+                            <img src="{{ asset('assets/users/img/payment-methods/apple-pay-dark-mode.svg') }}"
+                                alt="Apple Pay" class="img-fluid">
+                        </div>
+                        <div class="col-4">
+                            <img src="{{ asset('assets/users/img/payment-methods/google-pay-dark-mode.svg') }}"
+                                alt="Google Pay" class="img-fluid">
+                        </div>
+                        <div class="col-4">
+                            <img src="{{ asset('assets/users/img/payment-methods/paypal-dark-mode.svg') }}"
+                                alt="PayPal" class="img-fluid">
+                        </div>
+                    </div>
+                </div> --}}
             </div>
-            <div class="col-md-8">
-              <div class="row row-cols-1 row-cols-sm-3 gx-3 gx-md-4">
-                <div class="accordion-item col border-0">
-                  <h6 class="accordion-header" id="companyHeading">
-                    <span class="text-dark-emphasis d-none d-sm-block">Company</span>
-                    <button type="button" class="accordion-button collapsed py-3 d-sm-none" data-bs-toggle="collapse" data-bs-target="#companyLinks" aria-expanded="false" aria-controls="companyLinks">Company</button>
-                  </h6>
-                  <div class="accordion-collapse collapse d-sm-block" id="companyLinks" aria-labelledby="companyHeading" data-bs-parent="#footerLinks">
-                    <ul class="nav flex-column gap-2 pt-sm-3 pb-3 mt-n1 mb-1">
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">About company</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Our team</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Careers</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Contact us</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">News</a>
-                      </li>
-                    </ul>
-                  </div>
-                  <hr class="d-sm-none my-0">
-                </div>
-                <div class="accordion-item col border-0">
-                  <h6 class="accordion-header" id="accountHeading">
-                    <span class="text-dark-emphasis d-none d-sm-block">Account</span>
-                    <button type="button" class="accordion-button collapsed py-3 d-sm-none" data-bs-toggle="collapse" data-bs-target="#accountLinks" aria-expanded="false" aria-controls="accountLinks">Account</button>
-                  </h6>
-                  <div class="accordion-collapse collapse d-sm-block" id="accountLinks" aria-labelledby="accountHeading" data-bs-parent="#footerLinks">
-                    <ul class="nav flex-column gap-2 pt-sm-3 pb-3 mt-n1 mb-1">
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Your account</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Shipping rates &amp; policies</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Refunds &amp; replacements</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Delivery info</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Order tracking</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Taxes &amp; fees</a>
-                      </li>
-                    </ul>
-                  </div>
-                  <hr class="d-sm-none my-0">
-                </div>
-                <div class="accordion-item col border-0">
-                  <h6 class="accordion-header" id="customerHeading">
-                    <span class="text-dark-emphasis d-none d-sm-block">Customer service</span>
-                    <button type="button" class="accordion-button collapsed py-3 d-sm-none" data-bs-toggle="collapse" data-bs-target="#customerLinks" aria-expanded="false" aria-controls="customerLinks">Customer service</button>
-                  </h6>
-                  <div class="accordion-collapse collapse d-sm-block" id="customerLinks" aria-labelledby="customerHeading" data-bs-parent="#footerLinks">
-                    <ul class="nav flex-column gap-2 pt-sm-3 pb-3 mt-n1 mb-1">
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Payment methods</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Money back guarantee</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Product returns</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Support center</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="#!">Shipping</a>
-                      </li>
-                      <li class="d-flex w-100 pt-1">
-                        <a class="nav-link animate-underline animate-target d-inline fw-normal text-truncate p-0" href="{{ route('users.terms') }}">Terms &amp; conditions</a>
-                      </li>
-                    </ul>
-                  </div>
-                  <hr class="d-sm-none my-0">
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Category / tag links -->
-        <div class="d-flex flex-column gap-3 pb-3 pb-md-4 pb-lg-5 mt-n2 mt-sm-n4 mt-lg-0 mb-4">
+        {{-- <div class="d-flex flex-column gap-3 pb-3 pb-md-4 pb-lg-5 mt-n2 mt-sm-n4 mt-lg-0 mb-4">
           <ul class="nav align-items-center text-body-tertiary gap-2">
             <li class="animate-underline">
               <a class="nav-link fw-normal p-0 animate-target" href="#!">Computers</a>
@@ -217,28 +243,26 @@
               <a class="nav-link fw-normal p-0 animate-target" href="{{ route('users.terms') }}">Terms &amp; conditions</a>
             </li>
           </ul>
-        </div>
+        </div> --}}
 
-        <!-- Copyright + Payment methods -->
-        <div class="d-md-flex align-items-center border-top py-4">
-          <div class="d-flex gap-2 gap-sm-3 justify-content-center ms-md-auto mb-4 mb-md-0 order-md-2">
-            <div>
-              <img src="{{ asset ('assets/users/img/payment-methods/visa-dark-mode.svg')}} " alt="Visa">
+        <!-- Copyright & BCT Logo -->
+        <div class="border-top py-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <p class="text-body-secondary fs-sm mb-0">
+                        © 2025 iMart. Tất cả các quyền được bảo lưu.
+                        Địa chỉ: Tòa nhà FPT Polytechnic, 13 Trịnh Văn Bô, Phường Xuân Phương, TP Hà Nội<br>
+                        GPĐKKD số 0123456789 do Sở KH & ĐT TP. Hà Nội cấp ngày 10/08/2025
+                        Điện thoại: (028) 7302 3456 Email: imartshop@imart.com
+                    </p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <a href="" target="_blank" class="d-inline-block" style="max-width: 150px;">
+                        <img src="{{ asset('assets/users/logo/BCT.png') }}" alt="Đã thông báo Bộ Công Thương"
+                            class="img-fluid">
+                    </a>
+                </div>
             </div>
-            <div>
-              <img src="{{ asset ('assets/users/img/payment-methods/mastercard.svg')}} " alt="Mastercard">
-            </div>
-            <div>
-              <img src="{{ asset ('assets/users/img/payment-methods/paypal-dark-mode.svg')}} " alt="PayPal">
-            </div>
-            <div>
-              <img src="{{ asset ('assets/users/img/payment-methods/google-pay-dark-mode.svg')}} " alt="Google Pay">
-            </div>
-            <div>
-              <img src="{{ asset ('assets/users/img/payment-methods/apple-pay-dark-mode.svg')}} " alt="Apple Pay">
-            </div>
-          </div>
-          <p class="text-body fs-xs text-center text-md-start mb-0 me-4 order-md-1">© All rights reserved. Made by <span class="animate-underline"><a class="animate-target text-dark-emphasis fw-medium text-decoration-none" href="https://createx.studio/" target="_blank" rel="noreferrer">Createx Studio</a></span></p>
         </div>
-      </div>
-    </footer>
+    </div>
+</footer>

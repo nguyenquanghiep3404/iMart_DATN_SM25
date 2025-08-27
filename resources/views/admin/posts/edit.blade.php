@@ -100,183 +100,132 @@
 
 @section('content')
     <div class="body-content px-6 md:px-8 py-8">
-        <div class="container mx-auto max-w-screen-2xl">
-            <div class="mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Chỉnh sửa bài viết</h1>
-                <nav aria-label="breadcrumb" class="mt-2">
-                    <ol class="flex text-sm text-gray-500">
-                        <li><a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800">Bảng điều
-                                khiển</a></li>
-                        <li class="mx-1">/</li>
-                        <li><a href="{{ route('admin.posts.index') }}" class="text-indigo-600 hover:text-indigo-800">Bài
-                                viết</a></li>
-                        <li class="mx-1">/</li>
-                        <li class="text-gray-700 font-medium">Chỉnh sửa bài viết</li>
-                    </ol>
-                </nav>
-            </div>
+    <div class="container mx-auto max-w-screen-2xl">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Chỉnh sửa bài viết</h1>
+            <nav aria-label="breadcrumb" class="mt-2">
+                <ol class="flex text-sm text-gray-500">
+                    <li><a href="{{ route('admin.dashboard') }}" class="text-indigo-600 hover:text-indigo-800">Bảng điều khiển</a></li>
+                    <li class="mx-1">/</li>
+                    <li><a href="{{ route('admin.posts.index') }}" class="text-indigo-600 hover:text-indigo-800">Bài viết</a></li>
+                    <li class="mx-1">/</li>
+                    <li class="text-gray-700 font-medium">Chỉnh sửa bài viết</li>
+                </ol>
+            </nav>
+        </div>
 
-            <div class="card bg-white">
-                <div class="p-6">
-                    <form action="{{ route('admin.posts.update', $post) }}" method="POST" enctype="multipart/form-data"
-                        class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        @csrf
-                        @method('PUT')
+        <div class="card bg-white">
+            <div class="p-6">
+                <form action="{{ route('admin.posts.update', $post) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @csrf
+                    @method('PUT')
 
-                        {{-- Cột trái --}}
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Tiêu đề <span
-                                        class="text-red-600">*</span></label>
-                                <input type="text" name="title" id="title" class="form-input w-full"
-                                    value="{{ old('title', $post->title) }}">
-                                @error('title')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Slug <span
-                                        class="text-red-600">*</span></label>
-                                <input type="text" name="slug" id="slug" class="form-input w-full"
-                                    value="{{ old('slug', $post->slug) }}">
-                                @error('slug')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Meta title</label>
-                                <input type="text" name="meta_title" class="form-input w-full"
-                                    value="{{ old('meta_title', $post->meta_title) }}">
-                                @error('meta_title')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Meta description</label>
-                                <textarea name="meta_description" class="form-input form-textarea w-full">{{ old('meta_description', $post->meta_description) }}</textarea>
-                                @error('meta_description')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Meta keywords</label>
-                                <input type="text" name="meta_keywords" class="form-input w-full"
-                                    value="{{ old('meta_keywords', $post->meta_keywords) }}">
-                                @error('meta_keywords')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+                    {{-- Cột trái --}}
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tiêu đề <span class="text-red-600">*</span></label>
+                            <input type="text" name="title" id="title" class="form-input w-full" value="{{ old('title', $post->title) }}">
+                            @error('title')
+                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
-                        {{-- Cột phải --}}
-                        <div class="space-y-6">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Danh mục</label>
-                                <select name="post_category_id" class="form-input w-full">
-                                    <option value="">-- Chọn danh mục --</option>
-                                    @foreach ($categories as $cat)
-                                        <option value="{{ $cat->id }}"
-                                            {{ old('post_category_id', $post->post_category_id) == $cat->id ? 'selected' : '' }}>
-                                            {{ $cat->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('post_category_id')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Slug <span class="text-red-600">*</span></label>
+                            <input type="text" name="slug" id="slug" class="form-input w-full" value="{{ old('slug', $post->slug) }}">
+                            @error('slug')
+                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Thẻ (Tags)</label>
-                                <select name="tags[]" class="form-input w-full" multiple>
-                                    @foreach ($tags as $tag)
-                                        <option value="{{ $tag->id }}"
-                                            {{ in_array($tag->id, old('tags', $post->tags->pluck('id')->toArray())) ? 'selected' : '' }}>
-                                            {{ $tag->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('tags')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Tóm tắt</label>
+                            <textarea name="excerpt" class="form-input form-textarea w-full">{{ old('excerpt', $post->excerpt) }}</textarea>
+                            @error('excerpt')
+                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Hình ảnh bài viết</label>
-                                @if ($post->coverImage)
-                                    <div class="mb-2">
-                                        <img src="{{ Storage::url($post->coverImage->path) }}" alt="Ảnh hiện tại"
-                                            class="preview-image">
-                                        <p class="text-sm text-gray-600 mt-1">Ảnh hiện tại:
-                                            {{ $post->coverImage->original_name }}</p>
-                                    </div>
-                                @endif
-                                <input type="file" name="post_cover_image" class="form-input w-full"
-                                    accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
-                                @error('post_cover_image')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Nội dung <span class="text-red-600">*</span></label>
+                            <textarea name="content" id="editor" class="form-input form-textarea w-full h-48">{{ old('content', $post->content) }}</textarea>
+                            @error('content')
+                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Tóm tắt</label>
-                                <textarea name="excerpt" class="form-input form-textarea w-full">{{ old('excerpt', $post->excerpt) }}</textarea>
-                                @error('excerpt')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+                    {{-- Cột phải --}}
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Danh mục</label>
+                            <select name="post_category_id" class="form-input w-full">
+                                <option value="">-- Chọn danh mục --</option>
+                                @foreach ($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ old('post_category_id', $post->post_category_id) == $cat->id ? 'selected' : '' }}>{{ $cat->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('post_category_id')
+                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-1">Nội dung <span
-                                        class="text-red-600">*</span></label>
-                                <textarea name="content" id="editor" class="form-input form-textarea w-full h-48">{{ old('content', $post->content) }}</textarea>
-                                @error('content')
-                                    <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                @enderror
-                            </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Thẻ (Tags)</label>
+                            <select name="tags[]" class="form-input w-full" multiple>
+                                @foreach ($tags as $tag)
+                                    <option value="{{ $tag->id }}" {{ in_array($tag->id, old('tags', $post->tags->pluck('id')->toArray())) ? 'selected' : '' }}>{{ $tag->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('tags')
+                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-1">Trạng thái <span
-                                            class="text-red-600">*</span></label>
-                                    <select name="status" class="form-input w-full">
-                                        <option value="draft"
-                                            {{ old('status', $post->status) == 'draft' ? 'selected' : '' }}>Nháp</option>
-                                        <option value="published"
-                                            {{ old('status', $post->status) == 'published' ? 'selected' : '' }}>Xuất bản
-                                        </option>
-                                        <option value="pending_review"
-                                            {{ old('status', $post->status) == 'pending_review' ? 'selected' : '' }}>Chờ
-                                            duyệt</option>
-                                        
-                                    </select>
-                                    @error('status')
-                                        <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
-                                    @enderror
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Hình ảnh bài viết</label>
+                            @if ($post->coverImage)
+                                <div class="mb-2">
+                                    <img src="{{ Storage::url($post->coverImage->path) }}" alt="Ảnh hiện tại" class="preview-image">
+                                    <p class="text-sm text-gray-600 mt-1">Ảnh hiện tại: {{ $post->coverImage->original_name }}</p>
                                 </div>
-
-                                <div class="flex items-end">
-                                    <label class="inline-flex items-center">
-                                        <input type="checkbox" name="is_featured" value="1" class="form-input mr-2"
-                                            {{ old('is_featured', $post->is_featured) ? 'checked' : '' }}>
-                                        <span class="text-sm text-gray-700">Bài viết nổi bật</span>
-                                    </label>
-                                </div>
-                            </div>
+                            @endif
+                            <input type="file" name="post_cover_image" class="form-input w-full" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                            @error('post_cover_image')
+                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
 
-                        {{-- Nút lưu --}}
-                        <div class="md:col-span-2 flex items-center justify-center space-x-3 pt-6 border-t">
-                            <button type="submit" class="btn btn-success">Cập nhật</button>
-                            <a href="{{ route('admin.posts.index') }}" class="btn btn-secondary">Quay lại</a>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1">Trạng thái <span class="text-red-600">*</span></label>
+                            <select name="status" class="form-input w-full">
+                                <option value="draft" {{ old('status', $post->status) == 'draft' ? 'selected' : '' }}>Nháp</option>
+                                <option value="published" {{ old('status', $post->status) == 'published' ? 'selected' : '' }}>Xuất bản</option>
+                                <option value="pending_review" {{ old('status', $post->status) == 'pending_review' ? 'selected' : '' }}>Chờ duyệt</option>
+                            </select>
+                            @error('status')
+                                <p class="text-red-600 text-xs mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
-                    </form>
-                </div>
+
+                        <div class="flex items-center">
+                            <label class="inline-flex items-center">
+                                <input type="checkbox" name="is_featured" value="1" class="form-input mr-2" {{ old('is_featured', $post->is_featured) ? 'checked' : '' }}>
+                                <span class="text-sm text-gray-700">Bài viết nổi bật</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {{-- Nút lưu --}}
+                    <div class="md:col-span-2 flex items-center justify-center space-x-3 pt-6 border-t">
+                        <button type="submit" class="btn btn-success">Cập nhật</button>
+                        <a href="{{ route('admin.posts.index') }}" class="btn btn-secondary">Quay lại</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @push('scripts')

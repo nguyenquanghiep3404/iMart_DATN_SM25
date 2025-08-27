@@ -9,13 +9,14 @@
     @include('users.cart.layout.partials.css')
     @include('users.messenger')
     <!-- Breadcrumb -->
-    <nav class="container pt-3 my-3 my-md-4" aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="home-electronics.html">Home</a></li>
-            <li class="breadcrumb-item"><a href="shop-catalog-electronics.html">Shop</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Cart</li>
-        </ol>
-    </nav>
+   <nav class="container pt-3 my-3 my-md-4" aria-label="breadcrumb">
+    <ol class="breadcrumb text-truncate" style="font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a href="/danh-muc-san-pham">Sản phẩm</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Giỏ hàng</li>
+    </ol>
+</nav>
+
     <!-- Items in the cart + Order summary -->
     <section class="container pb-5 mb-2 mb-md-3 mb-lg-4 mb-xl-5">
         <h1 class="h3 mb-4">Giỏ Hàng</h1>
@@ -30,7 +31,7 @@
                                 <th scope="col" class="fs-sm fw-normal py-3 ps-0"><span class="text-body">Sản Phẩm</span>
                                 </th>
                                 <th scope="col" class="text-body fs-sm fw-normal py-3 d-none d-xl-table-cell"><span
-                                        class="text-body">Gía</span></th>
+                                        class="text-body">Giá</span></th>
                                 <th scope="col" class="text-body fs-sm fw-normal py-3 d-none d-md-table-cell"><span
                                         class="text-body">Số Lượng</span></th>
                                 <th scope="col" class="text-body fs-sm fw-normal py-3 d-none d-md-table-cell"><span
@@ -65,7 +66,7 @@
                                         : route('users.tradeins.show', ['slug' => $productSlug]); // giả sử route này có cho hàng cũ
                                 @endphp
 
-                                <tr data-item-id="{{ $item->id }}" data-stock="{{ $item->stock_quantity }}">
+                                <tr data-item-id="{{ $item->id }}" data-stock="{{ $item->stock_quantity }}" data-is-flash="{{ !empty($item->is_flash_sale) ? 1 : 0 }}" data-flash-limit="{{ !empty($item->is_flash_sale) ? max(0, (int) ($item->flash_remaining ?? 0)) : 0 }}">
                                     <td class="py-3 ps-0">
                                         <div class="d-flex align-items-center">
                                             <img src="{{ $item->image }}" alt="Ảnh sản phẩm" width="90" height="90">
@@ -130,9 +131,14 @@
                                                 aria-label="Decrement quantity">
                                                 <i class="ci-minus"></i>
                                             </button>
+                                            @php
+                                                $effectiveMax = !empty($item->is_flash_sale)
+                                                    ? max(0, min((int) ($item->flash_remaining ?? 0), (int) $item->stock_quantity))
+                                                    : (int) $item->stock_quantity;
+                                            @endphp
                                             <input type="number" class="form-control quantity-input text-center"
                                                 value="{{ $item->quantity }}" min="1"
-                                                max="{{ $item->stock_quantity }}">
+                                                max="{{ $effectiveMax }}">
                                             <button type="button" class="btn btn-icon btn-increment"
                                                 aria-label="Increment quantity">
                                                 <i class="ci-plus"></i>
@@ -171,9 +177,5 @@
             @include('users.cart.layout.partials.summary_oder')
         </div>
     </section>
-    <!-- Trending products (Carousel) -->
-    @include('users.cart.layout.partials.product_trending')
-    <!-- Subscription form + Vlog -->
-    @include('users.cart.layout.partials.form')
 @endsection
 @include('users.cart.layout.partials.script')

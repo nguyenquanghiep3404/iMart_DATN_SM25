@@ -128,9 +128,9 @@
     </div>
 
     {{-- Footer chứa các nút hành động --}}
-    @if(in_array($order->status, ['awaiting_shipment', 'shipped', 'out_for_delivery']))
+    @if(in_array($order->status, ['processing', 'shipped', 'out_for_delivery']))
         <footer class="sticky bottom-0 p-4 bg-white border-t z-20">
-            @if($order->status === 'awaiting_shipment')
+            @if($order->status === 'processing')
                 {{-- Nút mới để mở modal quét mã --}}
                 <button type="button" @click="openBarcodeScanner()" class="w-full flex items-center justify-center bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="fas fa-barcode mr-2"></i>
@@ -157,7 +157,11 @@
 
 
     {{-- Modal quét barcode --}}
-    <div x-show="isScannerOpen" 
+
+    <div x-show="isScannerOpen"
+
+    <div x-show="isScannerOpen"
+
          x-transition:enter="transition ease-out duration-300"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -238,7 +242,6 @@
         return {
             // Data
             orderCode: initialData.orderCode,
-            
             // Scanner State
             isScannerOpen: false,
             isLoading: false,
@@ -279,20 +282,27 @@
 
             startScanning() {
                 if (typeof Html5Qrcode === "undefined" || this.html5QrCode?.isScanning) return;
-                
+
+
                 this.isLoading = true;
                 this.html5QrCode = new Html5Qrcode("reader");
-                
+
+
+
+                this.isLoading = true;
+                this.html5QrCode = new Html5Qrcode("reader");
+
                 const config = { fps: 10, qrbox: { width: 250, height: 150 }, supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] };
 
                 const onScanSuccess = (decodedText, decodedResult) => {
                     if (!this.isScannerOpen) return;
-                    this.stopScanning(); 
+                    this.stopScanning();
+                    this.stopScanning();
 
                     if (decodedText.trim() === this.orderCode.trim()) {
                         this.beepSound?.play();
                         try { navigator.vibrate(100); } catch (e) {}
-                        
+
                         this.scanStatus = 'success';
                         this.scanMessage = 'Quét thành công! Đang cập nhật trạng thái...';
 
@@ -302,7 +312,6 @@
                     } else {
                         this.errorSound?.play();
                         try { navigator.vibrate([200, 50, 200]); } catch (e) {}
-                        
                         this.scanStatus = 'error';
                         this.scanMessage = `Mã không khớp! (Quét được: ${decodedText})`;
 
@@ -341,7 +350,6 @@
     document.addEventListener('DOMContentLoaded', function() {
         const failActionButton = document.getElementById('btn-fail-action');
         const modal = document.getElementById('failure-reason-modal');
-        
         if (failActionButton && modal) {
             const closeButtons = modal.querySelectorAll('.close-modal-btn');
             const confirmButton = modal.querySelector('#confirm-failure-btn');
@@ -352,7 +360,8 @@
             const openModal = () => {
                 modal.classList.remove('hidden');
                 // Thêm is-visible để kích hoạt animation
-                setTimeout(() => modal.classList.add('is-visible'), 10); 
+                setTimeout(() => modal.classList.add('is-visible'), 10);
+                setTimeout(() => modal.classList.add('is-visible'), 10);
             };
 
             const closeModal = () => {
@@ -377,7 +386,6 @@
                 // Gán giá trị vào các input ẩn trong form
                 document.getElementById('fail-reason-input').value = reason;
                 document.getElementById('fail-notes-input').value = notesTextarea.value;
-                
                 // Submit form
                 failForm.submit();
             });

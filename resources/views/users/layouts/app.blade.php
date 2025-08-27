@@ -24,7 +24,7 @@
     @include('users.partials.header')
 
     <!-- Page content -->
-    <main class="content-wrapper bg-body ">
+    <main class="content-wrapper bg-body">
         @yield('content')
     </main>
 
@@ -44,6 +44,9 @@
     <script src="{{ asset('assets/users/js/theme.min.js') }}"></script>
 
     @stack('scripts') {{-- Cho phép các trang con thêm JS cụ thể --}}
+    
+    <!-- Payment Debug Helper -->
+    <script src="{{ asset('assets/users/js/payment-debug-helper.js') }}"></script>
 </body>
 
 </html>

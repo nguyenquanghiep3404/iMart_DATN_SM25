@@ -4,13 +4,12 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\User;
 use App\Models\ProvinceOld;
 use App\Models\DistrictOld;
-use App\Models\StoreLocation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class ShipperAssignmentController extends Controller
@@ -24,51 +23,66 @@ class ShipperAssignmentController extends Controller
     }
 
     /**
-     * Get packages that need shipper assignment
+     * Get fulfillments (packages) that need shipper assignment.
+     * LOGIC MỚI: Lấy các gói hàng (fulfillments) thay vì đơn hàng (orders).
      */
-    public function getPackages(Request $request)
+    public function getOrders(Request $request)
     {
         try {
-            $packages = Order::with(['user', 'province', 'district', 'fulfillments'])
-                ->where('status', 'confirmed') // Only confirmed orders
-                ->whereNull('shipper_id') // Not assigned to any shipper yet
-                ->whereNotNull('delivery_deadline') // Has delivery deadline
-                ->whereHas('fulfillments', function($query) {
-                    $query->whereNotNull('tracking_code');
-                }) // Must have tracking code in fulfillment
-                ->select([
-                    'id',
-                    'order_code',
-                    'user_id',
-                    'total_amount',
-                    'shipping_address',
-                    'delivery_deadline',
-                    'province_id',
-                    'district_id',
-                    'shipper_id'
-                ])
-                ->orderBy('delivery_deadline', 'asc')
-                ->get()
-                ->map(function ($order) {
+            // Bắt đầu truy vấn từ OrderFulfillment
+            $fulfillments = OrderFulfillment::with([
+                // XÓA Ở ĐÂY: Bỏ 'order.province' và 'order.district' vì không cần thiết và gây lỗi
+                'order' => function ($query) {
+                    $query->select(
+                        'id',
+                        'order_code',
+                        'customer_name',
+                        'customer_phone',
+                        'shipping_address_line1',
+                        'shipping_address_line2',
+                        'desired_delivery_date',
+                        'shipping_old_province_code as province_id',
+                        'shipping_old_district_code as district_id',
+                        'grand_total'
+                    );
+                }
+            ])
+                ->select(
+                'id', 'order_id', 'status', 'shipper_id', 
+                'tracking_code', 'estimated_delivery_date' // <-- LẤY CẢ 2 TRƯỜNG MỚI
+                )
+                ->where('status', 'packed')
+                ->whereNull('shipper_id')
+                ->whereHas('order', function ($query) {
+                    $query->whereIn('shipping_old_province_code', function ($subQuery) {
+                        $subQuery->select('province_code')
+                            ->from('store_locations')
+                            ->where('type', 'warehouse')
+                            ->where('is_active', true);
+                    });
+                })
+ ->orderBy('estimated_delivery_date', 'asc') // <-- Sắp xếp theo trường mới
+            ->get()
+                ->map(function ($fulfillment) {
+                    // Xử lý ghép địa chỉ
+                    $address = trim($fulfillment->order->shipping_address_line1 . ', ' . $fulfillment->order->shipping_address_line2, ', ');
+
                     return [
-                        'id' => $order->id,
-                        'order_code' => $order->order_code,
-                        'customer_name' => $order->user->name ?? 'N/A',
-                        'customer_phone' => $order->user->phone ?? 'N/A',
-                        'shipping_address' => $order->shipping_address,
-                        'total_amount' => $order->total_amount,
-                        'delivery_deadline' => $order->delivery_deadline,
-                        'province_id' => $order->province_id,
-                        'district_id' => $order->district_id,
-                        'province_name' => $order->province->name ?? 'N/A',
-                        'district_name' => $order->district->name ?? 'N/A',
+                        'id' => $fulfillment->id,
+                        'tracking_code' => $fulfillment->tracking_code,
+                    'deadline' => $fulfillment->estimated_delivery_date, 
+                        'order_id' => $fulfillment->order->id,
+                        'order_code' => $fulfillment->order->order_code,
+                        'customer_name' => $fulfillment->order->customer_name,
+                        'customer_phone' => $fulfillment->order->customer_phone,
+                        'address' => $address,
+                        'total_amount' => $fulfillment->order->grand_total,
+                        'province_id' => $fulfillment->order->province_id,
+                        'district_id' => $fulfillment->order->district_id,
                     ];
                 });
 
-            return response()->json([
-                'success' => true,
-                'data' => $packages
-            ]);
+            return response()->json(['success' => true, 'data' => $fulfillments]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -77,31 +91,50 @@ class ShipperAssignmentController extends Controller
         }
     }
 
+
+
+
+
+
     /**
-     * Get available shippers
+     * Get available shippers based on the selected province.
+     * LOGIC MỚI: Lọc shipper theo kho hàng tại tỉnh/thành được chọn.
      */
-    public function getShippers(Request $request)
+    public function getShippers(Request $request, $province_code = null)
     {
         try {
-            $shippers = User::where('role', 'shipper')
-                ->where('status', 'active')
-                ->select(['id', 'name', 'email', 'phone'])
+            // SỬA Ở ĐÂY: Thay thế where('role', 'shipper') bằng whereHas('roles', ...)
+            $shippersQuery = User::whereHas('roles', function ($query) {
+                $query->where('name', 'shipper');
+            })->where('status', 'active');
+            // KẾT THÚC SỬA
+
+            if ($province_code) {
+                // Nếu có province_code, chỉ lấy shipper thuộc các kho ở tỉnh đó
+                $shippersQuery->whereHas('storeLocations', function ($query) use ($province_code) {
+                    $query->where('type', 'warehouse')
+                        ->where('province_code', $province_code);
+                });
+            } else {
+                // Nếu không có province_code, không trả về shipper nào để buộc người dùng phải chọn tỉnh
+                return response()->json(['success' => true, 'data' => []]);
+            }
+
+            $shippers = $shippersQuery->select(['id', 'name', 'email', 'phone_number'])
                 ->orderBy('name')
                 ->get()
                 ->map(function ($shipper) {
+                    $warehouse = $shipper->storeLocations()->where('type', 'warehouse')->first();
                     return [
                         'id' => $shipper->id,
                         'name' => $shipper->name,
                         'email' => $shipper->email,
-                        'phone' => $shipper->phone ?? 'N/A',
-                        'area' => 'Toàn quốc' // Default area, can be customized
+                        'phone' => $shipper->phone_number ?? 'N/A',
+                        'area' => $warehouse ? $warehouse->name : 'Chưa rõ khu vực'
                     ];
                 });
 
-            return response()->json([
-                'success' => true,
-                'data' => $shippers
-            ]);
+            return response()->json(['success' => true, 'data' => $shippers]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -110,24 +143,26 @@ class ShipperAssignmentController extends Controller
         }
     }
 
+
+
     /**
-     * Get provinces for filtering (only provinces with warehouses)
+     * Get provinces for filtering
+     * Cải tiến: Chỉ lấy các tỉnh/thành có gói hàng đang chờ gán.
      */
     public function getProvinces()
     {
         try {
-            $provinces = ProvinceOld::select(['provinces_old.code', 'provinces_old.name'])
-                ->join('store_locations', 'provinces_old.code', '=', 'store_locations.province_code')
-                ->where('store_locations.type', 'warehouse')
-                ->where('store_locations.is_active', true)
-                ->distinct()
-                ->orderBy('provinces_old.name')
+            // Lấy mã tỉnh từ các đơn hàng có fulfillment đang chờ gán
+            $provinceCodes = Order::whereHas('fulfillments', function ($q) {
+                $q->where('status', 'packed')->whereNull('shipper_id');
+            })->distinct()->pluck('shipping_old_province_code');
+
+            $provinces = ProvinceOld::whereIn('code', $provinceCodes)
+                ->select(['code as id', 'name'])
+                ->orderBy('name')
                 ->get();
 
-            return response()->json([
-                'success' => true,
-                'data' => $provinces
-            ]);
+            return response()->json(['success' => true, 'data' => $provinces]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -136,28 +171,19 @@ class ShipperAssignmentController extends Controller
         }
     }
 
+
     /**
      * Get districts by province for filtering
      */
-    public function getDistricts($province)
+    public function getDistricts($province_code)
     {
         try {
-            if (!$province) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Province code is required'
-                ], 400);
-            }
-
-            $districts = DistrictOld::where('parent_code', $province)
-                ->select(['code', 'name'])
+            $districts = DistrictOld::where('parent_code', $province_code)
+                ->select(['code as id', 'name'])
                 ->orderBy('name')
                 ->get();
 
-            return response()->json([
-                'success' => true,
-                'data' => $districts
-            ]);
+            return response()->json(['success' => true, 'data' => $districts]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -166,94 +192,71 @@ class ShipperAssignmentController extends Controller
         }
     }
 
+
     /**
-     * Assign shipper to selected packages
+     * Assign shipper to selected fulfillments (packages)
+     * LOGIC MỚI: Gán shipper cho từng gói hàng (fulfillment).
      */
     public function assignShipper(Request $request)
     {
         $request->validate([
-            'package_ids' => 'required|array|min:1',
-            'package_ids.*' => 'required|integer|exists:orders,id',
-            'shipper_id' => 'required|integer|exists:users,id'
+            'fulfillment_ids' => 'required|array|min:1',
+            'fulfillment_ids.*' => 'required|integer|exists:order_fulfillments,id',
+            'shipper_id' => [
+                'required',
+                'integer',
+                function ($attribute, $value, $fail) {
+                    $shipperExists = User::where('id', $value)
+                        ->whereHas('roles', function ($query) {
+                            $query->where('name', 'shipper');
+                        })
+                        ->exists();
+
+                    if (!$shipperExists) {
+                        $fail('Shipper được chọn không hợp lệ hoặc không có vai trò shipper.');
+                    }
+                },
+            ],
         ]);
 
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
-            $packageIds = $request->package_ids;
+            $fulfillmentIds = $request->fulfillment_ids;
             $shipperId = $request->shipper_id;
+            $shipper = User::find($shipperId);
 
-            // Verify shipper exists and has correct role
-            $shipper = User::where('id', $shipperId)
-                ->where('role', 'shipper')
-                ->where('status', 'active')
-                ->first();
-
-            if (!$shipper) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Shipper không tồn tại hoặc không hoạt động'
-                ], 404);
-            }
-
-            // Get orders that can be assigned (must have tracking code)
-            $orders = Order::whereIn('id', $packageIds)
-                ->where('status', 'confirmed')
+            $fulfillments = OrderFulfillment::whereIn('id', $fulfillmentIds)
+                ->where('status', 'packed')
                 ->whereNull('shipper_id')
-                ->whereNotNull('tracking_code')
                 ->get();
 
-            if ($orders->isEmpty()) {
+            if ($fulfillments->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Không tìm thấy đơn hàng hợp lệ để gán shipper. Đơn hàng phải có trạng thái "confirmed" và đã có mã vận đơn.'
+                    'message' => 'Không có gói hàng hợp lệ nào để gán. Vui lòng làm mới trang.'
                 ], 404);
             }
 
-            $updatedCount = 0;
-            $trackingCodes = [];
-
-            foreach ($orders as $order) {
-                // Update order with shipper only - tracking code should already exist
-                $order->update([
+            // Chỉ cập nhật bảng order_fulfillments
+            foreach ($fulfillments as $fulfillment) {
+                $fulfillment->update([
                     'shipper_id' => $shipperId,
-                    'status' => 'shipping', // Change status to shipping
+                    // THAY ĐỔI 1: Cập nhật status thành 'awaiting_shipment'
+                    'status' => 'awaiting_shipment',
                     'shipped_at' => Carbon::now()
                 ]);
-
-                // Cập nhật trạng thái packages thành 'awaiting_shipment_assigned'
-                $packages = $order->fulfillments()->with('packages')->get()->pluck('packages')->flatten();
-                foreach ($packages as $package) {
-                    $package->updateStatus(
-                        \App\Models\Package::STATUS_AWAITING_SHIPMENT_ASSIGNED,
-                        'Gói hàng đã được gán shipper: ' . $shipper->name,
-                        auth()->id()
-                    );
-                }
-
-                $updatedCount++;
-                $fulfillment = $order->fulfillments()->whereNotNull('tracking_code')->first();
-                $trackingCodes[] = [
-                    'order_code' => $order->order_code,
-                    'tracking_code' => $fulfillment ? $fulfillment->tracking_code : 'N/A'
-                ];
             }
+
+            // THAY ĐỔI 2: Đã xóa hoàn toàn khối code cập nhật trạng thái của bảng 'orders'
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => "Đã gán shipper thành công cho {$updatedCount} đơn hàng",
-                'data' => [
-                    'updated_count' => $updatedCount,
-                    'shipper_name' => $shipper->name,
-                    'tracking_codes' => $trackingCodes
-                ]
+                'message' => "Đã gán shipper {$shipper->name} thành công cho {$fulfillments->count()} gói hàng. Trạng thái gói hàng đã được chuyển sang 'Chờ vận chuyển'."
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
-            
             return response()->json([
                 'success' => false,
                 'message' => 'Có lỗi xảy ra khi gán shipper: ' . $e->getMessage()
@@ -262,40 +265,4 @@ class ShipperAssignmentController extends Controller
     }
 
 
-
-    /**
-     * Get assignment statistics
-     */
-    public function getStatistics()
-    {
-        try {
-            $stats = [
-                'total_pending' => Order::where('status', 'confirmed')
-                    ->whereNull('shipper_id')
-                    ->whereNotNull('tracking_code')
-                    ->count(),
-                'assigned_today' => Order::whereNotNull('shipper_id')
-                    ->whereDate('shipped_at', Carbon::today())
-                    ->count(),
-                'overdue_packages' => Order::where('status', 'confirmed')
-                    ->whereNull('shipper_id')
-                    ->whereNotNull('tracking_code')
-                    ->where('delivery_deadline', '<', Carbon::now())
-                    ->count(),
-                'active_shippers' => User::where('role', 'shipper')
-                    ->where('status', 'active')
-                    ->count()
-            ];
-
-            return response()->json([
-                'success' => true,
-                'data' => $stats
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Không thể tải thống kê: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 }

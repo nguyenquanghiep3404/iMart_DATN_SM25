@@ -61,11 +61,11 @@ class OrderRequest extends FormRequest
         $validator->after(function ($validator) {
             $currentOrder = $this->route('order');
             $newStatus = $this->input('status');
-            
+
             if ($currentOrder && !$this->isValidStatusTransition($currentOrder->status, $newStatus)) {
                 $currentStatusText = Order::getStatusOptions()[$currentOrder->status] ?? $currentOrder->status;
                 $newStatusText = Order::getStatusOptions()[$newStatus] ?? $newStatus;
-                
+
                 $validator->errors()->add('status', "Không thể chuyển từ trạng thái '{$currentStatusText}' sang '{$newStatusText}'. Vui lòng chọn trạng thái hợp lệ.");
             }
         });
@@ -78,11 +78,14 @@ class OrderRequest extends FormRequest
     {
         $validTransitions = [
             Order::STATUS_PENDING_CONFIRMATION => [Order::STATUS_PROCESSING, Order::STATUS_CANCELLED],
-            Order::STATUS_PROCESSING => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_CANCELLED],
-            Order::STATUS_OUT_FOR_DELIVERY => [Order::STATUS_DELIVERED, Order::STATUS_FAILED_DELIVERY, Order::STATUS_CANCELLED],
+            Order::STATUS_PROCESSING => [Order::STATUS_PARTIALLY_SHIPPED, Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_EXTERNAL_SHIPPING, Order::STATUS_CANCELLED],
+            Order::STATUS_PARTIALLY_SHIPPED => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_PARTIALLY_DELIVERED, Order::STATUS_CANCELLED],
+            Order::STATUS_OUT_FOR_DELIVERY => [Order::STATUS_PARTIALLY_DELIVERED, Order::STATUS_DELIVERED, Order::STATUS_FAILED_DELIVERY, Order::STATUS_CANCELLED],
+            Order::STATUS_EXTERNAL_SHIPPING => [Order::STATUS_PARTIALLY_DELIVERED, Order::STATUS_DELIVERED, Order::STATUS_FAILED_DELIVERY, Order::STATUS_CANCELLED],
+            Order::STATUS_PARTIALLY_DELIVERED => [Order::STATUS_DELIVERED, Order::STATUS_CANCELLED],
             Order::STATUS_DELIVERED => [], // Trạng thái cuối
             Order::STATUS_CANCELLED => [], // Trạng thái cuối
-            Order::STATUS_FAILED_DELIVERY => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_CANCELLED] 
+            Order::STATUS_FAILED_DELIVERY => [Order::STATUS_OUT_FOR_DELIVERY, Order::STATUS_CANCELLED]
         ];
 
         return in_array($newStatus, $validTransitions[$currentStatus] ?? []) || $currentStatus === $newStatus;

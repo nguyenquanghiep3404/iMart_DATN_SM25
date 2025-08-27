@@ -13,8 +13,8 @@ class OrderFulfillmentItem extends Model
     protected $fillable = [
         'order_fulfillment_id', 
         'order_item_id', 
-        'quantity',
-        'package_id'
+        'quantity'
+        // REMOVED: package_id - now using order_fulfillments directly
     ];
 
     /**
@@ -33,27 +33,5 @@ class OrderFulfillmentItem extends Model
         return $this->belongsTo(OrderItem::class);
     }
 
-    /**
-     * Relationship với Package
-     */
-    public function package(): BelongsTo
-    {
-        return $this->belongsTo(Package::class);
-    }
-
-    /**
-     * Scope để lấy items theo package
-     */
-    public function scopeForPackage($query, $packageId)
-    {
-        return $query->where('package_id', $packageId);
-    }
-
-    /**
-     * Scope để lấy items chưa được gán package
-     */
-    public function scopeWithoutPackage($query)
-    {
-        return $query->whereNull('package_id');
-    }
+    // REMOVED: Package relationship and scopes - now using order_fulfillments directly
 }

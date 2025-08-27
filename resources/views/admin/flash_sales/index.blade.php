@@ -71,6 +71,17 @@
             background-color: #dc2626;
         }
 
+        .btn-info {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background-color: #2563eb;
+        }
+
+
+
         .table-custom {
             width: 100%;
             color: #374151;
@@ -150,7 +161,8 @@
                             <thead>
                                 <tr>
                                     <th class="text-left text-base font-medium" style="width: 20%;">Tên chiến dịch</th>
-                                    <th class="text-left text-base font-medium" style="width: 20%;">Thời gian bắt đầu & kết thúc</th>
+                                    <th class="text-left text-base font-medium" style="width: 20%;">Thời gian bắt đầu & kết
+                                        thúc</th>
                                     <th class="text-left text-base font-medium" style="width: 20%;">Khung giờ ưu đãi</th>
                                     <th class="text-left text-base font-medium" style="width: 10%;">Số sản phẩm</th>
                                     <th class="text-left text-base font-medium" style="width: 15%;">Trạng thái</th>
@@ -179,7 +191,8 @@
                                                 Toàn thời gian chiến dịch
                                             @endif
                                         </td>
-                                        <td class="text-left text-base font-medium">{{ $flashSale->flashSaleProducts->count() }}</td>
+                                        <td class="text-left text-base font-medium">
+                                            {{ $flashSale->flashSaleProducts->count() }}</td>
                                         <td class="text-left text-base font-medium">
                                             @php
                                                 $now = now();
@@ -197,16 +210,32 @@
                                                     $bgClass = 'bg-green-500';
                                                 }
                                             @endphp
-                                            <span class="px-3 py-1 rounded text-white {{ $bgClass }}">{{ $status }}</span>
+                                            <span
+                                                class="px-3 py-1 rounded text-white {{ $bgClass }}">{{ $status }}</span>
                                         </td>
                                         <td class="text-left text-base font-medium">
                                             <div class="inline-flex space-x-1">
-                                                <a href="{{ route('admin.flash-sales.show', $flashSale->id) }}"
-                                                    class="btn btn-sm btn-primary" title="Chi tiết"><i
-                                                        class="fas fa-list"></i></a>
-                                                <a href="{{ route('admin.flash-sales.edit', $flashSale->id) }}"
-                                                    class="btn btn-sm btn-warning" title="Sửa"><i
-                                                        class="fas fa-edit"></i></a>
+                                                {{-- Nút "Thống kê" chỉ hiển thị khi flash sale đã kết thúc --}}
+                                                {{-- Nút "Thống kê" chỉ hiển thị khi flash sale đã kết thúc --}}
+                                                @if ($flashSale->status === 'finished')
+                                                    <a href="{{ route('admin.flash-sales.statistics', $flashSale->id) }}"
+                                                        class="btn btn-sm btn-info" title="Thống kê">
+                                                        <i class="fas fa-chart-bar"></i>
+                                                    </a>
+                                                @endif
+                                                {{-- Nút "Chi tiết" --}}
+                                                @unless ($flashSale->status === 'finished')
+                                                    <a href="{{ route('admin.flash-sales.show', $flashSale->id) }}"
+                                                        class="btn btn-sm btn-primary" title="Chi tiết"><i
+                                                            class="fas fa-list"></i></a>
+                                                @endunless
+
+                                                {{-- Ẩn nút "Sửa" nếu trạng thái là "Đã kết thúc" --}}
+                                                @unless ($flashSale->status === 'finished')
+                                                    <a href="{{ route('admin.flash-sales.edit', $flashSale->id) }}"
+                                                        class="btn btn-sm btn-warning" title="Sửa"><i
+                                                            class="fas fa-edit"></i></a>
+                                                @endunless
                                             </div>
                                         </td>
                                     </tr>

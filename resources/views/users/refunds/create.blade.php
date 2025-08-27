@@ -67,10 +67,26 @@
                         <div class="interactive-card rounded-lg p-4">
                             <div class="flex items-start space-x-4">
                                 <input type="checkbox" name="order_item_ids[]" value="{{ $item->id }}" class="h-5 w-5 mt-1 text-red-600 border-gray-300 rounded focus:ring-red-500">
-                                <img src="{{ optional($item->variant->product->coverImage)->url ?? 'https://placehold.co/80x80' }}" alt="Ảnh sản phẩm" class="w-20 h-20 rounded-md object-cover flex-shrink-0">
+                                @php
+                                $variant = $item->variant;
+                                $product = $variant?->product;
+
+                                if ($variant && $variant->primaryImage && Storage::disk('public')->exists($variant->primaryImage->path)) {
+                                $imageUrl = Storage::url($variant->primaryImage->path);
+                                } elseif ($product && $product->coverImage && Storage::disk('public')->exists($product->coverImage->path)) {
+                                $imageUrl = Storage::url($product->coverImage->path);
+                                } else {
+                                $imageUrl = 'https://placehold.co/80x80';
+                                }
+                                @endphp
+
+                                <img src="{{ $imageUrl }}"
+                                    alt="{{ $variant?->name ?? $product?->name ?? 'Sản phẩm' }}"
+                                    class="w-20 h-20 rounded-md object-cover flex-shrink-0">
+
                                 <div class="flex-1">
                                     <p class="font-semibold text-gray-800">{{ $item->variant->product->name }}</p>
-                                    <p class="text-sm text-gray-500">Biến thể: {{ $item->variant->name }}</p>
+                                    <p class="text-sm text-gray-500">Biến thể: {{ $item->variant->sku }}</p>
                                     <p class="text-sm text-gray-500">Giá: {{ number_format($item->price) }} VNĐ</p>
                                 </div>
                                 <div class="w-24">
@@ -131,7 +147,7 @@
                         <!-- Lựa chọn 1: Điểm thưởng -->
                         <label for="refund-points" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
                             <div class="flex items-center">
-                                <input type="radio" id="refund-points" name="refund_method" value="points" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                                <input type="radio" id="refund-points" name="refund_method" value="points" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
                                 <div class="ml-3">
                                     <p class="font-semibold text-gray-800">Hoàn tiền bằng Điểm thưởng</p>
                                     <p class="text-sm text-gray-500">Số điểm dự kiến được hoàn: <span id="expected-points" class="font-bold text-green-600">0 điểm</span>. Dùng để mua sắm cho lần sau.</p>
@@ -140,7 +156,7 @@
                         </label>
 
 
-                        <label for="refund-bank" class="interactive-card block rounded-lg p-4 cursor-pointer">
+                        <label for="refund-bank" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
                             <div class="flex items-center">
                                 <input type="radio" id="refund-bank" name="refund_method" value="bank" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
                                 <div class="ml-3">
@@ -167,7 +183,7 @@
 
                     <label for="refund-coupon" class="block border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition refund-option">
                         <div class="flex items-center">
-                            <input type="radio" id="refund-coupon" name="refund_method" value="coupon" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                            <input type="radio" id="refund-coupon" name="refund_method" value="coupon" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500">
                             <div class="ml-3">
                                 <p class="font-semibold text-gray-800">Nhận Mã giảm giá</p>
                                 <p class="text-sm text-gray-500">Bạn sẽ nhận được mã giảm giá trị giá <span id="refund-total-coupon" class="font-bold text-green-600">0 VNĐ</span>, chỉ áp dụng một lần cho tài khoản này.</p>
@@ -178,16 +194,23 @@
                     <hr class="mt-8">
                     <h2 class="text-xl font-semibold text-gray-800 my-6">4. Tóm tắt hoàn tiền</h2>
                     <div class="bg-gray-50 rounded-lg p-6">
-                        <div class="space-y-3">
-                            <div class="flex justify-between text-sm">
-                                <span class="text-gray-600">Tổng giá trị sản phẩm trả:</span>
-                                <span id="refund-subtotal" class="font-medium text-gray-800">0 VNĐ</span>
-                            </div>
-                            <div class="flex justify-between items-center pt-2 border-t mt-2">
-                                <span class="text-base font-bold text-gray-900">Số tiền dự kiến hoàn lại:</span>
-                                <span id="refund-total" class="text-xl font-bold text-green-600">0 VNĐ</span>
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Tổng giá trị sản phẩm trả:</span>
+                                    <span id="refund-subtotal" class="font-medium text-gray-800">0 VNĐ</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Giảm giá phân bổ:</span>
+                                    <span id="refund-discount" class="font-medium text-gray-800 text-red-600">0 VNĐ</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-2 border-t mt-2">
+                                    <span class="text-base font-bold text-gray-900">Số tiền dự kiến hoàn lại:</span>
+                                    <span id="refund-total" class="text-xl font-bold text-green-600">0 VNĐ</span>
+                                </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -223,7 +246,8 @@
         const fileUploadInput = document.getElementById('file-upload');
         const fileListDiv = document.getElementById('file-list');
         const termsCheckbox = document.getElementById('terms');
-
+        const orderSubtotal = {{ $order->sub_total }};
+        const discountAmount = {{ $order->discount_amount ?? 0 }};
         const productData = @json(
         $orderItems->mapWithKeys(function($item) {
             return [$item->id => [
@@ -233,9 +257,13 @@
         })
          );
 
+
         function updateFormState() {
             let anySelected = false;
             let totalRefund = 0;
+            let selectedSubtotal = 0;
+            let selectedItems = [];
+            let totalDiscountAllocated = 0;
 
             productCheckboxes.forEach(checkbox => {
                 const card = checkbox.closest('.interactive-card');
@@ -249,11 +277,24 @@
                     const productId = checkbox.value;
                     const quantity = parseInt(quantityInput.value, 10);
                     const price = productData[productId].price;
-                    totalRefund += price * quantity;
+                    const lineSubtotal = price * quantity;
+
+                    selectedSubtotal += lineSubtotal;
+                    selectedItems.push({ subtotal: lineSubtotal });
                 } else {
                     card.classList.remove('selected');
                     quantityInput.disabled = true;
                 }
+            });
+
+            // Phân bổ discount
+            selectedItems.forEach(item => {
+                let discountShare = 0;
+                if (orderSubtotal > 0 && discountAmount > 0) {
+                    discountShare = (item.subtotal / orderSubtotal) * discountAmount;
+                }
+                totalDiscountAllocated += discountShare;
+                totalRefund += item.subtotal - discountShare;
             });
 
             if (anySelected) {
@@ -262,18 +303,18 @@
                 returnDetailsSection.classList.add('hidden');
             }
 
-            const formattedTotal = new Intl.NumberFormat('vi-VN').format(totalRefund) + ' VNĐ';
-            refundSubtotalEl.textContent = formattedTotal;
+            const formattedSubtotal = new Intl.NumberFormat('vi-VN').format(selectedSubtotal) + ' VNĐ';
+            const formattedDiscount = new Intl.NumberFormat('vi-VN').format(Math.floor(totalDiscountAllocated)) + ' VNĐ';
+            const formattedTotal = new Intl.NumberFormat('vi-VN').format(Math.floor(totalRefund)) + ' VNĐ';
+
+            refundSubtotalEl.textContent = formattedSubtotal;
+            document.getElementById('refund-discount').textContent = formattedDiscount;
             refundTotalEl.textContent = formattedTotal;
 
-            refundTotalEl.textContent = formattedTotal;
-
-            // Nếu có phần tử hiển thị mã giảm giá, cập nhật luôn
             const refundTotalCouponEl = document.getElementById('refund-total-coupon');
             if (refundTotalCouponEl) {
                 refundTotalCouponEl.textContent = formattedTotal;
             }
-
 
             // ✅ Tính và hiển thị số điểm
             const points = Math.floor(totalRefund);
@@ -281,6 +322,8 @@
 
             toggleSubmitButton();
         }
+
+
 
 
         function updateRefundSelection() {

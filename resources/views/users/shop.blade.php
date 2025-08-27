@@ -353,56 +353,13 @@
 
     <section class="container mt-4">
         {{-- Tiêu đề và Breadcrumb (Include partial) --}}
-        <div class="mb-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-2 text-truncate"
-                    style="font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    <li class="breadcrumb-item"><a href="{{ route('users.home') }}">Trang chủ</a></li>
+        @include('users.partials.category_product.breadcrumb', ['categories' => $categories])
 
-                    @if (!empty($searchQuery))
-                        <li class="breadcrumb-item active" aria-current="page">Tìm kiếm: "{{ $searchQuery }}"</li>
-                    @elseif (isset($currentCategory))
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('users.products.all') }}">Danh mục sản phẩm</a>
-                        </li>
-
-                        @php
-                            $ancestors = collect([]);
-                            $cat = $currentCategory;
-                            while ($cat->parent_id) {
-                                $parent = $categories->firstWhere('id', $cat->parent_id);
-                                if ($parent) {
-                                    $ancestors->prepend($parent);
-                                    $cat = $parent;
-                                } else {
-                                    break;
-                                }
-                            }
-                        @endphp
-
-                        @foreach ($ancestors as $ancestor)
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('products.byCategory', ['id' => $ancestor->id, 'slug' => Str::slug($ancestor->name)]) }}"
-                                    title="{{ $ancestor->name }}">{{ $ancestor->name }}</a>
-                            </li>
-                        @endforeach
-
-                        <li class="breadcrumb-item active" aria-current="page" title="{{ $currentCategory->name }}">
-                            {{ $currentCategory->name }}
-                        </li>
-                    @else
-                        <li class="breadcrumb-item"><a href="{{ route('users.products.all') }}">Danh mục sản phẩm</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Tất cả sản phẩm</li>
-                    @endif
-                </ol>
-            </nav>
-
-            {{-- Banner khu vực danh mục --}}
+         {{-- Banner khu vực danh mục --}}
             <div class="category-banner mb-4 text-center mt-4 rounded-lg shadow-lg overflow-hidden">
                 <img src="{{ asset('assets/users/logo/hihi.png') }}" alt="Banner danh mục"
                     class="img-fluid rounded shadow-sm">
             </div>
-        </div>
 
         <div class="row">
             {{-- Sidebar bên trái --}}
@@ -498,72 +455,90 @@
                 });
             }
 
-            function ajaxLoad(url, method = 'GET', data = null) {
-                productsContainer.classList.add('ajax-loading');
-                fetch(url, {
-                        method: method,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRF-TOKEN': csrfToken
-                        },
-                        cache: 'no-store',
-                        body: method === 'POST' ? data : null
-                    })
-                    .then(async response => {
-                        const contentType = response.headers.get('content-type');
-                        if (response.ok && contentType && contentType.includes('application/json')) {
-                            const json = await response.json();
-                            if (json.products && document.getElementById('ajax-products-list')) {
-                                document.getElementById('ajax-products-list').innerHTML = json.products;
-                            }
-                            if (json.sidebar && document.getElementById('ajax-sidebar')) {
-                                document.getElementById('ajax-sidebar').innerHTML = json.sidebar;
-                            }
-                            if (json.title && document.querySelector('h1.page-title')) {
-                                document.querySelector('h1.page-title').textContent = json.title;
-                            }
-                            if (json.breadcrumb_html && document.querySelector('.breadcrumb')) {
-                                document.querySelector('.breadcrumb').innerHTML = json.breadcrumb_html;
-                            }
-                            if (json.currentSort) {
-                                document.querySelectorAll('.sort-options .nav-link').forEach(link => {
-                                    const sortKey = new URL(link.href, window.location.origin)
-                                        .searchParams.get('sort');
-                                    link.classList.toggle('active', sortKey === json.currentSort);
-                                });
-                            }
-                            updateSortLinks(url);
-                            productsContainer.classList.remove('ajax-loading');
-                            window.scrollTo({
-                                top: productsContainer.offsetTop - 80,
-                                behavior: 'smooth'
-                            });
-                            updateFilterUI(); // Đồng bộ UI sau khi cập nhật sidebar
-                        } else if (response.ok) {
-                            const html = await response.text();
-                            productsContainer.innerHTML = html;
-                            updateSortLinks(url);
-                            productsContainer.classList.remove('ajax-loading');
-                            window.scrollTo({
-                                top: productsContainer.offsetTop - 80,
-                                behavior: 'smooth'
-                            });
-                            updateFilterUI(); // Đồng bộ UI sau khi cập nhật HTML
-                        } else {
-                            const errorText = await response.text();
-                            console.log('AJAX error response:', errorText);
-                            productsContainer.classList.remove('ajax-loading');
-                            productsContainer.innerHTML = '<p>Đã có lỗi xảy ra. Vui lòng thử lại.<br>' +
-                                errorText + '</p>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('AJAX error:', error);
-                        productsContainer.classList.remove('ajax-loading');
-                        productsContainer.innerHTML = '<p>Đã có lỗi xảy ra. Vui lòng thử lại.</p>';
+           function ajaxLoad(url, method = 'GET', data = null) {
+            console.log('ajaxLoad called with URL:', url);
+            productsContainer.classList.add('ajax-loading');
+            fetch(url, {
+                method: method,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                cache: 'no-store',
+                body: method === 'POST' ? data : null
+            })
+            .then(async response => {
+                console.log('AJAX response received:', {
+                    status: response.status,
+                    ok: response.ok,
+                    contentType: response.headers.get('content-type')
+                });
+                
+                const contentType = response.headers.get('content-type');
+                if (response.ok && contentType && contentType.includes('application/json')) {
+                    const json = await response.json();
+                    console.log('JSON response received:', json);
+                    
+                    if (json.products && document.getElementById('ajax-products-list')) {
+                        document.getElementById('ajax-products-list').innerHTML = json.products;
+                        console.log('Products HTML updated');
+                    }
+                    if (json.sidebar && document.getElementById('ajax-sidebar')) {
+                        document.getElementById('ajax-sidebar').innerHTML = json.sidebar;
+                        console.log('Sidebar HTML updated');
+                    }
+                    if (json.title && document.querySelector('h1.page-title')) {
+                        document.querySelector('h1.page-title').textContent = json.title;
+                        console.log('Title updated');
+                    }
+                    if (json.breadcrumb_html && document.querySelector('.breadcrumb')) {
+                        document.querySelector('.breadcrumb').innerHTML = json.breadcrumb_html;
+                        console.log('Breadcrumb updated');
+                    }
+                    if (json.currentSort) {
+                        document.querySelectorAll('.sort-options .nav-link').forEach(link => {
+                            const sortKey = new URL(link.href, window.location.origin)
+                                .searchParams.get('sort');
+                            link.classList.toggle('active', sortKey === json.currentSort);
+                        });
+                        console.log('Sort options updated');
+                    }
+                    updateSortLinks(url);
+                    productsContainer.classList.remove('ajax-loading');
+                    window.scrollTo({
+                        top: productsContainer.offsetTop - 80,
+                        behavior: 'smooth'
                     });
-            }
+                    updateFilterUI();
+                    updateAppliedFilters(); // Thêm để đồng bộ tags bộ lọc
+                    console.log('AJAX JSON processing completed');
+                } else if (response.ok) {
+                    const html = await response.text();
+                    console.log('HTML response received, length:', html.length);
+                    productsContainer.innerHTML = html;
+                    updateSortLinks(url);
+                    productsContainer.classList.remove('ajax-loading');
+                    window.scrollTo({
+                        top: productsContainer.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                    updateFilterUI();
+                    updateAppliedFilters(); // Thêm để đồng bộ tags bộ lọc
+                    console.log('AJAX HTML processing completed');
+                } else {
+                    const errorText = await response.text();
+                    console.log('AJAX error response:', errorText);
+                    productsContainer.classList.remove('ajax-loading');
+                    productsContainer.innerHTML = '<p>Đã có lỗi xảy ra. Vui lòng thử lại.<br>' + errorText + '</p>';
+                }
+            })
+            .catch(error => {
+                console.error('AJAX error:', error);
+                productsContainer.classList.remove('ajax-loading');
+                productsContainer.innerHTML = '<p>Đã có lỗi xảy ra. Vui lòng thử lại.</p>';
+            });
+        }
 
             function slideDown(element, duration = 300) {
                 element.style.removeProperty('display');
@@ -622,7 +597,7 @@
             }
 
             // Cập nhật selector
-            const priceCheckboxes = document.querySelectorAll('input[name="muc-gia[]"]');
+            const priceCheckboxes = document.querySelectorAll('input[name="muc-gia"]');
             const storageItems = document.querySelectorAll(".storage-item");
             const storageInput = document.querySelector("#storage-input");
             const appliedFiltersContainer = document.getElementById("applied-filters");
@@ -651,7 +626,7 @@
 
                 const url = new URL(window.location.href);
                 console.log('Tham số URL:', {
-                    'muc-gia': url.searchParams.getAll('muc-gia[]'),
+                    'muc-gia': url.searchParams.get('muc-gia'),
                     min_price: url.searchParams.get('min_price'),
                     max_price: url.searchParams.get('max_price'),
                     storage: url.searchParams.get('storage')
@@ -672,11 +647,11 @@
                         priceQuickRanges.style.display = 'none';
                     }
                 } else {
-                    const priceRanges = url.searchParams.getAll('muc-gia[]');
+                    const priceRanges = url.searchParams.get('muc-gia')?.split(',') || [];
                     priceRanges.forEach(value => {
                         if (value !== 'all') {
                             const checkbox = document.querySelector(
-                                `input[name="muc-gia[]"][value="${value}"]`);
+                                `input[name="muc-gia"][value="${value}"]`);
                             if (checkbox) {
                                 const label = checkbox.closest('label').textContent.trim();
                                 createFilterTag(label, value, 'price');
@@ -710,12 +685,12 @@
 
             function updateFilterUI() {
                 const url = new URL(window.location.href);
-                const priceRanges = url.searchParams.getAll('muc-gia[]');
-                const allCheckbox = document.querySelector('input[name="muc-gia[]"][value="all"]');
+                const priceRanges = url.searchParams.get('muc-gia')?.split(',').filter(v => v.trim() !== '') || [];
+                const allCheckbox = document.querySelector('input[name="muc-gia"][value="all"]');
                 const otherCheckboxes = [...priceCheckboxes].filter(cb => cb.value !== 'all');
                 const allPriceRanges = otherCheckboxes.map(cb => cb.value);
 
-                console.log('priceRanges from URL:', priceRanges); // Debug
+                console.log('priceRanges from URL:', priceRanges);
 
                 // Đồng bộ trạng thái check/active cho từng checkbox giá
                 priceCheckboxes.forEach(cb => {
@@ -727,9 +702,9 @@
                     }
                 });
 
-                // Chỉ tick "Tất cả" khi KHÔNG có muc-gia[], min_price và max_price
+                // Chỉ tick "Tất cả" khi KHÔNG có muc-gia, min_price và max_price
                 if (
-                    (priceRanges.length === 0 || priceRanges.length === allPriceRanges.length) &&
+                    priceRanges.length === 0 &&
                     !url.searchParams.has('min_price') &&
                     !url.searchParams.has('max_price')
                 ) {
@@ -739,18 +714,15 @@
                         if (allLabel) {
                             allLabel.classList.add('active');
                         }
-                        if (priceRanges.length === 0) {
-                            otherCheckboxes.forEach(cb => {
-                                cb.checked = false;
-                                const label = cb.closest('label');
-                                if (label) {
-                                    label.classList.remove('active');
-                                }
-                            });
-                        }
+                        otherCheckboxes.forEach(cb => {
+                            cb.checked = false;
+                            const label = cb.closest('label');
+                            if (label) {
+                                label.classList.remove('active');
+                            }
+                        });
                     }
                 } else {
-                    // Nếu đang lọc giá thì bỏ tick "Tất cả"
                     if (allCheckbox) {
                         allCheckbox.checked = false;
                         const allLabel = allCheckbox.closest('label');
@@ -770,7 +742,7 @@
                 }
 
                 // Cập nhật bộ lọc dung lượng lưu trữ
-                const storages = url.searchParams.get('storage')?.split(',') || [];
+                const storages = url.searchParams.get('storage')?.split(',').filter(v => v.trim() !== '') || [];
                 storageItems.forEach(item => {
                     const itemValue = item.getAttribute('data-value');
                     if (storages.includes(itemValue)) {
@@ -785,17 +757,15 @@
                 const url = new URL(window.location.href);
                 let filterCount = 0;
 
-                // Đếm bộ lọc giá từ muc-gia[]
-                if (url.searchParams.getAll('muc-gia[]').length > 0) {
-                    filterCount += url.searchParams.getAll('muc-gia[]').length;
+                const priceRanges = url.searchParams.get('muc-gia')?.split(',').filter(v => v.trim() !== '') || [];
+                if (priceRanges.length > 0) {
+                    filterCount += priceRanges.length;
                 }
 
-                // Đếm bộ lọc giá từ thanh trượt (min_price và max_price)
                 if (url.searchParams.has('min_price') && url.searchParams.has('max_price')) {
-                    filterCount += 1; // Thanh trượt được tính là 1 bộ lọc
+                    filterCount += 1;
                 }
 
-                // Đếm bộ lọc dung lượng
                 const storages = url.searchParams.get('storage')?.split(',') || [];
                 if (storages.length > 0) {
                     filterCount += storages.length;
@@ -816,6 +786,53 @@
                     if (childUl) {
                         childUl.classList.toggle('open');
                     }
+                });
+            });
+
+            // Debug: Kiểm tra xem có bao nhiêu category links
+            const categoryLinks = document.querySelectorAll('.category-link');
+            console.log('Found category links:', categoryLinks.length);
+            categoryLinks.forEach((link, index) => {
+                console.log(`Category link ${index}:`, {
+                    href: link.href,
+                    classes: link.className,
+                    text: link.textContent.trim()
+                });
+                
+                // Thêm event listener trực tiếp cho mỗi category link
+                link.addEventListener('click', function(e) {
+                    console.log('Direct category link click detected:', this.href);
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const currentUrl = new URL(window.location.href);
+                    const newUrl = new URL(this.href, window.location.origin);
+
+                    // Giữ muc-gia
+                    const priceRanges = currentUrl.searchParams.get('muc-gia');
+                    if (priceRanges) {
+                        newUrl.searchParams.set('muc-gia', priceRanges);
+                        console.log('Direct: Preserved muc-gia:', priceRanges);
+                    }
+
+                    // Giữ các tham số khác
+                    ['min_price', 'max_price', 'storage'].forEach(key => {
+                        if (currentUrl.searchParams.has(key)) {
+                            newUrl.searchParams.set(key, currentUrl.searchParams.get(key));
+                            console.log('Direct: Preserved', key, ':', currentUrl.searchParams.get(key));
+                        }
+                    });
+
+                    // Đặt lại tham số sort về mặc định khi chuyển danh mục
+                    newUrl.searchParams.delete('sort');
+                    newUrl.searchParams.set('sort', 'moi_nhat');
+
+                    const finalUrl = newUrl.toString();
+                    console.log('Direct: Category link clicked - final URL:', finalUrl);
+                    
+                    ajaxLoad(finalUrl);
+                    window.history.pushState({}, '', finalUrl);
+                    console.log('Direct: AJAX request sent and history updated');
                 });
             });
 
@@ -855,26 +872,26 @@
                         const url = new URL(window.location.href);
 
                         if (type === 'price') {
-                            // Cập nhật tham số
-                            const priceRanges = url.searchParams.getAll('muc-gia[]');
-                            url.searchParams.delete('muc-gia[]');
-                            priceRanges.filter(v => v !== valueToRemove).forEach(v => {
-                                url.searchParams.append('muc-gia[]', v);
-                            });
+                            const priceRanges = url.searchParams.get('muc-gia')?.split(',') || [];
+                            const newPriceRanges = priceRanges.filter(v => v !== valueToRemove);
+                            if (newPriceRanges.length > 0) {
+                                url.searchParams.set('muc-gia', newPriceRanges.join(','));
+                            } else {
+                                url.searchParams.delete('muc-gia');
+                            }
 
-                            // Cập nhật selector
                             const allCheckbox = document.querySelector(
-                                'input[name="muc-gia[]"][value="all"]');
-                            if (url.searchParams.getAll('muc-gia[]').length === 0) {
+                                'input[name="muc-gia"][value="all"]');
+                            if (url.searchParams.get('muc-gia') === null) {
                                 if (allCheckbox) {
                                     allCheckbox.checked = true;
                                 }
                             }
                         } else if (type === 'storage') {
                             const selectedStorages = url.searchParams.get('storage')?.split(',') || [];
-                            const newStorages = selectedStorages.filter(s => s !== valueToRemove).join(',');
-                            if (newStorages) {
-                                url.searchParams.set('storage', newStorages);
+                            const newStorages = selectedStorages.filter(s => s !== valueToRemove);
+                            if (newStorages.length > 0) {
+                                url.searchParams.set('storage', newStorages.join(','));
                             } else {
                                 url.searchParams.delete('storage');
                             }
@@ -884,7 +901,7 @@
 
                             // Đảm bảo checkbox "Tất cả" được chọn sau khi xóa thanh trượt
                             const allCheckbox = document.querySelector(
-                                'input[name="muc-gia[]"][value="all"]');
+                                'input[name="muc-gia"][value="all"]');
                             if (allCheckbox) {
                                 allCheckbox.checked = true;
                             }
@@ -904,10 +921,10 @@
                     const url = new URL(window.location.href);
                     url.searchParams.delete('min_price');
                     url.searchParams.delete('max_price');
-                    url.searchParams.delete('muc-gia[]');
+                    url.searchParams.delete('muc-gia');
 
                     const allCheckbox = document.querySelector(
-                        'input[name="muc-gia[]"][value="all"]');
+                        'input[name="muc-gia"][value="all"]');
                     const otherCheckboxes = [...priceCheckboxes].filter(cb => cb.value !== 'all');
                     const allPriceRanges = otherCheckboxes.map(cb => cb.value);
 
@@ -916,7 +933,7 @@
                             otherCheckboxes.forEach(otherCheckbox => {
                                 otherCheckbox.checked = false;
                             });
-                            url.searchParams.delete('muc-gia[]'); // Không thêm all vào URL
+                            url.searchParams.delete('muc-gia'); // Không thêm all vào URL
                         }
                     } else {
                         if (this.checked) {
@@ -925,7 +942,7 @@
                         if (otherCheckboxes.every(cb => !cb.checked)) {
                             if (allCheckbox) {
                                 allCheckbox.checked = true;
-                                url.searchParams.delete('muc-gia[]'); // Không thêm all vào URL
+                                url.searchParams.delete('muc-gia'); // Không thêm all vào URL
                             }
                         } else {
                             const selectedRanges = otherCheckboxes.filter(cb => cb.checked).map(
@@ -933,11 +950,9 @@
                             if (selectedRanges.length === allPriceRanges.length) {
                                 otherCheckboxes.forEach(cb => cb.checked = false);
                                 if (allCheckbox) allCheckbox.checked = true;
-                                url.searchParams.delete('muc-gia[]'); // Không thêm all vào URL
+                                url.searchParams.delete('muc-gia'); // Không thêm all vào URL
                             } else {
-                                selectedRanges.forEach(value => {
-                                    url.searchParams.append('muc-gia[]', value);
-                                });
+                                url.searchParams.set('muc-gia', selectedRanges.join(','));
                             }
                         }
                     }
@@ -974,11 +989,11 @@
             // Tự động chọn ô "Tất cả" khi tải trang (nếu chưa có bộ lọc giá nào)
             const url = new URL(window.location.href);
             if (
-                !url.searchParams.has('muc-gia[]') &&
+                !url.searchParams.has('muc-gia') &&
                 !url.searchParams.has('min_price') &&
                 !url.searchParams.has('max_price')
             ) {
-                const allCheckbox = document.querySelector('input[name="muc-gia[]"][value="all"]');
+                const allCheckbox = document.querySelector('input[name="muc-gia"][value="all"]');
                 if (allCheckbox) {
                     allCheckbox.checked = true;
                     const allLabel = allCheckbox.closest('label');
@@ -1033,7 +1048,7 @@
                     const maxPrice = Math.round(values[1]);
                     const url = new URL(window.location.href);
 
-                    url.searchParams.delete('muc-gia[]');
+                    url.searchParams.delete('muc-gia');
                     url.searchParams.set('min_price', minPrice);
                     url.searchParams.set('max_price', maxPrice);
 
@@ -1041,7 +1056,7 @@
                     updateFilterUI();
 
                     // Ép bỏ tick "Tất cả" sau khi UI update
-                    const allCheckbox = document.querySelector('input[name="muc-gia[]"][value="all"]');
+                    const allCheckbox = document.querySelector('input[name="muc-gia"][value="all"]');
                     if (allCheckbox) {
                         allCheckbox.checked = false;
                         const allLabel = allCheckbox.closest('label');
@@ -1068,13 +1083,29 @@
                     const url = `${form.action}?${params}`;
                     ajaxLoad(url);
                     window.history.pushState({}, '', url);
+                    console.log('AJAX request sent and history updated');
+                    return;
                 }
             });
 
             document.addEventListener('click', function(e) {
+                console.log('Raw click event detected on:', e.target);
+                
                 const target = e.target.closest('a') || e.target;
 
-                if (!target) return;
+                if (!target) {
+                    console.log('No target found, returning');
+                    return;
+                }
+
+                console.log('Click event detected:', {
+                    target: target,
+                    tagName: target.tagName,
+                    classes: target.className,
+                    href: target.href,
+                    isCategoryLink: target.classList.contains('category-link'),
+                    hasCategoryLinkClass: target.classList.contains('category-link')
+                });
 
                 let url = target.href || window.location.href;
 
@@ -1085,31 +1116,37 @@
                     target.classList.contains('dropdown-item') ||
                     target.closest('.pagination')
                 ) {
+                    console.log('Filter link clicked, preventing default and handling AJAX');
                     e.preventDefault();
+                    e.stopPropagation();
 
                     // Nếu là liên kết danh mục, giữ các bộ lọc hiện tại
                     if (target.classList.contains('category-link')) {
+                        console.log('Category link detected, preserving filters');
                         const currentUrl = new URL(window.location.href);
                         const newUrl = new URL(target.href, window.location.origin);
 
-                        // Giữ các tham số lọc, nếu cần
-                        currentUrl.searchParams.forEach((value, key) => {
-                            if (key === 'muc-gia[]' || key === 'min_price' || key === 'max_price' ||
-                                key === 'storage') {
-                                // Thay đổi từ set() sang append() cho các tham số có thể lặp lại
-                                if (key === 'muc-gia[]') {
-                                    newUrl.searchParams.append(key, value);
-                                } else {
-                                    newUrl.searchParams.set(key, value);
-                                }
+                        // Giữ muc-gia
+                        const priceRanges = currentUrl.searchParams.get('muc-gia');
+                        if (priceRanges) {
+                            newUrl.searchParams.set('muc-gia', priceRanges);
+                            console.log('Preserved muc-gia:', priceRanges);
+                        }
+
+                        // Giữ các tham số khác
+                        ['min_price', 'max_price', 'storage'].forEach(key => {
+                            if (currentUrl.searchParams.has(key)) {
+                                newUrl.searchParams.set(key, currentUrl.searchParams.get(key));
+                                console.log('Preserved', key, ':', currentUrl.searchParams.get(key));
                             }
                         });
 
                         // Đặt lại tham số sort về mặc định khi chuyển danh mục
                         newUrl.searchParams.delete('sort');
-                        newUrl.searchParams.set('sort', 'moi_nhat'); // Thêm sort mặc định
+                        newUrl.searchParams.set('sort', 'moi_nhat');
 
                         url = newUrl.toString();
+                        console.log('Category link clicked - final URL:', url);
                     }
                     // Nếu là liên kết sắp xếp, giữ nguyên pathname của danh mục hiện tại
                     else if (target.closest('.sort-options') || target.classList.contains(
@@ -1146,7 +1183,7 @@
                     'Clear') {
                     e.preventDefault();
                     const newUrl = new URL(url);
-                    newUrl.searchParams.delete('muc-gia[]');
+                    newUrl.searchParams.delete('muc-gia');
                     newUrl.searchParams.delete('min_price');
                     newUrl.searchParams.delete('max_price');
                     newUrl.searchParams.delete('storage');
@@ -1162,7 +1199,7 @@
                 if (target.classList.contains('clear-all-filters')) {
                     e.preventDefault();
                     const url = new URL(window.location.href);
-                    url.searchParams.delete('muc-gia[]');
+                    url.searchParams.delete('muc-gia');
                     url.searchParams.delete('min_price');
                     url.searchParams.delete('max_price');
                     url.searchParams.delete('storage');
@@ -1177,10 +1214,16 @@
 
             // Lắng nghe sự kiện PopState để xử lý nút Back/Forward của trình duyệt
             window.addEventListener('popstate', function(e) {
+                console.log('PopState event detected:', e);
                 updateFilterUI();
                 updateAppliedFilters();
                 ajaxLoad(window.location.href);
             });
+
+            // Debug: Kiểm tra xem event listener có được đăng ký đúng không
+            console.log('Event listeners registered successfully');
+            console.log('Products container:', productsContainer);
+            console.log('CSRF token:', csrfToken);
         });
     </script>
 @endpush

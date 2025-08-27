@@ -115,8 +115,6 @@
             <span><span class="font-semibold">{{ number_format($totalReviews) }}</span> đánh giá</span>
         </div>
 
-
-        <div class="h-4 w-px bg-gray-300"></div><span><span class="font-semibold">4.6k</span> đã bán</span>
     </div>
     <div class="variants mt-6 space-y-4" tabindex="-1">
         {{-- Thuộc tính KHÔNG phải "Màu sắc" --}}
@@ -197,40 +195,75 @@
 
     @php
         use Carbon\Carbon;
+
+        // Lấy biến thể sản phẩm mặc định
         $variant = $defaultVariant ?? $product->variants->first();
         $now = now();
-        $salePrice = (int) $variant->sale_price;
-        $originalPrice = (int) $variant->price;
 
-        // Kiểm tra đủ điều kiện Flash Sale
-        $hasFlashTime =
-            $variant->sale_price_starts_at instanceof Carbon && $variant->sale_price_ends_at instanceof Carbon;
-        $isFlashSale = false;
-        if ($salePrice && $hasFlashTime) {
-            $isFlashSale = $now->between($variant->sale_price_starts_at, $variant->sale_price_ends_at);
+        // Lấy giá gốc và giá khuyến mãi thông thường từ biến thể
+        $originalPrice = (int) $variant->price;
+        $salePrice = (int) $variant->sale_price;
+
+        // Lấy thông tin flash sale của biến thể hiện tại từ mảng flashSaleProducts
+        $flashPrice = isset($flashSaleProducts[$variant->id])
+            ? (int) $flashSaleProducts[$variant->id]['flash_price']
+            : null;
+
+        // flashSaleEndTime đã được chuẩn hóa và truyền từ controller
+        $parsedFlashSaleEndTime =
+            isset($flashSaleEndTime) && $flashSaleEndTime
+                ? Carbon::parse($flashSaleEndTime)->timezone(config('app.timezone'))
+                : null;
+
+        // Kiểm tra flash sale và trạng thái hết hàng
+        $isFlashSale = $flashPrice && $parsedFlashSaleEndTime && $now->lte($parsedFlashSaleEndTime);
+        $remaining = isset($flashSaleProducts[$variant->id])
+            ? $flashSaleProducts[$variant->id]['quantity_limit'] - $flashSaleProducts[$variant->id]['quantity_sold']
+            : 0;
+        $isSoldOut = $isFlashSale && $remaining <= 0;
+
+        // Kiểm tra khuyến mãi thường
+        $isSale = $salePrice && $salePrice < $originalPrice;
+
+        // Tính giá hiển thị
+        $displayPrice = $isFlashSale && !$isSoldOut ? $flashPrice : ($isSale ? $salePrice : $originalPrice);
+
+        // Tính % giảm
+        $discountPercent = 0;
+        if ($originalPrice > 0) {
+            if ($isFlashSale && !$isSoldOut) {
+                $discountPercent = round(100 - ($flashPrice / $originalPrice) * 100);
+            } elseif ($isSale) {
+                $discountPercent = round(100 - ($salePrice / $originalPrice) * 100);
+            }
         }
 
-        // Nếu không phải Flash Sale mà vẫn có sale_price < original => là Sale thường
-        $isSale = !$isFlashSale && $salePrice && $salePrice < $originalPrice;
-
-        $discountPercent = $isFlashSale || $isSale ? round(100 - ($salePrice / $originalPrice) * 100) : 0;
+        // Tính phần trăm và số lượng còn lại cho flash sale
+        $percent =
+            isset($flashSaleProducts[$variant->id]) && $flashSaleProducts[$variant->id]['quantity_limit'] > 0
+                ? round(
+                    (($flashSaleProducts[$variant->id]['quantity_limit'] -
+                        $flashSaleProducts[$variant->id]['quantity_sold']) /
+                        $flashSaleProducts[$variant->id]['quantity_limit']) *
+                        100,
+                )
+                : 0;
+        $total = isset($flashSaleProducts[$variant->id]) ? $flashSaleProducts[$variant->id]['quantity_limit'] : 0;
     @endphp
 
-
-
     <div id="price-section" class="mt-4">
-        @if ($isFlashSale)
-            <!-- 🔥 Flash Sale Block -->
+        @if ($isFlashSale && !$isSoldOut)
             <div id="flash-sale-block" class="bg-orange-500 text-white p-4 rounded-lg">
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center position-relative">
                     <div>
-                        <p class="text-sm font-semibold">⚡ Online Giá Rẻ Quá</p>
+                        <p class="text-lg font-semibold">Online Giá Rẻ Quá</p>
                         <p id="product-price" class="text-3xl font-bold">
-                            {{ number_format($salePrice) }}₫
+                            {{ number_format($displayPrice) }}₫
                         </p>
                         <p class="text-sm opacity-80">
-                            <span id="original-price"
-                                class="line-through">{{ number_format($originalPrice) }}₫</span>
+                            <span id="original-price" class="line-through">
+                                {{ number_format($originalPrice) }}₫
+                            </span>
                             <span id="discount-percent">
                                 ({{ $discountPercent > 0 ? "-$discountPercent%" : '' }})
                             </span>
@@ -238,24 +271,33 @@
                     </div>
                     <div class="text-center">
                         <p class="text-sm font-semibold">Kết thúc sau</p>
-                        <div id="countdown-timer" data-end-time="{{ $variant->sale_price_ends_at }}"
+                        <div id="countdown-timer"
+                            data-end-time="{{ $parsedFlashSaleEndTime?->format('Y-m-d H:i:s') }}"
                             class="flex gap-1 mt-1 text-lg">
                             <span id="hours" class="timer-box">00</span>:
                             <span id="minutes" class="timer-box">00</span>:
                             <span id="seconds" class="timer-box">00</span>
                         </div>
+                        <!-- Thanh tiến trình flash sale -->
+                        @if (isset($flashSaleProducts[$variant->id]))
+                            <div class="js-flash-sale-progress mt-2">
+                                <div class="progress-wrapper">
+                                    <div class="progress-bar-inner" style="width: {{ $percent }}%">
+                                        <span class="progress-text">
+                                            🔥 Còn {{ $remaining }}/{{ $total }} suất
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
-
-            <!-- 💡 Normal Price Block (ẩn đi ban đầu) -->
             <div id="normal-price-block" class="price-block bg-gray-100 p-4 rounded-lg hidden">
-
                 <div class="flex items-baseline gap-3">
                     <span id="product-price" class="text-3xl font-bold text-red-600">
                         {{ number_format($isSale ? $salePrice : $originalPrice) }}₫
                     </span>
-
                     @if ($isSale)
                         <span id="original-price" class="text-lg text-gray-500 line-through">
                             {{ number_format($originalPrice) }}₫
@@ -264,21 +306,62 @@
                             class="bg-red-200 text-red-800 text-sm font-semibold px-2 py-0.5 rounded-md">
                             -{{ $discountPercent }}%
                         </span>
-                    @else
-                        <span id="original-price" class="text-lg text-gray-500 line-through hidden"></span>
-                        <span id="discount-percent" class="hidden"></span>
                     @endif
                 </div>
             </div>
         @else
-            <!-- ✅ Normal Price Block (hiển thị khi không phải Flash Sale) -->
+            <div id="flash-sale-block"
+                class="bg-orange-500 text-white p-4 rounded-lg mb-4 {{ $isSoldOut ? 'sold-out' : 'hidden' }}">
+                <div class="flex justify-between items-center position-relative">
+                    <div>
+                        <p class="text-lg font-semibold">Online Giá Rẻ Quá</p>
+                        <p id="product-price" class="text-3xl font-bold">
+                            {{ number_format($flashPrice) }}₫
+                        </p>
+                        <p class="text-sm opacity-80">
+                            <span id="original-price" class="line-through">
+                                {{ number_format($originalPrice) }}₫
+                            </span>
+                            <span id="discount-percent">
+                                ({{ $discountPercent > 0 ? "-$discountPercent%" : '' }})
+                            </span>
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-sm font-semibold">Kết thúc sau</p>
+                        <div id="countdown-timer"
+                            data-end-time="{{ $parsedFlashSaleEndTime?->format('Y-m-d H:i:s') }}"
+                            class="flex gap-1 mt-1 text-lg">
+                            <span id="hours" class="timer-box">00</span>:
+                            <span id="minutes" class="timer-box">00</span>:
+                            <span id="seconds" class="timer-box">00</span>
+                        </div>
+                        <!-- Thanh tiến trình flash sale -->
+                        @if (isset($flashSaleProducts[$variant->id]))
+                            <div class="js-flash-sale-progress mt-2">
+                                <div class="progress-wrapper">
+                                    <div class="progress-bar-inner" style="width: {{ $percent }}%">
+                                        <span class="progress-text">
+                                            🔥 Còn {{ $remaining }}/{{ $total }} suất
+                                        </span>
+                                    </div>
+                                </div>
+                                @if ($isSoldOut)
+                                    <img src="{{ asset('assets/users/logo/out-of-deal.png') }}" alt="Sold Out"
+                                        class="sold-out-overlay"
+                                        style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 50%;廊
+                                     max-height: 50%; object-fit: contain;">
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
             <div id="normal-price-block" class="price-block bg-gray-100 p-4 rounded-lg">
-
                 <div class="flex items-baseline gap-3">
                     <span id="product-price" class="text-3xl font-bold text-red-600">
                         {{ number_format($isSale ? $salePrice : $originalPrice) }}₫
                     </span>
-
                     @if ($isSale)
                         <span id="original-price" class="text-lg text-gray-500 line-through">
                             {{ number_format($originalPrice) }}₫
@@ -287,9 +370,6 @@
                             class="bg-red-200 text-red-800 text-sm font-semibold px-2 py-0.5 rounded-md">
                             -{{ $discountPercent }}%
                         </span>
-                    @else
-                        <span id="original-price" class="text-lg text-gray-500 line-through hidden"></span>
-                        <span id="discount-percent" class="hidden"></span>
                     @endif
                 </div>
             </div>
@@ -298,56 +378,61 @@
 
 
 
+
     <!-- Thay đổi hiển thị chi nhánh -->
     <section class="mt-6 p-4 sm:p-5 bg-gray-50 rounded-xl border border-gray-200">
         <div>
             <h3 class="font-semibold text-gray-900">Xem chi nhánh có hàng</h3>
-            <p class="text-sm text-gray-600 mt-1">Có <span id="store-count"
-                    class="font-bold text-blue-600">{{ $storeLocations->count() }}</span> cửa hàng có sản phẩm</p>
+            <p id="store-message" class="text-sm text-gray-600 mt-1">
+                @if ($storeLocations->count() >= 0)
+                    Có <span id="store-count" class="font-bold text-blue-600">
+                        {{ $storeLocations->count() }}
+                    </span> cửa hàng có sản phẩm
+                @elseif (isset($hasWarehouseInventory) && $hasWarehouseInventory)
+                    Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.
+                @else
+                    Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!
+                @endif
+            </p>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-            <select id="province-select"
-                class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
-                <option value="">Tất cả tỉnh/thành phố</option> {{-- Option mặc định --}}
-                @foreach ($provinces as $province)
-                    <option value="{{ $province->code }}">{{ $province->name }}</option>
-                @endforeach
-            </select>
-            <select id="district-select"
-                class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                disabled>
-                <option value="">Tất cả Quận/Huyện</option> {{-- Option mặc định --}}
-                {{-- Districts sẽ được load động bằng JavaScript --}}
-            </select>
+
+        <div id="filter-container">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <select id="province-select"
+                    class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Tất cả tỉnh/thành phố</option>
+                    @foreach ($provinces as $province)
+                        <option value="{{ $province->code }}">{{ $province->name }}</option>
+                    @endforeach
+                </select>
+                <select id="district-select"
+                    class="w-full p-2.5 bg-white border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                    disabled>
+                    <option value="">Tất cả Quận/Huyện</option>
+                </select>
+            </div>
         </div>
-        <!-- Store List Carousel -->
+
         <div class="relative mt-4">
             <div id="store-swiper" class="swiper -mx-1 px-1 pb-2">
                 <div class="swiper-wrapper">
-                    {{-- Vòng lặp Blade để hiển thị các cửa hàng động --}}
                     @forelse($storeLocations as $store)
                         <div class="swiper-slide w-64 sm:w-72">
                             <div
                                 class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
-                                {{-- Hiển thị địa chỉ của cửa hàng --}}
                                 <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
-                                    {{-- Hiển thị địa chỉ chi tiết --}}
                                     {{ $store->address }}
-                                    {{-- Thêm xã/phường --}}
                                     @if ($store->ward)
                                         , {{ $store->ward->name }}
                                     @endif
-                                    {{-- Thêm quận/huyện --}}
                                     @if ($store->district)
                                         , {{ $store->district->name }}
                                     @endif
-                                    {{-- Thêm tỉnh/thành phố --}}
                                     @if ($store->province)
                                         , {{ $store->province->name }}
                                     @endif
                                 </p>
                                 <div class="flex gap-2 mt-3 text-center">
-                                    {{-- Kiểm tra nếu có số điện thoại thì mới hiển thị liên kết gọi --}}
                                     @if ($store->phone)
                                         <a href="tel:{{ $store->phone }}"
                                             class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
@@ -355,19 +440,13 @@
                                             <span>{{ $store->phone }}</span>
                                         </a>
                                     @endif
-                                    {{-- Liên kết đến Google Maps --}}
-                                    {{-- Lưu ý: URL của Google Maps cần được xây dựng chuẩn hơn nếu muốn hiển thị chính xác trên bản đồ.
-                                 'https://www.google.com/maps/search/?api=1&query=' không phải là định dạng chuẩn.
-                                 Bạn nên dùng 'https://www.google.com/maps/search/?api=1&query=' và truyền địa chỉ đầy đủ vào.
-                            --}}
                                     <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($store->address . ', ' . ($store->ward->name ?? '') . ', ' . ($store->district->name ?? '') . ', ' . ($store->province->name ?? '')) }}"
                                         target="_blank"
                                         class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
                                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor"
                                             viewBox="0 0 24 24">
                                             <path
-                                                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38
-                                                    0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" />
+                                                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z" />
                                         </svg>
                                         <span>Bản đồ</span>
                                     </a>
@@ -375,28 +454,29 @@
                             </div>
                         </div>
                     @empty
-                        {{-- Hiển thị thông báo nếu không có cửa hàng nào --}}
-                        <div class="swiper-slide w-full text-center py-4 text-gray-500">
-                            Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!
-                        </div>
+                        <div class="swiper-slide w-full"></div>
                     @endforelse
                 </div>
             </div>
-            <button id="store-prev-btn"
-                class="absolute top-1/2 -translate-y-1/2 -left-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
-                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7">
-                    </path>
-                </svg>
-            </button>
-            <button id="store-next-btn"
-                class="absolute top-1/2 -translate-y-1/2 -right-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
-                <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
-                </svg>
-            </button>
+
+            @if ($storeLocations->count() > 0)
+                <button id="store-prev-btn"
+                    class="absolute top-1/2 -translate-y-1/2 -left-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                    <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7">
+                        </path>
+                    </svg>
+                </button>
+                <button id="store-next-btn"
+                    class="absolute top-1/2 -translate-y-1/2 -right-3.5 bg-white rounded-full p-1.5 shadow-lg hover:bg-gray-100 transition-colors z-10">
+                    <svg class="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7">
+                        </path>
+                    </svg>
+                </button>
+            @endif
         </div>
     </section>
 
@@ -406,6 +486,8 @@
         <input type="hidden" name="image" id="wishlist-variant-image">
         <input type="hidden" name="product_id" value="{{ $product->id }}">
         <input type="hidden" name="variant_key" id="wishlist-variant-key">
+        <input type="hidden" name="is_flash_sale" id="is-flash-sale">
+
 
 
         <div class="mt-6">
@@ -438,64 +520,183 @@
 @include('users.products.partials.script-whistlist')
 
 <script>
-    // Biến toàn cục lưu stock tính toán sau khi fetch
-    let realAvailableStock = 0;
-    // Biến toàn cục lưu số lượng đã có trong giỏ (đưa từ server)
-    const alreadyInCart = {{ $alreadyInCart }};
+    let realAvailableStock = 0; // còn lại sau khi trừ giỏ
+    let alreadyInCarts = 0; // đã có trong giỏ
+
     const quantityInput = document.getElementById('quantity_input');
 
-    // Hàm cập nhật max quantity input và kiểm tra số lượng nhập
-    function updateQuantityInputMax(stock) {
-        realAvailableStock = Math.max(stock - alreadyInCart, 0);
-        if (quantityInput) {
+    // LOGIC CỦA TIẾP
+    // function updateQuantityInputMax() {
+    //     if (!quantityInput) return;
+
+    //     quantityInput.max = realAvailableStock;
+
+    //     let currentVal = parseInt(quantityInput.value) || 1;
+    //     if (currentVal > realAvailableStock) {
+    //         quantityInput.value = realAvailableStock > 0 ? realAvailableStock : 1;
+    //     } else if (currentVal < 1) {
+    //         quantityInput.value = 1;
+    //     }
+    // }
+
+    function updateQuantityInputMax() {
+        if (!quantityInput) return;
+
+        // Kiểm tra xem có phải flash sale không
+        const isFlashSaleInput = document.getElementById('is-flash-sale');
+        const isFlashSale = isFlashSaleInput && isFlashSaleInput.value == '1';
+
+        if (isFlashSale) {
+            // Với flash sale, luôn đặt max > 0 để tránh lỗi validation
+            // Việc kiểm tra hết hàng sẽ được xử lý ở backend
+            quantityInput.max = Math.max(realAvailableStock, 1);
+        } else {
+            // Với sản phẩm thường, đặt max theo tồn kho thực tế
             quantityInput.max = realAvailableStock;
-            // Nếu giá trị hiện tại > max thì reset về max hoặc 1
-            let currentVal = parseInt(quantityInput.value) || 1;
-            if (currentVal > realAvailableStock) {
-                quantityInput.value = realAvailableStock > 0 ? realAvailableStock : 1;
-            }
+        }
+
+        let currentVal = parseInt(quantityInput.value) || 1;
+        if (currentVal > quantityInput.max) {
+            quantityInput.value = quantityInput.max > 0 ? quantityInput.max : 1;
+        } else if (currentVal < 1) {
+            quantityInput.value = 1;
         }
     }
 
     if (quantityInput) {
         quantityInput.addEventListener('input', function() {
-            const enteredQuantity = parseInt(this.value) || 0;
-            if (enteredQuantity > realAvailableStock) {
-                toastr.error(
-                    `Bạn đã có ${alreadyInCart} sản phẩm trong giỏ. Hệ thống chỉ còn ${realAvailableStock} sản phẩm nữa.`
-                );
-                this.value = realAvailableStock;
-            } else if (enteredQuantity < 1) {
+            let enteredQuantity = parseInt(this.value);
+            if (isNaN(enteredQuantity) || enteredQuantity < 1) {
                 this.value = 1;
+                return;
+            }
+
+            const isFlashSaleInput = document.getElementById('is-flash-sale');
+            const isFlashSale = isFlashSaleInput && isFlashSaleInput.value == '1';
+
+            if (enteredQuantity > realAvailableStock) {
+                if (isFlashSale) {
+                    // Với flash sale, sử dụng số lượng còn lại thực tế
+                    this.value = realAvailableStock > 0 ? realAvailableStock : 1;
+                } else {
+                    // Với sản phẩm thường, giữ nguyên
+                    toastr.error(
+                        `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Hệ thống chỉ còn ${realAvailableStock} sản phẩm nữa.`
+                    );
+                    this.value = realAvailableStock;
+                }
             }
         });
     }
 
     function fetchVariantStock(variantId) {
         fetch(`/api/variant-stock/${variantId}`)
-            .then(res => res.json())
-            .then(data => {
-                const availableStock = data.available_stock ?? 0;
-
-                // Cập nhật hiển thị tồn kho
-                const stockEl = document.getElementById('variant-stock');
-                if (stockEl) stockEl.textContent = `Còn lại: ${availableStock} sản phẩm`;
-
-                // Cập nhật max quantity dựa trên số lượng trong giỏ và tồn kho hiện tại
-                updateQuantityInputMax(availableStock);
-
-                // Cập nhật nút CTA
-                updateCTAButtons(realAvailableStock);
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`Lỗi HTTP: ${res.status}`);
+                }
+                return res.json();
             })
-            .catch(err => console.error('Lỗi lấy tồn kho:', err));
+            .then(data => {
+                alreadyInCarts = data.alreadyInCarts ?? 0;
+                realAvailableStock = data.remaining ?? 0;
+
+                // Lấy thông tin flash sale
+                fetch(`/variant-flash-sale/${variantId}`)
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error(`Lỗi HTTP: ${res.status}`);
+                        }
+                        return res.json();
+                    })
+                    .then(flashData => {
+                        const isFlashSaleInput = document.getElementById('is-flash-sale');
+                        if (!isFlashSaleInput) {
+                            console.error('Không tìm thấy phần tử #is-flash-sale');
+                            return;
+                        }
+
+                        // Cập nhật realAvailableStock và is_flash_sale
+                        if (flashData.is_flash_sale && flashData.remaining > 0) {
+                            isFlashSaleInput.value = 1;
+                            // Với flash sale, trừ số lượng đã có trong giỏ
+                            realAvailableStock = Math.min(realAvailableStock, flashData.remaining) -
+                                alreadyInCarts;
+                        } else {
+                            isFlashSaleInput.value = 0;
+                            // Với sản phẩm thường, giữ nguyên
+                            realAvailableStock = data.remaining ?? 0;
+                        }
+
+                        // Cập nhật tồn kho trên giao diện
+                        const stockEl = document.getElementById('variant-stock');
+                        if (stockEl) {
+                            if (flashData.is_flash_sale && flashData.remaining > 0) {
+                                const availableAfterCart = realAvailableStock;
+                                if (availableAfterCart > 0) {
+                                    stockEl.textContent =
+                                        `Flash Sale! Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Còn lại: ${availableAfterCart} sản phẩm`;
+                                } else {
+                                    stockEl.textContent =
+                                        `Bạn đã có ${alreadyInCarts} sản phẩm Flash Sale trong giỏ hàng. Đây là số lượng tối đa, không thể thêm nữa.`;
+                                }
+                            } else {
+                                stockEl.textContent =
+                                    `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Còn lại: ${realAvailableStock} sản phẩm`;
+                            }
+                        }
+
+                        updateQuantityInputMax();
+
+                        // Với flash sale, truyền số lượng còn lại thực tế
+                        if (flashData.is_flash_sale && flashData.remaining > 0) {
+                            updateCTAButtons(realAvailableStock);
+                        } else {
+                            updateCTAButtons(realAvailableStock);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Lỗi lấy thông tin flash sale:', err);
+                        toastr.error('Không thể lấy thông tin flash sale.');
+                    });
+            })
+            .catch(err => {
+                console.error('Lỗi lấy tồn kho:', err);
+                toastr.error('Không thể lấy thông tin tồn kho.');
+            });
     }
 
     function updateCTAButtons(quantity) {
         const ctaContainer = document.getElementById('main-cta-buttons');
         if (!ctaContainer) return;
 
-        if (quantity > 0) {
+        const isFlashSaleInput = document.getElementById('is-flash-sale');
+        const isFlashSale = isFlashSaleInput && isFlashSaleInput.value == '1';
+
+        if (isFlashSale) {
+            // Với flash sale, LUÔN hiển thị 2 nút bình thường
+            // Việc kiểm tra hết hàng được xử lý ở backend
             ctaContainer.innerHTML = `
+            <button type="submit"
+                class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
+                </svg>
+                THÊM VÀO GIỎ HÀNG
+            </button>
+
+            <button type="button" id="buy-now-btn"
+                class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+                MUA NGAY
+            </button>
+        `;
+            attachBuyNowListener();
+        } else {
+            // Logic cho sản phẩm thường
+            if (quantity > 0) {
+                ctaContainer.innerHTML = `
                 <button type="submit"
                     class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
@@ -511,107 +712,178 @@
                     MUA NGAY
                 </button>
             `;
-
-            attachBuyNowListener();
-        } else {
-            ctaContainer.innerHTML = `
+                attachBuyNowListener();
+            } else {
+                ctaContainer.innerHTML = `
                 <button type="button" disabled
                     class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-gray-400 text-gray-400 font-bold rounded-lg cursor-not-allowed">
                     HẾT HÀNG
                 </button>
             `;
+            }
         }
     }
+
+    // LOGIC CỦA TIẾP
+    //  if (quantityInput) {
+    //     quantityInput.addEventListener('input', function() {
+    //         let enteredQuantity = parseInt(this.value);
+    //         if (isNaN(enteredQuantity) || enteredQuantity < 1) {
+    //             this.value = 1;
+    //             return;
+    //         }
+    //         if (enteredQuantity > realAvailableStock) {
+    //             toastr.error(
+    //                 `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Hệ thống chỉ còn ${realAvailableStock} sản phẩm nữa.`
+    //             );
+    //             this.value = realAvailableStock;
+    //         }
+    //     });
+    // }
+
+    // function fetchVariantStock(variantId) {
+    //     fetch(`/api/variant-stock/${variantId}`)
+    //         .then(res => res.json())
+    //         .then(data => {
+    //             alreadyInCarts = data.alreadyInCarts ?? 0;
+    //             realAvailableStock = data.remaining ?? 0;
+
+    //             // Cập nhật tồn kho trên giao diện
+    //             const stockEl = document.getElementById('variant-stock');
+    //             if (stockEl) {
+    //                 stockEl.textContent =
+    //                     `Bạn đã có ${alreadyInCarts} sản phẩm trong giỏ. Còn lại: ${realAvailableStock} sản phẩm`;
+    //             }
+
+    //             updateQuantityInputMax();
+    //             updateCTAButtons(realAvailableStock);
+    //         })
+    //         .catch(err => {
+    //             console.error('Lỗi lấy tồn kho:', err);
+    //             toastr.error('Không thể lấy thông tin tồn kho.');
+    //         });
+    // }
+
+    // function updateCTAButtons(quantity) {
+    //     const ctaContainer = document.getElementById('main-cta-buttons');
+    //     if (!ctaContainer) return;
+
+    //     if (quantity > 0) {
+    //         ctaContainer.innerHTML = `
+    //             <button type="submit"
+    //                 class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-blue-600 text-blue-600 font-bold rounded-lg hover:bg-blue-50 transition-colors">
+    //                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+    //                     stroke="currentColor" class="w-6 h-6">
+    //                     <path stroke-linecap="round" stroke-linejoin="round"
+    //                         d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c.51 0 .962-.343 1.087-.835l1.838-6.839a1.5 1.5 0 00-1.087-1.835H4.215" />
+    //                 </svg>
+    //                 THÊM VÀO GIỎ HÀNG
+    //             </button>
+
+    //             <button type="button" id="buy-now-btn"
+    //                 class="flex-1 w-full px-6 py-4 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors">
+    //                 MUA NGAY
+    //             </button>
+    //         `;
+
+    //         attachBuyNowListener();
+    //     } else {
+    //         ctaContainer.innerHTML = `
+    //             <button type="button" disabled
+    //                 class="flex-1 w-full flex items-center justify-center gap-2 px-6 py-3.5 border-2 border-gray-400 text-gray-400 font-bold rounded-lg cursor-not-allowed">
+    //                 HẾT HÀNG
+    //             </button>
+    //         `;
+    //     }
+    // }
 
     function attachBuyNowListener() {
         const buyNowBtn = document.getElementById('buy-now-btn');
-        if (buyNowBtn) {
-            buyNowBtn.addEventListener('click', function() {
-                const form = document.getElementById('add-to-cart-form');
-                const formData = new FormData(form);
+        if (!buyNowBtn) return;
 
-                const inputVariantKey = document.getElementById('wishlist-variant-key');
-                const quantityInput = document.getElementById('quantity_input');
-                const variantData = window.variantData || {};
+        buyNowBtn.addEventListener('click', function() {
+            const form = document.getElementById('add-to-cart-form');
+            const formData = new FormData(form);
 
-                const variantKey = inputVariantKey?.value?.trim();
-                let quantity = parseInt(quantityInput.value) || 1;
-                const min = parseInt(quantityInput.min) || 1;
-                const max = parseInt(quantityInput.max) || 1000;
-                if (quantity < min) quantity = min;
-                if (quantity > max) quantity = max;
-                quantityInput.value = quantity;
+            const inputVariantKey = document.getElementById('wishlist-variant-key');
+            const quantityInput = document.getElementById('quantity_input');
+            const variantData = window.variantData || {};
 
-                const productId = formData.get('product_id');
-                const hasVariants = Object.keys(variantData).length > 1;
+            const variantKey = inputVariantKey?.value?.trim();
+            let quantity = parseInt(quantityInput.value) || 1;
+            const max = realAvailableStock;
+            if (quantity > max) quantity = max;
+            if (quantity < 1) quantity = 1;
+            quantityInput.value = quantity;
 
-                if (hasVariants && (!variantKey || variantKey === '' || variantKey === '_' || variantKey
-                        .includes('undefined'))) {
-                    toastr.error('Vui lòng chọn đầy đủ thông tin sản phẩm');
-                    return;
-                }
-                if (!productId) {
-                    toastr.error('Không tìm thấy thông tin sản phẩm.');
-                    return;
-                }
+            const productId = formData.get('product_id');
+            const hasVariants = Object.keys(variantData).length > 1;
 
-                // Kiểm tra tồn kho theo variantData và quantityInput.max = realAvailableStock
-                if (quantity > max) {
-                    toastr.error(`Số lượng vượt quá tồn kho. Chỉ còn ${max} sản phẩm.`);
-                    return;
-                }
+            if (hasVariants && (!variantKey || variantKey === '' || variantKey === '_' || variantKey.includes(
+                    'undefined'))) {
+                toastr.error('Vui lòng chọn đầy đủ thông tin sản phẩm');
+                return;
+            }
+            if (!productId) {
+                toastr.error('Không tìm thấy thông tin sản phẩm.');
+                return;
+            }
 
-                buyNowBtn.disabled = true;
-                buyNowBtn.innerHTML = '<span class="inline-block animate-spin mr-2"></span>Đang xử lý...';
+            if (quantity > max) {
+                toastr.error(`Số lượng vượt quá tồn kho. Chỉ còn ${max} sản phẩm.`);
+                return;
+            }
 
-                const buyNowData = {
-                    product_id: parseInt(productId),
-                    variant_key: variantKey,
-                    quantity: quantity,
-                };
+            buyNowBtn.disabled = true;
+            buyNowBtn.innerHTML = '<span class="inline-block animate-spin mr-2"></span>Đang xử lý...';
 
-                fetch('{{ route('buy-now.checkout') }}', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(buyNowData)
-                    })
-                    .then(async res => {
-                        const contentType = res.headers.get('content-type');
-                        if (!contentType || !contentType.includes('application/json')) {
-                            throw new Error('Server trả về định dạng không hợp lệ');
-                        }
-                        const data = await res.json();
-                        if (!res.ok) {
-                            throw new Error(data.message || `Lỗi server: ${res.status}`);
-                        }
-                        return data;
-                    })
-                    .then(data => {
-                        if (data.success && data.redirect_url) {
-                            window.location.href = data.redirect_url;
-                        } else {
-                            throw new Error(data.message || 'Phản hồi không hợp lệ từ server.');
-                        }
-                    })
-                    .catch(error => {
-                        toastr.error(error.message || 'Đã xảy ra lỗi khi xử lý. Vui lòng thử lại.');
-                        console.error(error);
-                    })
-                    .finally(() => {
-                        setTimeout(() => {
-                            buyNowBtn.disabled = false;
-                            buyNowBtn.innerHTML = 'MUA NGAY';
-                        }, 1000);
-                    });
-            });
-        }
+            const buyNowData = {
+                product_id: parseInt(productId),
+                variant_key: variantKey,
+                quantity: quantity,
+            };
+
+            fetch('{{ route('buy-now.checkout') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(buyNowData)
+                })
+                .then(async res => {
+                    const contentType = res.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        throw new Error('Server trả về định dạng không hợp lệ');
+                    }
+                    const data = await res.json();
+                    if (!res.ok) {
+                        throw new Error(data.message || `Lỗi server: ${res.status}`);
+                    }
+                    return data;
+                })
+                .then(data => {
+                    if (data.success && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        throw new Error(data.message || 'Phản hồi không hợp lệ từ server.');
+                    }
+                })
+                .catch(error => {
+                    toastr.error(error.message || 'Đã xảy ra lỗi khi xử lý. Vui lòng thử lại.');
+                    console.error(error);
+                })
+                .finally(() => {
+                    setTimeout(() => {
+                        buyNowBtn.disabled = false;
+                        buyNowBtn.innerHTML = 'MUA NGAY';
+                    }, 1000);
+                });
+        });
     }
 
-    // Lắng nghe khi người dùng chọn biến thể
+    // Khi người dùng chọn biến thể
     document.querySelectorAll('.variants input[type="radio"]').forEach(radio => {
         radio.addEventListener('change', function() {
             setTimeout(() => {
@@ -623,7 +895,7 @@
         });
     });
 
-    // Khi trang load, kiểm tra tồn kho ban đầu
+    // Khi trang load
     document.addEventListener('DOMContentLoaded', () => {
         const variantIdInput = document.querySelector('[name="product_variant_id"]');
         if (variantIdInput && variantIdInput.value) {
@@ -645,7 +917,6 @@
                 prevEl: '#store-prev-btn',
             },
             on: {
-                // Ẩn/hiện nút điều hướng khi không cần thiết
                 init: function() {
                     const container = this.el.parentElement;
                     container.classList.toggle('navigation-hidden', this.isLocked);
@@ -657,138 +928,167 @@
             }
         });
 
-        // Lưu swiper vào window để truy cập từ các hàm khác
         window.storeSwiper = swiper;
-
-        // Flag để ngăn gọi API trùng lặp
         let isUpdatingStores = false;
 
-        // Hàm chính để cập nhật danh sách cửa hàng dựa trên biến thể
-        function updateStoreLocations(variantId) {
-            // Ngăn gọi API nếu đang xử lý
-            if (isUpdatingStores) return;
-
+        // Hàm lọc và hiển thị danh sách cửa hàng
+        async function filterStores(variantId, provinceCode, districtCode) {
             const provinceSelect = document.getElementById('province-select');
             const districtSelect = document.getElementById('district-select');
             const storeWrapper = document.getElementById('store-swiper')?.querySelector('.swiper-wrapper');
-            const storeCount = document.getElementById('store-count');
+            const storeMessage = document.getElementById('store-message');
 
-            if (!storeWrapper || !storeCount) return;
+            if (!storeWrapper || !storeMessage) {
+                console.error('Missing required DOM elements.');
+                return;
+            }
 
-            // Cập nhật danh sách tỉnh/thành phố theo biến thể
+            try {
+                const query = new URLSearchParams();
+                if (provinceCode) query.append('province_code', provinceCode);
+                if (districtCode) query.append('district_code', districtCode);
+                query.append('product_variant_id', variantId);
+
+                // Hiển thị trạng thái tải
+                storeWrapper.innerHTML = `
+                <div class="swiper-slide w-full text-center py-4 text-gray-500">
+                    Đang tải danh sách cửa hàng...
+                </div>
+            `;
+                if (window.storeSwiper) window.storeSwiper.update();
+
+                const response = await fetch(`/api/filter-stores?${query.toString()}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const {
+                    stores,
+                    count,
+                    hasWarehouseInventory
+                } = await response.json();
+
+                // Cập nhật thông báo tồn kho chính (chỉ ở đây)
+                if (count >= 0) {
+                    storeMessage.innerHTML =
+                        `Có <span id="store-count" class="font-bold text-blue-600">${count}</span> cửa hàng có sản phẩm`;
+                } else if (hasWarehouseInventory) {
+                    storeMessage.innerHTML =
+                        `Tạm thời hết hàng tại cửa hàng, nhưng vẫn còn hàng online – Đặt ngay để giữ ưu đãi.`;
+                } else {
+                    storeMessage.innerHTML =
+                        `Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!`;
+                }
+
+                // Render danh sách cửa hàng
+                storeWrapper.innerHTML = '';
+                if (stores.length === 0) {
+                    storeWrapper.innerHTML = `
+                    <div class="swiper-slide w-full text-center py-4 text-gray-500">
+                        ${hasWarehouseInventory ? 
+                            'Sản phẩm này hiện <strong>không có sẵn tại hệ thống cửa hàng</strong>. Nhưng vẫn sẵn sàng để mua online.' : 
+                            'Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!'}
+                    </div>
+                `;
+                } else {
+                    stores.forEach(store => {
+                        const slide = document.createElement('div');
+                        slide.className = 'swiper-slide w-64 sm:w-72';
+                        const fullAddress =
+                            `${store.address}${store.ward ? `, ${store.ward.name}` : ''}${store.district ? `, ${store.district.name}` : ''}${store.province ? `, ${store.province.name}` : ''}`;
+
+                        slide.innerHTML = `
+                        <div class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
+                            <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
+                                ${fullAddress}
+                            </p>
+                            <div class="flex gap-2 mt-3 text-center">
+                                ${store.phone ? `
+                                    <a href="tel:${store.phone}" class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
+                                        <span>📞</span>
+                                        <span>${store.phone}</span>
+                                    </a>
+                                ` : ''}
+                                <a href="https://www.google.com/maps/search/?api=1&query={encodeURIComponent(fullAddress)}" target="_blank" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+                                    </svg>
+                                    <span>Bản đồ</span>
+                                </a>
+                            </div>
+                        </div>
+                    `;
+                        storeWrapper.appendChild(slide);
+                    });
+                }
+
+                if (window.storeSwiper) {
+                    window.storeSwiper.update();
+                    const container = window.storeSwiper.el.parentElement;
+                    container.classList.toggle('navigation-hidden', window.storeSwiper.isLocked);
+                }
+            } catch (error) {
+                console.error('Error fetching stores:', error);
+                storeWrapper.innerHTML = `
+                <div class="swiper-slide w-full text-center py-4 text-gray-500">
+                    Đã xảy ra lỗi khi tải danh sách cửa hàng.
+                </div>
+            `;
+                storeMessage.innerHTML =
+                    `Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!`;
+                if (window.storeSwiper) window.storeSwiper.update();
+            }
+        }
+
+        // Hàm chính để cập nhật danh sách cửa hàng dựa trên biến thể
+        function updateStoreLocations(variantId) {
+            if (isUpdatingStores) return;
+            isUpdatingStores = true;
+
+            const provinceSelect = document.getElementById('province-select');
+            const districtSelect = document.getElementById('district-select');
+
+            // Cập nhật danh sách tỉnh/thành phố có hàng cho biến thể này
             async function updateProvincesForVariant() {
                 try {
                     const response = await fetch(
                         `/api/provinces-by-variant?product_variant_id=${variantId}`);
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
                     const provinces = await response.json();
-                    const currentProvinceValue = provinceSelect.value;
 
-                    // Cập nhật danh sách tỉnh
-                    provinceSelect.innerHTML = '<option value="">Tất cả tỉnh/thành phố</option>';
-                    provinces.forEach(province => {
-                        const option = document.createElement('option');
-                        option.value = province.code;
-                        option.textContent = province.name;
-                        provinceSelect.appendChild(option);
-                    });
-
-                    // Reset quận/huyện
-                    districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
-                    districtSelect.disabled = true;
-
-                    // Reset tỉnh nếu không tồn tại trong danh sách mới
-                    const provinceExists = provinces.some(p => p.code === currentProvinceValue);
-                    if (!provinceExists) provinceSelect.value = '';
-                } catch (error) {
-                    // Giữ nguyên danh sách tỉnh nếu lỗi
-                }
-            }
-
-            // Lọc và hiển thị danh sách cửa hàng
-            async function filterStores(provinceCode, districtCode) {
-                try {
-                    const query = new URLSearchParams();
-                    if (provinceCode) query.append('province_code', provinceCode);
-                    if (districtCode) query.append('district_code', districtCode);
-                    query.append('product_variant_id', variantId);
-
-                    const response = await fetch(`/api/filter-stores?${query.toString()}`);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-                    const {
-                        stores,
-                        count
-                    } = await response.json();
-                    storeCount.textContent = count;
-                    storeWrapper.innerHTML = '';
-
-                    if (stores.length === 0) {
-                        storeWrapper.innerHTML =
-                            '<div class="swiper-slide w-full text-center py-4 text-gray-500">Sản phẩm này hiện không có sẵn tại hệ thống cửa hàng. Mong quý khách thông cảm!</div>';
-                    } else {
-                        stores.forEach(store => {
-                            const slide = document.createElement('div');
-                            slide.className = 'swiper-slide w-64 sm:w-72';
-                            slide.innerHTML = `
-                            <div class="store-card h-full flex flex-col bg-white p-4 border border-gray-200 rounded-lg">
-                                <p class="font-medium text-sm text-gray-800 leading-snug flex-grow">
-                                    ${store.address}${store.ward ? `, ${store.ward}` : ''}${store.district ? `, ${store.district}` : ''}${store.province ? `, ${store.province}` : ''}
-                                </p>
-                                <div class="flex gap-2 mt-3 text-center">
-                                    ${store.phone ? `
-                                        <a href="tel:${store.phone}" class="flex-1 text-sm text-red-600 font-semibold border border-red-200 bg-red-50 rounded-full py-1.5 px-2 hover:bg-red-100 transition-colors flex items-center justify-center gap-1.5">
-                                            <span>📞</span>
-                                            <span>${store.phone}</span>
-                                        </a>
-                                    ` : ''}
-                                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address + (store.ward ? `, ${store.ward}` : '') + (store.district ? `, ${store.district}` : '') + (store.province ? `, ${store.province}` : ''))}" target="_blank" class="flex-1 text-sm text-gray-700 font-semibold border border-gray-300 rounded-full py-1.5 px-2 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
-                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 
-                                                     0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
-                                        </svg>
-                                        <span>Bản đồ</span>
-                                    </a>
-                                </div>
-                            </div>
-                        `;
-                            storeWrapper.appendChild(slide);
+                    if (provinceSelect) {
+                        const currentProvince = provinceSelect.value;
+                        provinceSelect.innerHTML = '<option value="">Tất cả tỉnh/thành phố</option>';
+                        provinces.forEach(province => {
+                            const option = document.createElement('option');
+                            option.value = province.code;
+                            option.textContent = province.name;
+                            provinceSelect.appendChild(option);
                         });
-                    }
 
-                    // Cập nhật Swiper sau khi thêm slides
-                    if (window.storeSwiper) window.storeSwiper.update();
+                        if (currentProvince && provinces.some(p => p.code === currentProvince)) {
+                            provinceSelect.value = currentProvince;
+                        } else {
+                            provinceSelect.value = '';
+                        }
+
+                        if (districtSelect) {
+                            districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
+                            districtSelect.disabled = true;
+                        }
+                    }
                 } catch (error) {
-                    storeWrapper.innerHTML =
-                        '<div class="swiper-slide w-full text-center py-4 text-gray-500">Đã xảy ra lỗi khi tải danh sách cửa hàng.</div>';
-                    storeCount.textContent = '0';
-                    if (window.storeSwiper) window.storeSwiper.update();
+                    console.error('Error fetching provinces:', error);
                 }
             }
 
-            // Chỉ cập nhật tỉnh khi thay đổi biến thể
-            if (variantId !== window.lastVariantId) {
-                window.lastVariantId = variantId;
-                isUpdatingStores = true;
-                updateProvincesForVariant().then(() => {
-                    const currentProvince = provinceSelect ? provinceSelect.value : '';
-                    const currentDistrict = districtSelect ? districtSelect.value : '';
-                    filterStores(currentProvince, currentDistrict).finally(() => {
-                        isUpdatingStores = false;
-                    });
-                });
-            } else {
+            updateProvincesForVariant().then(() => {
                 const currentProvince = provinceSelect ? provinceSelect.value : '';
                 const currentDistrict = districtSelect ? districtSelect.value : '';
-                isUpdatingStores = true;
-                filterStores(currentProvince, currentDistrict).finally(() => {
+                filterStores(variantId, currentProvince, currentDistrict).finally(() => {
                     isUpdatingStores = false;
                 });
-            }
+            });
         }
 
-        // Lắng nghe thay đổi biến thể sản phẩm
         function listenForVariantChanges() {
             const radioButtons = document.querySelectorAll('.variants input[type="radio"][data-attr-name]');
             radioButtons.forEach(radio => {
@@ -817,7 +1117,6 @@
             });
         }
 
-        // Tạo listener cho province select
         function createProvinceSelectListener() {
             document.addEventListener('change', async function(event) {
                 if (event.target.id === 'province-select') {
@@ -826,8 +1125,10 @@
                     const variantIdInput = document.querySelector('[name="product_variant_id"]');
                     const productVariantId = variantIdInput ? variantIdInput.value : '';
 
-                    districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
-                    districtSelect.disabled = true;
+                    if (districtSelect) {
+                        districtSelect.innerHTML = '<option value="">Tất cả Quận/Huyện</option>';
+                        districtSelect.disabled = true;
+                    }
 
                     if (provinceCode && productVariantId) {
                         try {
@@ -838,40 +1139,45 @@
                                 `HTTP error! status: ${response.status}`);
 
                             const districts = await response.json();
-                            if (districts.length === 0) {
-                                districtSelect.innerHTML =
-                                    '<option value="">Không có quận/huyện</option>';
-                            } else {
-                                districts.forEach(district => {
-                                    const option = document.createElement('option');
-                                    option.value = district.code;
-                                    option.textContent = district.name;
-                                    districtSelect.appendChild(option);
-                                });
-                                districtSelect.disabled = false;
+
+                            if (districtSelect) {
+                                if (districts.length === 0) {
+                                    districtSelect.innerHTML =
+                                        '<option value="">Không có quận/huyện</option>';
+                                } else {
+                                    districts.forEach(district => {
+                                        const option = document.createElement('option');
+                                        option.value = district.code;
+                                        option.textContent = district.name;
+                                        districtSelect.appendChild(option);
+                                    });
+                                    districtSelect.disabled = false;
+                                }
                             }
                         } catch (error) {
-                            districtSelect.innerHTML =
-                                '<option value="">Không có quận/huyện</option>';
+                            console.error('Error fetching districts:', error);
+                            if (districtSelect) {
+                                districtSelect.innerHTML =
+                                    '<option value="">Không có quận/huyện</option>';
+                            }
                         }
                     }
-
-                    updateStoreLocations(productVariantId);
+                    filterStores(productVariantId, provinceCode, '');
                 }
             });
         }
 
-        // Khởi tạo các listener
         listenForVariantChanges();
 
-        // Theo dõi thay đổi variantId input
         const variantIdInput = document.querySelector('[name="product_variant_id"]');
         if (variantIdInput) {
             const observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
                         const newValue = variantIdInput.value;
-                        if (newValue) updateStoreLocations(newValue);
+                        if (newValue) {
+                            updateStoreLocations(newValue);
+                        }
                     }
                 });
             });
@@ -880,11 +1186,12 @@
                 attributeFilter: ['value']
             });
             variantIdInput.addEventListener('input', function() {
-                if (this.value) updateStoreLocations(this.value);
+                if (this.value) {
+                    updateStoreLocations(this.value);
+                }
             });
         }
 
-        // Listener cho district select
         const districtSelect = document.getElementById('district-select');
         if (districtSelect) {
             districtSelect.addEventListener('change', async function() {
@@ -893,11 +1200,10 @@
                 const districtCode = this.value;
                 const variantIdInput = document.querySelector('[name="product_variant_id"]');
                 const productVariantId = variantIdInput ? variantIdInput.value : '';
-                updateStoreLocations(productVariantId);
+                filterStores(productVariantId, provinceCode, districtCode);
             });
         }
 
-        // Cập nhật lần đầu khi trang tải
         setTimeout(() => {
             const variantIdInput = document.querySelector('[name="product_variant_id"]');
             if (variantIdInput && variantIdInput.value) {

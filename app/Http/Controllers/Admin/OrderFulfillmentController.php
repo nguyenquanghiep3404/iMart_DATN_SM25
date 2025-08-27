@@ -98,7 +98,7 @@ class OrderFulfillmentController extends Controller
     {
         try {
             $query = Order::with(['items.productVariant', 'customer'])
-                ->where('status', Order::STATUS_AWAITING_SHIPMENT);
+                ->where('status', Order::STATUS_PROCESSING);
                 
             if ($request->filled('search')) {
                 $search = $request->input('search');

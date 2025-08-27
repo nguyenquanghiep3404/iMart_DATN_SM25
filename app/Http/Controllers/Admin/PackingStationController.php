@@ -45,7 +45,7 @@ class PackingStationController extends Controller
      }
      
      /**
-      * Lấy danh sách đơn hàng chờ đóng gói của kho hiện tại
+      * Lấy danh sách gói hàng chờ đóng gói của kho hiện tại
       * 
       * @return \Illuminate\Http\JsonResponse
       */
@@ -66,31 +66,30 @@ class PackingStationController extends Controller
                 return response()->json(['error' => 'Bạn chưa được gán vào kho warehouse nào'], 403);
             }
             
-            // Lấy 20 đơn hàng gần nhất có fulfillments ở trạng thái "processing" thuộc các kho warehouse của người dùng
-            $pendingOrders = Order::with(['customer', 'fulfillments'])
-                ->whereHas('fulfillments', function($query) use ($userWarehouseIds) {
-                    $query->where('status', 'processing')
-                          ->whereIn('store_location_id', $userWarehouseIds);
+            // Lấy 20 gói hàng gần nhất ở trạng thái "processing" thuộc các kho warehouse của người dùng
+            $pendingFulfillments = \App\Models\OrderFulfillment::with(['order'])
+                ->where('status', 'processing')
+                ->whereIn('store_location_id', $userWarehouseIds)
+                ->whereHas('order', function($query) {
+                    $query->where('status', 'processing');
                 })
                 ->orderBy('created_at', 'desc')
                 ->limit(20)
                 ->get();
             
-            $formattedOrders = $pendingOrders->map(function($order) {
-                $trackingCodes = $order->fulfillments->where('status', 'processing')->pluck('tracking_code')->toArray();
-                
+            $formattedPackages = $pendingFulfillments->map(function($fulfillment) {
                 return [
-                    'id' => $order->id,
-                    'order_code' => $order->order_code,
-                    'customer_name' => $order->customer->name,
-                    'created_at' => Carbon::parse($order->created_at)->format('d/m/Y H:i'),
-                    'tracking_codes' => $trackingCodes,
-                    'first_tracking_code' => count($trackingCodes) > 0 ? $trackingCodes[0] : null,
-                    'total_packages' => count($trackingCodes)
+                    'id' => $fulfillment->order->id,
+                    'order_code' => $fulfillment->order->order_code,
+                    'customer_name' => $fulfillment->order->customer_name,
+                    'created_at' => Carbon::parse($fulfillment->created_at)->format('d/m/Y H:i'),
+                    'tracking_codes' => [$fulfillment->tracking_code],
+                    'first_tracking_code' => $fulfillment->tracking_code,
+                    'total_packages' => 1
                 ];
             });
             
-            return response()->json($formattedOrders);
+            return response()->json($formattedPackages);
             
         } catch (\Exception $e) {
             // Bỏ qua lỗi "Không đủ tồn kho cho sản phẩm"
@@ -101,7 +100,7 @@ class PackingStationController extends Controller
             
             return response()->json([
                 'success' => false,
-                'message' => 'Đã xảy ra lỗi khi lấy danh sách đơn hàng: ' . $e->getMessage()
+                'message' => 'Đã xảy ra lỗi khi lấy danh sách gói hàng: ' . $e->getMessage()
             ], 500);
         }
      }
@@ -162,26 +161,51 @@ class PackingStationController extends Controller
                 ], 403);
             }
 
+            // Lấy thông tin địa chỉ đầy đủ
+            $wardName = null;
+            $districtName = null;
+            $provinceName = null;
+            
+            if ($order->shipping_old_ward_code) {
+                $ward = \App\Models\WardOld::where('code', $order->shipping_old_ward_code)->first();
+                $wardName = $ward ? $ward->name_with_type : $order->shipping_old_ward_code;
+            }
+            
+            if ($order->shipping_old_district_code) {
+                $district = \App\Models\DistrictOld::where('code', $order->shipping_old_district_code)->first();
+                $districtName = $district ? $district->name_with_type : $order->shipping_old_district_code;
+            }
+            
+            if ($order->shipping_old_province_code) {
+                $province = \App\Models\ProvinceOld::where('code', $order->shipping_old_province_code)->first();
+                $provinceName = $province ? $province->name_with_type : $order->shipping_old_province_code;
+            }
+
             // Chuẩn bị dữ liệu gói hàng
             $packageData = [
                 'tracking_code' => $fulfillment->tracking_code,
                 'order_id' => $order->id,
+                'order_code' => $order->order_code,
                 'customer_name' => $order->customer_name,
                 'customer_phone' => $order->customer_phone,
                 'shipping_address_line1' => $order->shipping_address_line1,
                 'shipping_old_ward_code' => $order->shipping_old_ward_code,
                 'shipping_old_district_code' => $order->shipping_old_district_code,
                 'shipping_old_province_code' => $order->shipping_old_province_code,
-                'store_location' => $order->storeLocation->name ?? 'N/A',
+                'store_location_name' => $order->storeLocation->name ?? 'N/A',
                 'items' => collect($fulfillment->items)->map(function ($fulfillmentItem) {
                     $orderItem = $fulfillmentItem->orderItem;
+                    $productVariant = $orderItem->productVariant;
                     return [
                         'id' => $orderItem->id,
-                        'product_name' => $orderItem->productVariant->product->name,
-                        'variant_name' => $orderItem->productVariant->name,
+                        'product_name' => $productVariant->product->name,
+                        'variant_name' => $productVariant->name,
+                        'sku' => $productVariant->sku,
+                        'price' => $orderItem->price,
                         'quantity' => $fulfillmentItem->quantity,
+                        'product_image' => $productVariant->image_url,
                         'product_variant_id' => $orderItem->product_variant_id,
-                        'requires_imei' => (bool) $orderItem->productVariant->has_serial_tracking,
+                        'requires_imei' => (bool) $productVariant->has_serial_tracking,
                         'imei_input' => '',
                         'imei_scanned' => false,
                         'imei_error' => null
@@ -192,9 +216,9 @@ class PackingStationController extends Controller
             // Thêm địa chỉ đầy đủ
             $packageData['shipping_address_full'] = implode(', ', array_filter([
                 $order->shipping_address_line1,
-                $order->shipping_old_ward_code,
-                $order->shipping_old_district_code,
-                $order->shipping_old_province_code
+                $wardName,
+                $districtName,
+                $provinceName
             ]));
 
             return response()->json([
@@ -408,28 +432,37 @@ class PackingStationController extends Controller
 
             // Cập nhật trạng thái fulfillment thành packed
             $fulfillment->update(['status' => 'packed']);
+            
+            \Log::info('Đã cập nhật trạng thái fulfillment thành packed', [
+                'fulfillment_id' => $fulfillment->id,
+                'tracking_code' => $fulfillment->tracking_code,
+                'order_id' => $order->id
+            ]);
 
-            // Cập nhật trạng thái packages của fulfillment này thành 'packed'
-            $packages = $fulfillment->packages;
-            foreach ($packages as $package) {
-                $package->updateStatus(
-                    \App\Models\Package::STATUS_PACKED,
-                    'Gói hàng đã đóng gói xong',
-                    $user->id
-                );
-            }
-
-            // Kiểm tra xem tất cả fulfillment của đơn hàng đã được packed chưa
-            $allFulfillmentsPacked = $order->fulfillments()->where('status', '!=', 'packed')->count() === 0;
+            // Kiểm tra trạng thái của tất cả fulfillments trong đơn hàng
+            $order->refresh(); // Làm mới dữ liệu từ database
+            $fulfillmentStatuses = $order->fulfillments()->pluck('status');
+            
+            \Log::info('Kiểm tra trạng thái các gói hàng sau khi đóng gói', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code,
+                'fulfillment_statuses' => $fulfillmentStatuses->toArray(),
+                'packed_fulfillment' => $fulfillment->tracking_code
+            ]);
+            
+            // Logic cập nhật trạng thái đơn hàng dựa trên trạng thái các gói hàng:
+            // - Nếu tất cả gói hàng đã packed -> giữ nguyên trạng thái processing
+            // - Đơn hàng chỉ chuyển sang trạng thái khác khi có gói hàng được giao cho đơn vị vận chuyển
+            $allFulfillmentsPacked = $fulfillmentStatuses->every(function($status) {
+                return $status === 'packed';
+            });
             
             if ($allFulfillmentsPacked) {
-                // Cập nhật trạng thái đơn hàng khi tất cả gói hàng đã được đóng gói
-                $order->update([
-                    'status' => 'awaiting_shipment_packed',
-                    'processed_by' => $user->id,
-                    'store_location_id' => $order->store_location_id
+                \Log::info('Tất cả gói hàng đã được đóng gói xong', [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code
                 ]);
-
+                
                 // Kiểm tra và tạo transfer order nếu cần
                 $fulfillmentService = new \App\Services\OrderFulfillmentCheckService();
                 $fulfillmentService->createAutoTransferIfNeeded($order);

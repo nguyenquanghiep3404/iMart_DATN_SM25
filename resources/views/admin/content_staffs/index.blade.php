@@ -14,11 +14,22 @@
             gap: 0.75rem;
         }
 
+        .toast {
+            /* Đảm bảo toast có transition cho hiệu ứng ẩn/hiện */
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.hide {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
         .card {
             border-radius: 0.75rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             background: #ffffff;
-            /* Thay gradient bằng màu trắng hoàn toàn */
             animation: fadeIn 0.5s ease-in-out;
         }
 
@@ -197,7 +208,6 @@
             padding: 1.25rem 1.5rem;
             border-top: 1px solid #e5e7eb;
             background-color: #ffffff;
-            /* Thay #f9fafb bằng #ffffff */
             border-bottom-left-radius: 0.75rem;
             border-bottom-right-radius: 0.75rem;
         }
@@ -209,7 +219,6 @@
         @media (prefers-color-scheme: dark) {
             .card {
                 background: #1f2937;
-                /* Thay gradient bằng màu nền tối cố định */
                 box-shadow: 0 6px 12px -2px rgba(255, 255, 255, 0.05);
             }
 
@@ -260,7 +269,8 @@
 
 @section('content')
     <div class="body-content px-6 md:px-8 py-8">
-        @include('admin.partials.flash_message')
+        {{-- Đảm bảo partial này hiển thị các toast messages --}}
+        @include('admin.partials.flash_message') 
 
         <div class="container mx-auto max-w-screen-2xl">
             <div class="mb-8">
@@ -517,9 +527,9 @@
                         </div>
                         <div>
                             {!! $contentStaffs->appends([
-                                    'search' => request('search'),
-                                    'status' => request('status'),
-                                ])->links() !!}
+                                'search' => request('search'),
+                                'status' => request('status'),
+                            ])->links() !!}
                         </div>
                     </div>
                 @endif
@@ -530,27 +540,30 @@
 
 @push('scripts')
     <script>
+        // Hàm để ẩn hoặc xóa toast
+        const hideToast = (toastElement) => {
+            if (toastElement) {
+                toastElement.classList.add('hide'); // Thêm class 'hide' để kích hoạt transition
+                setTimeout(() => {
+                    toastElement.remove(); // Xóa hoàn toàn khỏi DOM sau khi transition kết thúc
+                }, 350); // Thời gian này phải khớp với transition trong CSS
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             const toasts = document.querySelectorAll('.toast');
 
-            const hideToast = (toastElement) => {
-                if (toastElement) {
-                    toastElement.classList.add('hide');
-                    setTimeout(() => {
-                        toastElement.remove();
-                    }, 350);
-                }
-            };
-
+            // Ẩn toast sau 5 giây nếu không có tương tác
             toasts.forEach(toast => {
                 const autoHideTimeout = setTimeout(() => {
                     hideToast(toast);
                 }, 5000);
 
+                // Xử lý nút đóng toast
                 const closeButton = toast.querySelector('[data-dismiss-target]');
                 if (closeButton) {
                     closeButton.addEventListener('click', function() {
-                        clearTimeout(autoHideTimeout);
+                        clearTimeout(autoHideTimeout); // Xóa timeout tự động ẩn
                         const targetId = this.getAttribute('data-dismiss-target');
                         const toastToHide = document.querySelector(targetId);
                         hideToast(toastToHide);
@@ -558,6 +571,19 @@
                 }
             });
 
+            // Quan trọng: Xử lý khi trang được tải từ back-forward cache (bfcache)
+            window.addEventListener('pageshow', function(event) {
+                // Nếu trang được khôi phục từ bfcache (người dùng nhấn nút Back/Forward)
+                if (event.persisted) {
+                    console.log('Trang được tải từ bfcache. Đang ẩn các toast...');
+                    document.querySelectorAll('.toast').forEach(toast => {
+                        hideToast(toast); // Ẩn ngay lập tức tất cả các toast
+                    });
+                }
+            });
+
+
+            // Logic cho Modal (không thay đổi)
             window.openModal = function(modalId) {
                 const modal = document.getElementById(modalId);
                 if (modal) {

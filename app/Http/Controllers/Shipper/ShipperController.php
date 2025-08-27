@@ -6,30 +6,165 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use Carbon\Carbon;
+
 
 class ShipperController extends Controller
 {
     /**
-     * Trang Dashboard: Hiển thị các đơn cần lấy và đang giao.
+     * Dashboard: Hiển thị các GÓI HÀNG (Fulfillments) được gán cho shipper.
      */
     public function dashboard()
     {
+        // THÊM LẠI DÒNG NÀY: Lấy thông tin shipper đang đăng nhập
         $shipper = Auth::user();
+        $shipperId = $shipper->id;
 
-        // Lấy các đơn hàng được gán cho shipper này để xử lý trong ngày
-        $ordersToPickup = Order::where('shipped_by', $shipper->id)
-            ->where('status', 'awaiting_shipment_assigned')
-            ->orderBy('created_at', 'desc')->get();
+        // Lấy các gói hàng đang chờ shipper lấy
+        $fulfillmentsToPickup = OrderFulfillment::with('order')
+            ->where('shipper_id', $shipperId)
+            ->where('status', 'awaiting_shipment')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        $ordersInTransit = Order::where('shipped_by', $shipper->id)
+        // Lấy các gói hàng đang trên đường vận chuyển
+        $fulfillmentsInTransit = OrderFulfillment::with('order')
+            ->where('shipper_id', $shipperId)
             ->whereIn('status', ['shipped', 'out_for_delivery'])
-            ->orderBy('updated_at', 'desc')->get();
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
-        return view('shipper.dashboard', compact('shipper', 'ordersToPickup', 'ordersInTransit'));
+        // Dữ liệu cho thông báo
+        $unreadNotificationsCount = $shipper->unreadNotifications()->count();
+        $recentNotifications = $shipper->notifications()->take(5)->get()->map(function ($notification) {
+             return [
+                'title' => $notification->data['title'] ?? '',
+                'message' => $notification->data['message'] ?? '',
+                'time' => $notification->created_at->diffForHumans(),
+                'color' => $notification->data['color'] ?? 'gray',
+                'icon' => $notification->data['icon'] ?? 'info',
+             ];
+        });
+        return view('shipper.dashboard', compact('shipper', 'fulfillmentsToPickup', 'fulfillmentsInTransit', 'unreadNotificationsCount', 'recentNotifications'));
     }
 
     /**
+     * Xem chi tiết một ĐƠN HÀNG, nhưng ủy quyền dựa trên GÓI HÀNG.
+     */
+    public function show(Order $order)
+    {
+        // Ủy quyền: Kiểm tra xem shipper có được gán cho BẤT KỲ gói hàng nào của đơn này không.
+        $isAuthorized = $order->fulfillments()->where('shipper_id', Auth::id())->exists();
+
+        if (!$isAuthorized) {
+            abort(403, 'Không có quyền truy cập đơn hàng này.');
+        }
+
+        $order->load('items');
+        return view('shipper.show', compact('order'));
+    }
+
+    /**
+     * Cập nhật trạng thái của một GÓI HÀNG và có thể cả ĐƠN HÀNG.
+     */
+    public function updateStatus(Request $request, Order $order)
+    {
+        // Ủy quyền tương tự như hàm show
+        $isAuthorized = $order->fulfillments()->where('shipper_id', Auth::id())->exists();
+        if (!$isAuthorized) {
+            return back()->with('error', 'Bạn không có quyền thực hiện hành động này.');
+        }
+
+        // Lấy fulfillment cụ thể nếu có fulfillment_id, nếu không thì lấy fulfillment đầu tiên
+        $fulfillmentId = $request->input('fulfillment_id');
+        if ($fulfillmentId) {
+            $fulfillment = $order->fulfillments()->where('shipper_id', Auth::id())->where('id', $fulfillmentId)->first();
+            if (!$fulfillment) {
+                return back()->with('error', 'Không tìm thấy gói hàng được chỉ định hoặc bạn không có quyền cập nhật.');
+            }
+        } else {
+            // Fallback: Lấy gói hàng đầu tiên mà shipper này được gán (để tương thích với code cũ)
+            $fulfillment = $order->fulfillments()->where('shipper_id', Auth::id())->first();
+            if (!$fulfillment) {
+                return back()->with('error', 'Không tìm thấy gói hàng được gán cho bạn.');
+            }
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|string|in:shipped,delivered,failed_delivery',
+            'barcode' => 'nullable|string',
+            'reason' => 'nullable|string|max:255',
+            'notes'  => 'nullable|string|max:500',
+            'fulfillment_id' => 'nullable|integer|exists:order_fulfillments,id'
+        ]);
+        
+        // Logic xác nhận lấy hàng (QUÉT BARCODE)
+        if ($validated['status'] === 'shipped') {
+            if ($fulfillment->status !== 'awaiting_shipment') {
+                return back()->with('error', 'Gói hàng không ở trạng thái chờ lấy hàng.');
+            }
+            if ($request->barcode !== $order->order_code) {
+                 return back()->with('error', 'Mã barcode không khớp với đơn hàng.');
+            }
+            
+            // Cập nhật GÓI HÀNG
+            $fulfillment->status = 'shipped'; // Đã lấy hàng, bắt đầu vận chuyển
+            $fulfillment->shipped_at = now();
+            $fulfillment->save();
+
+            // Cập nhật trạng thái ĐƠN HÀNG dựa trên tất cả fulfillments
+            $order->updateStatusBasedOnFulfillments();
+            
+            return redirect()->route('shipper.dashboard')->with('success', 'Đã xác nhận lấy hàng thành công!');
+        }
+
+        // Logic giao hàng (THÀNH CÔNG / THẤT BẠI)
+        if ($validated['status'] === 'delivered') {
+            $fulfillment->status = 'delivered';
+            $fulfillment->delivered_at = now();
+            
+            // Cập nhật payment status cho COD nếu tất cả gói hàng đã delivered
+            if (strtolower($order->payment_method) === 'cod') {
+                // Kiểm tra xem tất cả fulfillments đã delivered chưa
+                $allDelivered = $order->fulfillments()->where('status', '!=', 'delivered')->count() === 1; // chỉ còn gói hiện tại chưa delivered
+                if ($allDelivered) {
+                    $order->payment_status = 'paid';
+                }
+            }
+        }
+
+        if ($validated['status'] === 'failed_delivery') {
+            $fulfillment->status = 'failed'; // Trạng thái của gói hàng
+            $order->failed_delivery_reason = $validated['reason'] ?? $validated['notes'];
+        }
+        
+        $fulfillment->save();
+        
+        // Cập nhật trạng thái ĐƠN HÀNG dựa trên tất cả fulfillments
+        $order->updateStatusBasedOnFulfillments();
+        
+        // Lưu order sau khi cập nhật trạng thái
+        $order->save();
+
+        return redirect()->route('shipper.dashboard')->with('success', 'Cập nhật trạng thái thành công!');
+    }
+
+
+    /**
+     * Lịch sử: Hiển thị các GÓI HÀNG đã được xử lý.
+     */
+    public function history()
+    {
+        $fulfillmentsHistory = OrderFulfillment::with('order')
+            ->where('shipper_id', Auth::id())
+            ->whereIn('status', ['delivered', 'failed', 'returned', 'cancelled'])
+            ->orderBy('updated_at', 'desc')
+            ->paginate(15);
+
+        return view('shipper.history', compact('fulfillmentsHistory'));
+    }
+/**
      * Trang Thống kê: Tính toán KPI và chuẩn bị dữ liệu cho biểu đồ.
      */
     public function stats(Request $request)
@@ -84,219 +219,72 @@ class ShipperController extends Controller
 
         return view('shipper.stats', compact('shipper', 'stats', 'range', 'chartLabels', 'chartValues'));
     }
-
-    /**
-     * Trang Lịch sử: Lấy tất cả các đơn hàng đã xử lý và phân trang.
-     */
-    public function history()
-    {
-        $shipper = Auth::user();
-        $ordersHistory = Order::where('shipped_by', $shipper->id)
-            ->whereIn('status', ['delivered', 'cancelled', 'returned', 'failed_delivery'])
-            ->orderBy('updated_at', 'desc')
-            ->paginate(15); // Phân trang, mỗi trang 15 đơn
-
-        return view('shipper.history', compact('shipper', 'ordersHistory'));
-    }
-
-    /**
-     * Trang Tài khoản.
-     */
     public function profile()
     {
         return view('shipper.profile', ['shipper' => Auth::user()]);
     }
-
-    /**
-     * Trang chi tiết một đơn hàng.
-     */
-    public function show(Order $order)
-    {
-        if ($order->shipped_by !== Auth::id()) {
-            abort(403, 'Không có quyền truy cập đơn hàng này.');
-        }
-        $order->load('items');
-        return view('shipper.show', compact('order'));
+    public function updateFulfillmentStatus(Request $request, OrderFulfillment $fulfillment)
+{
+    // 1. Ủy quyền: Kiểm tra xem shipper có đúng là người được gán cho gói hàng này không.
+    if ($fulfillment->shipper_id !== Auth::id()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Bạn không có quyền cập nhật gói hàng này.'
+        ], 403); // 403 Forbidden
     }
 
-    /**
-     * Cập nhật trạng thái một đơn hàng.
-     */
-    public function updateStatus(Request $request, Order $order)
-    {
-        if ($order->shipped_by !== Auth::id()) {
-            if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Bạn không có quyền thực hiện hành động này.'], 403);
-            }
-            return back()->with('error', 'Bạn không có quyền thực hiện hành động này.');
-        }
-
-        // Xử lý quét barcode để chuyển từ awaiting_shipment_assigned sang out_for_delivery
-        if ($request->has('barcode') && $request->input('status') === 'shipped') {
-            // Kiểm tra trạng thái đơn hàng phải là awaiting_shipment_assigned
-            if ($order->status !== 'awaiting_shipment_assigned') {
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Đơn hàng không ở trạng thái chờ lấy hàng.'], 400);
-                }
-                return back()->with('error', 'Đơn hàng không ở trạng thái chờ lấy hàng.');
-            }
-
-            // Xác thực mã barcode (có thể kiểm tra với order_code hoặc logic khác)
-            $barcode = $request->input('barcode');
-            
-            // Kiểm tra mã barcode có khớp với order_code không
-            if ($barcode !== $order->order_code) {
-                \Log::info('Barcode validation failed', [
-                    'barcode' => $barcode,
-                    'order_code' => $order->order_code
-                ]);
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Mã barcode không khớp với đơn hàng.'], 400);
-                }
-                return back()->with('error', 'Mã barcode không khớp với đơn hàng.');
-            }
-            
-            \Log::info('Barcode validation passed, updating order status');
-
-            // Cập nhật trạng thái sang out_for_delivery (đang giao hàng)
-            $order->status = 'out_for_delivery';
-            $order->save();
-            
-            // Cập nhật trạng thái packages sang out_for_delivery
-            $this->updatePackageStatusBasedOnOrderStatus($order);
-
-            if ($request->expectsJson()) {
-                return response()->json(['success' => true, 'message' => 'Đã xác nhận lấy hàng và bắt đầu giao hàng!']);
-            }
-            return redirect()->route('shipper.dashboard')->with('success', 'Đã xác nhận lấy hàng và bắt đầu giao hàng!');
-        }
-
-        // Xử lý quét QR code để chuyển từ out_for_delivery sang delivered
-        if ($request->has('qr_code') && $request->input('status') === 'delivered') {
-            // Kiểm tra trạng thái đơn hàng phải là out_for_delivery
-            if ($order->status !== 'out_for_delivery') {
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Đơn hàng không ở trạng thái đang giao hàng.'], 400);
-                }
-                return back()->with('error', 'Đơn hàng không ở trạng thái đang giao hàng.');
-            }
-
-            // Xác thực mã QR code (có thể kiểm tra với order_code hoặc logic khác)
-            $qrCode = $request->input('qr_code');
-            
-            // Kiểm tra mã QR code có khớp với order_code không
-            if ($qrCode !== $order->order_code) {
-                \Log::info('QR code validation failed', [
-                    'qr_code' => $qrCode,
-                    'order_code' => $order->order_code
-                ]);
-                if ($request->expectsJson()) {
-                    return response()->json(['success' => false, 'message' => 'Mã QR code không khớp với đơn hàng.'], 400);
-                }
-                return back()->with('error', 'Mã QR code không khớp với đơn hàng.');
-            }
-            
-            \Log::info('QR code validation passed, updating order to delivered');
-
-            // Cập nhật trạng thái sang delivered (giao thành công)
-            $order->status = 'delivered';
-            $order->delivered_at = now();
-            
-            // Kiểm tra nếu phương thức thanh toán là COD thì cập nhật trạng thái thanh toán là 'paid'
-            if (strtolower($order->payment_method) === 'cod') {
-                $order->payment_status = 'paid';
-            }
-            
-            $order->save();
-            
-            // Cập nhật trạng thái packages sang delivered
-            $this->updatePackageStatusBasedOnOrderStatus($order);
-
-            if ($request->expectsJson()) {
-                return response()->json(['success' => true, 'message' => 'Đã xác nhận giao hàng thành công!']);
-            }
-            return redirect()->route('shipper.dashboard')->with('success', 'Đã xác nhận giao hàng thành công!');
-        }
-
-        // Logic cũ cho các trạng thái khác
-        $validated = $request->validate([
-            'status' => 'required|string|in:out_for_delivery,delivered,failed_delivery',
-            'reason' => 'nullable|string|max:255',
-            'notes'  => 'nullable|string|max:500' // Ghi chú thêm
-        ]);
-
-        $order->status = $validated['status'];
-
-        if ($validated['status'] === 'delivered') {
-            $order->delivered_at = now();
-            // Kiểm tra nếu phương thức thanh toán là COD thì cập nhật trạng thái thanh toán là 'paid'.
-            if (strtolower($order->payment_method) === 'cod') {
-                $order->payment_status = 'paid';
-            }
-        }
-
-        if ($validated['status'] === 'failed_delivery') {
-            $reason = $validated['reason'];
-            if ($reason === 'other' && !empty($validated['notes'])) {
-                $reason = $validated['notes'];
-            }
-            $order->failed_delivery_reason = $reason;
-            $order->delivered_at = null;
-        }
-
-        $order->save();
-        
-        // Cập nhật trạng thái packages cho các trạng thái khác
-        $this->updatePackageStatusBasedOnOrderStatus($order);
-
-        return redirect()->route('shipper.dashboard')->with('success', 'Cập nhật trạng thái đơn hàng ' . $order->order_code . ' thành công!');
+    // 2. Kiểm tra trạng thái hiện tại: Chỉ cho phép xác nhận khi gói hàng đang "chờ lấy hàng".
+    if ($fulfillment->status !== 'awaiting_shipment') {
+        return response()->json([
+            'success' => false,
+            'message' => 'Gói hàng này đã được lấy hoặc không ở trạng thái chờ lấy hàng.'
+        ], 422); // 422 Unprocessable Entity
     }
+
+    // Validate dữ liệu barcode gửi lên
+    $validated = $request->validate([
+        'barcode' => 'required|string',
+    ]);
+
+    if ($validated['barcode'] !== $fulfillment->tracking_code) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Mã vận đơn không khớp. Vui lòng thử lại.'
+        ], 422);
+    }
+
+
+    // 4. Cập nhật trạng thái GÓI HÀNG (Fulfillment) thành "shipped".
+    $fulfillment->status = 'shipped'; // Đã lấy hàng, bắt đầu vận chuyển
+    $fulfillment->shipped_at = now();
+    $fulfillment->save();
+
+    // 5. Cập nhật trạng thái ĐƠN HÀNG dựa trên tất cả fulfillments
+    $order = $fulfillment->order;
+    $order->updateStatusBasedOnFulfillments();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Đã xác nhận lấy hàng thành công!'
+    ]);
+}
+public function showFulfillment(OrderFulfillment $fulfillment)
+{
+    // 1. Ủy quyền: Đảm bảo shipper này được gán cho gói hàng
+    if ($fulfillment->shipper_id !== Auth::id()) {
+        abort(403, 'Bạn không có quyền truy cập gói hàng này.');
+    }
+
+    // 2. Tải các quan hệ cần thiết để hiển thị
+    // - order: thông tin chung của đơn hàng (người nhận, địa chỉ...)
+    // - items.orderItem: các sản phẩm cụ thể trong gói hàng này
+    $fulfillment->load(['order', 'items.orderItem']);
     
-    /**
-     * Cập nhật trạng thái packages dựa trên trạng thái đơn hàng
-     */
-    private function updatePackageStatusBasedOnOrderStatus(Order $order)
-    {
-        try {
-            // Lấy tất cả packages của đơn hàng thông qua fulfillments
-            $packages = \App\Models\Package::whereHas('fulfillment', function($query) use ($order) {
-                $query->where('order_id', $order->id);
-            })->get();
-            
-            // Mapping trạng thái order sang package status
-            $statusMapping = [
-                'pending_confirmation' => \App\Models\Package::STATUS_PENDING_CONFIRMATION,
-                'processing' => \App\Models\Package::STATUS_PROCESSING,
-                'out_for_delivery' => \App\Models\Package::STATUS_OUT_FOR_DELIVERY,
-                'delivered' => \App\Models\Package::STATUS_DELIVERED,
-                'cancelled' => \App\Models\Package::STATUS_CANCELLED,
-                'failed_delivery' => \App\Models\Package::STATUS_FAILED_DELIVERY,
-                'returned' => \App\Models\Package::STATUS_RETURNED,
-            ];
-            
-            $newPackageStatus = $statusMapping[$order->status] ?? null;
-            
-            if ($newPackageStatus) {
-                foreach ($packages as $package) {
-                    $package->updateStatus(
-                        $newPackageStatus,
-                        "Cập nhật từ shipper khi đơn hàng chuyển sang {$order->status}",
-                        Auth::id()
-                    );
-                }
-                
-                \Log::info('Package statuses updated successfully', [
-                    'order_id' => $order->id,
-                    'order_status' => $order->status,
-                    'package_status' => $newPackageStatus,
-                    'packages_count' => $packages->count()
-                ]);
-            }
-        } catch (\Exception $e) {
-            \Log::error('Error updating package statuses from shipper', [
-                'order_id' => $order->id,
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
+    // 3. Trả về view mới (hoặc view cũ đã được sửa)
+    return view('shipper.show_fulfillment', compact('fulfillment'));
+}
+
+
+
+
 }

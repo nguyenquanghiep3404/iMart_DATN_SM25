@@ -27,9 +27,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Requests\PaymentRequest;
+use App\Models\FlashSaleProduct;
+
 
 use App\Models\OrderFulfillment;
-use App\Services\AutoStockTransferService;
+// use App\Services\AutoStockTransferService; // Đã chuyển logic sang OrderObserver
 use App\Models\OrderFulfillmentItem;
 use App\Services\FulfillmentService;
 use App\Services\InventoryCommitmentService;
@@ -68,13 +70,13 @@ class PaymentController extends Controller
             $messages = collect($insufficientStock)->map(function($item){
                 if ($item['available'] == 0) {
                     // Hết hàng
-                    return "Sản phẩm {$item['name']}" 
-                        . (!empty($item['variant']) ? " ({$item['variant']})" : "") 
+                    return "Sản phẩm {$item['name']}"
+                        . (!empty($item['variant']) ? " ({$item['variant']})" : "")
                         . " hiện đã hết hàng, vui lòng xóa sản phẩm khỏi giỏ hàng!";
                 } else {
                     // Còn hàng nhưng ít hơn số lượng đặt
-                    return "Sản phẩm {$item['name']}" 
-                        . (!empty($item['variant']) ? " ({$item['variant']})" : "") 
+                    return "Sản phẩm {$item['name']}"
+                        . (!empty($item['variant']) ? " ({$item['variant']})" : "")
                         . " hiện chỉ còn {$item['available']} cái, bạn đã chọn {$item['requested']} cái. Vui lòng giảm số lượng xuống {$item['available']} cái.";
                 }
             })->implode('<br>');
@@ -100,6 +102,7 @@ class PaymentController extends Controller
         $user = auth()->user();
 
         $availableCoupons = Coupon::where('status', 'active')
+            ->where('is_public', 1)
             ->where(function ($query) {
                 $query->whereNull('start_date')
                     ->orWhere('start_date', '<=', now());
@@ -147,13 +150,13 @@ class PaymentController extends Controller
         $discount = $appliedCoupon['discount'] ?? 0;
         $voucherCode = $appliedCoupon['code'] ?? null;
         $total = max(0, $subtotal - $discount - $pointsDiscount);
-        
+
         // Lấy địa chỉ của user nếu đã đăng nhập
         $userAddresses = collect();
         if ($user) {
             $userAddresses = $user->addresses()->with(['province', 'district', 'ward', 'provinceOld', 'districtOld', 'wardOld'])->orderBy('is_default_shipping', 'desc')->get();
         }
-        
+
         return view('users.payments.information', array_merge($cartData, [
             'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
             'baseLength' => $maxLength > 0 ? $maxLength : 20,
@@ -191,7 +194,7 @@ class PaymentController extends Controller
             return ($item->productVariant->dimensions_height ?? 0) * $item->quantity;
         });
 
-        $availableCoupons = Coupon::where('status', 'active')->get();
+        $availableCoupons = Coupon::where('status', 'active')->where('is_public', 1)->get();
 
         // 4. Trả về view với toàn bộ dữ liệu chính xác
         return view('users.payments.information', [
@@ -215,7 +218,7 @@ class PaymentController extends Controller
     {
         // Debug: Log request data
         Log::info('PaymentRequest Data:', $request->all());
-        
+
         $cartData = $this->getCartData();
         if ($cartData['items']->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Giỏ hàng đang trống.'], 400);
@@ -233,7 +236,30 @@ class PaymentController extends Controller
     {
         try {
             $order = DB::transaction(function () use ($request, $cartData) {
-                return $this->createOrderAndItems($request, $cartData);
+                // Tạo đơn hàng và các mục liên quan
+                $order = $this->createOrderAndItems($request, $cartData);
+
+                // Xử lý trừ điểm thưởng cho thanh toán online
+                $user = Auth::user();
+                $pointsApplied = session('points_applied');
+                if ($user && $pointsApplied) {
+                    $pointsUsed = $pointsApplied['points'] ?? 0;
+                    if ($pointsUsed > 0) {
+                        if ($pointsUsed > $user->loyalty_points_balance) {
+                            throw new \Exception('Số dư điểm không đủ để thực hiện giao dịch này.');
+                        }
+                        $user->decrement('loyalty_points_balance', $pointsUsed);
+                        LoyaltyPointLog::create([
+                            'user_id' => $user->id,
+                            'order_id' => $order->id,
+                            'points' => -$pointsUsed,
+                            'type' => 'spend',
+                            'description' => "Sử dụng " . number_format($pointsUsed) . " điểm cho đơn hàng #{$order->order_code}",
+                        ]);
+                    }
+                }
+
+                return $order;
             });
 
             // Sau khi tạo đơn hàng thành công, gọi phương thức thanh toán tương ứng
@@ -244,8 +270,6 @@ class PaymentController extends Controller
                 return $this->createMomoPayment($order);
             }
             if ($request->payment_method === 'bank_transfer_qr') {
-
-
                 return response()->json([
                     'success' => true,
                     'redirect_url' => route('payments.bank_transfer_qr', ['order' => $order->id])
@@ -283,19 +307,15 @@ class PaymentController extends Controller
                     }
                 // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService.commitInventoryForOrder()
                 // để tránh trừ kho 2 lần. COD orders sẽ có inventory được commit ngay khi tạo đơn hàng.
-
+                // Tăng quantity_sold cho các sản phẩm Flash Sale
+                $this->incrementFlashSaleQuantitySold($order);
                 return $order;
             });
 
 
 
-            // Kích hoạt chuyển kho tự động
-            $autoTransferService = new AutoStockTransferService();
-            $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-            
-            if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng: ' . $order->order_code, $transferResult['transfers_created']);
-            }
+            // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+            // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
 
             // Xóa giỏ hàng sau khi đặt hàng thành công
             $this->clearPurchaseSession();
@@ -355,7 +375,8 @@ class PaymentController extends Controller
             'payment_method' => $request->payment_method,
             'payment_status' => Order::PAYMENT_PENDING,
             'status' => Order::STATUS_PENDING_CONFIRMATION,
-            'shipping_method' => $request->delivery_method === 'delivery' ? 'Giao hàng tận nơi' : 'Nhận tại cửa hàng',
+            'delivery_method' => $request->delivery_method,
+            'shipping_method' => null,
             'notes_from_customer' => $request->notes,
             'desired_delivery_date' => $deliveryInfo['date'],
             'desired_delivery_time_slot' => $deliveryInfo['time_slot'],
@@ -386,7 +407,7 @@ class PaymentController extends Controller
 
         // MỚI: Sử dụng FulfillmentService để tạo Order Fulfillments
         $fulfillmentService = new FulfillmentService();
-        
+
         if ($request->delivery_method === 'delivery') {
             $shipments = $request->input('shipments', []);
             // Nếu shipments rỗng hoặc không đầy đủ, sử dụng createFulfillmentsForOrder
@@ -430,7 +451,7 @@ class PaymentController extends Controller
     private function formatDeliveryDateTime($shippingMethod, $deliveryDate, $deliveryTimeSlot, $pickupDate, $pickupTimeSlot, $deliveryMethod): array
     {
         $deliveryInfo = [];
-        
+
         if ($deliveryMethod === 'pickup') {
             $deliveryInfo['date'] = $pickupDate;
             $deliveryInfo['time_slot'] = $pickupTimeSlot;
@@ -438,7 +459,7 @@ class PaymentController extends Controller
             $deliveryInfo['date'] = $deliveryDate;
             $deliveryInfo['time_slot'] = $deliveryTimeSlot;
         }
-        
+
         return $deliveryInfo;
     }
 
@@ -448,7 +469,7 @@ class PaymentController extends Controller
     private function calculatePickupShipments($cartItems, $pickupStoreId)
     {
         $shipmentController = new \App\Http\Controllers\Api\ShipmentController();
-        
+
         // Tạo request giả để gọi calculatePickupShipments
         $request = new \Illuminate\Http\Request();
         $request->merge([
@@ -459,17 +480,17 @@ class PaymentController extends Controller
                     'price' => $item->price,
                     'name' => $item->productVariant->product->name,
                     'variant' => $item->productVariant->attributeValues->pluck('value')->join(', '),
-                    'image' => $item->productVariant->primaryImage ? 
-                        \Storage::url($item->productVariant->primaryImage->path) : 
+                    'image' => $item->productVariant->primaryImage ?
+                        \Storage::url($item->productVariant->primaryImage->path) :
                         asset('images/placeholder.jpg')
                 ];
             })->toArray(),
             'pickup_store_id' => $pickupStoreId
         ]);
-        
+
         $response = $shipmentController->calculatePickupShipments($request);
         $responseData = $response->getData(true);
-        
+
         if ($responseData['success']) {
             // Chuyển đổi format để tương thích với FulfillmentService
             return collect($responseData['shipments'])->map(function($shipment) {
@@ -480,7 +501,7 @@ class PaymentController extends Controller
                 ];
             })->toArray();
         }
-        
+
         // Fallback: tạo shipment đơn giản cho pickup store
         return [[
             'store_location_id' => $pickupStoreId,
@@ -501,14 +522,14 @@ class PaymentController extends Controller
         // Kiểm tra xem tất cả cart items có store_location_id khớp với shipments không
         $shipmentStoreIds = collect($shipments)->pluck('store_location_id')->toArray();
         $cartItemStoreIds = $cartItems->pluck('store_location_id')->unique()->toArray();
-        
+
         // Nếu có cart items không có store_location_id trong shipments, data không đầy đủ
         foreach ($cartItemStoreIds as $storeId) {
             if (!in_array($storeId, $shipmentStoreIds)) {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -629,24 +650,19 @@ class PaymentController extends Controller
                         $order->payment_status = Order::PAYMENT_PAID;
                         $order->paid_at = now();
                         $order->save();
-                        
-                        // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
-                        // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
-                        // thông qua InventoryCommitmentService.fulfillInventoryForOrder()
+
+                        // REMOVED: commitInventoryForOrder đã được gọi trong createOrderAndItems
+                        // Không cần gọi lại để tránh tạm giữ hàng tồn kho 2 lần
+                        Log::info("Đơn hàng {$order->order_code} đã thanh toán VNPay thành công");
                     });
-                    
-                    // Kích hoạt chuyển kho tự động
-                    $autoTransferService = new AutoStockTransferService();
-                    $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-                    
-                    if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                        Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng VNPay: ' . $order->order_code, $transferResult['transfers_created']);
-                    }
-                    
+
+                    // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+                    // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
+
                     $this->clearPurchaseSession();
                 }
                 return redirect()->route('payments.success', ['order_id' => $order->id])->with('success', 'Thanh toán thành công!');
-            } 
+            }
  else {
                     // Thanh toán thất bại, có thể xóa đơn hàng hoặc cập nhật trạng thái thất bại
                     $order->status = Order::STATUS_CANCELLED;
@@ -697,7 +713,7 @@ class PaymentController extends Controller
 
                         // Lấy store_location_id từ order
                         $storeLocationId = $order->store_location_id;
-                        
+
                         // Nếu không có store_location_id (giao hàng), tự động tìm kho có hàng
                         if (!$storeLocationId) {
                             // Tìm kho có hàng cho item đầu tiên để xác định store_location_id
@@ -754,7 +770,7 @@ class PaymentController extends Controller
         $partnerCode = config('momo.partner_code');
         $accessKey = config('momo.access_key');
         $secretKey = config('momo.secret_key');
-        
+
         $orderInfo = "Thanh toan cho don hang #" . $orderCode;
         $amount = (string)(int)$grandTotal;
         $orderId = $orderCode . "_" . time(); // Đảm bảo orderId là duy nhất cho mỗi giao dịch
@@ -855,15 +871,18 @@ class PaymentController extends Controller
 
         if ($request->resultCode == 0) { // Thành công
             if ($order->payment_status == Order::PAYMENT_PENDING) {
-                $order->payment_status = Order::PAYMENT_PAID;
-                $order->save();
-                
-                // Lấy store_location_id từ order
+                DB::transaction(function() use ($order) {
+                    $order->payment_status = Order::PAYMENT_PAID;
+                    $order->save();
+
+                    // REMOVED: commitInventoryForOrder đã được gọi trong createOrderAndItems
+                    // Không cần gọi lại để tránh tạm giữ hàng tồn kho 2 lần
+                    Log::info("Đơn hàng {$order->order_code} đã thanh toán MoMo thành công");
+                });
+
+                // Chỉ gán store_location_id tự động nếu là đơn pickup và thiếu store
                 $storeLocationId = $order->store_location_id;
-                
-                // Nếu không có store_location_id (giao hàng), tự động tìm kho có hàng
-                if (!$storeLocationId) {
-                    // Tìm kho có hàng cho item đầu tiên để xác định store_location_id
+                if ($order->delivery_method === 'pickup' && !$storeLocationId) {
                     $firstItem = $order->items->first();
                     if ($firstItem && $firstItem->product_variant_id) {
                         $firstVariant = ProductVariant::find($firstItem->product_variant_id);
@@ -876,18 +895,10 @@ class PaymentController extends Controller
                         }
                     }
                 }
-                
-                // REMOVED: Logic trừ kho đã được xử lý bởi InventoryCommitmentService
-                // Khi thanh toán thành công, inventory đã được commit sẽ được fulfill tự động
-                
-                // Kích hoạt chuyển kho tự động
-                $autoTransferService = new AutoStockTransferService();
-                $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-                
-                if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                    Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng MoMo: ' . $order->order_code, $transferResult['transfers_created']);
-                }
-                
+
+                // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+                // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
+
                 $this->clearPurchaseSession();
             }
             return redirect()->route('payments.success', ['order_id' => $order->id])->with('success', 'Thanh toán thành công!');
@@ -940,13 +951,10 @@ class PaymentController extends Controller
                 $order->payment_status = Order::PAYMENT_PAID;
                 $order->status = Order::STATUS_PROCESSING;
                 $order->save();
-                
-                // Lấy store_location_id từ order
+
+                // Chỉ gán store_location_id tự động nếu là đơn pickup và thiếu store
                 $storeLocationId = $order->store_location_id;
-                
-                // Nếu không có store_location_id (giao hàng), tự động tìm kho có hàng
-                if (!$storeLocationId) {
-                    // Tìm kho có hàng cho item đầu tiên để xác định store_location_id
+                if ($order->delivery_method === 'pickup' && !$storeLocationId) {
                     $firstItem = $order->items->first();
                     if ($firstItem && $firstItem->product_variant_id) {
                         $firstVariant = ProductVariant::find($firstItem->product_variant_id);
@@ -959,7 +967,7 @@ class PaymentController extends Controller
                         }
                     }
                 }
-                
+
                 // Inventory deduction is now handled by InventoryCommitmentService to prevent double deductions
                 // The commitInventoryForOrder method handles both inventory commitment and fulfillment creation
             }
@@ -1023,14 +1031,61 @@ class PaymentController extends Controller
             }
         }
         $totalPointsEarned = 0;
+        $relatedProducts = collect();
         if ($order) {
             // Tính tổng điểm thưởng từ tất cả các sản phẩm trong đơn hàng
             $totalPointsEarned = $order->items->sum(function ($item) {
                 // Lấy điểm từ productVariant và nhân với số lượng
                 return ($item->productVariant->points_awarded_on_purchase ?? 0) * $item->quantity;
             });
+        // Lấy sản phẩm liên quan dựa trên đơn hàng vừa đặt
+            $categoryIds = $order->items->pluck('productVariant.product.category_id')->unique()->filter();
+            $purchasedProductIds = $order->items->pluck('productVariant.product.id')->unique();
+            if ($categoryIds->isNotEmpty()) {
+                $relatedProducts = Product::with([
+                    'coverImage',
+                    'variants' => function ($query) {
+                        $query->where('is_default', true)->orWhere('status', 'active');
+                    },
+                    'variants.primaryImage'
+                ])
+                    ->withCount(['reviews as reviews_count' => function ($query) {
+                        $query->where('reviews.status', 'approved');
+                    }])
+                    ->withAvg(['reviews as average_rating' => function ($query) {
+                        $query->where('reviews.status', 'approved');
+                    }], 'rating')
+                    ->whereIn('category_id', $categoryIds)
+                    ->whereNotIn('id', $purchasedProductIds)
+                    ->where('products.status', 'published')
+                    ->inRandomOrder()
+                    ->limit(4)
+                    ->get()
+                    ->map(function ($product) {
+                        // Lấy biến thể mặc định hoặc biến thể đầu tiên
+                        $variant = $product->variants->firstWhere('is_default', true) ?? $product->variants->first();
+                        if ($variant) {
+                            // Tính phần trăm giảm giá
+                            $discountPercent = 0;
+                            if ($variant->sale_price && $variant->price > $variant->sale_price) {
+                                $discountPercent = round(100 - ($variant->sale_price / $variant->price) * 100);
+                            }
+                            // Thêm thông tin vào product
+                            $product->default_variant = $variant;
+                            $product->discount_percent = $discountPercent;
+                            $product->display_price = $variant->sale_price ?: $variant->price;
+                            $product->original_price = $variant->price;
+                            $product->image_url = $variant->primaryImage ?
+                                asset('storage/' . $variant->primaryImage->path) : ($product->coverImage ? asset('storage/' . $product->coverImage->path) : null);
+                        }
+                        return $product;
+                    })
+                    ->filter(function ($product) {
+                        return $product->default_variant !== null;
+                    });
+            }
         }
-        return view('users.payments.success', compact('order', 'totalPointsEarned'));
+        return view('users.payments.success', compact('order', 'totalPointsEarned', 'relatedProducts'));
     }
     /**
      * Lấy dữ liệu giỏ hàng
@@ -1041,7 +1096,7 @@ class PaymentController extends Controller
     {
         $user = auth()->user();
         $items = collect();
-        // 1. Lấy danh sách sản phẩm 
+        // 1. Lấy danh sách sản phẩm
         if ($user && $user->cart) {
             $items = $user->cart->items()
                 ->with('cartable.product.coverImage', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
@@ -1283,6 +1338,7 @@ class PaymentController extends Controller
         $user = auth()->user();
 
         $availableCoupons = Coupon::where('status', 'active')
+            ->where('is_public', 1)
             ->where(function ($query) {
                 $query->whereNull('start_date')
                     ->orWhere('start_date', '<=', now());
@@ -1318,14 +1374,14 @@ class PaymentController extends Controller
         $buyNowData['is_buy_now'] = true;
         $buyNowData['availableCoupons'] = $availableCoupons;
         $buyNowData['subtotal'] = $subtotal;
-        
+
         // Lấy địa chỉ người dùng nếu đã đăng nhập
         $userAddresses = collect();
         if (auth()->check()) {
             $userAddresses = auth()->user()->addresses()->with(['province', 'district', 'ward', 'provinceOld', 'districtOld', 'wardOld'])->get();
         }
         $buyNowData['userAddresses'] = $userAddresses;
-        
+
         // Thêm flag để template biết đây là Buy Now
         $buyNowData['is_buy_now'] = true;
         return view('users.payments.information', $buyNowData);
@@ -1333,19 +1389,19 @@ class PaymentController extends Controller
 
     /**
      * Xử lý đặt hàng Buy Now
-     * 
+     *
      * LUỒNG HOẠT ĐỘNG MỚI:
      * 1. Kiểm tra tồn kho tại kho được chỉ định (pickup) hoặc tự động tìm kho (delivery)
      * 2. TẠM GIỮ HÀNG (commitStock) thay vì trừ thẳng tồn kho
      * 3. Tạo đơn hàng với trạng thái pending
      * 4. Kích hoạt chuyển kho tự động nếu cần thiết
      * 5. Tự động xử lý phiếu chuyển kho nếu có thể (cùng tỉnh/thành)
-     * 
+     *
      * QUẢN LÝ TỒN KHO:
      * - quantity_committed: Số lượng đã tạm giữ cho đơn hàng
      * - quantity: Tồn kho thực tế
      * - available_quantity = quantity - quantity_committed
-     * 
+     *
      * XỬ LÝ SAU ĐẶT HÀNG:
      * - Khi đơn hàng SHIPPED/OUT_FOR_DELIVERY: fulfillStock() - chuyển từ committed sang xuất kho thực
      * - Khi đơn hàng CANCELLED/RETURNED: releaseStock() - thả hàng đã tạm giữ
@@ -1366,7 +1422,11 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+                // Tính tổng phí ship từ mảng shipments (Buy Now)
+                $shippingFee = 0;
+                if ($request->delivery_method === 'delivery') {
+                    $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
+                }
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1392,7 +1452,8 @@ class PaymentController extends Controller
                     'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'],
                     'payment_method' => 'vnpay',
                     'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_method' => $request->shipping_method,
+                    'delivery_method' => $request->delivery_method,
+                    'shipping_method' => null,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
                     'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
@@ -1420,9 +1481,35 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
-                if (Auth::check() && $request->save_address && !$request->address_id) {
-                    $this->saveNewAddress($request);
+                // Tạm giữ hàng tồn kho
+                $storeLocationId = $customerInfo['store_location_id'] ?? $this->findAvailableStore($variant, $item->quantity);
+                if ($storeLocationId) {
+                    try {
+                        $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
+
+                        // Tạo fulfillment cho đơn hàng
+                        $fulfillmentService = app(FulfillmentService::class);
+                        $fulfillmentService->createFulfillmentsForOrder($order);
+                        Log::info("Đã tạo fulfillment cho đơn hàng mua ngay VNPay {$order->order_code}");
+                    } catch (\Exception $e) {
+                        Log::error("Lỗi khi tạo fulfillment cho đơn hàng mua ngay VNPay {$order->order_code}: " . $e->getMessage());
+                    }
                 }
+
+                if (Auth::check() && $request->save_address && !$request->address_id) {
+            Log::info('Saving new address for user: ' . Auth::id(), [
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id,
+                'full_name' => $request->full_name
+            ]);
+            $this->saveNewAddress($request);
+        } else {
+            Log::info('Not saving address', [
+                'is_logged_in' => Auth::check(),
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id
+            ]);
+        }
 
                 DB::commit();
                 return $this->createVnpayPayment($order, $request);
@@ -1438,7 +1525,11 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+                // Tính tổng phí ship từ mảng shipments (Buy Now)
+                $shippingFee = 0;
+                if ($request->delivery_method === 'delivery') {
+                    $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
+                }
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1464,7 +1555,8 @@ class PaymentController extends Controller
                     'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'],
                     'payment_method' => 'momo',
                     'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_method' => $request->shipping_method,
+                    'delivery_method' => $request->delivery_method,
+                    'shipping_method' => null,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
                     'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
@@ -1492,11 +1584,47 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
-                if (Auth::check() && $request->save_address && !$request->address_id) {
-                    $this->saveNewAddress($request);
+                // Tạm giữ hàng thay vì trừ thẳng tồn kho
+                $storeLocationId = $customerInfo['store_location_id'] ?? $this->findAvailableStore($variant, $item->quantity);
+                if ($storeLocationId) {
+                    try {
+                        $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
+
+                        // Tạo fulfillment cho đơn hàng
+                        $fulfillmentService = app(FulfillmentService::class);
+                        $fulfillmentService->createFulfillmentsForOrder($order);
+                        Log::info("Đã tạo fulfillment cho đơn hàng mua ngay MoMo {$order->order_code}");
+                    } catch (\Exception $e) {
+                        Log::error("Lỗi khi tạo fulfillment cho đơn hàng mua ngay MoMo {$order->order_code}: " . $e->getMessage());
+                    }
                 }
 
-                DB::commit();
+                // Tạo fulfillment cho đơn hàng Buy Now
+                $fulfillmentService = new FulfillmentService();
+                try {
+                    $fulfillmentService->createFulfillmentsForOrder($order);
+                    Log::info("Đã tạo fulfillment cho đơn hàng Buy Now (MoMo): {$order->order_code}");
+                } catch (\Exception $e) {
+                    Log::error("Lỗi khi tạo fulfillment cho đơn hàng Buy Now (MoMo) {$order->order_code}: {$e->getMessage()}");
+                    // Không throw exception để không làm fail toàn bộ đơn hàng
+                }
+
+                if (Auth::check() && $request->save_address && !$request->address_id) {
+            Log::info('Saving new address for user (COD): ' . Auth::id(), [
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id,
+                'full_name' => $request->full_name
+            ]);
+            $this->saveNewAddress($request);
+        } else {
+            Log::info('Not saving address (COD)', [
+                'is_logged_in' => Auth::check(),
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id
+            ]);
+        }
+
+        DB::commit();
                 return $this->createMomoPayment($order);
             } catch (Exception $e) {
                 DB::rollBack();
@@ -1508,7 +1636,11 @@ class PaymentController extends Controller
                 DB::beginTransaction();
 
                 $orderCode = 'DH-' . strtoupper(Str::random(10));
-                $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+                // Tính tổng phí ship từ mảng shipments (Buy Now)
+                $shippingFee = 0;
+                if ($request->delivery_method === 'delivery') {
+                    $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
+                }
                 $customerInfo = $this->prepareCustomerInfo($request);
                 $addressData = $this->prepareAddressData($request);
                 $deliveryInfo = $this->formatDeliveryDateTime($request->shipping_method, $request->delivery_date, $request->delivery_time_slot, $request->pickup_date, $request->pickup_time_slot, $request->delivery_method);
@@ -1534,7 +1666,8 @@ class PaymentController extends Controller
                     'grand_total' => $buyNowData['subtotal'] + $shippingFee - $buyNowData['discount'], // SỬA: Dùng buyNowData
                     'payment_method' => 'bank_transfer_qr',
                     'payment_status' => Order::PAYMENT_PENDING,
-                    'shipping_method' => $request->shipping_method,
+                    'delivery_method' => $request->delivery_method,
+                    'shipping_method' => null,
                     'status' => Order::STATUS_PENDING_CONFIRMATION,
                     'confirmation_token' => Str::random(40),
                     'notes_from_customer' => $request->notes,
@@ -1562,13 +1695,36 @@ class PaymentController extends Controller
                     'image_url' => $variant && $variant->primaryImage && file_exists(storage_path('app/public/' . $variant->primaryImage->path)) ? Storage::url($variant->primaryImage->path) : ($variant && $variant->product && $variant->product->coverImage && file_exists(storage_path('app/public/' . $variant->product->coverImage->path)) ? Storage::url($variant->product->coverImage->path) : asset('images/placeholder.jpg')),
                 ]);
 
+                // Tạm giữ hàng thay vì trừ thẳng tồn kho
+                $storeLocationId = $request->delivery_method === 'pickup' ? $request->store_location_id : null;
+                $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
 
-
-                if (Auth::check() && $request->save_address && !$request->address_id) {
-                    $this->saveNewAddress($request);
+                // Tạo fulfillment cho đơn hàng Buy Now
+                $fulfillmentService = new FulfillmentService();
+                try {
+                    $fulfillmentService->createFulfillmentsForOrder($order);
+                    Log::info("Đã tạo fulfillment cho đơn hàng Buy Now (bank_transfer_qr): {$order->order_code}");
+                } catch (\Exception $e) {
+                    Log::error("Lỗi khi tạo fulfillment cho đơn hàng Buy Now (bank_transfer_qr) {$order->order_code}: {$e->getMessage()}");
+                    // Không throw exception để không làm fail toàn bộ đơn hàng
                 }
 
-                // Xóa session "Mua Ngay"
+                if (Auth::check() && $request->save_address && !$request->address_id) {
+            Log::info('Saving new address for user (Buy Now): ' . Auth::id(), [
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id,
+                'full_name' => $request->full_name
+            ]);
+            $this->saveNewAddress($request);
+        } else {
+            Log::info('Not saving address (Buy Now)', [
+                'is_logged_in' => Auth::check(),
+                'save_address' => $request->save_address,
+                'address_id' => $request->address_id
+            ]);
+        }
+
+        // Xóa session "Mua Ngay"
                 $this->clearBuyNowSession();
                 DB::commit();
 
@@ -1602,7 +1758,11 @@ class PaymentController extends Controller
             }
 
             // --- TÍNH TOÁN LẠI GIÁ TRỊ CUỐI CÙNG ---
-            $shippingFee = $request->has('shipping_fee') ? (int) $request->shipping_fee : 0;
+            // LẤY PHÍ SHIP TỪ MẢNG SHIPMENTS
+            $shippingFee = 0;
+            if ($request->delivery_method === 'delivery') {
+                $shippingFee = collect($request->input('shipments', []))->sum('shipping_fee');
+            }
             $totalDiscount = $buyNowData['discount'] + $discountFromPoints;
             $grandTotal = $buyNowData['subtotal'] + $shippingFee - $totalDiscount;
 
@@ -1652,7 +1812,8 @@ class PaymentController extends Controller
                 'grand_total' => $grandTotal,
                 'payment_method' => $request->payment_method,
                 'payment_status' => $request->payment_method === 'cod' ? Order::PAYMENT_PENDING : Order::PAYMENT_PENDING,
-                'shipping_method' => $request->shipping_method,
+                'delivery_method' => $request->delivery_method,
+                'shipping_method' => null,
                 'status' => Order::STATUS_PENDING_CONFIRMATION,
                 'notes_from_customer' => $request->notes,
                 'admin_note' => $adminNote,
@@ -1666,17 +1827,15 @@ class PaymentController extends Controller
             $item = $buyNowData['items']->first();
             $variant = $item->productVariant;
             $storeLocationId = $order->store_location_id;
-            
-            // Nếu không có store_location_id (giao hàng), tự động tìm kho có hàng
+
+            // Nếu không có store_location_id (đơn giao tận nơi), KHÔNG gán vào order để tránh hiểu nhầm là pickup
             if (!$storeLocationId) {
+                // Tìm kho có hàng để commit inventory tạm thời, nhưng không cập nhật vào order
                 $storeLocationId = $this->findAvailableStore($variant, $item->quantity);
                 if (!$storeLocationId) {
                     $totalStock = $this->getSellableStock($variant);
                     throw new \Exception("Sản phẩm {$variant->product->name} không đủ hàng. Hiện chỉ còn {$totalStock} sản phẩm trong tất cả các kho.");
                 }
-                // Cập nhật store_location_id cho order
-                $order->store_location_id = $storeLocationId;
-                $order->save();
             } else {
                 // Nếu có store_location_id (nhận tại cửa hàng), kiểm tra kho đó
                 if (!$this->checkStockAvailability($variant, $item->quantity, $storeLocationId)) {
@@ -1704,18 +1863,10 @@ class PaymentController extends Controller
 
             // Tạm giữ hàng thay vì trừ thẳng tồn kho
             $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
-            
-            // Kích hoạt chuyển kho tự động nếu cần
-            $autoTransferService = new AutoStockTransferService();
-            $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-            
-            if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng Buy Now: ' . $order->order_code, $transferResult['transfers_created']);
-                
-                // Tự động xử lý phiếu chuyển kho nếu có thể (cùng tỉnh/thành)
-                $this->processAutoTransfersIfPossible($transferResult['transfers_created']);
-            }
-            
+
+            // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+            // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
+
             // --- XỬ LÝ TRỪ ĐIỂM ---
             if ($user && $pointsUsed > 0) {
                 $user->decrement('loyalty_points_balance', $pointsUsed);
@@ -1737,9 +1888,30 @@ class PaymentController extends Controller
                     'usage_date' => now(),
                 ]);
             }
+            // Tạo fulfillment cho đơn hàng Buy Now
+            $fulfillmentService = new FulfillmentService();
+            try {
+                $fulfillmentService->createFulfillmentsForOrder($order);
+                Log::info("Đã tạo fulfillment cho đơn hàng Buy Now: {$order->order_code}");
+            } catch (\Exception $e) {
+                Log::error("Lỗi khi tạo fulfillment cho đơn hàng Buy Now {$order->order_code}: {$e->getMessage()}");
+                // Không throw exception để không làm fail toàn bộ đơn hàng
+            }
+
             // Lưu địa chỉ mới vào sổ địa chỉ nếu người dùng chọn
             if (Auth::check() && $request->save_address && !$request->address_id) {
+                Log::info('Saving new address for user (Buy Now COD): ' . Auth::id(), [
+                    'save_address' => $request->save_address,
+                    'address_id' => $request->address_id,
+                    'full_name' => $request->full_name
+                ]);
                 $this->saveNewAddress($request);
+            } else {
+                Log::info('Not saving address (Buy Now COD)', [
+                    'is_logged_in' => Auth::check(),
+                    'save_address' => $request->save_address,
+                    'address_id' => $request->address_id
+                ]);
             }
 
             // Xóa session Buy Now
@@ -1831,7 +2003,7 @@ class PaymentController extends Controller
             'baseLength' => $maxLength > 0 ? $maxLength : 20,
             'baseWidth' => $maxWidth > 0 ? $maxWidth : 10,
             'baseHeight' => $totalHeight > 0 ? $totalHeight : 10,
-            'availableCoupons' => Coupon::where('status', 'active')->get(), // Buy Now VẪN áp dụng coupon
+            'availableCoupons' => Coupon::where('status', 'active')->where('is_public', 1)->get(),
         ];
     }
     /**
@@ -2001,7 +2173,7 @@ class PaymentController extends Controller
     public function fulfillOrderInventory(Order $order): void
     {
         $inventoryService = new InventoryCommitmentService();
-        
+
         try {
             $inventoryService->fulfillInventoryForOrder($order);
             Log::info("Đã xuất kho thực tế cho đơn hàng {$order->order_code}");
@@ -2017,7 +2189,7 @@ class PaymentController extends Controller
     public function releaseOrderInventory(Order $order): void
     {
         $inventoryService = new InventoryCommitmentService();
-        
+
         try {
             $inventoryService->releaseInventoryForOrder($order);
             Log::info("Đã thả tồn kho tạm giữ cho đơn hàng {$order->order_code}");
@@ -2034,14 +2206,14 @@ class PaymentController extends Controller
     private function processAutoTransfersIfPossible(array $transfersCreated): void
     {
         $autoTransferService = new AutoStockTransferService();
-        
+
         foreach ($transfersCreated as $transferInfo) {
             try {
                 $transfer = \App\Models\StockTransfer::find($transferInfo['transfer_id']);
-                
+
                 if ($transfer && $autoTransferService->canAutoProcessTransfer($transfer)) {
                     $result = $autoTransferService->autoProcessTransfer($transfer);
-                    
+
                     if ($result['success']) {
                         Log::info("Đã tự động xử lý phiếu chuyển kho {$transfer->transfer_code}: {$transferInfo['from_store']} → {$transferInfo['to_warehouse']}");
                     } else {
@@ -2292,11 +2464,11 @@ class PaymentController extends Controller
             $provinceCode = $request->input('province_code');
             $districtCode = $request->input('district_code');
             $productVariantIds = $request->input('product_variant_ids', []);
-            
+
             $query = StoreLocation::with(['province', 'district', 'ward'])
                 ->where('is_active', true)
                 ->where('type', 'store');
-                
+
             // Lọc theo tỉnh/huyện nếu có
             if ($provinceCode) {
                 $query->where('province_code', $provinceCode);
@@ -2304,7 +2476,7 @@ class PaymentController extends Controller
             if ($districtCode) {
                 $query->where('district_code', $districtCode);
             }
-            
+
             // Lấy tất cả cửa hàng có type='store' không cần quan tâm đến inventory
             // Sẽ sử dụng logic chuyển hàng để đảm bảo có hàng tại cửa hàng khách chọn
             $storeLocations = $query->get()->map(function ($location) {
@@ -2319,7 +2491,7 @@ class PaymentController extends Controller
                     'ward_name' => $location->ward ? $location->ward->name_with_type : 'Chưa cập nhật',
                 ];
             });
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $storeLocations
@@ -2416,14 +2588,9 @@ class PaymentController extends Controller
 
             // Inventory deduction is now handled by InventoryCommitmentService to prevent double deductions
             // The commitInventoryForOrder method handles both inventory commitment and fulfillment creation
-            
-            // Kích hoạt chuyển kho tự động
-            $autoTransferService = new AutoStockTransferService();
-            $transferResult = $autoTransferService->checkAndCreateAutoTransfer($order);
-            
-            if ($transferResult['success'] && !empty($transferResult['transfers_created'])) {
-                Log::info('Đã tạo phiếu chuyển kho tự động cho đơn hàng QR: ' . $order->order_code, $transferResult['transfers_created']);
-            }
+
+            // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
+            // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
 
             // Kích hoạt gửi email sản phẩm cho khách (sẽ làm ở bước sau)
             // \Mail::to($order->customer_email)->send(new \App\Mail\ProductLinkMail($order));
@@ -2437,4 +2604,32 @@ class PaymentController extends Controller
             return response('<h1>Đã có lỗi xảy ra!</h1><p>Vui lòng thử lại hoặc liên hệ quản trị viên.</p>', 500);
         }
     }
+
+    private function incrementFlashSaleQuantitySold(Order $order): void
+{
+    try {
+        // Lấy tất cả OrderItem trong đơn hàng
+        $orderItems = $order->items()->with('productVariant')->get();
+
+        foreach ($orderItems as $orderItem) {
+            // Kiểm tra xem product_variant_id có trong bảng flash_sale_products không
+            $flashSaleProduct = FlashSaleProduct::where('product_variant_id', $orderItem->product_variant_id)
+                ->whereHas('flashSale', function ($query) {
+                    $query->where('status', 'active')
+                          ->where('start_time', '<=', now())
+                          ->where('end_time', '>=', now());
+                })
+                ->first();
+
+            if ($flashSaleProduct) {
+                // Tăng quantity_sold tương ứng với số lượng trong OrderItem
+                $flashSaleProduct->increment('quantity_sold', $orderItem->quantity);
+                Log::info("Đã tăng quantity_sold cho FlashSaleProduct ID {$flashSaleProduct->id}: +{$orderItem->quantity}");
+            }
+        }
+    } catch (\Exception $e) {
+        Log::error("Lỗi khi tăng quantity_sold cho Flash Sale: " . $e->getMessage());
+        throw $e; // Ném lại ngoại lệ để rollback giao dịch nếu cần
+    }
+}
 }

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Models\ProductBundle;
 use App\Models\ProductVariant;
@@ -36,29 +38,105 @@ class BundleProductController extends Controller
 
     public function create()
     {
-        $productVariants = ProductVariant::with(['primaryImage', 'product', 'attributeValues.attribute'])
-            ->select(
-                'product_variants.id',
-                'product_variants.sku',
-                'product_variants.primary_image_id',
-                'product_variants.product_id'
-            )
-            ->join('products', 'product_variants.product_id', '=', 'products.id')
-            ->paginate(100)
-            ->map(function ($variant) {
-                $attributeString = $variant->attributeValues->pluck('value')->implode(' ');
+        // Lấy danh sách sản phẩm cha cùng với các biến thể và attributeValues
+        $products = Product::with(['variants' => function ($query) {
+            $query->with('attributeValues')->orderBy('created_at', 'desc'); // Tải attributeValues và sắp xếp biến thể
+        }])
+            ->orderBy('created_at', 'desc') // Sắp xếp sản phẩm cha từ mới đến cũ
+            ->get()
+            ->map(function ($product) {
                 return [
-                    'id' => $variant->id,
-                    'product_id' => $variant->product_id,
-                    'name' => trim(($variant->product->name ?? 'Không có tên') . ' ' . $attributeString),
-                    'sku' => $variant->sku,
-                    'image' => $variant->image_url,
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'variants' => $product->variants->map(function ($variant) use ($product) {
+                        // Tạo tên biến thể từ attributeValues
+                        $variantName = $variant->attributeValues->pluck('value')->filter()->join(' - ');
+                        // Tạo display_name: Tên sản phẩm cha + Tên biến thể
+                        $displayName = $variantName ? $product->name . ' - ' . $variantName : $product->name;
+                        return [
+                            'id' => $variant->id,
+                            'name' => $variantName, // Tên biến thể từ attributeValues
+                            'display_name' => $displayName, // Tên hiển thị kết hợp
+                            'sku' => $variant->sku,
+                            'image' => $variant->image_url, // Sử dụng getImageUrlAttribute
+                            'created_at' => $variant->created_at, // Để sắp xếp
+                        ];
+                    })->toArray(),
                 ];
             });
 
-        return view('admin.bundle_products.create', compact('productVariants'));
+        // Lấy danh sách danh mục
+        $categories = Category::orderBy('name')->get()->map(function ($category) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+            ];
+        });
+
+        return view('admin.bundle_products.create', [
+            'products' => $products,
+            'categories' => $categories, // Thêm biến categories
+        ]);
     }
 
+    public function getProductsByCategory(Request $request)
+    {
+        \Log::info("API getProductsByCategory called", [
+            'category_id' => $request->input('category_id'),
+            'search' => $request->input('search', '')
+        ]);
+
+        try {
+            $categoryId = $request->input('category_id');
+            $search = $request->input('search', '');
+
+            if (!$categoryId) {
+                \Log::info("No category_id provided, returning empty variants");
+                return response()->json(['variants' => []], 200);
+            }
+
+            $query = Product::with(['variants' => function ($query) {
+                $query->with('attributeValues')->orderBy('created_at', 'desc');
+            }])
+                ->where('category_id', $categoryId); // ✅ Sửa chỗ này
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhereHas('variants', function ($q) use ($search) {
+                            $q->where('sku', 'like', "%{$search}%")
+                                ->orWhereHas('attributeValues', function ($q) use ($search) {
+                                    $q->where('value', 'like', "%{$search}%");
+                                });
+                        });
+                });
+            }
+
+            $products = $query->orderBy('created_at', 'desc')->get();
+            \Log::info("Found products: " . $products->count());
+
+            // Tạo danh sách biến thể phẳng
+            $variants = $products->flatMap(function ($product) {
+                return $product->variants->map(function ($variant) use ($product) {
+                    $variantName = $variant->attributeValues->pluck('value')->filter()->join(' - ');
+                    $displayName = $variantName ? $product->name . ' - ' . $variantName : $product->name;
+                    return [
+                        'id' => $variant->id,
+                        'display_name' => $displayName,
+                        'sku' => $variant->sku,
+                        'image' => $variant->image_url,
+                        'created_at' => $variant->created_at,
+                    ];
+                });
+            })->sortByDesc('created_at')->values();
+
+            \Log::info("Returning variants", ['count' => $variants->count()]);
+            return response()->json(['variants' => $variants], 200);
+        } catch (\Exception $e) {
+            \Log::error("Error in getProductsByCategory: " . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500); // ✅ log rõ lỗi thay vì chung chung
+        }
+    }
 
     public function store(Request $request)
     {
@@ -68,13 +146,13 @@ class BundleProductController extends Controller
             'bundle_description' => 'nullable|string',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
-            'status' => 'nullable|in:on', // Checkbox gửi 'on' hoặc không có giá trị
+            'status' => 'nullable|in:on',
             'main_products' => 'required|array',
-            'main_products.*' => 'exists:product_variants,id', // Kiểm tra ID hợp lệ
+            'main_products.*' => 'exists:product_variants,id',
             'suggested_products' => 'nullable|array',
-            'suggested_products.*.id' => 'exists:product_variants,id', // Kiểm tra ID hợp lệ
-            'suggested_products.*.discount_type' => 'nullable|in:fixed_price,percentage_discount',
-            'suggested_products.*.discount_value' => 'nullable|numeric|min:0',
+            'suggested_products.*.id' => 'exists:product_variants,id',
+            // Xóa dòng discount_type
+            // Xóa dòng discount_value
             'suggested_products.*.is_preselected' => 'nullable|boolean',
             'suggested_products.*.display_order' => 'nullable|integer|min:0',
         ]);
@@ -101,9 +179,7 @@ class BundleProductController extends Controller
                 foreach ($validated['suggested_products'] as $index => $product) {
                     $bundle->suggestedProducts()->create([
                         'product_variant_id' => $product['id'],
-                        'discount_type' => $product['discount_type'] ?? 'fixed_price',
-                        'discount_value' => $product['discount_value'] ?? 0,
-                        'is_preselected' => isset($product['is_preselected']) ? (bool)$product['is_preselected'] : true,
+                        'is_preselected' => isset($product['is_preselected']) ? (bool)$product['is_preselected'] : false,
                         'display_order' => $product['display_order'] ?? $index,
                     ]);
                 }
@@ -118,52 +194,99 @@ class BundleProductController extends Controller
     // Hàm hiển thị form chỉnh sửa bundle
     public function edit(ProductBundle $bundle)
     {
-        // Nạp thêm quan hệ
-        $bundle->load([
-            'mainProducts.productVariant.product',
-            'suggestedProducts.productVariant.product'
-        ]);
-
-        // Xử lý mainProducts
-        $mainProducts = $bundle->mainProducts->map(function ($item) {
-            return [
-                'id' => optional($item->productVariant)->id ?? 0,
-                'name' => optional($item->productVariant)->product->name ?? 'Không có tên',
-                'sku' => optional($item->productVariant)->sku ?? 'N/A',
-                'image' => optional($item->productVariant)->image_url ?? '',
-            ];
-        });
-
-        // Xử lý suggestedProducts
-        $suggestedProducts = $bundle->suggestedProducts->map(function ($item) {
-            return [
-                'id' => optional($item->productVariant)->id ?? 0,
-                'name' => optional($item->productVariant)->product->name ?? 'Không có tên',
-                'sku' => optional($item->productVariant)->sku ?? 'N/A',
-                'image' => optional($item->productVariant)->image_url ?? '',
-                'discount_type' => $item->discount_type ?? 'fixed_price',
-                'discount_value' => $item->discount_value ?? 0,
-                'is_preselected' => $item->is_preselected ?? false,
-            ];
-        });
-
-        // Lấy danh sách product variants
-        $productVariants = ProductVariant::with(['primaryImage', 'product', 'attributeValues'])
-            ->select('product_variants.id', 'product_variants.sku', 'product_variants.primary_image_id', 'product_variants.product_id')
-            ->join('products', 'product_variants.product_id', '=', 'products.id')
+        // Tái sử dụng logic lấy danh sách tất cả sản phẩm và biến thể từ hàm create()
+        $products = Product::with(['variants' => function ($query) {
+            $query->with('attributeValues')->orderBy('created_at', 'desc');
+        }])
+            ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($variant) {
-                $attributeString = $variant->attributeValues->pluck('value')->implode(' ');
+            ->map(function ($product) {
                 return [
-                    'id' => $variant->id,
-                    'name' => trim(($variant->product->name ?? 'Không có tên') . ' ' . $attributeString),
-                    'sku' => $variant->sku,
-                    'image' => $variant->image_url,
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'variants' => $product->variants->map(function ($variant) use ($product) {
+                        $variantName = $variant->attributeValues->pluck('value')->filter()->join(' - ');
+                        $displayName = $variantName ? $product->name . ' - ' . $variantName : $product->name;
+                        return [
+                            'id' => $variant->id,
+                            'name' => $variantName,
+                            'display_name' => $displayName,
+                            'sku' => $variant->sku,
+                            'image' => $variant->image_url,
+                            'created_at' => $variant->created_at,
+                        ];
+                    })->toArray(),
                 ];
             });
 
+        // Lấy danh sách danh mục
+        $categories = Category::orderBy('name')->get()->map(function ($category) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+            ];
+        });
 
-        return view('admin.bundle_products.edit', compact('bundle', 'mainProducts', 'suggestedProducts', 'productVariants'));
+        // Nạp các mối quan hệ cần thiết cho bundle
+        $bundle->load([
+            'mainProducts.productVariant.product',
+            'suggestedProducts.productVariant.product',
+            'suggestedProducts.productVariant.attributeValues',
+        ]);
+
+        // Tạo mảng dữ liệu cho các sản phẩm chính đã chọn, nhóm theo sản phẩm cha
+        $mainProducts = $bundle->mainProducts->groupBy(function ($item) {
+            return $item->productVariant->product->id;
+        })->map(function ($group, $productId) use ($bundle) {
+            $product = $group->first()->productVariant->product;
+            return [
+                'id' => $productId,
+                'name' => $product->name,
+                'variants' => $group->map(function ($item) use ($product) {
+                    $productVariant = $item->productVariant;
+                    if (!$productVariant) {
+                        return null;
+                    }
+                    $variantName = $productVariant->attributeValues->pluck('value')->filter()->join(' - ');
+                    $displayName = $variantName ? $product->name . ' - ' . $variantName : $product->name;
+                    return [
+                        'id' => $productVariant->id,
+                        'name' => $variantName,
+                        'display_name' => $displayName,
+                        'sku' => $productVariant->sku,
+                        'image' => $productVariant->image_url,
+                        'created_at' => $productVariant->created_at,
+                    ];
+                })->filter()->sortByDesc('created_at')->values()->toArray(),
+            ];
+        })->values();
+
+        // Tạo mảng dữ liệu cho các sản phẩm gợi ý đã chọn
+        $suggestedProducts = $bundle->suggestedProducts->map(function ($item) {
+            $productVariant = $item->productVariant;
+            if (!$productVariant) {
+                return null;
+            }
+            $variantName = $productVariant->attributeValues->pluck('value')->filter()->join(' - ');
+            $displayName = $variantName ? $productVariant->product->name . ' - ' . $variantName : $productVariant->product->name;
+            return [
+                'id' => $productVariant->id,
+                'display_name' => $displayName,
+                'sku' => $productVariant->sku,
+                'image' => $productVariant->image_url,
+                'is_preselected' => (bool) $item->is_preselected,
+                'display_order' => $item->display_order,
+                'created_at' => $productVariant->created_at,
+            ];
+        })->filter()->sortBy('display_order')->values();
+
+        return view('admin.bundle_products.edit', [
+            'bundle' => $bundle,
+            'products' => $products,
+            'categories' => $categories,
+            'mainProducts' => $mainProducts,
+            'suggestedProducts' => $suggestedProducts,
+        ]);
     }
 
     // Hàm xử lý cập nhật bundle
@@ -180,8 +303,6 @@ class BundleProductController extends Controller
             'main_products.*' => 'exists:product_variants,id',
             'suggested_products' => 'nullable|array',
             'suggested_products.*.id' => 'exists:product_variants,id',
-            'suggested_products.*.discount_type' => 'nullable|in:fixed_price,percentage_discount',
-            'suggested_products.*.discount_value' => 'nullable|numeric|min:0',
             'suggested_products.*.is_preselected' => 'nullable|boolean',
             'suggested_products.*.display_order' => 'nullable|integer|min:0',
         ]);
@@ -197,34 +318,31 @@ class BundleProductController extends Controller
                 'status' => $request->has('status') ? 'active' : 'inactive',
             ]);
 
-            // Xóa các sản phẩm chính hiện tại
+            // Đồng bộ sản phẩm chính
             $bundle->mainProducts()->delete();
-
-            // Thêm lại sản phẩm chính
-            foreach ($validated['main_products'] as $variantId) {
-                $bundle->mainProducts()->create([
-                    'product_variant_id' => $variantId
-                ]);
+            if (!empty($validated['main_products'])) {
+                $mainProductData = array_map(function ($variantId) {
+                    return ['product_variant_id' => $variantId];
+                }, $validated['main_products']);
+                $bundle->mainProducts()->createMany($mainProductData);
             }
 
-            // Xóa các sản phẩm gợi ý hiện tại
+            // Đồng bộ sản phẩm gợi ý
             $bundle->suggestedProducts()->delete();
-
-            // Thêm lại sản phẩm gợi ý
             if (!empty($validated['suggested_products'])) {
-                foreach ($validated['suggested_products'] as $index => $product) {
-                    $bundle->suggestedProducts()->create([
+                $suggestedProductData = array_map(function ($product, $index) {
+                    return [
                         'product_variant_id' => $product['id'],
-                        'discount_type' => $product['discount_type'] ?? 'fixed_price',
-                        'discount_value' => $product['discount_value'] ?? 0,
-                        'is_preselected' => isset($product['is_preselected']) ? (bool)$product['is_preselected'] : true,
+                        'is_preselected' => isset($product['is_preselected']) ? (bool) $product['is_preselected'] : false,
                         'display_order' => $product['display_order'] ?? $index,
-                    ]);
-                }
+                    ];
+                }, $validated['suggested_products'], array_keys($validated['suggested_products']));
+                $bundle->suggestedProducts()->createMany($suggestedProductData);
             }
 
             return redirect()->route('admin.bundle-products.index')->with('success', 'Cập nhật bundle thành công!');
         } catch (\Exception $e) {
+            \Log::error("Error updating bundle: " . $e->getMessage());
             return redirect()->back()->withErrors(['error' => 'Có lỗi xảy ra khi cập nhật bundle: ' . $e->getMessage()])->withInput();
         }
     }
@@ -316,15 +434,15 @@ class BundleProductController extends Controller
         $bundleData = $trashedBundles->map(function ($bundle) {
             return [
                 'id' => $bundle->id,
-                'name' => $bundle->bundle_name ?? 'Không có tên',
-                'subtitle' => $bundle->bundle_title ?? 'Không có tiêu đề',
+                'name' => $bundle->name ?? 'Không có tên', // Sử dụng trường name
+                'display_title' => $bundle->display_title ?? 'Không có tiêu đề', // Sử dụng trường display_title
                 'deleted_at' => $bundle->deleted_at ? $bundle->deleted_at->format('d/m/Y') : 'N/A',
             ];
         });
 
         return view('admin.bundle_products.trashed', [
             'trashedBundles' => $trashedBundles,
-            'bundleData' => $bundleData, // 👈 truyền thêm mảng JSON-friendly
+            'bundleData' => $bundleData,
         ]);
     }
 
@@ -334,7 +452,7 @@ class BundleProductController extends Controller
         $bundle = ProductBundle::onlyTrashed()->findOrFail($id);
         $bundle->restore();
 
-        return redirect()->route('admin.bundle-products.trashed')->with('success', 'Khôi phục thành công!');
+        return redirect()->route('admin.bundle-products.index')->with('success', 'Khôi phục thành công!');
     }
 
     public function forceDelete($id)
@@ -342,7 +460,7 @@ class BundleProductController extends Controller
         $bundle = ProductBundle::onlyTrashed()->findOrFail($id);
         $bundle->forceDelete();
 
-        return redirect()->route('admin.bundle-products.trashed')->with('success', 'Đã xóa vĩnh viễn!');
+        return redirect()->route('admin.bundle-products.index')->with('success', 'Đã xóa vĩnh viễn!');
     }
 
     public function restoreBulk(Request $request)
@@ -351,7 +469,7 @@ class BundleProductController extends Controller
         $ids = $request->input('ids', []);
         ProductBundle::onlyTrashed()->whereIn('id', $ids)->restore();
 
-        return redirect()->route('admin.bundle-products.trashed')->with('success', 'Khôi phục thành công!');
+        return redirect()->route('admin.bundle-products.index')->with('success', 'Khôi phục thành công!');
     }
 
     public function forceDeleteBulk(Request $request)
@@ -359,6 +477,6 @@ class BundleProductController extends Controller
         $ids = $request->input('ids', []);
         ProductBundle::onlyTrashed()->whereIn('id', $ids)->forceDelete();
 
-        return redirect()->route('admin.bundle-products.trashed')->with('success', 'Xóa vĩnh viễn thành công!');
+        return redirect()->route('admin.bundle-products.index')->with('success', 'Xóa vĩnh viễn thành công!');
     }
 }

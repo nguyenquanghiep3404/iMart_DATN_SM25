@@ -60,11 +60,6 @@
         color: #d97706;
     }
 
-    .status-awaiting_shipment_assigned {
-        background-color: #e0f2fe;
-        color: #0277bd;
-    }
-
     .status-out_for_delivery {
         background-color: #f3e8ff;
         color: #7c3aed;
@@ -78,16 +73,6 @@
     .status-returned {
         background-color: #f3f4f6;
         color: #6b7280;
-    }
-
-    .status-awaiting_shipment_packed {
-        background-color: #fef3c7;
-        color: #d97706;
-    }
-
-    .status-awaiting_shipment_assigned {
-        background-color: #ddd6fe;
-        color: #7c3aed;
     }
 
     .status-cancelled {
@@ -265,7 +250,10 @@
     #modal-order-items img:hover {
         transform: scale(1.05);
     }
-
+    .status-cancellation-requested {
+    background-color: #fef9c3; /* Màu vàng nhạt */
+    color: #854d0e;
+    }
     /* Responsive table for modal */
     @media (max-width: 768px) {
         .modal-content table {
@@ -282,13 +270,32 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 border-b">
         <div>
             <h1 class="text-3xl font-bold text-gray-800">Chi tiết đơn hàng</h1>
-            <p class="text-lg text-indigo-600 font-semibold mt-1">#{{ $order->order_code }}</p>
+            <p class="text-lg text-gray-600 font-semibold mt-1">#{{ $order->order_code }}</p>
         </div>
         <div class="mt-4 sm:mt-0 flex space-x-3">
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong class="font-bold">THÔNG TIN GỠ LỖI:</strong>
+                <ul class="mt-2 list-disc list-inside text-sm">
+                    <li>
+                        <strong>Giá trị của <code>$order->status</code>:</strong>
+                        <code class="bg-red-200 p-1 rounded">{{ $order->status }}</code>
+                    </li>
+                    <li>
+                        <strong>Kết quả của <code>$order->cancellationRequest</code>:</strong>
+                        <pre class="bg-red-200 p-2 rounded mt-1"><code>@php(var_dump($order->cancellationRequest))</code></pre>
+                    </li>
+                </ul>
+            </div>
             <a href="{{ route('admin.orders.index') }}" class="px-5 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
                 <i class="fas fa-arrow-left mr-2"></i>Quay lại
             </a>
-            <button onclick="window.print()" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold flex items-center space-x-2">
+            @if($order->status == 'cancellation_requested' && $order->cancellationRequest)
+                {{-- Thay thế `href` bên trong nó --}}
+            <a href="{{ route('admin.orders.cancellation.show', $order->cancellationRequest->id) }}" class="px-5 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-semibold flex items-center space-x-2">
+                <i class="fas fa-exclamation-triangle"></i><span>Xử lý Yêu cầu Hủy</span>
+            </a>
+            @endif
+            <button onclick="window.print()" class="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold flex items-center space-x-2">
                 <i class="fas fa-print"></i><span>In hóa đơn</span>
             </button>
         </div>
@@ -330,6 +337,23 @@
                                 <p class="text-sm text-gray-500 mb-1">Trạng thái đơn hàng</p>
                                 <span id="modal-order-status" class="status-badge status-{{ $order->status ?? 'na' }}">{{ ($order->status) }}</span>
                             </div>
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Mã giảm giá đã sử dụng</p>
+                                @if($order->couponUsages && $order->couponUsages->count() > 0)
+                                    @foreach($order->couponUsages as $usage)
+                                        <div class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium inline-block mr-2 mb-1">
+                                            {{ $usage->coupon->code ?? 'N/A' }}
+                                            @if($usage->coupon->type == 'percentage')
+                                                ({{ $usage->coupon->value }}%)
+                                            @else
+                                                ({{ number_format($usage->coupon->value, 0, ',', '.') }}₫)
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <p class="text-gray-600 text-sm">Không sử dụng mã giảm giá</p>
+                                @endif
+                            </div>
                         </div>
                         <div class="space-y-4">
                             <div>
@@ -339,6 +363,20 @@
                             <div>
                                 <p class="text-sm text-gray-500 mb-1">Phương thức thanh toán</p>
                                 <p class="font-semibold text-gray-800">{{ $order->payment_method ?? 'N/A' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-500 mb-1">Điểm thưởng đã sử dụng</p>
+                                @if($order->loyaltyPointLogs && $order->loyaltyPointLogs->count() > 0)
+                                    @foreach($order->loyaltyPointLogs as $log)
+                                        <div class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium inline-block">
+                                            {{-- Điểm trong CSDL là số âm, nên ta dùng abs() để lấy giá trị tuyệt đối --}}
+                                            {{ number_format(abs($log->points)) }} điểm
+                                            ({{ number_format(abs($log->points) * 1000, 0, ',', '.') }}₫)
+                                        </div>
+                                    @endforeach
+                                @else
+                                    <p class="text-gray-600 text-sm">Không sử dụng điểm thưởng</p>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -363,7 +401,7 @@
                                 </td>
                                 <td class="p-3 text-center font-medium">{{ $item->quantity ?? 0 }}</td>
                                 <td class="p-3 text-right font-medium">{{ number_format($item->price ?? 0, 0, ',', '.') }} ₫</td>
-                                <td class="p-3 text-right font-semibold text-indigo-600">{{ number_format($item->total_price ?? 0, 0, ',', '.') }} ₫</td>
+                                <td class="p-3 text-right font-semibold text-gray-600">{{ number_format($item->total_price ?? 0, 0, ',', '.') }} ₫</td>
                             </tr>
                             @empty
                             <tr>
@@ -396,96 +434,164 @@
                     </div>
                 </div>
 
-                <!-- Thông tin Packages -->
+                <!-- Thông tin fulfillments -->
                 @if($order->fulfillments && $order->fulfillments->count() > 0)
                 <div class="mt-8">
                     <h3 class="font-bold text-lg text-gray-800 mb-4">Thông tin gói hàng</h3>
                     @foreach($order->fulfillments as $fulfillment)
-                        @if($fulfillment->packages && $fulfillment->packages->count() > 0)
+
                             <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                                <h4 class="font-semibold text-md text-gray-700 mb-3">Kho: {{ $fulfillment->storeLocation->name ?? 'N/A' }}</h4>
-                                @foreach($fulfillment->packages as $package)
-                                    <div class="bg-white border rounded-lg p-4 mb-3">
-                                        <div class="flex justify-between items-start mb-3">
-                                            <div>
-                                                <p class="font-semibold text-gray-800">Mã gói: {{ $package->package_code }}</p>
-                                                <p class="text-sm text-gray-600">{{ $package->description ?? 'Không có mô tả' }}</p>
-                                            </div>
-                                            <span class="status-badge status-{{ $package->status }}" data-status="{{ $package->status }}"></span>
+                                <div class="flex justify-between items-center mb-3">
+                                    <h4 class="font-semibold text-md text-gray-700">Kho: {{ $fulfillment->storeLocation->name ?? 'N/A' }}</h4>
+                                    @if($fulfillment->estimated_delivery_date)
+                                    <div class="text-sm text-blue-600">
+                                        <span class="font-medium">Dự kiến giao: {{ \Carbon\Carbon::parse($fulfillment->estimated_delivery_date)->format('d/m/Y') }}</span>
+                                    </div>
+                                    @endif
+                                </div>
+
+                                <div class="bg-white border rounded-lg p-4 mb-3">
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div>
+                                            <p class="font-semibold text-gray-800">Fulfillment #{{ $fulfillment->id }}</p>
+                                            <p class="text-sm text-gray-600">Trạng thái:
+                                                <span class="status-badge" style="
+                                                    @if($fulfillment->status == 'cancelled')
+                                                        background-color: #fee2e2 !important; color: #dc2626 !important;
+                                                    @elseif($fulfillment->status == 'pending')
+                                                        background-color: #e0e7ff !important; color: #4338ca !important;
+                                                    @elseif($fulfillment->status == 'processing')
+                                                        background-color: #cffafe !important; color: #0891b2 !important;
+                                                    @elseif($fulfillment->status == 'awaiting_shipment')
+                                                        background-color: #cffafe !important; color: #0891b2 !important;
+                                                    @elseif($fulfillment->status == 'shipped')
+                                                        background-color: #f3e8ff !important; color: #7c3aed !important;
+                                                    @elseif($fulfillment->status == 'delivered')
+                                                        background-color: #dcfce7 !important; color: #16a34a !important;
+                                                    @else
+                                                        background-color: #f3f4f6 !important; color: #6b7280 !important;
+                                                    @endif
+                                                    ">
+                                                    @if($fulfillment->status == 'cancelled')
+                                                        Đã hủy
+                                                    @elseif($fulfillment->status == 'pending')
+                                                        Chờ xử lý
+                                                    @elseif($fulfillment->status == 'processing')
+                                                        Đang xử lý
+                                                    @elseif($fulfillment->status == 'awaiting_shipment')
+                                                        Chờ giao hàng
+                                                    @elseif($fulfillment->status == 'shipped')
+                                                        đang giao hàng
+                                                    @elseif($fulfillment->status == 'delivered')
+                                                        Giao hàng thành công
+                                                    @else
+                                                        {{ $fulfillment->status }}
+                                                    @endif
+                                                </span>
+                                            </p>
                                         </div>
-                                        
-                                        @if($package->shipping_carrier || $package->tracking_code)
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                                            @if($package->shipping_carrier)
-                                            <div>
-                                                <p class="text-sm text-gray-500">Đơn vị vận chuyển</p>
-                                                <p class="font-medium">{{ $package->shipping_carrier }}</p>
-                                            </div>
-                                            @endif
-                                            @if($package->tracking_code)
-                                            <div>
-                                                <p class="text-sm text-gray-500">Mã vận đơn</p>
-                                                <p class="font-medium">{{ $package->tracking_code }}</p>
-                                            </div>
-                                            @endif
+                                    </div>
+
+                                    @if($fulfillment->shipping_carrier || $fulfillment->tracking_code)
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                                        @if($fulfillment->shipping_carrier)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Đơn vị vận chuyển</p>
+                                            <p class="font-medium">{{ $fulfillment->shipping_carrier }}</p>
                                         </div>
                                         @endif
-
-                                        @if($package->shipped_at || $package->delivered_at)
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-                                            @if($package->shipped_at)
-                                            <div>
-                                                <p class="text-sm text-gray-500">Ngày xuất kho</p>
-                                                <p class="font-medium">{{ $package->shipped_at->format('d/m/Y H:i') }}</p>
-                                            </div>
-                                            @endif
-                                            @if($package->delivered_at)
-                                            <div>
-                                                <p class="text-sm text-gray-500">Ngày giao hàng</p>
-                                                <p class="font-medium">{{ $package->delivered_at->format('d/m/Y H:i') }}</p>
-                                            </div>
-                                            @endif
-                                        </div>
-                                        @endif
-
-                                        <!-- Sản phẩm trong gói -->
-                                        @if($package->fulfillmentItems && $package->fulfillmentItems->count() > 0)
-                                        <div class="border-t pt-3">
-                                            <p class="text-sm font-medium text-gray-700 mb-2">Sản phẩm trong gói:</p>
-                                            <div class="space-y-2">
-                                                @foreach($package->fulfillmentItems as $item)
-                                                    <div class="flex justify-between items-center text-sm">
-                                                        <span class="text-gray-600">{{ $item->orderItem->product_name ?? 'N/A' }}</span>
-                                                        <span class="font-medium">x{{ $item->quantity }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                        @endif
-
-                                        <!-- Lịch sử trạng thái -->
-                                        @if($package->statusHistory && $package->statusHistory->count() > 0)
-                                        <div class="border-t pt-3 mt-3">
-                                            <p class="text-sm font-medium text-gray-700 mb-2">Lịch sử trạng thái:</p>
-                                            <div class="space-y-1">
-                                                @foreach($package->statusHistory->sortByDesc('timestamp') as $history)
-                                                    <div class="flex justify-between items-center text-xs">
-                                                        <div>
-                                                            <span class="font-medium" data-status="{{ $history->status }}"></span>
-                                                            @if($history->notes)
-                                                                <span class="text-gray-600">- {{ $history->notes }}</span>
-                                                            @endif
-                                                        </div>
-                                                        <span class="text-gray-500">{{ $history->timestamp->format('d/m/Y H:i') }}</span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
+                                        @if($fulfillment->tracking_code)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Mã vận đơn</p>
+                                            <p class="font-medium">{{ $fulfillment->tracking_code }}</p>
                                         </div>
                                         @endif
                                     </div>
-                                @endforeach
+                                    @endif
+
+                                    @if($fulfillment->shipped_at || $fulfillment->delivered_at || $fulfillment->estimated_delivery_date || $fulfillment->shipping_fee)
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                                        @if($fulfillment->estimated_delivery_date)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Ngày dự kiến giao</p>
+                                            <p class="font-medium">{{ \Carbon\Carbon::parse($fulfillment->estimated_delivery_date)->format('d/m/Y') }}</p>
+                                        </div>
+                                        @endif
+                                        @if($fulfillment->shipping_fee)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Phí vận chuyển</p>
+                                            <p class="font-medium">{{ number_format($fulfillment->shipping_fee, 0, ',', '.') }} ₫</p>
+                                        </div>
+                                        @endif
+                                        @if($fulfillment->shipped_at)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Ngày xuất kho</p>
+                                            <p class="font-medium">{{ $fulfillment->shipped_at->format('d/m/Y H:i') }}</p>
+                                        </div>
+                                        @endif
+                                        @if($fulfillment->delivered_at)
+                                        <div>
+                                            <p class="text-sm text-gray-500">Ngày giao hàng</p>
+                                            <p class="font-medium">{{ $fulfillment->delivered_at->format('d/m/Y H:i') }}</p>
+                                        </div>
+                                        @endif
+                                    </div>
+                                    @endif
+
+                                    <!-- Sản phẩm trong fulfillment -->
+                                    @if($fulfillment->fulfillmentItems && $fulfillment->fulfillmentItems->count() > 0)
+                                    <div class="border-t pt-3">
+                                        <p class="text-sm font-medium text-gray-700 mb-2">Sản phẩm trong gói hàng:</p>
+                                        <div class="space-y-3">
+                                            @foreach($fulfillment->fulfillmentItems as $item)
+                                                @php
+                                                    // Tính giá đã áp dụng giảm giá cho từng sản phẩm
+                                                    $originalPrice = $item->orderItem->price ?? 0;
+                                                    $quantity = $item->quantity;
+                                                    $originalTotal = $originalPrice * $quantity;
+                                                    
+                                                    // Tính tỷ lệ giảm giá của toàn đơn hàng
+                                                    $discountRatio = $order->sub_total > 0 ? $order->discount_amount / $order->sub_total : 0;
+                                                    
+                                                    // Áp dụng tỷ lệ giảm giá cho sản phẩm này
+                                                    $itemDiscount = $originalTotal * $discountRatio;
+                                                    $finalPrice = $originalPrice - ($itemDiscount / $quantity);
+                                                    $finalTotal = $originalTotal - $itemDiscount;
+                                                @endphp
+                                                <div class="bg-white border rounded p-3">
+                                                    <div class="flex justify-between items-start">
+                                                        <div class="flex-1">
+                                                            <p class="font-medium text-gray-800">{{ $item->orderItem->product_name ?? 'N/A' }}</p>
+                                                            <div class="text-sm text-gray-600 mt-1">
+                                                                <span>Số lượng: {{ $quantity }}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            @if($discountRatio > 0)
+                                                                <div class="text-sm">
+                                                                    <span class="text-gray-400 line-through">{{ number_format($originalPrice, 0, ',', '.') }}₫</span>
+                                                                    <span class="text-green-600 font-medium ml-1">{{ number_format($finalPrice, 0, ',', '.') }}₫</span>
+                                                                </div>
+                                                                <div class="text-sm font-semibold text-gray-800">
+                                                                    Tổng: <span class="text-green-600">{{ number_format($finalTotal, 0, ',', '.') }}₫</span>
+                                                                </div>
+                                                            @else
+                                                                <div class="text-sm font-medium text-gray-800">
+                                                                    {{ number_format($originalPrice, 0, ',', '.') }}₫
+                                                                </div>
+                                                                <div class="text-sm font-semibold text-gray-800">
+                                                                    Tổng: {{ number_format($originalTotal, 0, ',', '.') }}₫
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
                             </div>
-                        @endif
                     @endforeach
                 </div>
                 @endif
@@ -506,9 +612,7 @@
         csrfToken: '{{ csrf_token() }}'
     };
 
-    // Global pagination state
-    let currentPage = 1;
-    let totalPages = 1;
+    // --- GLOBAL VARIABLES REMOVED FOR DETAIL PAGE ---
 
     // --- UTILITY FUNCTIONS ---
     const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', {
@@ -538,13 +642,17 @@
             text: "Đang xử lý",
             class: "status-processing"
         },
+        awaiting_shipment: {
+            text: "Chờ giao hàng",
+            class: "status-processing"
+        },
         packed: {
-            text: "Chờ vận chuyển: đã đóng gói xong",
+            text: "Đóng gói thành công",
             class: "status-packed"
         },
-        awaiting_shipment_assigned: {
-            text: "Chờ vận chuyển: đã gán shipper",
-            class: "status-awaiting_shipment_assigned"
+        shipped: {
+            text: "đang giao hàng",
+            class: "status-shipped"
         },
         out_for_delivery: {
             text: "Đang giao hàng",
@@ -555,8 +663,12 @@
             class: "status-delivered"
         },
         cancelled: {
-            text: "Hủy",
+            text: "Đã hủy",
             class: "status-cancelled"
+        },
+        cancellation_requested: {
+            text: "Yêu cầu hủy",
+            class: "status-cancellation-requested"
         },
         failed_delivery: {
             text: "Giao thất bại",
@@ -591,174 +703,9 @@
         }
     };
 
-    // --- RENDER FUNCTIONS ---
-    function renderOrderRow(order) {
-        const orderStatus = statusMap[order.status] || {
-            text: 'N/A',
-            class: ''
-        };
-        const paymentStatus = paymentStatusMap[order.payment_status] || {
-            text: 'N/A',
-            class: ''
-        };
+    // --- RENDER FUNCTIONS REMOVED FOR DETAIL PAGE ---
 
-        // Determine shipper display
-        let shipperDisplay = '<span class="text-gray-400 italic">Chưa gán</span>';
-        if (order.shipper && order.shipper.name) {
-            shipperDisplay = `<span class="text-gray-700 font-medium">${order.shipper.name}</span>`;
-        }
-
-        // Show assign shipper button only for "awaiting_shipment_packed" status
-        let assignShipperButton = '';
-        if (order.status === 'awaiting_shipment_packed') {
-            assignShipperButton = `
-                <button onclick='showAssignShipperModal(${order.id}, "${order.order_code}")' 
-                        class="text-blue-600 hover:text-blue-900 font-medium text-lg ml-4" 
-                        title="Gán Shipper">
-                    <i class="fas fa-user-plus"></i>
-                </button>
-            `;
-        }
-
-        return `
-            <tr class="bg-white border-b hover:bg-gray-50">
-                <td class="p-6 font-bold text-indigo-600">${order.order_code}</td>
-                <td class="p-6">
-                    <div class="font-semibold">${order.customer_name}</div>
-                    <div class="text-gray-500">${order.customer_email}</div>
-                </td>
-                <td class="p-6 font-semibold">${formatCurrency(order.grand_total)}</td>
-                <td class="p-6"><span class="status-badge ${orderStatus.class}">${orderStatus.text}</span></td>
-                <td class="p-6"><span class="status-badge ${paymentStatus.class}">${paymentStatus.text}</span></td>
-                <td class="p-6">${formatDate(order.created_at)}</td>
-                <td class="p-6">${shipperDisplay}</td>
-                <td class="p-6 text-center">
-                    <button onclick='viewOrder(${order.id})' class="text-indigo-600 hover:text-indigo-900 font-medium text-lg" title="Xem chi tiết">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button onclick='showUpdateStatusModal(${order.id}, "${order.status}")' class="text-green-600 hover:text-green-900 font-medium text-lg ml-4" title="Cập nhật trạng thái">
-                         <i class="fas fa-edit"></i>
-                    </button>
-                    ${assignShipperButton}
-                </td>
-            </tr>
-        `;
-    }
-
-    const tbody = document.getElementById('orders-tbody');
-
-    function renderTable(orders) {
-        if (orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="8" class="text-center p-12 text-gray-500">Không tìm thấy đơn hàng nào.</td></tr>`;
-            return;
-        }
-        tbody.innerHTML = orders.map(renderOrderRow).join('');
-    }
-
-    // --- PAGINATION FUNCTIONS ---
-    function renderPagination(paginationData) {
-        const paginationInfo = document.getElementById('pagination-info');
-        const paginationControls = document.getElementById('pagination-controls');
-
-        // Update pagination info
-        if (paginationData.total > 0) {
-            paginationInfo.innerHTML = `
-                Hiển thị ${paginationData.from} đến ${paginationData.to} trong tổng số ${paginationData.total} kết quả
-            `;
-        } else {
-            paginationInfo.innerHTML = 'Không có dữ liệu';
-        }
-
-        // Update global state
-        currentPage = paginationData.current_page;
-        totalPages = paginationData.last_page;
-
-        // Generate pagination controls
-        let paginationHtml = '';
-
-        // Previous button
-        if (currentPage > 1) {
-            paginationHtml += `
-                <button onclick="goToPage(${currentPage - 1})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            `;
-        } else {
-            paginationHtml += `
-                <button disabled class="px-3 py-2 text-sm leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-l-lg cursor-not-allowed">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            `;
-        }
-
-        // Page numbers
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, currentPage + 2);
-
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === currentPage) {
-                paginationHtml += `
-                    <button class="px-3 py-2 text-sm leading-tight text-blue-600 bg-blue-50 border border-gray-300 hover:bg-blue-100 hover:text-blue-700">
-                        ${i}
-                    </button>
-                `;
-            } else {
-                paginationHtml += `
-                    <button onclick="goToPage(${i})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700">
-                        ${i}
-                    </button>
-                `;
-            }
-        }
-
-        // Next button
-        if (currentPage < totalPages) {
-            paginationHtml += `
-                <button onclick="goToPage(${currentPage + 1})" class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            `;
-        } else {
-            paginationHtml += `
-                <button disabled class="px-3 py-2 text-sm leading-tight text-gray-300 bg-gray-100 border border-gray-300 rounded-r-lg cursor-not-allowed">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            `;
-        }
-
-        paginationControls.innerHTML = paginationHtml;
-    }
-
-    async function goToPage(page) {
-        if (page < 1 || page > totalPages || page === currentPage) return;
-
-        const formData = new FormData();
-        formData.append('page', page);
-
-        // Add current filters
-        if (searchInput.value) formData.append('search', searchInput.value);
-        if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
-        if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
-        if (dateFilter.value) formData.append('date_range', dateFilter.value);
-
-        try {
-            const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': CONFIG.csrfToken
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                renderTable(result.data);
-                renderPagination(result.pagination);
-            }
-        } catch (error) {
-            console.error('Error loading page:', error);
-            showToast('Không thể tải trang này. Vui lòng thử lại hoặc về trang trước.', 'warning', 'Tải trang thất bại');
-        }
-    }
+    // --- TABLE AND PAGINATION FUNCTIONS REMOVED FOR DETAIL PAGE ---
 
     // --- MODAL LOGIC ---
     const modal = document.getElementById('order-detail-modal');
@@ -771,6 +718,8 @@
             if (result.success) {
                 const order = result.data;
                 populateModal(order);
+                console.log("Đang kiểm tra Order Status:", order.status);
+    console.log("Đang kiểm tra Cancellation Request:", order.cancellationRequest);
                 modal.classList.add('is-open');
                 modal.querySelector('div').classList.remove('scale-95');
             }
@@ -846,7 +795,7 @@
                 <td class="p-3">
                     <div class="flex items-center space-x-3">
                         <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                            ${productImage ? 
+                            ${productImage ?
                                 `<img src="${productImage}" alt="${item.product_name || 'Sản phẩm'}"
                                     class="w-full h-full object-cover"
                                     onerror="this.parentElement.innerHTML='<div class=\\'product-image-placeholder\\' style=\\'width:100%;height:100%\\'><i class=\\'fas fa-image text-2xl\\'></i></div>'">`
@@ -855,10 +804,10 @@
                                   </div>`}
                         </div>
                         <div class="flex-1 min-w-0">
-                            ${productLink !== '#' ? 
-                                `<a href="${productLink}" 
-                                    target="_blank" 
-                                    class="font-medium text-indigo-600 hover:text-indigo-900 hover:underline line-clamp-2"
+                            ${productLink !== '#' ?
+                                `<a href="${productLink}"
+                                    target="_blank"
+                                    class="font-medium text-gray-600 hover:text-gray-900 hover:underline line-clamp-2"
                                     title="Chỉnh sửa sản phẩm (mở tab mới)"
                                     onclick="event.stopPropagation();">
                                     ${item.product_name || 'N/A'}
@@ -869,7 +818,7 @@
                 </td>
                 <td class="p-3 text-center font-medium">${item.quantity || 0}</td>
                 <td class="p-3 text-right font-medium">${formatCurrency(item.price || 0)}</td>
-                <td class="p-3 text-right font-semibold text-indigo-600">${formatCurrency(item.total_price || 0)}</td>
+                <td class="p-3 text-right font-semibold text-gray-600">${formatCurrency(item.total_price || 0)}</td>
             </tr>
             `;
             }).join('');
@@ -897,104 +846,7 @@
         }
     });
 
-    // --- FILTERING LOGIC ---
-    const searchInput = document.getElementById('search');
-    const orderStatusFilter = document.getElementById('order-status');
-    const paymentStatusFilter = document.getElementById('payment-status');
-    const dateFilter = document.getElementById('date-range');
-
-    async function refreshCurrentPage() {
-        // Keep current page and filters when refreshing
-        const formData = new FormData();
-        formData.append('page', currentPage);
-
-        if (searchInput.value) formData.append('search', searchInput.value);
-        if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
-        if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
-        if (dateFilter.value) formData.append('date_range', dateFilter.value);
-
-        try {
-            const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': CONFIG.csrfToken
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                renderTable(result.data);
-                renderPagination(result.pagination);
-            }
-        } catch (error) {
-            console.error('Error refreshing page:', error);
-            showToast('Không thể làm mới dữ liệu. Vui lòng tải lại trang.', 'warning', 'Cảnh báo');
-        }
-    }
-
-    async function applyFilters() {
-        const formData = new FormData();
-
-        // Reset to page 1 when applying filters
-        formData.append('page', 1);
-
-        if (searchInput.value) formData.append('search', searchInput.value);
-        if (orderStatusFilter.value) formData.append('status', orderStatusFilter.value);
-        if (paymentStatusFilter.value) formData.append('payment_status', paymentStatusFilter.value);
-        if (dateFilter.value) formData.append('date_range', dateFilter.value);
-
-        try {
-            const response = await fetch(CONFIG.routes.index + '?' + new URLSearchParams(formData), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': CONFIG.csrfToken
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                renderTable(result.data);
-                renderPagination(result.pagination);
-            }
-        } catch (error) {
-            console.error('Error applying filters:', error);
-            showToast('Không thể áp dụng bộ lọc. Vui lòng thử lại hoặc làm mới trang.', 'warning', 'Lọc dữ liệu thất bại');
-        }
-    }
-
-    document.getElementById('apply-filters').addEventListener('click', applyFilters);
-    document.getElementById('clear-filters').addEventListener('click', () => {
-        searchInput.value = '';
-        orderStatusFilter.value = '';
-        paymentStatusFilter.value = '';
-        dateFilter.value = '';
-        loadOrders();
-    });
-
-    // --- INITIAL LOAD ---
-    async function loadOrders() {
-        try {
-            const response = await fetch(CONFIG.routes.index, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': CONFIG.csrfToken
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                renderTable(result.data);
-                renderPagination(result.pagination);
-            }
-        } catch (error) {
-            console.error('Error loading orders:', error);
-            showToast('Không thể tải danh sách đơn hàng từ server. Hiển thị dữ liệu cache.', 'warning', 'Tải dữ liệu thất bại');
-            // Fallback to show initial data from server
-            @if(isset($orders))
-            renderTable(@json($orders->items()));
-            @endif
-        }
-    }
+    // --- DETAIL PAGE SPECIFIC LOGIC ---
 
     // --- TOAST NOTIFICATION SYSTEM ---
     function showToast(message, type = 'success', title = null) {
@@ -1123,7 +975,7 @@
             showToast('Vui lòng chọn trạng thái mới cho đơn hàng.', 'warning', 'Thiếu thông tin');
             return false;
         }
-        
+
         // Ngăn chuyển từ 'processing' sang trạng thái khác mà không qua trạm đóng gói
         if (currentStatus === 'processing' && newStatus !== 'processing' && newStatus !== 'cancelled') {
             showToast('Đơn hàng đang xử lý phải được xác nhận tại Trạm Đóng Gói trước khi chuyển sang trạng thái khác', 'error');
@@ -1187,8 +1039,8 @@
                 // Close modal
                 closeUpdateStatusModal();
 
-                // Refresh current page instead of going to page 1
-                refreshCurrentPage();
+                // Reload the page to show updated order status
+                window.location.reload();
             } else {
                 // Handle different types of errors
                 if (response.status === 422) {
@@ -1273,7 +1125,7 @@
                 // Reset cache khi có order_id để lấy shipper theo warehouse
                 shippersCache = null;
             }
-            
+
             // Use cache if available và không có order_id
             if (shippersCache && !orderId) {
                 populateShipperSelect(shippersCache);
@@ -1359,8 +1211,8 @@
                 // Close modal
                 closeAssignShipperModal();
 
-                // Refresh current page
-                refreshCurrentPage();
+                // Reload the page to show updated statuses
+                window.location.reload();
             } else {
                 if (response.status === 422) {
                     showToast(result.message || 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.', 'error', 'Dữ liệu không hợp lệ');
@@ -1381,38 +1233,21 @@
             }
         }
     });
-    
+
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Translate package status to Vietnamese
-        setTimeout(() => {
-            const packageStatusElements = document.querySelectorAll('[data-status]');
-            packageStatusElements.forEach(element => {
-                const status = element.getAttribute('data-status');
-                if (statusMap[status]) {
-                    element.textContent = statusMap[status].text;
-                }
-            });
-        }, 100);
-        
-        @if(isset($orders))
-        renderTable(@json($orders->items()));
-       renderPagination({
-                current_page: {{ $orders->currentPage() }},
-                last_page: {{ $orders->lastPage() }},
-                per_page: {{ $orders->perPage() }},
-                total: {{ $orders->total() }},
-                from: {{ $orders->firstItem() ?? 0 }},
-                to: {{ $orders->lastItem() ?? 0 }}
-            });
-        @else
-        loadOrders();
-        @endif
-        
-        // Auto-refresh orders every 30 seconds to catch status updates from packing station
-        setInterval(() => {
-            loadOrders();
-        }, 30000);
+        // Xử lý hiển thị trạng thái gói hàng
+        document.querySelectorAll('[data-status]').forEach(element => {
+            const status = element.getAttribute('data-status');
+            // Chỉ áp dụng cho status-badge trong gói hàng, không áp dụng cho lịch sử trạng thái
+            if (status && statusMap[status] && element.classList.contains('status-badge') && !element.closest('.space-y-1')) {
+                element.textContent = statusMap[status].text;
+                element.className = `status-badge ${statusMap[status].class}`;
+            }
+        });
+
+        // Detail page initialization complete
+        console.log('Detail page loaded successfully');
     });
 </script>
 @endsection

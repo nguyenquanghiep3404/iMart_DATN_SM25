@@ -4,189 +4,226 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <div class="mt-10 md:mt-12 space-y-10 md:space-y-12">
-    <!-- Mua Kèm Deal Sốc / Cheaper Together -->
-    @if ($productBundles->isNotEmpty())
+    <!-- bundle.blade.php -->
+    @if ($productBundles && $productBundles->isNotEmpty())
         @foreach ($productBundles as $bundle)
-            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
+            <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm" data-bundle-id="{{ $bundle['id'] }}">
                 <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">{{ $bundle['display_title'] }}</h2>
                 <div class="flex flex-col lg:flex-row items-center justify-center gap-4"
                     id="bundle-deal-container-{{ $bundle['id'] }}">
-                    <!-- Wrapper for scrollable items -->
+
                     <div
                         class="w-full flex items-center gap-4 overflow-x-auto lg:overflow-visible pb-4 lg:pb-0 lg:w-auto carousel">
-                        <!-- Main Product -->
-                        <div
-                            class="flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg flex-shrink-0 w-44 sm:w-48">
+                        <div class="bundle-main-product flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg flex-shrink-0 w-44 sm:w-48"
+                            data-price="{{ $bundle['main_product']['sale_price'] ?? $bundle['main_product']['price'] }}"
+                            data-variant-id="{{ $bundle['main_product']['variant_id'] }}">
                             <img src="{{ $bundle['main_product']['image'] }}" class="w-32 h-32 object-contain mb-2"
                                 alt="{{ $bundle['main_product']['name'] }}">
                             <p class="font-semibold text-sm">{{ $bundle['main_product']['name'] }}</p>
                             <p class="font-bold text-red-600">
-                                {{ number_format($bundle['main_product']['display_price']) }}₫
-                                @if ($bundle['main_product']['original_price'])
-                                    <span
-                                        class="text-gray-500 line-through text-xs">{{ number_format($bundle['main_product']['original_price']) }}₫</span>
+                                @if ($bundle['main_product']['sale_price'])
+                                    {{ number_format($bundle['main_product']['sale_price']) }}₫
+                                    <span class="text-gray-500 line-through text-xs">
+                                        {{ number_format($bundle['main_product']['price']) }}₫
+                                    </span>
+                                @else
+                                    {{ number_format($bundle['main_product']['price']) }}₫
                                 @endif
                             </p>
                         </div>
-                        <div class="text-3xl font-light text-gray-400">+</div>
-                        <!-- Suggested Products -->
-                        @foreach ($bundle['suggested_products'] as $suggested)
-                            <div
-                                class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
-                                <input type="checkbox" data-price="{{ $suggested['bundle_price'] }}"
-                                    data-variant-id="{{ $suggested['variant_id'] }}"
-                                    class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
-                                    @if ($suggested['is_preselected']) checked @endif>
-                                <img src="{{ $suggested['image'] }}" class="w-32 h-32 object-contain mb-2"
-                                    alt="{{ $suggested['name'] }}">
-                                <p class="font-semibold text-sm">{{ $suggested['name'] }}</p>
-                                <p class="font-bold text-red-600">{{ number_format($suggested['bundle_price']) }}₫
-                                    @if ($suggested['original_price'])
-                                        <span
-                                            class="text-gray-500 line-through text-xs">{{ number_format($suggested['original_price']) }}₫</span>
-                                    @endif
-                                </p>
-                            </div>
-                            @if (!$loop->last)
-                                <div class="text-3xl font-light text-gray-400">+</div>
-                            @endif
-                        @endforeach
+
+                        <div class="text-3xl font-light text-gray-400 plus-sign">+</div>
+
+                        <div class="bundle-suggested-products flex flex-row items-center gap-4">
+                            @foreach ($bundle['suggested_products'] as $suggested)
+                                <div
+                                    class="bundle-item flex flex-col items-center text-center p-4 border border-gray-200 rounded-lg relative flex-shrink-0 w-44 sm:w-48">
+                                    <input type="checkbox"
+                                        data-price="{{ $suggested['sale_price'] ?? $suggested['price'] }}"
+                                        data-variant-id="{{ $suggested['variant_id'] }}"
+                                        class="bundle-checkbox absolute top-2 right-2 h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+                                        @if ($suggested['is_preselected']) checked @endif>
+                                    <img src="{{ $suggested['image'] }}" class="w-32 h-32 object-contain mb-2"
+                                        alt="{{ $suggested['name'] }}">
+                                    <p class="font-semibold text-sm">{{ $suggested['name'] }}</p>
+                                    <p class="font-bold text-red-600">
+                                        @if ($suggested['sale_price'])
+                                            {{ number_format($suggested['sale_price']) }}₫
+                                            <span class="text-gray-500 line-through text-xs">
+                                                {{ number_format($suggested['price']) }}₫
+                                            </span>
+                                        @else
+                                            {{ number_format($suggested['price']) }}₫
+                                        @endif
+                                    </p>
+                                </div>
+                                @if (!$loop->last)
+                                    <div class="text-3xl font-light text-gray-400 plus-sign">+</div>
+                                @endif
+                            @endforeach
+                        </div>
                     </div>
+
                     <div class="text-3xl font-light text-gray-400 hidden lg:block">=</div>
-                    <!-- Total Price -->
+
                     <div
                         class="w-full max-w-xs sm:w-auto lg:w-auto lg:max-w-none mt-4 lg:mt-0 lg:ml-4 p-4 border-2 border-red-500 rounded-lg text-center">
                         <p class="font-semibold">Tổng giá trị:</p>
                         <p id="bundle-total-price-{{ $bundle['id'] }}" class="text-2xl font-bold text-red-600 my-2">
-                            {{ number_format($bundle['total_bundle_price']) }}₫</p>
-                        <button class="w-full bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700"
-                            onclick="addBundleToCart({{ $bundle['id'] }})">Thêm tất cả vào giỏ</button>
+                            @php
+                                $totalPrice = $bundle['main_product']['sale_price'] ?? $bundle['main_product']['price'];
+                                foreach ($bundle['suggested_products'] as $suggested) {
+                                    if ($suggested['is_preselected']) {
+                                        $totalPrice += $suggested['sale_price'] ?? $suggested['price'];
+                                    }
+                                }
+                            @endphp
+                            {{ number_format($totalPrice) }}₫
+                        </p>
+
+                        {{-- Nút thêm vào giỏ hàng --}}
+                        <button
+                            class="add-to-cart-btn bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md transition duration-200"
+                            data-bundle-id="{{ $bundle['id'] }}">
+                            Thêm tất cả vào giỏ hàng
+                        </button>
                     </div>
                 </div>
             </section>
         @endforeach
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                @foreach ($productBundles as $bundle)
-                    const container{{ $bundle['id'] }} = document.getElementById(
-                        'bundle-deal-container-{{ $bundle['id'] }}');
-                    const checkboxes{{ $bundle['id'] }} = container{{ $bundle['id'] }}.querySelectorAll(
-                        '.bundle-checkbox');
-                    const totalPriceElement{{ $bundle['id'] }} = document.getElementById(
-                        'bundle-total-price-{{ $bundle['id'] }}');
-                    let totalPrice{{ $bundle['id'] }} = {{ $bundle['total_bundle_price'] }};
-
-                    checkboxes{{ $bundle['id'] }}.forEach(checkbox => {
-                        checkbox.addEventListener('change', function() {
-                            const price = parseFloat(this.getAttribute('data-price'));
-                            if (this.checked) {
-                                totalPrice{{ $bundle['id'] }} += price;
-                            } else {
-                                totalPrice{{ $bundle['id'] }} -= price;
-                            }
-                            totalPriceElement{{ $bundle['id'] }}.textContent = new Intl.NumberFormat(
-                                'vi-VN', {
-                                    style: 'currency',
-                                    currency: 'VND'
-                                }
-                            ).format(totalPrice{{ $bundle['id'] }});
-                        });
-                    });
-                @endforeach
-
-                window.addBundleToCart = function(bundleId) {
-                    const container = document.getElementById(`bundle-deal-container-${bundleId}`);
-                    const quantityInput = document.getElementById(`bundle-quantity-${bundleId}`) || {
-                        value: 1
-                    };
-                    const quantity = parseInt(quantityInput.value) || 1;
-
-                    // Thu thập danh sách sản phẩm (chính và gợi ý)
-                    const products = [];
-
-                    // Sản phẩm chính
-                    products.push({
-                        product_variant_id: {{ $bundle['main_product']['variant_id'] }},
-                        quantity: quantity,
-                        price: {{ $bundle['main_product']['display_price'] }} // Giá hiển thị của sản phẩm chính
-                    });
-
-                    // Sản phẩm gợi ý
-                    const selectedVariants = Array.from(container.querySelectorAll('.bundle-checkbox:checked'))
-                        .map(checkbox => ({
-                            product_variant_id: parseInt(checkbox.getAttribute('data-variant-id')),
-                            quantity: quantity,
-                            price: parseFloat(checkbox.getAttribute(
-                                'data-price')) // Giá ưu đãi từ bundle_suggested_products
-                        }));
-
-                    products.push(...selectedVariants);
-
-                    // Gửi yêu cầu AJAX
-                    fetch("{{ route('cart.addCombo') }}", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Accept": "application/json",
-                                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({
-                                products: products,
-                                product_bundle_id: {{ $bundle['id'] }} // Gửi ID bundle
-                            })
-                        })
-                        .then(response => {
-                            if (!response.ok) return response.json().then(err => Promise.reject(err));
-                            return response.json();
-                        })
-                        .then(data => {
-                            toastr.options = {
-                                closeButton: true,
-                                progressBar: true,
-                                escapeHtml: false,
-                                timeOut: 3000,
-                                positionClass: 'toast-bottom-right'
-                            };
-
-                            if (data.success) {
-                                const cartUrl = "{{ route('cart.index') }}";
-                                const message =
-                                    `${data.success} <br><a href="${cartUrl}" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>`;
-                                toastr.success(message);
-
-                                // Cập nhật số lượng mục trong giỏ hàng
-                                const cartBadge = document.getElementById('cart-badge');
-                                if (cartBadge) {
-                                    if (data.cartItemCount > 0) {
-                                        cartBadge.textContent = data.cartItemCount;
-                                        cartBadge.style.display = 'flex';
-                                    } else {
-                                        cartBadge.style.display = 'none';
-                                    }
-                                }
-                            } else if (data.errors) {
-                                data.errors.forEach(error => toastr.error(error));
-                            } else {
-                                toastr.error(data.error || 'Có lỗi xảy ra khi thêm gói vào giỏ hàng.');
-                            }
-                        })
-                        .catch(err => {
-                            toastr.error(err.error || 'Có lỗi xảy ra khi thêm gói vào giỏ hàng.');
-                            console.error('Lỗi AJAX:', err);
-                        });
-                };
-            });
-        </script>
+    @else
     @endif
+
+    <script>
+        // Hàm xử lý sự kiện "Thêm tất cả vào giỏ hàng"
+
+        // Các hàm và logic hiện có (giữ nguyên)
+        function getVariantKey() {
+            if (window.productType !== 'variable') {
+                console.log('Sản phẩm không có biến thể, getVariantKey trả về chuỗi rỗng');
+                return '';
+            }
+            const key = attributeOrder.map(attr => currentSelections[attr] || '').join('_');
+            console.log('Sinh ra variant key:', key);
+            return key;
+        }
+
+        function addBundleToCart(bundleId) {
+            console.log(`[DEBUG] Bắt đầu thêm tất cả sản phẩm của bundle ${bundleId} vào giỏ hàng`);
+
+            // Tìm container của bundle
+            const bundleContainer = document.getElementById(`bundle-deal-container-${bundleId}`);
+            if (!bundleContainer) {
+                console.error(`[ERROR] Không tìm thấy container cho bundle ${bundleId}`);
+                toastr.error('Lỗi: Không tìm thấy gói sản phẩm.');
+                return;
+            }
+
+            // Lấy thông tin sản phẩm chính
+            const mainProductEl = bundleContainer.querySelector('.bundle-main-product');
+            if (!mainProductEl) {
+                console.error(`[ERROR] Không tìm thấy sản phẩm chính cho bundle ${bundleId}`);
+                toastr.error('Lỗi: Không tìm thấy sản phẩm chính.');
+                return;
+            }
+
+            const mainProduct = {
+                product_variant_id: mainProductEl.dataset.variantId,
+                quantity: 1, // Mặc định số lượng là 1
+                variant_key: window.productType === 'variable' ? getVariantKey() : 'default',
+                image: mainProductEl.querySelector('img')?.src || '',
+                product_id: window.currentProductId
+            };
+
+            // Lấy danh sách sản phẩm kèm theo được chọn
+            const checkboxes = bundleContainer.querySelectorAll('.bundle-checkbox:checked');
+            const suggestedProducts = Array.from(checkboxes).map(checkbox => ({
+                product_variant_id: checkbox.dataset.variantId,
+                quantity: 1, // Mặc định số lượng là 1
+                variant_key: checkbox.dataset.variantKey || 'default', // Lấy từ data attribute nếu có
+                image: checkbox.closest('.bundle-item')?.querySelector('img')?.src || '',
+                product_id: checkbox.dataset.productId || window.currentProductId // Cần thêm product_id nếu có
+            }));
+
+            // Tạo danh sách sản phẩm để gửi
+            const products = [mainProduct, ...suggestedProducts];
+
+            if (products.length === 0) {
+                console.error('[ERROR] Không có sản phẩm nào được chọn trong bundle');
+                toastr.error('Vui lòng chọn ít nhất một sản phẩm trong gói.');
+                return;
+            }
+
+            console.log('[DEBUG] Danh sách sản phẩm gửi đi:', products);
+
+            // Gửi yêu cầu AJAX
+            fetch('/cart/add-bundle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        products,
+                        _token: document.querySelector('meta[name="csrf-token"]').content
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('[DEBUG] Phản hồi từ server:', data);
+                    if (data.success) {
+                        // Sửa đoạn code này để bao gồm HTML cho nút "Xem giỏ hàng"
+                        const message =
+                            `${data.message || 'Đã thêm tất cả sản phẩm vào giỏ hàng!'} <br><a href="/cart" class="btn btn-sm btn-primary mt-2">Xem giỏ hàng</a>`;
+
+                        toastr.options = {
+                            closeButton: true,
+                            progressBar: true,
+                            timeOut: 3000,
+                            extendedTimeOut: 1000,
+                            positionClass: 'toast-bottom-right',
+                            // Bắt buộc phải thêm tùy chọn này để HTML được render
+                            escapeHtml: false
+                        };
+
+                        toastr.success(message);
+
+                        // Cập nhật badge giỏ hàng
+                        const cartBadge = document.querySelector('.cart-badge');
+                        if (cartBadge && data.cartItemCount) {
+                            cartBadge.textContent = data.cartItemCount;
+                            cartBadge.classList.remove('hidden');
+                        }
+                    } else {
+                        toastr.error(data.error || 'Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.', 'Lỗi');
+                    }
+                })
+                .catch(error => {
+                    console.error('[ERROR] Lỗi khi gửi yêu cầu thêm bundle:', error);
+                    toastr.error('Có lỗi xảy ra khi thêm sản phẩm vào giỏ hàng.', 'Lỗi');
+                });
+        }
+
+        // Gắn sự kiện cho các nút "Thêm tất cả vào giỏ hàng"
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const bundleId = this.dataset.bundleId;
+                    addBundleToCart(bundleId);
+                });
+            });
+        });
+    </script>
+
 
     <!-- PHẦN 2 & 3: TABS - BÀI VIẾT & THÔNG SỐ -->
     <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm">
         <!-- Tab Buttons -->
         <div class="flex justify-center border-2 border-gray-200 rounded-xl p-1 mb-6 max-w-md mx-auto">
             <button id="tab-desc-btn"
-                class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-600">Bài viết đánh
-                giá</button>
+                class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold text-gray-600">Mô tả
+            </button>
             <button id="tab-specs-btn"
                 class="tab-button w-1/2 py-2.5 px-4 rounded-lg text-sm font-semibold tab-active">Thông số kỹ
                 thuật</button>
@@ -205,6 +242,74 @@
                     </button>
                 </div>
             </div>
+
+            <style>
+                /* Khung mô tả */
+                #description-wrapper {
+                    font-size: 18px;
+                    /* chữ to hơn */
+                    line-height: 1.8;
+                    /* giãn dòng thoáng hơn */
+                    color: #333;
+                }
+
+                /* Đoạn văn */
+                #description-wrapper p {
+                    margin-bottom: 1rem;
+                }
+
+                /* Tiêu đề trong mô tả */
+                #description-wrapper h2,
+                #description-wrapper h3 {
+                    font-weight: 600;
+                    margin: 1.5rem 0 1rem;
+                    font-size: 20px;
+                    color: #111;
+                }
+
+                /* Danh sách */
+                #description-wrapper ul,
+                #description-wrapper ol {
+                    margin: 1rem 0 1rem 1.5rem;
+                    padding-left: 1rem;
+                }
+
+                #description-wrapper li {
+                    margin-bottom: 0.5rem;
+                }
+
+                /* Ảnh trong mô tả - căn giữa */
+                #description-wrapper img {
+                    display: block;
+                    margin: 1.5rem auto;
+                    /* căn giữa ngang */
+                    max-width: 90%;
+                    /* không bị tràn */
+                    height: auto;
+                    border-radius: 8px;
+                }
+
+                /* Quote */
+                #description-wrapper blockquote {
+                    border-left: 4px solid #ddd;
+                    padding-left: 1rem;
+                    color: #555;
+                    font-style: italic;
+                    margin: 1.5rem 0;
+                }
+
+                /* Nút xem thêm */
+                #read-more-btn {
+                    background: #f5f5f5;
+                    border-radius: 6px;
+                    padding: 10px 18px;
+                    transition: 0.2s;
+                }
+
+                #read-more-btn:hover {
+                    background: #e2e2e2;
+                }
+            </style>
 
             <!-- Content for Specs Tab -->
             <div id="tab-specs-content" class="tab-content">
@@ -270,33 +375,33 @@
                 <!-- Hiển thị sao trung bình -->
                 <div class="flex my-2">
                     @for ($i = 1; $i <= 5; $i++)
-                        @if ($averageRating>= $i)
-                        <!-- Sao đầy -->
-                        <svg class="w-5 h-5 fill-current text-yellow-400" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276
+                        @if ($averageRating >= $i)
+                            <!-- Sao đầy -->
+                            <svg class="w-5 h-5 fill-current text-yellow-400" viewBox="0 0 20 20">
+                                <path d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276
                         5.212 6.084.878-4.18 4.09 1.698 5.91z" />
-                        </svg>
+                            </svg>
                         @elseif ($averageRating >= $i - 0.5)
-                        <!-- Sao nửa -->
-                        <svg class="w-5 h-5 fill-current text-yellow-400" viewBox="0 0 20 20">
-                            <defs>
-                                <linearGradient id="half-grad-{{ $i }}" x1="0" x2="1"
-                                    y1="0" y2="0">
-                                    <stop offset="50%" stop-color="currentColor" />
-                                    <stop offset="50%" stop-color="#e5e7eb" />
-                                </linearGradient>
-                            </defs>
-                            <path fill="url(#half-grad-{{ $i }})" d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276
+                            <!-- Sao nửa -->
+                            <svg class="w-5 h-5 fill-current text-yellow-400" viewBox="0 0 20 20">
+                                <defs>
+                                    <linearGradient id="half-grad-{{ $i }}" x1="0" x2="1"
+                                        y1="0" y2="0">
+                                        <stop offset="50%" stop-color="currentColor" />
+                                        <stop offset="50%" stop-color="#e5e7eb" />
+                                    </linearGradient>
+                                </defs>
+                                <path fill="url(#half-grad-{{ $i }})" d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276
                             5.212 6.084.878-4.18 4.09 1.698 5.91z" />
-                        </svg>
+                            </svg>
                         @else
-                        <!-- Sao rỗng -->
-                        <svg class="w-5 h-5 fill-current text-gray-200" viewBox="0 0 20 20">
-                            <path d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276
+                            <!-- Sao rỗng -->
+                            <svg class="w-5 h-5 fill-current text-gray-200" viewBox="0 0 20 20">
+                                <path d="M10 15l-5.878 3.09L5.82 12.18 1.64 8.09l6.084-.878L10 2l2.276
                         5.212 6.084.878-4.18 4.09 1.698 5.91z" />
-                        </svg>
+                            </svg>
                         @endif
-                        @endfor
+                    @endfor
                 </div>
 
                 <p class="text-sm text-gray-600">
@@ -308,18 +413,18 @@
             <div class="col-span-2">
                 <div class="space-y-2">
                     @foreach ([5, 4, 3, 2, 1] as $star)
-                    @php
-                    $count = $starRatingsCount[$star] ?? 0;
-                    $percentage = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
-                    @endphp
-                    <div class="flex items-center gap-2 text-sm">
-                        <span class="text-yellow-400 w-10">{{ $star }} ★</span>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                            <div class="bg-yellow-400 h-2.5 rounded-full transition-all duration-300"
-                                style="width: {{ $percentage }}%"></div>
+                        @php
+                            $count = $starRatingsCount[$star] ?? 0;
+                            $percentage = $totalReviews > 0 ? ($count / $totalReviews) * 100 : 0;
+                        @endphp
+                        <div class="flex items-center gap-2 text-sm">
+                            <span class="text-yellow-400 w-10">{{ $star }} ★</span>
+                            <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                <div class="bg-yellow-400 h-2.5 rounded-full transition-all duration-300"
+                                    style="width: {{ $percentage }}%"></div>
+                            </div>
+                            <span class="text-gray-600 w-12 text-right">{{ number_format($count) }}</span>
                         </div>
-                        <span class="text-gray-600 w-12 text-right">{{ number_format($count) }}</span>
-                    </div>
                     @endforeach
                 </div>
             </div>
@@ -344,16 +449,16 @@
 
                     {{-- Các nút filter theo sao --}}
                     @for ($i = 5; $i >= 1; $i--)
-                    <a href="{{ request()->fullUrlWithQuery(['rating' => $i, 'page' => 1]) }}"
-                        class="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:bg-gray-200
+                        <a href="{{ request()->fullUrlWithQuery(['rating' => $i, 'page' => 1]) }}"
+                            class="px-3 py-1 bg-gray-100 text-gray-800 text-sm font-medium rounded-full flex items-center gap-1 border-2 border-transparent hover:bg-gray-200
                {{ request('rating') == $i ? 'bg-gray-800 text-white border-gray-700' : 'bg-gray-200 text-gray-800 hover:border-gray-400' }}">
-                        {{ $i }} <svg class="w-4 h-4 text-yellow-400" fill="currentColor"
-                            viewBox="0 0 20 20">
-                            <path
-                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                            </path>
-                        </svg>
-                    </a>
+                            {{ $i }} <svg class="w-4 h-4 text-yellow-400" fill="currentColor"
+                                viewBox="0 0 20 20">
+                                <path
+                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
+                                </path>
+                            </svg>
+                        </a>
                     @endfor
                 </div>
             </div>
@@ -366,72 +471,81 @@
             <div id="combined-list" class="mt-6">
 
                 @forelse ($paginatedItems as $item)
-                @if ($item->type === 'review')
-                @php $review = $item->data; @endphp
-                <div class="border-b border-gray-200 py-4">
-                    <div class="flex items-start gap-4">
-                        {{-- Avatar --}}
-                        @if ($review->user && $review->user->avatar_url)
-                        <img src="{{ $review->user->avatar_url }}" alt="{{ $review->user->name }}" class="w-10 h-10 rounded-full object-cover">
-                        @elseif ($review->user)
-                        <div class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
-                            {{ strtoupper(mb_substr($review->user->name, 0, 1)) }}
-                        </div>
-                        @else
-                        {{-- Với khách chưa đăng ký --}}
-                        <div class="w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
-                            K
-                        </div>
-                        @endif
-                        <div class="flex-1">
-                            <p class="font-semibold text-gray-800"> {{ $review->user->name ?? ($review->orderItem->order->customer_name) }}</p>
-
-                            {{-- Sao đánh giá --}}
-                            <div class="flex text-yellow-400 text-sm my-1">
-                                @for ($i = 1; $i <= 5; $i++)
-                                    @if ($i <=$review->rating)
-                                    ★
-                                    @else
-                                    <span class="text-gray-300">★</span>
-                                    @endif
-                                    @endfor
-                            </div>
-
-                            <p class="text-sm text-gray-600 review-text">{{ $review->comment }}</p>
-
-                            {{-- Ảnh review --}}
-                            <div class="flex flex-wrap gap-3 mt-3">
-                                @foreach ($review->images as $media)
-                                @if (str_starts_with($media->mime_type, 'image/'))
-                                <a href="{{ Storage::url($media->path) }}" target="_blank" class="block">
-                                    <img src="{{ Storage::url($media->path) }}"
-                                        alt="Ảnh đánh giá"
-                                        class="w-24 h-24 rounded-md object-cover border border-gray-200">
-                                </a>
-                                @elseif (str_starts_with($media->mime_type, 'video/'))
-                                <video controls class="w-64 rounded border border-gray-300">
-                                    <source src="{{ Storage::url($media->path) }}" type="{{ $media->mime_type }}">
-                                    Trình duyệt không hỗ trợ video.
-                                </video>
+                    @if ($item->type === 'review')
+                        @php $review = $item->data; @endphp
+                        <div class="border-b border-gray-200 py-4">
+                            <div class="flex items-start gap-4">
+                                {{-- Avatar --}}
+                                @if ($review->user && $review->user->avatar_url)
+                                    <img src="{{ $review->user->avatar_url }}" alt="{{ $review->user->name }}"
+                                        class="w-10 h-10 rounded-full object-cover">
+                                @elseif ($review->user)
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
+                                        {{ strtoupper(mb_substr($review->user->name, 0, 1)) }}
+                                    </div>
+                                @else
+                                    {{-- Với khách chưa đăng ký --}}
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-semibold text-sm uppercase">
+                                        K
+                                    </div>
                                 @endif
-                                @endforeach
+                                <div class="flex-1">
+                                    <p class="font-semibold text-gray-800">
+                                        {{ $review->user->name ?? $review->orderItem->order->customer_name }}</p>
+
+                                    {{-- Sao đánh giá --}}
+                                    <div class="flex text-yellow-400 text-sm my-1">
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            @if ($i <= $review->rating)
+                                                ★
+                                            @else
+                                                <span class="text-gray-300">★</span>
+                                            @endif
+                                        @endfor
+                                    </div>
+
+                                    <p class="text-sm text-gray-600 review-text">{{ $review->comment }}</p>
+
+                                    {{-- Ảnh review --}}
+                                    <div class="flex flex-wrap gap-3 mt-3">
+                                        @foreach ($review->images as $media)
+                                            @if (str_starts_with($media->mime_type, 'image/'))
+                                                <a href="{{ Storage::url($media->path) }}" target="_blank"
+                                                    class="block">
+                                                    <img src="{{ Storage::url($media->path) }}" alt="Ảnh đánh giá"
+                                                        class="w-24 h-24 rounded-md object-cover border border-gray-200">
+                                                </a>
+                                            @elseif (str_starts_with($media->mime_type, 'video/'))
+                                                <video controls class="w-64 rounded border border-gray-300">
+                                                    <source src="{{ Storage::url($media->path) }}"
+                                                        type="{{ $media->mime_type }}">
+                                                    Trình duyệt không hỗ trợ video.
+                                                </video>
+                                            @endif
+                                        @endforeach
+                                    </div>
+
+                                    <span
+                                        class="text-xs text-gray-500 mt-2 flex items-center gap-4">{{ $review->created_at->diffForHumans() }}</span>
+
+                                    {{-- Trạng thái --}}
+                                    @if (
+                                        $review->status !== 'approved' &&
+                                            Auth::check() &&
+                                            ($review->user_id === Auth::id() || Auth::user()->hasRole('admin')))
+                                        <p class="text-yellow-600 text-sm italic mt-1">Bình luận của bạn đang chờ duyệt
+                                        </p>
+                                    @endif
+                                </div>
                             </div>
-
-                            <span class="text-xs text-gray-500 mt-2 flex items-center gap-4">{{ $review->created_at->diffForHumans() }}</span>
-
-                            {{-- Trạng thái --}}
-                            @if ($review->status !== 'approved' && Auth::check() && ($review->user_id === Auth::id() || Auth::user()->hasRole('admin')))
-                            <p class="text-yellow-600 text-sm italic mt-1">Bình luận của bạn đang chờ duyệt</p>
-                            @endif
                         </div>
-                    </div>
-                </div>
-
-                @elseif ($item->type === 'comment')
-                @include('users.products.partials.recursive-comment', ['comment' => $item->data])
-                @endif
+                    @elseif ($item->type === 'comment')
+                        @include('users.products.partials.recursive-comment', ['comment' => $item->data])
+                    @endif
                 @empty
-                <p class="text-sm text-gray-500 mt-4">Chưa có đánh giá hoặc bình luận nào.</p>
+                    <p class="text-sm text-gray-500 mt-4">Chưa có đánh giá hoặc bình luận nào.</p>
                 @endforelse
 
 
@@ -502,44 +616,229 @@
     </section>
 
     <!-- PHẦN 6: SẢN PHẨM TƯƠNG TỰ -->
-    <section>
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">Sản phẩm tương tự</h2>
-        @if ($relatedProducts->isNotEmpty())
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @foreach ($relatedProducts as $relatedProduct)
-            <div
-                class="product-card bg-white rounded-lg shadow-sm overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
-                <a href="{{ route('products.show', $relatedProduct->slug) }}" class="block">
-                    <img src="{{ $relatedProduct->coverImage ? Storage::url($relatedProduct->coverImage->path) : 'https://placehold.co/300x300/e2e8f0/e2e8f0' }}"
-                        alt="{{ $relatedProduct->name }}" class="w-full h-40 object-cover">
-                    <div class="p-3">
-                        <h4 class="font-semibold text-sm text-gray-800 truncate">{{ $relatedProduct->name }}
-                        </h4>
-                        @if ($relatedProduct->defaultVariant)
-                        <p class="font-bold text-red-600 mt-1">
-                            {{ number_format($relatedProduct->defaultVariant->display_price) }}₫
-                        </p>
-                        @endif
-                        <div class="flex items-center gap-1 text-xs text-gray-500 mt-1">
-                            <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z">
-                                </path>
-                            </svg>
-                            <span>{{ round($relatedProduct->average_rating, 1) }}</span>
-                            <span class="ml-1">({{ $relatedProduct->reviews_count }} đánh giá)</span>
+
+    <section class="container px-4 pt-5 mt-2 mt-sm-3 mt-lg-4">
+        <div class="d-flex align-items-center justify-content-between pb-3 pb-md-4">
+            <h2 class="h3 mb-0">Sản phẩm đã xem gần đây</h2>
+            <div class="nav ms-3">
+            </div>
+        </div>
+
+        <!-- Swiper container -->
+        <div class="swiper recent-products-swiper pt-2">
+            <div id="recent-products-container" class="swiper-wrapper">
+                <!-- Danh sách sản phẩm đã xem sẽ được render bằng JavaScript -->
+            </div>
+        </div>
+    </section>
+    <div class="padding-bottom-5">
+
+    </div>
+
+    <!-- Thêm JS của Swiper từ CDN -->
+    <!-- Thêm JS của Swiper từ CDN -->
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+        <script>
+            function renderRecentProducts() {
+                const recentProductsContainer = document.getElementById('recent-products-container');
+                if (!recentProductsContainer) {
+                    console.error('Không tìm thấy #recent-products-container');
+                    return;
+                }
+
+                const recentProducts = JSON.parse(localStorage.getItem('recent_product_ids') || '[]');
+                recentProductsContainer.innerHTML = '';
+
+                if (recentProducts.length === 0) {
+                    recentProductsContainer.innerHTML =
+                        '<div class="swiper-slide"><div class="col-12 text-center py-5"><p class="text-muted">Không tìm thấy sản phẩm nào.</p></div></div>';
+                    return;
+                }
+
+                recentProducts.forEach(product => {
+                    const rawPrice = parseInt(product.price) || 0;
+                    const rawSalePrice = product.sale_price !== null ? parseInt(product.sale_price) : null;
+                    const hasSale = rawSalePrice !== null && rawSalePrice < rawPrice;
+                    const discountPercent = hasSale ? Math.round((1 - rawSalePrice / rawPrice) * 100) : 0;
+                    const displayPrice = hasSale ? rawSalePrice : rawPrice;
+                    const isFlashSale = product.is_flash_sale || false;
+                    const productName = product.variant_name ? `${product.name} ${product.variant_name}` : product.name;
+                    const mainImage = product.image || '/images/placeholder.jpg';
+
+                    // Tạo productUrl sử dụng product.slug và variant_key
+                    let productSlug = product.slug;
+                    if (!productSlug) {
+                        console.warn(`Slug không tồn tại cho sản phẩm ID ${product.id}, sử dụng ID làm fallback`);
+                        productSlug = product.id;
+                    }
+                    console.log(`[DEBUG] Base slug: ${productSlug}, Variant key: ${product.variant_key}`);
+                    if (product.variant_key && product.variant_key !== 'default') {
+                        const variantAttributes = product.variant_key.split('_');
+                        const slugParts = variantAttributes.map(attr => {
+                            if (!attr) return '';
+                            const normalizedAttr = attr
+                                .normalize('NFD') // Chuẩn hóa Unicode
+                                .replace(/[\u0300-\u036f]/g, '') // Loại bỏ dấu
+                                .replace(/[đĐ]/g, 'd') // Thay cả 'đ' và 'Đ' bằng 'd'
+                                .toLowerCase()
+                                .replace(/\s+/g, '-') // Thay khoảng trắng bằng dấu gạch ngang
+                                .replace(/[^a-z0-9-]/g, ''); // Loại bỏ ký tự không hợp lệ
+                            console.log(`[DEBUG] Normalized attribute: ${attr} -> ${normalizedAttr}`);
+                            return normalizedAttr;
+                        }).filter(Boolean);
+                        if (slugParts.length > 0) {
+                            productSlug = `${productSlug}-${slugParts.join('-')}`;
+                        }
+                    }
+                    const productUrl = `/san-pham/${productSlug}`;
+                    console.log(`[DEBUG] Generated productUrl: ${productUrl}`);
+
+                    const productHtml = `
+            <div class="swiper-slide">
+                <div class="product-card animate-underline hover-effect-opacity bg-body rounded-4 shadow-lg border-0">
+                    <div class="position-relative">
+                        ${hasSale ? `
+                                    <div class="discount-badge" style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px;">
+                                        ${discountPercent === 100 ? 'Miễn phí' : `Giảm ${discountPercent}%`}
+                                    </div>
+                                ` : ''}
+                        ${isFlashSale ? `
+                                    <div class="flash-sale-badge" style="position: absolute; top: 10px; left: 10px; background: #da272a; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px;">
+                                        Flash Sale
+                                    </div>
+                                ` : ''}
+                        <a class="d-block rounded-top overflow-hidden bg-white bg-opacity-75 position-relative"
+                           style="backdrop-filter: blur(4px); padding-bottom: 0px;"
+                           href="${productUrl}">
+                            <div class="ratio" style="--cz-aspect-ratio: calc(250 / 220 * 100%)">
+                                <img src="${mainImage}" alt="${product.name}" loading="lazy"
+                                     class="img-fluid rounded-3 shadow-sm"
+                                     style="object-fit: contain; width: 100%; height: 100%; background: #fff;">
+                            </div>
+                        </a>
+                    </div>
+                    <div class="w-100 min-w-0 px-2 pb-3 pt-2 px-sm-3 pb-sm-3 d-flex flex-column justify-content-between"
+                         style="min-height: 100px;">
+                        <h3 class="pb-2 mb-3 text-center">
+                            <a class="d-block fs-base fw-semibold text-truncate mb-2 no-underline-link"
+                               href="${productUrl}" style="margin-top: 10px;">
+                                ${productName}
+                            </a>
+                        </h3>
+                        <div class="lh-1 mb-0" style="line-height: 1.2; text-align: center;">
+                            ${displayPrice > 0 ? `
+                                        ${hasSale ? `
+                                    <span class="text-primary fw-semibold fs-base" style="color: #0d6efd !important;">
+                                        ${formatPrice(displayPrice)}
+                                    </span>
+                                    <del class="text-muted fs-sm ms-2">
+                                        ${formatPrice(rawPrice)}
+                                    </del>
+                                ` : `
+                                    <span class="fw-semibold fs-base">${formatPrice(displayPrice)}</span>
+                                `}
+                                    ` : `
+                                        <span class="text-primary fw-semibold fs-base" style="color: #0d6efd !important;">0đ</span>
+                                    `}
                         </div>
                     </div>
-                </a>
+                </div>
             </div>
-            </a>
-        </div>
-        @endforeach
-</div>
-@else
-<p class="text-center text-gray-500">Không có sản phẩm tương tự.</p>
-@endif
-</section>
+        `;
+                    recentProductsContainer.insertAdjacentHTML('beforeend', productHtml);
+                });
+
+                // Khởi tạo Swiper sau khi render sản phẩm
+                new Swiper('.recent-products-swiper', {
+                    slidesPerView: 2,
+                    spaceBetween: 16,
+                    navigation: {
+                        nextEl: '.swiper-button-prev',
+                        prevEl: '.swiper-button-next',
+                    },
+                    breakpoints: {
+                        576: {
+                            slidesPerView: 3
+                        },
+                        992: {
+                            slidesPerView: 5
+                        }
+                    }
+                });
+            }
+
+            function formatPrice(price) {
+                return price.toLocaleString('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND'
+                }).replace('₫', 'đ');
+            }
+
+            function saveRecentProduct() {
+                const productId = window.currentProductId;
+                const productName = @json($product->name);
+                const attributeOrder = window.attributeOrder || [];
+                const currentSelections = window.currentSelections || {};
+                const variantKey = window.productType === 'variable' ? attributeOrder.map(attr => currentSelections[attr] || '')
+                    .join('_') : 'default';
+                const variant = window.variantData[variantKey] || window.variantData['default'];
+                const variantName = attributeOrder.map(attr => currentSelections[attr]).filter(Boolean).join(' ');
+                let image = variant?.image;
+                if (!image || typeof image !== 'string') {
+                    image = @json($product->coverImage ? Storage::url($product->coverImage->path) : '/images/placeholder.jpg');
+                }
+                const price = variant?.price ? parseInt(variant.price) : parseInt(@json($product->price));
+                const salePrice = variant?.sale_price ? parseInt(variant.sale_price) : null;
+                const isFlashSale = variant?.is_flash_sale || false;
+                const slug = window.baseSlug || productId;
+
+                // Kiểm tra và log window.baseSlug
+                if (!window.baseSlug) {
+                    console.warn(`window.baseSlug không tồn tại, sử dụng productId (${productId}) làm slug`);
+                } else {
+                    console.log(`[DEBUG] window.baseSlug: ${window.baseSlug}`);
+                }
+
+                const key = 'recent_product_ids';
+                const maxItems = 10;
+                let recentProducts = JSON.parse(localStorage.getItem(key)) || [];
+
+                recentProducts = recentProducts.filter(item => window.productType === 'variable' ?
+                    `${item.id}_${item.variant_key || ''}` !== `${productId}_${variantKey}` : item.id !== productId);
+
+                recentProducts.unshift({
+                    id: productId,
+                    name: productName,
+                    variant_key: variantKey,
+                    variant_name: variantName,
+                    image: image,
+                    price: price,
+                    sale_price: salePrice,
+                    is_flash_sale: isFlashSale,
+                    slug: slug,
+                    variant_id: variant?.variant_id || 'default'
+                });
+
+                recentProducts = recentProducts.slice(0, maxItems);
+                localStorage.setItem(key, JSON.stringify(recentProducts));
+
+                console.log('✅ Đã lưu sản phẩm vào danh sách đã xem:', {
+                    id: productId,
+                    image: image,
+                    variantKey: variantKey,
+                    slug: slug,
+                    recentProducts: recentProducts
+                });
+
+                renderRecentProducts();
+            }
+
+            window.addEventListener('load', () => {
+                renderRecentProducts();
+            });
+        </script>
+    @endpush
 </div>
 
 <!-- MODAL ĐÁNH GIÁ -->
@@ -575,7 +874,8 @@
                         </svg>
                         <div class="flex text-sm text-gray-600"><label for="file-upload"
                                 class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"><span>Tải
-                                    lên một file</span><input id="file-upload" name="media[]" type="file" class="sr-only" multiple accept="image/*,video/*">
+                                    lên một file</span><input id="file-upload" name="media[]" type="file"
+                                    class="sr-only" multiple accept="image/*,video/*">
 
                             </label>
                             <p class="pl-1">hoặc kéo và thả</p>
@@ -595,7 +895,8 @@
 </div>
 
 <!-- Modal xác minh đơn hàng -->
-<div id="guestReviewVerifyModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+<div id="guestReviewVerifyModal"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-lg w-full max-w-md relative">
         <h2 class="text-xl font-semibold mb-4">Xác minh đơn hàng</h2>
         <form id="verifyOrderForm">
@@ -611,7 +912,8 @@
             </div>
 
             <div class="text-right">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Xác nhận</button>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Xác
+                    nhận</button>
             </div>
         </form>
         <button class="absolute top-2 right-2 text-gray-500" onclick="closeVerifyModal()">✕</button>
@@ -619,12 +921,14 @@
 </div>
 
 <!-- Khu vực hiển thị sản phẩm trong đơn hàng đã xác minh -->
-<div id="verifiedProductsSection" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+<div id="verifiedProductsSection"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
     <div class="bg-white p-6 rounded-lg w-full max-w-3xl relative">
         <h2 class="text-xl font-semibold mb-4">Chọn sản phẩm bạn muốn đánh giá</h2>
         <div id="productList" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2"></div>
 
-        <button class="absolute top-2 right-2 text-gray-500 hover:text-gray-700" onclick="closeVerifiedProductsSection()">✕</button>
+        <button class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+            onclick="closeVerifiedProductsSection()">✕</button>
     </div>
 </div>
 
@@ -653,8 +957,7 @@
 
             <div>
                 <label class="font-semibold text-gray-700">Thêm hình ảnh/video</label>
-                <div
-                    class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
                     <div class="space-y-1 text-center">
                         <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none"
                             viewBox="0 0 48 48" aria-hidden="true">
@@ -671,7 +974,7 @@
                         <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                     </div>
                 </div>
-                 <div id="preview-images-guest" class="flex flex-wrap gap-3 mt-3"></div>
+                <div id="preview-images-guest" class="flex flex-wrap gap-3 mt-3"></div>
             </div>
             <!-- Hidden input để JS gán giá trị -->
             <input type="hidden" id="order_item_id_guest" name="order_item_id_guest">
@@ -720,7 +1023,7 @@
 
             const formData = new FormData(this);
 
-            fetch('{{ route("guest.reviews.verify") }}', {
+            fetch('{{ route('guest.reviews.verify') }}', {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -736,10 +1039,11 @@
                     }
 
                     const modalContent = document.getElementById('verifyModalContent');
-                    const verifiedProductsSection = document.getElementById('verifiedProductsSection');
+                    const verifiedProductsSection = document.getElementById(
+                        'verifiedProductsSection');
                     const productList = document.getElementById('productList');
                     productList.innerHTML = ''; // Clear trước
-                    
+
                     // Render từng item
                     data.items.forEach(item => {
                         const productHTML = `
@@ -863,74 +1167,77 @@
     }
 
     // Đánh giá sản phẩm (sao + comment + modal)
-function initReviewModal() {
-    const writeBtn = document.getElementById('write-review-btn');
-    const modal = document.getElementById('review-modal');
-    const closeBtn = document.getElementById('close-review-modal-btn');
-    const starsContainer = document.getElementById('review-stars-container');
-    const submitBtn = document.getElementById('submit-review-btn');
-    const reviewText = document.getElementById('review-text');
-    const fileInput = document.getElementById('file-upload');
-    const previewContainer = document.getElementById('preview-images');
-    let selectedRating = 0;
-    let selectedFiles = [];
+    function initReviewModal() {
+        const writeBtn = document.getElementById('write-review-btn');
+        const modal = document.getElementById('review-modal');
+        const closeBtn = document.getElementById('close-review-modal-btn');
+        const starsContainer = document.getElementById('review-stars-container');
+        const submitBtn = document.getElementById('submit-review-btn');
+        const reviewText = document.getElementById('review-text');
+        const fileInput = document.getElementById('file-upload');
+        const previewContainer = document.getElementById('preview-images');
+        let selectedRating = 0;
+        let selectedFiles = [];
 
-    if (!writeBtn || !modal || !closeBtn || !starsContainer || !fileInput || !previewContainer) return;
+        if (!writeBtn || !modal || !closeBtn || !starsContainer || !fileInput || !previewContainer) return;
 
-    // ⭐ Render sao
-    starsContainer.innerHTML = '';
-    for (let i = 1; i <= 5; i++) {
-        const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        star.setAttribute('class', 'review-star w-8 h-8 text-gray-300 cursor-pointer transition-colors');
-        star.setAttribute('fill', 'currentColor');
-        star.setAttribute('viewBox', '0 0 20 20');
-        star.dataset.rating = i;
-        star.innerHTML =
-            `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
-        starsContainer.appendChild(star);
-    }
+        // ⭐ Render sao
+        starsContainer.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            star.setAttribute('class', 'review-star w-8 h-8 text-gray-300 cursor-pointer transition-colors');
+            star.setAttribute('fill', 'currentColor');
+            star.setAttribute('viewBox', '0 0 20 20');
+            star.dataset.rating = i;
+            star.innerHTML =
+                `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
+            starsContainer.appendChild(star);
+        }
 
-    const stars = starsContainer.querySelectorAll('.review-star');
-    stars.forEach(star => {
-        star.addEventListener('mouseover', () => {
-            stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star.dataset.rating));
-        });
-        star.addEventListener('mouseout', () => {
-            stars.forEach(s => {
-                s.classList.remove('text-yellow-400');
-                s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
+        const stars = starsContainer.querySelectorAll('.review-star');
+        stars.forEach(star => {
+            star.addEventListener('mouseover', () => {
+                stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star
+                    .dataset.rating));
+            });
+            star.addEventListener('mouseout', () => {
+                stars.forEach(s => {
+                    s.classList.remove('text-yellow-400');
+                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
+                        'text-gray-300');
+                });
+            });
+            star.addEventListener('click', () => {
+                selectedRating = parseInt(star.dataset.rating);
+                stars.forEach(s => {
+                    s.classList.remove('text-yellow-400', 'text-gray-300');
+                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
+                        'text-gray-300');
+                });
             });
         });
-        star.addEventListener('click', () => {
-            selectedRating = parseInt(star.dataset.rating);
-            stars.forEach(s => {
-                s.classList.remove('text-yellow-400', 'text-gray-300');
-                s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
-            });
-        });
-    });
 
-    // ⭐ Hiện modal
-    function showModal(modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        document.body.classList.add('overflow-hidden');
-        setTimeout(() => {
-            modal.classList.add('opacity-100');
-            modal.querySelector('div[class*="transform"]').classList.remove('scale-95');
-        }, 10);
-    }
+        // ⭐ Hiện modal
+        function showModal(modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.classList.add('overflow-hidden');
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                modal.querySelector('div[class*="transform"]').classList.remove('scale-95');
+            }, 10);
+        }
 
-    function hideModal(modal) {
-        document.body.classList.remove('overflow-hidden');
-        modal.classList.remove('opacity-100');
-        modal.querySelector('div[class*="transform"]').classList.add('scale-95');
-        setTimeout(() => {
-            modal.classList.add('hidden');
-        }, 300);
-    }
+        function hideModal(modal) {
+            document.body.classList.remove('overflow-hidden');
+            modal.classList.remove('opacity-100');
+            modal.querySelector('div[class*="transform"]').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
 
-            if (writeBtn) {
+        if (writeBtn) {
             writeBtn.addEventListener('click', () => {
                 if (IS_LOGGED_IN) {
                     if (ORDER_ITEM_ID !== null) {
@@ -947,283 +1254,290 @@ function initReviewModal() {
             });
         }
 
-    closeBtn.addEventListener('click', () => hideModal(modal));
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) hideModal(modal);
-    });
-
-    // ⭐ Upload ảnh + preview
-    fileInput.addEventListener('change', function (e) {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            if (selectedFiles.length >= 5) {
-                toastr.warning('Chỉ được upload tối đa 5 file.');
-                return;
-            }
-
-            const exists = selectedFiles.some(f => f.name === file.name && f.size === file.size);
-            if (exists) return;
-
-            selectedFiles.push(file);
-
-            const url = URL.createObjectURL(file);
-            const wrapper = document.createElement('div');
-            wrapper.className = 'relative w-24 h-24 rounded overflow-hidden border border-gray-300';
-
-            let media;
-            if (file.type.startsWith('image/')) {
-                media = document.createElement('img');
-                media.src = url;
-                media.className = 'w-full h-full object-cover';
-            } else if (file.type.startsWith('video/')) {
-                media = document.createElement('video');
-                media.src = url;
-                media.controls = true;
-                media.className = 'w-full h-full object-cover';
-            } else {
-                return;
-            }
-
-            const removeBtn = document.createElement('button');
-            removeBtn.innerHTML = '&times;';
-            removeBtn.className = 'absolute top-0 right-0 bg-white bg-opacity-75 text-red-600 font-bold rounded-bl px-1';
-
-            removeBtn.addEventListener('click', () => {
-                selectedFiles = selectedFiles.filter(f => !(f.name === file.name && f.size === file.size));
-                wrapper.remove();
-            });
-
-            wrapper.appendChild(media);
-            wrapper.appendChild(removeBtn);
-            previewContainer.appendChild(wrapper);
+        closeBtn.addEventListener('click', () => hideModal(modal));
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) hideModal(modal);
         });
 
-        // Reset input để chọn lại file trùng
-        e.target.value = '';
-    });
+        // ⭐ Upload ảnh + preview
+        fileInput.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            files.forEach(file => {
+                if (selectedFiles.length >= 5) {
+                    toastr.warning('Chỉ được upload tối đa 5 file.');
+                    return;
+                }
 
-    // ⭐ Gửi đánh giá
-    submitBtn.addEventListener('click', () => {
-        if (!selectedRating) return toastr.warning('Vui lòng chọn số sao');
-        const comment = reviewText?.value.trim();
+                const exists = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+                if (exists) return;
 
-        const formData = new FormData();
-        formData.append('rating', selectedRating);
-        formData.append('comment', comment);
-        formData.append('product_variant_id', PRODUCT_VARIANT_ID);
-        if (ORDER_ITEM_ID !== null) {
-            formData.append('order_item_id', ORDER_ITEM_ID);
-        }
+                selectedFiles.push(file);
 
-        selectedFiles.forEach(file => {
-            formData.append('media[]', file);
+                const url = URL.createObjectURL(file);
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative w-24 h-24 rounded overflow-hidden border border-gray-300';
+
+                let media;
+                if (file.type.startsWith('image/')) {
+                    media = document.createElement('img');
+                    media.src = url;
+                    media.className = 'w-full h-full object-cover';
+                } else if (file.type.startsWith('video/')) {
+                    media = document.createElement('video');
+                    media.src = url;
+                    media.controls = true;
+                    media.className = 'w-full h-full object-cover';
+                } else {
+                    return;
+                }
+
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.className =
+                    'absolute top-0 right-0 bg-white bg-opacity-75 text-red-600 font-bold rounded-bl px-1';
+
+                removeBtn.addEventListener('click', () => {
+                    selectedFiles = selectedFiles.filter(f => !(f.name === file.name && f
+                        .size === file.size));
+                    wrapper.remove();
+                });
+
+                wrapper.appendChild(media);
+                wrapper.appendChild(removeBtn);
+                previewContainer.appendChild(wrapper);
+            });
+
+            // Reset input để chọn lại file trùng
+            e.target.value = '';
         });
 
-        fetch(reviewPostUrl, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(async res => {
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || 'Có lỗi xảy ra.');
-                return data;
-            })
-            .then(data => {
-                toastr.success(data.message || 'Đánh giá thành công!');
-                hideModal(modal);
-                setTimeout(() => location.reload(), 1500);
-            })
-            .catch(err => {
-                toastr.error(err.message || 'Lỗi kết nối server');
+        // ⭐ Gửi đánh giá
+        submitBtn.addEventListener('click', () => {
+            if (!selectedRating) return toastr.warning('Vui lòng chọn số sao');
+            const comment = reviewText?.value.trim();
+
+            const formData = new FormData();
+            formData.append('rating', selectedRating);
+            formData.append('comment', comment);
+            formData.append('product_variant_id', PRODUCT_VARIANT_ID);
+            if (ORDER_ITEM_ID !== null) {
+                formData.append('order_item_id', ORDER_ITEM_ID);
+            }
+
+            selectedFiles.forEach(file => {
+                formData.append('media[]', file);
             });
-    });
-}
+
+            fetch(reviewPostUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Có lỗi xảy ra.');
+                    return data;
+                })
+                .then(data => {
+                    toastr.success(data.message || 'Đánh giá thành công!');
+                    hideModal(modal);
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(err => {
+                    toastr.error(err.message || 'Lỗi kết nối server');
+                });
+        });
+    }
 
 
     function initGuestReviewModal() {
-    const modal = document.getElementById('review-modal-guest');
-    const closeBtn = document.getElementById('close-review-modal-guest-btn');
-    const starsContainer = document.getElementById('review-stars-guest');
-    const submitBtn = document.getElementById('submit-review-btn-guest');
-    const reviewText = document.getElementById('review-text-guest');
-    const fileInput = document.getElementById('file-upload-guest');
-    const previewContainer = document.getElementById('preview-images-guest'); // ➕ BẠN PHẢI THÊM DIV này trong HTML
-    const inputOrderItemId = document.getElementById('order_item_id_guest');
-    const inputProductVariantId = document.getElementById('product_variant_id_guest');
-    let selectedRating = 0;
-    let selectedFiles = [];
+        const modal = document.getElementById('review-modal-guest');
+        const closeBtn = document.getElementById('close-review-modal-guest-btn');
+        const starsContainer = document.getElementById('review-stars-guest');
+        const submitBtn = document.getElementById('submit-review-btn-guest');
+        const reviewText = document.getElementById('review-text-guest');
+        const fileInput = document.getElementById('file-upload-guest');
+        const previewContainer = document.getElementById('preview-images-guest'); // ➕ BẠN PHẢI THÊM DIV này trong HTML
+        const inputOrderItemId = document.getElementById('order_item_id_guest');
+        const inputProductVariantId = document.getElementById('product_variant_id_guest');
+        let selectedRating = 0;
+        let selectedFiles = [];
 
-    if (!modal || !closeBtn || !starsContainer) return;
+        if (!modal || !closeBtn || !starsContainer) return;
+        // ⭐ Render stars
+        starsContainer.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            star.setAttribute('class', 'guest-review-star w-8 h-8 text-gray-300 cursor-pointer transition-colors');
+            star.setAttribute('fill', 'currentColor');
+            star.setAttribute('viewBox', '0 0 20 20');
+            star.dataset.rating = i;
+            star.innerHTML =
+                `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
+            starsContainer.appendChild(star);
+        }
 
-    // ⭐ Render stars
-    starsContainer.innerHTML = '';
-    for (let i = 1; i <= 5; i++) {
-        const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        star.setAttribute('class', 'guest-review-star w-8 h-8 text-gray-300 cursor-pointer transition-colors');
-        star.setAttribute('fill', 'currentColor');
-        star.setAttribute('viewBox', '0 0 20 20');
-        star.dataset.rating = i;
-        star.innerHTML = `<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>`;
-        starsContainer.appendChild(star);
-    }
-
-    const stars = starsContainer.querySelectorAll('.guest-review-star');
-    stars.forEach(star => {
-        star.addEventListener('mouseover', () => {
-            stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star.dataset.rating));
-        });
-        star.addEventListener('mouseout', () => {
-            stars.forEach(s => {
-                s.classList.remove('text-yellow-400');
-                s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
+        const stars = starsContainer.querySelectorAll('.guest-review-star');
+        stars.forEach(star => {
+            star.addEventListener('mouseover', () => {
+                stars.forEach(s => s.classList.toggle('text-yellow-400', s.dataset.rating <= star
+                    .dataset.rating));
+            });
+            star.addEventListener('mouseout', () => {
+                stars.forEach(s => {
+                    s.classList.remove('text-yellow-400');
+                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
+                        'text-gray-300');
+                });
+            });
+            star.addEventListener('click', () => {
+                selectedRating = parseInt(star.dataset.rating);
+                stars.forEach(s => {
+                    s.classList.remove('text-yellow-400', 'text-gray-300');
+                    s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' :
+                        'text-gray-300');
+                });
             });
         });
-        star.addEventListener('click', () => {
-            selectedRating = parseInt(star.dataset.rating);
-            stars.forEach(s => {
-                s.classList.remove('text-yellow-400', 'text-gray-300');
-                s.classList.add(s.dataset.rating <= selectedRating ? 'text-yellow-400' : 'text-gray-300');
-            });
+
+        function showModal() {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            selectedFiles = [];
+            previewContainer.innerHTML = '';
+            fileInput.value = '';
+            setTimeout(() => {
+                modal.classList.add('opacity-100');
+                modal.querySelector('div[class*="transform"]').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function hideModal() {
+            modal.classList.remove('opacity-100');
+            modal.querySelector('div[class*="transform"]').classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        closeBtn.addEventListener('click', () => hideModal());
+        modal.addEventListener('click', e => {
+            if (e.target === modal) hideModal();
         });
-    });
 
-    function showModal() {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        selectedFiles = [];
-        previewContainer.innerHTML = '';
-        fileInput.value = '';
-        setTimeout(() => {
-            modal.classList.add('opacity-100');
-            modal.querySelector('div[class*="transform"]').classList.remove('scale-95');
-        }, 10);
-    }
+        // ⭐ Upload & preview ảnh/video
+        fileInput?.addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
 
-    function hideModal() {
-        modal.classList.remove('opacity-100');
-        modal.querySelector('div[class*="transform"]').classList.add('scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    }
+            files.forEach(file => {
+                if (selectedFiles.length >= 5) {
+                    toastr.warning('Tối đa 5 ảnh/video');
+                    return;
+                }
 
-    closeBtn.addEventListener('click', () => hideModal());
-    modal.addEventListener('click', e => {
-        if (e.target === modal) hideModal();
-    });
+                const exists = selectedFiles.some(f => f.name === file.name && f.size === file.size);
+                if (exists) return;
 
-    // ⭐ Upload & preview ảnh/video
-    fileInput?.addEventListener('change', function (e) {
-        const files = Array.from(e.target.files);
+                selectedFiles.push(file);
 
-        files.forEach(file => {
-            if (selectedFiles.length >= 5) {
-                toastr.warning('Tối đa 5 ảnh/video');
+                const url = URL.createObjectURL(file);
+                const wrapper = document.createElement('div');
+                wrapper.className = 'relative w-24 h-24 rounded overflow-hidden border border-gray-300';
+
+                let media;
+                if (file.type.startsWith('image/')) {
+                    media = document.createElement('img');
+                    media.src = url;
+                    media.className = 'w-full h-full object-cover';
+                } else if (file.type.startsWith('video/')) {
+                    media = document.createElement('video');
+                    media.src = url;
+                    media.controls = true;
+                    media.className = 'w-full h-full object-cover';
+                } else {
+                    return;
+                }
+
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.className =
+                    'absolute top-0 right-0 bg-white bg-opacity-75 text-red-600 font-bold rounded-bl px-1';
+
+                removeBtn.addEventListener('click', () => {
+                    selectedFiles = selectedFiles.filter(f => !(f.name === file.name && f
+                        .size === file.size));
+                    wrapper.remove();
+                });
+
+                wrapper.appendChild(media);
+                wrapper.appendChild(removeBtn);
+                previewContainer.appendChild(wrapper);
+            });
+
+            e.target.value = '';
+        });
+
+        // ⭐ Gửi đánh giá khách
+        submitBtn.addEventListener('click', () => {
+            if (!selectedRating) return toastr.warning('Vui lòng chọn số sao');
+
+            const comment = reviewText?.value.trim();
+            const orderItemId = inputOrderItemId?.value;
+            const productVariantId = inputProductVariantId?.value;
+
+            if (!orderItemId || !productVariantId) {
+                toastr.error('Thiếu thông tin sản phẩm để đánh giá.');
                 return;
             }
 
-            const exists = selectedFiles.some(f => f.name === file.name && f.size === file.size);
-            if (exists) return;
+            const formData = new FormData();
+            formData.append('rating', selectedRating);
+            formData.append('comment', comment);
+            formData.append('order_item_id', orderItemId);
+            formData.append('product_variant_id', productVariantId);
+            formData.append('guest', true);
 
-            selectedFiles.push(file);
-
-            const url = URL.createObjectURL(file);
-            const wrapper = document.createElement('div');
-            wrapper.className = 'relative w-24 h-24 rounded overflow-hidden border border-gray-300';
-
-            let media;
-            if (file.type.startsWith('image/')) {
-                media = document.createElement('img');
-                media.src = url;
-                media.className = 'w-full h-full object-cover';
-            } else if (file.type.startsWith('video/')) {
-                media = document.createElement('video');
-                media.src = url;
-                media.controls = true;
-                media.className = 'w-full h-full object-cover';
-            } else {
-                return;
-            }
-
-            const removeBtn = document.createElement('button');
-            removeBtn.innerHTML = '&times;';
-            removeBtn.className = 'absolute top-0 right-0 bg-white bg-opacity-75 text-red-600 font-bold rounded-bl px-1';
-
-            removeBtn.addEventListener('click', () => {
-                selectedFiles = selectedFiles.filter(f => !(f.name === file.name && f.size === file.size));
-                wrapper.remove();
+            selectedFiles.forEach(file => {
+                formData.append('media[]', file);
             });
 
-            wrapper.appendChild(media);
-            wrapper.appendChild(removeBtn);
-            previewContainer.appendChild(wrapper);
+            fetch(guestReviewPostUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Có lỗi xảy ra.');
+                    return data;
+                })
+                .then(data => {
+                    toastr.success(data.message || 'Đánh giá thành công!');
+                    hideModal();
+                    setTimeout(() => location.reload(), 1500);
+                })
+                .catch(err => toastr.error(err.message || 'Lỗi kết nối server'));
         });
 
-        e.target.value = '';
-    });
+        // Bắt sự kiện khi click nút “Viết đánh giá” cho khách
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('write-review-btn')) {
+                const orderItemId = e.target.dataset.orderItemId;
+                const productVariantId = e.target.dataset.productVariantId;
 
-    // ⭐ Gửi đánh giá khách
-    submitBtn.addEventListener('click', () => {
-        if (!selectedRating) return toastr.warning('Vui lòng chọn số sao');
+                if (inputOrderItemId && inputProductVariantId) {
+                    inputOrderItemId.value = orderItemId || '';
+                    inputProductVariantId.value = productVariantId || '';
+                }
 
-        const comment = reviewText?.value.trim();
-        const orderItemId = inputOrderItemId?.value;
-        const productVariantId = inputProductVariantId?.value;
-
-        if (!orderItemId || !productVariantId) {
-            toastr.error('Thiếu thông tin sản phẩm để đánh giá.');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('rating', selectedRating);
-        formData.append('comment', comment);
-        formData.append('order_item_id', orderItemId);
-        formData.append('product_variant_id', productVariantId);
-        formData.append('guest', true);
-
-        selectedFiles.forEach(file => {
-            formData.append('media[]', file);
-        });
-
-        fetch(guestReviewPostUrl, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: formData
-            })
-            .then(async res => {
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.message || 'Có lỗi xảy ra.');
-                return data;
-            })
-            .then(data => {
-                toastr.success(data.message || 'Đánh giá thành công!');
-                hideModal();
-                setTimeout(() => location.reload(), 1500);
-            })
-            .catch(err => toastr.error(err.message || 'Lỗi kết nối server'));
-    });
-
-    // Bắt sự kiện khi click nút “Viết đánh giá” cho khách
-    document.addEventListener('click', function (e) {
-        if (e.target.classList.contains('write-review-btn')) {
-            const orderItemId = e.target.dataset.orderItemId;
-            const productVariantId = e.target.dataset.productVariantId;
-
-            if (inputOrderItemId && inputProductVariantId) {
-                inputOrderItemId.value = orderItemId || '';
-                inputProductVariantId.value = productVariantId || '';
+                showModal();
             }
-
-            showModal();
-        }
-    });
-}
+        });
+    }
 
 
 

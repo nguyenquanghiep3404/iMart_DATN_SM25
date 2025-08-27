@@ -241,14 +241,14 @@
                                         điểm*</label>
                                     <input type="text" id="name" name="name" x-model="formData.name"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        required>
+                                        >
                                 </div>
                                 <div>
                                     <label for="phone" class="block text-sm font-medium text-gray-700">Số điện
                                         thoại*</label>
                                     <input type="text" id="phone" name="phone" x-model="formData.phone"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        required>
+                                        >
                                 </div>
                                 <div>
                                     <label for="province_code_display"
@@ -256,7 +256,7 @@
                                     <select id="province_code_display" x-model="formData.province_code"
                                         @change="updateDistricts()"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        required>
+                                        >
                                         <option value="">Chọn Tỉnh/Thành phố</option>
                                         <template x-for="province in provinces" :key="province.code">
                                             <option :value="province.code" x-text="province.name"></option>
@@ -269,7 +269,7 @@
                                     <select id="district_code_display" x-model="formData.district_code"
                                         @change="updateWards()"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        :disabled="!formData.province_code" required>
+                                        :disabled="!formData.province_code" >
                                         <option value="">Chọn Quận/Huyện</option>
                                         <template x-for="district in districts" :key="district.code">
                                             <option :value="district.code" x-text="district.name"></option>
@@ -281,7 +281,7 @@
                                         địa điểm*</label>
                                     <select id="type_display" x-model="formData.type"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        required>
+                                        >
                                         <option value="store">Cửa hàng</option>
                                         <option value="warehouse">Kho</option>
                                         <option value="service_center">Trung tâm bảo hành</option>
@@ -292,7 +292,7 @@
                                         class="block text-sm font-medium text-gray-700">Phường/Xã*</label>
                                     <select id="ward_code_display" x-model="formData.ward_code"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        :disabled="!formData.district_code" required>
+                                        :disabled="!formData.district_code" >
                                         <option value="">Chọn Phường/Xã</option>
                                         <template x-for="ward in wards" :key="ward.code">
                                             <option :value="ward.code" x-text="ward.name"></option>
@@ -304,7 +304,7 @@
                                         (số nhà, đường)*</label>
                                     <input type="text" id="address" name="address" x-model="formData.address"
                                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 mt-1"
-                                        placeholder="Ví dụ: 123 Lê Lợi" required>
+                                        placeholder="Ví dụ: 123 Lê Lợi" >
                                 </div>
                                 <div class="sm:col-span-2 flex items-center">
                                     <label for="is_active_display" class="relative inline-block w-11 h-6 cursor-pointer">
@@ -533,14 +533,14 @@
                     async editLocation(location) {
                         this.isEditMode = true;
                         this.resetForm();
+
                         try {
                             const response = await fetch(`/admin/store-locations/${location.id}/edit`);
-                            if (!response.ok) {
-                                const errorText = await response.text();
-                                throw new Error(`Không thể lấy dữ liệu địa điểm. Trạng thái: ${response.status}. Phản hồi: ${errorText}`);
-                            }
+                            if (!response.ok) throw new Error('Không thể tải dữ liệu để chỉnh sửa.');
+
                             const fullLocation = await response.json();
 
+                            // Gán dữ liệu vào form, LƯU Ý: chưa gán district_code và ward_code
                             this.formData = {
                                 id: fullLocation.id,
                                 name: fullLocation.name,
@@ -548,24 +548,36 @@
                                 type: fullLocation.type,
                                 is_active: fullLocation.is_active,
                                 province_code: fullLocation.province_code || '',
-                                district_code: fullLocation.district_code || '',
-                                ward_code: fullLocation.ward_code || '',
+                                district_code: '', // << Tạm thời để trống
+                                ward_code: '',     // << Tạm thời để trống
                                 address: fullLocation.address || '',
                             };
 
-                            // Tải lại các dropdown địa chỉ theo thứ tự
+                            // Mở modal trước để các element select tồn tại trong DOM
+                            this.isModalOpen = true;
+
+                            // Đợi DOM cập nhật sau khi mở modal
+                            await this.$nextTick();
+
+                            // Bắt đầu chuỗi tải địa chỉ
                             if (this.formData.province_code) {
-                                await this.updateDistricts(true);
+                                await this.updateDistricts(true); // Tải danh sách quận/huyện
+
+                                // Gán district_code VÀ đợi DOM cập nhật
+                                this.formData.district_code = fullLocation.district_code || '';
+                                await this.$nextTick();
+
                                 if (this.formData.district_code) {
-                                    await new Promise(resolve => setTimeout(resolve, 100));
-                                    await this.updateWards(true);
+                                    await this.updateWards(true); // Tải danh sách phường/xã
+
+                                    // Gán ward_code VÀ đợi DOM cập nhật
+                                    this.formData.ward_code = fullLocation.ward_code || '';
+                                    await this.$nextTick();
                                 }
                             }
-
-                            this.isModalOpen = true;
                         } catch (error) {
                             console.error('Lỗi khi lấy địa điểm để chỉnh sửa:', error);
-                            this.showMessage(error.message || 'Lỗi khi tải thông tin cửa hàng để sửa.', 'error');
+                            this.showMessage(error.message || 'Lỗi khi tải thông tin cửa hàng.', 'error');
                         }
                     },
 
@@ -758,6 +770,7 @@
                             this.showMessage(error.message || 'Lỗi kết nối hoặc xử lý server.', 'error');
                         }
                     },
+
 
                     async fetchLocations() {
                         try {

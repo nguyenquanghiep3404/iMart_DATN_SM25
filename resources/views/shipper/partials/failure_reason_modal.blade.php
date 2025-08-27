@@ -1,8 +1,28 @@
-<div id="failure-reason-modal" class="modal-overlay">
-    <div class="modal-content">
+
+<div x-show="isFailureModalOpen"
+     x-cloak
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="modal-overlay">
+
+    <div @click.outside="isFailureModalOpen = false"
+         x-show="isFailureModalOpen"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-full"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform translate-y-full"
+         class="modal-content">
+        
         <h2 class="text-xl font-bold text-gray-800 p-6 border-b">Lý do giao không thành công</h2>
 
-        <form id="failure-report-form" action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST" style="display: none;">
+        {{-- Form ẩn để JS điền thông tin và submit --}}
+        <form id="fail-delivery-form" action="{{ route('shipper.orders.updateStatus', $fulfillment->order) }}" method="POST" class="hidden">
             @csrf
             @method('PATCH')
             <input type="hidden" name="status" value="failed_delivery">
@@ -25,9 +45,13 @@
                 <textarea id="failure-notes" rows="3" class="w-full py-2 px-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="VD: Khách hẹn giao sau 17h"></textarea>
             </div>
         </div>
-        <div class="modal-footer p-6 grid grid-cols-2 gap-3">
-             <button type="button" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg close-modal-btn">Hủy</button>
-             <button type="button" id="confirm-failure-btn" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg">Xác nhận</button>
+        
+        <div class="p-6 grid grid-cols-2 gap-3 border-t">
+            {{-- Nút Hủy giờ sẽ đổi trạng thái isFailureModalOpen --}}
+            <button type="button" @click="isFailureModalOpen = false" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg">Hủy</button>
+            
+            {{-- Nút Xác nhận sẽ gọi hàm submitFailureForm trong AlpineJS component --}}
+            <button type="button" @click="submitFailureForm()" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg">Xác nhận</button>
         </div>
     </div>
 </div>
