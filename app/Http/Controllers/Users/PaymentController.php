@@ -2605,7 +2605,7 @@ class PaymentController extends Controller
         }
     }
 
-    private function incrementFlashSaleQuantitySold(Order $order): void
+   private function incrementFlashSaleQuantitySold(Order $order): void
 {
     try {
         // Lấy tất cả OrderItem trong đơn hàng
@@ -2622,9 +2622,19 @@ class PaymentController extends Controller
                 ->first();
 
             if ($flashSaleProduct) {
-                // Tăng quantity_sold tương ứng với số lượng trong OrderItem
-                $flashSaleProduct->increment('quantity_sold', $orderItem->quantity);
-                Log::info("Đã tăng quantity_sold cho FlashSaleProduct ID {$flashSaleProduct->id}: +{$orderItem->quantity}");
+                // Kiểm tra số lượng còn lại của Flash Sale
+                $remainingQuantity = $flashSaleProduct->quantity_limit - $flashSaleProduct->quantity_sold;
+
+                if ($remainingQuantity <= 0) {
+                    // Sản phẩm Flash Sale đã hết hàng, bỏ qua việc tăng quantity_sold
+                    Log::info("Sản phẩm FlashSaleProduct ID {$flashSaleProduct->id} đã hết hàng, không tăng quantity_sold.");
+                    continue;
+                }
+
+                // Chỉ tăng quantity_sold nếu còn số lượng khả dụng
+                $quantityToAdd = min($orderItem->quantity, $remainingQuantity);
+                $flashSaleProduct->increment('quantity_sold', $quantityToAdd);
+                Log::info("Đã tăng quantity_sold cho FlashSaleProduct ID {$flashSaleProduct->id}: +{$quantityToAdd}");
             }
         }
     } catch (\Exception $e) {
