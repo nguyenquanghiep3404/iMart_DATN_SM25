@@ -132,8 +132,8 @@
                 <i class="fas fa-barcode mr-2"></i>
                 <span>QUÉT MÃ ĐỂ LẤY GÓI HÀNG</span>
             </button>
-            {{-- THAY ĐỔI: Form này sẽ được submit bởi JS, action trỏ đến route updateStatus của Order --}}
-            <form id="pickup-form" action="{{ route('shipper.orders.updateStatus', $fulfillment->order) }}" method="POST" class="hidden">
+            {{-- THAY ĐỔI: Form này sẽ được submit bởi JS, action trỏ đến route updateStatus của Fulfillment --}}
+            <form id="pickup-form" action="{{ route('shipper.fulfillments.updateStatus', $fulfillment) }}" method="POST" class="hidden">
                 @csrf @method('PATCH')
                 <input type="hidden" name="status" value="shipped">
                 {{-- JS sẽ thêm barcode vào đây trước khi submit --}}
@@ -146,6 +146,7 @@
                 <form action="{{ route('shipper.orders.updateStatus', $fulfillment->order) }}" method="POST">
                     @csrf @method('PATCH')
                     <input type="hidden" name="status" value="delivered">
+                    <input type="hidden" name="fulfillment_id" value="{{ $fulfillment->id }}">
                     <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg">GIAO THÀNH CÔNG</button>
                 </form>
             </div>
@@ -188,7 +189,7 @@
     </div>
     
     {{-- Modal lý do giao hàng thất bại --}}
-    @include('shipper.partials.failure_reason_modal', ['order' => $fulfillment->order])
+    @include('shipper.partials.failure_reason_modal', ['fulfillment' => $fulfillment])
 </div>
 @endsection
 

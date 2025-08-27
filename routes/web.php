@@ -892,7 +892,6 @@ Route::prefix('shipper')
         Route::get('/stats', [ShipperController::class, 'stats'])->name('stats');
         Route::get('/history', [ShipperController::class, 'history'])->name('history');
         Route::get('/profile', [ShipperController::class, 'profile'])->name('profile');
-        Route::get('/orders/{order}', [ShipperController::class, 'show'])->name('orders.show');
         Route::patch('/fulfillments/{fulfillment}/update-status', [ShipperController::class, 'updateFulfillmentStatus'])->name('fulfillments.updateStatus');
         Route::patch('/orders/{order}/update-status', [ShipperController::class, 'updateStatus'])->name('orders.updateStatus')->middleware('can:access_shipper_dashboard');
     });
