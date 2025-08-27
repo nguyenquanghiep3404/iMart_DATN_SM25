@@ -22,7 +22,7 @@
         <h2 class="text-xl font-bold text-gray-800 p-6 border-b">Lý do giao không thành công</h2>
 
         {{-- Form ẩn để JS điền thông tin và submit --}}
-        <form id="fail-delivery-form" action="{{ route('shipper.orders.updateStatus', $order) }}" method="POST" class="hidden">
+        <form id="fail-delivery-form" action="{{ route('shipper.orders.updateStatus', $fulfillment->order) }}" method="POST" class="hidden">
             @csrf
             @method('PATCH')
             <input type="hidden" name="status" value="failed_delivery">

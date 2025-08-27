@@ -70,13 +70,13 @@ class PaymentController extends Controller
             $messages = collect($insufficientStock)->map(function($item){
                 if ($item['available'] == 0) {
                     // Hết hàng
-                    return "Sản phẩm {$item['name']}" 
-                        . (!empty($item['variant']) ? " ({$item['variant']})" : "") 
+                    return "Sản phẩm {$item['name']}"
+                        . (!empty($item['variant']) ? " ({$item['variant']})" : "")
                         . " hiện đã hết hàng, vui lòng xóa sản phẩm khỏi giỏ hàng!";
                 } else {
                     // Còn hàng nhưng ít hơn số lượng đặt
-                    return "Sản phẩm {$item['name']}" 
-                        . (!empty($item['variant']) ? " ({$item['variant']})" : "") 
+                    return "Sản phẩm {$item['name']}"
+                        . (!empty($item['variant']) ? " ({$item['variant']})" : "")
                         . " hiện chỉ còn {$item['available']} cái, bạn đã chọn {$item['requested']} cái. Vui lòng giảm số lượng xuống {$item['available']} cái.";
                 }
             })->implode('<br>');
@@ -150,13 +150,13 @@ class PaymentController extends Controller
         $discount = $appliedCoupon['discount'] ?? 0;
         $voucherCode = $appliedCoupon['code'] ?? null;
         $total = max(0, $subtotal - $discount - $pointsDiscount);
-        
+
         // Lấy địa chỉ của user nếu đã đăng nhập
         $userAddresses = collect();
         if ($user) {
             $userAddresses = $user->addresses()->with(['province', 'district', 'ward', 'provinceOld', 'districtOld', 'wardOld'])->orderBy('is_default_shipping', 'desc')->get();
         }
-        
+
         return view('users.payments.information', array_merge($cartData, [
             'baseWeight' => $totalWeight > 0 ? $totalWeight : 1000,
             'baseLength' => $maxLength > 0 ? $maxLength : 20,
@@ -218,7 +218,7 @@ class PaymentController extends Controller
     {
         // Debug: Log request data
         Log::info('PaymentRequest Data:', $request->all());
-        
+
         $cartData = $this->getCartData();
         if ($cartData['items']->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'Giỏ hàng đang trống.'], 400);
@@ -238,7 +238,7 @@ class PaymentController extends Controller
             $order = DB::transaction(function () use ($request, $cartData) {
                 // Tạo đơn hàng và các mục liên quan
                 $order = $this->createOrderAndItems($request, $cartData);
-                
+
                 // Xử lý trừ điểm thưởng cho thanh toán online
                 $user = Auth::user();
                 $pointsApplied = session('points_applied');
@@ -258,7 +258,7 @@ class PaymentController extends Controller
                         ]);
                     }
                 }
-                
+
                 return $order;
             });
 
@@ -407,7 +407,7 @@ class PaymentController extends Controller
 
         // MỚI: Sử dụng FulfillmentService để tạo Order Fulfillments
         $fulfillmentService = new FulfillmentService();
-        
+
         if ($request->delivery_method === 'delivery') {
             $shipments = $request->input('shipments', []);
             // Nếu shipments rỗng hoặc không đầy đủ, sử dụng createFulfillmentsForOrder
@@ -451,7 +451,7 @@ class PaymentController extends Controller
     private function formatDeliveryDateTime($shippingMethod, $deliveryDate, $deliveryTimeSlot, $pickupDate, $pickupTimeSlot, $deliveryMethod): array
     {
         $deliveryInfo = [];
-        
+
         if ($deliveryMethod === 'pickup') {
             $deliveryInfo['date'] = $pickupDate;
             $deliveryInfo['time_slot'] = $pickupTimeSlot;
@@ -459,7 +459,7 @@ class PaymentController extends Controller
             $deliveryInfo['date'] = $deliveryDate;
             $deliveryInfo['time_slot'] = $deliveryTimeSlot;
         }
-        
+
         return $deliveryInfo;
     }
 
@@ -469,7 +469,7 @@ class PaymentController extends Controller
     private function calculatePickupShipments($cartItems, $pickupStoreId)
     {
         $shipmentController = new \App\Http\Controllers\Api\ShipmentController();
-        
+
         // Tạo request giả để gọi calculatePickupShipments
         $request = new \Illuminate\Http\Request();
         $request->merge([
@@ -480,17 +480,17 @@ class PaymentController extends Controller
                     'price' => $item->price,
                     'name' => $item->productVariant->product->name,
                     'variant' => $item->productVariant->attributeValues->pluck('value')->join(', '),
-                    'image' => $item->productVariant->primaryImage ? 
-                        \Storage::url($item->productVariant->primaryImage->path) : 
+                    'image' => $item->productVariant->primaryImage ?
+                        \Storage::url($item->productVariant->primaryImage->path) :
                         asset('images/placeholder.jpg')
                 ];
             })->toArray(),
             'pickup_store_id' => $pickupStoreId
         ]);
-        
+
         $response = $shipmentController->calculatePickupShipments($request);
         $responseData = $response->getData(true);
-        
+
         if ($responseData['success']) {
             // Chuyển đổi format để tương thích với FulfillmentService
             return collect($responseData['shipments'])->map(function($shipment) {
@@ -501,7 +501,7 @@ class PaymentController extends Controller
                 ];
             })->toArray();
         }
-        
+
         // Fallback: tạo shipment đơn giản cho pickup store
         return [[
             'store_location_id' => $pickupStoreId,
@@ -522,14 +522,14 @@ class PaymentController extends Controller
         // Kiểm tra xem tất cả cart items có store_location_id khớp với shipments không
         $shipmentStoreIds = collect($shipments)->pluck('store_location_id')->toArray();
         $cartItemStoreIds = $cartItems->pluck('store_location_id')->unique()->toArray();
-        
+
         // Nếu có cart items không có store_location_id trong shipments, data không đầy đủ
         foreach ($cartItemStoreIds as $storeId) {
             if (!in_array($storeId, $shipmentStoreIds)) {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -650,19 +650,19 @@ class PaymentController extends Controller
                         $order->payment_status = Order::PAYMENT_PAID;
                         $order->paid_at = now();
                         $order->save();
-                        
+
                         // REMOVED: commitInventoryForOrder đã được gọi trong createOrderAndItems
                         // Không cần gọi lại để tránh tạm giữ hàng tồn kho 2 lần
                         Log::info("Đơn hàng {$order->order_code} đã thanh toán VNPay thành công");
                     });
-                    
+
                     // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
                     // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
-                    
+
                     $this->clearPurchaseSession();
                 }
                 return redirect()->route('payments.success', ['order_id' => $order->id])->with('success', 'Thanh toán thành công!');
-            } 
+            }
  else {
                     // Thanh toán thất bại, có thể xóa đơn hàng hoặc cập nhật trạng thái thất bại
                     $order->status = Order::STATUS_CANCELLED;
@@ -713,7 +713,7 @@ class PaymentController extends Controller
 
                         // Lấy store_location_id từ order
                         $storeLocationId = $order->store_location_id;
-                        
+
                         // Nếu không có store_location_id (giao hàng), tự động tìm kho có hàng
                         if (!$storeLocationId) {
                             // Tìm kho có hàng cho item đầu tiên để xác định store_location_id
@@ -770,7 +770,7 @@ class PaymentController extends Controller
         $partnerCode = config('momo.partner_code');
         $accessKey = config('momo.access_key');
         $secretKey = config('momo.secret_key');
-        
+
         $orderInfo = "Thanh toan cho don hang #" . $orderCode;
         $amount = (string)(int)$grandTotal;
         $orderId = $orderCode . "_" . time(); // Đảm bảo orderId là duy nhất cho mỗi giao dịch
@@ -874,12 +874,12 @@ class PaymentController extends Controller
                 DB::transaction(function() use ($order) {
                     $order->payment_status = Order::PAYMENT_PAID;
                     $order->save();
-                    
+
                     // REMOVED: commitInventoryForOrder đã được gọi trong createOrderAndItems
                     // Không cần gọi lại để tránh tạm giữ hàng tồn kho 2 lần
                     Log::info("Đơn hàng {$order->order_code} đã thanh toán MoMo thành công");
                 });
-                
+
                 // Chỉ gán store_location_id tự động nếu là đơn pickup và thiếu store
                 $storeLocationId = $order->store_location_id;
                 if ($order->delivery_method === 'pickup' && !$storeLocationId) {
@@ -895,10 +895,10 @@ class PaymentController extends Controller
                         }
                     }
                 }
-                
+
                 // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
                 // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
-                
+
                 $this->clearPurchaseSession();
             }
             return redirect()->route('payments.success', ['order_id' => $order->id])->with('success', 'Thanh toán thành công!');
@@ -951,7 +951,7 @@ class PaymentController extends Controller
                 $order->payment_status = Order::PAYMENT_PAID;
                 $order->status = Order::STATUS_PROCESSING;
                 $order->save();
-                
+
                 // Chỉ gán store_location_id tự động nếu là đơn pickup và thiếu store
                 $storeLocationId = $order->store_location_id;
                 if ($order->delivery_method === 'pickup' && !$storeLocationId) {
@@ -967,7 +967,7 @@ class PaymentController extends Controller
                         }
                     }
                 }
-                
+
                 // Inventory deduction is now handled by InventoryCommitmentService to prevent double deductions
                 // The commitInventoryForOrder method handles both inventory commitment and fulfillment creation
             }
@@ -1096,7 +1096,7 @@ class PaymentController extends Controller
     {
         $user = auth()->user();
         $items = collect();
-        // 1. Lấy danh sách sản phẩm 
+        // 1. Lấy danh sách sản phẩm
         if ($user && $user->cart) {
             $items = $user->cart->items()
                 ->with('cartable.product.coverImage', 'cartable.attributeValues.attribute', 'cartable.primaryImage')
@@ -1374,14 +1374,14 @@ class PaymentController extends Controller
         $buyNowData['is_buy_now'] = true;
         $buyNowData['availableCoupons'] = $availableCoupons;
         $buyNowData['subtotal'] = $subtotal;
-        
+
         // Lấy địa chỉ người dùng nếu đã đăng nhập
         $userAddresses = collect();
         if (auth()->check()) {
             $userAddresses = auth()->user()->addresses()->with(['province', 'district', 'ward', 'provinceOld', 'districtOld', 'wardOld'])->get();
         }
         $buyNowData['userAddresses'] = $userAddresses;
-        
+
         // Thêm flag để template biết đây là Buy Now
         $buyNowData['is_buy_now'] = true;
         return view('users.payments.information', $buyNowData);
@@ -1389,19 +1389,19 @@ class PaymentController extends Controller
 
     /**
      * Xử lý đặt hàng Buy Now
-     * 
+     *
      * LUỒNG HOẠT ĐỘNG MỚI:
      * 1. Kiểm tra tồn kho tại kho được chỉ định (pickup) hoặc tự động tìm kho (delivery)
      * 2. TẠM GIỮ HÀNG (commitStock) thay vì trừ thẳng tồn kho
      * 3. Tạo đơn hàng với trạng thái pending
      * 4. Kích hoạt chuyển kho tự động nếu cần thiết
      * 5. Tự động xử lý phiếu chuyển kho nếu có thể (cùng tỉnh/thành)
-     * 
+     *
      * QUẢN LÝ TỒN KHO:
      * - quantity_committed: Số lượng đã tạm giữ cho đơn hàng
      * - quantity: Tồn kho thực tế
      * - available_quantity = quantity - quantity_committed
-     * 
+     *
      * XỬ LÝ SAU ĐẶT HÀNG:
      * - Khi đơn hàng SHIPPED/OUT_FOR_DELIVERY: fulfillStock() - chuyển từ committed sang xuất kho thực
      * - Khi đơn hàng CANCELLED/RETURNED: releaseStock() - thả hàng đã tạm giữ
@@ -1486,7 +1486,7 @@ class PaymentController extends Controller
                 if ($storeLocationId) {
                     try {
                         $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
-                        
+
                         // Tạo fulfillment cho đơn hàng
                         $fulfillmentService = app(FulfillmentService::class);
                         $fulfillmentService->createFulfillmentsForOrder($order);
@@ -1589,7 +1589,7 @@ class PaymentController extends Controller
                 if ($storeLocationId) {
                     try {
                         $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
-                        
+
                         // Tạo fulfillment cho đơn hàng
                         $fulfillmentService = app(FulfillmentService::class);
                         $fulfillmentService->createFulfillmentsForOrder($order);
@@ -1827,7 +1827,7 @@ class PaymentController extends Controller
             $item = $buyNowData['items']->first();
             $variant = $item->productVariant;
             $storeLocationId = $order->store_location_id;
-            
+
             // Nếu không có store_location_id (đơn giao tận nơi), KHÔNG gán vào order để tránh hiểu nhầm là pickup
             if (!$storeLocationId) {
                 // Tìm kho có hàng để commit inventory tạm thời, nhưng không cập nhật vào order
@@ -1863,10 +1863,10 @@ class PaymentController extends Controller
 
             // Tạm giữ hàng thay vì trừ thẳng tồn kho
             $this->commitInventoryStock($variant, $item->quantity, $storeLocationId);
-            
+
             // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
             // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
-            
+
             // --- XỬ LÝ TRỪ ĐIỂM ---
             if ($user && $pointsUsed > 0) {
                 $user->decrement('loyalty_points_balance', $pointsUsed);
@@ -2173,7 +2173,7 @@ class PaymentController extends Controller
     public function fulfillOrderInventory(Order $order): void
     {
         $inventoryService = new InventoryCommitmentService();
-        
+
         try {
             $inventoryService->fulfillInventoryForOrder($order);
             Log::info("Đã xuất kho thực tế cho đơn hàng {$order->order_code}");
@@ -2189,7 +2189,7 @@ class PaymentController extends Controller
     public function releaseOrderInventory(Order $order): void
     {
         $inventoryService = new InventoryCommitmentService();
-        
+
         try {
             $inventoryService->releaseInventoryForOrder($order);
             Log::info("Đã thả tồn kho tạm giữ cho đơn hàng {$order->order_code}");
@@ -2206,14 +2206,14 @@ class PaymentController extends Controller
     private function processAutoTransfersIfPossible(array $transfersCreated): void
     {
         $autoTransferService = new AutoStockTransferService();
-        
+
         foreach ($transfersCreated as $transferInfo) {
             try {
                 $transfer = \App\Models\StockTransfer::find($transferInfo['transfer_id']);
-                
+
                 if ($transfer && $autoTransferService->canAutoProcessTransfer($transfer)) {
                     $result = $autoTransferService->autoProcessTransfer($transfer);
-                    
+
                     if ($result['success']) {
                         Log::info("Đã tự động xử lý phiếu chuyển kho {$transfer->transfer_code}: {$transferInfo['from_store']} → {$transferInfo['to_warehouse']}");
                     } else {
@@ -2464,11 +2464,11 @@ class PaymentController extends Controller
             $provinceCode = $request->input('province_code');
             $districtCode = $request->input('district_code');
             $productVariantIds = $request->input('product_variant_ids', []);
-            
+
             $query = StoreLocation::with(['province', 'district', 'ward'])
                 ->where('is_active', true)
                 ->where('type', 'store');
-                
+
             // Lọc theo tỉnh/huyện nếu có
             if ($provinceCode) {
                 $query->where('province_code', $provinceCode);
@@ -2476,7 +2476,7 @@ class PaymentController extends Controller
             if ($districtCode) {
                 $query->where('district_code', $districtCode);
             }
-            
+
             // Lấy tất cả cửa hàng có type='store' không cần quan tâm đến inventory
             // Sẽ sử dụng logic chuyển hàng để đảm bảo có hàng tại cửa hàng khách chọn
             $storeLocations = $query->get()->map(function ($location) {
@@ -2491,7 +2491,7 @@ class PaymentController extends Controller
                     'ward_name' => $location->ward ? $location->ward->name_with_type : 'Chưa cập nhật',
                 ];
             });
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $storeLocations
@@ -2588,7 +2588,7 @@ class PaymentController extends Controller
 
             // Inventory deduction is now handled by InventoryCommitmentService to prevent double deductions
             // The commitInventoryForOrder method handles both inventory commitment and fulfillment creation
-            
+
             // Logic tạo phiếu chuyển kho đã được chuyển sang OrderObserver
             // sẽ tự động kích hoạt khi đơn hàng chuyển từ 'chờ xác nhận' sang 'đang xử lý'
 

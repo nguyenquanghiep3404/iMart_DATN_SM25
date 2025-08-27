@@ -1,7 +1,7 @@
 <div class="relative block bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
     @if($fulfillment->status === 'awaiting_shipment')
         {{-- Truyền tracking_code vào hàm Javascript --}}
-        <button @click.stop="openBarcodeScanner('{{ $fulfillment->id }}', '{{ $fulfillment->tracking_code }}')"
+        <button @click.stop="openBarcodeScanner('{{ $fulfillment->id }}')"
                 class="absolute top-2 right-2 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow-lg transition-colors z-10"
                 title="Quét mã để xác nhận lấy hàng">
             <i class="fas fa-qrcode text-sm"></i>

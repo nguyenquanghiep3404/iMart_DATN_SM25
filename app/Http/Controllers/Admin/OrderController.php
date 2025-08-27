@@ -670,7 +670,7 @@ class OrderController extends Controller
                         ProductInventory::where('product_variant_id', $item->product_variant_id)
                                         ->where('store_location_id', $storeLocationId)
                                         ->where('inventory_type', 'new') // Giả định hoàn trả hàng mới
-                                        ->increment('quantity', $item->quantity);
+                                        ->decrement('quantity_committed', $item->quantity);
                     }
                 }
             } else {
