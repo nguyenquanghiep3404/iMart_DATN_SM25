@@ -81,8 +81,8 @@
                             </svg>
                             <span class="text-gray-600 font-medium whitespace-nowrap">Trạng thái :</span>
                             <span class="ml-2">
-                                <span class="px-2 py-1 text-xs {{ $category->status ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50' }} rounded">
-                                    {{ $category->status ? 'Hoạt động' : 'Không hoạt động' }}
+                                <span class="px-2 py-1 text-xs {{ $category->status === 'active' ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50' }} rounded">
+                                    {{ $category->status === 'active' ? 'Hoạt động' : 'Không hoạt động' }}
                                 </span>
                             </span>
                         </div>

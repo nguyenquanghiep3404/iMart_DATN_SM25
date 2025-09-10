@@ -174,9 +174,16 @@ class InventoryDashboardController extends Controller
         if ($storeLocation && $storeLocation !== 'all') {
             $orderQuery->where('store_location_id', $storeLocation);
         }
-        // 1. Tổng doanh thu
-        $totalRevenue = (clone $orderQuery)->sum('sub_total');
-        // 2. Tổng giá vốn (COGS) - Tính từ cost_price của product_variants
+        // 1. Tổng doanh thu - Tính từ order_items thay vì orders.sub_total
+        $totalRevenue = Order::join('order_items', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.status', 'delivered')
+            ->where('orders.payment_status', 'paid')
+            ->whereBetween('orders.created_at', [$start, $end]);
+        if ($storeLocation && $storeLocation !== 'all') {
+            $totalRevenue->where('orders.store_location_id', $storeLocation);
+        }
+        $totalRevenue = $totalRevenue->sum(DB::raw('order_items.quantity * order_items.price'));
+        // 2. Tổng giá vốn (COGS) - Tính từ weighted average cost của inventory_lots
         $cogsQuery = Order::join('order_items', 'orders.id', '=', 'order_items.order_id')
             ->join('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
             ->where('orders.status', 'delivered')
@@ -189,7 +196,32 @@ class InventoryDashboardController extends Controller
             $cogsQuery->join('products', 'product_variants.product_id', '=', 'products.id')
                 ->where('products.category_id', $category);
         }
-        $totalCOGS = $cogsQuery->sum(DB::raw('order_items.quantity * product_variants.cost_price'));
+        
+        // Tính weighted average cost cho từng sản phẩm
+        $totalCOGS = 0;
+        $orderItems = $cogsQuery->select('order_items.id', 'order_items.quantity', 'order_items.product_variant_id')->get();
+        
+        foreach ($orderItems as $item) {
+            // Tính weighted average cost cho sản phẩm này
+            $lots = DB::table('inventory_lots')
+                ->where('product_variant_id', $item->product_variant_id)
+                ->where('quantity_on_hand', '>', 0)
+                ->select('cost_price', 'quantity_on_hand')
+                ->get();
+            
+            if ($lots->count() > 0) {
+                $totalQuantity = $lots->sum('quantity_on_hand');
+                $totalCost = $lots->sum(function ($lot) {
+                    return $lot->cost_price * $lot->quantity_on_hand;
+                });
+                $avgCost = $totalQuantity > 0 ? $totalCost / $totalQuantity : 0;
+                $totalCOGS += $item->quantity * $avgCost;
+            } else {
+                // Fallback to product_variants.cost_price if no lots
+                $variant = ProductVariant::find($item->product_variant_id);
+                $totalCOGS += $item->quantity * ($variant->cost_price ?? 0);
+            }
+        }
         // 3. Lợi nhuận gộp - Doanh thu trừ COGS
         $grossProfit = $totalRevenue - $totalCOGS;
         // 4. Tỷ suất lợi nhuận gộp
@@ -223,13 +255,14 @@ class InventoryDashboardController extends Controller
         for ($i = 5; $i >= 0; $i--) {
             $monthStart = $start->copy()->subMonths($i)->startOfMonth();
             $monthEnd = $start->copy()->subMonths($i)->endOfMonth();
-            $revenue = Order::where('status', 'delivered')
-                ->where('payment_status', 'paid')
-                ->whereBetween('created_at', [$monthStart, $monthEnd])
+            $revenue = Order::join('order_items', 'orders.id', '=', 'order_items.order_id')
+                ->where('orders.status', 'delivered')
+                ->where('orders.payment_status', 'paid')
+                ->whereBetween('orders.created_at', [$monthStart, $monthEnd])
                 ->when($storeLocation && $storeLocation !== 'all', function ($query) use ($storeLocation) {
-                    return $query->where('store_location_id', $storeLocation);
+                    return $query->where('orders.store_location_id', $storeLocation);
                 })
-                ->sum('sub_total');
+                ->sum(DB::raw('order_items.quantity * order_items.price'));
             $cogs = $this->calculateCOGS($monthStart, $monthEnd, $storeLocation, $category);
             $profit = $revenue - $cogs;
             $revenueData[] = [
@@ -251,7 +284,7 @@ class InventoryDashboardController extends Controller
                 return $query->where('orders.store_location_id', $storeLocation);
             })
             ->groupBy('categories.id', 'categories.name')
-            ->select('categories.name', DB::raw('SUM(orders.sub_total) as revenue'))
+            ->select('categories.name', DB::raw('SUM(order_items.quantity * order_items.price) as revenue'))
             ->get();
 
         return [
@@ -262,7 +295,7 @@ class InventoryDashboardController extends Controller
     private function calculateCOGS($start, $end, $storeLocation = null, $category = null)
     {
         $query = Order::join('order_items', 'orders.id', '=', 'order_items.order_id')
-            ->join('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
+            ->join('inventory_lots', 'order_items.product_variant_id', '=', 'inventory_lots.product_variant_id')
             ->where('orders.status', 'delivered')
             ->where('orders.payment_status', 'paid')
             ->whereBetween('orders.created_at', [$start, $end]);
@@ -270,10 +303,11 @@ class InventoryDashboardController extends Controller
             $query->where('orders.store_location_id', $storeLocation);
         }
         if ($category && $category !== 'all') {
-            $query->join('products', 'product_variants.product_id', '=', 'products.id')
+            $query->join('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
+                ->join('products', 'product_variants.product_id', '=', 'products.id')
                 ->where('products.category_id', $category);
         }
-        return $query->sum(DB::raw('order_items.quantity * product_variants.cost_price'));
+        return $query->sum(DB::raw('order_items.quantity * inventory_lots.cost_price'));
     }
     // Trang báo cáo chi tiết: Lợi nhuận theo sản phẩm
     public function productProfitReport(Request $request)
@@ -288,6 +322,7 @@ class InventoryDashboardController extends Controller
         $start = $queryDate['start'];
         $end = $queryDate['end'];
         $query = Order::join('order_items', 'orders.id', '=', 'order_items.order_id')
+            ->join('inventory_lots', 'order_items.product_variant_id', '=', 'inventory_lots.product_variant_id')
             ->join('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
             ->join('products', 'product_variants.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
@@ -315,9 +350,9 @@ class InventoryDashboardController extends Controller
                 'categories.name as category_name',
                 DB::raw('SUM(order_items.quantity) as total_quantity'),
                 DB::raw('SUM(order_items.quantity * order_items.price) as revenue'),
-                DB::raw('SUM(order_items.quantity * product_variants.cost_price) as cogs'),
-                DB::raw('SUM(order_items.quantity * order_items.price) - SUM(order_items.quantity * product_variants.cost_price) as gross_profit'),
-                DB::raw('CASE WHEN SUM(order_items.quantity * order_items.price) > 0 THEN ((SUM(order_items.quantity * order_items.price) - SUM(order_items.quantity * product_variants.cost_price)) / SUM(order_items.quantity * order_items.price)) * 100 ELSE 0 END as profit_margin')
+                DB::raw('SUM(order_items.quantity * inventory_lots.cost_price) as cogs'),
+                DB::raw('SUM(order_items.quantity * order_items.price) - SUM(order_items.quantity * inventory_lots.cost_price) as gross_profit'),
+                DB::raw('CASE WHEN SUM(order_items.quantity * order_items.price) > 0 THEN ((SUM(order_items.quantity * order_items.price) - SUM(order_items.quantity * inventory_lots.cost_price)) / SUM(order_items.quantity * order_items.price)) * 100 ELSE 0 END as profit_margin')
             )
             ->orderByDesc('revenue')
             ->paginate(20)

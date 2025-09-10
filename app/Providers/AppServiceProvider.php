@@ -154,6 +154,7 @@ class AppServiceProvider extends ServiceProvider
         // Chia sẻ danh mục hiển thị trên header (menu client)
         View::composer('*', function ($view) {
             $menuCategories = \App\Models\Category::where('show_on_homepage', true)
+                ->where('status', 'active') // Chỉ hiển thị categories có status = active
                 ->orderBy('order')
                 ->get();
 

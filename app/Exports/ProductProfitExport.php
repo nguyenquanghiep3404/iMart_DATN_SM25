@@ -34,6 +34,7 @@ class ProductProfitExport implements FromCollection, WithHeadings, WithMapping
         $search = trim((string)($this->filters['q'] ?? ''));
 
         $query = Order::join('order_items', 'orders.id', '=', 'order_items.order_id')
+            ->join('inventory_lots', 'order_items.product_variant_id', '=', 'inventory_lots.product_variant_id')
             ->join('product_variants', 'order_items.product_variant_id', '=', 'product_variants.id')
             ->join('products', 'product_variants.product_id', '=', 'products.id')
             ->join('categories', 'products.category_id', '=', 'categories.id')
@@ -63,9 +64,9 @@ class ProductProfitExport implements FromCollection, WithHeadings, WithMapping
                 'categories.name as category_name',
                 DB::raw('SUM(order_items.quantity) as total_quantity'),
                 DB::raw('SUM(order_items.quantity * order_items.price) as revenue'),
-                DB::raw('SUM(order_items.quantity * product_variants.cost_price) as cogs'),
-                DB::raw('SUM(order_items.quantity * order_items.price) - SUM(order_items.quantity * product_variants.cost_price) as gross_profit'),
-                DB::raw('CASE WHEN SUM(order_items.quantity * order_items.price) > 0 THEN ((SUM(order_items.quantity * order_items.price) - SUM(order_items.quantity * product_variants.cost_price)) / SUM(order_items.quantity * order_items.price)) * 100 ELSE 0 END as profit_margin')
+                DB::raw('SUM(order_items.quantity * inventory_lots.cost_price) as cogs'),
+                DB::raw('SUM(order_items.quantity * order_items.price) - SUM(order_items.quantity * inventory_lots.cost_price) as gross_profit'),
+                DB::raw('CASE WHEN SUM(order_items.quantity * order_items.price) > 0 THEN ((SUM(order_items.quantity * order_items.price) - SUM(order_items.quantity * inventory_lots.cost_price)) / SUM(order_items.quantity * order_items.price)) * 100 ELSE 0 END as profit_margin')
             )
             ->orderByDesc('revenue')
             ->get();

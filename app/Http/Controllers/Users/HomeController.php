@@ -1793,7 +1793,7 @@ class HomeController extends Controller
 
         $products->setCollection(collect($productsData));
 
-        $categories = Category::all();
+        $categories = Category::where('status', 'active')->get();
         $parentCategories = $categories->whereNull('parent_id');
 
         if ($request->ajax()) {
@@ -2052,8 +2052,8 @@ class HomeController extends Controller
             'products' => $products,
             'searchQuery' => $query,
             'tab' => $tab,
-            'categories' => Category::all(),
-            'parentCategories' => Category::whereNull('parent_id')->get(),
+            'categories' => Category::where('status', 'active')->get(),
+            'parentCategories' => Category::where('status', 'active')->whereNull('parent_id')->get(),
             'currentCategory' => null,
             'currentSort' => 'moi_nhat',
         ]);
