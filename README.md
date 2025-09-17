@@ -1,15 +1,21 @@
-# Tóm tắt dự án iMart - Hệ thống thương mại điện tử
+# Tóm tắt dự án iMart - Website bán sản phẩm Apple
+
+## Phân chia công việc: 
+nguyenquanghiep3404:  
+- Quản lý biến thể sản phẩm, Quản lý thư viện ảnh, Quản lý sản phẩm, Quản lý thông số, Luồng thanh toán online,  Quản lý kho hàng và POS, Chat realtime, Tính toán phí ship của cửa hàng, logic chuyển kho tự động, Quản lý chuyển kho tự động.
+-
+
 
 ## 1. Tổng quan dự án
 
 iMart là một hệ thống thương mại điện tử toàn diện được phát triển trên nền tảng Laravel, cung cấp giải pháp mua sắm trực tuyến với đầy đủ tính năng từ quản lý sản phẩm, đơn hàng đến thanh toán và giao hàng. Hệ thống hỗ trợ đa cửa hàng (multi-location), POS bán hàng tại quầy, quản lý kho hàng phức tạp và hệ thống marketing tự động.
 
 ### Công nghệ sử dụng
-- **Framework**: Laravel 11.x
+- **Framework**: Laravel 12.x
 - **PHP**: Phiên bản 8.3+
 - **Database**: MySQL 8.0+
 - **Frontend**: HTML, CSS, JavaScript, Tailwind CSS
-- **Thanh toán**: Tích hợp các cổng thanh toán (VNPay, Momo, Casso)
+- **Thanh toán**: Tích hợp các cổng thanh toán (VNPay, Momo)
 - **Realtime**: Laravel Reverb cho chat và thông báo
 - **Export/Import**: Maatwebsite/Excel
 - **Queue**: Redis/Database cho xử lý background jobs
