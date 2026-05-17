@@ -1,14 +1,22 @@
 # Tóm tắt dự án iMart - Website bán sản phẩm Apple
 
-## Phân chia công việc: 
-nguyenquanghiep3404:  
-- Quản lý biến thể sản phẩm, Quản lý thư viện ảnh, Quản lý sản phẩm, Quản lý thông số, Luồng thanh toán online,  Quản lý kho hàng và POS, Chat realtime, Tính toán phí ship của cửa hàng, logic chuyển kho tự động, Quản lý chuyển kho tự động.
--
+## Thông tin Repository
+- **Mô tả**: Website bán sản phẩm Apple iMart
+- **Tỉ lệ ngôn ngữ**: Blade (68.2%), PHP (28.4%), JavaScript (1.7%), CSS (1.6%), HTML (0.1%)
+- [Xem trực tiếp trên GitHub](https://github.com/nguyenquanghiep3404/iMart_DATN_SM25)
 
+## Phân chia công việc theo module/tính năng:
+
+- **nguyenquanghiep3404:** Backend tổng thể, database schema, quản lý quyền, sản phẩm, queue, payment, core business, triển khai cloud, kiểm thử, thông báo real-time.
+- **pdacsang:** Tài khoản/phân quyền, đơn hàng & fulfillment, UI khách hàng, đăng ký/đăng nhập, địa chỉ, giỏ hàng, wishlist, review, chat, blog.
+- **Kieutritiep:** Kho hàng chuyên sâu, POS, location, kiểm kê, barcode, báo cáo kho.
+- **ngoctan270905:** Marketing: email campaign, coupon, flash sale, loyalty, nhóm khách hàng, tự động hóa, dashboard marketing.
+- **tranduyanh220:** Quản lý địa chỉ, vận chuyển, fulfilling, chuẩn hóa địa chỉ, liên kết order/return.
+- **khanh682:** Log hệ thống, notification, cấu hình, phân ca, upload file, banner, báo cáo phân tích, hiệu năng, worker.
 
 ## 1. Tổng quan dự án
 
-iMart là một hệ thống thương mại điện tử toàn diện được phát triển trên nền tảng Laravel, cung cấp giải pháp mua sắm trực tuyến với đầy đủ tính năng từ quản lý sản phẩm, đơn hàng đến thanh toán và giao hàng. Hệ thống hỗ trợ đa cửa hàng (multi-location), POS bán hàng tại quầy, quản lý kho hàng phức tạp và hệ thống marketing tự động.
+iMart là một hệ thống thương mại điện tử toàn diện được phát triển trên nền tảng Laravel, cung cấp giải pháp mua sắm trực tuyến với đầy đủ tính năng hiện đại...
 
 ### Công nghệ sử dụng
 - **Framework**: Laravel 12.x
@@ -245,6 +253,6 @@ Dự án được tổ chức theo mô hình MVC (Model-View-Controller) của L
 
 ## 6. Kết luận
 
-iMart là một hệ thống thương mại điện tử toàn diện, được xây dựng với kiến trúc hiện đại, đáp ứng đầy đủ nhu cầu của cả người mua và người bán. Hệ thống không chỉ cung cấp trải nghiệm mua sắm thuận tiện cho người dùng mà còn mang đến công cụ quản lý hiệu quả cho doanh nghiệp.
+iMart là một hệ thống thương mại điện tử toàn diện, được xây dựng với kiến trúc hiện đại, đáp ứng đầy đủ nhu cầu của cả người mua và người bán...
 
-Với khả năng mở rộng và tùy biến cao, iMart có thể dễ dàng thích ứng với các yêu cầu kinh doanh khác nhau, từ cửa hàng nhỏ đến hệ thống thương mại điện tử quy mô lớn.
+Với khả năng mở rộng và tuỳ biến cao, iMart có thể dễ dàng thích ứng với các yêu cầu kinh doanh khác nhau, từ cửa hàng nhỏ đến hệ thống thương mại điện tử lớn.
