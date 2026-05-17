@@ -7,8 +7,8 @@
 
 ## Phân chia công việc theo module/tính năng:
 
-- **nguyenquanghiep3404:** Backend tổng thể, database schema, quản lý quyền, sản phẩm, queue, payment, core business, triển khai cloud, kiểm thử, thông báo real-time.
-- **pdacsang:** Tài khoản/phân quyền, đơn hàng & fulfillment, UI khách hàng, đăng ký/đăng nhập, địa chỉ, giỏ hàng, wishlist, review, chat, blog.
+- **nguyenquanghiep3404:** Backend tổng thể, database schema, quản lý quyền, sản phẩm, queue, payment, core business, triển khai cloud, kiểm thử, thông báo real-time, Quản lý biến thể sản phẩm, Quản lý thư viện ảnh, Quản lý sản phẩm, Quản lý thông số, Luồng thanh toán online, Quản lý kho hàng và POS, Chat realtime, Tính toán phí ship của cửa hàng, logic chuyển kho tự động, Quản lý chuyển kho tự động.
+- **pdacsang:** Tài khoản/phân quyền, đơn hàng & fulfillment, UI khách hàng, đăng ký/đăng nhập, địa chỉ, giỏ hàng, wishlist, review, chat, blog, 
 - **Kieutritiep:** Kho hàng chuyên sâu, POS, location, kiểm kê, barcode, báo cáo kho.
 - **ngoctan270905:** Marketing: email campaign, coupon, flash sale, loyalty, nhóm khách hàng, tự động hóa, dashboard marketing.
 - **tranduyanh220:** Quản lý địa chỉ, vận chuyển, fulfilling, chuẩn hóa địa chỉ, liên kết order/return.
